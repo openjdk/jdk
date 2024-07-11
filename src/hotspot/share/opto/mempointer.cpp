@@ -89,16 +89,31 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_AddP:
     case Op_AddL:
     case Op_AddI:
+    {
+      // TODO check if we should decompose or not: int-overflow!!!
+      Node* a = n->in((opc == Op_AddP) ? 2 : 1);
+      Node* b = n->in((opc == Op_AddP) ? 3 : 2);
+      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
+      _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
+      return;
+    }
     case Op_SubL:
     case Op_SubI:
     {
       // TODO check if we should decompose or not: int-overflow!!!
-      // TODO check if we should decompose or not
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
+
+      NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
+      LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
+                                                             : scaleL; )
+
+      // If anything went wrong with the scale computation: bailout.
+      if (sub_scale.is_NaN()) { break; }
+      LP64_ONLY( if (sub_scaleL.is_NaN()) { break; } )
+
       _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-      // TODO figure out how to do subtraction, which scale to negate
-      _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
+      _worklist.push(MemPointerSummand(b, sub_scale LP64_ONLY( COMMA sub_scaleL )));
       return;
     }
     case Op_MulL:
