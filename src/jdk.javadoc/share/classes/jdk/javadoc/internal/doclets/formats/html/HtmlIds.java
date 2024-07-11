@@ -619,7 +619,7 @@ public class HtmlIds {
             id += ((ModuleElement) e).getQualifiedName();
         } else {
             // while utterly unexpected, we shouldn't fail
-            id += "unknown-element-";
+            id += "unknown-element";
         }
         int counter = 1;
         while (!snippetIds.add(id + counter)) {
