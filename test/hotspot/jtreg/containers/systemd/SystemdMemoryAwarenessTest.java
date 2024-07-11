@@ -27,11 +27,13 @@
  * @summary Memory/CPU awareness test for JDK-under-test inside a systemd slice.
  * @requires systemd.support
  * @library /test/lib
- * @build HelloSystemd
- * @run driver SystemdMemoryAwarenessTest
+ * @build HelloSystemd jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SystemdMemoryAwarenessTest
  */
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.containers.systemd.SystemdRunOptions;
 import jdk.test.lib.containers.systemd.SystemdTestUtils;
 import jdk.test.lib.containers.systemd.SystemdTestUtils.ResultFiles;
@@ -39,14 +41,24 @@ import jdk.test.lib.containers.systemd.SystemdTestUtils.ResultFiles;
 
 public class SystemdMemoryAwarenessTest {
 
+    private static final WhiteBox wb = WhiteBox.getWhiteBox();
+
     public static void main(String[] args) throws Exception {
        testHelloSystemd();
     }
 
     private static void testHelloSystemd() throws Exception {
         SystemdRunOptions opts = SystemdTestUtils.newOpts("HelloSystemd");
-        // 1 GB memory and 2 cores CPU
-        opts.memoryLimit("1000M").cpuLimit("200%");
+        // 1 GB memory
+        opts.memoryLimit("1000M");
+        int physicalCpus = wb.hostCPUs();
+        if (physicalCpus < 3) {
+           System.err.println("WARNING: host system only has " + physicalCpus + " expected >= 3");
+        }
+        // 1 or 2 cores limit depending on physical CPUs
+        int coreLimit = Math.min(physicalCpus, 2);
+        System.out.println("DEBUG: Running test with a CPU limit of " + coreLimit);
+        opts.cpuLimit(String.format("%d%%", coreLimit * 100));
         opts.sliceName(SystemdMemoryAwarenessTest.class.getSimpleName());
 
         ResultFiles files = SystemdTestUtils.buildSystemdSlices(opts);
@@ -55,7 +67,7 @@ public class SystemdMemoryAwarenessTest {
             SystemdTestUtils.systemdRunJava(opts)
                 .shouldHaveExitValue(0)
                 .shouldContain("Hello Systemd")
-                .shouldContain("OSContainer::active_processor_count: 2")
+                .shouldContain("OSContainer::active_processor_count: " + coreLimit)
                 .shouldContain("Memory Limit is: 1048576000"); // 1 GB
         } finally {
             try {
