@@ -1712,19 +1712,10 @@ int WhiteBox::array_bytes_to_length(size_t bytes) {
 ///////////////
 // MetaspaceTestContext and MetaspaceTestArena
 WB_ENTRY(jlong, WB_CreateMetaspaceTestContext(JNIEnv* env, jobject wb, jlong commit_limit, jlong reserve_limit))
-  if (commit_limit % BytesPerWord != 0) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("WB_CreateMetaspaceTestContext: commit_limit " JLONG_FORMAT
-                        " is not a multiple of the system word byte size %d",
-                        commit_limit, BytesPerWord));
-  }
-  if (reserve_limit % BytesPerWord != 0) {
-    THROW_MSG_0(
-        vmSymbols::java_lang_IllegalArgumentException(),
-        err_msg("WB_CreateMetaspaceTestContext: reserve_limit " JLONG_FORMAT
-                " is not a multiple of the system word byte size %d",
-                commit_limit, BytesPerWord));
-  }
+  assert(is_aligned(commit_limit, BytesPerWord),
+         "WB_CreateMetaspaceTestContext: commit_limit is not a multiple of the system word byte size");
+  assert(is_aligned(reserve_limit, BytesPerWord),
+         "WB_CreateMetaspaceTestContext: reserve_limit is not a multiple of the system word byte size");
   metaspace::MetaspaceTestContext* context =
       new metaspace::MetaspaceTestContext("whitebox-metaspace-context", (size_t) commit_limit / BytesPerWord,
                                           (size_t) reserve_limit / BytesPerWord);
@@ -1766,24 +1757,16 @@ WB_ENTRY(void, WB_DestroyMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena
 WB_END
 
 WB_ENTRY(jlong, WB_AllocateFromMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong size))
-  if (size % BytesPerWord != 0) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("WB_AllocateFromMetaspaceTestArena: size " JLONG_FORMAT
-                        " is not a multiple of the system word byte size %d",
-                        size, BytesPerWord));
-  }
+  assert(is_aligned(size, BytesPerWord),
+         "WB_AllocateFromMetaspaceTestArena: size is not a multiple of the system word byte size");
   metaspace::MetaspaceTestArena *arena0 = (metaspace::MetaspaceTestArena *)arena;
   MetaWord *p = arena0->allocate((size_t) size / BytesPerWord);
   return (jlong)p2i(p);
 WB_END
 
 WB_ENTRY(void, WB_DeallocateToMetaspaceTestArena(JNIEnv* env, jobject wb, jlong arena, jlong p, jlong size))
-  if (size % BytesPerWord != 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              err_msg("WB_DeallocateToMetaspaceTestArena: size " JLONG_FORMAT
-                      " is not a multiple of the system word byte size %d",
-                      size, BytesPerWord));
-  }
+  assert(is_aligned(size, BytesPerWord),
+         "WB_DeallocateToMetaspaceTestArena: size is not a multiple of the system word byte size");
   metaspace::MetaspaceTestArena* arena0 = (metaspace::MetaspaceTestArena*) arena;
   arena0->deallocate((MetaWord*)p, (size_t) size / BytesPerWord);
 WB_END
