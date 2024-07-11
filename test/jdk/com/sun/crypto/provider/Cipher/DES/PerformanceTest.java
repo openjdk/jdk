@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,9 @@ public class PerformanceTest {
         cipher.doFinal(data, 0, data.length);
         end = System.currentTimeMillis();
 
-        int speed = (int)((data.length * count)/(end - start));
+        // To avoid diving by zero if end is equal to start
+        long executionTime = end > start ? end - start : 1;
+        int speed = (int) ((data.length * count) / executionTime);
         sum += speed;
         col.append(speed);
     }
