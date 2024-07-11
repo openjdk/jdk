@@ -69,6 +69,8 @@ compiler/startup/StartupOutput.java 8326615 generic-x64
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
+compiler/vectorization/TestFloat16VectorConvChain.java 8335860 generic-all
+
 #############################################################################
 
 # :hotspot_gc

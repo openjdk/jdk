@@ -633,6 +633,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * asSlice(offset, newSize, 1);
      * }
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -651,6 +654,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Returns a slice of this memory segment, at the given offset, with the provided
      * alignment constraint. The returned segment's address is the address of this
      * segment plus the given offset; its size is specified by the given argument.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -679,6 +685,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * asSlice(offset, layout.byteSize(), layout.byteAlignment());
      * }
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -705,6 +714,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * asSlice(offset, byteSize() - offset);
      * }
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -720,6 +732,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Returns a new memory segment that has the same address and scope as this segment,
      * but with the provided size.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -758,6 +773,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@link #byteSize()}.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -806,6 +824,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * That is, the cleanup action receives a segment that is associated with the global
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@code newSize}.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
