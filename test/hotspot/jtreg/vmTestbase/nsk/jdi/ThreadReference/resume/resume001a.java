@@ -81,7 +81,13 @@ public class resume001a {
 
             String instruction;
 
-            log1("waiting for an instruction from the debugger ...");
+            log1("waiting for an instruction from the debugger: iteration " + i);
+            if (i == 1) {
+                // Let the debugger know we finished the first iteration and are now
+                // waiting for next command. This is needed so we don't suspend the
+                // main thread while it is doing a log(), which can hold a needed lock.
+                pipe.println("waiting");
+            }
             instruction = pipe.readln();
             if (instruction.equals("quit")) {
                 log1("'quit' recieved");
