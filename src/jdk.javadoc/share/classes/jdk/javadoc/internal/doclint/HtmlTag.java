@@ -507,7 +507,7 @@ public enum HtmlTag {
         PROFILE,
         REV,
         REVERSED,
-        ROLE,
+        ROLE(true),
         ROWSPAN,
         RULES,
         SCHEME,
@@ -606,26 +606,6 @@ public enum HtmlTag {
         this.attrs = new EnumMap<>(Attr.class);
         for (Map<Attr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
-        attrs.put(Attr.CLASS, AttrKind.OK);
-        attrs.put(Attr.ID, AttrKind.OK);
-        attrs.put(Attr.STYLE, AttrKind.OK);
-        attrs.put(Attr.ROLE, AttrKind.OK);
-        // for now, assume that all ARIA attributes are allowed on all tags.
-        attrs.put(Attr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
-        attrs.put(Attr.ARIA_CONTROLS, AttrKind.OK);
-        attrs.put(Attr.ARIA_DESCRIBEDBY, AttrKind.OK);
-        attrs.put(Attr.ARIA_EXPANDED, AttrKind.OK);
-        attrs.put(Attr.ARIA_LABEL, AttrKind.OK);
-        attrs.put(Attr.ARIA_LABELLEDBY, AttrKind.OK);
-        attrs.put(Attr.ARIA_LEVEL, AttrKind.OK);
-        attrs.put(Attr.ARIA_MULTISELECTABLE, AttrKind.OK);
-        attrs.put(Attr.ARIA_OWNS, AttrKind.OK);
-        attrs.put(Attr.ARIA_POSINSET, AttrKind.OK);
-        attrs.put(Attr.ARIA_READONLY, AttrKind.OK);
-        attrs.put(Attr.ARIA_REQUIRED, AttrKind.OK);
-        attrs.put(Attr.ARIA_SELECTED, AttrKind.OK);
-        attrs.put(Attr.ARIA_SETSIZE, AttrKind.OK);
-        attrs.put(Attr.ARIA_SORT, AttrKind.OK);
     }
 
     public boolean accepts(HtmlTag t) {
