@@ -69,10 +69,9 @@ int CompiledDirectCall::to_interp_stub_size() {
 }
 
 int CompiledDirectCall::to_trampoline_stub_size() {
-  // Somewhat pessimistically, we count 4 instructions here (although
-  // there are only 3) because we sometimes emit an alignment nop.
+  // We count instructions and an additional alignment nop.
   // Trampoline stubs are always word aligned.
-  return MacroAssembler::max_trampoline_stub_size();
+  return MacroAssembler::max_reloc_call_stub_size();
 }
 
 // Relocation entries for call stub, compiled java to interpreter.

@@ -60,12 +60,10 @@ void Relocation::pd_set_data_value(address x, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be an address instruction here");
-  if (MacroAssembler::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != nullptr) {
-      return nativeCallTrampolineStub_at(trampoline)->destination();
-    }
+  if (NativeCall::is_at(addr())) {
+    return nativeCall_at(addr())->reloc_destination(orig_addr);
   }
+  // Non call reloc
   if (orig_addr != nullptr) {
     // the extracted address from the instructions in address orig_addr
     address new_addr = MacroAssembler::pd_call_destination(orig_addr);
@@ -81,10 +79,9 @@ address Relocation::pd_call_destination(address orig_addr) {
 
 void Relocation::pd_set_call_destination(address x) {
   assert(is_call(), "should be an address instruction here");
-  if (MacroAssembler::is_call_at(addr())) {
-    address trampoline = nativeCall_at(addr())->get_trampoline();
-    if (trampoline != nullptr) {
-      nativeCall_at(addr())->set_destination_mt_safe(x, /* assert_lock */false);
+  if (NativeCall::is_at(addr())) {
+    NativeCall* nc = nativeCall_at(addr());
+    if (nc->reloc_set_destination(x)) {
       return;
     }
   }

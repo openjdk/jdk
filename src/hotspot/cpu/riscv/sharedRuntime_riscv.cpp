@@ -1005,7 +1005,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     // Make sure the call is patchable
     __ align(NativeInstruction::instruction_size);
 
-    const address tr_call = __ trampoline_call(resolve);
+    const address tr_call = __ reloc_call(resolve);
     if (tr_call == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1037,7 +1037,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // Make sure the call is patchable
   __ align(NativeInstruction::instruction_size);
 
-  const address tr_call = __ trampoline_call(resolve);
+  const address tr_call = __ reloc_call(resolve);
   if (tr_call == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }

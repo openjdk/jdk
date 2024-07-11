@@ -466,8 +466,10 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
+  address emit_address_stub(int insts_call_instruction_offset, address target);
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_trampoline_stub_size();
+  static int max_reloc_call_stub_size();
+
   void emit_static_call_stub();
   static int static_call_stub_size();
 
@@ -623,8 +625,8 @@ class MacroAssembler: public Assembler {
   void bgtz(Register Rs, const address dest);
 
  private:
+  void load_link_jump(const address source, Register temp = t0);
   void jump_link(const address dest, Register temp);
-  void jump_link(const Address &adr, Register temp);
  public:
   // We try to follow risc-v asm menomics.
   // But as we don't layout a reachable GOT,
@@ -1205,7 +1207,27 @@ public:
   //     be used instead.
   //     All instructions are embedded at a call site.
   //
-  //   - trampoline call:
+  //   - indirect call: movptr + jalr
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  //   - reloc call:
+  //     This is only available in C1/C2-generated code (nmethod).
+  //
+  //     [Main code section]
+  //       auipc
+  //       ld <address_from_stub_section>
+  //       jalr
+  //     [Stub section]
+  //     trampoline:
+  //       <64-bit destination address>
+  //
+  //    To change the destination we simply atomically store the new
+  //    address in the stub section.
+  //
+  // - trampoline call (old reloc call / -XX:+UseTrampolines):
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
   //     and a register-indirect call. It has the advantages of reaching anywhere in
@@ -1224,17 +1246,10 @@ public:
   //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
   //     is not used.
   //     The optimization does not remove the trampoline from the stub section.
-
+  //
   //     This is necessary because the trampoline may well be redirected later when
   //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
-  //
-  //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
-  //
   //
   // To patch a trampoline call when the JAL can't reach, we first modify
   // the 64-bit destination address in the trampoline, then modify the
@@ -1248,9 +1263,10 @@ public:
   // invalidated, so there will be a trap at its start.
   // For this to work, the destination address in the trampoline is
   // always updated, even if we're not using the trampoline.
+  // --
 
   // Emit a direct call if the entry address will always be in range,
-  // otherwise a trampoline call.
+  // otherwise a reloc call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1258,7 +1274,13 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
+  address reloc_call(Address entry) {
+    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
+  }
+ private:
   address trampoline_call(Address entry);
+  address load_and_call(Address entry);
+ public:
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
@@ -1585,50 +1607,19 @@ public:
 
 public:
   enum {
-    // Refer to function emit_trampoline_stub.
-    trampoline_stub_instruction_size = 3 * instruction_size + wordSize, // auipc + ld + jr + target address
-    trampoline_stub_data_offset      = 3 * instruction_size,            // auipc + ld + jr
-
     // movptr
     movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
     movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
     load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
   };
 
+  enum NativeShortCall {
+    trampoline_size        = 3 * instruction_size + wordSize,
+    trampoline_data_offset = 3 * instruction_size
+  };
+
   static bool is_load_pc_relative_at(address branch);
   static bool is_li16u_at(address instr);
-
-  static bool is_trampoline_stub_at(address addr) {
-    // Ensure that the stub is exactly
-    //      ld   t0, L--->auipc + ld
-    //      jr   t0
-    // L:
-
-    // judge inst + register + imm
-    // 1). check the instructions: auipc + ld + jalr
-    // 2). check if auipc[11:7] == t0 and ld[11:7] == t0 and ld[19:15] == t0 && jr[19:15] == t0
-    // 3). check if the offset in ld[31:20] equals the data_offset
-    assert_cond(addr != nullptr);
-    const int instr_size = instruction_size;
-    if (is_auipc_at(addr) &&
-        is_ld_at(addr + instr_size) &&
-        is_jalr_at(addr + 2 * instr_size) &&
-        (extract_rd(addr)                    == x5) &&
-        (extract_rd(addr + instr_size)       == x5) &&
-        (extract_rs1(addr + instr_size)      == x5) &&
-        (extract_rs1(addr + 2 * instr_size)  == x5) &&
-        (Assembler::extract(Assembler::ld_instr(addr + 4), 31, 20) == trampoline_stub_data_offset)) {
-      return true;
-    }
-    return false;
-  }
-
-  static bool is_call_at(address instr) {
-    if (is_jal_at(instr) || is_jalr_at(instr)) {
-      return true;
-    }
-    return false;
-  }
 
   static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
   static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
@@ -1664,7 +1655,6 @@ public:
 
   static bool is_lwu_to_zr(address instr);
 
-private:
   static Register extract_rs1(address instr);
   static Register extract_rs2(address instr);
   static Register extract_rd(address instr);
