@@ -65,7 +65,8 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2264,6 +2265,7 @@ public final class System {
             super(fd);
         }
 
+        @Override
         public void write(int b) throws IOException {
             boolean attempted = Blocker.begin();
             try {
@@ -2681,14 +2683,6 @@ public final class System {
                 return Thread.currentCarrierThread();
             }
 
-            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                if (Thread.currentThread() instanceof VirtualThread vthread) {
-                    return vthread.executeOnCarrierThread(task);
-                } else {
-                    return task.call();
-                }
-            }
-
             public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {
                 return ((ThreadLocal<T>)local).getCarrierThreadLocal();
             }
@@ -2753,6 +2747,14 @@ public final class System {
                 } else {
                     throw new WrongThreadException();
                 }
+            }
+
+            public Executor virtualThreadDefaultScheduler() {
+                return VirtualThread.defaultScheduler();
+            }
+
+            public Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers() {
+                return VirtualThread.delayedTaskSchedulers();
             }
 
             public StackWalker newStackWalkerInstance(Set<StackWalker.Option> options,

@@ -42,9 +42,10 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Stream;
 
 import jdk.internal.misc.CarrierThreadLocal;
@@ -511,11 +512,6 @@ public interface JavaLangAccess {
     Thread currentCarrierThread();
 
     /**
-     * Executes the given value returning task on the current carrier thread.
-     */
-    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
-
-    /**
      * Returns the value of the current carrier thread's copy of a thread-local.
      */
     <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local);
@@ -587,6 +583,16 @@ public interface JavaLangAccess {
      * @throws RejectedExecutionException if the scheduler cannot accept a task
      */
     void unparkVirtualThread(Thread thread);
+
+    /**
+     * Returns the virtual thread default scheduler.
+     */
+    Executor virtualThreadDefaultScheduler();
+
+    /**
+     * Returns a stream of the delayed task schedulers used for virtual threads.
+     */
+    Stream<ScheduledExecutorService> virtualThreadDelayedTaskSchedulers();
 
     /**
      * Creates a new StackWalker
