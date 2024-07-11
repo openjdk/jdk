@@ -35,7 +35,7 @@ import java.security.spec.ECGenParameterSpec;
 public class CurveGetParameterSpec {
     public static void main(String[] args) throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-        kpg.initialize(384);
+        kpg.initialize(new ECGenParameterSpec("secp384r1"));
         var k = kpg.generateKeyPair().getPublic();
         var a = AlgorithmParameters.getInstance("EC");
         a.init(k.getParams());
