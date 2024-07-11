@@ -124,8 +124,6 @@ public:
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t contiguous_available() const;
-
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
