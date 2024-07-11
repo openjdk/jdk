@@ -40,7 +40,7 @@ import nsk.share.test.Stresser;
 public class from001 {
 
     private static boolean testFailed = false;
-    private static final int MAX_TRIES = 60; // limit attempts to receive Notification data
+    private static final int MAX_TRIES = 6; // limit attempts to receive Notification data
 
     public static void main(String[] args) {
 
@@ -152,9 +152,9 @@ public class from001 {
         int tries = 0;
         while (!messageReceived && ++tries < MAX_TRIES) {
             try {
-                Object r = from001Listener.queue.poll(1000, TimeUnit.MILLISECONDS);
+                Object r = from001Listener.queue.poll(10000, TimeUnit.MILLISECONDS);
                 if (r == null) {
-                    log.display("polling for Notification data");
+                    log.display("poll for Notification data returns null...");
                     continue;
                 } else {
                     messageReceived = true;
@@ -222,7 +222,6 @@ class from001Listener implements NotificationListener {
                 messageNotSent = false;
             } catch(InterruptedException e) {
                 // ignore, retry
-                // not needed: messageNotSent = true;
             }
         }
     }
