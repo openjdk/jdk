@@ -28,6 +28,7 @@ package sun.security.util;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.util.function.UnaryOperator;
 
 /**
  * A utility class to expand properties embedded in a string.
@@ -52,12 +53,12 @@ public class PropertyExpander {
     }
 
     public static String expand(String value) throws ExpandException {
-        return expand(value, false, true);
+        return expand(value, false);
     }
 
     public static String expand(String value, boolean encodeURL)
             throws ExpandException {
-        return expand(value, encodeURL, true);
+        return expand(value, encodeURL, System::getProperty);
     }
 
     /*
@@ -65,7 +66,7 @@ public class PropertyExpander {
      */
     public static String expandNonStrict(String value) {
         try {
-            return expand(value, false, false);
+            return expand(value, false, key -> System.getProperty(key, ""));
         } catch (ExpandException e) {
             // should not happen
             throw new RuntimeException("unexpected expansion error: when " +
@@ -75,7 +76,7 @@ public class PropertyExpander {
     }
 
     private static String expand(String value, boolean encodeURL,
-            boolean strict) throws ExpandException {
+            UnaryOperator<String> propertiesGetter) throws ExpandException {
         if (value == null)
             return null;
 
@@ -121,7 +122,7 @@ public class PropertyExpander {
                 if (prop.equals("/")) {
                     sb.append(java.io.File.separatorChar);
                 } else {
-                    String val = System.getProperty(prop);
+                    String val = propertiesGetter.apply(prop);
                     if (val != null) {
                         if (encodeURL) {
                             // encode 'val' unless it's an absolute URI
@@ -136,9 +137,10 @@ public class PropertyExpander {
                             }
                         }
                         sb.append(val);
-                    } else if (strict) {
+                    } else {
                         throw new ExpandException(
-                                "unable to expand property " + prop);
+                                             "unable to expand property " +
+                                             prop);
                     }
                 }
             }
