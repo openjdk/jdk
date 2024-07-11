@@ -111,11 +111,9 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   }
 #endif // ASSERT
 
-  if (!thread->can_call_java()) {
+  if (h_exception.is_null() && !thread->can_call_java()) {
     ResourceMark rm(thread);
-    const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
-                      h_name != nullptr ? h_name->as_C_string() :
-                      "null";
+    const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
     log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
                         "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
                         "throwing pre-allocated exception: %s",
@@ -205,7 +203,7 @@ void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
                               Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, h_cause)) return;
+  if (special_exception(thread, file, line, Handle(), name)) return;
   // Create and throw exception
   Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, nullptr);

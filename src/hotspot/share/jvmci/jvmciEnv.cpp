@@ -399,9 +399,11 @@ class ExceptionTranslation: public StackObj {
     _encoded_ok        = 0, // exception was successfully encoded into buffer
     _buffer_alloc_fail = 1, // native memory for buffer could not be allocated
     _encode_oome_fail  = 2, // OutOfMemoryError thrown during encoding
-    _encode_fail       = 3  // some other problem occured during encoding. If buffer != 0,
+    _encode_fail       = 3, // some other problem occured during encoding. If buffer != 0,
                             // buffer contains a `struct { u4 len; char[len] desc}`
                             // describing the problem
+    _encode_oome_in_vm = 4  // an OutOfMemoryError thrown from within VM code on a
+                            // thread that cannot call Java (OOME has no stack trace)
   };
 
   JVMCIEnv*  _from_env; // Source of translation. Can be null.
@@ -488,6 +490,12 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
 
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (!THREAD->can_call_java()) {
+      Symbol *ex_name = _throwable->klass()->name();
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        JVMCI_event_1("translating exception: OutOfMemoryError within VM code");
+        decode(THREAD, _encode_oome_in_vm, 0L);
+        return 0;
+      }
       char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
       const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
       JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
