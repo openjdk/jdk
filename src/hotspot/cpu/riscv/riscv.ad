@@ -1956,8 +1956,8 @@ bool Matcher::supports_vector_calling_convention(void) {
 OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
   assert(EnableVectorSupport && UseVectorStubs, "sanity");
   assert(ideal_reg == Op_VecA, "sanity");
-  int lo = V10_num;
-  int hi = V10_K_num;
+  int lo = V8_num;
+  int hi = V8_K_num;
   return OptoRegPair(hi, lo);
 }
 
