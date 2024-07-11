@@ -177,10 +177,10 @@ JNI_COCOA_EXIT(env);
 /*
  * Class:     sun_lwawt_macosx_CClipboard
  * Method:    writeFileObjects
- * Signature: ([BJ)V
+ * Signature: ([B)V
 */
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_writeFileObjects
-(JNIEnv *env, jobject inObject, jbyteArray inBytes, jlong inFormat)
+(JNIEnv *env, jobject inObject, jbyteArray inBytes)
 {
     CHECK_NULL(inBytes);
 
@@ -188,7 +188,6 @@ JNI_COCOA_ENTER(env);
     jint nBytes = (*env)->GetArrayLength(env, inBytes);
     jbyte *rawBytes = (*env)->GetPrimitiveArrayCritical(env, inBytes, NULL);
     CHECK_NULL(rawBytes);
-    NSString *format = formatForIndex(inFormat);
     NSMutableArray *formatArray = [NSMutableArray arrayWithCapacity:2];
     int i = 0;
     for (int j = 0; j < nBytes; j++) {
