@@ -194,10 +194,13 @@ public:
         // another memory access. If the scope has been closed at that point,
         // the target thread will see it and throw an exception.
 
-        // We would like to deoptimize here only if last_frame::oops_do
-        // reports the session oop being live at this safepoint, but this
-        // currently isn't possible due to JDK-8290892
-        Deoptimization::deoptimize(jt, last_frame);
+        nmethod* code = last_frame.cb()->as_nmethod();
+        if (code->has_scoped_access()) {
+          // We would like to deoptimize here only if last_frame::oops_do
+          // reports the session oop being live at this safepoint, but this
+          // currently isn't possible due to JDK-8290892
+          Deoptimization::deoptimize(jt, last_frame);
+        }
       }
     }
   }

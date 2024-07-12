@@ -437,6 +437,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_monitors(true);
   }
 
+  if (parse_method->is_scoped()) {
+    C->set_has_scoped_access(true);
+  }
+
   _iter.reset_to_method(method());
   C->set_has_loops(C->has_loops() || method()->has_loops());
 
