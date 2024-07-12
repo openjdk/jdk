@@ -55,48 +55,12 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     private LdapReferralException refEx = null;
     private NamingException errEx = null;
 
-    /* This class maintains the pieces of state that need to be cleaned up (or
-     * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
-     * Because the state is mutable, synchronization is used to ensure that all
-     * updates made by the program thread are seen by the cleanup thread.
-     */
-    private static class EnumCtx implements Runnable {
-        // Only update these variables using the set* methods below
-        private LdapCtx homeCtx;
-        private LdapResult res;
-        private LdapClient enumClnt;
-
-        private EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
-            this.homeCtx = homeCtx;
-            this.res = answer;
-            this.enumClnt = client;
-        }
-
-        private synchronized void setRes(LdapResult newRes) { this.res = newRes; }
-        private synchronized void setHomeCtx(LdapCtx newCtx) { this.homeCtx = newCtx; }
-        private synchronized void setEnumClnt(LdapClient newClnt) { this.enumClnt = newClnt; }
-
-        @Override
-        public synchronized void run() {
-            if (enumClnt != null) {
-                if (homeCtx != null) {
-                    enumClnt.clearSearchReply(res, homeCtx.reqCtls);
-                }
-                enumClnt = null;
-            }
-            if (homeCtx != null) {
-                homeCtx.decEnumCount();
-                homeCtx = null;
-            }
-        }
-    }
-
     private final EnumCtx enumCtx;
     private final Cleanable cleanable;
 
     // Subclasses interact directly with the LdapCtx. This method provides
     // access to the LdapCtx in the EnumCtx.
-    protected final LdapCtx homeCtx() { return enumCtx.homeCtx; }
+    protected final LdapCtx getHomeCtx() { return enumCtx.getHomeCtx(); }
 
     /*
      * Record the next set of entries and/or referrals.
@@ -140,7 +104,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.enumCtx.homeCtx.incEnumCount();
+            homeCtx.incEnumCount();
             this.cleanable = LDAP_CLEANER.register(this, enumCtx);
     }
 
@@ -171,26 +135,27 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     private void getNextBatch() throws NamingException {
         try {
-            LdapResult newRes = homeCtx().getSearchReply(enumCtx.enumClnt, enumCtx.res);
-            enumCtx.setRes(newRes);
-            if (enumCtx.res == null) {
+            LdapCtx homeCtx = getHomeCtx();
+            LdapResult res = homeCtx.getSearchReply(enumCtx.getEnumClnt(), enumCtx.getRes());
+            enumCtx.setRes(res);
+            if (res == null) {
                 limit = posn = 0;
                 return;
             }
 
-            entries = enumCtx.res.entries;
+            entries = res.entries;
             limit = (entries == null) ? 0 : entries.size(); // handle empty set
             posn = 0; // reset
 
             // minimize the number of calls to processReturnCode()
             // (expensive when batchSize is small and there are many results)
-            if ((enumCtx.res.status != LdapClient.LDAP_SUCCESS) ||
-                ((enumCtx.res.status == LdapClient.LDAP_SUCCESS) &&
-                    (enumCtx.res.referrals != null))) {
+            if ((res.status != LdapClient.LDAP_SUCCESS) ||
+                ((res.status == LdapClient.LDAP_SUCCESS) &&
+                    (res.referrals != null))) {
 
                 try {
                     // convert referrals into a chain of LdapReferralException
-                    homeCtx().processReturnCode(enumCtx.res, listArg);
+                    homeCtx.processReturnCode(res, listArg);
 
                 } catch (LimitExceededException | PartialResultException e) {
                     setNamingException(e);
@@ -199,17 +164,17 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             }
 
             // merge any newly received referrals with any current referrals
-            if (enumCtx.res.refEx != null) {
+            if (res.refEx != null) {
                 if (refEx == null) {
-                    refEx = enumCtx.res.refEx;
+                    refEx = res.refEx;
                 } else {
-                    refEx = refEx.appendUnprocessedReferrals(enumCtx.res.refEx);
+                    refEx = refEx.appendUnprocessedReferrals(res.refEx);
                 }
-                enumCtx.res.refEx = null; // reset
+                res.refEx = null; // reset
             }
 
-            if (enumCtx.res.resControls != null) {
-                homeCtx().respCtls = enumCtx.res.resControls;
+            if (res.resControls != null) {
+                homeCtx.respCtls = res.resControls;
             }
         } finally {
             // Ensure Cleaner does not run until after this method completes
@@ -359,53 +324,52 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     protected final boolean hasMoreReferrals() throws NamingException {
         try {
-        if ((refEx != null) && !(errEx instanceof LimitExceededException) &&
-            (refEx.hasMoreReferrals() || refEx.hasMoreReferralExceptions())) {
+            if ((refEx != null) &&
+                (refEx.hasMoreReferrals() ||
+                 refEx.hasMoreReferralExceptions()
+                    && !(errEx instanceof LimitExceededException))) {
 
-            if (homeCtx().handleReferrals == LdapClient.LDAP_REF_THROW) {
-                throw (NamingException)(refEx.fillInStackTrace());
-            }
-
-            // process the referrals sequentially
-            while (true) {
-
-                LdapReferralContext refCtx =
-                    (LdapReferralContext)refEx.getReferralContext(
-                    homeCtx().envprops, homeCtx().reqCtls);
-
-                try {
-
-                    update(getReferredResults(refCtx));
-                    break;
-
-                } catch (LdapReferralException re) {
-
-                    // record a previous exception and quit if any limit is reached
-                    var namingException = re.getNamingException();
-                    if (namingException instanceof LimitExceededException) {
-                        errEx = namingException;
-                        break;
-                    } else if (errEx == null) {
-                        errEx = namingException;
-                    }
-                    refEx = re;
-                    continue;
-
-                } finally {
-                    // Make sure we close referral context
-                    refCtx.close();
+                LdapCtx homeCtx = getHomeCtx();
+                if (homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
+                    throw (NamingException)(refEx.fillInStackTrace());
                 }
-            }
-            return hasMoreImpl();
 
-        } else {
-            cleanup();
+                // process the referrals sequentially
+                while (true) {
 
-            if (errEx != null) {
-                throw errEx;
+                    LdapReferralContext refCtx =
+                        (LdapReferralContext)refEx.getReferralContext(
+                        homeCtx.envprops, homeCtx.reqCtls);
+
+                    try {
+
+                        update(getReferredResults(refCtx));
+                        break;
+
+                    } catch (LdapReferralException re) {
+
+                        // record a previous exception
+                        if (errEx == null) {
+                            errEx = re.getNamingException();
+                        }
+                        refEx = re;
+                        continue;
+
+                    } finally {
+                        // Make sure we close referral context
+                        refCtx.close();
+                    }
+                }
+                return hasMoreImpl();
+
+            } else {
+                cleanup();
+
+                if (errEx != null) {
+                    throw errEx;
+                }
+                return (false);
             }
-            return (false);
-        }
         } finally {
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(enumCtx);
@@ -419,11 +383,11 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
         try {
             // Cleanup previous context first
-            homeCtx().decEnumCount();
+            getHomeCtx().decEnumCount();
 
             // New enum will have already incremented enum count and recorded clnt
-            enumCtx.setHomeCtx(ne.enumCtx.homeCtx);
-            enumCtx.setEnumClnt(ne.enumCtx.enumClnt);
+            enumCtx.setHomeCtx(ne.enumCtx.getHomeCtx());
+            enumCtx.setEnumClnt(ne.enumCtx.getEnumClnt());
 
             // 'this' and 'ne' now both refer to ne's homeCtx. 'this' will
             // decrement homeCtx's enum count later (via cleanup() or Cleaner).
@@ -434,7 +398,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             // Record rest of information from new enum
             posn = ne.posn;
             limit = ne.limit;
-            enumCtx.setRes(ne.enumCtx.res);
+            enumCtx.setRes(ne.enumCtx.getRes());
             entries = ne.entries;
             refEx = ne.refEx;
             listArg = ne.listArg;
@@ -457,5 +421,50 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     @Override
     public final void close() {
         cleanup();
+    }
+}
+
+/* This class maintains the pieces of state that need to be cleaned up (or
+ * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
+ * Because the state is mutable, synchronization is used to ensure that changes
+ * made on the program thread are seen by the cleanup thread.
+ * It is a top-level (not nested) class to prevent access to private members,
+ * enforcing use of the setters.
+ */
+class EnumCtx implements Runnable {
+    private LdapCtx homeCtx;
+    private LdapResult res;
+    private LdapClient enumClnt;
+
+    EnumCtx(LdapCtx homeCtx, LdapResult answer, LdapClient client) {
+        this.homeCtx = homeCtx;
+        this.res = answer;
+        this.enumClnt = client;
+    }
+
+    // Synchronization provides memory visibility between threads, but isn't
+    // needed to prevent race conditions. The reachabilityFences prevent the
+    // cleaner thread from running and accessing the EnumCtx while a program is
+    // still using it. Thus, only the setters are synchronized.
+    synchronized void setRes(LdapResult newRes) { this.res = newRes; }
+    synchronized void setHomeCtx(LdapCtx newCtx) { this.homeCtx = newCtx; }
+    synchronized void setEnumClnt(LdapClient newClnt) { this.enumClnt = newClnt; }
+
+    LdapResult getRes() { return this.res; }
+    LdapCtx getHomeCtx() { return this.homeCtx; }
+    LdapClient getEnumClnt() { return this.enumClnt; }
+
+    @Override
+    public synchronized void run() {
+        if (enumClnt != null) {
+            if (homeCtx != null) {
+                enumClnt.clearSearchReply(res, homeCtx.reqCtls);
+            }
+            enumClnt = null;
+        }
+        if (homeCtx != null) {
+            homeCtx.decEnumCount();
+            homeCtx = null;
+        }
     }
 }
