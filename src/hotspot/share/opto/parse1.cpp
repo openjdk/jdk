@@ -251,7 +251,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new FastLockNode( 0, lock_object, box ))->as_FastLock();
+    const FastLockNode *flock = _gvn.transform(new FastLockNode( nullptr, lock_object, box ))->as_FastLock();
     map()->push_monitor(flock);
 
     // If the lock is our method synchronization lock, tuck it away in
