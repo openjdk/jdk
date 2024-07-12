@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @requires vm.flavor != "zero"
+ * @requires vm.compiler2.enabled
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
  * @library /test/lib
