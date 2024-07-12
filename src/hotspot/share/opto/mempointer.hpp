@@ -59,6 +59,12 @@ public:
     return NoOverflowInt(java_add((jlong)a.value(), (jlong)b.value()));
   }
 
+  friend NoOverflowInt operator-(const NoOverflowInt a, const NoOverflowInt b) {
+    if (a.is_NaN()) { return make_NaN(); }
+    if (b.is_NaN()) { return make_NaN(); }
+    return NoOverflowInt(java_subtract((jlong)a.value(), (jlong)b.value()));
+  }
+
   friend NoOverflowInt operator*(const NoOverflowInt a, const NoOverflowInt b) {
     if (a.is_NaN()) { return make_NaN(); }
     if (b.is_NaN()) { return make_NaN(); }
@@ -71,6 +77,12 @@ public:
     jint shift = b.value();
     if (shift < 0 || shift > 31) { return make_NaN(); }
     return NoOverflowInt(java_shift_left((jlong)a.value(), shift));
+  }
+
+  friend bool operator==(const NoOverflowInt a, const NoOverflowInt b) {
+    if (a.is_NaN()) { return false; }
+    if (b.is_NaN()) { return false; }
+    return a.value() == b.value();
   }
 
   NoOverflowInt truncate_to_30_bits() const {
@@ -109,6 +121,7 @@ public:
              //   Example: "array1[i] = array2[i]":
              //     If at runtime "array1 != array2": cannot alias.
              //     If at runtime "array1 == array2": constant distance.
+             // TODO consider to simplify for MergeStores...?
 private:
   const Aliasing _aliasing;
   const jint _distance;
@@ -225,6 +238,19 @@ public:
   NoOverflowInt scale() const { return _scale; }
   LP64_ONLY( NoOverflowInt scaleL() const { return _scaleL; } )
 
+  friend bool operator==(const MemPointerSummand a, const MemPointerSummand b) {
+    // Both "null" -> equal.
+    if (a.variable() == nullptr && b.variable() == nullptr) { return true; }
+
+    // Same variable and scale?
+    if (a.variable() != b.variable()) { return false; }
+    return a.scale() == b.scale();
+  }
+
+  friend bool operator!=(const MemPointerSummand a, const MemPointerSummand b) {
+    return !(a == b);
+  }
+
 #ifndef PRODUCT
   void print() const {
     tty->print("  MemPointerSummand: ");
@@ -281,6 +307,13 @@ public:
   }
 
   MemPointerAliasing get_aliasing_with(const MemPointerSimpleForm& other) const;
+
+  const MemPointerSummand summands_at(const uint i) const {
+    assert(i < SUMMANDS_SIZE, "in bounds");
+    return _summands[i];
+  }
+
+  const NoOverflowInt con() const { return _con; }
 
 #ifndef PRODUCT
   void print() const {

@@ -184,7 +184,23 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
 }
 
 MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other) const {
-  return MemPointerAliasing::make_unknown();
+  // Check if all summands are the same:
+  for (uint i = 0; i < SUMMANDS_SIZE; i++) {
+    const MemPointerSummand s1 = summands_at(i);
+    const MemPointerSummand s2 = other.summands_at(i);
+    if (s1 != s2) {
+      return MemPointerAliasing::make_unknown();
+    }
+  }
+
+  // Compute distance:
+  NoOverflowInt distance = other.con() - con();
+  distance = distance.truncate_to_30_bits();
+  if (distance.is_NaN()) {
+    return MemPointerAliasing::make_unknown();
+  }
+
+  return MemPointerAliasing::make_always(distance.value());
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
