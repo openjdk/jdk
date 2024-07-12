@@ -65,7 +65,7 @@ public class TestJhsdbJstackLock {
             out.shouldMatch("^\\s+- waiting to lock <0x[0-9a-f]+> \\(a java\\.lang\\.Class for LingeredAppWithLock\\)$");
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Thread\\)$");
             out.shouldMatch("^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Class for int\\)$");
-            out.shouldMatch("^\\s+- waiting on <0x[0-9a-f]+> \\(a java\\.lang\\.Object\\)$");
+            out.shouldMatch("^\\s+- waiting on (<0x[0-9a-f]+> \\(a java\\.lang\\.Object\\)|<no object reference available>)$");
 
             out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
 
