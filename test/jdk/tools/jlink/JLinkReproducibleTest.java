@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class JLinkReproducibleTest {
 
-    static final String TOOL_VM_OPTIONS = System.getProperty("test.tool.vm.opts", "");
+    private static final String TOOL_VM_OPTIONS = System.getProperty("test.tool.vm.opts", "");
 
     private static void run(List<String> cmd) throws Exception {
         var pb = new ProcessBuilder(cmd.toArray(new String[0]));
