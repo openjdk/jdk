@@ -137,6 +137,7 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.repeated.modifier", "public public record R(String foo) { }");
         assertFail("compiler.err.repeated.modifier", "private private record R(String foo) { }");
         assertFail("compiler.err.already.defined", "record R(int x, int x) {}");
+        assertFail("compiler.err.already.defined", "record R(int x, int x, int x) {}");
         for (String s : List.of("var", "record"))
             assertFail("compiler.err.restricted.type.not.allowed.here", "record R(# x) { }", s);
         for (String s : List.of("public", "protected", "private", "static", "final", "transient", "volatile",

@@ -1548,24 +1548,21 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             return null;
         }
 
-        public RecordComponent findRecordComponentToRemove(JCVariableDecl var) {
-            RecordComponent toRemove = null;
-            for (RecordComponent rc : recordComponents) {
-                if (rc.name == var.name) {
-                    toRemove = rc;
-                }
-            }
-            return toRemove;
-        }
-
         /* creates a record component if non is related to the given variable and recreates a brand new one
          * in other case
          */
         public RecordComponent createRecordComponent(RecordComponent existing, JCVariableDecl rcDecl, VarSymbol varSym) {
             RecordComponent rc = null;
-            if (existing != null) {
-                recordComponents = List.filter(recordComponents, existing);
-                recordComponents = recordComponents.append(rc = new RecordComponent(varSym, existing.ast, existing.isVarargs));
+            if (existing != null && !recordComponents.isEmpty()) {
+                ListBuffer<RecordComponent> newRComps = new ListBuffer<>();
+                for (RecordComponent rcomp : recordComponents) {
+                    if (existing == rcomp) {
+                        newRComps.add(rc = new RecordComponent(varSym, existing.ast, existing.isVarargs));
+                    } else {
+                        newRComps.add(rcomp);
+                    }
+                }
+                recordComponents = newRComps.toList();
             } else {
                 // Didn't find the record component: create one.
                 recordComponents = recordComponents.append(rc = new RecordComponent(varSym, rcDecl));
