@@ -1305,8 +1305,9 @@ const int ObjectAlignmentInBytes = 8;
           "maximum number of elements to print")                            \
                                                                             \
   develop(int, MaxStringPrintSize, 256,                                     \
-          "maximum number of characters to print when printing a String "   \
-          "in the VM. The middle of the string is elided.")                 \
+          "maximum number of characters to print for a java.lang.String "   \
+          "in the VM. If exceeded, an abridged version of the string is "   \
+          "print with the middle of the string is elided.")                 \
           range(2, O_BUFLEN)                                                \
                                                                             \
   develop(intx, MaxSubklassPrintSize, 4,                                    \
