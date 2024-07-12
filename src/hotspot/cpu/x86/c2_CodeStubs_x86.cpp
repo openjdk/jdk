@@ -114,8 +114,8 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ jmpb(restore_held_monitor_count_and_slow_path);
 #else // _LP64
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+    const Address succ_address(monitor, ObjectMonitor::succ_offset() - monitor_tag);
+    const Address owner_address(monitor, ObjectMonitor::owner_offset() - monitor_tag);
 
     // successor null check.
     __ cmpptr(succ_address, NULL_WORD);

@@ -688,8 +688,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
       movptr(monitor, Address(t, OMCache::oop_to_monitor_difference()));
     }
     const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+    const Address recursions_address(monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(monitor, ObjectMonitor::owner_offset() - monitor_tag);
 
     Label monitor_locked;
     // Lock the monitor.
