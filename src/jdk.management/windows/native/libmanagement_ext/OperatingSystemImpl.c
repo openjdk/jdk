@@ -50,8 +50,8 @@
 #include <process.h>
 #pragma warning(pop)
 
-typedef unsigned __int32 juint;
-typedef unsigned __int64 julong;
+typedef unsigned int juint;
+typedef unsigned long long julong;
 
 static void set_low(jlong* value, jint low) {
     *value &= (jlong)0xffffffff << 32;
@@ -436,7 +436,7 @@ makeFullCounterPath(const char* const objectName,
             return NULL;
         }
 
-        _snprintf(fullCounterPath,
+         snprintf(fullCounterPath,
                   fullCounterPathLen,
                   PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
                   objectName,
@@ -472,14 +472,14 @@ makeFullCounterPath(const char* const objectName,
         }
 
         if (instance) {
-            _snprintf(fullCounterPath,
+             snprintf(fullCounterPath,
                       fullCounterPathLen,
                       OBJECT_WITH_INSTANCES_COUNTER_FMT,
                       objectName,
                       instance,
                       counterName);
         } else {
-            _snprintf(fullCounterPath,
+             snprintf(fullCounterPath,
                       fullCounterPathLen,
                       OBJECT_COUNTER_FMT,
                       objectName,
@@ -719,7 +719,7 @@ currentQueryIndexForProcess(void) {
             PDH_FMT_COUNTERVALUE counterValue;
             PDH_STATUS res;
 
-            _snprintf(fullIDProcessCounterPath,
+             snprintf(fullIDProcessCounterPath,
                       MAX_PATH,
                       pdhIDProcessCounterFmt,
                       index);
@@ -1059,7 +1059,7 @@ allocateAndInitializePdhConstants() {
     }
 
     /* "\Process(java#%d)\ID Process" */
-    _snprintf(pdhIDProcessCounterFmt,
+     snprintf(pdhIDProcessCounterFmt,
               pdhIDProcessCounterFmtLen,
               PROCESS_OBJECT_INSTANCE_COUNTER_FMT,
               pdhLocalizedProcessObject,

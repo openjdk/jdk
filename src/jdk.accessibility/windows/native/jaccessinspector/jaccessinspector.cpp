@@ -1526,7 +1526,7 @@ BOOL UpdateMessageNumber () {
     size_t messageNumber = g_MessageHistory.GetCurrentMessageIndex() + 1;
     char text [32] = {0};
     if ( 0 != messageCount ) {
-        ::_snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
+        :: snprintf(text, sizeof(text), "%d of %d", (int)messageNumber,
                                                     (int) messageCount);
     }
     return ::SetWindowText(dlgItem, text);

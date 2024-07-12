@@ -29,15 +29,10 @@
 #include <stddef.h>      /* for uintptr_t */
 #include <stdlib.h>      /* for _MAx_PATH */
 
-typedef unsigned __int64 UNSIGNED_JLONG;
+typedef unsigned long long UNSIGNED_JLONG;
 typedef unsigned long UNSIGNED_JINT;
 
 #define MAXPATHLEN _MAX_PATH
-
-/* Needed on Windows because names seem to be hidden in stdio.h. */
-
-#define snprintf        _snprintf
-#define vsnprintf       _vsnprintf
 
 /* On little endian machines, convert java big endian numbers. */
 

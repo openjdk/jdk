@@ -39,7 +39,7 @@ void *p11FindFunction(JNIEnv *env, jlong jHandle, const char *functionName) {
     void *fAddress = GetProcAddress(hModule, functionName);
     if (fAddress == NULL) {
         char errorMessage[256];
-        _snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
+        snprintf(errorMessage, sizeof(errorMessage), "Symbol not found: %s", functionName);
         p11ThrowNullPointerException(env, errorMessage);
         return NULL;
     }

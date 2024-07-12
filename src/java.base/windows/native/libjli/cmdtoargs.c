@@ -328,7 +328,7 @@ public:
             printf("*** cannot allocate memory\n");
             doabort();
         }
-        _snprintf(cptr, MAX_PATH, "\"%s\" %s", argv[0], cmdline);
+        snprintf(cptr, MAX_PATH, "\"%s\" %s", argv[0], cmdline);
         JLI_CmdToArgs(cptr);
         free(cptr);
         StdArg *kargv = JLI_GetStdArgs();
