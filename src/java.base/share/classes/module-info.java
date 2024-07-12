@@ -238,13 +238,9 @@ module java.base {
         jdk.jfr;
     exports jdk.internal.ref to
         java.desktop,
-<<<<<<< HEAD
         java.naming,
         java.net.http,
         jdk.naming.dns;
-=======
-        java.naming
->>>>>>> 9ffaa788197 (Fix the merge fix)
     exports jdk.internal.reflect to
         java.logging,
         java.sql,
