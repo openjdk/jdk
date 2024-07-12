@@ -168,29 +168,28 @@ public class from001 {
         // If we got a Notification, test that the CompositeData can create a MemoryNotificationInfo
         if (!messageReceived) {
             throw new TestFailure("No Notification received.");
-        } else {
-            result = MemoryNotificationInfo.from(from001Listener.data.get());
-            try {
-               ObjectName poolObjectName = new ObjectName(monitor.getName(poolObject));
-               ObjectName resultObjectName = new ObjectName(
-                         ManagementFactory.MEMORY_POOL_MXBEAN_DOMAIN_TYPE +
-                         ",name=" + result.getPoolName());
+        }
+        result = MemoryNotificationInfo.from(from001Listener.data.get());
+        try {
+            ObjectName poolObjectName = new ObjectName(monitor.getName(poolObject));
+            ObjectName resultObjectName = new ObjectName(
+                        ManagementFactory.MEMORY_POOL_MXBEAN_DOMAIN_TYPE +
+                        ",name=" + result.getPoolName());
 
-               log.display("poolObjectName : " + poolObjectName +
-                                  " resultObjectName : " + resultObjectName);
+            log.display("poolObjectName : " + poolObjectName +
+                        " resultObjectName : " + resultObjectName);
 
-               if (!poolObjectName.equals(resultObjectName)) {
-                  log.complain("FAILURE 3.");
-                  log.complain("Wrong pool name : " + resultObjectName +
-                               ", expected : " + poolObjectName);
-                  testFailed = true;
-               }
-
-            } catch (Exception e) {
-                log.complain("Unexpected exception " + e);
-                e.printStackTrace(log.getOutStream());
+            if (!poolObjectName.equals(resultObjectName)) {
+                log.complain("FAILURE 3.");
+                log.complain("Wrong pool name : " + resultObjectName +
+                             ", expected : " + poolObjectName);
                 testFailed = true;
             }
+
+        } catch (Exception e) {
+            log.complain("Unexpected exception " + e);
+            e.printStackTrace(log.getOutStream());
+            testFailed = true;
         }
         if (testFailed) {
             throw new TestFailure("TEST FAILED. See log.");
