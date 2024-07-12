@@ -2379,8 +2379,8 @@ public class DecimalFormat extends NumberFormat {
         NumericPosition pos = subparseNumber(text, position, digits, true, isExponent, status);
         position = pos.fullPos;
 
-        // First character after the prefix was un-parseable, should
-        // fail regardless if lenient or strict.
+        // First character after the prefix was un-parseable or parsing integer
+        // only with no integer portion. Should fail regardless if lenient or strict.
         if (position == -1) {
             parsePosition.index = oldStart;
             parsePosition.errorIndex = oldStart;
@@ -2421,8 +2421,8 @@ public class DecimalFormat extends NumberFormat {
             }
 
             // When parsing integer only, index should be int pos
-            // If intPos is 0, the entire value was integer
-            if (isParseIntegerOnly() && pos.intPos > 0) {
+            // If intPos is -1, the entire value was integer and index should be full pos
+            if (isParseIntegerOnly() && pos.intPos != -1) {
                 parsePosition.index = pos.intPos;
             } else {
                 // increment the index by the suffix
@@ -2474,7 +2474,7 @@ public class DecimalFormat extends NumberFormat {
                                    boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
-        int intIndex = 0;
+        int intIndex = -1;
         if (!isExponent && text.regionMatches(position, symbols.getInfinity(), 0,
                 symbols.getInfinity().length())) {
             position += symbols.getInfinity().length();
@@ -2570,6 +2570,10 @@ public class DecimalFormat extends NumberFormat {
                     // Cancel out backup setting (see grouping handler below)
                     backup = -1;
                 } else if (!isExponent && ch == decimal) {
+                    if (isParseIntegerOnly() && startPos == position) {
+                        // Parsing int only with no integer portion, fail
+                        return new NumericPosition(-1, intIndex);
+                    }
                     // Check grouping size on decimal separator
                     if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
                         return new NumericPosition(
