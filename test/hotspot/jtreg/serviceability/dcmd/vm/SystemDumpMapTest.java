@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -41,9 +40,9 @@ import java.util.regex.Pattern;
  *          java.compiler
  *          java.management
  *          jdk.internal.jvmstat/sun.jvmstat.monitor
- * @run testng SystemDumpMapTest
+ * @run testng/othervm -XX:+UsePerfData SystemDumpMapTest
  */
-public class SystemDumpMapTest {
+public class SystemDumpMapTest extends SystemMapTestBase {
 
     private void run_test(CommandExecutor executor, boolean useDefaultFileName) {
 
@@ -64,18 +63,22 @@ public class SystemDumpMapTest {
             boolean NMTOff = output.contains("NMT is disabled");
             String regexBase = ".*0x\\p{XDigit}+ - 0x\\p{XDigit}+ +\\d+";
             HashSet<Pattern> patterns = new HashSet<>();
-            patterns.add(Pattern.compile(regexBase + ".*jvm.*"));
-            if (!NMTOff) { // expect VM annotations if NMT is on
-                patterns.add(Pattern.compile(regexBase + ".*JAVAHEAP.*"));
-                patterns.add(Pattern.compile(regexBase + ".*META.*"));
-                patterns.add(Pattern.compile(regexBase + ".*CODE.*"));
-                patterns.add(Pattern.compile(regexBase + ".*STACK.*main.*"));
+            for (String s: shouldMatchUnconditionally) {
+                patterns.add(Pattern.compile(s));
             }
+            if (!NMTOff) { // expect VM annotations if NMT is on
+                for (String s: shouldMatchIfNMTIsEnabled) {
+                    patterns.add(Pattern.compile(s));
+                }
+            }
+
             do {
                 String line = reader.readLine();
                 if (line != null) {
+                    System.out.println("   " + line);
                     for (Pattern pat : patterns) {
                         if (pat.matcher(line).matches()) {
+                            System.out.println(">>> matches " + pat);
                             patterns.remove(pat);
                             break;
                         }

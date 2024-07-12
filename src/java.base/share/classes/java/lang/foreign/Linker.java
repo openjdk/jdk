@@ -222,7 +222,7 @@ import java.util.stream.Stream;
  * <pre>
  * MemoryLayout.structLayout(
  *     ValueLayout.JAVA_INT.withName("x"),
- *     MemoryLayout.paddingLayout(32),
+ *     MemoryLayout.paddingLayout(4),
  *     ValueLayout.JAVA_LONG.withName("y")
  * );
  * </pre>

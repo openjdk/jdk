@@ -1154,6 +1154,10 @@ public:
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
+  // Check that all locks/unlocks associated with object come from balanced regions.
+  // They can become unbalanced after coarsening optimization or on OSR entry.
+  bool is_balanced();
+
   // locking does not modify its arguments
   virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
