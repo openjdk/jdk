@@ -30,6 +30,7 @@ import javax.naming.*;
 import javax.naming.directory.*;
 import javax.naming.ldap.*;
 import javax.naming.ldap.LdapName;
+import java.lang.ref.Reference;
 
 import com.sun.jndi.toolkit.ctx.Continuation;
 import com.sun.naming.internal.NamingManagerHelper;
@@ -58,122 +59,125 @@ final class LdapSearchEnumeration
     protected SearchResult createItem(String dn, Attributes attrs,
                                       Vector<Control> respCtls)
             throws NamingException {
-
-        Object obj = null;
-
-        String relStart;         // name relative to starting search context
-        String relHome;          // name relative to homeCtx.currentDN
-        boolean relative = true; // whether relative to currentDN
-
-        // need to strip off all but lowest component of dn
-        // so that is relative to current context (currentDN)
-
         try {
-            Name parsed = new LdapName(dn);
-            // System.err.println("dn string: " + dn);
-            // System.err.println("dn name: " + parsed);
+            Object obj = null;
 
-            if (startName != null && parsed.startsWith(startName)) {
-                relStart = parsed.getSuffix(startName.size()).toString();
-                relHome = parsed.getSuffix(homeCtx().currentParsedDN.size()).toString();
-            } else {
+            String relStart;         // name relative to starting search context
+            String relHome;          // name relative to homeCtx.currentDN
+            boolean relative = true; // whether relative to currentDN
+
+            // need to strip off all but lowest component of dn
+            // so that is relative to current context (currentDN)
+
+            try {
+                Name parsed = new LdapName(dn);
+                // System.err.println("dn string: " + dn);
+                // System.err.println("dn name: " + parsed);
+
+                if (startName != null && parsed.startsWith(startName)) {
+                    relStart = parsed.getSuffix(startName.size()).toString();
+                    relHome = parsed.getSuffix(homeCtx().currentParsedDN.size()).toString();
+                } else {
+                    relative = false;
+                    relHome = relStart =
+                        LdapURL.toUrlString(homeCtx().hostname, homeCtx().port_number,
+                        dn, homeCtx().hasLdapsScheme);
+                }
+            } catch (NamingException e) {
+                // could not parse name
                 relative = false;
                 relHome = relStart =
                     LdapURL.toUrlString(homeCtx().hostname, homeCtx().port_number,
                     dn, homeCtx().hasLdapsScheme);
             }
-        } catch (NamingException e) {
-            // could not parse name
-            relative = false;
-            relHome = relStart =
-                LdapURL.toUrlString(homeCtx().hostname, homeCtx().port_number,
-                dn, homeCtx().hasLdapsScheme);
-        }
 
-        // Name relative to search context
-        CompositeName cn = new CompositeName();
-        if (!relStart.isEmpty()) {
-            cn.add(relStart);
-        }
-
-        // Name relative to homeCtx
-        CompositeName rcn = new CompositeName();
-        if (!relHome.isEmpty()) {
-            rcn.add(relHome);
-        }
-        //System.err.println("relStart: " + cn);
-        //System.err.println("relHome: " + rcn);
-
-        // Fix attributes to be able to get schema
-        homeCtx().setParents(attrs, rcn);
-
-        // only generate object when requested
-        if (searchArgs.cons.getReturningObjFlag()) {
-
-            if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
-                // Entry contains Java-object attributes (ser/ref object)
-                // serialized object or object reference
-                obj = Obj.decodeObject(attrs);
-            }
-            if (obj == null) {
-                obj = new LdapCtx(homeCtx(), dn);
+            // Name relative to search context
+            CompositeName cn = new CompositeName();
+            if (!relStart.isEmpty()) {
+                cn.add(relStart);
             }
 
-            // Call getObjectInstance before removing unrequested attributes
-            try {
-                // rcn is either relative to homeCtx or a fully qualified DN
+            // Name relative to homeCtx
+            CompositeName rcn = new CompositeName();
+            if (!relHome.isEmpty()) {
+                rcn.add(relHome);
+            }
+            //System.err.println("relStart: " + cn);
+            //System.err.println("relHome: " + rcn);
+
+            // Fix attributes to be able to get schema
+            homeCtx().setParents(attrs, rcn);
+
+            // only generate object when requested
+            if (searchArgs.cons.getReturningObjFlag()) {
+
+                if (attrs.get(Obj.JAVA_ATTRIBUTES[Obj.CLASSNAME]) != null) {
+                    // Entry contains Java-object attributes (ser/ref object)
+                    // serialized object or object reference
+                    obj = Obj.decodeObject(attrs);
+                }
+                if (obj == null) {
+                    obj = new LdapCtx(homeCtx(), dn);
+                }
+
+                // Call getObjectInstance before removing unrequested attributes
+                try {
+                    // rcn is either relative to homeCtx or a fully qualified DN
                 obj = NamingManagerHelper.getDirObjectInstance(
                     obj, rcn, (relative ? homeCtx : null),
                     homeCtx.envprops, attrs, ObjectFactoriesFilter::checkLdapFilter);
-            } catch (NamingException e) {
-                throw e;
-            } catch (Exception e) {
-                NamingException ne =
-                    new NamingException(
-                            "problem generating object using object factory");
-                ne.setRootCause(e);
-                throw ne;
-            }
-
-            // remove Java attributes from result, if necessary
-            // Even if CLASSNAME attr not there, there might be some
-            // residual attributes
-
-            String[] reqAttrs;
-            if ((reqAttrs = searchArgs.reqAttrs) != null) {
-                // create an attribute set for those requested
-                Attributes rattrs = new BasicAttributes(true); // ignore case
-                for (int i = 0; i < reqAttrs.length; i++) {
-                    rattrs.put(reqAttrs[i], null);
+                } catch (NamingException e) {
+                    throw e;
+                } catch (Exception e) {
+                    NamingException ne =
+                        new NamingException(
+                                "problem generating object using object factory");
+                    ne.setRootCause(e);
+                    throw ne;
                 }
-                for (int i = 0; i < Obj.JAVA_ATTRIBUTES.length; i++) {
-                    // Remove Java-object attributes if not requested
-                    if (rattrs.get(Obj.JAVA_ATTRIBUTES[i]) == null) {
-                        attrs.remove(Obj.JAVA_ATTRIBUTES[i]);
+
+                // remove Java attributes from result, if necessary
+                // Even if CLASSNAME attr not there, there might be some
+                // residual attributes
+
+                String[] reqAttrs;
+                if ((reqAttrs = searchArgs.reqAttrs) != null) {
+                    // create an attribute set for those requested
+                    Attributes rattrs = new BasicAttributes(true); // ignore case
+                    for (int i = 0; i < reqAttrs.length; i++) {
+                        rattrs.put(reqAttrs[i], null);
+                    }
+                    for (int i = 0; i < Obj.JAVA_ATTRIBUTES.length; i++) {
+                        // Remove Java-object attributes if not requested
+                        if (rattrs.get(Obj.JAVA_ATTRIBUTES[i]) == null) {
+                            attrs.remove(Obj.JAVA_ATTRIBUTES[i]);
+                        }
                     }
                 }
+
             }
 
+            /*
+             * name in search result is either the stringified composite name
+             * relative to the search context that can be passed directly to
+             * methods of the search context, or the fully qualified DN
+             * which can be used with the initial context.
+             */
+            SearchResult sr;
+            if (respCtls != null) {
+                sr = new SearchResultWithControls(
+                    (relative ? cn.toString() : relStart), obj, attrs,
+                    relative, homeCtx().convertControls(respCtls));
+            } else {
+                sr = new SearchResult(
+                    (relative ? cn.toString() : relStart),
+                    obj, attrs, relative);
+            }
+            sr.setNameInNamespace(dn);
+            return sr;
+        } finally {
+            Reference.reachabilityFence(this);
         }
-
-        /*
-         * name in search result is either the stringified composite name
-         * relative to the search context that can be passed directly to
-         * methods of the search context, or the fully qualified DN
-         * which can be used with the initial context.
-         */
-        SearchResult sr;
-        if (respCtls != null) {
-            sr = new SearchResultWithControls(
-                (relative ? cn.toString() : relStart), obj, attrs,
-                relative, homeCtx().convertControls(respCtls));
-        } else {
-            sr = new SearchResult(
-                (relative ? cn.toString() : relStart),
-                obj, attrs, relative);
-        }
-        sr.setNameInNamespace(dn);
-        return sr;
     }
 
     @Override
