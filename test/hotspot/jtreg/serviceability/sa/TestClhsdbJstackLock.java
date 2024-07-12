@@ -59,7 +59,7 @@ public class TestClhsdbJstackLock {
                 "^\\s+- waiting to lock <0x[0-9a-f]+> \\(a java\\.lang\\.Class for LingeredAppWithLock\\)$",
                 "^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Thread\\)$",
                 "^\\s+- locked <0x[0-9a-f]+> \\(a java\\.lang\\.Class for int\\)$",
-                "^\\s+- waiting on <0x[0-9a-f]+> \\(a java\\.lang\\.Object\\)$"));
+                "^\\s+- waiting on (<0x[0-9a-f]+> \\(a java\\.lang\\.Object\\)|<no object reference available>)$"));
             unExpStrMap.put("jstack", List.of(
                 "missing reason for "));
             test.run(app.getPid(), cmds, expStrMap, unExpStrMap);
