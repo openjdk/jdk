@@ -1907,7 +1907,7 @@ class MutableBigInteger {
      * if needed, where {@code sqrt(.)} denotes the mathematical square root.
      * The contents of {@code this} are <em>not</em> changed.
      * The value of {@code this} is assumed to be non-negative.
-     * 
+     *
      * @return the integer square root of {@code this} and the remainder if needed
      * @throws ArithmeticException if the value returned by {@code bitLength()}
      * overflows the range of {@code int}.
