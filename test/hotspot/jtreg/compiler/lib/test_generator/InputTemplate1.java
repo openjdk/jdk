@@ -20,29 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package compiler.lib.test_generator;
-
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class InputTemplate1 extends InputTemplate {
-
-    private static  String VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
-
-
-
     public InputTemplate1() {
     }
-
-
     @Override
     public CodeSegment getTemplate() {
         /* TODO:
@@ -52,18 +37,12 @@ public class InputTemplate1 extends InputTemplate {
          *           this would require replacing conflicting variables e.g. $i with $i1 and $i2,
          *           and also replace \{init} from the inner CodeTemplate with a var $limit from outer CodeTemplate
         **/
-
-        String template_nes = """
-            int $a = \\{val};
-            long $b = j;
-            do {
-                $a--;
-                $b++;
-            } while ($a > 0);
-            """;
+        Template1 template = new Template1();
+        Template2 template2 = new Template2();
+        String template_nes= template.getTemplate(List.of("j"));
+        String template_nes2= template2.getTemplate(List.of("j"));
         String imports= """
                 """;
-
         String statics = """
                 static long lFld;
                 static A a = new A();
@@ -72,9 +51,7 @@ public class InputTemplate1 extends InputTemplate {
                     int i;
                 }
                 """;
-
         String call = "test_\\{uniqueId}();\n";
-
         String method = """
                  public static void test_\\{uniqueId}() {
                      long limit = lFld;
@@ -85,44 +62,36 @@ public class InputTemplate1 extends InputTemplate {
                              \\{thing}
                              \\{template}
                              if (j > 0) { // After peeling: j > 0 always true -> loop folded away
+                             \\{template2}
                                  break;
                              }
                          }
                      }
                  }
                 """;
-        Map<String, String> replacements = Map.ofEntries(
-                Map.entry("template",template_nes ));
-        method=doReplacements(method,replacements);
-
-
+        Map<String, String> replacement = Map.ofEntries(
+                Map.entry("template",template_nes ),
+                Map.entry("template2",template_nes2 ));
+        method=doReplacements(method,replacement);
         return new CodeSegment(statics, call, method,imports);
     }
-
     @Override
     public Map<String, String> getRandomReplacements() {
         Map<String, String> replacements = new HashMap<>();
-
         String init = getRandomValueAsString(integerValues);
-        String val = getRandomValueAsString(integerValues);
         String limit = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
         String uniqueId = getUniqueId();
-        //String template=VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS;
-
         replacements.put("init", init);
-        replacements.put("val", val);
         replacements.put("limit", limit);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
         replacements.put("thing", thing);
-        //replacements.put("template", template);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
-
     @Override
     public String[] getCompileFlags() {
         return new String[] {
@@ -132,6 +101,6 @@ public class InputTemplate1 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 2;
+        return 3;
     }
 }

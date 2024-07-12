@@ -110,8 +110,6 @@ public abstract class InputTemplate {
                 Map.entry("calls", CodeSegment.getCalls()),
                 Map.entry("methods", CodeSegment.getMethods()),
                 Map.entry("imports", CodeSegment.getImports())
-
-
         );
 
         return doReplacements(template, replacements);
