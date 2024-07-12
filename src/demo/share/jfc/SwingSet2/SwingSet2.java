@@ -849,7 +849,7 @@ public class SwingSet2 extends JPanel {
             SwingUtilities.updateComponentTreeUI(this);
         } else {
             if (currentLookAndFeel.name.contains("GTK")) {
-                this.setPreferredSize(new Dimension(PREFERRED_WIDTH + 260, PREFERRED_HEIGHT + 230));
+                this.setPreferredSize(new Dimension(PREFERRED_WIDTH + 260, PREFERRED_HEIGHT + 80));
             } else {
                 this.setPreferredSize(new Dimension(PREFERRED_WIDTH, PREFERRED_HEIGHT));
             }
