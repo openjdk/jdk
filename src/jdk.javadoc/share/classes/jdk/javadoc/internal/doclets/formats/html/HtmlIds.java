@@ -36,6 +36,7 @@ import java.util.stream.Stream;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -594,5 +595,36 @@ public class HtmlIds {
             idValue = idValue + counter;
         }
         return HtmlId.of(idValue);
+    }
+
+    /**
+     * Returns an id for a snippet.
+     *
+     * @param e the element in whose documentation the snippet appears
+     * @param snippetIds the set of snippet ids already generated
+     * @return a unique id for the snippet
+     */
+    public HtmlId forSnippet(Element e, Set<String> snippetIds) {
+        String id = "snippet-";
+        ElementKind kind = e.getKind();
+        if (kind == ElementKind.PACKAGE) {
+            id += forPackage((PackageElement) e).name();
+        } else if (kind.isDeclaredType()) {
+            id += forClass((TypeElement) e).name();
+        } else if (kind.isExecutable()) {
+            id += forMember((ExecutableElement) e).getFirst().name();
+        } else if (kind.isField()) {
+            id += forMember((VariableElement) e).name();
+        } else if (kind == ElementKind.MODULE) {
+            id += ((ModuleElement) e).getQualifiedName();
+        } else {
+            // while utterly unexpected, we shouldn't fail
+            id += "unknown-element";
+        }
+        int counter = 1;
+        while (!snippetIds.add(id + counter)) {
+            counter++;
+        }
+        return HtmlId.of(id + counter);
     }
 }

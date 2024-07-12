@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,8 +220,9 @@ public class TestSnippetTag extends SnippetTester {
         checkLinks();
         for (int j = 0; j < snippets.size(); j++) {
             var attr = snippets.get(j);
+            Optional<String> id = (attr.id() != null ? Optional.of(attr.id()) : Optional.of("snippet-case" + j + "()1"));
             var snippetHtml = getSnippetHtmlRepresentation("pkg/A.html", "    Hello, Snippet!\n",
-                    Optional.ofNullable(attr.lang()), Optional.ofNullable(attr.id()));
+                    Optional.ofNullable(attr.lang()), id);
             checkOutput("pkg/A.html", true,
                         """
                         <span class="element-name">case%s</span>()</div>
@@ -879,7 +880,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(id, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.empty(),
+                                Optional.of("snippet-case" + id + "()2"))));
         });
     }
 
@@ -971,7 +973,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput)));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", expectedOutput, Optional.empty(),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -1549,7 +1552,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.empty(),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -1662,12 +1666,14 @@ public class TestSnippetTag extends SnippetTester {
                     """
                     <span class="element-name">case0</span>()</div>
                     <div class="block">
-                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", "", Optional.empty(),
+                            Optional.of("snippet-case0()2")));
         checkOutput("pkg/A.html", true,
                     """
                     <span class="element-name">case1</span>()</div>
                     <div class="block">
-                    """ + getSnippetHtmlRepresentation("pkg/A.html", ""));
+                    """ + getSnippetHtmlRepresentation("pkg/A.html", "", Optional.empty(),
+                            Optional.of("snippet-case1()2")));
     }
 
     @Test // TODO: use combinatorial methods
@@ -1765,7 +1771,8 @@ public class TestSnippetTag extends SnippetTester {
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
                         %s
-                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2")));
+                        """.formatted(j, getSnippetHtmlRepresentation("pkg/A.html", "2", Optional.empty(),
+                                Optional.of("snippet-case" + j + "()2"))));
         }
     }
 
@@ -1844,7 +1851,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.empty(),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
@@ -2302,7 +2310,8 @@ public class TestSnippetTag extends SnippetTester {
                         """
                         <span class="element-name">case%s</span>()</div>
                         <div class="block">
-                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput())));
+                        %s""".formatted(index, getSnippetHtmlRepresentation("pkg/A.html", t.expectedOutput(), Optional.empty(),
+                                Optional.of("snippet-case" + index + "()2"))));
         });
     }
 
