@@ -216,6 +216,90 @@ public:
 #endif
 };
 
+// Class to represent aliasing between two MemPointer.
+class MemPointerAliasing {
+public:
+  enum Aliasing {
+    Unknown, // Distance unknown.
+             //   Example: two "int[]" with different variable index offsets.
+             //            e.g. "array[i] = array[j]".
+    Never,   // Can never alias.
+             //   Example: "int[]" and "float[]".
+             //            e.g. "intArray[i] = floatArray[i]".
+    Always,  // Constant distance = p1 - p2.
+             //   Example: The same address expression, except for a constant offset
+             //            e.g. "array[i] = array[i+1]".
+    Maybe};  // Either "Never" (i.e. different memory objects)
+             //     or "Always" (at constant distance).
+             //   Example: "array1[i] = array2[i]":
+             //     If at runtime "array1 != array2": cannot alias.
+             //     If at runtime "array1 == array2": constant distance.
+private:
+  const Aliasing _aliasing;
+  const jint _distance;
+
+  MemPointerAliasing(const Aliasing aliasing, const jint distance) :
+    _aliasing(aliasing),
+    _distance(distance)
+  {
+    const jint max_distance = 1 << 30;
+    assert(_distance < max_distance && _distance > -max_distance, "safe distance");
+  }
+
+public:
+  MemPointerAliasing() : MemPointerAliasing(Unknown, 0) {}
+
+  static MemPointerAliasing make_unknown() {
+    return MemPointerAliasing();
+  }
+
+  static MemPointerAliasing make_never() {
+    return MemPointerAliasing(Never, 0);
+  }
+
+  static MemPointerAliasing make_always(const jint distance) {
+    return MemPointerAliasing(Always, distance);
+  }
+
+  static MemPointerAliasing make_maybe(const jint distance) {
+    return MemPointerAliasing(Maybe, distance);
+  }
+
+  Aliasing aliasing() const { return _aliasing; }
+  bool has_distance() const { return _aliasing == Always || _aliasing == Maybe; }
+  jint distance() const { assert(has_distance(), "must have"); return _distance; }
+
+  // Use case: exact aliasing and adjacency.
+  bool is_always_at_distance(const jint distance) {
+    return _aliasing == Always && _distance == distance;
+  }
+
+  bool is_never_overlapping(const jint size1, const jint size2) {
+    assert(1 <= size1 && size1 <= 1024, "sane size");
+    assert(1 <= size2 && size2 <= 1024, "sane size");
+
+    if (_aliasing == Unknown) { return false; }
+    if (_aliasing == Never)   { return true; }
+
+    // distance = p2 - p1
+    const jint d = distance();
+    return size1 <=  d || // <==>  size1 <= p2 - p1  <==>  p1 + size1 <= p2
+           size2 <= -d;   // <==>  size2 <= p1 - p2  <==>  p2 + size2 <= p1
+  }
+
+#ifndef PRODUCT
+  void print() const {
+    switch(_aliasing) {
+      case Unknown: tty->print("Unknown");               break;
+      case Never:   tty->print("Never");                 break;
+      case Always:  tty->print("Always(%d)", _distance); break;
+      case Maybe:   tty->print("Maybe(%d)", _distance);  break;
+      default: ShouldNotReachHere();
+    }
+  }
+#endif
+};
+
 class MemPointerSimpleFormParser : public StackObj {
 private:
   const MemNode* _mem;
