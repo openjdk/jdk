@@ -183,7 +183,16 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   _summands.push(summand);
 }
 
+MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other) const {
+  return MemPointerAliasing::make_unknown();
+}
+
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
-  return true; // TODO
+  const MemPointerAliasing aliasing = simple_form().get_aliasing_with(other.simple_form());
+  tty->print_cr("MemPointer::is_adjacent_to_and_before");
+  simple_form().print();
+  other.simple_form().print();
+  tty->print("Aliasing: "); aliasing.print(); tty->cr();
+  return aliasing.is_always_at_distance(mem()->memory_size());
 }
 
