@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,7 +310,8 @@ void C1_MacroAssembler::allocate_array(
   int      base_offset_in_bytes,       // elements offset in bytes
   int      elt_size,                   // element size in bytes
   Register klass,                      // object klass
-  Label&   slow_case                   // continuation point if fast allocation fails
+  Label&   slow_case,                  // continuation point if fast allocation fails
+  bool     zero_array                  // zero the allocated array or not
 ) {
   assert_different_registers(obj, len, t1, t2, t3, klass);
 
@@ -346,22 +347,24 @@ void C1_MacroAssembler::allocate_array(
   try_allocate(obj, arr_size, 0, t2, t3, slow_case);
   initialize_header(obj, klass, len, t2, t3);
 
-  // Initialize body.
-  const Register base  = t2;
-  const Register index = t3;
-  addi(base, obj, base_offset_in_bytes);               // compute address of first element
-  addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
+  if (zero_array) {
+    // Initialize body.
+    const Register base  = t2;
+    const Register index = t3;
+    addi(base, obj, base_offset_in_bytes);               // compute address of first element
+    addi(index, arr_size, -(base_offset_in_bytes));      // compute index = number of bytes to clear
 
-  // Zero first 4 bytes, if start offset is not word aligned.
-  if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
-    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
-    li(t1, 0);
-    stw(t1, 0, base);
-    addi(base, base, BytesPerInt);
-    // Note: initialize_body will align index down, no need to correct it here.
+    // Zero first 4 bytes, if start offset is not word aligned.
+    if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
+      assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
+      li(t1, 0);
+      stw(t1, 0, base);
+      addi(base, base, BytesPerInt);
+      // Note: initialize_body will align index down, no need to correct it here.
+    }
+
+    initialize_body(base, index);
   }
-
-  initialize_body(base, index);
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     Unimplemented();
