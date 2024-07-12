@@ -665,13 +665,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
       for (int i = 0; i < num_unrolled; i++) {
         cmpptr(obj, Address(t));
         jccb(Assembler::equal, monitor_found);
-        if (i + 1 != num_unrolled) {
-          increment(t, in_bytes(OMCache::oop_to_oop_difference()));
-        }
+        increment(t, in_bytes(OMCache::oop_to_oop_difference()));
       }
-
-      // Loop after unrolling, advance iterator.
-      increment(t, in_bytes(OMCache::oop_to_oop_difference()));
 
       Label loop;
 

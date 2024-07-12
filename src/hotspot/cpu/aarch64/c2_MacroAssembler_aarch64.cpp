@@ -309,13 +309,8 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
         ldr(t1, Address(t3_t));
         cmp(obj, t1);
         br(Assembler::EQ, monitor_found);
-        if (i + 1 != num_unrolled) {
-          increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
-        }
+        increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
       }
-
-      // Loop after unrolling, advance iterator.
-      increment(t3_t, in_bytes(OMCache::oop_to_oop_difference()));
 
       Label loop;
 
