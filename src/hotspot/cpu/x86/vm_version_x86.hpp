@@ -834,7 +834,8 @@ public:
     return true;
   }
 
-  // For AVX CPUs only. f16c support is disabled if UseAVX == 0.
+  // For AVX CPUs only since it needs VEX encoding which is missing on SSE targets,
+  // thus f16c support is disabled if UseAVX == 0.
   static bool supports_float16() {
     return supports_f16c() || supports_avx512vl();
   }
