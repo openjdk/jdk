@@ -244,22 +244,26 @@ private:
 class MemPointer : public StackObj {
 private:
   const MemNode* _mem;
-  MemPointerSimpleForm _simple_form;
+  const MemPointerSimpleForm _simple_form;
 
 public:
+  // TODO no need for phase?
   MemPointer(PhaseGVN* phase, const MemNode* mem) :
-    _mem(mem)
+    _mem(mem),
+    _simple_form(init_simple_form(_mem))
   {
-    assert(_mem->is_Store(), "only stores are supported");
-    ResourceMark rm;
-    MemPointerSimpleFormParser parser(_mem);
-    _simple_form = parser.simple_form();
     _simple_form.print(); // TODO tracing???
   }
 
   bool is_adjacent_to_and_before(const MemPointer& other) const;
+
+private:
+  static const MemPointerSimpleForm init_simple_form(const MemNode* mem) {
+    assert(mem->is_Store(), "only stores are supported");
+    ResourceMark rm;
+    MemPointerSimpleFormParser parser(mem);
+    return parser.simple_form();
+  }
 };
 
 #endif // SHARE_OPTO_MEMPOINTER_HPP
-
-
