@@ -406,7 +406,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size,
 
 HeapWord* ParallelScavengeHeap::allocate_old_gen_and_record(size_t size) {
   assert_locked_or_safepoint(Heap_lock);
-  HeapWord* res = old_gen()->allocate(size);
+  HeapWord* res = old_gen()->expand_and_allocate(size);
   if (res != nullptr) {
     _size_policy->tenured_allocation(size * HeapWordSize);
   }
@@ -434,8 +434,7 @@ HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tl
 
   result = young_gen()->allocate(size);
   if (result == nullptr && !is_tlab) {
-    // auto expand inside
-    result = old_gen()->allocate(size);
+    result = old_gen()->expand_and_allocate(size);
   }
   return result;   // Could be null if we are out of space.
 }
@@ -851,7 +850,7 @@ void ParallelScavengeHeap::resize_old_gen(size_t desired_free_space) {
 }
 
 HeapWord* ParallelScavengeHeap::allocate_loaded_archive_space(size_t size) {
-  return _old_gen->allocate(size);
+  return _old_gen->expand_and_allocate(size);
 }
 
 void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space) {

@@ -118,7 +118,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   // Calculating new sizes
   void resize(size_t desired_free_space);
 
-  HeapWord* allocate(size_t word_size) {
+  HeapWord* expand_and_allocate(size_t word_size) {
     HeapWord* res;
     do {
       res = cas_allocate_noexpand(word_size);

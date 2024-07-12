@@ -215,13 +215,13 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
         // Do we allocate directly, or flush and refill?
         if (new_obj_size > (OldPLABSize / 2)) {
           // Allocate this object directly
-          new_obj = cast_to_oop(old_gen()->allocate(new_obj_size));
+          new_obj = cast_to_oop(old_gen()->expand_and_allocate(new_obj_size));
           promotion_trace_event(new_obj, o, new_obj_size, age, true, nullptr);
         } else {
           // Flush and fill
           _old_lab.flush();
 
-          HeapWord* lab_base = old_gen()->allocate(OldPLABSize);
+          HeapWord* lab_base = old_gen()->expand_and_allocate(OldPLABSize);
           if(lab_base != nullptr) {
             _old_lab.initialize(MemRegion(lab_base, OldPLABSize));
             // Try the old lab allocation again.
