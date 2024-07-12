@@ -45,13 +45,6 @@ class PSScavenge: AllStatic {
   friend class PSKeepAliveClosure;
   friend class PSPromotionManager;
 
- enum ScavengeSkippedCause {
-   not_skipped = 0,
-   to_space_not_empty,
-   promoted_too_large,
-   full_follows_scavenge
- };
-
  protected:
   // Flags/counters
   static SpanSubjectToDiscoveryClosure _span_based_discoverer;
@@ -105,10 +98,9 @@ class PSScavenge: AllStatic {
   // Called by parallelScavengeHeap to init the tenuring threshold
   static void initialize();
 
-  // Scavenge entry point.  This may invoke a full gc; return true if so.
-  static bool invoke();
-  // Return true if a collection was done; false otherwise.
-  static bool invoke_no_policy();
+  // Scavenge entry point.
+  // Return true iff a young-gc is completed without promotion-failure.
+  static bool invoke(bool clear_soft_refs);
 
   template <class T> static inline bool should_scavenge(T* p);
 

@@ -51,6 +51,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
@@ -968,6 +969,7 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
