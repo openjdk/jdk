@@ -192,8 +192,8 @@ class MutexLockerImpl: public StackObj {
  protected:
   Mutex* _mutex;
   bool _prof;
-  elapsedTimer _before;
-  elapsedTimer _after;
+  elapsedTimer _wait_time; // time waiting for a mutex locker
+  elapsedTimer _hold_time; // time a mutex locker has been held
 
 private:
   static PerfCounter** _perf_lock_count;
@@ -203,11 +203,12 @@ private:
 public:
 
   MutexLockerImpl(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    _mutex(mutex), _prof(log_is_enabled(Info, perf, vmlocks) && Thread::current_or_null() != nullptr && Thread::current()->profile_vm_locks()) {
+    _mutex(mutex),
+    _prof(log_is_enabled(Info, perf, vmmutex) && Thread::current_or_null() != nullptr && Thread::current()->profile_vm_locks()) {
 
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != nullptr) {
-      if (_prof) { _before.start(); } // before
+      if (_prof) { _wait_time.start(); } // waiting
 
       if (no_safepoint_check) {
         _mutex->lock_without_safepoint_check();
@@ -215,14 +216,14 @@ public:
         _mutex->lock();
       }
 
-      if (_prof) { _before.stop(); _after.start(); } // after
+      if (_prof) { _wait_time.stop(); _hold_time.start(); } // holding
     }
   }
 
   MutexLockerImpl(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex), _prof(thread->profile_vm_locks()) {
 
-    if (_prof) { _before.start(); } // before
+    if (_prof) { _wait_time.start(); } // waiting
 
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != nullptr) {
@@ -233,7 +234,7 @@ public:
       }
     }
 
-    if (_prof) { _before.stop(); _after.start(); } // after
+    if (_prof) { _wait_time.stop(); _hold_time.start(); } // holding
   }
 
   ~MutexLockerImpl() {
@@ -243,14 +244,16 @@ public:
 
       if (_prof) {
         assert(UsePerfData, "required");
-        _after.stop();
+        _hold_time.stop();
         _perf_lock_count    [_mutex->id() + 1]->inc();
-        _perf_lock_wait_time[_mutex->id() + 1]->inc(_before.ticks());
-        _perf_lock_hold_time[_mutex->id() + 1]->inc(_after.ticks());
+        _perf_lock_wait_time[_mutex->id() + 1]->inc(_wait_time.ticks());
+        _perf_lock_hold_time[_mutex->id() + 1]->inc(_hold_time.ticks());
       }
     }
   }
 
+ protected:
+  static void init_counters();
  private:
   static void print_counter_on(outputStream* st, const char* name, bool is_unique, int idx);
 
@@ -258,7 +261,6 @@ public:
   static int name2id(const char* name);
 
   static void post_initialize();
-  static void init_counters();
   static void print_counters_on(outputStream* st);
 };
 
@@ -274,6 +276,9 @@ class MutexLocker: public MutexLockerImpl {
    MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(thread, mutex, flag) {
      assert(mutex != nullptr, "null mutex not allowed");
+   }
+   static void init_counters() {
+     MutexLockerImpl::init_counters();
    }
 };
 

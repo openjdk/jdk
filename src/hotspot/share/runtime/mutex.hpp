@@ -98,7 +98,8 @@ class Mutex : public CHeapObj<mtSynchronizer> {
  protected:                              // Monitor-Mutex metadata
   PlatformMonitor _lock;                 // Native monitor implementation
   const char* _name;                     // Name of mutex/monitor
-  int _id;                               // ID for named mutexes
+  int _id;                               // ID for named mutexes. It is for indexing into the _perf_lock_count,
+                                         // _perf_lock_wait_time, and _perf_lock_hold_time arrays in MutexLockerImpl.
 
   // Debugging fields for naming, deadlock detection, etc. (some only used in debug mode)
 #ifndef PRODUCT
@@ -195,8 +196,7 @@ class Mutex : public CHeapObj<mtSynchronizer> {
 
   const char *name() const                  { return _name; }
 
-  int      id() const { return _id; }
-  void set_id(int id) { _id = id; }
+  int id() const { return _id; }
 
   void print_on_error(outputStream* st) const;
   #ifndef PRODUCT

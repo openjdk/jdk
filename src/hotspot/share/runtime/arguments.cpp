@@ -3740,10 +3740,10 @@ jint Arguments::apply_ergo() {
     }
   }
 
-  if (log_is_enabled(Info, perf, vmlocks)) {
+  if (log_is_enabled(Info, perf, vmmutex)) {
     if (!UsePerfData) {
-      warning("Disabling -Xlog:perf+vmlocks since UsePerfData is turned off.");
-      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, vmlocks));
+      warning("Disabling -Xlog:perf+vmmutex since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, vmmutex));
     }
   }
 

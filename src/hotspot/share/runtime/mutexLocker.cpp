@@ -187,9 +187,7 @@ void assert_lock_strong(const Mutex* lock) {
 
 static void add_mutex(Mutex* var) {
   assert(_num_mutex < MAX_NUM_MUTEX, "increase MAX_NUM_MUTEX");
-  int id = _num_mutex++;
-  _mutex_array[id] = var;
-  var->set_id(id);
+  _mutex_array[_num_mutex++] = var;
 }
 
 #define MUTEX_STORAGE_NAME(name) name##_storage
@@ -376,7 +374,9 @@ void mutex_init() {
 #undef MUTEX_STORAGE_NAME
 
 static const int MAX_NAMES = 200;
+// _names stores all the names of the mutexes in the order of their creation.
 static const char* _names[MAX_NAMES] = { nullptr };
+// _is_unique is false if the Mutex is not a singleton instance; the ones created from mutex_init() are singleton instances.
 static bool _is_unique[MAX_NAMES] = { false };
 static int _num_names = 0;
 
@@ -385,7 +385,7 @@ PerfCounter** MutexLockerImpl::_perf_lock_wait_time = nullptr;
 PerfCounter** MutexLockerImpl::_perf_lock_hold_time = nullptr;
 
 void MutexLockerImpl::init_counters() {
-  if (log_is_enabled(Info, perf, vmlocks)) {
+  if (log_is_enabled(Info, perf, vmmutex)) {
     ResourceMark rm;
     EXCEPTION_MARK;
     _perf_lock_count     = NEW_C_HEAP_ARRAY(PerfCounter*, MAX_NAMES + 1, mtInternal);
@@ -393,8 +393,8 @@ void MutexLockerImpl::init_counters() {
     _perf_lock_hold_time = NEW_C_HEAP_ARRAY(PerfCounter*, MAX_NAMES + 1, mtInternal);
 
     NEWPERFEVENTCOUNTER(_perf_lock_count[0],     SUN_RT, PerfDataManager::counter_name("Other", "Count"));
-    NEWPERFEVENTCOUNTER(_perf_lock_wait_time[0], SUN_RT, PerfDataManager::counter_name("Other", "BeforeTime"));
-    NEWPERFEVENTCOUNTER(_perf_lock_hold_time[0], SUN_RT, PerfDataManager::counter_name("Other", "AfterTime"));
+    NEWPERFEVENTCOUNTER(_perf_lock_wait_time[0], SUN_RT, PerfDataManager::counter_name("Other", "WaitTime"));
+    NEWPERFEVENTCOUNTER(_perf_lock_hold_time[0], SUN_RT, PerfDataManager::counter_name("Other", "HoldTime"));
     for (int i = 0; i < MAX_NAMES; i++) {
       ResourceMark rm;
       const char* counter_name = _names[i];
@@ -404,8 +404,8 @@ void MutexLockerImpl::init_counters() {
         counter_name = ss.as_string();
       }
       NEWPERFEVENTCOUNTER(_perf_lock_count[i+1],       SUN_RT, PerfDataManager::counter_name(counter_name, "Count"));
-      NEWPERFEVENTCOUNTER(_perf_lock_wait_time[i + 1], SUN_RT, PerfDataManager::counter_name(counter_name, "BeforeTime"));
-      NEWPERFEVENTCOUNTER(_perf_lock_hold_time[i + 1], SUN_RT, PerfDataManager::counter_name(counter_name, "AfterTime"));
+      NEWPERFEVENTCOUNTER(_perf_lock_wait_time[i + 1], SUN_RT, PerfDataManager::counter_name(counter_name, "WaitTime"));
+      NEWPERFEVENTCOUNTER(_perf_lock_hold_time[i + 1], SUN_RT, PerfDataManager::counter_name(counter_name, "HoldTime"));
     }
     if (HAS_PENDING_EXCEPTION) {
       vm_exit_during_initialization("MutexLockerImpl::init_counters() failed unexpectedly");
@@ -414,7 +414,7 @@ void MutexLockerImpl::init_counters() {
 }
 
 int MutexLockerImpl::name2id(const char* name) {
-  if (log_is_enabled(Info, perf, vmlocks)) {
+  if (log_is_enabled(Info, perf, vmmutex)) {
     for (int i = 0; i < _num_names; i++) {
       if (strcmp(_names[i], name) == 0) {
         _is_unique[i] = false;
@@ -451,7 +451,7 @@ static jlong accumulate_lock_counters(PerfCounter** lock_counters) {
 }
 
 void MutexLockerImpl::print_counters_on(outputStream* st) {
-  if (log_is_enabled(Info, perf, vmlocks)) {
+  if (log_is_enabled(Info, perf, vmmutex)) {
     jlong total_count     = accumulate_lock_counters(_perf_lock_count);
     jlong total_wait_time = accumulate_lock_counters(_perf_lock_wait_time);
     jlong total_hold_time = accumulate_lock_counters(_perf_lock_hold_time);
