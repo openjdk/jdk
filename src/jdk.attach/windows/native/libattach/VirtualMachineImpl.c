@@ -54,7 +54,7 @@ typedef jint (WINAPI* EnqueueOperationFunc)
 static HANDLE
 doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProcessId);
 
-/* Convert jstring to C string, returns JNI_FALSE if the string has been truncated. */
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
 static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len);
 
 
@@ -618,7 +618,7 @@ doPrivilegedOpenProcess(DWORD dwDesiredAccess, BOOL bInheritHandle, DWORD dwProc
     return hProcess;
 }
 
-/* Convert jstring to C string, returns JNI_FALSE if the string has been truncated. */
+/* Converts jstring to C string, returns JNI_FALSE if the string has been truncated. */
 static jboolean jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
     jboolean isCopy;
     const char* str;

@@ -95,10 +95,14 @@ public class LongArgTest {
                 String actualValue = getFlag(vm);
 
                 if (!flagValue.equals(actualValue)) {
-                    String msg = "Actual values is different: "
-                                + (actualValue == null
-                                    ? "null"
-                                    : ("size is " + actualValue.length() + " instead of " + flagValue.length()));
+                    String msg = "Actual value is different: ";
+                    if (actualValue == null) {
+                        msg += "null";
+                    } else if (flagValue.startsWith(actualValue)) {
+                        msg += "truncated from " + flagValue.length() + " to " + actualValue.length();
+                    } else {
+                        msg += actualValue + ", expected value: " + flagValue;
+                    }
                     System.out.println(msg);
                     vm.detach();
                     throw new RuntimeException(msg);
