@@ -1825,7 +1825,7 @@ bool Arguments::check_vm_args_consistency() {
 
   if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
     // ObjectMonitorTable requires lightweight locking.
-    FLAG_SET_CMDLINE(LockingMode, LM_LIGHTWEIGHT);
+    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
     warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
   }
 
