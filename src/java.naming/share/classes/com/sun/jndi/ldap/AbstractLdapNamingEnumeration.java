@@ -33,9 +33,10 @@ import javax.naming.*;
 import javax.naming.directory.Attributes;
 import javax.naming.ldap.Control;
 
-import java.lang.ref.Cleaner;
+import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner.Cleanable;
 import java.lang.ref.Reference;
+import jdk.internal.ref.CleanerFactory;
 
 /**
  * Basic enumeration for NameClassPair, Binding, and SearchResults.
@@ -44,7 +45,6 @@ import java.lang.ref.Reference;
 abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         implements NamingEnumeration<T>, ReferralEnumeration<T> {
 
-    private static final Cleaner LDAP_CLEANER = Cleaner.create();
     protected Name listArg;
 
     private Continuation cont;  // used to fill in exceptions
@@ -57,11 +57,15 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
     /* This class maintains the pieces of state that need to be cleaned up (or
      * are needed for cleanup). It gets registered with Cleaner to perform cleanup.
-     * Because the state is mutable, synchronization is used to ensure that changes
-     * made on the program thread are seen by the cleanup thread.
+     *
+     * reachabilityFences are used to ensure that an AbstractLdapNamingEnumeration
+     * instance does not become unreachable while one of its methods is still
+     * executing (possibly leading to EnumCtx being cleaned up while it's still in use).
+     *
+     * Because the state is mutable, fullFence() is used to ensure that changes
+     * made on the main/program thread are seen by the cleanup thread.
      */
     private static class EnumCtx implements Runnable {
-        // *ONLY* update these variables using the setter methods below
         private LdapCtx homeCtx;
         private LdapResult res;
         private LdapClient enumClnt;
@@ -72,20 +76,11 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             this.enumClnt = client;
         }
 
-        // Synchronization provides memory visibility between threads, but isn't
-        // needed to prevent race conditions. The reachabilityFences prevent the
-        // cleaner thread from running and accessing the EnumCtx while a program is
-        // still using it. Thus, only the setters are synchronized.
-        private synchronized void setRes(LdapResult newRes) { this.res = newRes; }
-        private synchronized void setHomeCtx(LdapCtx newCtx) { this.homeCtx = newCtx; }
-        private synchronized void setEnumClnt(LdapClient newClnt) { this.enumClnt = newClnt; }
-
-        LdapResult getRes() { return this.res; }
-        LdapCtx getHomeCtx() { return this.homeCtx; }
-        LdapClient getEnumClnt() { return this.enumClnt; }
-
         @Override
-        public synchronized void run() {
+        public void run() {
+            // Ensure changes on the main/program thread happens-before cleanup
+            VarHandle.fullFence();
+
             if (enumClnt != null) {
                 if (homeCtx != null) {
                     enumClnt.clearSearchReply(res, homeCtx.reqCtls);
@@ -104,7 +99,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
     // Subclasses interact directly with the LdapCtx. This method provides
     // access to the LdapCtx in the EnumCtx.
-    protected final LdapCtx getHomeCtx() { return enumCtx.getHomeCtx(); }
+    protected final LdapCtx getHomeCtx() { return enumCtx.homeCtx; }
 
     /*
      * Record the next set of entries and/or referrals.
@@ -148,17 +143,60 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
             this.enumCtx = new EnumCtx(homeCtx, answer, homeCtx.clnt);
             // Ensures that context won't get closed from underneath us
-            this.enumCtx.getHomeCtx().incEnumCount();
-            this.cleanable = LDAP_CLEANER.register(this, this.enumCtx);
+            this.enumCtx.homeCtx.incEnumCount();
+            this.cleanable = CleanerFactory.cleaner().register(this, this.enumCtx);
+            // For finalizers, JLS guarantees that the constructor of a finalizeable
+            // class will complete before the finalizer is run. Classes that use
+            // Cleaner instead don't currently have such a guarantee.
+
+            // 'this' needs to stay reachable until registration with Cleaner
+            // completes, to ensure that the cleanable state that has been created
+            // will eventually be cleaned up. Within Cleaner.register(), there
+            // are reachability fences to ensure that the registered object remains
+            // reachable.
+            // TODO: Is anything else needed so that this constructor
+            //  "happens-before" the cleaning action ?
     }
 
     @Override
     public final T nextElement() {
         try {
-            return next();
+            try {
+                return next();
+            } finally {
+                // An interesting one.
+
+                // A similar case to nextImpl(), except in this case, next()
+                // *is* overridable. Add fences here; otherwise, next() could
+                // be incorrectly overridden in the future to access the
+                // cleanable state without the proper fences.
+
+                // Ensure writes are visible to the Cleaner thread
+                VarHandle.fullFence();
+                // Ensure Cleaner does not run until after this method completes
+                Reference.reachabilityFence(this);
+            }
         } catch (NamingException e) {
             // can't throw exception
             cleanup();
+            // Re: automagically adding fences someday...
+            // Methods which do explicit cleanup() like this are...interesting. If
+            // fences are added after *every* method call, in this case the
+            // fences would "happen" after cleanup had already happened.
+            //
+            // Is there a way for such an automatically-added reachabilityFence
+            // to cause problems? Could the method require some object to
+            // became unreachable? I don't think so: the reachabilityFence keeps
+            // 'this' from becoming unreachable, and a method could not reset the
+            // value of 'this', e.g. to null, to cause it to become unreachable.
+            //
+            // In the cases like this of an explicit call to cleanup(),
+            // the cleanup happens on the main/program thread, not on the cleaner
+            // thread. So there's no visibility issues with the cleaner thread
+            // (but perhaps still could be with some other thread?).
+            //
+            // So automatic reachability and full fences in this would be strange,
+            // but not harmful AFAICT.
             return null;
         }
     }
@@ -166,7 +204,16 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
     @Override
     public final boolean hasMoreElements() {
         try {
-            return hasMore();
+            try {
+                return hasMore();
+            } finally {
+                // See nextElement(), above - same situation
+
+                // Ensure writes are visible to the Cleaner thread
+                VarHandle.fullFence();
+                // Ensure Cleaner does not run until after this method completes
+                Reference.reachabilityFence(this);
+            }
         } catch (NamingException e) {
             // can't throw exception
             cleanup();
@@ -179,27 +226,25 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     private void getNextBatch() throws NamingException {
         try {
-            LdapCtx homeCtx = getHomeCtx();
-            LdapResult res = homeCtx.getSearchReply(enumCtx.getEnumClnt(), enumCtx.getRes());
-            enumCtx.setRes(res);
-            if (res == null) {
+            enumCtx.res = enumCtx.homeCtx.getSearchReply(enumCtx.enumClnt, enumCtx.res);
+            if (enumCtx.res == null) {
                 limit = posn = 0;
                 return;
             }
 
-            entries = res.entries;
+            entries = enumCtx.res.entries;
             limit = (entries == null) ? 0 : entries.size(); // handle empty set
             posn = 0; // reset
 
             // minimize the number of calls to processReturnCode()
             // (expensive when batchSize is small and there are many results)
-            if ((res.status != LdapClient.LDAP_SUCCESS) ||
-                ((res.status == LdapClient.LDAP_SUCCESS) &&
-                    (res.referrals != null))) {
+            if ((enumCtx.res.status != LdapClient.LDAP_SUCCESS) ||
+                ((enumCtx.res.status == LdapClient.LDAP_SUCCESS) &&
+                    (enumCtx.res.referrals != null))) {
 
                 try {
                     // convert referrals into a chain of LdapReferralException
-                    homeCtx.processReturnCode(res, listArg);
+                    enumCtx.homeCtx.processReturnCode(enumCtx.res, listArg);
 
                 } catch (LimitExceededException | PartialResultException e) {
                     setNamingException(e);
@@ -208,19 +253,21 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             }
 
             // merge any newly received referrals with any current referrals
-            if (res.refEx != null) {
+            if (enumCtx.res.refEx != null) {
                 if (refEx == null) {
-                    refEx = res.refEx;
+                    refEx = enumCtx.res.refEx;
                 } else {
-                    refEx = refEx.appendUnprocessedReferrals(res.refEx);
+                    refEx = refEx.appendUnprocessedReferrals(enumCtx.res.refEx);
                 }
-                res.refEx = null; // reset
+                enumCtx.res.refEx = null; // reset
             }
 
-            if (res.resControls != null) {
-                homeCtx.respCtls = res.resControls;
+            if (enumCtx.res.resControls != null) {
+                enumCtx.homeCtx.respCtls = enumCtx.res.resControls;
             }
         } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(this);
         }
@@ -234,17 +281,23 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public final boolean hasMore() throws NamingException {
+        try {
+            if (hasMoreCalled) {
+                return more;
+            }
 
-        if (hasMoreCalled) {
-            return more;
-        }
+            hasMoreCalled = true;
 
-        hasMoreCalled = true;
-
-        if (!more) {
-            return false;
-        } else {
-            return (more = hasMoreImpl());
+            if (!more) {
+                return false;
+            } else {
+                return (more = hasMoreImpl());
+            }
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(enumCtx);
         }
     }
 
@@ -253,49 +306,62 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public final T next() throws NamingException {
-
-        if (!hasMoreCalled) {
-            hasMore();
+        try {
+            if (!hasMoreCalled) {
+                hasMore();
+            }
+            hasMoreCalled = false;
+            return nextImpl();
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(enumCtx);
         }
-        hasMoreCalled = false;
-        return nextImpl();
     }
 
     /*
      * Test if unprocessed entries or referrals exist.
      */
     private boolean hasMoreImpl() throws NamingException {
-        // when page size is supported, this
-        // might generate an exception while attempting
-        // to fetch the next batch to determine
-        // whether there are any more elements
+        try {
+            // when page size is supported, this
+            // might generate an exception while attempting
+            // to fetch the next batch to determine
+            // whether there are any more elements
 
-        // test if the current set of entries has been processed
-        if (posn == limit) {
-            getNextBatch();
-        }
-
-        // test if any unprocessed entries exist
-        if (posn < limit) {
-            return true;
-        } else {
-
-            try {
-                // try to process another referral
-                return hasMoreReferrals();
-
-            } catch (LdapReferralException |
-                     LimitExceededException |
-                     PartialResultException e) {
-                cleanup();
-                throw e;
-
-            } catch (NamingException e) {
-                cleanup();
-                PartialResultException pre = new PartialResultException();
-                pre.setRootCause(e);
-                throw pre;
+            // test if the current set of entries has been processed
+            if (posn == limit) {
+                getNextBatch();
             }
+
+            // test if any unprocessed entries exist
+            if (posn < limit) {
+                return true;
+            } else {
+
+                try {
+                    // try to process another referral
+                    return hasMoreReferrals();
+
+                } catch (LdapReferralException |
+                        LimitExceededException |
+                        PartialResultException e) {
+                    cleanup();
+                    throw e;
+
+                } catch (NamingException e) {
+                    cleanup();
+                    PartialResultException pre = new PartialResultException();
+                    pre.setRootCause(e);
+                    throw pre;
+                }
+            }
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(enumCtx);
         }
     }
 
@@ -309,22 +375,34 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             cleanup();
             throw cont.fillInException(e);
         }
+        // No fences, but another interesting one.
+        // nextAux() (source just below) has its own fences. The only other thing
+        // this method does is to *call cleanup*.
+        // If nextAux() were overrideable, this method should probably have
+        // fences, but it seems OK for now without.
     }
 
     private T nextAux() throws NamingException {
-        if (posn == limit) {
-            getNextBatch();  // updates posn and limit
+        try {
+            if (posn == limit) {
+                getNextBatch();  // updates posn and limit
+            }
+
+            if (posn >= limit) {
+                cleanup();
+                throw new NoSuchElementException("invalid enumeration handle");
+            }
+
+            LdapEntry result = entries.elementAt(posn++);
+
+            // gets and outputs DN from the entry
+            return createItem(result.DN, result.attributes, result.respCtls);
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(enumCtx);
         }
-
-        if (posn >= limit) {
-            cleanup();
-            throw new NoSuchElementException("invalid enumeration handle");
-        }
-
-        LdapEntry result = entries.elementAt(posn++);
-
-        // gets and outputs DN from the entry
-        return createItem(result.DN, result.attributes, result.respCtls);
     }
 
     protected final String getAtom(String dn) {
@@ -336,6 +414,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
         } catch (NamingException e) {
             return dn;
         }
+        // No fences - method clearly does not access cleanable state
     }
 
     protected abstract T createItem(String dn, Attributes attrs,
@@ -347,15 +426,23 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
      */
     @Override
     public void appendUnprocessedReferrals(LdapReferralException ex) {
-        if (refEx != null) {
-            refEx = refEx.appendUnprocessedReferrals(ex);
-        } else {
-            refEx = ex.appendUnprocessedReferrals(refEx);
+        try {
+            if (refEx != null) {
+                refEx = refEx.appendUnprocessedReferrals(ex);
+            } else {
+                refEx = ex.appendUnprocessedReferrals(refEx);
+            }
+        } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
+            // Ensure Cleaner does not run until after this method completes
+            Reference.reachabilityFence(this);
         }
     }
 
     final void setNamingException(NamingException e) {
         errEx = e;
+        // No fences - method clearly does not access cleanable state
     }
 
     protected abstract AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
@@ -373,8 +460,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                  refEx.hasMoreReferralExceptions()
                     && !(errEx instanceof LimitExceededException))) {
 
-                LdapCtx homeCtx = getHomeCtx();
-                if (homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
+                if (enumCtx.homeCtx.handleReferrals == LdapClient.LDAP_REF_THROW) {
                     throw (NamingException)(refEx.fillInStackTrace());
                 }
 
@@ -383,7 +469,7 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
 
                     LdapReferralContext refCtx =
                         (LdapReferralContext)refEx.getReferralContext(
-                        homeCtx.envprops, homeCtx.reqCtls);
+                        enumCtx.homeCtx.envprops, enumCtx.homeCtx.reqCtls);
 
                     try {
 
@@ -415,6 +501,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 return (false);
             }
         } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(enumCtx);
         }
@@ -430,19 +518,19 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
             getHomeCtx().decEnumCount();
 
             // New enum will have already incremented enum count and recorded clnt
-            enumCtx.setHomeCtx(ne.enumCtx.getHomeCtx());
-            enumCtx.setEnumClnt(ne.enumCtx.getEnumClnt());
+            enumCtx.homeCtx = ne.enumCtx.homeCtx;
+            enumCtx.enumClnt = ne.enumCtx.enumClnt;
 
             // 'this' and 'ne' now both refer to ne's homeCtx. 'this' will
             // decrement homeCtx's enum count later (via cleanup() or Cleaner).
             // Clear ne's reference to homeCtx so ne's Cleaner doesn't
             // *also* decrement the count.
-            ne.enumCtx.setHomeCtx(null);
+            ne.enumCtx.homeCtx = null;
 
             // Record rest of information from new enum
             posn = ne.posn;
             limit = ne.limit;
-            enumCtx.setRes(ne.enumCtx.getRes());
+            enumCtx.res = ne.enumCtx.res;
             entries = ne.entries;
             refEx = ne.refEx;
             listArg = ne.listArg;
@@ -451,6 +539,8 @@ abstract class AbstractLdapNamingEnumeration<T extends NameClassPair>
                 errEx = ne.errEx;
             }
         } finally {
+            // Ensure writes are visible to the Cleaner thread
+            VarHandle.fullFence();
             // Ensure Cleaner does not run until after this method completes
             Reference.reachabilityFence(ne);
             Reference.reachabilityFence(this);
