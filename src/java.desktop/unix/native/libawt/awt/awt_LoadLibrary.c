@@ -62,15 +62,24 @@ JNIEXPORT jboolean JNICALL AWTIsHeadless() {
         graphicsEnvClass = (*env)->FindClass(env,
                                              "java/awt/GraphicsEnvironment");
         if (graphicsEnvClass == NULL) {
+            // Not finding the class is not necessarily an error.
+            if ((*env)->ExceptionCheck(env)) {
+                (*env)->ExceptionClear(env);
+            }
             return JNI_TRUE;
         }
         headlessFn = (*env)->GetStaticMethodID(env,
                                                graphicsEnvClass, "isHeadless", "()Z");
         if (headlessFn == NULL) {
+            // If we can't find the method, we assume headless mode.
+            if ((*env)->ExceptionCheck(env)) {
+                (*env)->ExceptionClear(env);
+            }
             return JNI_TRUE;
         }
         isHeadless = (*env)->CallStaticBooleanMethod(env, graphicsEnvClass,
                                                      headlessFn);
+        // If an exception occurred, we assume headless mode.
         if ((*env)->ExceptionCheck(env)) {
             (*env)->ExceptionClear(env);
             return JNI_TRUE;
