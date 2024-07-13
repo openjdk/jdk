@@ -592,13 +592,21 @@ public final class Double extends Number
      * value, use subclasses of {@link java.text.NumberFormat}.
      *
      * @apiNote
-     * This method corresponds to the general functionality of
+     * This method corresponds to the general functionality of the
      * convertToDecimalCharacter operation defined in IEEE 754;
      * however, that operation is defined in terms of specifying the
-     * number of significand digits used in the conversion, a
-     * configuration parameter offered by the precision flag of
-     * several numeric floating-point conversions of {@link
-     * java.util.Formatter}.
+     * number of significand digits used in the conversion.
+     * Code to do such a conversion in the Java platform includes
+     * converting the {@code double} to a {@link java.math.BigDecimal
+     * BigDecimal} exactly and then rounding the {@code BigDecimal} to
+     * the desired number of digits; sample code:
+     * {@snippet lang=java :
+     * double d = 0.1;
+     * int digits = 25;
+     * BigDecimal bd = new BigDecimal(d);
+     * String result = bd.round(new MathContext(digits,  RoundingMode.HALF_UP));
+     * // 0.1000000000000000055511151
+     * }
      *
      * @param   d   the {@code double} to be converted.
      * @return a string representation of the argument.
