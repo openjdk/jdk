@@ -330,6 +330,7 @@ public class Modules extends JCTree.Visitor {
             } else {
                 sym = syms.enterModule(name);
                 if (sym.module_info.sourcefile != null && sym.module_info.sourcefile != toplevel.sourcefile) {
+                    decl.sym = syms.errModule;
                     log.error(decl.pos(), Errors.DuplicateModule(sym));
                     return;
                 }

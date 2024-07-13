@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -223,9 +223,9 @@ final class Disassemble extends Command {
                 Path p = directory.resolve(formattedFilename);
                 File splittedFile = p.toFile();
                 println("Writing " + splittedFile + " ... " + bytes.length);
-                FileOutputStream fos = new FileOutputStream(splittedFile);
-                fos.write(bytes);
-                fos.close();
+                try (var fos = new FileOutputStream(splittedFile)) {
+                    fos.write(bytes);
+                }
             }
         } catch (IOException ioe) {
             throw new UserDataException("i/o error writing file " + file);

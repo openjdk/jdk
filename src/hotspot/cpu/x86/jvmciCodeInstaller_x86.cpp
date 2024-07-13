@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,12 +49,17 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, JVMC
     return (pc_offset + NativeCall::instruction_size);
   } else if (inst->is_mov_literal64()) {
     // mov+call instruction pair
-    jint offset = pc_offset + NativeMovConstReg::instruction_size;
+    jint offset = pc_offset + ((NativeMovConstReg*)inst)->instruction_size();
     u_char* call = (u_char*) (_instructions->start() + offset);
     if (call[0] == Assembler::REX_B) {
       offset += 1; /* prefix byte for extended register R8-R15 */
       call++;
     }
+    if (call[0] == Assembler::REX2) {
+      offset += 2; /* prefix byte for APX extended GPR register R16-R31 */
+      call+=2;
+    }
+    // Register indirect call.
     assert(call[0] == 0xFF, "expected call");
     offset += 2; /* opcode byte + modrm byte */
     return (offset);
@@ -215,6 +220,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
       // see comment above for POLL_FAR
       _instructions->relocate(pc, relocInfo::poll_return_type, Assembler::imm_operand);
       return true;
+#if INCLUDE_ZGC
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
       return true;
@@ -236,6 +242,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterMov);
       return true;
+#endif
     default:
       return false;
   }
