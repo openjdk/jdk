@@ -586,30 +586,31 @@ public final class Long extends Number
 
         byte[] value = s.value();
         int len = value.length;
-        if (len != 0) {
-            int digit = ~0xFF;
-            int i = 0;
-            byte firstChar = value[i++];
-            if (firstChar != '-' && firstChar != '+') {
-                digit = CharacterDataLatin1.digit(firstChar);
+        if (len == 0) {
+            throw NumberFormatException.forInputString("", radix);
+        }
+        int digit = ~0xFF;
+        int i = 0;
+        byte firstChar = value[i++];
+        if (firstChar != '-' && firstChar != '+') {
+            digit = CharacterDataLatin1.digit(firstChar);
+        }
+        if (digit >= 0 || digit == ~0xFF && len > 1) {
+            long limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
+            long multmin = -922337203685477580L; // actual limit / 10
+            long result = -(digit & 0xFF);
+            boolean inRange = true;
+            /* Accumulating negatively avoids surprises near MAX_VALUE */
+            while (i < len && (digit = CharacterDataLatin1.digit(value[i++])) >= 0
+                    && (inRange = result > multmin
+                        || result == multmin && digit <= (int) (radix * multmin - limit))) {
+                result = radix * result - digit;
             }
-            if (digit >= 0 || digit == ~0xFF && len > 1) {
-                long limit = firstChar != '-' ? MIN_VALUE + 1 : MIN_VALUE;
-                long multmin = -922337203685477580L; // actual limit / 10
-                long result = -(digit & 0xFF);
-                boolean inRange = true;
-                /* Accumulating negatively avoids surprises near MAX_VALUE */
-                while (i < len && (digit = CharacterDataLatin1.digit(value[i++])) >= 0
-                        && (inRange = result > multmin
-                            || result == multmin && digit <= (int) (10 * multmin - limit))) {
-                    result = 10 * result - digit;
-                }
-                if (inRange && i == len && digit >= 0) {
-                    return firstChar != '-' ? -result : result;
-                }
+            if (inRange && i == len && digit >= 0) {
+                return firstChar != '-' ? -result : result;
             }
         }
-        throw NumberFormatException.forInputString(s, 10);
+        throw NumberFormatException.forInputString(s, radix);
     }
 
     /**
