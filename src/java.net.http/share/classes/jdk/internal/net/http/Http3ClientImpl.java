@@ -140,11 +140,6 @@ public final class Http3ClientImpl implements AutoCloseable {
         transportParameters.setIntParameter(initial_max_streams_bidi, 0);
         // HTTP/3 doesn't allow remote bidirectional stream: no need to allow data
         transportParameters.setIntParameter(initial_max_stream_data_bidi_remote, 0);
-
-        client().idleConnectionTimeout(HTTP_3).ifPresent((duration) -> {
-            transportParameters.setIntParameter(max_idle_timeout, duration.toMillis());
-            builder.transportParameters(transportParameters);
-        });
         this.quicClient = builder.build();
     }
 
