@@ -89,22 +89,23 @@ public final class AnnotationImpl implements Annotation {
         }
     }
 
-    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant
+    // TODO stub, remove with WritableElement
+    public sealed interface OfConstantImpl extends AnnotationValue
             permits AnnotationImpl.OfStringImpl, AnnotationImpl.OfDoubleImpl,
                     AnnotationImpl.OfFloatImpl, AnnotationImpl.OfLongImpl,
                     AnnotationImpl.OfIntegerImpl, AnnotationImpl.OfShortImpl,
                     AnnotationImpl.OfCharacterImpl, AnnotationImpl.OfByteImpl,
                     AnnotationImpl.OfBooleanImpl {
+        PoolEntry poolEntry();
 
         @Override
         default void writeTo(BufWriter buf) {
             buf.writeU1(tag());
-            buf.writeIndex(constant());
+            buf.writeIndex(poolEntry());
         }
-
     }
 
-    public record OfStringImpl(Utf8Entry constant)
+    public record OfStringImpl(Utf8Entry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfString {
 
         @Override
@@ -114,11 +115,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public String stringValue() {
-            return constant().stringValue();
+            return poolEntry().stringValue();
         }
     }
 
-    public record OfDoubleImpl(DoubleEntry constant)
+    public record OfDoubleImpl(DoubleEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfDouble {
 
         @Override
@@ -128,11 +129,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public double doubleValue() {
-            return constant().doubleValue();
+            return poolEntry().doubleValue();
         }
     }
 
-    public record OfFloatImpl(FloatEntry constant)
+    public record OfFloatImpl(FloatEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfFloat {
 
         @Override
@@ -142,11 +143,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public float floatValue() {
-            return constant().floatValue();
+            return poolEntry().floatValue();
         }
     }
 
-    public record OfLongImpl(LongEntry constant)
+    public record OfLongImpl(LongEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfLong {
 
         @Override
@@ -156,11 +157,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public long longValue() {
-            return constant().longValue();
+            return poolEntry().longValue();
         }
     }
 
-    public record OfIntegerImpl(IntegerEntry constant)
+    public record OfIntegerImpl(IntegerEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfInteger {
 
         @Override
@@ -170,11 +171,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public int intValue() {
-            return constant().intValue();
+            return poolEntry().intValue();
         }
     }
 
-    public record OfShortImpl(IntegerEntry constant)
+    public record OfShortImpl(IntegerEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfShort {
 
         @Override
@@ -184,11 +185,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public short shortValue() {
-            return (short)constant().intValue();
+            return (short)poolEntry().intValue();
         }
     }
 
-    public record OfCharacterImpl(IntegerEntry constant)
+    public record OfCharacterImpl(IntegerEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfCharacter {
 
         @Override
@@ -198,11 +199,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public char charValue() {
-            return (char)constant().intValue();
+            return (char)poolEntry().intValue();
         }
     }
 
-    public record OfByteImpl(IntegerEntry constant)
+    public record OfByteImpl(IntegerEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfByte {
 
         @Override
@@ -212,11 +213,11 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public byte byteValue() {
-            return (byte)constant().intValue();
+            return (byte)poolEntry().intValue();
         }
     }
 
-    public record OfBooleanImpl(IntegerEntry constant)
+    public record OfBooleanImpl(IntegerEntry poolEntry)
             implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfBoolean {
 
         @Override
@@ -226,7 +227,7 @@ public final class AnnotationImpl implements Annotation {
 
         @Override
         public boolean booleanValue() {
-            return constant().intValue() == 1;
+            return poolEntry().intValue() == 1;
         }
     }
 

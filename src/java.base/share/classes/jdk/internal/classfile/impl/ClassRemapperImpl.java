@@ -391,11 +391,15 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 AnnotationValue.ofAnnotation(mapAnnotation(oa.annotation()));
             case AnnotationValue.OfArray oa ->
                 AnnotationValue.ofArray(oa.values().stream().map(this::mapAnnotationValue).toList());
-            case AnnotationValue.OfConstant oc -> oc;
             case AnnotationValue.OfClass oc ->
                 AnnotationValue.ofClass(map(oc.classSymbol()));
             case AnnotationValue.OfEnum oe ->
                 AnnotationValue.ofEnum(map(oe.classSymbol()), oe.constantName().stringValue());
+            case AnnotationValue.OfByte _, AnnotationValue.OfBoolean _,
+                AnnotationValue.OfCharacter _, AnnotationValue.OfDouble _,
+                AnnotationValue.OfFloat _, AnnotationValue.OfInteger _,
+                AnnotationValue.OfLong _, AnnotationValue.OfShort _,
+                AnnotationValue.OfString _ -> val;
         };
     }
 

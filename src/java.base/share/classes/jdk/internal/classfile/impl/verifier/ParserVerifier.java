@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,11 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield l;
             }
-            case AnnotationValue.OfConstant _, AnnotationValue.OfClass _ -> 2;
+            case AnnotationValue.OfByte _, AnnotationValue.OfBoolean _,
+                 AnnotationValue.OfCharacter _, AnnotationValue.OfDouble _,
+                 AnnotationValue.OfFloat _, AnnotationValue.OfInteger _,
+                 AnnotationValue.OfLong _, AnnotationValue.OfShort _,
+                 AnnotationValue.OfString _, AnnotationValue.OfClass _ -> 2;
             case AnnotationValue.OfEnum _ -> 4;
         };
     }

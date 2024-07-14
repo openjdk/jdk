@@ -28,13 +28,11 @@ import java.lang.classfile.constantpool.DoubleEntry;
 import java.lang.classfile.constantpool.FloatEntry;
 import java.lang.classfile.constantpool.IntegerEntry;
 import java.lang.classfile.constantpool.LongEntry;
-import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.Constable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.internal.javac.PreviewFeature;
@@ -51,11 +49,16 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
         permits AnnotationValue.OfAnnotation, AnnotationValue.OfArray,
-                AnnotationValue.OfConstant, AnnotationValue.OfClass,
-                AnnotationValue.OfEnum {
+                AnnotationValue.OfString, AnnotationValue.OfDouble,
+                AnnotationValue.OfFloat, AnnotationValue.OfLong,
+                AnnotationValue.OfInteger, AnnotationValue.OfShort,
+                AnnotationValue.OfCharacter, AnnotationValue.OfByte,
+                AnnotationValue.OfBoolean, AnnotationValue.OfClass,
+                AnnotationValue.OfEnum, AnnotationImpl.OfConstantImpl {
 
     /**
-     * Models an annotation-valued element
+     * Models an annotation-valued element.
+     * The tag of this element is {@value ClassFile#AEV_ANNOTATION}.
      *
      * @since 22
      */
@@ -67,7 +70,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     }
 
     /**
-     * Models an array-valued element
+     * Models an array-valued element.
+     * The tag of this element is {@value ClassFile#AEV_ARRAY}.
      *
      * @since 22
      */
@@ -79,220 +83,152 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     }
 
     /**
-     * Models a constant-valued element, which can be evaluated without
-     * class loading.
-     *
-     * @sealedGraph
-     * @since 22
-     */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant extends AnnotationValue
-            permits AnnotationValue.OfString, AnnotationValue.OfDouble,
-                    AnnotationValue.OfFloat, AnnotationValue.OfLong,
-                    AnnotationValue.OfInteger, AnnotationValue.OfShort,
-                    AnnotationValue.OfCharacter, AnnotationValue.OfByte,
-                    AnnotationValue.OfBoolean, AnnotationImpl.OfConstantImpl {
-        /** {@return the constant} */
-        PoolEntry constant();
-
-        /**
-         * {@return the constant value}
-         * @since 24
-         */
-        Constable constantValue();
-    }
-
-    /**
-     * Models a constant-valued element
+     * Models a string-valued element.
+     * The tag of this element is {@value ClassFile#AEV_STRING}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfString extends AnnotationValue.OfConstant
+    sealed interface OfString extends AnnotationValue
             permits AnnotationImpl.OfStringImpl {
         /** {@return the constant} */
         String stringValue();
 
-        /** @since 24 */
-        @Override
-        Utf8Entry constant();
-
-        @Override
-        default String constantValue() {
-            return stringValue();
-        }
+        /** {@return the constant pool entry} */
+        Utf8Entry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a double-valued element.
+     * The tag of this element is {@value ClassFile#AEV_DOUBLE}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfDouble extends AnnotationValue.OfConstant
+    sealed interface OfDouble extends AnnotationValue
             permits AnnotationImpl.OfDoubleImpl {
         /** {@return the constant} */
         double doubleValue();
 
-        /** @since 24 */
-        @Override
-        DoubleEntry constant();
-
-        @Override
-        default Double constantValue() {
-            return doubleValue();
-        }
+        /** {@return the constant pool entry} */
+        DoubleEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a float-valued element.
+     * The tag of this element is {@value ClassFile#AEV_FLOAT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfFloat extends AnnotationValue.OfConstant
+    sealed interface OfFloat extends AnnotationValue
             permits AnnotationImpl.OfFloatImpl {
         /** {@return the constant} */
         float floatValue();
 
-        /** @since 24 */
-        @Override
-        FloatEntry constant();
-
-        @Override
-        default Float constantValue() {
-            return floatValue();
-        }
+        /** {@return the constant pool entry} */
+        FloatEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a long-valued element.
+     * The tag of this element is {@value ClassFile#AEV_LONG}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfLong extends AnnotationValue.OfConstant
+    sealed interface OfLong extends AnnotationValue
             permits AnnotationImpl.OfLongImpl {
         /** {@return the constant} */
         long longValue();
 
-        /** @since 24 */
-        @Override
-        LongEntry constant();
-
-        @Override
-        default Long constantValue() {
-            return longValue();
-        }
+        /** {@return the constant pool entry} */
+        LongEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models an integer-valued element.
+     * The tag of this element is {@value ClassFile#AEV_INT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfInteger extends AnnotationValue.OfConstant
+    sealed interface OfInteger extends AnnotationValue
             permits AnnotationImpl.OfIntegerImpl {
         /** {@return the constant} */
         int intValue();
 
-        /** @since 24 */
-        @Override
-        IntegerEntry constant();
-
-        @Override
-        default Integer constantValue() {
-            return intValue();
-        }
+        /** {@return the constant pool entry} */
+        IntegerEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a short-valued element.
+     * The tag of this element is {@value ClassFile#AEV_SHORT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfShort extends AnnotationValue.OfConstant
+    sealed interface OfShort extends AnnotationValue
             permits AnnotationImpl.OfShortImpl {
         /** {@return the constant} */
         short shortValue();
 
-        /** @since 24 */
-        @Override
-        IntegerEntry constant();
-
-        @Override
-        default Short constantValue() {
-            return shortValue();
-        }
+        /** {@return the constant pool entry} */
+        IntegerEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a character-valued element.
+     * The tag of this element is {@value ClassFile#AEV_CHAR}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfCharacter extends AnnotationValue.OfConstant
+    sealed interface OfCharacter extends AnnotationValue
             permits AnnotationImpl.OfCharacterImpl {
         /** {@return the constant} */
         char charValue();
 
-        /** @since 24 */
-        @Override
-        IntegerEntry constant();
-
-        @Override
-        default Character constantValue() {
-            return charValue();
-        }
+        /** {@return the constant pool entry} */
+        IntegerEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a byte-valued element.
+     * The tag of this element is {@value ClassFile#AEV_BYTE}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfByte extends AnnotationValue.OfConstant
+    sealed interface OfByte extends AnnotationValue
             permits AnnotationImpl.OfByteImpl {
         /** {@return the constant} */
         byte byteValue();
 
-        /** @since 24 */
-        @Override
-        IntegerEntry constant();
-
-        @Override
-        default Byte constantValue() {
-            return byteValue();
-        }
+        /** {@return the constant pool entry} */
+        IntegerEntry poolEntry();
     }
 
     /**
-     * Models a constant-valued element
+     * Models a boolean-valued element.
+     * The tag of this element is {@value ClassFile#AEV_BOOLEAN}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfBoolean extends AnnotationValue.OfConstant
+    sealed interface OfBoolean extends AnnotationValue
             permits AnnotationImpl.OfBooleanImpl {
         /** {@return the constant} */
         boolean booleanValue();
 
-        /** @since 24 */
-        @Override
-        IntegerEntry constant();
-
-        @Override
-        default Boolean constantValue() {
-            return booleanValue();
-        }
+        /** {@return the constant pool entry} */
+        IntegerEntry poolEntry();
     }
 
     /**
-     * Models a class-valued element
+     * Models a class-valued element.
+     * The tag of this element is {@value ClassFile#AEV_CLASS}.
      *
      * @since 22
      */
@@ -309,7 +245,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     }
 
     /**
-     * Models an enum-valued element
+     * Models an enum-valued element.
+     * The tag of this element is {@value ClassFile#AEV_ENUM}.
      *
      * @since 22
      */

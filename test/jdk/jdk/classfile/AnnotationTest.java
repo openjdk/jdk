@@ -23,13 +23,13 @@
 
 /*
  * @test
+ * @bug 8335927
  * @summary Testing ClassFile annotations.
  * @run junit AnnotationTest
  */
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -55,18 +55,18 @@ class AnnotationTest {
 
     private static Map<String, Object> constants
             = Map.ofEntries(
-            new AbstractMap.SimpleImmutableEntry<>("i", 1),
-            new AbstractMap.SimpleImmutableEntry<>("j", 1L),
-            new AbstractMap.SimpleImmutableEntry<>("s", (short) 1),
-            new AbstractMap.SimpleImmutableEntry<>("b", (byte) 1),
-            new AbstractMap.SimpleImmutableEntry<>("f", 1.0f),
-            new AbstractMap.SimpleImmutableEntry<>("d", 1.0d),
-            new AbstractMap.SimpleImmutableEntry<>("z", Boolean.TRUE),
-            new AbstractMap.SimpleImmutableEntry<>("c", (int) '1'),
-            new AbstractMap.SimpleImmutableEntry<>("st", "1"),
-            new AbstractMap.SimpleImmutableEntry<>("cl", ClassDesc.of("foo.Bar")),
-            new AbstractMap.SimpleImmutableEntry<>("en", E.C),
-            new AbstractMap.SimpleImmutableEntry<>("arr", new Object[] {1, "1", 1.0f})
+            Map.entry("i", 1),
+            Map.entry("j", 1L),
+            Map.entry("s", (short) 1),
+            Map.entry("b", (byte) 1),
+            Map.entry("f", 1.0f),
+            Map.entry("d", 1.0d),
+            Map.entry("z", Boolean.TRUE),
+            Map.entry("c", '1'),
+            Map.entry("st", "1"),
+            Map.entry("cl", ClassDesc.of("foo.Bar")),
+            Map.entry("en", E.C),
+            Map.entry("arr", new Object[] {1, "1", 1.0f})
     );
 
     private static final List<AnnotationElement> constantElements =
@@ -87,28 +87,54 @@ class AnnotationTest {
         for (AnnotationElement evp : a.elements()) {
             names.add(evp.name().stringValue());
             switch (evp.name().stringValue()) {
-                case "i", "j", "s", "b", "f", "d", "z", "c", "st":
-                    assertTrue (evp.value() instanceof AnnotationValue.OfConstant c);
-                    assertEquals(((AnnotationValue.OfConstant) evp.value()).constantValue(),
-                                 constants.get(evp.name().stringValue()));
+                case "i":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfInteger i && i.intValue() == 1);
+                    break;
+                case "j":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfLong j && j.longValue() == 1L);
+                    break;
+                case "s":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfShort s && s.shortValue() == (short) 1);
+                    break;
+                case "b":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfByte b && b.byteValue() == (byte) 1);
+                    break;
+                case "f":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfFloat f && f.floatValue() == 1.0f);
+                    break;
+                case "d":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfDouble d && d.doubleValue() == 1.0d);
+                    break;
+                case "z":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfBoolean z && z.booleanValue());
+                    break;
+                case "c":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfCharacter c && c.charValue() == '1');
+                    break;
+                case "st":
+                    assertTrue(evp.value() instanceof AnnotationValue.OfString st && st.stringValue().equals("1"));
                     break;
                 case "cl":
-                    assertTrue (evp.value() instanceof AnnotationValue.OfClass c
+                    assertTrue(evp.value() instanceof AnnotationValue.OfClass c
                                 && c.className().stringValue().equals("Lfoo/Bar;"));
                     break;
                 case "en":
-                    assertTrue (evp.value() instanceof AnnotationValue.OfEnum c
+                    assertTrue(evp.value() instanceof AnnotationValue.OfEnum c
                                 && c.className().stringValue().equals(E.class.descriptorString()) && c.constantName().stringValue().equals("C"));
                     break;
                 case "a":
-                    assertTrue (evp.value() instanceof AnnotationValue.OfAnnotation c
+                    assertTrue(evp.value() instanceof AnnotationValue.OfAnnotation c
                                 && assertAnno(c.annotation(), "LBar;", false));
                     break;
                 case "arr":
-                    assertTrue (evp.value() instanceof AnnotationValue.OfArray);
+                    assertTrue(evp.value() instanceof AnnotationValue.OfArray);
                     List<AnnotationValue> values = ((AnnotationValue.OfArray) evp.value()).values();
-                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).constantValue()).collect(toSet()),
-                                 Set.of(1, 1.0f, "1"));
+                    assertEquals(values.stream().map(v -> switch (v) {
+                        case AnnotationValue.OfInteger i -> i.intValue();
+                        case AnnotationValue.OfFloat f -> f.floatValue();
+                        case AnnotationValue.OfString s -> s.stringValue();
+                        default -> fail("Unexpected value " + v);
+                    }).collect(toSet()), Set.of(1, 1.0f, "1"));
                     break;
                 default:
                     fail("Unexpected annotation element: " + evp.name().stringValue());

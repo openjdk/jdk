@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,43 +226,73 @@ public class AnnotationWriter extends BasicWriter {
 
     public void write(AnnotationValue value, boolean resolveIndices) {
         switch (value) {
-            case AnnotationValue.OfConstant ev -> {
+            case AnnotationValue.OfBoolean ev -> {
                 if (resolveIndices) {
-                    var entry = ev.constant();
-                    switch (ev.tag()) {
-                        case 'B':
-                            print("(byte) ");
-                            print(constantWriter.stringValue(entry));
-                            break;
-                        case 'C':
-                            print("'");
-                            print(constantWriter.charValue(entry));
-                            print("'");
-                            break;
-                        case 'D':
-                        case 'F':
-                        case 'I':
-                        case 'J':
-                            print(constantWriter.stringValue(entry));
-                            break;
-                        case 'S':
-                            print("(short) ");
-                            print(constantWriter.stringValue(entry));
-                            break;
-                        case 'Z':
-                            print(constantWriter.booleanValue(entry));
-                            break;
-                        case 's':
-                            print("\"");
-                            print(constantWriter.stringValue(entry));
-                            print("\"");
-                            break;
-                        default:
-                            print(ev.tag() + "#" + entry.index());
-                            break;
-                    }
+                    print(constantWriter.booleanValue(ev.poolEntry()));
                 } else {
-                    print(ev.tag() + "#" + ev.constant().index());
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfByte ev -> {
+                if (resolveIndices) {
+                    print("(byte) ");
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfCharacter ev -> {
+                if (resolveIndices) {
+                    print("'");
+                    print(constantWriter.charValue(ev.poolEntry()));
+                    print("'");
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfFloat ev -> {
+                if (resolveIndices) {
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfDouble ev -> {
+                if (resolveIndices) {
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfInteger ev -> {
+                if (resolveIndices) {
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfLong ev -> {
+                if (resolveIndices) {
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfShort ev -> {
+                if (resolveIndices) {
+                    print("(short) ");
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
+                }
+            }
+            case AnnotationValue.OfString ev -> {
+                if (resolveIndices) {
+                    print("\"");
+                    print(constantWriter.stringValue(ev.poolEntry()));
+                    print("\"");
+                } else {
+                    print(ev.tag() + "#" + ev.poolEntry().index());
                 }
             }
             case AnnotationValue.OfEnum ev -> {
