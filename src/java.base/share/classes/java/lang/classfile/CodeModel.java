@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the body of a method (the {@code Code} attribute).  The instructions
- * of the method body are accessed via a streaming view (e.g., {@link
- * #elements()}).
+ * of the method body are accessed via a streaming view.
  *
  * @since 22
  */
