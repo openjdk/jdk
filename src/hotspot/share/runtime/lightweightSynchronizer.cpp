@@ -27,7 +27,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
-#include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "nmt/memflags.hpp"
 #include "oops/oop.inline.hpp"
