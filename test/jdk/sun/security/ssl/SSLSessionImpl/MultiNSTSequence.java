@@ -26,15 +26,8 @@
  * @library /test/lib
  * @library /javax/net/ssl/templates
  * @bug 8242008
- * @summary Verifies multiple session tickets are PSKs are used by JSSE
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=1
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=3
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=10
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=true
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=false
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.enableSessionTicketExtension=false -Djdk.tls.client.enableSessionTicketExtension=false
- * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.enableSessionTicketExtension=true -Djdk.tls.client.enableSessionTicketExtension=true
+ * @summary Verifies sequence of used NST entries from the cache queue.
+ * @run main/othervm MultiNSTSequence -Djdk.tls.server.newSessionTicketCount=2
  */
 
 import jdk.test.lib.Utils;
@@ -47,41 +40,38 @@ import java.util.HexFormat;
 import java.util.List;
 
 /**
- * This test verifies that multiple NSTs and PSKs are sent by a JSSE server.
- * Then JSSE client is able to store them all and resume the connection.  It
- * requires specific text in the TLS debugging to verify the success.
+ * This test verifies that multiple NSTs take the oldest PSK from the
+ * QueueCacheEntry stored in the TLS Session Cache.
+ *
+ * Note: Beyond 9 iterations the PSK id verification code becomes complicated
+ * with a QueueCacheEntry limit set to retain only the 10 newest entries.
  */
 
-public class MultiNSTClient {
+public class MultiNSTSequence {
 
     static HexFormat hex = HexFormat.of();
+    static final int ITERATIONS = 9;
 
     public static void main(String[] args) throws Exception {
 
         if (!args[0].equalsIgnoreCase("p")) {
             StringBuilder sb = new StringBuilder();
-            Arrays.stream(args).forEach(a -> {
-                sb.append(a);
-                sb.append(" ");
-            });
+            Arrays.stream(args).forEach(a -> sb.append(a).append(" "));
             String params = sb.toString();
             System.setProperty("test.java.opts",
                 "-Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
                     " -Djavax.net.debug=ssl,handshake " + params
-                );
-
-            boolean TLS13 = args[0].contains("1.3");
+                              );
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                Utils.addTestJavaOpts("MultiNSTClient", "p"));
+                Utils.addTestJavaOpts("MultiNSTSequence", "p"));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
-            System.out.println("I'm here");
             boolean pass = true;
             try {
                 List<String> list = output.stderrShouldContain("MultiNST PSK").
@@ -96,9 +86,10 @@ public class MultiNSTClient {
                 serverPSK.stream().forEach(s -> System.out.println("\t" + s));
                 System.out.println("found client: " + clientPSK.size());
                 clientPSK.stream().forEach(s -> System.out.println("\t" + s));
-                for (int i = 0; i < 2; i++) {
-                    String svr = serverPSK.getFirst();
-                    String cli = clientPSK.getFirst();
+                int i;
+                for (i = 0; i < ITERATIONS; i++) {
+                    String svr = serverPSK.get(i);
+                    String cli = clientPSK.get(i);
                     if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
                         System.out.println("entry " + (i + 1) + " match.");
                     } else {
@@ -109,18 +100,13 @@ public class MultiNSTClient {
                     }
                 }
             } catch (RuntimeException e) {
-                System.out.println("No MultiNST PSK found.");
+                System.out.println("Server and Client PSK usage order is not" +
+                    " the same.");
                 pass = false;
             }
 
-            if (TLS13) {
-                if (!pass) {
-                    throw new Exception("Test failed: " + params);
-                }
-            } else {
-                if (pass) {
-                    throw new Exception("Test failed: " + params);
-                }
+            if (!pass) {
+                throw new Exception("Test failed: " + params);
             }
             System.out.println("Test Passed");
             return;
@@ -128,43 +114,28 @@ public class MultiNSTClient {
 
         TLSBase.Server server = new TLSBase.Server();
 
-        System.out.println("------  Start connection");
+        System.out.println("------  Initial connection");
         TLSBase.Client initial = new TLSBase.Client();
 
         SSLSession initialSession = initial.getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
         System.out.println("session = " + initialSession);
 
-        System.out.println("------  getNewSession from original client");
-        SSLSession resumption;
-        resumption = initial.getNewSession();
-        System.out.println("id = " + hex.formatHex(resumption.getId()));
-        System.out.println("session = " + resumption);
-        if (!initialSession.toString().equalsIgnoreCase(resumption.toString())) {
-            throw new Exception("Resumed session did not match");
-        }
-
-        System.out.println("------  Second getNewSession from original client");
-        resumption = initial.getNewSession();
-        System.out.println("id = " + hex.formatHex(resumption.getId()));
-        System.out.println("session = " + resumption);
-        if (!initialSession.toString().equalsIgnoreCase(resumption.toString())) {
-            throw new Exception("Resumed session did not match");
-        }
-
-        System.out.println("------  New client connection");
-        TLSBase.Client newConnection = new TLSBase.Client();
-        SSLSession newSession = newConnection.getSession();
-
-        System.out.println("id = " + hex.formatHex(newSession.getId()));
-        System.out.println("session = " + newSession);
-        if (initialSession.toString().equalsIgnoreCase(newSession.toString())) {
-            throw new Exception("new session is the same as the initial.");
+        System.out.println("------  Resume client");
+        for (int i = 0; i < ITERATIONS; i++) {
+            SSLSession r = initial.getNewSession();
+            StringBuilder sb = new StringBuilder(100);
+            sb.append("Iteration: ").append(i);
+            sb.append("\tid = ").append(hex.formatHex(r.getId()));
+            sb.append("\tsession = ").append(r);
+            System.out.println(sb);
+            if (!initialSession.toString().equalsIgnoreCase(r.toString())) {
+                throw new Exception("Resumed session did not match");
+            }
         }
 
         System.out.println("------  Closing connections");
         initial.close();
-        newConnection.close();
         server.close(initial);
         System.out.println("------  End");
         System.exit(0);

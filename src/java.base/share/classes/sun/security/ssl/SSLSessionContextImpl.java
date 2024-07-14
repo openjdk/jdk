@@ -304,11 +304,17 @@ final class SSLSessionContextImpl implements SSLSessionContext {
 
     // package-private method, remove a cached SSLSession
     void remove(SessionId key) {
+        remove(key, false);
+    }
+    void remove(SessionId key, boolean isClient) {
         SSLSessionImpl s = sessionCache.get(key);
         if (s != null) {
             sessionCache.remove(key);
-            sessionHostPortCache.remove(
+            // A client keeps the cache entry for queued NST resumption.
+            if (!isClient) {
+                sessionHostPortCache.remove(
                     getKey(s.getPeerHost(), s.getPeerPort()));
+            }
         }
     }
 

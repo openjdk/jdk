@@ -25,6 +25,8 @@ import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.Buffer;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.X509CertSelector;
@@ -32,6 +34,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This is a base setup for creating a server and clients.  All clients will
@@ -57,14 +63,14 @@ abstract public class TLSBase {
     static String trustStoreFile = "truststore";
     static String passwd = "passphrase";
 
-    final static String TESTROOT =
+    static final String TESTROOT =
         System.getProperty("test.root", "../../../..");
 
     SSLContext sslContext;
     // Server's port
     static int serverPort;
     // Name shown during read and write ops
-    String name;
+    public String name;
 
     TLSBase() {
 
@@ -79,20 +85,28 @@ abstract public class TLSBase {
 
     // Base read operation
     byte[] read(SSLSocket sock) throws Exception {
+        /*
         BufferedReader reader = new BufferedReader(
             new InputStreamReader(sock.getInputStream()));
-        String s = reader.readLine();
-        System.err.println("(read) " + name + ": " + s);
-        return s.getBytes();
+        String s = null;
+        while (reader.ready() && (s = reader.readLine()) != null);
+         */
+        BufferedInputStream is = new BufferedInputStream(sock.getInputStream());
+        byte[] b = is.readNBytes(5);
+        System.err.println("(read) " + Thread.currentThread().getName() + ": " + new String(b));
+        return b;
     }
 
     // Base write operation
     public void write(SSLSocket sock, byte[] data) throws Exception {
+        /*
         PrintWriter out = new PrintWriter(
             new OutputStreamWriter(sock.getOutputStream()));
         out.println(new String(data));
         out.flush();
-        System.err.println("(write)" + name + ": " + new String(data));
+         */
+        sock.getOutputStream().write(data);
+        System.err.println("(write)" + Thread.currentThread().getName() + ": " + new String(data));
     }
 
     private static KeyManager[] getKeyManager(boolean empty) throws Exception {
@@ -151,6 +165,13 @@ abstract public class TLSBase {
                 new ConcurrentHashMap<>();
         Thread t;
         List<Exception> exceptionList = new ArrayList<>();
+        int c;
+        ExecutorService threadPool = Executors.newFixedThreadPool(10,
+            r -> {
+                Thread t = Executors.defaultThreadFactory().newThread(r);
+                return t;
+            });
+
 
         Server(ServerBuilder builder) {
             super();
@@ -161,8 +182,10 @@ abstract public class TLSBase {
                     TLSBase.getTrustManager(builder.tm), null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
+                ssock.setReuseAddress(true);
                 ssock.setNeedClientAuth(builder.clientauth);
                 serverPort = ssock.getLocalPort();
+                System.out.println("Server Port: " + serverPort);
             } catch (Exception e) {
                 System.err.println("Failure during server initialization");
                 e.printStackTrace();
@@ -170,26 +193,40 @@ abstract public class TLSBase {
 
             // Thread to allow multiple clients to connect
             t = new Thread(() -> {
+                //ExecutorService executor = Executors.newFixedThreadPool(5);
                 try {
                     while (true) {
-                        System.err.println("Server ready on port " +
-                            serverPort);
-                        SSLSocket c = (SSLSocket)ssock.accept();
-                        clientMap.put(c.getPort(), c);
-                        try {
-                            write(c, read(c));
-                        } catch (Exception e) {
-                            System.out.println("Caught " + e.getMessage());
-                            e.printStackTrace();
-                            exceptionList.add(e);
-                        }
+                        SSLSocket sock = (SSLSocket)ssock.accept();
+                        threadPool.submit(new ServerThread(sock));
                     }
                 } catch (Exception ex) {
                     System.err.println("Server Down");
                     ex.printStackTrace();
+                } finally {
+                    //executor.close();
+                    threadPool.close();
                 }
             });
             t.start();
+        }
+
+        class ServerThread extends Thread {
+            SSLSocket sock;
+
+            ServerThread(SSLSocket s) {
+                this.sock = s;
+                clientMap.put(sock.getPort(), sock);
+            }
+
+            public void run() {
+                try {
+                    write(sock, read(sock));
+                } catch (Exception e) {
+                    System.out.println("Caught " + e.getMessage());
+                    e.printStackTrace();
+                    exceptionList.add(e);
+                }
+            }
         }
 
         Server() {
@@ -340,7 +377,7 @@ abstract public class TLSBase {
             }
         }
 
-        public SSLSocket connect() {
+        private SSLSocket connect() {
             try {
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
@@ -354,45 +391,63 @@ abstract public class TLSBase {
             return sock.getSession();
         }
 
-        // Connect to server.  Maybe runnable in the future
-        private SSLSocket getNewSocket() {
-            try {
+        public SSLSocket getSocket() {
+            return sock;
+        }
 
-                sock = (SSLSocket)sslContext.getSocketFactory().createSocket();
-                sock.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
-                System.err.println("Client connected using port " +
-                        sock.getLocalPort());
-                name = "client(" + sock.toString() + ")";
-                write("Hello");
-                read();
+        private SSLSocket getNewSocket() {
+            SSLSocket newSock = null;
+            try {
+                newSock = (SSLSocket) sslContext.getSocketFactory().createSocket();
+                newSock.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
+                System.err.println("Client (" + Thread.currentThread().getName() + ") connected using port " +
+                    newSock.getLocalPort() + " to " + newSock.getPort() + " socket: " + (sock == null? "null" : sock));
+                name = "client(" + newSock + ")";
+                writeRead(newSock);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-            return sock;
+            return newSock;
+        }
+
+        public SSLSocket getResumptionSocket() {
+            return getNewSocket();
+        }
+
+        public SSLSocket getNewFreshSocket() {
+            try {
+                return (SSLSocket) sslContext.getSocketFactory().createSocket();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+            return null;
+        }
+
+        static public void resetSocket(SSLSocket socket) {
+            try {
+                socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), serverPort));
+                System.err.println("Client reset (" + Thread.currentThread().getName() + ") connected using port " +
+                    socket.getLocalPort() + " to " + socket.getPort() + " socket: " + (socket == null ? "null" : socket));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        public void writeRead(SSLSocket socket) {
+            try {
+                write(socket, "Hello".getBytes(StandardCharsets.ISO_8859_1));
+                read(socket);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
 
         public SSLSession getNewSession() {
             return getNewSocket().getSession();
         }
 
-        // Read from the client socket
         byte[] read() throws Exception {
             return read(sock);
-        }
-
-        // Write to the client socket
-        void write(byte[] data) throws Exception {
-            write(sock, data);
-        }
-        void write(String s) throws Exception {
-            write(sock, s.getBytes());
-        }
-
-        // Client writes to the server, then reads from the server.
-        // Return true if the read & write data match, false if not.
-        boolean writeRead(Server server, String s) throws Exception {
-            write(s.getBytes());
-            return (Arrays.compare(s.getBytes(), server.read(this)) == 0);
         }
 
         // Get port from the socket
