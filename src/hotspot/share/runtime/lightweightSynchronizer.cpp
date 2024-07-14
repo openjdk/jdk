@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 
 #include "classfile/vmSymbols.hpp"
-#include "javaThread.inline.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -36,7 +35,7 @@
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
