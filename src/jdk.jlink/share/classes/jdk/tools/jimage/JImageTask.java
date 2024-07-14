@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.util.MissingResourceException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.MethodModel;
@@ -368,9 +367,9 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                ClassFile.of().parse(bytes).forEachElement(cle -> {
-                    if (cle instanceof MethodModel mm) mm.forEachElement(me -> {
-                        if (me instanceof CodeModel com) com.forEachElement(coe -> {
+                ClassFile.of().parse(bytes).forEach(cle -> {
+                    if (cle instanceof MethodModel mm) mm.forEach(me -> {
+                        if (me instanceof CodeModel com) com.forEach(coe -> {
                             //do nothing here, just visit each model element
                         });
                     });

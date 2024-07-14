@@ -122,7 +122,7 @@ public final class MethodImpl
     }
 
     @Override
-    public void forEachElement(Consumer<MethodElement> consumer) {
+    public void forEach(Consumer<? super MethodElement> consumer) {
         consumer.accept(flags());
         for (Attribute<?> attr : attributes()) {
             if (attr instanceof MethodElement e)
@@ -140,7 +140,7 @@ public final class MethodImpl
                                new Consumer<>() {
                 @Override
                 public void accept(MethodBuilder mb) {
-                    MethodImpl.this.forEachElement(mb);
+                    MethodImpl.this.forEach(mb);
                 }
             });
         }

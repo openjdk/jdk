@@ -101,14 +101,14 @@ public final class FieldImpl
             builder.withField(fieldName(), fieldType(), new Consumer<>() {
                 @Override
                 public void accept(FieldBuilder fb) {
-                    FieldImpl.this.forEachElement(fb);
+                    FieldImpl.this.forEach(fb);
                 }
             });
         }
     }
 
     @Override
-    public void forEachElement(Consumer<FieldElement> consumer) {
+    public void forEach(Consumer<? super FieldElement> consumer) {
         consumer.accept(flags());
         for (Attribute<?> attr : attributes()) {
             if (attr instanceof FieldElement e)

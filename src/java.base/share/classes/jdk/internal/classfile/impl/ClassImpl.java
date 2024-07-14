@@ -156,7 +156,7 @@ public final class ClassImpl
     // ClassModel
 
     @Override
-    public void forEachElement(Consumer<ClassElement> consumer) {
+    public void forEach(Consumer<? super ClassElement> consumer) {
         consumer.accept(flags());
         consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {

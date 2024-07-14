@@ -200,7 +200,7 @@ class CorpusTest {
 
         byte[] newBytes = cc.build(
                 classModel.thisClass().asSymbol(),
-                classModel::forEachElement);
+                classModel::forEach);
         var newModel = cc.parse(newBytes);
         assertEqualsDeep(ClassRecord.ofClassModel(newModel, CompatibilityFilter.By_ClassBuilder),
                 ClassRecord.ofClassModel(classModel, CompatibilityFilter.By_ClassBuilder),
