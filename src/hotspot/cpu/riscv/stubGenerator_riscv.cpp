@@ -2329,7 +2329,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
-    const Register x0          = c_rarg4;
 
     const VectorRegister res   = v16;
     const VectorRegister vtmp1 = v4;
@@ -2432,7 +2431,6 @@ class StubGenerator: public StubCodeGenerator {
     const Register to          = c_rarg1;  // destination array address
     const Register key         = c_rarg2;  // key array address
     const Register keylen      = c_rarg3;
-    const Register x0          = c_rarg4;
 
     const VectorRegister res   = v16;
     const VectorRegister vtmp1 = v4;
