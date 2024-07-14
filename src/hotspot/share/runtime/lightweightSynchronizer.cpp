@@ -93,8 +93,7 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     }
 
     bool equals(ObjectMonitor** value) {
-      // The entry is going to be removed soon.
-      assert(*value != nullptr, "must be");
+            assert(*value != nullptr, "must be");
       return (*value)->object_refers_to(_obj);
     }
 
