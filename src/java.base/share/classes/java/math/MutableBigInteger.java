@@ -1985,7 +1985,7 @@ class MutableBigInteger {
                 s--;
 
             // Allocate sufficient space to hold the normalized final square root
-            MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3) + 1) >> 1]);
+            MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3)) >> 1]);
 
             // Place the partial square root
             sqrt.intLen = 1;
