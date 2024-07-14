@@ -93,14 +93,6 @@ public sealed interface ConstantPoolBuilder
     boolean canWriteDirect(ConstantPool constantPool);
 
     /**
-     * Writes associated bootstrap method entries to the specified writer
-     *
-     * @param buf the writer
-     * @return false when no bootstrap method entry has been written
-     */
-    boolean writeBootstrapMethods(BufWriter buf);
-
-    /**
      * {@return A {@link Utf8Entry} describing the provided {@linkplain String}}
      * If a UTF8 entry in the pool already describes this string, it is returned;
      * otherwise, a new entry is added and the new entry is returned.

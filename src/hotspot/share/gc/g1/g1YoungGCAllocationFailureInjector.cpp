@@ -30,7 +30,7 @@
 
 #if ALLOCATION_FAILURE_INJECTOR
 
-class SelectAllocationFailureRegionClosure : public HeapRegionClosure {
+class SelectAllocationFailureRegionClosure : public G1HeapRegionClosure {
   CHeapBitMap& _allocation_failure_regions;
   size_t _allocation_failure_regions_num;
 

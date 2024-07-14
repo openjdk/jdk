@@ -202,9 +202,9 @@ OopHandle ClassLoaderData::ChunkedHandleList::add(oop o) {
 
 int ClassLoaderData::ChunkedHandleList::count() const {
   int count = 0;
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    count += chunk->_size;
+    count += Atomic::load(&chunk->_size);
     chunk = chunk->_next;
   }
   return count;
@@ -258,9 +258,9 @@ bool ClassLoaderData::ChunkedHandleList::contains(oop p) {
 
 #ifndef PRODUCT
 bool ClassLoaderData::ChunkedHandleList::owner_of(oop* oop_handle) {
-  Chunk* chunk = _head;
+  Chunk* chunk = Atomic::load_acquire(&_head);
   while (chunk != nullptr) {
-    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[chunk->_size])) {
+    if (&(chunk->_data[0]) <= oop_handle && oop_handle < &(chunk->_data[Atomic::load(&chunk->_size)])) {
       return true;
     }
     chunk = chunk->_next;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,6 +148,8 @@ public class SnippetTaglet extends BaseTaglet {
         var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
+        } else {
+            pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, ids).name());
         }
         var code = new HtmlTree(TagName.CODE)
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
@@ -231,6 +233,8 @@ public class SnippetTaglet extends BaseTaglet {
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
+
+    private final Set<String> ids = new HashSet<>();
 
     private static final class BadSnippetException extends Exception {
 

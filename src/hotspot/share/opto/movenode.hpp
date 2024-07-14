@@ -158,7 +158,7 @@ class MoveD2LNode : public MoveNode {
 //     (CMove (Binary bol cmp) (Binary src1 src2))
 class BinaryNode : public Node {
   public:
-  BinaryNode( Node *n1, Node *n2 ) : Node(0,n1,n2) { }
+  BinaryNode( Node *n1, Node *n2 ) : Node(nullptr,n1,n2) { }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return 0; }
 };

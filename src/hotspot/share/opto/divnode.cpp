@@ -266,7 +266,6 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
   }
 
   // Taken from Hacker's Delight, Fig. 8-2. Multiply high signed.
-  // (http://www.hackersdelight.org/HDcode/mulhs.c)
   //
   // int mulhs(int u, int v) {
   //    unsigned u0, v0, w0;
