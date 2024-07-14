@@ -2316,7 +2316,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
 
-    Label L_do44, L_do52;
+    Label L_do44, L_do52, L_end;
 
     const Register from        = c_rarg0;  // source array address
     const Register to          = c_rarg1;  // destination array address
@@ -2355,11 +2355,7 @@ class StubGenerator: public StubCodeGenerator {
       __ vaesem_vv(res, working_vregs[i]);
     }
     __ vaesef_vv(res, working_vregs[14]);
-
-    __ vse32_v(res, to);
-    __ mv(c_rarg0, 0);
-    __ leave();
-    __ ret();
+    __ j(L_end);
 
   __ bind(L_do52);
     for (int i = 0; i < 13; i++) {
@@ -2373,11 +2369,7 @@ class StubGenerator: public StubCodeGenerator {
       __ vaesem_vv(res, working_vregs[i]);
     }
     __ vaesef_vv(res, working_vregs[12]);
-
-    __ vse32_v(res, to);
-    __ mv(c_rarg0, 0);
-    __ leave();
-    __ ret();
+    __ j(L_end);
 
   __ bind(L_do44);
     for (int i = 0; i < 11; i++) {
@@ -2392,6 +2384,7 @@ class StubGenerator: public StubCodeGenerator {
     }
     __ vaesef_vv(res, working_vregs[10]);
 
+  __ bind(L_end);
     __ vse32_v(res, to);
     __ mv(c_rarg0, 0);
     __ leave();
