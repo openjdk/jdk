@@ -2280,11 +2280,13 @@ class StubGenerator: public StubCodeGenerator {
     __ vrev8_v(vtmp1, vtmp1);
     __ vrev8_v(vtmp2, vtmp2);
   }
+
   void generate_rev8_pack4(const VectorRegister vtmp1, const VectorRegister vtmp2,
                            const VectorRegister vtmp3, const VectorRegister vtmp4) {
     generate_rev8_pack2(vtmp1, vtmp2);
     generate_rev8_pack2(vtmp3, vtmp4);
   }
+
   void generate_vle32_pack2(const Register key, const VectorRegister vtmp1,
                             const VectorRegister vtmp2) {
     const int step = 16;
@@ -2293,6 +2295,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vle32_v(vtmp2, key);
     __ addi(key, key, step);
   }
+
   void generate_vle32_pack4(const Register key, const VectorRegister vtmp1,
                             const VectorRegister vtmp2, const VectorRegister vtmp3,
                             const VectorRegister vtmp4) {
