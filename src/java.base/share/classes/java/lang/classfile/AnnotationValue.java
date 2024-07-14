@@ -309,7 +309,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a string-valued element}
      * @param value the string
-     * @since 24
      */
     static OfString ofString(Utf8Entry value) {
         return new AnnotationImpl.OfStringImpl(value);
@@ -318,7 +317,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a string-valued element}
      * @param value the string
-     * @since 24
      */
     static OfString ofString(String value) {
         return ofString(TemporaryConstantPool.INSTANCE.utf8Entry(value));
@@ -327,7 +325,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a double-valued element}
      * @param value the double value
-     * @since 24
      */
     static OfDouble ofDouble(DoubleEntry value) {
         return new AnnotationImpl.OfDoubleImpl(value);
@@ -336,7 +333,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a double-valued element}
      * @param value the double value
-     * @since 24
      */
     static OfDouble ofDouble(double value) {
         return ofDouble(TemporaryConstantPool.INSTANCE.doubleEntry(value));
@@ -345,7 +341,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a float-valued element}
      * @param value the float value
-     * @since 24
      */
     static OfFloat ofFloat(FloatEntry value) {
         return new AnnotationImpl.OfFloatImpl(value);
@@ -354,7 +349,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a float-valued element}
      * @param value the float value
-     * @since 24
      */
     static OfFloat ofFloat(float value) {
         return ofFloat(TemporaryConstantPool.INSTANCE.floatEntry(value));
@@ -363,7 +357,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a long-valued element}
      * @param value the long value
-     * @since 24
      */
     static OfLong ofLong(LongEntry value) {
         return new AnnotationImpl.OfLongImpl(value);
@@ -372,7 +365,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a long-valued element}
      * @param value the long value
-     * @since 24
      */
     static OfLong ofLong(long value) {
         return ofLong(TemporaryConstantPool.INSTANCE.longEntry(value));
@@ -381,7 +373,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for an int-valued element}
      * @param value the int value
-     * @since 24
      */
     static OfInteger ofInt(IntegerEntry value) {
         return new AnnotationImpl.OfIntegerImpl(value);
@@ -390,7 +381,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for an int-valued element}
      * @param value the int value
-     * @since 24
      */
     static OfInteger ofInt(int value) {
         return ofInt(TemporaryConstantPool.INSTANCE.intEntry(value));
@@ -399,7 +389,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a short-valued element}
      * @param value the short value
-     * @since 24
      */
     static OfShort ofShort(IntegerEntry value) {
         return new AnnotationImpl.OfShortImpl(value);
@@ -408,7 +397,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a short-valued element}
      * @param value the short value
-     * @since 24
      */
     static OfShort ofShort(short value) {
         return ofShort(TemporaryConstantPool.INSTANCE.intEntry(value));
@@ -417,7 +405,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a char-valued element}
      * @param value the char value
-     * @since 24
      */
     static OfCharacter ofChar(IntegerEntry value) {
         return new AnnotationImpl.OfCharacterImpl(value);
@@ -426,7 +413,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a char-valued element}
      * @param value the char value
-     * @since 24
      */
     static OfCharacter ofChar(char value) {
         return ofChar(TemporaryConstantPool.INSTANCE.intEntry(value));
@@ -435,7 +421,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a byte-valued element}
      * @param value the byte value
-     * @since 24
      */
     static OfByte ofByte(IntegerEntry value) {
         return new AnnotationImpl.OfByteImpl(value);
@@ -444,7 +429,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a byte-valued element}
      * @param value the byte value
-     * @since 24
      */
     static OfByte ofByte(byte value) {
         return ofByte(TemporaryConstantPool.INSTANCE.intEntry(value));
@@ -453,7 +437,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a boolean-valued element}
      * @param value the boolean value
-     * @since 24
      */
     static OfBoolean ofBoolean(IntegerEntry value) {
         return new AnnotationImpl.OfBooleanImpl(value);
@@ -462,7 +445,6 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * {@return an annotation element for a boolean-valued element}
      * @param value the boolean value
-     * @since 24
      */
     static OfBoolean ofBoolean(boolean value) {
         int i = value ? 1 : 0;
