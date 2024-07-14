@@ -2096,8 +2096,9 @@ class MutableBigInteger {
             } else {
                 resOffset = offset;
             }
-            // Clean words where necessary
-            Arrays.fill(res, resOffset + intLen, resOffset + resLen - addend.intLen, 0);
+            // Clear words where necessary
+            if (addend.intLen < n)
+                Arrays.fill(res, resOffset + intLen, resOffset + resLen - addend.intLen, 0);
         }
 
         System.arraycopy(addend.value, addend.offset, res, resOffset + resLen - addend.intLen, addend.intLen);
