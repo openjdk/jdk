@@ -2115,7 +2115,7 @@ class MutableBigInteger {
      * @param blockIndex the block index
      * @param len the logical length of the input value in units of 32 bits
      * @param limit the offset which is the end of valid words in the input value
-     * @param blockLength the length of the block in units of 32 bits
+     * @param blockLen the length of the block in units of 32 bits
      */
     private MutableBigInteger getBlockZimmermann(int blockIndex, int len, int limit, int blockLen) {
         final int blockEnd = offset + len - blockIndex * blockLen;
