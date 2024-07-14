@@ -32,27 +32,22 @@ using Stepper = PartialArrayTaskStepper;
 
 class PartialArrayTaskStepper::TestSupport : AllStatic {
 public:
-  static Step start(const Stepper* stepper,
-                    int length,
-                    int* to_length_addr) {
-    return stepper->start_impl(length, to_length_addr);
-  }
-
   static Step next(const Stepper* stepper,
-                   int length,
-                   int* to_length_addr) {
+                   size_t length,
+                   size_t* to_length_addr) {
     return stepper->next_impl(length, to_length_addr);
   }
 };
 
 using StepperSupport = PartialArrayTaskStepper::TestSupport;
 
-static int simulate(const Stepper* stepper,
-                    int length,
-                    int* to_length_addr) {
-  Step init = StepperSupport::start(stepper, length, to_length_addr);
+static uint simulate(const Stepper* stepper,
+                     size_t length,
+                     size_t* to_length_addr) {
+  Step init = stepper->start(length);
+  *to_length_addr = init._index;
   uint queue_count = init._ncreate;
-  int task = 0;
+  uint task = 0;
   for ( ; queue_count > 0; ++task) {
     --queue_count;
     Step step = StepperSupport::next(stepper, length, to_length_addr);
@@ -61,18 +56,18 @@ static int simulate(const Stepper* stepper,
   return task;
 }
 
-static void run_test(int length, int chunk_size, uint n_workers) {
+static void run_test(size_t length, size_t chunk_size, uint n_workers) {
   const PartialArrayTaskStepper stepper(n_workers, chunk_size);
-  int to_length;
-  int tasks = simulate(&stepper, length, &to_length);
+  size_t to_length;
+  uint tasks = simulate(&stepper, length, &to_length);
   ASSERT_EQ(length, to_length);
   ASSERT_EQ(tasks, length / chunk_size);
 }
 
 TEST(PartialArrayTaskStepperTest, doit) {
-  for (int chunk_size = 50; chunk_size <= 500; chunk_size += 50) {
+  for (size_t chunk_size = 50; chunk_size <= 500; chunk_size += 50) {
     for (uint n_workers = 1; n_workers <= 256; n_workers = (n_workers * 3 / 2 + 1)) {
-      for (int length = 0; length <= 1000000; length = (length * 2 + 1)) {
+      for (size_t length = 0; length <= 1000000; length = (length * 2 + 1)) {
         run_test(length, chunk_size, n_workers);
       }
       // Ensure we hit boundary cases for length % chunk_size == 0.
