@@ -41,14 +41,14 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     parse_sub_expression(_worklist.pop());
   }
 
-  for (int i = 0; i < _summands.length(); i++) {
-    MemPointerSummand summand = _summands.at(i);
-    summand.print();
-  }
+  // for (int i = 0; i < _summands.length(); i++) {
+  //   MemPointerSummand summand = _summands.at(i);
+  //   summand.print();
+  // }
 
-  tty->print("con: ");
-  _con.print();
-  tty->cr();
+  // tty->print("con: ");
+  // _con.print();
+  // tty->cr();
 
   // TODO gtest???
   // NoOverflowInt a(1 << 20);
@@ -73,7 +73,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
   const NoOverflowInt one(1);
 
-  n->dump();
+  // n->dump();
 
   int opc = n->Opcode();
   switch (opc) {
@@ -138,7 +138,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
           LP64_ONLY( factorL = one; )
           break;
         case Op_LShiftL:
-          factor = one << NoOverflowInt(in2->get_long());
+          factor = one << NoOverflowInt(in2->get_int());
           LP64_ONLY( factorL = factor; )
           break;
         case Op_LShiftI:
@@ -201,10 +201,10 @@ MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpl
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
   const MemPointerAliasing aliasing = simple_form().get_aliasing_with(other.simple_form());
-  tty->print_cr("MemPointer::is_adjacent_to_and_before");
-  simple_form().print();
-  other.simple_form().print();
-  tty->print("Aliasing: "); aliasing.print(); tty->cr();
+  // tty->print_cr("MemPointer::is_adjacent_to_and_before");
+  // simple_form().print();
+  // other.simple_form().print();
+  // tty->print("Aliasing: "); aliasing.print(); tty->cr();
   return aliasing.is_always_at_distance(mem()->memory_size());
 }
 

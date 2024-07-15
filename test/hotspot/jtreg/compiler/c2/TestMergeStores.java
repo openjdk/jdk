@@ -33,7 +33,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8318446 8331054 8331311
+ * @bug 8318446 8331054 8331311 8335392
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -42,7 +42,7 @@ import java.util.Random;
 
 /*
  * @test
- * @bug 8318446 8331054 8331311
+ * @bug 8318446 8331054 8331311 8335392
  * @summary Test merging of consecutive stores
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
@@ -611,9 +611,8 @@ public class TestMergeStores {
     }
 
     @Test
-    // Disabled by JDK-8335390, to be enabled again by JDK-8335392.
-    // @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
-    //     applyIf = {"UseUnalignedAccesses", "true"})
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"},
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test1f(byte[] a) {
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 0, (byte)0xbe);
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + 1, (byte)0xba);

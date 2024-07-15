@@ -372,7 +372,7 @@ public:
     _mem(mem),
     _simple_form(init_simple_form(_mem))
   {
-    _simple_form.print(); // TODO tracing???
+    // _simple_form.print(); // TODO tracing???
   }
 
   const MemNode* mem() const { return _mem; }
