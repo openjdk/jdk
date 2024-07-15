@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,16 +170,5 @@ public non-sealed interface ClassTransform
     @Override
     default ClassTransform andThen(ClassTransform t) {
         return new TransformImpl.ChainedClassTransform(this, t);
-    }
-
-    /**
-     * @implSpec The default implementation returns a resolved transform bound
-     *           to the given class builder.
-     */
-    @Override
-    default ResolvedTransform<ClassElement> resolve(ClassBuilder builder) {
-        return new TransformImpl.ResolvedTransformImpl<>(e -> accept(builder, e),
-                                                         () -> atEnd(builder),
-                                                         () -> atStart(builder));
     }
 }
