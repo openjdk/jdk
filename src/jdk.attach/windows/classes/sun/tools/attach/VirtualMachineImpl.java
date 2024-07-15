@@ -72,7 +72,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     InputStream execute(String cmd, Object ... args)
         throws AgentLoadException, IOException
     {
-        assert args.length <= 3;        // includes null
+        assert args.length <= 4;        // includes null
         checkNulls(args);
 
         // create a pipe using a random name

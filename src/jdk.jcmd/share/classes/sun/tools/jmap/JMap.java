@@ -206,6 +206,7 @@ public class JMap {
         String filename = null;
         String liveopt = "-all";
         String compress_level = null;
+        String redact = "false";
 
         for (String subopt : subopts) {
             if (subopt.equals("") || subopt.equals("all")) {
@@ -226,6 +227,8 @@ public class JMap {
                     System.err.println("Fail: no number provided in option: '" + subopt + "'");
                     usage(1);
                 }
+            } else if (subopt.equals("redact")) {
+                redact = "true";
             } else {
                 System.err.println("Fail: invalid option: '" + subopt + "'");
                 usage(1);
@@ -240,7 +243,7 @@ public class JMap {
         System.out.flush();
 
         // dumpHeap is not the same as jcmd GC.heap_dump
-        executeCommandForPid(pid, "dumpheap", filename, liveopt, compress_level);
+        executeCommandForPid(pid, "dumpheap", filename, liveopt, compress_level, redact);
     }
 
     private static void checkForUnsupportedOptions(String[] args) {
@@ -307,6 +310,7 @@ public class JMap {
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("      gz=<number>  If specified, the heap dump is written in gzipped format using the given compression level.");
         System.err.println("                   1 (recommended) is the fastest, 9 the strongest compression.");
+        System.err.println("      redact       Redact primitive values from the dump.");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");
