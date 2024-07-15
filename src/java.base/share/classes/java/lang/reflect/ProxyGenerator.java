@@ -505,7 +505,7 @@ final class ProxyGenerator {
      */
     private void addProxyMethod(Method m, Class<?> fromClass) {
         Class<?> returnType = m.getReturnType();
-        Class<?>[] exceptionTypes = m.getSharedExceptionTypes();
+        Class<?>[] exceptionTypes = m.exceptionTypes;
 
         String sig = m.toShortSignature();
         List<ProxyMethod> sigmethods = proxyMethodsFor(sig);
@@ -526,7 +526,7 @@ final class ProxyGenerator {
                 return;
             }
         }
-        sigmethods.add(new ProxyMethod(m, sig, m.getSharedParameterTypes(), returnType,
+        sigmethods.add(new ProxyMethod(m, sig, m.parameterTypes, returnType,
                 exceptionTypes, fromClass, "m" + proxyMethodCount++));
     }
 
@@ -677,8 +677,8 @@ final class ProxyGenerator {
          */
         private ProxyMethod(Method method, String methodFieldName) {
             this(method, method.toShortSignature(),
-                 method.getSharedParameterTypes(), method.getReturnType(),
-                 method.getSharedExceptionTypes(), method.getDeclaringClass(), methodFieldName);
+                 method.parameterTypes, method.getReturnType(),
+                 method.exceptionTypes, method.getDeclaringClass(), methodFieldName);
         }
 
         /**

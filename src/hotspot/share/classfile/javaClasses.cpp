@@ -3209,31 +3209,91 @@ void java_lang_reflect_AccessibleObject::set_override(oop reflect, jboolean valu
   reflect->bool_field_put(_override_offset, (int) value);
 }
 
-// java_lang_reflect_Method
+// java_lang_reflect_Executable
 
-int java_lang_reflect_Method::_clazz_offset;
-int java_lang_reflect_Method::_name_offset;
-int java_lang_reflect_Method::_returnType_offset;
-int java_lang_reflect_Method::_parameterTypes_offset;
-int java_lang_reflect_Method::_exceptionTypes_offset;
-int java_lang_reflect_Method::_slot_offset;
-int java_lang_reflect_Method::_modifiers_offset;
-int java_lang_reflect_Method::_signature_offset;
-int java_lang_reflect_Method::_annotations_offset;
-int java_lang_reflect_Method::_parameter_annotations_offset;
-int java_lang_reflect_Method::_annotation_default_offset;
+int java_lang_reflect_Executable::_clazz_offset;
+int java_lang_reflect_Executable::_slot_offset;
+int java_lang_reflect_Executable::_parameterTypes_offset;
+int java_lang_reflect_Executable::_exceptionTypes_offset;
+int java_lang_reflect_Executable::_modifiers_offset;
+int java_lang_reflect_Executable::_signature_offset;
+int java_lang_reflect_Executable::_annotations_offset;
+int java_lang_reflect_Executable::_parameter_annotations_offset;
 
-#define METHOD_FIELDS_DO(macro) \
+#define EXECUTABLE_FIELDS_DO(macro) \
   macro(_clazz_offset,          k, vmSymbols::clazz_name(),          class_signature,       false); \
-  macro(_name_offset,           k, vmSymbols::name_name(),           string_signature,      false); \
-  macro(_returnType_offset,     k, vmSymbols::returnType_name(),     class_signature,       false); \
+  macro(_slot_offset,           k, vmSymbols::slot_name(),           int_signature,         false); \
   macro(_parameterTypes_offset, k, vmSymbols::parameterTypes_name(), class_array_signature, false); \
   macro(_exceptionTypes_offset, k, vmSymbols::exceptionTypes_name(), class_array_signature, false); \
-  macro(_slot_offset,           k, vmSymbols::slot_name(),           int_signature,         false); \
   macro(_modifiers_offset,      k, vmSymbols::modifiers_name(),      int_signature,         false); \
   macro(_signature_offset,             k, vmSymbols::signature_name(),             string_signature,     false); \
   macro(_annotations_offset,           k, vmSymbols::annotations_name(),           byte_array_signature, false); \
-  macro(_parameter_annotations_offset, k, vmSymbols::parameter_annotations_name(), byte_array_signature, false); \
+  macro(_parameter_annotations_offset, k, vmSymbols::parameter_annotations_name(), byte_array_signature, false);
+
+void java_lang_reflect_Executable::compute_offsets() {
+  InstanceKlass* k = vmClasses::reflect_Executable_klass();
+  EXECUTABLE_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+}
+
+#if INCLUDE_CDS
+void java_lang_reflect_Executable::serialize_offsets(SerializeClosure* f) {
+  EXECUTABLE_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+}
+#endif
+
+oop java_lang_reflect_Executable::clazz(oop executable) {
+  return executable->obj_field(_clazz_offset);
+}
+
+void java_lang_reflect_Executable::set_clazz(oop executable, oop value) {
+   executable->obj_field_put(_clazz_offset, value);
+}
+
+int java_lang_reflect_Executable::slot(oop executable) {
+  return executable->int_field(_slot_offset);
+}
+
+void java_lang_reflect_Executable::set_slot(oop executable, int value) {
+  executable->int_field_put(_slot_offset, value);
+}
+
+oop java_lang_reflect_Executable::parameter_types(oop executable) {
+  return executable->obj_field(_parameterTypes_offset);
+}
+
+void java_lang_reflect_Executable::set_parameter_types(oop executable, oop value) {
+  executable->obj_field_put(_parameterTypes_offset, value);
+}
+
+void java_lang_reflect_Executable::set_exception_types(oop executable, oop value) {
+  executable->obj_field_put(_exceptionTypes_offset, value);
+}
+
+void java_lang_reflect_Executable::set_modifiers(oop executable, int value) {
+  executable->int_field_put(_modifiers_offset, value);
+}
+
+void java_lang_reflect_Executable::set_signature(oop executable, oop value) {
+  executable->obj_field_put(_signature_offset, value);
+}
+
+void java_lang_reflect_Executable::set_annotations(oop executable, oop value) {
+  executable->obj_field_put(_annotations_offset, value);
+}
+
+void java_lang_reflect_Executable::set_parameter_annotations(oop executable, oop value) {
+  executable->obj_field_put(_parameter_annotations_offset, value);
+}
+
+// java_lang_reflect_Method
+
+int java_lang_reflect_Method::_name_offset;
+int java_lang_reflect_Method::_returnType_offset;
+int java_lang_reflect_Method::_annotation_default_offset;
+
+#define METHOD_FIELDS_DO(macro) \
+  macro(_name_offset,           k, vmSymbols::name_name(),           string_signature,      false); \
+  macro(_returnType_offset,     k, vmSymbols::returnType_name(),     class_signature,       false); \
   macro(_annotation_default_offset,    k, vmSymbols::annotation_default_name(),    byte_array_signature, false);
 
 void java_lang_reflect_Method::compute_offsets() {
@@ -3256,22 +3316,6 @@ Handle java_lang_reflect_Method::create(TRAPS) {
   return InstanceKlass::cast(klass)->allocate_instance_handle(THREAD);
 }
 
-oop java_lang_reflect_Method::clazz(oop reflect) {
-  return reflect->obj_field(_clazz_offset);
-}
-
-void java_lang_reflect_Method::set_clazz(oop reflect, oop value) {
-   reflect->obj_field_put(_clazz_offset, value);
-}
-
-int java_lang_reflect_Method::slot(oop reflect) {
-  return reflect->int_field(_slot_offset);
-}
-
-void java_lang_reflect_Method::set_slot(oop reflect, int value) {
-  reflect->int_field_put(_slot_offset, value);
-}
-
 void java_lang_reflect_Method::set_name(oop method, oop value) {
   method->obj_field_put(_name_offset, value);
 }
@@ -3284,121 +3328,22 @@ void java_lang_reflect_Method::set_return_type(oop method, oop value) {
   method->obj_field_put(_returnType_offset, value);
 }
 
-oop java_lang_reflect_Method::parameter_types(oop method) {
-  return method->obj_field(_parameterTypes_offset);
-}
-
-void java_lang_reflect_Method::set_parameter_types(oop method, oop value) {
-  method->obj_field_put(_parameterTypes_offset, value);
-}
-
-void java_lang_reflect_Method::set_exception_types(oop method, oop value) {
-  method->obj_field_put(_exceptionTypes_offset, value);
-}
-
-void java_lang_reflect_Method::set_modifiers(oop method, int value) {
-  method->int_field_put(_modifiers_offset, value);
-}
-
-void java_lang_reflect_Method::set_signature(oop method, oop value) {
-  method->obj_field_put(_signature_offset, value);
-}
-
-void java_lang_reflect_Method::set_annotations(oop method, oop value) {
-  method->obj_field_put(_annotations_offset, value);
-}
-
-void java_lang_reflect_Method::set_parameter_annotations(oop method, oop value) {
-  method->obj_field_put(_parameter_annotations_offset, value);
-}
-
 void java_lang_reflect_Method::set_annotation_default(oop method, oop value) {
   method->obj_field_put(_annotation_default_offset, value);
 }
 
-int java_lang_reflect_Constructor::_clazz_offset;
-int java_lang_reflect_Constructor::_parameterTypes_offset;
-int java_lang_reflect_Constructor::_exceptionTypes_offset;
-int java_lang_reflect_Constructor::_slot_offset;
-int java_lang_reflect_Constructor::_modifiers_offset;
-int java_lang_reflect_Constructor::_signature_offset;
-int java_lang_reflect_Constructor::_annotations_offset;
-int java_lang_reflect_Constructor::_parameter_annotations_offset;
-
-#define CONSTRUCTOR_FIELDS_DO(macro) \
-  macro(_clazz_offset,          k, vmSymbols::clazz_name(),          class_signature,       false); \
-  macro(_parameterTypes_offset, k, vmSymbols::parameterTypes_name(), class_array_signature, false); \
-  macro(_exceptionTypes_offset, k, vmSymbols::exceptionTypes_name(), class_array_signature, false); \
-  macro(_slot_offset,           k, vmSymbols::slot_name(),           int_signature,         false); \
-  macro(_modifiers_offset,      k, vmSymbols::modifiers_name(),      int_signature,         false); \
-  macro(_signature_offset,             k, vmSymbols::signature_name(),             string_signature,     false); \
-  macro(_annotations_offset,           k, vmSymbols::annotations_name(),           byte_array_signature, false); \
-  macro(_parameter_annotations_offset, k, vmSymbols::parameter_annotations_name(), byte_array_signature, false);
-
-void java_lang_reflect_Constructor::compute_offsets() {
-  InstanceKlass* k = vmClasses::reflect_Constructor_klass();
-  CONSTRUCTOR_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void java_lang_reflect_Constructor::serialize_offsets(SerializeClosure* f) {
-  CONSTRUCTOR_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
+// java_lang_reflect_Constructor
 
 Handle java_lang_reflect_Constructor::create(TRAPS) {
   assert(Universe::is_fully_initialized(), "Need to find another solution to the reflection problem");
-  Symbol* name = vmSymbols::java_lang_reflect_Constructor();
-  Klass* k = SystemDictionary::resolve_or_fail(name, true, CHECK_NH);
+  Klass* k = vmClasses::reflect_Constructor_klass();
   InstanceKlass* ik = InstanceKlass::cast(k);
   // Ensure it is initialized
   ik->initialize(CHECK_NH);
   return ik->allocate_instance_handle(THREAD);
 }
 
-oop java_lang_reflect_Constructor::clazz(oop reflect) {
-  return reflect->obj_field(_clazz_offset);
-}
-
-void java_lang_reflect_Constructor::set_clazz(oop reflect, oop value) {
-   reflect->obj_field_put(_clazz_offset, value);
-}
-
-oop java_lang_reflect_Constructor::parameter_types(oop constructor) {
-  return constructor->obj_field(_parameterTypes_offset);
-}
-
-void java_lang_reflect_Constructor::set_parameter_types(oop constructor, oop value) {
-  constructor->obj_field_put(_parameterTypes_offset, value);
-}
-
-void java_lang_reflect_Constructor::set_exception_types(oop constructor, oop value) {
-  constructor->obj_field_put(_exceptionTypes_offset, value);
-}
-
-int java_lang_reflect_Constructor::slot(oop reflect) {
-  return reflect->int_field(_slot_offset);
-}
-
-void java_lang_reflect_Constructor::set_slot(oop reflect, int value) {
-  reflect->int_field_put(_slot_offset, value);
-}
-
-void java_lang_reflect_Constructor::set_modifiers(oop constructor, int value) {
-  constructor->int_field_put(_modifiers_offset, value);
-}
-
-void java_lang_reflect_Constructor::set_signature(oop constructor, oop value) {
-  constructor->obj_field_put(_signature_offset, value);
-}
-
-void java_lang_reflect_Constructor::set_annotations(oop constructor, oop value) {
-  constructor->obj_field_put(_annotations_offset, value);
-}
-
-void java_lang_reflect_Constructor::set_parameter_annotations(oop method, oop value) {
-  method->obj_field_put(_parameter_annotations_offset, value);
-}
+// java_lang_reflect_Field
 
 int java_lang_reflect_Field::_clazz_offset;
 int java_lang_reflect_Field::_name_offset;
@@ -5322,8 +5267,8 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_invoke_MethodHandleNatives_CallSiteContext) \
   f(java_security_AccessControlContext) \
   f(java_lang_reflect_AccessibleObject) \
+  f(java_lang_reflect_Executable) \
   f(java_lang_reflect_Method) \
-  f(java_lang_reflect_Constructor) \
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
   f(reflect_ConstantPool) \

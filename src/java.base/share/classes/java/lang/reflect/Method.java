@@ -70,22 +70,12 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Method extends Executable {
-    private final Class<?>            clazz;
-    private final int                 slot;
-    // This is guaranteed to be interned by the VM in the 1.4
-    // reflection implementation
-    private final String              name;
-    private final Class<?>            returnType;
-    private final Class<?>[]          parameterTypes;
-    private final Class<?>[]          exceptionTypes;
-    private final int                 modifiers;
-    // Generics and annotations support
-    private final transient String    signature;
-    // generic info repository; lazily initialized
-    private transient volatile MethodRepository genericInfo;
-    private final byte[]              annotations;
-    private final byte[]              parameterAnnotations;
-    private final byte[]              annotationDefault;
+    // fields injected by hotspot
+    private final String name; // interned in hotspot
+    private final Class<?> returnType;
+    private @Stable final byte[] annotationDefault;
+
+    private volatile MethodRepository genericInfo;
     @Stable
     private MethodAccessor      methodAccessor;
     // For sharing of MethodAccessors. This branching structure is
@@ -135,16 +125,10 @@ public final class Method extends Executable {
            byte[] annotations,
            byte[] parameterAnnotations,
            byte[] annotationDefault) {
-        this.clazz = declaringClass;
+        super(declaringClass, parameterTypes, checkedExceptions, modifiers,
+                slot, signature, annotations, parameterAnnotations);
         this.name = name;
-        this.parameterTypes = parameterTypes;
         this.returnType = returnType;
-        this.exceptionTypes = checkedExceptions;
-        this.modifiers = modifiers;
-        this.slot = slot;
-        this.signature = signature;
-        this.annotations = annotations;
-        this.parameterAnnotations = parameterAnnotations;
         this.annotationDefault = annotationDefault;
     }
 
@@ -210,23 +194,13 @@ public final class Method extends Executable {
         return root;
     }
 
-    @Override
-    boolean hasGenericInformation() {
-        return (getGenericSignature() != null);
-    }
-
-    @Override
-    byte[] getAnnotationBytes() {
-        return annotations;
-    }
-
     /**
      * Returns the {@code Class} object representing the class or interface
      * that declares the method represented by this object.
      */
     @Override
     public Class<?> getDeclaringClass() {
-        return clazz;
+        return super.getDeclaringClass();
     }
 
     /**
@@ -244,7 +218,7 @@ public final class Method extends Executable {
      */
     @Override
     public int getModifiers() {
-        return modifiers;
+        return super.getModifiers();
     }
 
     /**
@@ -302,29 +276,11 @@ public final class Method extends Executable {
       } else { return getReturnType();}
     }
 
-    @Override
-    Class<?>[] getSharedParameterTypes() {
-        return parameterTypes;
-    }
-
-    @Override
-    Class<?>[] getSharedExceptionTypes() {
-        return exceptionTypes;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Class<?>[] getParameterTypes() {
-        return parameterTypes.length == 0 ? parameterTypes: parameterTypes.clone();
-    }
-
     /**
      * {@inheritDoc}
      * @since 1.8
      */
-    public int getParameterCount() { return parameterTypes.length; }
+    public int getParameterCount() { return super.getParameterCount(); }
 
 
     /**
@@ -337,14 +293,6 @@ public final class Method extends Executable {
     @Override
     public Type[] getGenericParameterTypes() {
         return super.getGenericParameterTypes();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Class<?>[] getExceptionTypes() {
-        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
     }
 
     /**
@@ -442,7 +390,7 @@ public final class Method extends Executable {
 
     String toShortSignature() {
         StringJoiner sj = new StringJoiner(",", getName() + "(", ")");
-        for (Class<?> parameterType : getSharedParameterTypes()) {
+        for (Class<?> parameterType : parameterTypes) {
             sj.add(parameterType.getTypeName());
         }
         return sj.toString();
@@ -816,7 +764,7 @@ public final class Method extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
+        return super.getParameterAnnotations();
     }
 
     /**

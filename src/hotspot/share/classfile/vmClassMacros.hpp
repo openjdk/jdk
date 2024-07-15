@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@
   do_klass(Properties_klass,                            java_util_Properties                                  ) \
   do_klass(Module_klass,                                java_lang_Module                                      ) \
   do_klass(reflect_AccessibleObject_klass,              java_lang_reflect_AccessibleObject                    ) \
+  do_klass(reflect_Executable_klass,                    java_lang_reflect_Executable                          ) \
   do_klass(reflect_Field_klass,                         java_lang_reflect_Field                               ) \
   do_klass(reflect_Parameter_klass,                     java_lang_reflect_Parameter                           ) \
   do_klass(reflect_Method_klass,                        java_lang_reflect_Method                              ) \

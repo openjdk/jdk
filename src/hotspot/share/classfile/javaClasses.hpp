@@ -663,23 +663,53 @@ class java_lang_reflect_AccessibleObject: AllStatic {
   friend class JavaClasses;
 };
 
+// Interface to java.lang.reflect.Executable objects
 
-// Interface to java.lang.reflect.Method objects
-
-class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
+class java_lang_reflect_Executable : public java_lang_reflect_AccessibleObject {
  private:
   // Note that to reduce dependencies on the JDK we compute these
   // offsets at run-time.
   static int _clazz_offset;
-  static int _name_offset;
-  static int _returnType_offset;
+  static int _slot_offset;
   static int _parameterTypes_offset;
   static int _exceptionTypes_offset;
-  static int _slot_offset;
   static int _modifiers_offset;
   static int _signature_offset;
   static int _annotations_offset;
   static int _parameter_annotations_offset;
+
+  static void compute_offsets();
+ public:
+  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
+
+  // Accessors
+  static oop clazz(oop executable);
+  static void set_clazz(oop executable, oop value);
+
+  static int slot(oop executable);
+  static void set_slot(oop executable, int value);
+
+  static oop parameter_types(oop executable);
+  static void set_parameter_types(oop executable, oop value);
+
+  static void set_exception_types(oop executable, oop value);
+  static void set_modifiers(oop executable, int value);
+  static void set_signature(oop executable, oop value);
+  static void set_annotations(oop executable, oop value);
+  static void set_parameter_annotations(oop executable, oop value);
+
+  // Debugging
+  friend class JavaClasses;
+};
+
+// Interface to java.lang.reflect.Method objects
+
+class java_lang_reflect_Method : public java_lang_reflect_Executable {
+ private:
+  // Note that to reduce dependencies on the JDK we compute these
+  // offsets at run-time.
+  static int _name_offset;
+  static int _returnType_offset;
   static int _annotation_default_offset;
 
   static void compute_offsets();
@@ -690,25 +720,10 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
   static Handle create(TRAPS);
 
   // Accessors
-  static oop clazz(oop reflect);
-  static void set_clazz(oop reflect, oop value);
-
   static void set_name(oop method, oop value);
 
   static oop return_type(oop method);
   static void set_return_type(oop method, oop value);
-
-  static oop parameter_types(oop method);
-  static void set_parameter_types(oop method, oop value);
-
-  static int slot(oop reflect);
-  static void set_slot(oop reflect, int value);
-
-  static void set_exception_types(oop method, oop value);
-  static void set_modifiers(oop method, int value);
-  static void set_signature(oop method, oop value);
-  static void set_annotations(oop method, oop value);
-  static void set_parameter_annotations(oop method, oop value);
   static void set_annotation_default(oop method, oop value);
 
   // Debugging
@@ -718,41 +733,15 @@ class java_lang_reflect_Method : public java_lang_reflect_AccessibleObject {
 
 // Interface to java.lang.reflect.Constructor objects
 
-class java_lang_reflect_Constructor : public java_lang_reflect_AccessibleObject {
+class java_lang_reflect_Constructor : public java_lang_reflect_Executable {
  private:
   // Note that to reduce dependencies on the JDK we compute these
   // offsets at run-time.
-  static int _clazz_offset;
-  static int _parameterTypes_offset;
-  static int _exceptionTypes_offset;
-  static int _slot_offset;
-  static int _modifiers_offset;
-  static int _signature_offset;
-  static int _annotations_offset;
-  static int _parameter_annotations_offset;
-
   static void compute_offsets();
  public:
-  static void serialize_offsets(SerializeClosure* f) NOT_CDS_RETURN;
 
   // Allocation
   static Handle create(TRAPS);
-
-  // Accessors
-  static oop clazz(oop reflect);
-  static void set_clazz(oop reflect, oop value);
-
-  static oop parameter_types(oop constructor);
-  static void set_parameter_types(oop constructor, oop value);
-
-  static int slot(oop reflect);
-  static void set_slot(oop reflect, int value);
-
-  static void set_exception_types(oop constructor, oop value);
-  static void set_modifiers(oop constructor, int value);
-  static void set_signature(oop constructor, oop value);
-  static void set_annotations(oop constructor, oop value);
-  static void set_parameter_annotations(oop method, oop value);
 
   // Debugging
   friend class JavaClasses;

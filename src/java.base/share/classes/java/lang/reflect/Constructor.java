@@ -65,17 +65,8 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Constructor<T> extends Executable {
-    private final Class<T>            clazz;
-    private final int                 slot;
-    private final Class<?>[]          parameterTypes;
-    private final Class<?>[]          exceptionTypes;
-    private final int                 modifiers;
-    // Generics and annotations support
-    private final transient String    signature;
     // generic info repository; lazily initialized
     private transient volatile ConstructorRepository genericInfo;
-    private final byte[]              annotations;
-    private final byte[]              parameterAnnotations;
 
     // Generics infrastructure
     // Accessor for factory
@@ -92,7 +83,7 @@ public final class Constructor<T> extends Executable {
         if (genericInfo == null) {
             // create and cache generic info repository
             genericInfo =
-                ConstructorRepository.make(getSignature(),
+                ConstructorRepository.make(signature,
                                            getFactory());
             this.genericInfo = genericInfo;
         }
@@ -127,14 +118,8 @@ public final class Constructor<T> extends Executable {
                 String signature,
                 byte[] annotations,
                 byte[] parameterAnnotations) {
-        this.clazz = declaringClass;
-        this.parameterTypes = parameterTypes;
-        this.exceptionTypes = checkedExceptions;
-        this.modifiers = modifiers;
-        this.slot = slot;
-        this.signature = signature;
-        this.annotations = annotations;
-        this.parameterAnnotations = parameterAnnotations;
+        super(declaringClass, parameterTypes, checkedExceptions, modifiers,
+                slot, signature, annotations, parameterAnnotations);
     }
 
     /**
@@ -153,7 +138,7 @@ public final class Constructor<T> extends Executable {
         if (this.root != null)
             throw new IllegalArgumentException("Can not copy a non-root Constructor");
 
-        Constructor<T> res = new Constructor<>(clazz,
+        Constructor<T> res = new Constructor<>(getDeclaringClass(),
                                                parameterTypes,
                                                exceptionTypes, modifiers, slot,
                                                signature,
@@ -199,23 +184,14 @@ public final class Constructor<T> extends Executable {
         }
     }
 
-    @Override
-    boolean hasGenericInformation() {
-        return (getSignature() != null);
-    }
-
-    @Override
-    byte[] getAnnotationBytes() {
-        return annotations;
-    }
-
     /**
      * Returns the {@code Class} object representing the class that
      * declares the constructor represented by this object.
      */
     @Override
+    @SuppressWarnings("unchecked")
     public Class<T> getDeclaringClass() {
-        return clazz;
+        return (Class<T>) super.getDeclaringClass();
     }
 
     /**
@@ -233,7 +209,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public int getModifiers() {
-        return modifiers;
+        return super.getModifiers();
     }
 
     /**
@@ -244,36 +220,18 @@ public final class Constructor<T> extends Executable {
     @Override
     @SuppressWarnings({"rawtypes", "unchecked"})
     public TypeVariable<Constructor<T>>[] getTypeParameters() {
-      if (getSignature() != null) {
-        return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
-      } else
-          return (TypeVariable<Constructor<T>>[])GenericDeclRepository.EMPTY_TYPE_VARS;
-    }
-
-
-    @Override
-    Class<?>[] getSharedParameterTypes() {
-        return parameterTypes;
-    }
-
-    @Override
-    Class<?>[] getSharedExceptionTypes() {
-        return exceptionTypes;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Class<?>[] getParameterTypes() {
-        return parameterTypes.length == 0 ? parameterTypes : parameterTypes.clone();
+        if (signature != null) {
+            return (TypeVariable<Constructor<T>>[])getGenericInfo().getTypeParameters();
+        } else {
+            return (TypeVariable<Constructor<T>>[]) GenericDeclRepository.EMPTY_TYPE_VARS;
+        }
     }
 
     /**
      * {@inheritDoc}
      * @since 1.8
      */
-    public int getParameterCount() { return parameterTypes.length; }
+    public int getParameterCount() { return super.getParameterCount(); }
 
     /**
      * {@inheritDoc}
@@ -285,14 +243,6 @@ public final class Constructor<T> extends Executable {
     @Override
     public Type[] getGenericParameterTypes() {
         return super.getGenericParameterTypes();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Class<?>[] getExceptionTypes() {
-        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
     }
 
     /**
@@ -373,7 +323,7 @@ public final class Constructor<T> extends Executable {
         sb.append(getDeclaringClass().getTypeName());
         sb.append('(');
         StringJoiner sj = new StringJoiner(",");
-        for (Class<?> parameterType : getSharedParameterTypes()) {
+        for (Class<?> parameterType : parameterTypes) {
             sj.add(parameterType.getTypeName());
         }
         sb.append(sj);
@@ -571,23 +521,6 @@ public final class Constructor<T> extends Executable {
         }
     }
 
-    int getSlot() {
-        return slot;
-    }
-
-    String getSignature() {
-        return signature;
-    }
-
-    byte[] getRawAnnotations() {
-        return annotations;
-    }
-
-    byte[] getRawParameterAnnotations() {
-        return parameterAnnotations;
-    }
-
-
     /**
      * {@inheritDoc}
      *
@@ -614,7 +547,7 @@ public final class Constructor<T> extends Executable {
      */
     @Override
     public Annotation[][] getParameterAnnotations() {
-        return sharedGetParameterAnnotations(parameterTypes, parameterAnnotations);
+        return super.getParameterAnnotations();
     }
 
     @Override

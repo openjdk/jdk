@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,21 +51,44 @@ import sun.reflect.generics.repository.ConstructorRepository;
  */
 public abstract sealed class Executable extends AccessibleObject
     implements Member, GenericDeclaration permits Constructor, Method {
+    // fields injected by hotspot
+    final Class<?> clazz;
+    final int slot;
+    @Stable final Class<?>[] parameterTypes;
+    @Stable final Class<?>[] exceptionTypes;
+    final int modifiers;
+    final String signature;
+    @Stable final byte[] annotations;
+    @Stable final byte[] parameterAnnotations;
+
     /*
      * Only grant package-visibility to the constructor.
      */
     @SuppressWarnings("deprecation")
-    Executable() {}
-
-    /**
-     * Accessor method to allow code sharing
-     */
-    abstract byte[] getAnnotationBytes();
+    Executable(Class<?> declaringClass,
+               Class<?>[] parameterTypes,
+               Class<?>[] checkedExceptions,
+               int modifiers,
+               int slot,
+               String signature,
+               byte[] annotations,
+               byte[] parameterAnnotations) {
+        this.clazz = declaringClass;
+        this.parameterTypes = parameterTypes;
+        this.exceptionTypes = checkedExceptions;
+        this.modifiers = modifiers;
+        this.slot = slot;
+        this.signature = signature;
+        this.annotations = annotations;
+        this.parameterAnnotations = parameterAnnotations;
+    }
 
     /**
      * Does the Executable have generic information.
      */
-    abstract boolean hasGenericInformation();
+    boolean hasGenericInformation() {
+        return signature != null;
+    }
 
     abstract ConstructorRepository getGenericInfo();
 
@@ -196,7 +219,9 @@ public abstract sealed class Executable extends AccessibleObject
      * Returns the {@code Class} object representing the class or interface
      * that declares the executable represented by this object.
      */
-    public abstract Class<?> getDeclaringClass();
+    public Class<?> getDeclaringClass() {
+        return clazz;
+    }
 
     /**
      * Returns the name of the executable represented by this object.
@@ -208,7 +233,9 @@ public abstract sealed class Executable extends AccessibleObject
      * the executable represented by this object}
      * @see #accessFlags
      */
-    public abstract int getModifiers();
+    public int getModifiers() {
+        return modifiers;
+    }
 
     /**
      * {@return an unmodifiable set of the {@linkplain AccessFlag
@@ -241,14 +268,6 @@ public abstract sealed class Executable extends AccessibleObject
      */
     public abstract TypeVariable<?>[] getTypeParameters();
 
-    // returns shared array of parameter types - must never give it out
-    // to the untrusted code...
-    abstract Class<?>[] getSharedParameterTypes();
-
-    // returns shared array of exception types - must never give it out
-    // to the untrusted code...
-    abstract Class<?>[] getSharedExceptionTypes();
-
     /**
      * Returns an array of {@code Class} objects that represent the formal
      * parameter types, in declaration order, of the executable
@@ -266,7 +285,9 @@ public abstract sealed class Executable extends AccessibleObject
      * represents
      */
     @SuppressWarnings("doclint:reference") // cross-module links
-    public abstract Class<?>[] getParameterTypes();
+    public Class<?>[] getParameterTypes() {
+        return parameterTypes.length == 0 ? parameterTypes : parameterTypes.clone();
+    }
 
     /**
      * Returns the number of formal parameters (whether explicitly
@@ -276,7 +297,9 @@ public abstract sealed class Executable extends AccessibleObject
      * @return The number of formal parameters for the executable this
      * object represents
      */
-    public abstract int getParameterCount();
+    public int getParameterCount() {
+        return parameterTypes.length;
+    }
 
     /**
      * Returns an array of {@code Type} objects that represent the
@@ -351,7 +374,7 @@ public abstract sealed class Executable extends AccessibleObject
         } else {
             final boolean realParamData = hasRealParameterData();
             final Type[] genericParamTypes = getGenericParameterTypes();
-            final Type[] nonGenericParamTypes = getSharedParameterTypes();
+            final Type[] nonGenericParamTypes = parameterTypes;
             // If we have real parameter data, then we use the
             // synthetic and mandate flags to our advantage.
             if (realParamData) {
@@ -507,7 +530,9 @@ public abstract sealed class Executable extends AccessibleObject
      * @return the exception types declared as being thrown by the
      * executable this object represents
      */
-    public abstract Class<?>[] getExceptionTypes();
+    public Class<?>[] getExceptionTypes() {
+        return exceptionTypes.length == 0 ? exceptionTypes : exceptionTypes.clone();
+    }
 
     /**
      * Returns an array of {@code Type} objects that represent the
@@ -598,10 +623,7 @@ public abstract sealed class Executable extends AccessibleObject
      *    the formal and implicit parameters, in declaration order, of
      *    the executable represented by this object
      */
-    public abstract Annotation[][] getParameterAnnotations();
-
-    Annotation[][] sharedGetParameterAnnotations(Class<?>[] parameterTypes,
-                                                 byte[] parameterAnnotations) {
+    public Annotation[][] getParameterAnnotations() {
         int numParameters = parameterTypes.length;
         if (parameterAnnotations == null)
             return new Annotation[numParameters][0];
@@ -665,7 +687,7 @@ public abstract sealed class Executable extends AccessibleObject
                         declAnnos = root.declaredAnnotations();
                     } else {
                         declAnnos = AnnotationParser.parseAnnotations(
-                                getAnnotationBytes(),
+                                annotations,
                                 SharedSecrets.getJavaLangAccess().
                                         getConstantPool(getDeclaringClass()),
                                 getDeclaringClass()
