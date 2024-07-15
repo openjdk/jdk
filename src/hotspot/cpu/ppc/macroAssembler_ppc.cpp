@@ -37,7 +37,6 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
-#include "opto/c2_CodeStubs.hpp"
 #include "prims/methodHandles.hpp"
 #include "register_ppc.hpp"
 #include "runtime/icache.hpp"
@@ -2576,16 +2575,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   const Register top = tmp2;
   const Register t = tmp3;
 
-  Label dummy;
-  C2FastUnlockLightweightStub* stub = nullptr;
-
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(flag, obj, mark, tmp3, tmp2);
-    Compile::current()->output()->add_stub(stub);
-  }
-
-  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
-
   { // Lightweight unlock
     Label push_and_slow;
 
@@ -2703,15 +2692,13 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     cmpdi(flag, t, 0);
     bne(flag, unlocked);
 
-    b(check_deflater);
+    crxor(flag, Assembler::equal, flag, Assembler::equal); // Fast Lock Flag = NE
+    b(slow_path);
   }
 
   bind(unlocked);
-  if (stub != nullptr) {
-    bind(stub->unlocked_continuation());
-  }
   dec_held_monitor_count(t);
-  cmpd(flag, t, t); // Set Flag to EQ
+  crorc(flag, Assembler::equal, flag, Assembler::equal); // Fast Lock Flag = EQ
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == EQ.
@@ -2720,9 +2707,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
-  if (stub != nullptr) {
-    bind(stub->slow_path_continuation());
-  }
 #ifdef ASSERT
   // Check that slow_path label is reached with flag == NE.
   bne(flag, flag_correct);

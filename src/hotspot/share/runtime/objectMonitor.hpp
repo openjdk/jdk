@@ -337,6 +337,10 @@ private:
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
 
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  TryLockResult  TryLock(JavaThread* current);
+
   void      print() const;
 #ifdef ASSERT
   void      print_debug_style_on(outputStream* st) const;
@@ -354,11 +358,6 @@ private:
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-
-
-  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
-
-  TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);

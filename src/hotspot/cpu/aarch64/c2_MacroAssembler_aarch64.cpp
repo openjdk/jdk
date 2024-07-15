@@ -339,23 +339,13 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
   // Handle inflated monitor.
   Label inflated, inflated_load_monitor;
   // Finish fast unlock successfully. MUST branch to with flag == EQ
-  Label unlocked, set_eq_unlocked;
+  Label unlocked;
   // Finish fast unlock unsuccessfully. MUST branch to with flag == NE
   Label slow_path;
 
   const Register t1_mark = t1;
   const Register t2_top = t2;
   const Register t3_t = t3;
-
-  Label dummy;
-  C2FastUnlockLightweightStub* stub = nullptr;
-
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, t1, t3, t2);
-    Compile::current()->output()->add_stub(stub);
-  }
-
-  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
 
   { // Lightweight unlock
 
@@ -465,15 +455,11 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
     cmp(rscratch1, zr);
     br(Assembler::NE, unlocked);
-
-    // Check for, and try to cancel any async deflation.
-    b(check_deflater);
+    cmp(zr, rthread); // Set Flag to NE
+    b(slow_path);
   }
 
   bind(unlocked);
-  if (stub != nullptr) {
-    bind(stub->unlocked_continuation());
-  }
   decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
   cmp(zr, zr); // Set Flags to EQ
 
@@ -485,9 +471,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 #endif
 
   bind(slow_path);
-  if (stub != nullptr) {
-    bind(stub->slow_path_continuation());
-  }
 #ifdef ASSERT
   // Check that slow_path label is reached with Flags == NE.
   br(Assembler::NE, flag_correct);

@@ -1061,7 +1061,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   }
 
   Label& push_and_slow_path = stub == nullptr ? dummy : stub->push_and_slow_path();
-  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
 
   { // Lightweight Unlock
 
@@ -1131,17 +1130,16 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // See https://blogs.oracle.com/dave/entry/instruction_selection_for_volatile_fences
     lock(); addl(Address(rsp, 0), 0);
 
-    // Check if the entry lists are empty, and if so we are done.
+    // Check if the entry lists are empty.
     movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
     orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    jccb(Assembler::zero, unlocked);
+    jccb(Assembler::zero, unlocked);    // If so we are done.
 
-    // Check if there is a successor, and if there is we are done.
+    // Check if there is a successor.
     cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    jccb(Assembler::notZero, unlocked);
-
-    // Check for, and try to cancel any async deflation.
-    jmp(check_deflater);
+    jccb(Assembler::notZero, unlocked); // If so we are done.
+    testl(monitor, monitor);            // Fast Unlock ZF = 0
+    jmpb(slow_path);
 
     // Recursive unlock.
     bind(recursive);
@@ -1149,11 +1147,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   }
 
   bind(unlocked);
-  if (stub != nullptr) {
-    bind(stub->unlocked_continuation());
-  }
   decrement(Address(thread, JavaThread::held_monitor_count_offset()));
-  xorl(t, t); // Set ZF = 1
+  xorl(t, t); // Fast Unlock ZF = 1
 
 #ifdef ASSERT
   // Check that unlocked label is reached with ZF set.

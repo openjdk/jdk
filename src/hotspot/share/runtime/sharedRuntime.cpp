@@ -63,6 +63,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -1914,6 +1915,18 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   ExceptionMark em(current);
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
+
+  markWord mark = obj->mark();
+  if (mark.has_monitor()) {
+    ObjectMonitor* m = mark.monitor();
+    assert(m->object()->mark() == mark, "invariant");
+    if (!m->is_entered(current)) {
+      if (m->TryLock(current) != ObjectMonitor::TryLockResult::Success) {
+        current->inc_held_monitor_count(-1);
+        return;
+      }
+    }
+  }
   if (obj->is_unlocked()) {
     if (CheckJNICalls) {
       fatal("Object has been unlocked by JNI");

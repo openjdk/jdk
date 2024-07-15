@@ -340,9 +340,6 @@ bool ObjectMonitor::enter_for(JavaThread* locking_thread) {
       set_owner_from_BasicLock(prev_owner, locking_thread);
       success = true;
     }
-    assert(success, "Failed to enter_for: locking_thread=" INTPTR_FORMAT
-           ", this=" INTPTR_FORMAT "{owner=" INTPTR_FORMAT "}, observed owner: " INTPTR_FORMAT,
-           p2i(locking_thread), p2i(this), p2i(owner_raw()), p2i(prev_owner));
   } else {
     // Async deflation is in progress and our contentions increment
     // above lost the race to async deflation. Undo the work and
@@ -524,16 +521,32 @@ bool ObjectMonitor::enter(JavaThread* current) {
 
 ObjectMonitor::TryLockResult ObjectMonitor::TryLock(JavaThread* current) {
   void* own = owner_raw();
-  if (own != nullptr) return TryLockResult::HasOwner;
-  if (try_set_owner_from(nullptr, current) == nullptr) {
-    assert(_recursions == 0, "invariant");
-    return TryLockResult::Success;
+  void* first_own = own;
+
+  for (;;) {
+    if (own == DEFLATER_MARKER) {
+      if (enter_for(current)) {
+        assert(_recursions == 0, "invariant");
+        return TryLockResult::Success;
+      } else {
+        // Deflation won or change of owner; dont spin
+        break;
+      }
+    } else if (own == nullptr) {
+      void* prev_own = try_set_owner_from(nullptr, current);
+      if (prev_own == nullptr) {
+        assert(_recursions == 0, "invariant");
+        return TryLockResult::Success;
+      } else {
+        // The lock had been free momentarily, but we lost the race to the lock.
+        own = prev_own;
+      }
+    } else {
+      // Retry doesn't make as much sense because the lock was just acquired.
+      break;
+    }
   }
-  // The lock had been free momentarily, but we lost the race to the lock.
-  // Interference -- the CAS failed.
-  // We can either return -1 or retry.
-  // Retry doesn't make as much sense because the lock was just acquired.
-  return TryLockResult::Interference;
+  return first_own == own ? TryLockResult::HasOwner : TryLockResult::Interference;
 }
 
 // Deflate the specified ObjectMonitor if not in-use. Returns true if it
@@ -717,24 +730,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     return;
   }
 
-  if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
-    // Cancelled the in-progress async deflation by changing owner from
-    // DEFLATER_MARKER to current. As part of the contended enter protocol,
-    // contentions was incremented to a positive value before EnterI()
-    // was called and that prevents the deflater thread from winning the
-    // last part of the 2-part async deflation protocol. After EnterI()
-    // returns to enter(), contentions is decremented because the caller
-    // now owns the monitor. We bump contentions an extra time here to
-    // prevent the deflater thread from winning the last part of the
-    // 2-part async deflation protocol after the regular decrement
-    // occurs in enter(). The deflater thread will decrement contentions
-    // after it recognizes that the async deflation was cancelled.
-    add_to_contentions(1);
-    assert(_succ != current, "invariant");
-    assert(_Responsible != current, "invariant");
-    return;
-  }
-
   assert(InitDone, "Unexpectedly not initialized");
 
   // We try one round of spinning *before* enqueueing current.
@@ -841,22 +836,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     if (TryLock(current) == TryLockResult::Success) {
       break;
     }
-
-    if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
-      // Cancelled the in-progress async deflation by changing owner from
-      // DEFLATER_MARKER to current. As part of the contended enter protocol,
-      // contentions was incremented to a positive value before EnterI()
-      // was called and that prevents the deflater thread from winning the
-      // last part of the 2-part async deflation protocol. After EnterI()
-      // returns to enter(), contentions is decremented because the caller
-      // now owns the monitor. We bump contentions an extra time here to
-      // prevent the deflater thread from winning the last part of the
-      // 2-part async deflation protocol after the regular decrement
-      // occurs in enter(). The deflater thread will decrement contentions
-      // after it recognizes that the async deflation was cancelled.
-      add_to_contentions(1);
-      break;
-    }
     assert(owner_raw() != current, "invariant");
 
     // park self
@@ -872,22 +851,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     }
 
     if (TryLock(current) == TryLockResult::Success) {
-      break;
-    }
-
-    if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
-      // Cancelled the in-progress async deflation by changing owner from
-      // DEFLATER_MARKER to current. As part of the contended enter protocol,
-      // contentions was incremented to a positive value before EnterI()
-      // was called and that prevents the deflater thread from winning the
-      // last part of the 2-part async deflation protocol. After EnterI()
-      // returns to enter(), contentions is decremented because the caller
-      // now owns the monitor. We bump contentions an extra time here to
-      // prevent the deflater thread from winning the last part of the
-      // 2-part async deflation protocol after the regular decrement
-      // occurs in enter(). The deflater thread will decrement contentions
-      // after it recognizes that the async deflation was cancelled.
-      add_to_contentions(1);
       break;
     }
 
@@ -1300,26 +1263,39 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
         return;
       }
 
-      // The deflator owns the lock.  Try to cancel the deflation by
-      // first incrementing contentions...
+      // The deflator owns the lock.  Now try to cancel the async
+      // deflation.  As part of the contended enter protocol,
+      // contentions was incremented to a positive value before
+      // EnterI() was called and that prevents the deflater thread
+      // from winning the last part of the 2-part async deflation
+      // protocol. After EnterI() returns to enter(), contentions is
+      // decremented because the caller now owns the monitor. We need
+      // to increment contentions an extra time here to prevent the
+      // deflater thread from winning the last part of the 2-part
+      // async deflation protocol after the regular decrement occurs
+      // in enter().
       add_to_contentions(1);
 
       if (contentions() < 0) {
         assert((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != nullptr, "");
+        // Mr. Deflator won the race.  Rebalance contentions, and then
+        // we are done.
         add_to_contentions(-1);
-        // Mr. Deflator won the race, so we are done.
         return;
       }
 
-      // ... then try to take the ownership.
+      // Now try to take the ownership.
       if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
-        // We successfully canceled deflation.  ObjectMonitor::deflate_monitor()
-        // will decrement contentions, which is why we don't do it here.
+        // We successfully cancelled the in-progress async deflation.
+        // ObjectMonitor::deflate_monitor() will decrement contentions
+        // after it recognizes that the async deflation was
+        // cancelled, which is why we don't do it here.
       } else {
         owner = try_set_owner_from(nullptr, current);
         add_to_contentions(-1);
         if (owner != nullptr) {
-          // Owned by another thread, so we are done.
+          // The lock is owned by another thread, who is now
+          // responsible for ensuring succession, so we are done.
           return;
         }
       }

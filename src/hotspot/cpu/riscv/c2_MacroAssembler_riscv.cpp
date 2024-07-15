@@ -386,16 +386,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
   const Register tmp2_top = tmp2;
   const Register tmp3_t = tmp3;
 
-  Label dummy;
-  C2FastUnlockLightweightStub* stub = nullptr;
-
-  if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, tmp1_mark, tmp3, tmp2);
-    Compile::current()->output()->add_stub(stub);
-  }
-
-  Label& check_deflater = stub == nullptr ? dummy : stub->check_deflater();
-
   { // Lightweight unlock
 
     // Check if obj is top of lock-stack.
@@ -505,15 +495,11 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
     // Check successor.
     ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::succ_offset()));
     bnez(tmp3_t, unlocked);
-
-    // Check for, and try to cancel any async deflation.
-    j(check_deflater);
+    mv(flag, 1);
+    j(slow_path);
   }
 
   bind(unlocked);
-  if (stub != nullptr) {
-    bind(stub->unlocked_continuation());
-  }
   mv(flag, zr);
   decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2, tmp3);
 
@@ -525,9 +511,6 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
 #endif
 
   bind(slow_path);
-  if (stub != nullptr) {
-    bind(stub->slow_path_continuation());
-  }
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);

@@ -74,7 +74,7 @@ void C2EntryBarrierStub::emit(C2_MacroAssembler& masm) {
 }
 
 int C2FastUnlockLightweightStub::max_size() const {
-  return 256;
+  return 128;
 }
 
 void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
@@ -89,51 +89,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ movptr(Address(_thread, _t), _obj);
 #endif
     __ addl(Address(_thread, JavaThread::lock_stack_top_offset()), oopSize);
-    __ xorl(rax, 1); // Make ZF = 0
-    __ jmp(slow_path_continuation());
-  }
-
-  {  // Check for, and try to cancel any async deflation.
-    __ bind(_check_deflater);
-
-    const Register monitor = _mark;
-    Label slow_path, decrement_contentions_slow_path, decrement_contentions_fast_path;
-
-    // CAS owner (null => current thread).
-    __ xorptr(rax, rax);
-    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    __ jccb(Assembler::equal, slow_path);
-
-    // rax contains the current owner here
-    __ cmpptr(rax, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
-    __ jcc(Assembler::notEqual, unlocked_continuation());
-
-    // The deflator owns the lock.  Try to cancel the deflation by
-    // first incrementing contentions...
-    __ lock(); __ incrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
-
-    __ cmpl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)), 0);
-    __ jccb(Assembler::less, decrement_contentions_fast_path); // Mr. Deflator won the race.
-
-    // ... then try to take the ownership.  If we manage to cancel deflation,
-    // ObjectMonitor::deflate_monitor() will decrementcontentions, which is why
-    // we don'tdo it here.
-    // rax contains DEFLATER_MARKER (the current owner)
-    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    __ jcc(Assembler::equal, slow_path); // We successfully canceled deflation.
-
-    __ xorptr(rax, rax);
-    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-    __ jccb(Assembler::equal, decrement_contentions_slow_path);
-
-    __ bind(decrement_contentions_fast_path);
-    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
-    __ jmp(unlocked_continuation());
-
-    __ bind(decrement_contentions_slow_path);
-    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
-    __ bind(slow_path);
-    __ xorl(rax, 1); // Make ZF = 0
+    // addl will always result in ZF = 0 (no overflows).
     __ jmp(slow_path_continuation());
   }
 }
