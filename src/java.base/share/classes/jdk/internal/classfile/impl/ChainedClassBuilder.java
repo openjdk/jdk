@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import java.lang.classfile.*;
@@ -52,14 +51,9 @@ public final class ChainedClassBuilder
     }
 
     @Override
-    public Optional<ClassModel> original() {
-        return terminal.original();
-    }
-
-    @Override
     public ClassBuilder withField(Utf8Entry name, Utf8Entry descriptor, Consumer<? super FieldBuilder> handler) {
         consumer.accept(new BufferedFieldBuilder(terminal.constantPool, terminal.context,
-                                                        name, descriptor, null)
+                                                        name, descriptor)
                                        .run(handler)
                                        .toModel());
         return this;
@@ -68,8 +62,7 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
         BufferedFieldBuilder builder = new BufferedFieldBuilder(terminal.constantPool, terminal.context,
-                                                                field.fieldName(), field.fieldType(),
-                                                                field);
+                                                                field.fieldName(), field.fieldType());
         builder.transform(field, transform);
         consumer.accept(builder.toModel());
         return this;
