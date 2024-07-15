@@ -961,8 +961,8 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   markWord mark = object->mark_acquire();
   assert(!mark.is_unlocked(), "Cannot be unlocked");
 
-  for (;;) {
-  // Fetch the monitor from the table
+    for (;;) {
+// Fetch the monitor from the table
     monitor = get_or_insert_monitor(object, current, cause, true /* try_read */);
 
     // ObjectMonitors are always inserted as anonymously owned, this thread is
