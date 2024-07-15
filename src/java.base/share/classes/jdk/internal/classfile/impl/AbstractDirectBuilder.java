@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.classfile.Attribute;
+import java.lang.classfile.constantpool.ConstantPool;
 
 public class AbstractDirectBuilder<M> {
     protected final SplitConstantPool constantPool;
@@ -39,6 +40,10 @@ public class AbstractDirectBuilder<M> {
 
     public SplitConstantPool constantPool() {
         return constantPool;
+    }
+
+    public boolean canWriteDirect(ConstantPool source) {
+        return constantPool().canWriteDirect(source);
     }
 
     public void setOriginal(M original) {
