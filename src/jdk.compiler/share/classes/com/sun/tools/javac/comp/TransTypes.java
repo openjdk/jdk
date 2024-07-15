@@ -626,7 +626,7 @@ public class TransTypes extends TreeTranslator {
      * This method should be removed when --release 14 is not supported.
      */
     boolean isPrivateInOtherClass(JCMemberReference tree) {
-        return  (tree.sym.flags() & PRIVATE) != 0 &&
+        return (tree.sym.flags() & PRIVATE) != 0 &&
                 !types.isSameType(
                         types.erasure(tree.sym.enclClass().asType()),
                         types.erasure(env.enclClass.sym.asType()));
