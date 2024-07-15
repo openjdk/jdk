@@ -165,10 +165,6 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_CastII:
     case Op_CastLL:
     case Op_CastX2P:
-    {
-      assert(false, "unary");
-      break;
-    }
     case Op_ConvI2L:
     {
       Node* a = n->in(1);
