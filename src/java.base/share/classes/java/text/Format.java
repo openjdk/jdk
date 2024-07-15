@@ -148,7 +148,8 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Formats an object to produce a string. This is equivalent to
+     * Formats an object to produce a string.
+     * This method returns a string that would be equal to the string returned by
      * <blockquote>
      * {@link #format(Object, StringBuffer, FieldPosition) format}<code>(obj,
      *         new StringBuffer(), new FieldPosition(0)).toString();</code>
