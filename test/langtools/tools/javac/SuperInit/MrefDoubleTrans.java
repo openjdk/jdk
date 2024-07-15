@@ -28,13 +28,11 @@
  * @compile MrefDoubleTrans.java
  */
 class MrefDoubleTrans {
-    static class T {
-        public void f() {
-            Runnable r = new I()::m;
-        }
+    public void f() {
+        Runnable r = new I()::m;
+    }
 
-        static class I {
-            void m(Object... xs) {}
-        }
+    class I {
+        void m(Object... xs) {}
     }
 }
