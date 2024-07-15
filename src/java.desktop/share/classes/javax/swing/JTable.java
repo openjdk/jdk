@@ -1267,9 +1267,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
             resizeAndRepaint();
             if (tableHeader != null) {
                 if (mode == JTable.AUTO_RESIZE_LAST_COLUMN) {
-                    if (columnModel.getColumnCount() > 0) {
-                        tableHeader.setResizingColumn(
-                                columnModel.getColumn(columnModel.getColumnCount() - 1));
+                    int colCnt = columnModel.getColumnCount();
+                    if (colCnt > 0) {
+                        tableHeader.setResizingColumn(columnModel.getColumn(colCnt - 1));
                     }
                 }
                 tableHeader.resizeAndRepaint();
