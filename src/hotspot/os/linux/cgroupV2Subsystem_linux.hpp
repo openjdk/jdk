@@ -117,7 +117,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CgroupV2Controller* unified() { return &_unified; }
 
   public:
-    CgroupV2Subsystem(CgroupV2MemoryController * memory,
+    CgroupV2Subsystem(CgroupV2MemoryController* memory,
                       CgroupV2CpuController* cpu,
                       CgroupV2Controller unified) :
                          _unified(unified),
