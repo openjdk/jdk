@@ -190,7 +190,6 @@ private:
 
   ObjectWaiter* volatile _WaitSet;  // LL of threads wait()ing on the monitor
   volatile int  _waiters;           // number of waiting threads
- private:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
  public:
