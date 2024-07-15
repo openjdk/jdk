@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ class ZRuntimeCallSpill {
         __ save_volatile_gprs(R1_SP, -_nbytes_save, _preserve_fp_registers, preserve_R3);
       }
 
-      __ save_LR_CR(R0);
+      __ save_LR(R0);
       __ push_frame_reg_args(_nbytes_save, R0);
     }
   }
@@ -84,7 +84,7 @@ class ZRuntimeCallSpill {
     Register result = R3_RET;
     if (_needs_frame) {
       __ pop_frame();
-      __ restore_LR_CR(R0);
+      __ restore_LR(R0);
 
       if (_preserve_gp_registers) {
         bool restore_R3 = _result != R3_ARG1;
@@ -785,7 +785,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   const int nbytes_save = (MacroAssembler::num_volatile_regs + stack_parameters) * BytesPerWord;
 
   __ save_volatile_gprs(R1_SP, -nbytes_save);
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
 
   // Load arguments back again from the stack.
   __ ld(R3_ARG1, -1 * BytesPerWord, R1_SP); // ref
@@ -799,7 +799,7 @@ void ZBarrierSetAssembler::generate_c1_load_barrier_runtime_stub(StubAssembler* 
   __ mr(R0, R3_RET);
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();
@@ -815,7 +815,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   __ save_volatile_gprs(R1_SP, -nbytes_save);
   __ mr(R3_ARG1, R0); // store address
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame_reg_args(nbytes_save, R0);
 
   if (self_healing) {
@@ -825,7 +825,7 @@ void ZBarrierSetAssembler::generate_c1_store_barrier_runtime_stub(StubAssembler*
   }
 
   __ pop_frame();
-  __ restore_LR_CR(R3_RET);
+  __ restore_LR(R3_RET);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ blr();

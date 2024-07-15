@@ -87,27 +87,30 @@ public:
 class Arena : public CHeapObjBase {
 public:
 
-  enum class Tag {
+  enum class Tag : uint8_t {
     tag_other = 0,
     tag_ra,   // resource area
     tag_ha,   // handle area
     tag_node  // C2 Node arena
   };
 
+private:
+  const MEMFLAGS _flags;        // Memory tracking flags
+  const Tag _tag;
+  size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
+
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
 
-  MEMFLAGS    _flags;           // Memory tracking flags
-  const Tag _tag;
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
   char* _hwm;                   // High water mark
   char* _max;                   // and max in current chunk
+
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
   void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
@@ -123,8 +126,7 @@ protected:
  public:
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
-  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other);
-  Arena(MEMFLAGS memflag, Tag tag, size_t init_size);
+  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }

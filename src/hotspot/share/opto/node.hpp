@@ -175,7 +175,6 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
-class UnorderedReductionNode;
 class VectorNode;
 class LoadVectorNode;
 class LoadVectorMaskedNode;
@@ -739,7 +738,6 @@ public:
         DEFINE_CLASS_ID(ExpandV, Vector, 5)
         DEFINE_CLASS_ID(CompressM, Vector, 6)
         DEFINE_CLASS_ID(Reduction, Vector, 7)
-          DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
         DEFINE_CLASS_ID(NegV, Vector, 8)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
@@ -991,7 +989,6 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
-  DEFINE_CLASS_QUERY(UnorderedReduction)
   DEFINE_CLASS_QUERY(Vector)
   DEFINE_CLASS_QUERY(VectorMaskCmp)
   DEFINE_CLASS_QUERY(VectorUnbox)

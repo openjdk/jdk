@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,8 @@ class MacroAssembler: public Assembler {
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
+  // Branch-free implementation to convert !=0 to 1.
+  void inline normalize_bool(Register dst, Register temp = R0, bool is_64bit = false);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)
@@ -298,7 +300,9 @@ class MacroAssembler: public Assembler {
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
   void restore_volatile_gprs(Register src_base, int offset,
                              bool include_fp_regs = true, bool include_R3_RET_reg = true);
-  void save_LR_CR(   Register tmp);     // tmp contains LR on return.
+  void save_LR(Register tmp);
+  void restore_LR(Register tmp);
+  void save_LR_CR(Register tmp);     // tmp contains LR on return.
   void restore_LR_CR(Register tmp);
 
   // Get current PC using bl-next-instruction trick.
@@ -601,6 +605,33 @@ class MacroAssembler: public Assembler {
                            Register temp1_reg,
                            Register temp2_reg,
                            Label& L_success);
+
+  void repne_scan(Register addr, Register value, Register count, Register scratch);
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  void lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     Register result,
+                                     u1 super_klass_slot);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register result,
+                                               Register temp1);
 
   void clinit_barrier(Register klass,
                       Register thread,
