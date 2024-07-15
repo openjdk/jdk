@@ -44,9 +44,8 @@ import jdk.test.lib.process.ProcessTools;
  */
 public class NativeMethodPrefixApp implements StringIdCallback {
 
-    // This test is fragile like a golden file test.
-    // It assumes that a specific non-native library method will call a specific
-    // native method.  The below may need to be updated based on library changes.
+    // we expect this native method, which is part of this test's application,
+    // to be instrumented and invoked
     static String goldenNativeMethodName = "fooBarNativeMethod";
     static boolean[] gotIt = {false, false, false};
     private static final String testLibraryPath = System.getProperty("test.nativepath");
