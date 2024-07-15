@@ -52,11 +52,6 @@ public interface QuicPacketReceiver {
     QuicConnectionId localConnectionId();
 
     /**
-     * {@return the peer connection id}
-     */
-    QuicConnectionId peerConnectionId();
-
-    /**
      * A stream of local connectionIds.
      * According to Quic-Transport, a connection may have several
      * connection IDs;

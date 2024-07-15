@@ -1344,7 +1344,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * @param datagram     the datagram
      */
     public void pushClosingDatagram(QuicConnectionImpl connection, InetSocketAddress destination, ByteBuffer datagram) {
-        if (debug.on()) debug.log("Pushing closing datagram for " + connection.localConnectionId());
+        if (debug.on()) debug.log("Pushing closing datagram for " + connection.logTag());
         closing(connection, datagram.slice());
         pushDatagram(connection, destination, datagram);
     }
@@ -1360,7 +1360,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     public void pushClosedDatagram(QuicConnectionImpl connection,
                                    InetSocketAddress destination,
                                    ByteBuffer datagram) {
-        if (debug.on()) debug.log("Pushing closed datagram for " + connection.localConnectionId());
+        if (debug.on()) debug.log("Pushing closed datagram for " + connection.logTag());
         removeConnection(connection);
         pushDatagram(connection, destination, datagram);
     }
@@ -1420,7 +1420,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         } else if (conn instanceof QuicConnectionImpl impl) {
             final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
             if (debugOn) debug.log("remapping %s to DrainingConnection", id);
-            var draining = new DrainingConnection(id, impl.peerConnectionId(), idleTimeout);
+            var draining = new DrainingConnection(id, idleTimeout);
             // we can ignore stateless reset in the draining state.
             remapPeerIssuedResetToken(impl, draining);
             draining.startTimer();
@@ -1457,7 +1457,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         } else if (conn instanceof QuicConnectionImpl impl) {
             final long idleTimeout = impl.peerPtoMs() * 3; // 3 PTO
             if (debugOn) debug.log("remapping %s to ClosingConnection", id);
-            var closing = new ClosingConnection(id, impl.peerConnectionId(), idleTimeout, datagram);
+            var closing = new ClosingConnection(id, idleTimeout, datagram);
             remapPeerIssuedResetToken(impl, closing);
             closing.startTimer();
             return closing;
@@ -1560,7 +1560,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // an instance of this class)
         final static long NO_IDLE_TIMEOUT = 2000;
         final QuicConnectionId localConnectionId;
-        final QuicConnectionId peerConnectionId;
         final long maxIdleTimeMs;
         final long id;
         int more = 1;
@@ -1569,24 +1568,17 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         volatile Deadline updatedDeadline;
 
         ClosedConnection(QuicConnectionId localConnectionId,
-                         QuicConnectionId peerConnectionId,
                          long maxIdleTimeMs) {
             this.id = QuicTimerQueue.newEventId();
             this.maxIdleTimeMs = maxIdleTimeMs == 0 ? NO_IDLE_TIMEOUT : maxIdleTimeMs;
             this.deadline = Deadline.MAX;
             this.updatedDeadline = Deadline.MAX;
             this.localConnectionId = localConnectionId;
-            this.peerConnectionId = peerConnectionId;
         }
 
         @Override
         public final QuicConnectionId localConnectionId() {
             return localConnectionId;
-        }
-
-        @Override
-        public final QuicConnectionId peerConnectionId() {
-            return peerConnectionId;
         }
 
         @Override
@@ -1693,10 +1685,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         final List<ByteBuffer> closePackets = Collections.synchronizedList(new ArrayList<>());
 
         ClosingConnection(QuicConnectionId localConnectionId,
-                          QuicConnectionId peerConnectionId,
                           long maxIdleTimeMs,
                           ByteBuffer... closePackets) {
-            super(localConnectionId, peerConnectionId, maxIdleTimeMs);
+            super(localConnectionId, maxIdleTimeMs);
             this.closePackets.addAll(Arrays.asList(closePackets));
         }
 
@@ -1725,7 +1716,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
 
         private DrainingConnection toDraining() {
-            return new DrainingConnection(localConnectionId, peerConnectionId, maxIdleTimeMs);
+            return new DrainingConnection(localConnectionId, maxIdleTimeMs);
         }
     }
 
@@ -1736,9 +1727,8 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     public final class DrainingConnection extends ClosedConnection {
 
         DrainingConnection(QuicConnectionId localConnectionId,
-                           QuicConnectionId peerConnectionId,
                            long maxIdleTimeMs) {
-            super(localConnectionId, peerConnectionId, maxIdleTimeMs);
+            super(localConnectionId, maxIdleTimeMs);
         }
 
         @Override

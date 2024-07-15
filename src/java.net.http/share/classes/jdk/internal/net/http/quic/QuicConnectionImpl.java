@@ -285,9 +285,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private final ReentrantLock handshakeLock = new ReentrantLock();
     private final String cachedToString;
 
-    static String dbgTag(QuicInstance quicInstance, QuicConnectionId id) {
+    static String dbgTag(QuicInstance quicInstance, String logTag) {
         return String.format("QuicConnection(%s, %s)",
-                quicInstance.instanceId(), id.simpleString());
+                quicInstance.instanceId(), logTag);
     }
 
     protected QuicConnectionImpl(final QuicVersion firstFlightVersion,
@@ -300,7 +300,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.cachedToString = String.format("QuicConnection(%s:%s)",
                 Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
         this.connectionId = this.quicInstance.idFactory().newConnectionId();
-        this.dbgTag = dbgTag(quicInstance, this.connectionId);
+        this.dbgTag = dbgTag(quicInstance, logTag());
         this.congestionController = new QuicRenoCongestionController(dbgTag);
         this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
@@ -1648,7 +1648,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     /**
      * {@return the peer connection id}
      */
-    @Override
     public QuicConnectionId peerConnectionId() {
         return this.peerConnIdManager.getPeerConnId();
     }
