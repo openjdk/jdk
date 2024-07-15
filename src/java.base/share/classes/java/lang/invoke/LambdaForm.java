@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -567,7 +567,7 @@ class LambdaForm {
             assert(n.index() == i);
             for (Object arg : n.arguments) {
                 if (arg instanceof Name n2) {
-                    int i2 = n2.index();
+                    int i2 = n2.index;
                     assert(0 <= i2 && i2 < names.length) : n.debugString() + ": 0 <= i2 && i2 < names.length: 0 <= " + i2 + " < " + names.length;
                     assert(names[i2] == n2) : Arrays.asList("-1-", i, "-2-", n.debugString(), "-3-", i2, "-4-", n2.debugString(), "-5-", names[i2].debugString(), "-6-", this);
                     assert(i2 < i);  // ref must come after def!
@@ -1339,7 +1339,7 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        @Stable short flippedIndex; // uses -1..-256 for slots, 0 for unset
+        @Stable short index;
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
@@ -1347,15 +1347,15 @@ class LambdaForm {
         private static final Object[] EMPTY_ARGS = new Object[0];
 
         private Name(int index, BasicType type, NamedFunction function, Object[] arguments) {
-            this.flippedIndex = (short)~index;
+            this.index = (short)index;
             this.type = type;
             this.function = function;
             this.arguments = arguments;
             this.constraint = null;
-            assert(this.index() == index && typesMatch(function, this.arguments));
+            assert(this.index == index && typesMatch(function, this.arguments));
         }
         private Name(Name that, Object constraint) {
-            this.flippedIndex = that.flippedIndex;
+            this.index = that.index;
             this.type = that.type;
             this.function = that.function;
             this.arguments = that.arguments;
@@ -1393,11 +1393,11 @@ class LambdaForm {
         Name(BasicType type) { this(-1, type); }
 
         BasicType type() { return type; }
-        int index() { return ~flippedIndex; }
+        int index() { return index; }
         boolean initIndex(int i) {
-            if (flippedIndex != ~i) {
-                if (flippedIndex != 0)  return false;
-                flippedIndex = (short)~i;
+            if (index != i) {
+                if (index != -1)  return false;
+                index = (short)i;
             }
             return true;
         }
@@ -1446,7 +1446,7 @@ class LambdaForm {
         eachArg:
             for (int j = 0; j < arguments.length; j++) {
                 if (arguments[j] instanceof Name n) {
-                    int check = n.index();
+                    int check = n.index;
                     // harmless check to see if the thing is already in newNames:
                     if (check >= 0 && check < newNames.length && n == newNames[check])
                         continue eachArg;
@@ -1473,7 +1473,7 @@ class LambdaForm {
             Object[] arguments = this.arguments;
             for (int j = 0; j < arguments.length; j++) {
                 if (arguments[j] instanceof Name n) {
-                    if (n.isParam() && n.index() < INTERNED_ARGUMENT_LIMIT)
+                    if (n.isParam() && n.index < INTERNED_ARGUMENT_LIMIT)
                         arguments[j] = internArgument(n);
                 }
             }
@@ -1519,7 +1519,7 @@ class LambdaForm {
         }
 
         public String toString() {
-            return (isParam() ? "a" : "t") + (flippedIndex != 0 ? index() : System.identityHashCode(this)) + ":" + typeChar();
+            return (isParam()?"a":"t")+(index >= 0 ? index : System.identityHashCode(this))+":"+typeChar();
         }
         public String debugString() {
             String s = paramString();
@@ -1619,7 +1619,7 @@ class LambdaForm {
         @Override
         public int hashCode() {
             if (isParam())
-                return index() | (type.ordinal() << 8);
+                return index | (type.ordinal() << 8);
             return function.hashCode() ^ Arrays.hashCode(arguments);
         }
     }
@@ -1628,7 +1628,7 @@ class LambdaForm {
      *  Return -1 if the name is not used.  Return names.length if it is the return value.
      */
     int lastUseIndex(Name n) {
-        int ni = n.index(), nmax = names.length;
+        int ni = n.index, nmax = names.length;
         assert(names[ni] == n);
         if (result == ni)  return nmax;  // live all the way beyond the end
         for (int i = nmax; --i > ni; ) {
@@ -1640,8 +1640,8 @@ class LambdaForm {
 
     /** Return the number of times n is used as an argument or return value. */
     int useCount(Name n) {
-        int count = (result == n.index()) ? 1 : 0;
-        int i = Math.max(n.index() + 1, arity);
+        int count = (result == n.index) ? 1 : 0;
+        int i = Math.max(n.index + 1, arity);
         while (i < names.length) {
             count += names[i++].useCount(n);
         }
@@ -1655,9 +1655,9 @@ class LambdaForm {
     }
     static Name internArgument(Name n) {
         assert(n.isParam()) : "not param: " + n;
-        assert(n.index() < INTERNED_ARGUMENT_LIMIT);
+        assert(n.index < INTERNED_ARGUMENT_LIMIT);
         if (n.constraint != null)  return n;
-        return argument(n.index(), n.type);
+        return argument(n.index, n.type);
     }
     static Name[] arguments(int extra, MethodType types) {
         int length = types.parameterCount();
