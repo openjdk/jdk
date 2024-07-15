@@ -229,7 +229,7 @@ inline void OMCache::set_monitor(ObjectMonitor *monitor) {
 
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
-  assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must be exist in table");
+  assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
 
   OMCacheEntry to_insert = {obj, monitor};
 
