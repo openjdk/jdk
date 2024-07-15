@@ -190,6 +190,10 @@ public abstract class JCmdTestDumpBase {
         PidJcmdExecutor cmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
         OutputAnalyzer output = cmdExecutor.execute(jcmd, true/*silent*/);
 
+        if (archiveFileName.contains("%p")) {
+            archiveFileName = archiveFileName.replace("%p", "%d").formatted(pid);
+        }
+
         if (expectOK) {
             output.shouldHaveExitValue(0);
             checkFileExistence(archiveFileName, true);

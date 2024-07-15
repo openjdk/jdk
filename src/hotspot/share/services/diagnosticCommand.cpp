@@ -516,11 +516,21 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
+  // If the filename contains %p, it will be replaced by the pid.
+  char fname[JVM_MAXPATHLEN];
+  if (!Arguments::copy_expand_pid(_filename.value(), strlen(_filename.value()),
+                                  fname, JVM_MAXPATHLEN)) {
+    stringStream msg;
+    msg.print("Invalid file path name specified: %s", _filename.value());
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), msg.base());
+  }
+
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+  dumper.dump(fname, output(), (int)level, _overwrite.value(),
+              (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
@@ -1039,8 +1049,15 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 
   // call CDS.dumpSharedArchive
   Handle fileh;
+  char fname[JVM_MAXPATHLEN];
   if (file != nullptr) {
-    fileh =  java_lang_String::create_from_str(_filename.value(), CHECK);
+    // If the filename contains %p, it will be replaced by the pid.
+    const char *name = _filename.value();
+    if (Arguments::copy_expand_pid(name, strlen(name), fname, JVM_MAXPATHLEN)) {
+      fileh = java_lang_String::create_from_str(fname, CHECK);
+    } else {
+      warning("Invalid file path name specified, fall back to default name");
+    }
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
@@ -1113,7 +1130,13 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
-  char* path = _filepath.value();
+  char path[JVM_MAXPATHLEN];
+  if (!Arguments::copy_expand_pid(_filepath.value(), strlen(_filepath.value()),
+                                  path, JVM_MAXPATHLEN)) {
+    stringStream msg;
+    msg.print("Invalid file path name specified: %s", _filepath.value());
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), msg.base());
+  }
   bool overwrite = _overwrite.value();
   Symbol* name = (json) ? vmSymbols::dumpThreadsToJson_name() : vmSymbols::dumpThreads_name();
   dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), path, overwrite, CHECK);
@@ -1195,14 +1218,20 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream defaultname;
-  const char* name = nullptr;
-  if (_filename.is_set()) {
-    name = _filename.value();
-  } else {
-    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
-    name = defaultname.base();
+  const char *name = nullptr;
+  char fname[JVM_MAXPATHLEN];
+  if (!_filename.is_set()) {
+    jio_snprintf(fname, sizeof(fname), "vm_memory_map_%d.txt",
+                 os::current_process_id());
+  } else if (!Arguments::copy_expand_pid(_filename.value(),
+                                        strlen(_filename.value()), fname,
+                                        JVM_MAXPATHLEN)) {
+    // If the filename contains %p, it will be replaced by the pid.
+    warning("Invalid file path name specified, fall back to default name.");
+    jio_snprintf(fname, sizeof(fname), "vm_memory_map_%d.txt",
+                 os::current_process_id());
   }
+  name = fname;
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

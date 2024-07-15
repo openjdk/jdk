@@ -1793,12 +1793,19 @@ void CodeCache::write_perf_map(const char* filename) {
 
   // Perf expects to find the map file at /tmp/perf-<pid>.map
   // if the file name is not specified.
-  char fname[32];
+  char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
-    filename = fname;
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map",
+                 os::current_process_id());
   }
-
+  // If the filename contains %p, it will be replaced by the pid.
+  else if (!Arguments::copy_expand_pid(filename, strlen(filename), fname,
+                                       JVM_MAXPATHLEN)) {
+    warning("Invalid file path name specified, fall back to default name");
+    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map",
+                 os::current_process_id());
+  }
+  filename = fname;
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
     log_warning(codecache)("Failed to create %s for perf map", filename);

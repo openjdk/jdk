@@ -87,6 +87,13 @@ public class JCmdTestStaticDump extends JCmdTestDumpBase {
         }
         app.stopApp();
 
+        // Test static dump with file name containing %p
+        print2ln(test_count++ + " Test static dump with given file name containing %p.");
+        app = createLingeredApp("-cp", allJars);
+        pid = app.getPid();
+        test("%p.jsa", pid, noBoot, EXPECT_PASS, STATIC_MESSAGES);
+        app.stopApp();
+
         //  Test static dump with flags with which dumping should fail
         //  This test will result classes.jsa in default server dir if -XX:SharedArchiveFile= not set.
         print2ln(test_count++ + " Test static dump with flags with which dumping should fail.");
