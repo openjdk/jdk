@@ -284,6 +284,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             SequentialScheduler.lockingScheduler(this::continueHandshake0);
     private final ReentrantLock handshakeLock = new ReentrantLock();
     private final String cachedToString;
+    private final String logTag;
 
     static String dbgTag(QuicInstance quicInstance, String logTag) {
         return String.format("QuicConnection(%s, %s)",
@@ -294,13 +295,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                                  final QuicInstance quicInstance,
                                  final InetSocketAddress peerAddress,
                                  final String peerName,
-                                 final SSLParameters sslParameters) {
+                                 final SSLParameters sslParameters,
+                                 String logTag) {
         this.quicInstance = Objects.requireNonNull(quicInstance, "quicInstance");
         this.peerAddress = peerAddress;
         this.cachedToString = String.format("QuicConnection(%s:%s)",
                 Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
         this.connectionId = this.quicInstance.idFactory().newConnectionId();
-        this.dbgTag = dbgTag(quicInstance, logTag());
+        this.logTag = logTag;
+        this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
         this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
@@ -3894,7 +3897,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     public final String logTag() {
-        return connectionId.simpleString();
+        return logTag;
     }
 
     /* ========================================================

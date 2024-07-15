@@ -140,14 +140,6 @@ public abstract class QuicConnectionId implements Comparable<QuicConnectionId> {
         return matches(ByteBuffer.wrap(buffer, offset, length));
     }
 
-    /**
-     * {@return a simple string to identify this connection ID in logs}
-     * @implSpec The default implementation returms {@code this.toString()}.
-     */
-    public String simpleString() {
-        return toString();
-    }
-
     @Override
     public int compareTo(QuicConnectionId o) {
         return this.compareBytes(o.asReadOnlyBuffer());

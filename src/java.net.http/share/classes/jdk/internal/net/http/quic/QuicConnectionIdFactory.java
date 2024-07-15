@@ -53,12 +53,6 @@ public class QuicConnectionIdFactory {
 
     private static final int MIN_CONNECTION_ID_LENGTH = 9;
 
-    // TODO switch to per-endpoint factories
-    // global is better for debugging: IDs are globally unique
-    // per-endpoint is secure: unique scrambler, unique reset tokens
-    private static final boolean factoryPerEndpoint = false;
-    private static final QuicConnectionIdFactory CLIENT = new QuicConnectionIdFactory(CLIENT_DESC);
-    private static final QuicConnectionIdFactory SERVER = new QuicConnectionIdFactory(SERVER_DESC);
     private final AtomicLong tokens = new AtomicLong();
     private volatile boolean wrapped;
     private final byte[] scrambler;
@@ -67,11 +61,11 @@ public class QuicConnectionIdFactory {
     private final int connectionIdLength = RANDOM.nextInt(MIN_CONNECTION_ID_LENGTH, MAX_CONNECTION_ID_LENGTH+1);
 
     public static QuicConnectionIdFactory getClient() {
-        return factoryPerEndpoint ? new QuicConnectionIdFactory(CLIENT_DESC) : CLIENT;
+        return new QuicConnectionIdFactory(CLIENT_DESC);
     }
 
     public static QuicConnectionIdFactory getServer() {
-        return factoryPerEndpoint ? new QuicConnectionIdFactory(SERVER_DESC) : SERVER;
+        return new QuicConnectionIdFactory(SERVER_DESC);
     }
 
     private QuicConnectionIdFactory(String simpleDesc) {
@@ -406,11 +400,6 @@ public class QuicConnectionIdFactory {
         public String toString() {
             return "%s(length=%s, token=%s, hash=%s)"
                     .formatted(simpleDesc, length, token, hashCode);
-        }
-
-        @Override
-        public String simpleString() {
-            return "%s(%s)".formatted(simpleDesc, token);
         }
     }
 }

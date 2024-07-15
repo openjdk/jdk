@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -79,6 +80,7 @@ import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.sta
 import static jdk.internal.net.http.quic.QuicTransportParameters.ParameterId.version_information;
 
 public final class QuicServerConnection extends QuicConnectionImpl {
+    private static final AtomicLong CONNECTIONS = new AtomicLong();
     private final QuicVersion preferredQuicVersion;
     private volatile boolean connectionIdAcknowledged;
     private final QuicServer server;
@@ -112,7 +114,8 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                          SSLParameters sslParameters,
                          byte[] initialToken,
                          QuicServer.RetryData retryData) {
-        super(quicVersion, server, peerAddress, null, sslParameters);
+        super(quicVersion, server, peerAddress, null, sslParameters,
+                "QuicServerConnection(" + CONNECTIONS.incrementAndGet() + ")");
         this.preferredQuicVersion = preferredQuicVersion;
         // this should have been first statement in this constructor but compiler doesn't allow it
         Objects.requireNonNull(quicVersion, "quic version");

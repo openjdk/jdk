@@ -67,6 +67,7 @@ import jdk.internal.net.quic.QuicVersion;
  */
 public final class QuicClient implements QuicInstance, AutoCloseable {
     private static final AtomicLong IDS = new AtomicLong();
+    private static final AtomicLong CONNECTIONS = new AtomicLong();
 
     private final Logger debug = Utils.getDebugLogger(this::name);
 
@@ -212,7 +213,8 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
             throw new IllegalArgumentException("missing ALPN on alt service");
         }
         final SSLParameters sslParameters = createSSLParameters(new String[]{alpn});
-        return new QuicConnectionImpl(null, this, peerAddress, service.origin().host(), sslParameters);
+        return new QuicConnectionImpl(null, this, peerAddress,
+                service.origin().host(), sslParameters, "QuicClientConnection(" + CONNECTIONS.incrementAndGet() + ")");
     }
 
     /**
@@ -234,7 +236,7 @@ public final class QuicClient implements QuicInstance, AutoCloseable {
         }
         final SSLParameters sslParameters = createSSLParameters(alpns);
         return new QuicConnectionImpl(null, this, peerAddress, peerAddress.getHostString(),
-                sslParameters);
+                sslParameters, "QuicClientConnection(" + CONNECTIONS.incrementAndGet() + ")");
     }
 
     private SSLParameters createSSLParameters(final String[] alpns) {
