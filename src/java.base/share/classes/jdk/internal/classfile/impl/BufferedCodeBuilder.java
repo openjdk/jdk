@@ -201,7 +201,7 @@ public final class BufferedCodeBuilder
             builder.withCode(new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    forEachElement(cb);
+                    forEach(cb);
                 }
             });
         }
