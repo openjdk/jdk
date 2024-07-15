@@ -2920,7 +2920,7 @@ public class JavacParser implements Parser {
                     case PLUS: case SUB: case STRINGLITERAL: case CHARLITERAL:
                     case STRINGFRAGMENT:
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
-                    case NULL: case IDENTIFIER: case TRUE: case FALSE:
+                    case NULL: case IDENTIFIER: case UNDERSCORE: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
                     case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
@@ -3436,7 +3436,15 @@ public class JavacParser implements Parser {
                                 : PatternResult.PATTERN;
                     }
                     parenDepth++; break;
-                case RPAREN: parenDepth--; break;
+                case RPAREN:
+                    parenDepth--;
+                    if (parenDepth == 0 &&
+                        typeDepth == 0 &&
+                        peekToken(lookahead, TokenKind.IDENTIFIER) &&
+                        S.token(lookahead + 1).name() == names.when) {
+                        return PatternResult.PATTERN;
+                    }
+                    break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
                 case FINAL:

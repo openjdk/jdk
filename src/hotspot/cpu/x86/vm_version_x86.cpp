@@ -108,6 +108,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
 
+#if defined(_LP64)
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
@@ -115,7 +116,6 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     // handling guarantees that preserved register values post signal handling were
     // re-instantiated by operating system and not because they were not modified externally.
 
-    /* FIXME Uncomment following code after OS enablement of
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
@@ -124,10 +124,10 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ mov64(r31, 0L);
     UseAPX = save_apx;
     VM_Version::clean_cpuFeatures();
-    */
     __ ret(0);
     return start;
   }
+#endif
 
   address generate_get_cpu_info() {
     // Flags to test CPU type.
@@ -419,7 +419,7 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(Address(rsi, 8), rcx);
     __ movl(Address(rsi,12), rdx);
 
-#ifndef PRODUCT
+#if defined(_LP64)
     //
     // Check if OS has enabled XGETBV instruction to access XCR0
     // (OSXSAVE feature flag) and CPU supports APX
@@ -437,26 +437,22 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000);
     __ jcc(Assembler::notEqual, vector_save_restore);
 
-    /* FIXME: Uncomment while integrating JDK-8329032
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
     __ mov64(r31, VM_Version::egpr_test_value());
-    */
     __ xorl(rsi, rsi);
     VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
     // Generate SEGV
     __ movl(rax, Address(rsi, 0));
 
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
-    /* FIXME: Uncomment after integration of JDK-8329032
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
     __ movq(Address(rsi, 8), r31);
 
     UseAPX = save_apx;
-    */
 #endif
     __ bind(vector_save_restore);
     //
@@ -1322,55 +1318,6 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA, false);
   }
 
-  if (!supports_rtm() && UseRTMLocking) {
-    vm_exit_during_initialization("RTM instructions are not available on this CPU");
-  }
-
-#if INCLUDE_RTM_OPT
-  if (UseRTMLocking) {
-    if (!CompilerConfig::is_c2_enabled()) {
-      // Only C2 does RTM locking optimization.
-      vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-    }
-    if (is_intel_family_core()) {
-      if ((_model == CPU_MODEL_HASWELL_E3) ||
-          (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
-          (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
-        // currently a collision between SKL and HSW_E3
-        if (!UnlockExperimentalVMOptions && UseAVX < 3) {
-          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this "
-                                        "platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
-        } else {
-          warning("UseRTMLocking is only available as experimental option on this platform.");
-        }
-      }
-    }
-    if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
-      // RTM locking should be used only for applications with
-      // high lock contention. For now we do not use it by default.
-      vm_exit_during_initialization("UseRTMLocking flag should be only set on command line");
-    }
-  } else { // !UseRTMLocking
-    if (UseRTMForStackLocks) {
-      if (!FLAG_IS_DEFAULT(UseRTMForStackLocks)) {
-        warning("UseRTMForStackLocks flag should be off when UseRTMLocking flag is off");
-      }
-      FLAG_SET_DEFAULT(UseRTMForStackLocks, false);
-    }
-    if (UseRTMDeopt) {
-      FLAG_SET_DEFAULT(UseRTMDeopt, false);
-    }
-    if (PrintPreciseRTMLockingStatistics) {
-      FLAG_SET_DEFAULT(PrintPreciseRTMLockingStatistics, false);
-    }
-  }
-#else
-  if (UseRTMLocking) {
-    // Only C2 does RTM locking optimization.
-    vm_exit_during_initialization("RTM locking optimization is not supported in this VM");
-  }
-#endif
-
 #ifdef COMPILER2
   if (UseFPUForSpilling) {
     if (UseSSE < 2) {
@@ -2219,9 +2166,11 @@ int VM_Version::avx3_threshold() {
           FLAG_IS_DEFAULT(AVX3Threshold)) ? 0 : AVX3Threshold;
 }
 
+#if defined(_LP64)
 void VM_Version::clear_apx_test_state() {
   clear_apx_test_state_stub();
 }
+#endif
 
 static bool _vm_version_initialized = false;
 
@@ -2240,8 +2189,10 @@ void VM_Version::initialize() {
   detect_virt_stub = CAST_TO_FN_PTR(detect_virt_stub_t,
                                      g.generate_detect_virt());
 
+#if defined(_LP64)
   clear_apx_test_state_stub = CAST_TO_FN_PTR(clear_apx_test_state_t,
                                      g.clear_apx_test_state());
+#endif
   get_processor_features();
 
   LP64_ONLY(Assembler::precompute_instructions();)
@@ -3232,11 +3183,17 @@ bool VM_Version::os_supports_apx_egprs() {
   if (!supports_apx_f()) {
     return false;
   }
+  // Enable APX support for product builds after
+  // completion of planned features listed in JDK-8329030.
+#if !defined(PRODUCT)
   if (_cpuid_info.apx_save[0] != egpr_test_value() ||
       _cpuid_info.apx_save[1] != egpr_test_value()) {
     return false;
   }
   return true;
+#else
+  return false;
+#endif
 }
 
 uint VM_Version::cores_per_cpu() {

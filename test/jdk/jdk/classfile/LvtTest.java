@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariable> lvs = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariable l) lvs.add(l);
         });
 
@@ -108,7 +108,7 @@ class LvtTest {
         ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = cc.transform(c, Transforms.threeLevelNoop);
+        byte[] newClass = cc.transformClass(c, Transforms.threeLevelNoop);
         ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);
@@ -198,7 +198,7 @@ class LvtTest {
                         .orElseThrow();
 
         List<LocalVariableType> lvts = new ArrayList<>();
-        co.forEachElement(e -> {
+        co.forEach(e -> {
             if (e instanceof LocalVariableType l) lvts.add(l);
         });
 
@@ -304,11 +304,11 @@ class LvtTest {
     void skipDebugSkipsLVT() {
         ClassModel c = ClassFile.of(ClassFile.DebugElementsOption.DROP_DEBUG).parse(fileBytes);
 
-        c.forEachElement(e -> {
+        c.forEach(e -> {
             if (e instanceof MethodModel m) {
-                m.forEachElement(el -> {
+                m.forEach(el -> {
                     if (el instanceof CodeModel cm) {
-                        cm.forEachElement(elem -> {
+                        cm.forEach(elem -> {
                             assertFalse(elem instanceof LocalVariable);
                             assertFalse(elem instanceof LocalVariableType);
                         });
