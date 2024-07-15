@@ -6338,7 +6338,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     }
   } else {                      // No slot zero
     if( n->is_CFG() ) {         // CFG with no slot 0 is dead
-      _loop_or_ctrl.map(n->_idx,0);    // No block setting, it's globally dead
+      _loop_or_ctrl.map(n->_idx,nullptr); // No block setting, it's globally dead
       return;
     }
     assert(!n->is_CFG() || n->outcnt() == 0, "");
@@ -6356,7 +6356,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       assert(_loop_or_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
     }
 #endif
-    _loop_or_ctrl.map(n->_idx, 0);     // This node is useless
+    _loop_or_ctrl.map(n->_idx, nullptr); // This node is useless
     _deadlist.push(n);
     return;
   }

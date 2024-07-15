@@ -554,9 +554,9 @@ void Type::Initialize_shared(Compile* current) {
   TypeInstPtr::BOTTOM  = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass());
   TypeInstPtr::MIRROR  = TypeInstPtr::make(TypePtr::NotNull, current->env()->Class_klass());
   TypeInstPtr::MARK    = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
-                                           false, 0, oopDesc::mark_offset_in_bytes());
+                                           false, nullptr, oopDesc::mark_offset_in_bytes());
   TypeInstPtr::KLASS   = TypeInstPtr::make(TypePtr::BotPTR,  current->env()->Object_klass(),
-                                           false, 0, oopDesc::klass_offset_in_bytes());
+                                           false, nullptr, oopDesc::klass_offset_in_bytes());
   TypeOopPtr::BOTTOM  = TypeOopPtr::make(TypePtr::BotPTR, OffsetBot, TypeOopPtr::InstanceBot);
 
   TypeMetadataPtr::BOTTOM = TypeMetadataPtr::make(TypePtr::BotPTR, nullptr, OffsetBot);
@@ -567,7 +567,7 @@ void Type::Initialize_shared(Compile* current) {
   TypeNarrowKlass::NULL_PTR = TypeNarrowKlass::make( TypePtr::NULL_PTR );
 
   mreg2type[Op_Node] = Type::BOTTOM;
-  mreg2type[Op_Set ] = 0;
+  mreg2type[Op_Set ] = nullptr;
   mreg2type[Op_RegN] = TypeNarrowOop::BOTTOM;
   mreg2type[Op_RegI] = TypeInt::INT;
   mreg2type[Op_RegP] = TypePtr::BOTTOM;
@@ -3129,7 +3129,7 @@ const TypeRawPtr *TypeRawPtr::NOTNULL;
 const TypeRawPtr *TypeRawPtr::make( enum PTR ptr ) {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
-  return (TypeRawPtr*)(new TypeRawPtr(ptr,0))->hashcons();
+  return (TypeRawPtr*)(new TypeRawPtr(ptr,nullptr))->hashcons();
 }
 
 const TypeRawPtr *TypeRawPtr::make( address bits ) {
@@ -3141,7 +3141,7 @@ const TypeRawPtr *TypeRawPtr::make( address bits ) {
 const TypeRawPtr* TypeRawPtr::cast_to_ptr_type(PTR ptr) const {
   assert( ptr != Constant, "what is the constant?" );
   assert( ptr != Null, "Use TypePtr for null" );
-  assert( _bits==0, "Why cast a constant address?");
+  assert( _bits == nullptr, "Why cast a constant address?");
   if( ptr == _ptr ) return this;
   return make(ptr);
 }
@@ -3525,7 +3525,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
   }
 #endif
   if (Compile::current()->eliminate_boxing() && (t == InstPtr) &&
-      (offset > 0) && xk && (k != 0) && k->is_instance_klass()) {
+      (offset > 0) && xk && (k != nullptr) && k->is_instance_klass()) {
     _is_ptr_to_boxed_value = k->as_instance_klass()->is_boxed_value_offset(offset);
   }
 #ifdef _LP64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ struct Tarjan {
 // constructed.  This is the Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
 void PhaseCFG::build_dominator_tree() {
   // Pre-grow the blocks array, prior to the ResourceMark kicking in
-  _blocks.map(number_of_blocks(), 0);
+  _blocks.map(number_of_blocks(), nullptr);
 
   ResourceMark rm;
   // Setup mappings from my Graph to Tarjan's stuff and back
@@ -286,8 +286,8 @@ uint PhaseCFG::do_DFS(Tarjan *tarjan, uint rpo_counter) {
 
 void Tarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;
@@ -575,8 +575,8 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
 
 void NTarjan::COMPRESS()
 {
-  assert( _ancestor != 0, "" );
-  if( _ancestor->_ancestor != 0 ) {
+  assert( _ancestor != nullptr, "" );
+  if( _ancestor->_ancestor != nullptr ) {
     _ancestor->COMPRESS( );
     if( _ancestor->_label->_semi < _label->_semi )
       _label = _ancestor->_label;

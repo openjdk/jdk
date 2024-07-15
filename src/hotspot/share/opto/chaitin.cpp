@@ -69,7 +69,7 @@ void LRG::dump() const {
       tty->print(") ");
     }
   }
-  else if( _def == 0 ) tty->print("Dead ");
+  else if( _def == nullptr ) tty->print("Dead ");
   else tty->print("Def: N%d ",_def->_idx);
 
   tty->print("Cost:%4.2g Area:%4.2g Score:%4.2g ",_cost,_area, score());
@@ -203,7 +203,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
        nullptr
 #endif
        )
-  , _live(0)
+  , _live(nullptr)
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
 #ifndef PRODUCT

@@ -309,7 +309,7 @@ static Node* clone_node(Node* def, Block *b, Compile* C) {
       assert(false, "RA Split failed: attempt to clone node with anti_dependence");
       C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
     }
-    return 0;
+    return nullptr;
   }
   return def->clone();
 }
@@ -341,7 +341,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
       Node *in_spill;
       if (in->ideal_reg() != Op_RegFlags) {
         in_spill = get_spillcopy_wide(MachSpillCopyNode::InputToRematerialization, in, def, i);
-        if (!in_spill) { return 0; } // Bailed out
+        if (!in_spill) { return nullptr; } // Bailed out
         insert_proj(b_def, idx_def, in_spill, maxlrg++);
         if (b_def == b) {
           insidx++;
@@ -357,7 +357,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
                  " range and defining node %d: %s may not be rematerialized.",
                  def->_idx, def->Name(), in->_idx, in->Name());
           C->record_method_not_compilable("attempted to spill a non-spillable item with RegFlags input");
-          return 0; // Bailed out
+          return nullptr; // Bailed out
         }
       }
     }
@@ -366,7 +366,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   Node *spill = clone_node(def, b, C);
   if (spill == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
     // Check when generating nodes
-    return 0;
+    return nullptr;
   }
 
   // See if any inputs are currently being spilled, and take the
