@@ -742,8 +742,7 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
     }
   }
 
-  // Fast-locking does not use the 'lock' argument.
-  while (mark.is_fast_locked()) {
+    while (mark.is_fast_locked()) {
     markWord unlocked_mark = mark.set_unlocked();
     markWord old_mark = mark;
     mark = object->cas_set_mark(unlocked_mark, old_mark);
