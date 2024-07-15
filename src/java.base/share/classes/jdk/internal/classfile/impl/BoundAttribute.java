@@ -987,77 +987,77 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     public static AttributeMapper<?> standardAttribute(Utf8Entry name) {
         // critical bootstrap path, so no lambdas nor method handles here
         return switch (name.hashCode()) {
-            case 0x78147009 ->
+            case 0x46699ff2 ->
                 name.equalsString(NAME_ANNOTATION_DEFAULT) ? annotationDefault() : null;
-            case 0x665e3a3a ->
+            case 0x5208e184 ->
                 name.equalsString(NAME_BOOTSTRAP_METHODS) ? bootstrapMethods() : null;
-            case 0xcb7e162 ->
+            case 0xcb60907a ->
                 name.equalsString(NAME_CHARACTER_RANGE_TABLE) ? characterRangeTable() : null;
-            case 0x21e41e7e ->
+            case 0x4020220d ->
                 name.equalsString(NAME_CODE) ? code() : null;
-            case 0x5a306b41 ->
+            case 0xc20dd1fe ->
                 name.equalsString(NAME_COMPILATION_ID) ? compilationId() : null;
-            case 0x3e191c7c ->
+            case 0xcab1940d ->
                 name.equalsString(NAME_CONSTANT_VALUE) ? constantValue() : null;
-            case 0x5e88ed0c ->
+            case 0x558641d3 ->
                 name.equalsString(NAME_DEPRECATED) ? deprecated() : null;
-            case 0x7284695e ->
+            case 0x51d443cd ->
                 name.equalsString(NAME_ENCLOSING_METHOD) ? enclosingMethod() : null;
-            case 0x21df25db ->
+            case 0x687c1624 ->
                 name.equalsString(NAME_EXCEPTIONS) ? exceptions() : null;
-            case 0x11392da9 ->
+            case 0x7adb2910 ->
                 name.equalsString(NAME_INNER_CLASSES) ? innerClasses() : null;
-            case 0x167536fc ->
+            case 0x653f0551 ->
                 name.equalsString(NAME_LINE_NUMBER_TABLE) ? lineNumberTable() : null;
-            case 0x46939abc ->
+            case 0x64c75927 ->
                 name.equalsString(NAME_LOCAL_VARIABLE_TABLE) ? localVariableTable() : null;
-            case 0x63ee67f4 ->
+            case 0x6697f98d ->
                 name.equalsString(NAME_LOCAL_VARIABLE_TYPE_TABLE) ? localVariableTypeTable() : null;
-            case 0x2b597e15 ->
+            case 0xdbb0cdcb ->
                 name.equalsString(NAME_METHOD_PARAMETERS) ? methodParameters() : null;
-            case 0x19f20ade ->
+            case 0xc9b0928c ->
                 name.equalsString(NAME_MODULE) ? module() : null;
-            case 0x47f6395e ->
+            case 0x41cd27e8 ->
                 name.equalsString(NAME_MODULE_HASHES) ? moduleHashes() : null;
-            case 0x54db809 ->
+            case 0x7deb0a13 ->
                 name.equalsString(NAME_MODULE_MAIN_CLASS) ? moduleMainClass() : null;
-            case 0x1abd1c2c ->
+            case 0x6706ff99 ->
                 name.equalsString(NAME_MODULE_PACKAGES) ? modulePackages() : null;
-            case 0x6ba46dd ->
+            case 0x60272858 ->
                 name.equalsString(NAME_MODULE_RESOLUTION) ? moduleResolution() : null;
-            case 0x46f7d91d ->
+            case 0x5646d73d ->
                 name.equalsString(NAME_MODULE_TARGET) ? moduleTarget() : null;
-            case 0x5137f53 ->
+            case 0x50336c40 ->
                 name.equalsString(NAME_NEST_HOST) ? nestHost() : null;
-            case 0x4a8fa3b6 ->
+            case 0x4735ab81 ->
                 name.equalsString(NAME_NEST_MEMBERS) ? nestMembers() : null;
-            case 0x55c73cb6 ->
+            case 0x7100d9fe ->
                 name.equalsString(NAME_PERMITTED_SUBCLASSES) ? permittedSubclasses() : null;
-            case 0x3fe76d4e ->
+            case 0xd1ab5871 ->
                 name.equalsString(NAME_RECORD) ? record() : null;
-            case 0x180d6925 ->
+            case 0x7588550f ->
                 name.equalsString(NAME_RUNTIME_INVISIBLE_ANNOTATIONS) ? runtimeInvisibleAnnotations() : null;
-            case 0x7be22752 ->
+            case 0xcc74da30 ->
                 name.equalsString(NAME_RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS) ? runtimeInvisibleParameterAnnotations() : null;
-            case 0x5299824 ->
+            case 0xf67697f5 ->
                 name.equalsString(NAME_RUNTIME_INVISIBLE_TYPE_ANNOTATIONS) ? runtimeInvisibleTypeAnnotations() : null;
-            case 0x3534786e ->
+            case 0xe0837d2a ->
                 name.equalsString(NAME_RUNTIME_VISIBLE_ANNOTATIONS) ? runtimeVisibleAnnotations() : null;
-            case 0xb4b4ac6 ->
+            case 0xc945a075 ->
                 name.equalsString(NAME_RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS) ? runtimeVisibleParameterAnnotations() : null;
-            case 0x6926482 ->
+            case 0x611a3a90 ->
                 name.equalsString(NAME_RUNTIME_VISIBLE_TYPE_ANNOTATIONS) ? runtimeVisibleTypeAnnotations() : null;
-            case 0x16a42b7c ->
+            case 0xf76fb898 ->
                 name.equalsString(NAME_SIGNATURE) ? signature() : null;
-            case 0x400ab245 ->
+            case 0x6b41b047 ->
                 name.equalsString(NAME_SOURCE_DEBUG_EXTENSION) ? sourceDebugExtension() : null;
-            case 0x2af490d4 ->
+            case 0x748c2857 ->
                 name.equalsString(NAME_SOURCE_FILE) ? sourceFile() : null;
-            case 0x303e0c58 ->
+            case 0x6bf13a96 ->
                 name.equalsString(NAME_SOURCE_ID) ? sourceId() : null;
-            case 0x19c7d0cd ->
+            case 0xfa85ee5a ->
                 name.equalsString(NAME_STACK_MAP_TABLE) ? stackMapTable() : null;
-            case 0x3dc79b7a ->
+            case 0xf2670725 ->
                 name.equalsString(NAME_SYNTHETIC) ? synthetic() : null;
             default -> null;
         };
