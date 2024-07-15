@@ -1339,7 +1339,7 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        @Stable short offsetIndex; // slot + 1, reserves 0 for unset
+        private @Stable short offsetIndex; // slot + 1, reserves 0 for unset
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
@@ -1395,9 +1395,10 @@ class LambdaForm {
         BasicType type() { return type; }
         int index() { return offsetIndex - 1; }
         boolean initIndex(int i) {
-            if (offsetIndex != i + 1) {
+            short index = (short) (i + 1);
+            if (offsetIndex != index) {
                 if (offsetIndex != 0)  return false;
-                offsetIndex = (short) (i + 1);
+                offsetIndex = index;
             }
             return true;
         }
