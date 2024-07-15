@@ -1510,7 +1510,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 var to = pto.multipliedBy(backoff);
                 if (to.compareTo(MAX_PTO_BACKOFF_TIMEOUT) > 0) to = MAX_PTO_BACKOFF_TIMEOUT;
                 String msg = "%s: Too many probe time outs (%s: backoff %s, duration %s, %s)"
-                        .formatted(connectionId.simpleString(), packetNumberSpace, backoff,
+                        .formatted(logTag(), packetNumberSpace, backoff,
                                 to, rttEstimator.state());
                 final TerminationCause terminationCause;
                 if (packetNumberSpace == PacketNumberSpace.HANDSHAKE) {
@@ -3045,13 +3045,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             if (Log.errors()) {
                 var error = new AssertionError("%s: Size too big: %s > %s".formatted(
-                        localConnectionId().simpleString(),
+                        logTag(),
                         size, getMaxDatagramSize()));
-                Log.logError(localConnectionId().simpleString() + ": Packet too big: " + packet.prettyPrint());
+                Log.logError(logTag() + ": Packet too big: " + packet.prettyPrint());
                 Log.logError(error);
             } else if (debug.on()) {
                 var error = new AssertionError("%s: Size too big: %s > %s".formatted(
-                        localConnectionId().simpleString(),
+                        logTag(),
                         size, getMaxDatagramSize()));
                 debug.log("Packet too big: " + packet.prettyPrint());
                 debug.log(error);
@@ -3894,7 +3894,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         packetSpaces.close();
     }
 
-    protected final String logTag() {
+    public final String logTag() {
         return connectionId.simpleString();
     }
 

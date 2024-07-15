@@ -404,6 +404,11 @@ public class EncoderTest {
 
         @Override
         public String dbgTag() { return null; }
+
+        @Override
+        public String logTag() {
+            return null;
+        }
     }
 
     class TestQuicSenderStream implements QuicSenderStream {

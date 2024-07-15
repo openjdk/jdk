@@ -227,7 +227,7 @@ public final class Http3Connection implements AutoCloseable {
     }
 
     public String quicConnectionTag() {
-        return quicConnection.localConnectionId().simpleString();
+        return quicConnection.logTag();
     }
 
     private static boolean shouldUpdateDynamicTable(TableEntry tableEntry) {

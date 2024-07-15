@@ -314,6 +314,11 @@ public class EncoderDecoderConnector {
         public String dbgTag() {
             return null;
         }
+
+        @Override
+        public String logTag() {
+            return null;
+        }
     }
 
 

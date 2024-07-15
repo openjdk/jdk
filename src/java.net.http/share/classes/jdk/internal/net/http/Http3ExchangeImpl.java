@@ -1247,7 +1247,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             Log.logHttp3("{0}/streamId={1} {2} #{3} (requestSent={4}, responseReceived={5}, " +
                             "reader={6}, writer={7}, statusCode={8}, finalStream={9}, " +
                             "receivedQuicBytes={10}, sentQuicBytes={11}): {12}",
-                    connection().quicConnection().localConnectionId().simpleString(),
+                    connection().quicConnection().logTag(),
                     String.valueOf(reader.stream().streamId()), request, String.valueOf(exchange.multi.id),
                     requestSent, responseReceived, reader.receivingState(), writer.sendingState(),
                     Integer.valueOf(responseCode), connection.isFinalStream(), String.valueOf(receivedQuicBytes),

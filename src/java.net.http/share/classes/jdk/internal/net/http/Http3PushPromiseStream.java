@@ -523,7 +523,7 @@ final class Http3PushPromiseStream<T> extends Http3Stream<T> {
         if (Log.http3()) {
             Log.logHttp3("{0}/streamId={1} pushId={2} #{3} (responseReceived={4}, " +
                             "reader={5}, statusCode={6}, finalStream={9}): {10}",
-                    connection().quicConnection().localConnectionId().simpleString(),
+                    connection().quicConnection().logTag(),
                     String.valueOf(reader.stream().streamId()), pushId, String.valueOf(exchange.multi.id),
                     responseReceived, reader.receivingState(),
                     Integer.valueOf(responseCode), connection.isFinalStream(), io);

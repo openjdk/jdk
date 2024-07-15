@@ -895,15 +895,12 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         String msg = x.getMessage();
         if (msg != null && msg.contains("too big")) {
             int max = -1;
-            String cid = connection == null
-                    ? "(unknown connection)"
-                    : connection.localConnectionId().simpleString();
             if (connection instanceof QuicConnectionImpl cimpl) {
                 max = cimpl.getMaxDatagramSize();
             }
-            msg = "%s on endpoint %s: Failed to send datagram (%s bytes, max: %s) to %s: %s"
-                    .formatted(cid, this.name, tosend, max, dest, x);
-            if (debug.on()) debug.log(msg);
+            msg = "on endpoint %s: Failed to send datagram (%s bytes, max: %s) to %s: %s"
+                    .formatted(this.name, tosend, max, dest, x);
+            if (connection == null && debug.on()) debug.log(msg);
             x = new SocketException(msg, x);
         }
         if (connection != null) {

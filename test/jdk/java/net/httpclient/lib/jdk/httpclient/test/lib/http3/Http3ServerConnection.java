@@ -986,7 +986,7 @@ public class Http3ServerConnection {
             }
 
             String connectionTag() {
-                return quicConnection.localConnectionId().simpleString();
+                return quicConnection.logTag();
             }
 
             long getResponseLength() {
@@ -1195,7 +1195,7 @@ public class Http3ServerConnection {
                 // this will return QuicServerConnectionId(NNN), which should
                 // be enough to detect whether two exchanges are made on the
                 // same connection
-                return quicConnection.localConnectionId().simpleString();
+                return quicConnection.logTag();
             }
 
             @Override

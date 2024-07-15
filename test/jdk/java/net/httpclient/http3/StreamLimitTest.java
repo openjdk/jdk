@@ -74,7 +74,7 @@ public class StreamLimitTest {
 
         @Override
         public void handle(HttpTestExchange exchange) throws IOException {
-            final String handledBy = latestServerConn.localConnectionId().simpleString();
+            final String handledBy = latestServerConn.logTag();
             System.out.println(handledBy + " handling request " + exchange.getRequestURI());
             final byte[] respBody;
             if (handledBy == null) {

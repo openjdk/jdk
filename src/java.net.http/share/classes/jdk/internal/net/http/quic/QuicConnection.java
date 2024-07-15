@@ -194,6 +194,11 @@ public abstract class QuicConnection {
     public abstract String dbgTag();
 
     /**
+     * {@return a debug tag}
+     */
+    public abstract String logTag();
+
+    /**
      * {@return the {@link TerminationCause} if the connection has closed or is being closed,
      * otherwise returns null}
      */

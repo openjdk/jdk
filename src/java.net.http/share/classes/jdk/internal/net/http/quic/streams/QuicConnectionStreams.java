@@ -1377,7 +1377,7 @@ public final class QuicConnectionStreams {
         } catch (RuntimeException | AssertionError x) {
             if (debug.on()) debug.log("Failed to compose frames", x);
             if (Log.errors()) {
-                Log.logError(connection.localConnectionId().simpleString()
+                Log.logError(connection.logTag()
                         + ": Failed to compose frames", x);
             }
             throw x;
