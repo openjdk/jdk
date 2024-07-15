@@ -209,8 +209,12 @@ class DefNewGeneration: public Generation {
     return result;
   }
 
+  // Allocate requested size or return null; single-threaded and lock-free versions.
   HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
+
+  // Expand young-gen and invoke allocate above.
+  HeapWord* expand_and_allocate(size_t size);
 
   void gc_epilogue(bool full);
 
@@ -225,8 +229,6 @@ class DefNewGeneration: public Generation {
   void compute_new_size();
 
   bool collect(bool clear_all_soft_refs);
-
-  HeapWord* expand_and_allocate(size_t size);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }

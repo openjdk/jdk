@@ -130,9 +130,11 @@ public:
   void complete_loaded_archive_space(MemRegion archive_space);
   inline void update_for_block(HeapWord* start, HeapWord* end);
 
+  // Allocate and returns a block of the requested size, or returns "null".
+  // Assumes the caller has done any necessary locking.
   inline HeapWord* allocate(size_t word_size);
-  inline HeapWord* par_allocate(size_t word_size);
 
+  // Expand the old-gen then invoke allocate above.
   HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();

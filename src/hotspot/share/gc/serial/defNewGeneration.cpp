@@ -572,11 +572,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   return block_start_const(to(), p);
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size);
-}
-
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
   size_t const survivor_capacity = to()->capacity() / HeapWordSize;
@@ -878,6 +873,11 @@ HeapWord* DefNewGeneration::allocate(size_t word_size) {
 
 HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
+}
+
+HeapWord* DefNewGeneration::expand_and_allocate(size_t size) {
+  // We don't attempt to expand the young generation (but perhaps we should.)
+  return allocate(size);
 }
 
 size_t DefNewGeneration::tlab_capacity() const {
