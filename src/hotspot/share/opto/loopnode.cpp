@@ -2591,7 +2591,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* stride_m = phase->intcon(stride_con - (stride_con > 0 ? 1 : -1));
     Node *range = phase->transform(new SubINode(in(Limit), in(Init)));
     Node *bias  = phase->transform(new AddINode(range, stride_m));
-    Node *trip  = phase->transform(new DivINode(0, bias, in(Stride)));
+    Node *trip  = phase->transform(new DivINode(nullptr, bias, in(Stride)));
     Node *span  = phase->transform(new MulINode(trip, in(Stride)));
     return new AddINode(span, in(Init)); // exact limit
   }
@@ -2620,7 +2620,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* neg_stride   = phase->longcon(-stride_con);
       span = phase->transform(new AndLNode(bias, neg_stride));
     } else {
-      Node *trip  = phase->transform(new DivLNode(0, bias, stride));
+      Node *trip  = phase->transform(new DivLNode(nullptr, bias, stride));
       span = phase->transform(new MulLNode(trip, stride));
     }
     // Convert back to int
