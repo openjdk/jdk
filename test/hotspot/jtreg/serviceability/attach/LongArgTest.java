@@ -42,25 +42,40 @@ import jdk.test.lib.apps.LingeredApp;
 
 public class LongArgTest {
 
+    // current restriction: max arg size is 1024
+    private static int MAX_ARG_SIZE = 1024;
+
     public static void main(String[] args) throws Exception {
         LingeredApp app = null;
         try {
             app = LingeredApp.startApp();
 
-            test(app).run();
-
+            // sanity
             test(app)
-                .withLongValue()
+                .mustSucceed()
                 .run();
 
             test(app)
-                .withSuperLongValue()
+                .valueLength(MAX_ARG_SIZE)
+                .mustSucceed()
+                .run();
+
+            test(app)
+                .valueLength(MAX_ARG_SIZE + 1)
+                .run();
+
+            // more than max args (3) with MAX_ARG_SIZE
+            test(app)
+                .valueLength(3 * MAX_ARG_SIZE + 1)
                 .run();
 
         } finally {
             LingeredApp.stopApp(app);
         }
+    }
 
+    private static Test test(LingeredApp app) {
+        return new Test(app);
     }
 
     // For simplicity, the test uses internal HotSpotVirtualMachine,
@@ -69,25 +84,25 @@ public class LongArgTest {
         private LingeredApp app;
         private String flagName = "HeapDumpPath";
         private String flagValue = generateValue(5);
+        private boolean setFlagMustSucceed = false;
 
         Test(LingeredApp app) {
             this.app = app;
         }
 
-        // Value length exceeds 1K.
-        Test withLongValue() {
-            flagValue = generateValue(1024 + 1);
+        Test valueLength(int len) {
+            flagValue = generateValue(len);
             return this;
         }
 
-        // Value length exceeds 3K (1K * 3 args).
-        Test withSuperLongValue() {
-            flagValue = generateValue(3 * 1024 + 1);
+        Test mustSucceed() {
+            setFlagMustSucceed = true;
             return this;
         }
 
         void run() throws Exception {
             System.out.println("======== Start ========");
+            System.out.println("Arg size = " + flagValue.length());
 
             HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(String.valueOf(app.getPid()));
 
@@ -124,6 +139,9 @@ public class LongArgTest {
                 replyReader = new BufferedReader(new InputStreamReader(
                     vm.setFlag(flagName, flagValue)));
             } catch (IOException ex) {
+                if (setFlagMustSucceed) {
+                    throw ex;
+                }
                 System.out.println("OK: setFlag() thrown exception:");
                 ex.printStackTrace(System.out);
                 return false;
@@ -154,12 +172,8 @@ public class LongArgTest {
         }
 
         private String generateValue(int len) {
-            return "X" + "A".repeat(len) + "X";
+            return "X" + "A".repeat(len - 2) + "X";
         }
-    }
-
-    private static Test test(LingeredApp app) {
-        return new Test(app);
     }
 
 }
