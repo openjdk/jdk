@@ -83,7 +83,7 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     oop _obj;
 
   public:
-    Lookup(oop obj) : _obj(obj) {}
+    explicit Lookup(oop obj) : _obj(obj) {}
 
     uintx get_hash() const {
       uintx hash = _obj->mark().hash();
@@ -92,7 +92,7 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     }
 
     bool equals(ObjectMonitor** value) {
-            assert(*value != nullptr, "must be");
+      assert(*value != nullptr, "must be");
       return (*value)->object_refers_to(_obj);
     }
 
@@ -106,7 +106,7 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     ObjectMonitor* _monitor;
 
   public:
-    LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
+    explicit LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
 
     uintx get_hash() const {
       return _monitor->hash();
@@ -742,7 +742,7 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
     }
   }
 
-    while (mark.is_fast_locked()) {
+  while (mark.is_fast_locked()) {
     markWord unlocked_mark = mark.set_unlocked();
     markWord old_mark = mark;
     mark = object->cas_set_mark(unlocked_mark, old_mark);
@@ -961,8 +961,8 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   markWord mark = object->mark_acquire();
   assert(!mark.is_unlocked(), "Cannot be unlocked");
 
-    for (;;) {
-// Fetch the monitor from the table
+  for (;;) {
+    // Fetch the monitor from the table
     monitor = get_or_insert_monitor(object, current, cause, true /* try_read */);
 
     // ObjectMonitors are always inserted as anonymously owned, this thread is
