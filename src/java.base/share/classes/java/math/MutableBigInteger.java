@@ -931,6 +931,58 @@ class MutableBigInteger {
     }
 
     /**
+     * Shifts {@code this} of {@code n} ints to the left and adds {@code addend}.
+     * Assumes {@code n > 0} for speed.
+     */
+    void shiftAdd(MutableBigInteger addend, int n) {
+        // Fast cases
+        if (addend.intLen <= n) {
+            shiftAddDisjoint(addend, n);
+        } else if (intLen == 0) {
+            copyValue(addend);
+        } else {
+            leftShift(n << 5);
+            add(addend);
+        }
+    }
+
+    /**
+     * Shifts {@code this} of {@code n} ints to the left and adds {@code addend}.
+     * Assume {@code addend.intLen <= n}.
+     */
+    void shiftAddDisjoint(MutableBigInteger addend, int n) {
+        if (intLen == 0) { // Avoid unnormal values
+            copyValue(addend);
+            return;
+        }
+
+        int[] res;
+        final int resLen = intLen + n, resOffset;
+        if (resLen > value.length) {
+            res = new int[resLen];
+            System.arraycopy(value, offset, res, 0, intLen);
+            resOffset = 0;
+        } else {
+            res = value;
+            if (offset + resLen > value.length) {
+                System.arraycopy(value, offset, res, 0, intLen);
+                resOffset = 0;
+            } else {
+                resOffset = offset;
+            }
+            // Clear words where necessary
+            if (addend.intLen < n)
+                Arrays.fill(res, resOffset + intLen, resOffset + resLen - addend.intLen, 0);
+        }
+
+        System.arraycopy(addend.value, addend.offset, res, resOffset + resLen - addend.intLen, addend.intLen);
+
+        value = res;
+        offset = resOffset;
+        intLen = resLen;
+    }
+
+    /**
      * Subtracts the smaller of this and b from the larger and places the
      * result into this MutableBigInteger.
      */
@@ -2019,8 +2071,7 @@ class MutableBigInteger {
         MutableBigInteger u = dividend.divide(twiceSqrt, q);
 
         MutableBigInteger sqrt = sr[0];
-        sqrt.leftShift(blockLen << 5);
-        sqrt.add(q);
+        sqrt.shiftAdd(q, blockLen);
 
         MutableBigInteger chunk = u; // Corresponds to ub + a_0 in the paper
         chunk.shiftAddDisjoint(getBlockZimmermann(0, len, limit, blockLen), blockLen);
@@ -2070,42 +2121,6 @@ class MutableBigInteger {
             sqrt.rightShift(halfShift);
         }
         return new MutableBigInteger[] { sqrt, rem };
-    }
-
-    /**
-     * Shifts {@code this} of {@code n} ints to the left and adds {@code addend}.
-     * Assume {@code addend.intLen <= n}.
-     */
-    private void shiftAddDisjoint(MutableBigInteger addend, int n) {
-        if (intLen == 0) { // Avoid unnormal values
-            copyValue(addend);
-            return;
-        }
-
-        int[] res;
-        final int resLen = intLen + n, resOffset;
-        if (resLen > value.length) {
-            res = new int[resLen];
-            System.arraycopy(value, offset, res, 0, intLen);
-            resOffset = 0;
-        } else {
-            res = value;
-            if (offset + resLen > value.length) {
-                System.arraycopy(value, offset, res, 0, intLen);
-                resOffset = 0;
-            } else {
-                resOffset = offset;
-            }
-            // Clear words where necessary
-            if (addend.intLen < n)
-                Arrays.fill(res, resOffset + intLen, resOffset + resLen - addend.intLen, 0);
-        }
-
-        System.arraycopy(addend.value, addend.offset, res, resOffset + resLen - addend.intLen, addend.intLen);
-
-        value = res;
-        offset = resOffset;
-        intLen = resLen;
     }
 
     /**
