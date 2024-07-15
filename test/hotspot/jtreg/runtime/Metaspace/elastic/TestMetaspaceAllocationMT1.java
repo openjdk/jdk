@@ -90,22 +90,24 @@
  *      TestMetaspaceAllocationMT1 3
  */
 
+import jdk.test.lib.Unit;
+
 public class TestMetaspaceAllocationMT1 {
 
     public static void main(String[] args) throws Exception {
 
-        final long wordSize = Settings.WORD_SIZE;
-        final long testAllocationCeiling = 1024 * 1024 * 8 * wordSize; // 8m words = 64M on 64bit
+        final long testAllocationCeiling = 64L * Unit.valueOf("M").size();
+
         final int numThreads = 4;
         final int seconds = Integer.parseInt(args[0]);
 
         for (int i = 0; i < 3; i ++) {
 
-            long commitLimit = (i == 1) ? 1024 * 256 * wordSize: 0;
+            long commitLimit = (i == 1) ? 2 * Unit.valueOf("M").size() : 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
             //  (512K on 64bit, 1M on 32bit)
-            long reserveLimit = (i == 2) ? Settings.ROOT_CHUNK_WORD_SIZE * 2 * wordSize: 0;
+            long reserveLimit = (i == 2) ? Settings.ROOT_CHUNK_WORD_SIZE * 16: 0;
 
             System.out.println("#### Test: ");
             System.out.println("#### testAllocationCeiling: " + testAllocationCeiling);
@@ -115,7 +117,7 @@ public class TestMetaspaceAllocationMT1 {
             System.out.println("#### reserveLimit: " + reserveLimit);
 
             MetaspaceTestContext context = new MetaspaceTestContext(commitLimit, reserveLimit);
-            MetaspaceTestOneArenaManyThreads test = new MetaspaceTestOneArenaManyThreads(context, testAllocationCeiling * wordSize, numThreads, seconds);
+            MetaspaceTestOneArenaManyThreads test = new MetaspaceTestOneArenaManyThreads(context, testAllocationCeiling, numThreads, seconds);
 
             try {
                 test.runTest();

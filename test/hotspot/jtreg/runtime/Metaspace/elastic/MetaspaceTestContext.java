@@ -229,7 +229,7 @@ public class MetaspaceTestContext {
         // are stress tests,
         //
         long expectedMaxCommitted = usageMeasured;
-        expectedMaxCommitted += Settings.ROOT_CHUNK_WORD_SIZE;
+        expectedMaxCommitted += Settings.ROOT_CHUNK_WORD_SIZE * Settings.WORD_SIZE;
         expectedMaxCommitted *= 10.0;
 
         if (committedMeasured > expectedMaxCommitted) {
