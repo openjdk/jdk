@@ -5265,8 +5265,8 @@ class StubGenerator: public StubCodeGenerator {
     __ add(len, len, count);
     __ bltz(len, L_by1);
     // Trying to unroll
-    __ mv(count, step_64);
-    __ blt(len, count, L_by16_loop);
+    __ mv(t2, step_64);
+    __ blt(len, t2, L_by16_loop);
 
   __ bind(L_by16_loop_unroll);
     adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
@@ -5275,7 +5275,6 @@ class StubGenerator: public StubCodeGenerator {
     __ sub(len, len, step_64);
     // By now the count should still be 64
     __ bge(len, count, L_by16_loop_unroll);
-    __ mv(count, step_16);
 
   __ bind(L_by16_loop);
     adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
