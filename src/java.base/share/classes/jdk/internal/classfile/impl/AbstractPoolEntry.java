@@ -68,24 +68,19 @@ public abstract sealed class AbstractPoolEntry {
      */
 
     private static final int TAG_SMEAR = 0x13C4B2D1;
-    private static final int INT_PHI = 0x9E3779B9;
+    static final int NON_ZERO = 0x40000000;
 
     public static int hash1(int tag, int x1) {
-        return phiMix(tag * TAG_SMEAR + x1);
+        return (tag * TAG_SMEAR + x1) | NON_ZERO;
     }
 
     public static int hash2(int tag, int x1, int x2) {
-        return phiMix(tag * TAG_SMEAR + x1 + 31*x2);
+        return (tag * TAG_SMEAR + x1 + 31 * x2) | NON_ZERO;
     }
 
     // Ensure that hash is never zero
     public static int hashString(int stringHash) {
-        return phiMix(stringHash | (1 << 30));
-    }
-
-    public static int phiMix(int x) {
-        int h = x * INT_PHI;
-        return h ^ (h >> 16);
+        return stringHash | NON_ZERO;
     }
 
     public static Utf8Entry rawUtf8EntryFromStandardAttributeName(String name) {

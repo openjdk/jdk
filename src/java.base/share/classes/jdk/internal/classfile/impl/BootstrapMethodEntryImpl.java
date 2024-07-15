@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,9 +76,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     static int computeHashCode(MethodHandleEntryImpl handle,
                                List<? extends LoadableConstantEntry> arguments) {
-        int hash = handle.hashCode();
-        hash = 31 * hash + arguments.hashCode();
-        return AbstractPoolEntry.phiMix(hash);
+        return (31 * handle.hashCode() + arguments.hashCode()) | AbstractPoolEntry.NON_ZERO;
     }
 
     @Override
