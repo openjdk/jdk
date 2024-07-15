@@ -51,8 +51,6 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
-import compiler.lib.ir_framework.*;
-
 public class TestMergeStoresFuzzer {
   public static void main(String args[]) throws IOException {
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -97,11 +95,10 @@ public class TestMergeStoresFuzzer {
     if (success) {
       System.out.println("Compilation successfull, invoking test...");
       try {
-          ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
           // Classpath for all included classes (e.g. IR Framework).
           URL[] urls = new URL[] { new File("").toURI().toURL(),
                                    new File(System.getProperty("test.classes")).toURI().toURL()};
-          URLClassLoader classLoader = URLClassLoader.newInstance(urls, sysLoader);
+          URLClassLoader classLoader = URLClassLoader.newInstance(urls);
           Class.forName("HelloWorld", true, classLoader).getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
 
       } catch (ClassNotFoundException e) {
