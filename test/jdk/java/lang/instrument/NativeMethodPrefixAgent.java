@@ -69,13 +69,9 @@ class NativeMethodPrefixAgent {
         }
 
         @Override
-        public byte[]
-        transform(
-            ClassLoader loader,
-            String className,
-            Class<?> classBeingRedefined,
-            ProtectionDomain    protectionDomain,
-            byte[] classfileBuffer) {
+        public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
+                                ProtectionDomain protectionDomain, byte[] classfileBuffer) {
+
             try {
                 // we only transform a specific application class
                 if (!className.equals(CLASS_TO_TRANSFORM)) {
