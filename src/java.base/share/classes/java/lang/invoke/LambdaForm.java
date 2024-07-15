@@ -1339,7 +1339,7 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        @Stable short flippedIndex; // uses -1..-256 for slots, 0 for unset
+        @Stable short offsetIndex; // slot + 1, reserves 0 for unset
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
@@ -1347,7 +1347,7 @@ class LambdaForm {
         private static final Object[] EMPTY_ARGS = new Object[0];
 
         private Name(int index, BasicType type, NamedFunction function, Object[] arguments) {
-            this.flippedIndex = (short)~index;
+            this.offsetIndex = (short) (index + 1);
             this.type = type;
             this.function = function;
             this.arguments = arguments;
@@ -1355,7 +1355,7 @@ class LambdaForm {
             assert(this.index() == index && typesMatch(function, this.arguments));
         }
         private Name(Name that, Object constraint) {
-            this.flippedIndex = that.flippedIndex;
+            this.offsetIndex = that.offsetIndex;
             this.type = that.type;
             this.function = that.function;
             this.arguments = that.arguments;
@@ -1393,11 +1393,11 @@ class LambdaForm {
         Name(BasicType type) { this(-1, type); }
 
         BasicType type() { return type; }
-        int index() { return ~flippedIndex; }
+        int index() { return offsetIndex - 1; }
         boolean initIndex(int i) {
-            if (flippedIndex != ~i) {
-                if (flippedIndex != 0)  return false;
-                flippedIndex = (short)~i;
+            if (offsetIndex != i + 1) {
+                if (offsetIndex != 0)  return false;
+                offsetIndex = (short) (i + 1);
             }
             return true;
         }
@@ -1519,7 +1519,7 @@ class LambdaForm {
         }
 
         public String toString() {
-            return (isParam() ? "a" : "t") + (flippedIndex != 0 ? index() : System.identityHashCode(this)) + ":" + typeChar();
+            return (isParam() ? "a" : "t") + (offsetIndex != 0 ? index() : System.identityHashCode(this)) + ":" + typeChar();
         }
         public String debugString() {
             String s = paramString();
