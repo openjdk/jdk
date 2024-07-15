@@ -24,8 +24,8 @@
  */
 package jdk.internal.net.http.quic;
 
+import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -79,9 +79,12 @@ public class QuicConnectionIdFactory {
         byte[] temp = new byte[MAX_CONNECTION_ID_LENGTH];
         RANDOM.nextBytes(temp);
         scrambler = temp;
-        temp = new byte[64]; // 64 = HmacSHA256 blocklen
-        RANDOM.nextBytes(temp);
-        statelessTokenKey = new SecretKeySpec(temp, "HmacSHA256");
+        try {
+            KeyGenerator kg = KeyGenerator.getInstance("HmacSHA256");
+            statelessTokenKey = kg.generateKey();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("HmacSHA256 key generator not available", e);
+        }
     }
 
     /**

@@ -43,12 +43,10 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HexFormat;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -78,8 +76,8 @@ import jdk.internal.util.OperatingSystem;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.SecretKeySpec;
 
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.BLOCKING_WITH_VIRTUAL_THREADS;
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.NON_BLOCKING_WITH_SELECTOR;
@@ -274,10 +272,12 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         this.executor = quicInstance.executor();
         this.timerQueue = timerQueue;
         if (debug.on()) debug.log("created for %s", channel);
-        byte[] key = new byte[16];
-        // TODO use a global random?
-        new SecureRandom().nextBytes(key);
-        tokenEncryptionKey = new SecretKeySpec(key, "AES");
+        try {
+            KeyGenerator kg = KeyGenerator.getInstance("AES");
+            tokenEncryptionKey = kg.generateKey();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("AES key generator not available", e);
+        }
     }
 
     public String name() {
