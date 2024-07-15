@@ -33,8 +33,8 @@ import static java.lang.constant.ConstantDescs.*;
 
 class NativeMethodPrefixAgent {
 
-    private static ClassFileTransformer t0, t1, t2;
-    private static Instrumentation inst;
+    static ClassFileTransformer t0, t1, t2;
+    static Instrumentation inst;
     private static Throwable agentError; // to be accessed/updated in a synchronized block
 
     private static final String CLASS_TO_TRANSFORM = "NativeMethodPrefixApp$Dummy";
@@ -58,8 +58,8 @@ class NativeMethodPrefixAgent {
     static class Tr implements ClassFileTransformer {
         private static final ClassDesc CD_StringIdCallbackReporter = ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter");
         private static final MethodTypeDesc MTD_void_String_int = MethodTypeDesc.of(CD_void, CD_String, CD_int);
-        private final String trname;
-        private final int transformId;
+        final String trname;
+        final int transformId;
         private final String nativeMethodPrefix;
 
         Tr(int transformId) {
@@ -69,41 +69,39 @@ class NativeMethodPrefixAgent {
         }
 
         @Override
-        public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
-                                ProtectionDomain protectionDomain, byte[] classfileBuffer) {
-
+        public byte[]
+        transform(
+            ClassLoader loader,
+            String className,
+            Class<?> classBeingRedefined,
+            ProtectionDomain    protectionDomain,
+            byte[] classfileBuffer) {
             try {
-                return doTransform(className, classBeingRedefined, classfileBuffer);
+                // we only transform a specific application class
+                if (!className.equals(CLASS_TO_TRANSFORM)) {
+                    return null;
+                }
+                if (classBeingRedefined != null) {
+                    return null;
+                }
+                // use a byte code generator which creates wrapper methods,
+                // with a configured native method prefix, for each native method on the
+                // class being transformed
+                final Instrumentor byteCodeGenerator = Instrumentor.instrFor(classfileBuffer)
+                        .addNativeMethodTrackingInjection(nativeMethodPrefix,
+                                (name, cb) -> {
+                                    cb.loadConstant(name);
+                                    cb.loadConstant(transformId);
+                                    cb.invokestatic(CD_StringIdCallbackReporter,
+                                            "tracker", MTD_void_String_int);
+                                });
+                // generate the bytecode
+                return byteCodeGenerator.apply();
             } catch (Throwable t) {
                 trackError(t);
                 return null;
             }
         }
-
-        private byte[] doTransform(String className, Class<?> classBeingRedefined,
-                                   byte[] classfileBuffer) {
-            // we only transform a specific application class
-            if (!className.equals(CLASS_TO_TRANSFORM)) {
-                return null;
-            }
-            if (classBeingRedefined != null) {
-                return null;
-            }
-            // use a byte code generator which creates wrapper methods,
-            // with a configured native method prefix, for each native method on the
-            // class being transformed
-            final Instrumentor byteCodeGenerator = Instrumentor.instrFor(classfileBuffer)
-                    .addNativeMethodTrackingInjection(nativeMethodPrefix,
-                            (name, cb) -> {
-                                cb.loadConstant(name);
-                                cb.loadConstant(transformId);
-                                cb.invokestatic(CD_StringIdCallbackReporter,
-                                        "tracker", MTD_void_String_int);
-                            });
-            // generate the bytecode
-            return byteCodeGenerator.apply();
-        }
-
     }
 
     // for debugging
@@ -121,7 +119,10 @@ class NativeMethodPrefixAgent {
         }
     }
 
-    public static void premain(String agentArgs, Instrumentation instArg) throws Exception {
+    public static void
+    premain (String agentArgs, Instrumentation instArg)
+        throws IOException, IllegalClassFormatException,
+        ClassNotFoundException, UnmodifiableClassException {
         inst = instArg;
         System.out.println("Premain");
 
