@@ -244,15 +244,7 @@ public abstract class UnixFileSystemProvider
                                               FileAttribute<?>... attrs)
          throws IOException
     {
-        UnixPath file = UnixPath.toUnixPath(obj);
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
-        try {
-            return UnixChannelFactory.newFileChannel(file, options, mode);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file);
-            return null;  // keep compiler happy
-        }
+        return newFileChannel(obj, options, attrs);
     }
 
     @Override
