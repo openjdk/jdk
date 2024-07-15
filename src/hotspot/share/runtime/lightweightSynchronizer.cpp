@@ -340,22 +340,20 @@ public:
 
 ObjectMonitorWorld* LightweightSynchronizer::_omworld = nullptr;
 
-ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool try_read, bool* inserted) {
+ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
 
-  if (try_read) {
-    ObjectMonitor* monitor = get_monitor_from_table(current, object);
-    if (monitor != nullptr) {
-      *inserted = false;
-      return monitor;
-    }
+  ObjectMonitor* monitor = get_monitor_from_table(current, object);
+  if (monitor != nullptr) {
+    *inserted = false;
+    return monitor;
   }
 
   ObjectMonitor* alloced_monitor = new ObjectMonitor(object);
   alloced_monitor->set_owner_anonymous();
 
   // Try insert monitor
-  ObjectMonitor* monitor = add_monitor(current, alloced_monitor, object);
+  monitor = add_monitor(current, alloced_monitor, object);
 
   *inserted = alloced_monitor == monitor;
   if (!*inserted) {
@@ -386,13 +384,13 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
 }
 
 
-ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause, bool try_read) {
+ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause) {
   assert(UseObjectMonitorTable, "must be");
 
   EventJavaMonitorInflate event;
 
   bool inserted;
-  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, try_read, &inserted);
+  ObjectMonitor* monitor = get_or_insert_monitor_from_table(object, current, &inserted);
 
   if (inserted) {
     // Hopefully the performance counters are allocated on distinct
@@ -963,7 +961,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
 
   for (;;) {
     // Fetch the monitor from the table
-    monitor = get_or_insert_monitor(object, current, cause, true /* try_read */);
+    monitor = get_or_insert_monitor(object, current, cause);
 
     // ObjectMonitors are always inserted as anonymously owned, this thread is
     // the current holder of the monitor. So unless the entry is stale and
@@ -1039,7 +1037,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, JavaThread
 
   // Get or create the monitor
   if (monitor == nullptr) {
-    monitor = get_or_insert_monitor(object, current, cause, true /* try_read */);
+    monitor = get_or_insert_monitor(object, current, cause);
   }
 
   if (monitor->try_enter(locking_thread)) {

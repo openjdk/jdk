@@ -36,8 +36,8 @@ class LightweightSynchronizer : AllStatic {
 private:
   static ObjectMonitorWorld* _omworld;
 
-  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool try_read, bool* inserted);
-  static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause, bool try_read);
+  static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
+  static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause);
 
   static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
   static bool remove_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
