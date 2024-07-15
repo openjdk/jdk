@@ -37,32 +37,45 @@ import static java.lang.foreign.ValueLayout.*;
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(1)
-@Threads(Threads.MAX)
 public class ConcurrentClose {
 
     static final int SIZE = 10_000;
 
-    @Benchmark
-    public void sharedAccess() {
-        try (Arena arena = Arena.ofShared()) {
-            MemorySegment segment = arena.allocate(SIZE);
-            access(segment);
-        }
+    MemorySegment segment;
+    byte[] array;
+
+    @Setup
+    public void setup() {
+        segment = Arena.global().allocate(SIZE);
+        array = new byte[SIZE];
     }
 
     @Benchmark
-    public void confinedAccess() {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment segment = arena.allocate(SIZE);
-            access(segment);
-        }
+    @GroupThreads(1)
+    @Group("sharedClose")
+    public void closing() {
+        Arena arena = Arena.ofShared();
+        arena.close();
     }
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    public int access(MemorySegment segment) {
+    @Benchmark
+    @GroupThreads(1)
+    @Group("sharedClose")
+    public int memorySegmentAccess() {
         int sum = 0;
         for (int i = 0; i < segment.byteSize(); i++) {
             sum += segment.get(JAVA_BYTE, i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    @GroupThreads(1)
+    @Group("sharedClose")
+    public int otherAccess() {
+        int sum = 0;
+        for (int i = 0; i < array.length; i++) {
+            sum += array[i];
         }
         return sum;
     }
