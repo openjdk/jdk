@@ -366,53 +366,9 @@ public class Lower extends TreeTranslator {
                     if (v.getConstValue() == null) {
                         addFreeVar(v);
                     }
-                } else {
-                    if (outerThisStack.head != null &&
-                        outerThisStack.head != _sym)
-                        visitSymbol(outerThisStack.head);
                 }
             }
         }
-
-        /** If tree refers to a class instance creation expression
-         *  add all free variables of the freshly created class.
-         */
-        public void visitNewClass(JCNewClass tree) {
-            ClassSymbol c = (ClassSymbol)tree.constructor.owner;
-            if (tree.encl == null &&
-                c.hasOuterInstance() &&
-                outerThisStack.head != null)
-                visitSymbol(outerThisStack.head);
-            super.visitNewClass(tree);
-        }
-
-        /** If tree refers to a qualified this or super expression
-         *  for anything but the current class, add the outer this
-         *  stack as a free variable.
-         */
-        public void visitSelect(JCFieldAccess tree) {
-            if ((tree.name == names._this || tree.name == names._super) &&
-                tree.selected.type.tsym != clazz &&
-                outerThisStack.head != null)
-                visitSymbol(outerThisStack.head);
-            super.visitSelect(tree);
-        }
-
-        /** If tree refers to a superclass constructor call,
-         *  add all free variables of the superclass.
-         */
-        public void visitApply(JCMethodInvocation tree) {
-            if (TreeInfo.name(tree.meth) == names._super) {
-                Symbol constructor = TreeInfo.symbol(tree.meth);
-                ClassSymbol c = (ClassSymbol)constructor.owner;
-                if (c.hasOuterInstance() &&
-                    !tree.meth.hasTag(SELECT) &&
-                    outerThisStack.head != null)
-                    visitSymbol(outerThisStack.head);
-            }
-            super.visitApply(tree);
-        }
-
     }
 
     ClassSymbol ownerToCopyFreeVarsFrom(ClassSymbol c) {
@@ -1586,7 +1542,7 @@ public class Lower extends TreeTranslator {
     }
 
     private VarSymbol makeOuterThisVarSymbol(Symbol owner, long flags) {
-        Type target = types.erasure(owner.enclClass().type.getEnclosingType());
+        Type target = owner.innermostAccessibleEnclosingClass().erasure(types);
         // Set NOOUTERTHIS for all synthetic outer instance variables, and unset
         // it when the variable is accessed. If the variable is never accessed,
         // we skip creating an outer instance field and saving the constructor
@@ -3097,7 +3053,7 @@ public class Lower extends TreeTranslator {
                 thisArg.type = tree.encl.type;
             } else if (c.isDirectlyOrIndirectlyLocal()) {
                 // local class
-                thisArg = makeThis(tree.pos(), c.type.getEnclosingType().tsym);
+                thisArg = makeThis(tree.pos(), c.innermostAccessibleEnclosingClass());
             } else {
                 // nested class
                 thisArg = makeOwnerThis(tree.pos(), c, false);
@@ -3303,7 +3259,7 @@ public class Lower extends TreeTranslator {
                     ((JCIdent) tree.meth).name = methName;
                 } else if (c.isDirectlyOrIndirectlyLocal() || methName == names._this){
                     // local class or this() call
-                    thisArg = makeThis(tree.meth.pos(), c.type.getEnclosingType().tsym);
+                    thisArg = makeThis(tree.meth.pos(), c.innermostAccessibleEnclosingClass());
                 } else if (currentClass.isStatic()) {
                     // super() call from static nested class - invalid
                     log.error(tree.pos(),
