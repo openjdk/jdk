@@ -5241,14 +5241,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType =
-                attribTree(tree.underlyingType, env, new ResultInfo(KindSelector.TYP_PCK, Type.noType));
-        if (underlyingType.hasTag(PACKAGE)) {
-            // Type annotations are not admissible on packages, but we handle packages here to
-            // report better diagnostics later in validateAnnotatedType.
-            result = tree.type = underlyingType;
-            return;
-        }
+        Type underlyingType = attribType(tree.underlyingType, env);
         Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)

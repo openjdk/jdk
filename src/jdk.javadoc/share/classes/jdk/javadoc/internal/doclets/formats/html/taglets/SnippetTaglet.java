@@ -124,6 +124,8 @@ public class SnippetTaglet extends BaseTaglet {
         var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
+        } else {
+            pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, ids).name());
         }
         var code = new HtmlTree(TagName.CODE)
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
@@ -207,6 +209,8 @@ public class SnippetTaglet extends BaseTaglet {
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
+
+    private final Set<String> ids = new HashSet<>();
 
     private static final class BadSnippetException extends Exception {
 

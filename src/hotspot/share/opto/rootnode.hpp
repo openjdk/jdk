@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 // procedure start.
 class RootNode : public LoopNode {
 public:
-  RootNode( ) : LoopNode(0,0) {
+  RootNode( ) : LoopNode(nullptr, nullptr) {
     init_class_id(Class_Root);
     del_req(2);
     del_req(1);
