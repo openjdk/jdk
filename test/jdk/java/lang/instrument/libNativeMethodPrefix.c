@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include <stdio.h>
 #include "jni.h"
 
 JNIEXPORT jlong JNICALL
