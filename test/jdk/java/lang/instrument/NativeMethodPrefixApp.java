@@ -40,8 +40,7 @@ import jdk.test.lib.process.ProcessTools;
  *        asmlib.Instrumentor NativeMethodPrefixAgent
  * @enablePreview
  * @comment The test uses asmlib/Instrumentor.java which relies on ClassFile API PreviewFeature.
- * @run main/native/timeout=240 NativeMethodPrefixApp roleDriver
- * @comment The test uses a higher timeout to prevent test timeouts noted in JDK-6528548
+ * @run main/native NativeMethodPrefixApp roleDriver
  */
 public class NativeMethodPrefixApp implements StringIdCallback {
 
