@@ -24,7 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import java.lang.classfile.constantpool.ConstantPool;
@@ -191,11 +190,6 @@ public sealed interface BufWriter
      * {@return the number of bytes that have been written to the buffer}
      */
     int size();
-
-    /**
-     * {@return a {@link java.nio.ByteBuffer ByteBuffer} view of the bytes in the buffer}
-     */
-    ByteBuffer asByteBuffer();
 
     /**
      * Copy the contents of the buffer into a byte array.

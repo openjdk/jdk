@@ -1040,7 +1040,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
     assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
   }
-  address call = trampoline_call(stub);
+  address call = reloc_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE, NOMATCH));
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1322,7 +1322,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("string_compare {");
 
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
+  // Bizarrely, the counts are passed in bytes, regardless of whether they
   // are L or U strings, however the result is always in characters.
   if (!str1_isL) {
     sraiw(cnt1, cnt1, 1);
@@ -1478,7 +1478,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       ShouldNotReachHere();
   }
   assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
-  address call = trampoline_call(stub);
+  address call = reloc_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
     ciEnv::current()->record_failure("CodeCache is full");
@@ -2326,12 +2326,13 @@ void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mas
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
-                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE) {
+                                        VectorRegister vr1, VectorRegister vr2, VectorRegister vrs, bool islatin, Label &DONE,
+                                        Assembler::LMUL lmul) {
   Label loop;
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
 
   bind(loop);
-  vsetvli(tmp1, cnt, sew, Assembler::m2);
+  vsetvli(tmp1, cnt, sew, lmul);
   vlex_v(vr1, a1, sew);
   vlex_v(vr2, a2, sew);
   vmsne_vv(vrs, vr1, vr2);
@@ -2357,7 +2358,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -2410,7 +2411,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE, Assembler::m2);
 
   bind(DONE);
 
@@ -2445,8 +2446,18 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   mv(cnt2, cnt1);
   bind(L);
 
+  // We focus on the optimization of small sized string.
+  // Please check below document for string size distribution statistics.
+  // https://cr.openjdk.org/~shade/density/string-density-report.pdf
   if (str1_isL == str2_isL) { // LL or UU
-    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE);
+    // Below construction of v regs and lmul is based on test on 2 different boards,
+    // vlen == 128 and vlen == 256 respectively.
+    if (!encLL && MaxVectorSize == 16) { // UU
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v4, v8, v4, encLL, DIFFERENCE, Assembler::m4);
+    } else { // UU + MaxVectorSize or LL
+      element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE, Assembler::m2);
+    }
+
     j(DONE);
   } else { // LU or UL
     Register strL = encLU ? str1 : str2;
@@ -2762,6 +2773,10 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
     case BoolTest::ge: vmsge_vv(vd, src1, src2, vm); break;
     case BoolTest::lt: vmslt_vv(vd, src1, src2, vm); break;
     case BoolTest::gt: vmsgt_vv(vd, src1, src2, vm); break;
+    case BoolTest::ule: vmsleu_vv(vd, src1, src2, vm); break;
+    case BoolTest::uge: vmsgeu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ult: vmsltu_vv(vd, src1, src2, vm); break;
+    case BoolTest::ugt: vmsgtu_vv(vd, src1, src2, vm); break;
     default:
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
@@ -2785,6 +2800,21 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
       assert(false, "unsupported compare condition");
       ShouldNotReachHere();
   }
+}
+
+// In Matcher::scalable_predicate_reg_slots,
+// we assume each predicate register is one-eighth of the size of
+// scalable vector register, one mask bit per vector byte.
+void C2_MacroAssembler::spill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vse8_v(v, t0);
+}
+
+void C2_MacroAssembler::unspill_vmask(VectorRegister v, int offset) {
+  vsetvli_helper(T_BYTE, MaxVectorSize >> 3);
+  add(t0, sp, offset);
+  vle8_v(v, t0);
 }
 
 void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,

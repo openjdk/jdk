@@ -25,7 +25,6 @@
 #ifndef SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
-#include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
@@ -456,6 +455,7 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
+typedef const u_char* const_address;
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have

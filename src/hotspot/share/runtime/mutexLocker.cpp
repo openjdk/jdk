@@ -123,6 +123,8 @@ Monitor* JfrThreadSampler_lock        = nullptr;
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
+Mutex*   ExternalsRecorder_lock       = nullptr;
+
 Monitor* ContinuationRelativize_lock  = nullptr;
 
 Mutex*   Metaspace_lock               = nullptr;
@@ -268,6 +270,7 @@ void mutex_init() {
   MUTEX_DEFN(CompiledIC_lock                 , PaddedMutex  , nosafepoint);  // locks VtableStubs_lock, InlineCacheBuffer_lock
   MUTEX_DEFN(MethodCompileQueue_lock         , PaddedMonitor, safepoint);
   MUTEX_DEFN(CompileStatistics_lock          , PaddedMutex  , safepoint);
+  MUTEX_DEFN(DirectivesStack_lock            , PaddedMutex  , nosafepoint);
 
   MUTEX_DEFN(JvmtiThreadState_lock           , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
@@ -325,8 +328,10 @@ void mutex_init() {
   MUTEX_DEFL(InlineCacheBuffer_lock         , PaddedMutex  , CompiledIC_lock);
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
-  MUTEX_DEFL(DirectivesStack_lock           , PaddedMutex  , CodeCache_lock);
   MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
+
+  // tty_lock is held when printing nmethod and its relocations which use this lock.
+  MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);

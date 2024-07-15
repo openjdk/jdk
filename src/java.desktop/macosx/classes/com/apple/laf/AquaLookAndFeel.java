@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import javax.swing.plaf.basic.BasicLookAndFeel;
 
 import apple.laf.JRSUIControl;
 import apple.laf.JRSUIUtils;
+import sun.swing.AltProcessor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -174,7 +176,9 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
         spf.setActive(true);
         PopupFactory.setSharedInstance(spf);
 
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(true);
     }
 
     /**
@@ -185,7 +189,8 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see #initialize
      */
     public void uninitialize() {
-        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventPostProcessor(AquaMnemonicHandler.getInstance());
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
 
         final PopupFactory popupFactory = PopupFactory.getSharedInstance();
         if (popupFactory instanceof ScreenPopupFactory spf) {

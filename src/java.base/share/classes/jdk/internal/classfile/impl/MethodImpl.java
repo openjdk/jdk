@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,12 +64,12 @@ public final class MethodImpl
 
     @Override
     public Utf8Entry methodName() {
-        return reader.readUtf8Entry(startPos + 2);
+        return reader.readEntry(startPos + 2, Utf8Entry.class);
     }
 
     @Override
     public Utf8Entry methodType() {
-        return reader.readUtf8Entry(startPos + 4);
+        return reader.readEntry(startPos + 4, Utf8Entry.class);
     }
 
     @Override
@@ -118,11 +118,11 @@ public final class MethodImpl
 
     @Override
     public Optional<CodeModel> code() {
-        return findAttribute(Attributes.CODE).map(a -> (CodeModel) a);
+        return findAttribute(Attributes.code()).map(a -> (CodeModel) a);
     }
 
     @Override
-    public void forEachElement(Consumer<MethodElement> consumer) {
+    public void forEach(Consumer<? super MethodElement> consumer) {
         consumer.accept(flags());
         for (Attribute<?> attr : attributes()) {
             if (attr instanceof MethodElement e)
@@ -140,7 +140,7 @@ public final class MethodImpl
                                new Consumer<>() {
                 @Override
                 public void accept(MethodBuilder mb) {
-                    MethodImpl.this.forEachElement(mb);
+                    MethodImpl.this.forEach(mb);
                 }
             });
         }

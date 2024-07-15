@@ -35,18 +35,18 @@ import sun.util.locale.provider.CalendarDataUtility;
 
 public class BuddhistCalendar extends GregorianCalendar {
 
-//////////////////
+//----------------
 // Class Variables
-//////////////////
+//----------------
 
     @java.io.Serial
     private static final long serialVersionUID = -8527488697350388578L;
 
     private static final int BUDDHIST_YEAR_OFFSET = 543;
 
-///////////////
+//-------------
 // Constructors
-///////////////
+//-------------
 
     /**
      * Constructs a default BuddhistCalendar using the current time
@@ -84,9 +84,9 @@ public class BuddhistCalendar extends GregorianCalendar {
         super(zone, aLocale);
     }
 
-/////////////////
+//---------------
 // Public methods
-/////////////////
+//---------------
 
     /**
      * Returns {@code "buddhist"} as the calendar type of this Calendar.

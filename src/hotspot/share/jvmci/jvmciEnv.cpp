@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,9 +399,11 @@ class ExceptionTranslation: public StackObj {
     _encoded_ok        = 0, // exception was successfully encoded into buffer
     _buffer_alloc_fail = 1, // native memory for buffer could not be allocated
     _encode_oome_fail  = 2, // OutOfMemoryError thrown during encoding
-    _encode_fail       = 3  // some other problem occured during encoding. If buffer != 0,
+    _encode_fail       = 3, // some other problem occured during encoding. If buffer != 0,
                             // buffer contains a `struct { u4 len; char[len] desc}`
                             // describing the problem
+    _encode_oome_in_vm = 4  // an OutOfMemoryError thrown from within VM code on a
+                            // thread that cannot call Java (OOME has no stack trace)
   };
 
   JVMCIEnv*  _from_env; // Source of translation. Can be null.
@@ -488,6 +490,12 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
 
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     if (!THREAD->can_call_java()) {
+      Symbol *ex_name = _throwable->klass()->name();
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        JVMCI_event_1("translating exception: OutOfMemoryError within VM code");
+        decode(THREAD, _encode_oome_in_vm, 0L);
+        return 0;
+      }
       char* char_buffer = print_throwable_to_buffer(_throwable, buffer, buffer_size);
       const char* detail = log_is_enabled(Info, exceptions) ? "" : " (-Xlog:exceptions may give more detail)";
       JVMCI_event_1("cannot call Java to translate exception%s: %s", detail, char_buffer);
@@ -514,6 +522,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception from JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
@@ -545,6 +554,7 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
   }
 
   void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    JVMCI_event_1("decoding exception to JVM heap (format: %d, buffer[%d]) ", format, buffer == 0L ? -1 : *((u4*) buffer));
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
     JavaCallArguments jargs;
     jargs.push_int(format);
@@ -958,6 +968,31 @@ jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isGCSupported (JVMCIObject runtime, 
                                                      JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
                                                      JNIJVMCI::HotSpotJVMCIRuntime::isGCSupported_method(),
                                                      gcIdentifier);
+    if (jni()->ExceptionCheck()) {
+      return false;
+    }
+    return result;
+  }
+}
+
+jboolean JVMCIEnv::call_HotSpotJVMCIRuntime_isIntrinsicSupported (JVMCIObject runtime, jint intrinsicIdentifier) {
+  JavaThread* THREAD = JavaThread::current(); // For exception macros.
+  if (is_hotspot()) {
+    JavaCallArguments jargs;
+    jargs.push_oop(Handle(THREAD, HotSpotJVMCI::resolve(runtime)));
+    jargs.push_int(intrinsicIdentifier);
+    JavaValue result(T_BOOLEAN);
+    JavaCalls::call_special(&result,
+                            HotSpotJVMCI::HotSpotJVMCIRuntime::klass(),
+                            vmSymbols::isIntrinsicSupported_name(),
+                            vmSymbols::int_bool_signature(), &jargs, CHECK_0);
+    return result.get_jboolean();
+  } else {
+    JNIAccessMark jni(this, THREAD);
+    jboolean result = jni()->CallNonvirtualBooleanMethod(runtime.as_jobject(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::clazz(),
+                                                     JNIJVMCI::HotSpotJVMCIRuntime::isIntrinsicSupported_method(),
+                                                     intrinsicIdentifier);
     if (jni()->ExceptionCheck()) {
       return false;
     }

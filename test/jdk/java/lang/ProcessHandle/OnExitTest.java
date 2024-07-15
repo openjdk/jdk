@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 
 import org.testng.annotations.Test;
@@ -40,6 +41,7 @@ import org.testng.TestNG;
 
 /*
  * @test
+ * @bug 8333742
  * @requires vm.flagless
  * @library /test/lib
  * @modules jdk.management
@@ -65,8 +67,10 @@ public class OnExitTest extends ProcessUtil {
     @Test
     public static void test1() {
         try {
-            int[] exitValues = {0, 1, 10};
+            int[] exitValues = {0, 1, 10, 259};
             for (int value : exitValues) {
+                // Linux & Mac don't support exit codes longer than 8 bits, skip
+                if (value == 259 && !Platform.isWindows()) continue;
                 Process p = JavaChild.spawn("exit", Integer.toString(value));
                 CompletableFuture<Process> future = p.onExit();
                 future.thenAccept( (ph) -> {
@@ -81,7 +85,9 @@ public class OnExitTest extends ProcessUtil {
                 Assert.assertEquals(h, p);
                 Assert.assertEquals(p.exitValue(), value);
                 Assert.assertFalse(p.isAlive(), "Process should not be alive");
-                p.waitFor();
+                Assert.assertEquals(p.waitFor(), value);
+                Assert.assertTrue(p.waitFor(1, TimeUnit.MILLISECONDS),
+                        "waitFor should return true");
             }
         } catch (IOException | InterruptedException | ExecutionException ex) {
             Assert.fail(ex.getMessage(), ex);

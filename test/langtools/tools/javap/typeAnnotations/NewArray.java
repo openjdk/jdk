@@ -52,8 +52,8 @@ public class NewArray {
     }
 
     void test(MethodModel mm) {
-        test(mm, Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
-        test(mm, Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+        test(mm, Attributes.runtimeVisibleTypeAnnotations());
+        test(mm, Attributes.runtimeInvisibleTypeAnnotations());
     }
 
     // test the result of Attributes.getIndex according to expectations
@@ -62,7 +62,7 @@ public class NewArray {
         Attribute<T> attr_instance;
         CodeAttribute cAttr;
 
-        cAttr = mm.findAttribute(Attributes.CODE).orElse(null);
+        cAttr = mm.findAttribute(Attributes.code()).orElse(null);
         if (cAttr != null) {
             attr_instance = cAttr.findAttribute(attr_name).orElse(null);
             if (attr_instance != null) {

@@ -42,6 +42,7 @@ import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassSignature;
 import java.lang.classfile.ClassFile;
 import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.ClassHierarchyResolver;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
@@ -141,7 +142,7 @@ public class ClassWriter extends BasicWriter {
             }
         }
 
-        cm.findAttribute(Attributes.SOURCE_FILE).ifPresent(sfa ->
+        cm.findAttribute(Attributes.sourceFile()).ifPresent(sfa ->
             println("Compiled from \"" + sfa.sourceFile().stringValue() + "\""));
 
         if (options.sysInfo || options.verbose) {
@@ -151,7 +152,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(getClassModifiers(cm.flags().flagsMask()));
 
         if ((classModel.flags().flagsMask() & ACC_MODULE) != 0) {
-            var attr = classModel.findAttribute(Attributes.MODULE);
+            var attr = classModel.findAttribute(Attributes.module());
             if (attr.isPresent()) {
                 var modAttr = attr.get();
                 if ((modAttr.moduleFlagsMask() & ACC_OPEN) != 0) {
@@ -178,7 +179,7 @@ public class ClassWriter extends BasicWriter {
         }
 
         try {
-            var sigAttr = classModel.findAttribute(Attributes.SIGNATURE).orElse(null);
+            var sigAttr = classModel.findAttribute(Attributes.signature()).orElse(null);
             if (sigAttr == null) {
                 // use info from class file header
                 if ((classModel.flags().flagsMask() & ACC_INTERFACE) == 0
@@ -248,9 +249,29 @@ public class ClassWriter extends BasicWriter {
         if (options.verbose) {
             attrWriter.write(classModel.attributes());
         }
+
+        if (options.verify) {
+            var vErrors = VERIFIER.verify(classModel);
+            if (!vErrors.isEmpty()) {
+                println();
+                for (var ve : vErrors) {
+                    println(ve.getMessage());
+                }
+                errorReported = true;
+            }
+        }
         return !errorReported;
     }
     // where
+
+    private static final ClassFile VERIFIER = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(
+            ClassHierarchyResolver.defaultResolver().orElse(new ClassHierarchyResolver() {
+                @Override
+                public ClassHierarchyResolver.ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
+                    // mark all unresolved classes as interfaces to exclude them from assignability verification
+                    return ClassHierarchyInfo.ofInterface();
+                }
+            })));
 
     final SignaturePrinter sigPrinter;
 
@@ -396,16 +417,16 @@ public class ClassWriter extends BasicWriter {
             return;
 
         var flags = AccessFlags.ofField(f.flags().flagsMask());
-        writeModifiers(flags.flags().stream().filter(fl -> fl.sourceModifier())
+        writeModifiers(flagsReportUnknown(flags).stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
-                f.findAttribute(Attributes.SIGNATURE)
+                f.findAttribute(Attributes.signature())
                         .map(SignatureAttribute::asTypeSignature)
                         .orElseGet(() -> Signature.of(f.fieldTypeSymbol()))));
         print(" ");
         print(() -> f.fieldName().stringValue());
         if (options.showConstants) {
-            var a = f.findAttribute(Attributes.CONSTANT_VALUE);
+            var a = f.findAttribute(Attributes.constantValue());
             if (a.isPresent()) {
                 print(" = ");
                 var cv = a.get();
@@ -425,7 +446,7 @@ public class ClassWriter extends BasicWriter {
 
         if (options.verbose)
             writeList(String.format("flags: (0x%04x) ", flags.flagsMask()),
-                    flags.flags().stream().map(fl -> "ACC_" + fl.name()).toList(),
+                    flagsReportUnknown(flags).stream().map(fl -> "ACC_" + fl.name()).toList(),
                     "\n");
 
         if (options.showAllAttrs) {
@@ -457,7 +478,7 @@ public class ClassWriter extends BasicWriter {
         int flags = m.flags().flagsMask();
 
         var modifiers = new ArrayList<String>();
-        for (var f : AccessFlags.ofMethod(flags).flags())
+        for (var f : flagsReportUnknown(m.flags()))
             if (f.sourceModifier()) modifiers.add(Modifier.toString(f.mask()));
 
         String name = "???";
@@ -480,7 +501,7 @@ public class ClassWriter extends BasicWriter {
         writeModifiers(modifiers);
 
         try {
-            var sigAttr = m.findAttribute(Attributes.SIGNATURE);
+            var sigAttr = m.findAttribute(Attributes.signature());
             MethodSignature d;
             if (sigAttr.isEmpty()) {
                 d = MethodSignature.parseFrom(m.methodType().stringValue());
@@ -507,7 +528,7 @@ public class ClassWriter extends BasicWriter {
                     break;
             }
 
-            var e_attr = m.findAttribute(Attributes.EXCEPTIONS);
+            var e_attr = m.findAttribute(Attributes.exceptions());
             // if there are generic exceptions, there must be erased exceptions
             if (e_attr.isPresent()) {
                 var exceptions = e_attr.get();
@@ -540,7 +561,7 @@ public class ClassWriter extends BasicWriter {
             StringBuilder sb = new StringBuilder();
             String sep = "";
             sb.append(String.format("flags: (0x%04x) ", flags));
-            for (var f : AccessFlags.ofMethod(flags).flags()) {
+            for (var f : flagsReportUnknown(m.flags())) {
                 sb.append(sep).append("ACC_").append(f.name());
                 sep = ", ";
             }
@@ -559,9 +580,9 @@ public class ClassWriter extends BasicWriter {
             }
 
             if (options.showLineAndLocalVariableTables) {
-                code.findAttribute(Attributes.LINE_NUMBER_TABLE)
+                code.findAttribute(Attributes.lineNumberTable())
                         .ifPresent(a -> attrWriter.write(a, code));
-                code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE)
+                code.findAttribute(Attributes.localVariableTable())
                         .ifPresent(a -> attrWriter.write(a, code));
             }
         }
@@ -589,7 +610,7 @@ public class ClassWriter extends BasicWriter {
     public static final int ACC_STATIC_PHASE = 0x0040;
 
     void writeDirectives() {
-        var attr = classModel.findAttribute(Attributes.MODULE);
+        var attr = classModel.findAttribute(Attributes.module());
         if (attr.isEmpty())
             return;
 
@@ -773,17 +794,9 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    private static Set<String> getClassModifiers(int mask) {
-        return getModifiers(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
-                ? mask & ~ACC_ABSTRACT : mask).flags());
-    }
-
-    private static Set<String> getMethodModifiers(int mask) {
-        return getModifiers(AccessFlags.ofMethod(mask).flags());
-    }
-
-    private static Set<String> getFieldModifiers(int mask) {
-        return getModifiers(AccessFlags.ofField(mask).flags());
+    private Set<String> getClassModifiers(int mask) {
+        return getModifiers(flagsReportUnknown(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
+                ? mask & ~ACC_ABSTRACT : mask)));
     }
 
     private static Set<String> getModifiers(Set<java.lang.reflect.AccessFlag> flags) {
@@ -793,16 +806,16 @@ public class ClassWriter extends BasicWriter {
         return s;
     }
 
-    private static Set<String> getClassFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofClass(mask).flags());
+    private Set<String> getClassFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofClass(mask)));
     }
 
-    private static Set<String> getMethodFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofMethod(mask).flags());
+    private Set<String> getMethodFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofMethod(mask)));
     }
 
-    private static Set<String> getFieldFlags(int mask) {
-        return getFlags(mask, AccessFlags.ofField(mask).flags());
+    private Set<String> getFieldFlags(int mask) {
+        return getFlags(mask, flagsReportUnknown(AccessFlags.ofField(mask)));
     }
 
     private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {
@@ -817,42 +830,6 @@ public class ClassWriter extends BasicWriter {
             mask = mask & ~bit;
         }
         return s;
-    }
-
-    public static enum AccessFlag {
-        ACC_PUBLIC      (ClassFile.ACC_PUBLIC,       "public",       true,  true,  true,  true ),
-        ACC_PRIVATE     (ClassFile.ACC_PRIVATE,      "private",      false, true,  true,  true ),
-        ACC_PROTECTED   (ClassFile.ACC_PROTECTED,    "protected",    false, true,  true,  true ),
-        ACC_STATIC      (ClassFile.ACC_STATIC,       "static",       false, true,  true,  true ),
-        ACC_FINAL       (ClassFile.ACC_FINAL,        "final",        true,  true,  true,  true ),
-        ACC_SUPER       (ClassFile.ACC_SUPER,        null,           true,  false, false, false),
-        ACC_SYNCHRONIZED(ClassFile.ACC_SYNCHRONIZED, "synchronized", false, false, false, true ),
-        ACC_VOLATILE    (ClassFile.ACC_VOLATILE,     "volatile",     false, false, true,  false),
-        ACC_BRIDGE      (ClassFile.ACC_BRIDGE,       null,           false, false, false, true ),
-        ACC_TRANSIENT   (ClassFile.ACC_TRANSIENT,    "transient",    false, false, true,  false),
-        ACC_VARARGS     (ClassFile.ACC_VARARGS,      null,           false, false, false, true ),
-        ACC_NATIVE      (ClassFile.ACC_NATIVE,       "native",       false, false, false, true ),
-        ACC_INTERFACE   (ClassFile.ACC_INTERFACE,    null,           true,   true, false, false),
-        ACC_ABSTRACT    (ClassFile.ACC_ABSTRACT,     "abstract",     true,   true, false, true ),
-        ACC_STRICT      (ClassFile.ACC_STRICT,       "strictfp",     false, false, false, true ),
-        ACC_SYNTHETIC   (ClassFile.ACC_SYNTHETIC,    null,           true,  true,  true,  true ),
-        ACC_ANNOTATION  (ClassFile.ACC_ANNOTATION,   null,           true,   true, false, false),
-        ACC_ENUM        (ClassFile.ACC_ENUM,         null,           true,   true, true,  false),
-        ACC_MODULE      (ClassFile.ACC_MODULE,       null,           true,  false, false, false);
-
-        public final int flag;
-        public final String modifier;
-        public final boolean isClass, isInnerClass, isField, isMethod;
-
-        AccessFlag(int flag, String modifier, boolean isClass,
-                boolean isInnerClass, boolean isField, boolean isMethod) {
-            this.flag = flag;
-            this.modifier = modifier;
-            this.isClass = isClass;
-            this.isInnerClass = isInnerClass;
-            this.isField = isField;
-            this.isMethod = isMethod;
-        }
     }
 
     private final Options options;

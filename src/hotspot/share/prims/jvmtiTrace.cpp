@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/javaThread.inline.hpp"
 
 //
 // class JvmtiTrace
@@ -276,6 +277,12 @@ const char *JvmtiTrace::safe_get_thread_name(Thread *thread) {
   }
   if (!thread->is_Java_thread()) {
     return thread->name();
+  }
+  if (Thread::current()->is_Java_thread()) {
+    JavaThreadState current_state = JavaThread::cast(Thread::current())->thread_state();
+    if (current_state == _thread_in_native || current_state == _thread_blocked) {
+      return "not readable";
+    }
   }
   JavaThread* java_thread = JavaThread::cast(thread);
   oop threadObj = java_thread->jvmti_vthread();

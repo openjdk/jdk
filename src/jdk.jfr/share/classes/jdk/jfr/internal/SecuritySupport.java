@@ -73,7 +73,6 @@ import jdk.jfr.internal.consumer.FileAccess;
  */
 public final class SecuritySupport {
     private static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
-    private static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
     private static final String EVENT_PACKAGE_NAME = "jdk.jfr.internal.event";
 
     public static final String REGISTER_EVENT = "registerEvent";
@@ -89,7 +88,6 @@ public final class SecuritySupport {
         addReadEdge(Object.class);
         addInternalEventExport(Object.class);
         addEventsExport(Object.class);
-        addInstrumentExport(Object.class);
     }
 
     static final class SecureRecorderListener implements FlightRecorderListener {
@@ -321,10 +319,6 @@ public final class SecuritySupport {
 
     static void addEventsExport(Class<?> clazz) {
         Modules.addExports(JFR_MODULE, EVENTS_PACKAGE_NAME, clazz.getModule());
-    }
-
-    static void addInstrumentExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, INSTRUMENT_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addReadEdge(Class<?> clazz) {

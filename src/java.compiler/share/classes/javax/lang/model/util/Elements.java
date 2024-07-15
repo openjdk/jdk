@@ -277,19 +277,26 @@ public interface Elements {
             getElementValuesWithDefaults(AnnotationMirror a);
 
     /**
-     * Returns the text of the documentation (&quot;Javadoc&quot;)
+     * Returns the text of the documentation (&quot;JavaDoc&quot;)
      * comment of an element.
      *
-     * <p> A documentation comment of an element is a comment that
-     * begins with "{@code /**}", ends with a separate
-     * "<code>*&#47;</code>", and immediately precedes the element,
-     * ignoring white space, annotations, end-of-line-comments ({@code
-     * "//"} comments), and intermediate traditional comments
-     * (<code>"/* ... *&#47;"</code> comments) that are not doc comments.
-     * Therefore, a documentation comment
-     * contains at least three "{@code *}" characters.  The text
+     * <p>A documentation comment of an element is a particular kind
+     * of comment that immediately precedes the element, ignoring
+     * white space, annotations and any other comments that are
+     * not themselves documentation comments.
+     *
+     * <p>There are two kinds of documentation comments, either based on
+     * <em>traditional comments</em> or based on a series of
+     * <em>end-of-line comments</em>. For both kinds, the text
      * returned for the documentation comment is a processed form of
-     * the comment as it appears in source code:
+     * the comment as it appears in source code, as described below.
+     *
+     * <p>A {@linkplain DocCommentKind#TRADITIONAL traditional
+     * documentation comment} is a traditional comment that begins
+     * with "{@code /**}", and ends with a separate "<code>*&#47;</code>".
+     * (Therefore, such a comment contains at least three "{@code *}"
+     * characters.)
+     * The lines of such a comment are processed as follows:
      * <ul>
      * <li>The leading "{@code /**}" is removed, as are any
      * immediately following space characters on that line. If all the
@@ -297,8 +304,8 @@ public interface Elements {
      * the returned comment.
      * <li>For subsequent lines
      * of the doc comment starting after the initial "{@code /**}",
-     * if the lines start with <em>zero</em> or more whitespace characters followed by
-     * <em>one</em> or more "{@code *}" characters,
+     * if the lines start with <em>zero</em> or more whitespace characters
+     * followed by <em>one</em> or more "{@code *}" characters,
      * those leading whitespace characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
      * space or starting the line.
@@ -306,21 +313,87 @@ public interface Elements {
      * form, the entire line is retained.
      * <li> The trailing "<code>*&#47;</code>" is removed. The line
      * with the trailing" <code>*&#47;</code>" also undergoes leading
-     * space and "{@code *}" character removal as described above. If all the characters
-     * of the line are removed, it makes no contribution to the
-     * returned comment.
+     * space and "{@code *}" character removal as described above.
+     * <li>The processed lines are then concatenated together,
+     * separated by newline ("{@code \n}") characters, and returned.
      * </ul>
-     * The processed lines are then
-     * concatenated together (including line terminators) and
-     * returned.
+     *
+     * <p>An {@linkplain DocCommentKind#END_OF_LINE end-of-line
+     * documentation comment} is a series of adjacent end-of-line
+     * comments, each on a line by itself, ignoring any whitespace
+     * characters at the beginning of the line, and each beginning
+     * with "{@code ///}".
+     * The lines of such a comment are processed as follows:
+     * <ul>
+     * <li>Any leading whitespace and the three initial "{@code /}"
+     * characters are removed from each line.
+     * <li>The lines are shifted left, by removing leading whitespace
+     * characters, until the non-blank line with the least leading
+     * whitespace characters has no remaining leading whitespace
+     * characters.
+     * <li>Additional leading whitespace characters and any trailing
+     * whitespace characters in each line are preserved.
+     * <li>
+     * The processed lines are then concatenated together,
+     * separated by newline ("{@code \n}") characters, and returned.
+     * If the last line is not blank, the returned value will not be
+     * terminated by a newline character.
+     * </ul>
      *
      * @param e  the element being examined
      * @return the documentation comment of the element, or {@code null}
      *          if there is none
      * @jls 3.6 White Space
      * @jls 3.7 Comments
+     *
+     * @apiNote
+     * Documentation comments are processed by the standard doclet
+     * used by the {@code javadoc} tool to generate API documentation.
      */
     String getDocComment(Element e);
+
+    /**
+     * {@return the kind of the documentation comment for the given element,
+     * or {@code null} if there is no comment or the kind is not known}
+     *
+     * @implSpec The default implementation of this method returns
+     * {@code null}.
+     *
+     * @param e the element being examined
+     * @since 23
+     */
+    default DocCommentKind getDocCommentKind(Element e) {
+        return null;
+    }
+
+    /**
+     * The kind of documentation comment.
+     *
+     * @since 23
+     */
+    enum DocCommentKind {
+        /**
+         * The kind of comments whose lines are prefixed by {@code ///}.
+         *
+         * @apiNote
+         * The standard doclet used by the {@code javadoc} tool treats these comments
+         * as containing Markdown and documentation comment tags.
+         *
+         *
+         * @see <a href="https://openjdk.org/jeps/467">
+         * JEP 467: Markdown Documentation Comments</a>
+         */
+        END_OF_LINE,
+
+        /**
+         * The kind of comments that begin with {@code /**}.
+         *
+         * @apiNote
+         * The standard doclet used by the {@code javadoc} tool treats these comments
+         * as containing HTML and documentation comment tags.
+         */
+        TRADITIONAL
+    }
 
     /**
      * {@return {@code true} if the element is deprecated, {@code false} otherwise}
