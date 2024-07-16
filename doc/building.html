@@ -232,7 +232,9 @@ again.</p></li>
 <li><p><a href="#running-make">Run make</a>:<br />
 <code>make images</code></p></li>
 <li><p>Verify your newly built JDK:<br />
-<code>./build/*/images/jdk/bin/java -version</code></p></li>
+<code>./build/*/images/jdk/bin/java -version</code><br />
+Note the built JDK is at <code>/images/jdk</code> instead of
+<code>/jdk</code>.</p></li>
 <li><p><a href="#running-tests">Run basic tests</a>:<br />
 <code>make test-tier1</code></p></li>
 </ol>
@@ -1078,8 +1080,8 @@ You can test the newly built JDK like this:
 <li><code>hotspot</code> - Build all of hotspot (but only hotspot)</li>
 <li><code>hotspot-&lt;variant&gt;</code> - Build just the specified jvm
 variant</li>
-<li><code>images</code> or <code>product-images</code> - Build the JDK
-image</li>
+<li><code>images</code> or <code>product-images</code> - Build the
+regular JDK image</li>
 <li><code>docs</code> or <code>docs-image</code> - Build the
 documentation image</li>
 <li><code>test-image</code> - Build the test image</li>
@@ -2017,10 +2019,14 @@ some directory names have spaces. Usually, it assumes those directories
 have <a
 href="https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name">short
 paths</a>. You can run <code>fsutil file setshortname</code> in
-<code>cmd</code> on certain directories, such as
-<code>Microsoft Visual Studio</code> or <code>Windows Kits</code>, to
-assign arbitrary short paths so <code>configure</code> can access
-them.</p>
+<code>cmd</code> on directories to assign short paths so
+<code>configure</code> can access them. If the result says "Access
+denied", it may be that there are processes running in that directory;
+you can reboot Windows in safe mode and run the command on those
+directories again.</p>
+<p>The only directories required to have short paths are
+<code>Microsoft Visual Studio</code> and <code>Windows Kits</code>; the
+rest of the "contains space" warnings from configure can be ignored.</p>
 <h3 id="getting-help">Getting Help</h3>
 <p>If none of the suggestions in this document helps you, or if you find
 what you believe is a bug in the build system, please contact the Build
