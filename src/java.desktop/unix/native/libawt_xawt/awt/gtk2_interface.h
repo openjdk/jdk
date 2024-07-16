@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,11 @@ typedef enum
 } GParamFlags;
 
 /* We define all structure pointers to be void* */
-typedef void GMainContext;
 typedef void GVfs;
 
 typedef void GdkColormap;
 typedef void GdkDrawable;
 typedef void GdkGC;
-typedef void GdkPixbuf;
 typedef void GdkPixmap;
 
 typedef void GtkFixed;
