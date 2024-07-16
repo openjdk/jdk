@@ -331,7 +331,6 @@ public class PacketEncodingTest {
                                        int versionNumber,
                                        PacketNumberSpace packetNumberSpace,
                                        long packetNumber,
-                                       int packetNumberLength,
                                        QuicConnectionId srcConnectionId,
                                        QuicConnectionId destConnectionId,
                                        byte[] payload) {
@@ -344,7 +343,7 @@ public class PacketEncodingTest {
             expected = List.of(ByteBuffer.wrap(payload));
         }
         checkLongHeaderPacket0(packet, packetType, versionNumber, packetNumberSpace, packetNumber,
-                packetNumberLength, srcConnectionId, destConnectionId, expected);
+                srcConnectionId, destConnectionId, expected);
     }
 
     private void checkLongHeaderPacket(LongHeaderPacket packet,
@@ -352,7 +351,6 @@ public class PacketEncodingTest {
                                        int versionNumber,
                                        PacketNumberSpace packetNumberSpace,
                                        long packetNumber,
-                                       int packetNumberLength,
                                        QuicConnectionId srcConnectionId,
                                        QuicConnectionId destConnectionId,
                                        byte[] payload,
@@ -369,7 +367,7 @@ public class PacketEncodingTest {
             expected = List.of(ByteBuffer.wrap(pb), ByteBuffer.wrap(payload));
         }
         checkLongHeaderPacket0(packet, packetType, versionNumber, packetNumberSpace, packetNumber,
-                packetNumberLength, srcConnectionId, destConnectionId, expected);
+                srcConnectionId, destConnectionId, expected);
 
     }
 
@@ -378,12 +376,10 @@ public class PacketEncodingTest {
                                        int versionNumber,
                                        PacketNumberSpace packetNumberSpace,
                                        long packetNumber,
-                                       int packetNumberLength,
-                                       QuicConnectionId srcConnectionId,
+                                        QuicConnectionId srcConnectionId,
                                        QuicConnectionId destConnectionId,
                                        List<ByteBuffer> payload) {
         // Check created packet
-        assertEquals(QuicPacket.headersType(packet.headerBits()), HeadersType.LONG);
         assertEquals(packet.headersType(), HeadersType.LONG);
         assertEquals(packet.packetType(), packetType);
         boolean hasLength = switch (packetType) {
@@ -493,11 +489,9 @@ public class PacketEncodingTest {
                                         PacketType packetType,
                                         PacketNumberSpace packetNumberSpace,
                                         long packetNumber,
-                                        int packetNumberLength,
                                         QuicConnectionId destConnectionId,
                                         byte[] payload) {
         // Check created packet
-        assertEquals(QuicPacket.headersType(packet.headerBits()), HeadersType.SHORT);
         assertEquals(packet.headersType(), HeadersType.SHORT);
         assertEquals(packet.packetType(), packetType);
         assertEquals(packet.hasLength(), false);
@@ -613,7 +607,7 @@ public class PacketEncodingTest {
                 PacketType.INITIAL, packetNumber, tokenLength, payload.length, padding,
                 packet.size(), frames, packet.frames());
         checkLongHeaderPacket(initialPacket, PacketType.INITIAL, quicVersion.versionNumber(),
-                PacketNumberSpace.INITIAL, packetNumber, packetNumberLength,
+                PacketNumberSpace.INITIAL, packetNumber,
                 srcConnectionId, destConnectionId, payload, padding);
         assertEquals(initialPacket.tokenLength(), tokenLength);
         assertEquals(initialPacket.token(), token);
@@ -645,7 +639,7 @@ public class PacketEncodingTest {
         System.out.printf("datagram(offset:%d, second:%d, position:%d, limit:%d)%n",
                 offset, second, datagram.position(), datagram.limit());
         System.out.printf("reading first datagram(offset:%d, position:%d, limit:%d)%n",
-                offset, second, datagram.position(), datagram.limit());
+                offset, datagram.position(), datagram.limit());
         checkLongHeaderPacketAt(datagram, offset, PacketType.INITIAL, quicVersion.versionNumber(),
                 srcConnectionId, destConnectionId);
         System.out.printf("reading second datagram(offset:%d, position:%d, limit:%d)%n",
@@ -671,9 +665,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof InitialPacket, "decoded: " + decodedPacket);
             InitialPacket initialDecoded = InitialPacket.class.cast(decodedPacket);
             checkLongHeaderPacket(initialDecoded, PacketType.INITIAL, quicVersion.versionNumber(),
-                    PacketNumberSpace.INITIAL, packetNumber, packetNumberLength,
+                    PacketNumberSpace.INITIAL, packetNumber,
                     srcConnectionId, destConnectionId, payload, padding);
-            assertEquals(decodedPacket.headerBits(), packet.headerBits());
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
             assertEquals(initialDecoded.tokenLength(), tokenLength);
@@ -731,7 +724,7 @@ public class PacketEncodingTest {
         assertTrue(packet instanceof HandshakePacket);
         var handshakePacket = (HandshakePacket) packet;
         checkLongHeaderPacket(handshakePacket, PacketType.HANDSHAKE, quicVersion.versionNumber(),
-                PacketNumberSpace.HANDSHAKE, packetNumber, packetNumberLength,
+                PacketNumberSpace.HANDSHAKE, packetNumber,
                 srcConnectionId, destConnectionId, payload);
         assertEquals(handshakePacket.hasLength(), true);
         assertEquals(handshakePacket.length(), packetNumberLength + payloadSize);
@@ -787,9 +780,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof HandshakePacket, "decoded: " + decodedPacket);
             HandshakePacket handshakeDecoded = HandshakePacket.class.cast(decodedPacket);
             checkLongHeaderPacket(handshakeDecoded, PacketType.HANDSHAKE, quicVersion.versionNumber(),
-                    PacketNumberSpace.HANDSHAKE, packetNumber, packetNumberLength,
+                    PacketNumberSpace.HANDSHAKE, packetNumber,
                     srcConnectionId, destConnectionId, payload);
-            assertEquals(decodedPacket.headerBits(), packet.headerBits());
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
             assertEquals(handshakeDecoded.length(), handshakePacket.length());
@@ -845,7 +837,7 @@ public class PacketEncodingTest {
         assertTrue(packet instanceof ZeroRttPacket);
         var zeroRttPacket = (ZeroRttPacket) packet;
         checkLongHeaderPacket(zeroRttPacket, PacketType.ZERORTT, quicVersion.versionNumber(),
-                PacketNumberSpace.APPLICATION, packetNumber, packetNumberLength,
+                PacketNumberSpace.APPLICATION, packetNumber,
                 srcConnectionId, destConnectionId, payload);
         assertEquals(zeroRttPacket.hasLength(), true);
         assertEquals(zeroRttPacket.length(), packetNumberLength + payloadSize);
@@ -901,9 +893,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof ZeroRttPacket, "decoded: " + decodedPacket);
             ZeroRttPacket zeroRttDecoded = ZeroRttPacket.class.cast(decodedPacket);
             checkLongHeaderPacket(zeroRttDecoded, PacketType.ZERORTT, quicVersion.versionNumber(),
-                    PacketNumberSpace.APPLICATION, packetNumber, packetNumberLength,
+                    PacketNumberSpace.APPLICATION, packetNumber,
                     srcConnectionId, destConnectionId, payload);
-            assertEquals(decodedPacket.headerBits(), packet.headerBits());
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
             assertEquals(zeroRttDecoded.length(), zeroRttPacket.length());
@@ -941,7 +932,7 @@ public class PacketEncodingTest {
         assertTrue(packet instanceof VersionNegotiationPacket);
         var versionPacket = (VersionNegotiationPacket) packet;
         checkLongHeaderPacket(versionPacket, PacketType.VERSIONS, 0,
-                PacketNumberSpace.NONE, -1, 0,
+                PacketNumberSpace.NONE, -1,
                 srcConnectionId, destConnectionId, null);
         assertEquals(versionPacket.hasLength(), false);
         assertEquals(versionPacket.supportedVersions(),
@@ -1001,10 +992,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof VersionNegotiationPacket, "decoded: " + decodedPacket);
             VersionNegotiationPacket decodedVersion = VersionNegotiationPacket.class.cast(decodedPacket);
             checkLongHeaderPacket(decodedVersion, PacketType.VERSIONS, 0,
-                    PacketNumberSpace.NONE, -1, 0,
+                    PacketNumberSpace.NONE, -1,
                     srcConnectionId, destConnectionId, null);
-            assertEquals(decodedPacket.headerBits() & 0x80, packet.headerBits() & 0xFF);
-            assertEquals(decodedPacket.headerBits(), encoded.get(0));
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
             assertEquals(decodedVersion.supportedVersions(),
@@ -1045,7 +1034,7 @@ public class PacketEncodingTest {
         assertTrue(packet instanceof RetryPacket);
         var retryPacket = (RetryPacket) packet;
         checkLongHeaderPacket(retryPacket, PacketType.RETRY, quicVersion.versionNumber(),
-                PacketNumberSpace.NONE, -1, 0,
+                PacketNumberSpace.NONE, -1,
                 srcConnectionId, destConnectionId, null);
         assertEquals(retryPacket.hasLength(), false);
         assertEquals(retryPacket.retryToken(), retryToken);
@@ -1106,10 +1095,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof RetryPacket, "decoded: " + decodedPacket);
             RetryPacket decodedRetry = RetryPacket.class.cast(decodedPacket);
             checkLongHeaderPacket(decodedRetry, PacketType.RETRY, quicVersion.versionNumber(),
-                    PacketNumberSpace.NONE, -1, 0,
+                    PacketNumberSpace.NONE, -1,
                     srcConnectionId, destConnectionId, null);
-            assertEquals(decodedPacket.headerBits() & 0xF0, packet.headerBits() & 0xFF);
-            assertEquals(decodedPacket.headerBits(), encoded.get(0));
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
             assertEquals(decodedPacket.size(), expectedSize);
@@ -1163,7 +1150,7 @@ public class PacketEncodingTest {
         assertTrue(packet instanceof OneRttPacket);
         var oneRttPacket = (OneRttPacket) packet;
         checkShortHeaderPacket(oneRttPacket, PacketType.ONERTT,
-                PacketNumberSpace.APPLICATION, packetNumber, packetNumberLength,
+                PacketNumberSpace.APPLICATION, packetNumber,
                 destConnectionId, payload);
         assertEquals(oneRttPacket.hasLength(), false);
         assertEquals(oneRttPacket.size(), expectedSize);
@@ -1215,9 +1202,8 @@ public class PacketEncodingTest {
             assertTrue(decodedPacket instanceof OneRttPacket, "decoded: " + decodedPacket);
             OneRttPacket oneRttDecoded = OneRttPacket.class.cast(decodedPacket);
             checkShortHeaderPacket(oneRttDecoded, PacketType.ONERTT,
-                    PacketNumberSpace.APPLICATION, packetNumber, packetNumberLength,
+                    PacketNumberSpace.APPLICATION, packetNumber,
                     destConnectionId, payload);
-            assertEquals(decodedPacket.headerBits(), packet.headerBits());
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
         }

@@ -232,14 +232,6 @@ public interface QuicPacket {
     }
 
     /**
-     * This packet header's bits, without protection. When protection is applied,
-     * this becomes the first byte in the packet.
-     * @return this packet headers bits.
-     */
-    // TODO: This is quic version dependent and differs between v1 and v2
-    byte headerBits();
-
-    /**
      * {@return this packet's payload. May be null}
      */
     default List<ByteBuffer> payload() {

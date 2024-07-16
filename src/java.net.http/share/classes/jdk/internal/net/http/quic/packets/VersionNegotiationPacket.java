@@ -56,8 +56,6 @@ package jdk.internal.net.http.quic.packets;
  */
 public interface VersionNegotiationPacket extends LongHeaderPacket {
     @Override
-    default byte headerBits() { return (byte)0x80; }
-    @Override
     default PacketType packetType() { return PacketType.VERSIONS; }
     @Override
     default int version() { return 0;}
