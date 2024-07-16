@@ -2330,7 +2330,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   Label loop;
   Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
   assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vg2), "sanity");
-  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vvgss), "sanity");
+  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vgs), "sanity");
   Assembler::LMUL lmul = vgrp_to_lmul(vg1);
   VectorRegister vr1 = vg1.start_vreg();
   VectorRegister vr2 = vg2.start_vreg();

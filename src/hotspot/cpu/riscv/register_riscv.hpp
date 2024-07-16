@@ -378,30 +378,86 @@ class VectorRegisterGroup {
   constexpr explicit VectorRegisterGroup(int encoding) : _encoding(encoding) {}
 
  public:
-  inline friend constexpr VectorRegisterGroup as_VectorRegisterGroup(int encoding);
+  inline constexpr friend VectorRegisterGroup as_VectorRegisterGroup(int encoding);
 
-  constexpr VectorRegisterGroup() : _encoding(-1) {} // vnoreg_grp
+ constexpr VectorRegisterGroup() : _encoding(-1) {
+    assert(false, "must");
+    // tty->print_cr("=========== VectorRegisterGroup()");
+  } // vnoreg_grp
+
+  enum {
+    number_of_registers    = 32,
+    max_slots_per_register = 4
+  };
+
+  class VectorRegisterGroupImpl: public AbstractRegisterImpl {
+    friend class VectorRegisterGroup;
+
+    static constexpr const VectorRegisterGroupImpl* first();
+
+   public:
+    // accessors
+    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
+    constexpr int     encoding() const { assert(is_valid(), "invalid register, %d", raw_encoding()); return raw_encoding(); }
+    constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
+
+    // derived registers, offsets, and addresses
+    inline VectorRegisterGroup successor() const;
+
+    VMReg as_VMReg() const;
+
+    const char* name() const;
+  };
 
   int operator==(const VectorRegisterGroup r) const { return _encoding == r._encoding; }
   int operator!=(const VectorRegisterGroup r) const { return _encoding != r._encoding; }
 
-  VectorRegister vreg_at(int i) {
-    return vnoreg; // just for temporary demo
-  }
+  constexpr const VectorRegisterGroupImpl* operator->() const { return VectorRegisterGroupImpl::first() + _encoding; }
+
   VectorRegister start_vreg() {
-    return vreg_at(0);
+    tty->print_cr("=========== start_vreg: %d, %d", _encoding >> 5, _encoding & 0x1f);
+    return as_VectorRegister(_encoding & 0x1f);
   }
+  /*
   int group_len() {
     return 2; // just for temporary demo
-  }
+  }*/
   // Assembler::LMUL lmul() { return Assembler::m2;}
 };
 
-constexpr VectorRegisterGroup vnoreg_grp = VectorRegisterGroup();
+extern VectorRegisterGroup::VectorRegisterGroupImpl all_VectorRegisterGroupImpls[VectorRegisterGroup::number_of_registers + 1] INTERNAL_VISIBILITY;
+
+inline constexpr const VectorRegisterGroup::VectorRegisterGroupImpl* VectorRegisterGroup::VectorRegisterGroupImpl::first() {
+  return all_VectorRegisterGroupImpls + 1;
+}
+
 
 inline constexpr VectorRegisterGroup as_VectorRegisterGroup(int encoding) {
-  return vnoreg_grp; // just for temporary demo
+  // tty->print_cr("=========== as_VectorRegisterGroup: %d", encoding);
+  // encoding -= 32;
+  if (false) {
+    int mi = encoding >> 5;
+    int vi = encoding & 0x1f;
+    if (0 <= vi && vi < VectorRegisterGroup::number_of_registers) {
+      return VectorRegisterGroup(encoding);
+    }
+  } else {
+    if (0 <= encoding && encoding < VectorRegisterGroup::number_of_registers) {
+      return VectorRegisterGroup(encoding);
+    }
+  }
+  return VectorRegisterGroup(-1); // just for temporary demo
 }
+
+constexpr VectorRegisterGroup vnoreg_grp = as_VectorRegisterGroup(-1);
+ // constexpr VectorRegisterGroup v2m2    = as_VectorRegisterGroup((1 << 5) + 2); // (mi << 5) + vi
+ // constexpr VectorRegisterGroup v4m2    = as_VectorRegisterGroup((1 << 5) + 4);
+ // constexpr VectorRegisterGroup v4m4    = as_VectorRegisterGroup((2 << 5) + 4);
+ constexpr VectorRegisterGroup v2m2    = as_VectorRegisterGroup(0);
+ constexpr VectorRegisterGroup v4m2    = as_VectorRegisterGroup(1);
+ constexpr VectorRegisterGroup v4m4    = as_VectorRegisterGroup(1);
+
+
 
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
@@ -411,12 +467,13 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
     max_gpr = Register::number_of_registers * Register::max_slots_per_register,
     max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
     max_vpr = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
+    max_vgpr = max_vpr + VectorRegisterGroup::number_of_registers * VectorRegisterGroup::max_slots_per_register,
 
     // A big enough number for C2: all the registers plus flags
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives
     // it's optoregs.
-    number_of_registers = max_vpr // gpr/fpr/vpr
+    number_of_registers = max_vgpr // gpr/fpr/vpr
   };
 };
 

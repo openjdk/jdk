@@ -173,7 +173,7 @@ int RegisterForm::RegMask_Size() {
   // is something like 90+ parameters.
   // Add a few (3 words == 96 bits) for incoming & outgoing arguments to calls.
   // Round up to the next doubleword size.
-  return (words_for_regs + 3 + 1) & ~1;
+  return (words_for_regs + 30 + 1) & ~1;
 }
 
 void RegisterForm::dump() {                  // Debug printer

@@ -397,6 +397,12 @@ reg_def V31_H ( SOC, SOC, Op_VecA, 31, v31->as_VMReg()->next()  );
 reg_def V31_J ( SOC, SOC, Op_VecA, 31, v31->as_VMReg()->next(2) );
 reg_def V31_K ( SOC, SOC, Op_VecA, 31, v31->as_VMReg()->next(3) );
 
+
+// reg_def V2_M2    ( SOC, SOC, Op_VecA, 0,  v2m2->as_VMReg()           );
+// reg_def V4_M2    ( SOC, SOC, Op_VecA, 1,  v4m2->as_VMReg()           );
+// reg_def V4_M4    ( SOC, SOC, Op_VecA, 2,  v4m4->as_VMReg()           );
+
+
 // ----------------------------
 // Special Registers
 // ----------------------------
@@ -527,10 +533,17 @@ alloc_class chunk2(
     V28, V28_H, V28_J, V28_K,
     V29, V29_H, V29_J, V29_K,
     V30, V30_H, V30_J, V30_K,
-    V31, V31_H, V31_J, V31_K,
+    V31, V31_H, V31_J, V31_K
+    // ,V2_M2, V4_M2, V4_M4
 );
 
 alloc_class chunk3(RFLAGS);
+
+/*
+alloc_class chunk4(
+    V2_M2, V4_M2, V4_M4
+);
+*/
 
 //----------Architecture Description Register Classes--------------------------
 // Several register classes are automatically defined based upon information in
@@ -865,6 +878,7 @@ reg_class vectora_reg(
     V27, V27_H, V27_J, V27_K,
     V28, V28_H, V28_J, V28_K,
     V29, V29_H, V29_J, V29_K
+    // , V2_M2, V4_M2, V4_M4
 );
 
 // Class for 64 bit register f0
@@ -897,7 +911,7 @@ reg_class v2_reg(
     V2, V2_H, V2_J, V2_K
 );
 
-reg_class v2_m2_reg(
+reg_class v2m2_reg(
     V2, V2_H, V2_J, V2_K, V3, V3_H, V3_J, V3_K
 );
 
@@ -911,11 +925,11 @@ reg_class v4_reg(
     V4, V4_H, V4_J, V4_K
 );
 
-reg_class v4_m2_reg(
+reg_class v4m2_reg(
     V4, V4_H, V4_J, V4_K, V5, V5_H, V5_J, V5_K
 );
 
-reg_class v4_m4_reg(
+reg_class v4m4_reg(
     V4, V4_H, V4_J, V4_K, V5, V5_H, V5_J, V5_K,
     V6, V6_H, V6_J, V6_K, V7, V7_H, V7_J, V7_K
 );
@@ -940,7 +954,7 @@ reg_class v8_reg(
     V8, V8_H, V8_J, V8_K
 );
 
-reg_class v8_m4_reg(
+reg_class v8m4_reg(
     V8, V8_H, V8_J, V8_K, V9, V9_H, V9_J, V9_K,
     V10, V10_H, V10_J, V10_K, V11, V11_H, V11_J, V11_K
 );
@@ -3466,7 +3480,7 @@ operand vReg_V2()
 
 operand vReg_V2_m2()
 %{
-  constraint(ALLOC_IN_RC(v2_m2_reg));
+  constraint(ALLOC_IN_RC(v2m2_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -3496,7 +3510,7 @@ operand vReg_V4()
 
 operand vReg_V4_m2()
 %{
-  constraint(ALLOC_IN_RC(v4_m2_reg));
+  constraint(ALLOC_IN_RC(v4m2_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -3506,7 +3520,7 @@ operand vReg_V4_m2()
 
 operand vReg_V4_m4()
 %{
-  constraint(ALLOC_IN_RC(v4_m4_reg));
+  constraint(ALLOC_IN_RC(v4m4_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
@@ -3556,7 +3570,7 @@ operand vReg_V8()
 
 operand vReg_V8_m4()
 %{
-  constraint(ALLOC_IN_RC(v8_m4_reg));
+  constraint(ALLOC_IN_RC(v8m4_reg));
   match(VecA);
   match(vReg);
   op_cost(0);
