@@ -1899,7 +1899,7 @@ static jobjectArray get_class_declared_methods_helper(
 
   // Select methods matching the criteria.
   for (int i = 0; i < methods_length; i++) {
-    methodHandle method(THREAD, methods->at(i));
+    Method* method = methods->at(i);
     if (want_constructor && !method->is_object_initializer()) {
       continue;
     }
