@@ -1066,7 +1066,7 @@ void Compile::Init(bool aliasing) {
     if (has_method() && _directive->VectorizeOption) {
       set_do_vector_loop(true);
       NOT_PRODUCT(if (do_vector_loop() && Verbose) {tty->print("Compile::Init: do vectorized loops (SIMD like) for method %s\n",  method()->name()->as_quoted_ascii());})
-    } else if (has_method() && method()->name() != 0 &&
+    } else if (has_method() && method()->name() != nullptr &&
                method()->intrinsic_id() == vmIntrinsics::_forEachRemaining) {
       set_do_vector_loop(true);
     }
