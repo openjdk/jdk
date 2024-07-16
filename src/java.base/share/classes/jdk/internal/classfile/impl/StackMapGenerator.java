@@ -50,7 +50,6 @@ import jdk.internal.constant.ReferenceClassDescImpl;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
 
-
 /**
  * StackMapGenerator is responsible for stack map frames generation.
  * <p>

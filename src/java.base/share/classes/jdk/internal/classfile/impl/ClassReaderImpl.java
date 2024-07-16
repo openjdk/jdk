@@ -466,12 +466,12 @@ public final class ClassReaderImpl
         return entryByIndex(index, cls);
     }
 
-    public boolean compare(BufWriter bufWriter,
+    public boolean compare(BufWriterImpl bufWriter,
                            int bufWriterOffset,
                            int classReaderOffset,
                            int length) {
         try {
-            return Arrays.equals(((BufWriterImpl) bufWriter).elems,
+            return Arrays.equals(bufWriter.elems,
                                  bufWriterOffset, bufWriterOffset + length,
                                  buffer, classReaderOffset, classReaderOffset + length);
         } catch (IndexOutOfBoundsException e) {

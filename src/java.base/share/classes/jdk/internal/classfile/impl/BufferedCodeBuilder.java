@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;

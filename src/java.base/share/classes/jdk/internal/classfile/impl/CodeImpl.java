@@ -210,7 +210,7 @@ public final class CodeImpl
         return exceptionTable;
     }
 
-    public boolean compareCodeBytes(BufWriter buf, int offset, int len) {
+    public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
         return codeLength == len
                && classReader.compare(buf, offset, codeStart, codeLength);
     }

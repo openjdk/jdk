@@ -40,7 +40,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
-public class AnnotationReader {
+public final class AnnotationReader {
     private AnnotationReader() { }
 
     public static List<Annotation> readAnnotations(ClassReader classReader, int p) {
@@ -289,6 +289,7 @@ public class AnnotationReader {
     }
 
     public static void writeAnnotations(BufWriter buf, List<? extends Annotation> list) {
+        // handles annotations and type annotations
         var internalBuf = (BufWriterImpl) buf;
         internalBuf.writeU2(list.size());
         for (var e : list) {

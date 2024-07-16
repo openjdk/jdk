@@ -124,9 +124,8 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(arr, 0, arr.length);
     }
 
-    public void writeBytes(BufWriter other) {
-        BufWriterImpl o = (BufWriterImpl) other;
-        writeBytes(o.elems, 0, o.offset);
+    public void writeBytes(BufWriterImpl other) {
+        writeBytes(other.elems, 0, other.offset);
     }
 
     @Override
