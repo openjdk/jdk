@@ -638,7 +638,7 @@ public class Main {
                 index++;
             }
             boolean updateEndTd = false;
-            Pattern styleAttr = Pattern.compile("(?<before>.*style=\")(?<style>[^\"]*)(?<after>\".*)");
+            Pattern styleAttr = Pattern.compile("(?s)(?<before>.*style=\")(?<style>[^\"]*)(?<after>\".*)");
             for (Entry e : entries) {
                 if (simple && e.column == maxIndex) {
                     String attrs = e.html.substring(3, e.html.length() - 1);
