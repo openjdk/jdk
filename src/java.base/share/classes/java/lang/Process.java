@@ -32,6 +32,7 @@ import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
@@ -456,14 +457,54 @@ public abstract class Process {
      * @since 1.8
      */
     public boolean waitFor(long timeout, TimeUnit unit)
-        throws InterruptedException
-    {
-        long remainingNanos = unit.toNanos(timeout); // throw NPE before other conditions
+        throws InterruptedException {
+        Objects.requireNonNull(unit, "unit"); // throw NPE before other conditions
+
         if (hasExited())
             return true;
         if (timeout <= 0)
             return false;
 
+        return waitForNanos(unit.toNanos(timeout));
+    }
+
+    /**
+     * Causes the current thread to wait, if necessary, until the
+     * process represented by this {@code Process} object has
+     * terminated, or the specified waiting duration elapses.
+     *
+     * <p>If the process has already terminated then this method returns
+     * immediately with the value {@code true}.  If the process has not
+     * terminated and the duration is not positive, then
+     * this method returns immediately with the value {@code false}.
+     *
+     * <p>The default implementation of this method polls the {@code exitValue}
+     * to check if the process has terminated. Concrete implementations of this
+     * class are strongly encouraged to override this method with a more
+     * efficient implementation.
+     *
+     * @param duration the maximum duration to wait; if not positive,
+     *                this method returns immediately.
+     * @return {@code true} if the process has exited and {@code false} if
+     *         the waiting duration elapsed before the process has exited.
+     * @throws InterruptedException if the current thread is interrupted
+     *         while waiting.
+     * @throws NullPointerException if duration is null
+     * @since 24
+     */
+    public boolean waitFor(Duration duration)
+            throws InterruptedException {
+        Objects.requireNonNull(duration, "duration"); // throw NPE before other conditions
+
+        if (hasExited())
+            return true;
+        if (duration.isZero() || duration.isNegative())
+            return false;
+
+        return waitForNanos(TimeUnit.NANOSECONDS.convert(duration));
+    }
+
+    private boolean waitForNanos(long remainingNanos) throws InterruptedException {
         long deadline = System.nanoTime() + remainingNanos;
         do {
             Thread.sleep(Math.min(TimeUnit.NANOSECONDS.toMillis(remainingNanos) + 1, 100));
