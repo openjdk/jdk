@@ -79,6 +79,8 @@ public:
     //    someone else like FLAG_SET_ERGO)
     WAS_SET_ON_COMMAND_LINE = 1 << 17,
 
+    VALUE_ITERATED          = 1 << 18,
+
     KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_ON_COMMAND_LINE)
   };
 
@@ -296,6 +298,10 @@ private:
   }
 
   static const int type_signatures[];
+
+  void clear_iterated()           { _flags = Flags(_flags & ~VALUE_ITERATED);                 }
+  void set_iterated()             { _flags = Flags(_flags | VALUE_ITERATED);                  }
+  bool is_iterated()              { return (_flags & VALUE_ITERATED) != 0;                    }
 
 public:
   template <typename T>

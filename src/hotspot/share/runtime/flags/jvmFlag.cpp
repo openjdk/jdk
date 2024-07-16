@@ -701,26 +701,28 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     out->print_cr("[Global flags ranges]");
   }
 
-  // Sort
-  JVMFlag** array = NEW_C_HEAP_ARRAY_RETURN_NULL(JVMFlag*, length, mtArguments);
-  if (array != nullptr) {
-    for (size_t i = 0; i < length; i++) {
-      array[i] = &flagTable[i];
+  // Mark flags clear
+  for (size_t i = 0; i < length; i++) {
+    if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
+      flagTable[i].clear_iterated();
     }
-    qsort(array, length, sizeof(JVMFlag*), compare_flags);
-
+  }
+  // Print the flag with highest sort value, then mark it
+  for (size_t j = 0; j < length; j++) {
+    JVMFlag* max = nullptr;
     for (size_t i = 0; i < length; i++) {
-      if (array[i]->is_unlocked() && !(skipDefaults && array[i]->is_default())) {
-        array[i]->print_on(out, withComments, printRanges);
+      if (!(flagTable[i].is_iterated()) && flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
+        if (max == nullptr) {
+          max = &flagTable[i];
+        }
+        if (strcmp(max->name(), flagTable[i].name()) > 0) {
+          max = &flagTable[i];
+        }
       }
     }
-    FREE_C_HEAP_ARRAY(JVMFlag*, array);
-  } else {
-    // OOM? Print unsorted.
-    for (size_t i = 0; i < length; i++) {
-      if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-        flagTable[i].print_on(out, withComments, printRanges);
-      }
+    if (max != nullptr) {
+      max->print_on(out, withComments, printRanges);
+      max->set_iterated();
     }
   }
 }
