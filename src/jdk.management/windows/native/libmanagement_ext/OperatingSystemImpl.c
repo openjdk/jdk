@@ -50,8 +50,8 @@
 #include <process.h>
 #pragma warning(pop)
 
-typedef unsigned int juint;
-typedef unsigned long long julong;
+typedef unsigned __int32 juint;
+typedef unsigned __int64 julong;
 
 static void set_low(jlong* value, jint low) {
     *value &= (jlong)0xffffffff << 32;
