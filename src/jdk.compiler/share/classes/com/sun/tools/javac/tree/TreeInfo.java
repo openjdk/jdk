@@ -344,11 +344,13 @@ public class TreeInfo {
         @Override
         public void visitClassDef(JCClassDecl tree) {
             // don't descend any further
+            result = tree;
         }
 
         @Override
         public void visitLambda(JCLambda tree) {
             // don't descend any further
+            result = tree;
         }
     }
 
