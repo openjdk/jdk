@@ -585,7 +585,7 @@ public class PacketSpaceManagerTest {
                 @Override
                 public void packetAcked(int packetBytes, Deadline sentTime) { }
                 @Override
-                public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime) { }
+                public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) { }
                 @Override
                 public void packetDiscarded(Collection<QuicPacket> discardedPackets) { }
             };

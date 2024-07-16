@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.VarHandle;
-import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -99,6 +97,8 @@ public sealed class PacketSpaceManager implements PacketSpace
     private volatile boolean blockedByCC;
     // packet threshold for loss detection; RFC 9002 suggests 3
     private static final long kPacketThreshold = 3;
+    // Multiplier for persistent congestion; RFC 9002 suggests 3
+    private static final int kPersistentCongestionThreshold = 3;
 
     /**
      * A record that stores the next AckFrame that should be sent
@@ -1738,6 +1738,8 @@ public sealed class PacketSpaceManager implements PacketSpace
         transferLock.lock();
         try {
             List<PendingAcknowledgement> lost = Log.quicRetransmit() ? new ArrayList<>() : null;
+            List<QuicPacket> packets = new ArrayList<>();
+            Deadline firstSendTime = null, lastSendTime = null;
             for (PendingAcknowledgement head = pendingAcknowledgements.peek();
                  head != null && head.packetNumber < largestReceivedAckedPN;
                  head = pendingAcknowledgements.peek()) {
@@ -1753,7 +1755,11 @@ public sealed class PacketSpaceManager implements PacketSpace
                     if (pendingAcknowledgements.remove(head)) {
                         pendingRetransmission.add(head);
                         triggeredForRetransmission.add(head);
-                        congestionController.packetLost(List.of(head.packet), head.sent);
+                        packets.add(head.packet);
+                        if (firstSendTime == null) {
+                            firstSendTime = head.sent;
+                        }
+                        lastSendTime = head.sent;
                         var lp = head;
                         lostPackets.removeIf(p -> lp.hasPreviousNumber(p.packetNumber));
                         lostPackets.add(head);
@@ -1770,6 +1776,14 @@ public sealed class PacketSpaceManager implements PacketSpace
                     }
                     break;
                 }
+            }
+            if (!packets.isEmpty()) {
+                // Persistent congestion is detected more aggressively than mandated by RFC 9002:
+                // - may be reported even if there's no prior RTT sample
+                // - may be reported even if there are acknowledged packets between the lost ones
+                boolean persistent = Deadline.between(firstSendTime, lastSendTime)
+                                .compareTo(getPersistentCongestionDuration()) > 0;
+                congestionController.packetLost(packets, lastSendTime, persistent);
             }
             if (lost != null && !lost.isEmpty()) {
                 Log.logQuic("{0} lost packet {1}({2}) total unrecovered {3}, unacknowledged {4}",
@@ -1813,6 +1827,13 @@ public sealed class PacketSpaceManager implements PacketSpace
         var max = QuicRttEstimator.MAX_PTO_BACKOFF_TIMEOUT;
         // don't allow PTO > 240s
         return pto.compareTo(max) > 0 ? max : pto;
+    }
+
+    // returns the persistent congestion duration
+    Duration getPersistentCongestionDuration() {
+        return rttEstimator.getBasePtoDuration()
+                .plusMillis(peerMaxAckDelayMillis)
+                .multipliedBy(kPersistentCongestionThreshold);
     }
 
     private Deadline getPtoDeadline() {
