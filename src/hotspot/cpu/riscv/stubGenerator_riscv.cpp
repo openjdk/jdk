@@ -5131,8 +5131,8 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
     address start = __ pc();
 
-    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_nmax_loop_entry,
-      L_by16, L_by16_loop, L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
+    Label L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop,
+      L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
 
     // Aliases
     Register adler  = c_rarg0;
@@ -5213,20 +5213,9 @@ class StubGenerator: public StubCodeGenerator {
     __ bgeu(len, temp0, L_nmax);
     __ beqz(len, L_combine);
 
-  __ bind(L_simple_by1_loop);
-    __ lbu(temp0, Address(buff, 0));
-    __ addi(buff, buff, step_1);
-    __ add(s1, s1, temp0);
-    __ add(s2, s2, s1);
+    // Jumping to L_by1_loop
     __ sub(len, len, step_1);
-    __ bgtz(len, L_simple_by1_loop);
-
-    // s1 = s1 % BASE
-    __ remuw(s1, s1, base);
-    // s2 = s2 % BASE
-    __ remuw(s2, s2, base);
-
-    __ j(L_combine);
+    __ j(L_by1_loop);
 
   __ bind(L_nmax);
     __ sub(len, len, nmax);
