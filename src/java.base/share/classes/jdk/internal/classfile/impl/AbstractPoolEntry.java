@@ -55,7 +55,7 @@ import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
 
-public abstract sealed class AbstractPoolEntry implements Util.Writable {
+public abstract sealed class AbstractPoolEntry {
     /*
     Invariant: a {CP,BSM} entry for pool P refer only to {CP,BSM} entries
     from P or P's parent.  This is enforced by the various xxxEntry methods
@@ -121,6 +121,8 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
     public int width() {
         return (tag == ClassFile.TAG_LONG || tag == ClassFile.TAG_DOUBLE) ? 2 : 1;
     }
+
+    abstract void writeTo(BufWriterImpl buf);
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
@@ -406,7 +408,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             if (rawBytes != null) {
                 pool.writeU1(tag);
                 pool.writeU2(rawLen);
@@ -477,7 +479,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
             return ref1;
         }
 
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
         }
@@ -507,7 +509,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
             return ref2;
         }
 
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
             pool.writeU2(ref2.index());
@@ -813,7 +815,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
             return nameAndType;
         }
 
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(bsmIndex);
             pool.writeU2(nameAndType.index());
@@ -918,7 +920,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU1(refKind);
             pool.writeU2(reference.index());
@@ -1068,7 +1070,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeInt(val);
         }
@@ -1101,7 +1103,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeFloat(val);
         }
@@ -1133,7 +1135,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeLong(val);
         }
@@ -1165,7 +1167,7 @@ public abstract sealed class AbstractPoolEntry implements Util.Writable {
         }
 
         @Override
-        public void writeTo(BufWriterImpl pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeDouble(val);
         }

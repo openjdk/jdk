@@ -276,6 +276,11 @@ public class Util {
         return ((WritableLocalVariable) lvOrLvt).writeLocalTo(buf);
     }
 
+    /**
+     * A generic interface for objects to write to a
+     * buf writer. Do not implement unless necessary,
+     * as this writeTo is public, which can be troublesome.
+     */
     interface Writable {
         void writeTo(BufWriterImpl writer);
     }

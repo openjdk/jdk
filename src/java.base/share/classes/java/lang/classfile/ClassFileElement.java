@@ -39,6 +39,6 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassFileElement
-        permits AttributedElement, CompoundElement, WritableElement,
+        permits AttributedElement, CompoundElement,
                 ClassElement, CodeElement, FieldElement, MethodElement {
 }

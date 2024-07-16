@@ -24,7 +24,6 @@
  */
 package java.lang.classfile.constantpool;
 
-import java.lang.classfile.WritableElement;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -34,7 +33,7 @@ import jdk.internal.javac.PreviewFeature;
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface PoolEntry extends WritableElement
+public sealed interface PoolEntry
         permits AnnotationConstantValueEntry, DynamicConstantPoolEntry,
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,
                 PackageEntry {

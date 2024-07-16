@@ -33,7 +33,7 @@ import java.lang.classfile.constantpool.MethodHandleEntry;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 
-public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry, Util.Writable {
+public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
 
     final int index;
     final int hash;
@@ -86,8 +86,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry, Uti
         return hash;
     }
 
-    @Override
-    public void writeTo(BufWriterImpl writer) {
+    void writeTo(BufWriterImpl writer) {
         writer.writeIndex(bootstrapMethod());
         Util.writeListIndices(writer, arguments());
     }

@@ -54,7 +54,7 @@ import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
 import static java.lang.classfile.ClassFile.TAG_PACKAGE;
 import static java.lang.classfile.ClassFile.TAG_STRING;
 
-public final class SplitConstantPool implements ConstantPoolBuilder, Util.Writable {
+public final class SplitConstantPool implements ConstantPoolBuilder {
 
     private final ClassReaderImpl parent;
     private final int parentSize, parentBsmSize;
@@ -161,8 +161,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder, Util.Writab
         return true;
     }
 
-    @Override
-    public void writeTo(BufWriterImpl buf) {
+    void writeTo(BufWriterImpl buf) {
         int writeFrom = 1;
         if (size() >= 65536) {
             throw new IllegalArgumentException(String.format("Constant pool is too large %d", size()));

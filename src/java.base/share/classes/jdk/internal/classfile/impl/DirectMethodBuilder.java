@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,11 @@ import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
-        implements TerminalMethodBuilder, WritableElement, MethodInfo, Util.Writable {
+        implements TerminalMethodBuilder, MethodInfo, Util.Writable {
 
     final Utf8Entry name;
     final Utf8Entry desc;
@@ -114,7 +113,7 @@ public final class DirectMethodBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute)element);
+            writeAttribute((CustomAttribute<?>) element);
         }
         return this;
     }
