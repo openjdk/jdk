@@ -236,11 +236,6 @@ public class QuicPacketEncoder {
         }
 
         @Override
-        public List<ByteBuffer> payload() {
-            return null;
-        }
-
-        @Override
         public void encode(ByteBuffer buffer, CodingContext context) {
             encodePacket(buffer, sourceId(), destinationId(), version(), retryToken, size, context);
         }
@@ -1083,9 +1078,6 @@ public class QuicPacketEncoder {
             size = Math.addExact(size, destinationId().length());
             return size;
         }
-
-        @Override
-        public List<ByteBuffer> payload() { return null; }
 
         @Override
         public void encode(ByteBuffer buffer, CodingContext context) {

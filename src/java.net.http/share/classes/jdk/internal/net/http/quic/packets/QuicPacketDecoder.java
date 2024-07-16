@@ -140,11 +140,6 @@ public class QuicPacketDecoder {
         }
 
         @Override
-        public List<ByteBuffer> payload() {
-            return null;
-        }
-
-        @Override
         public byte[] retryToken() {
             return retryToken;
         }
@@ -808,9 +803,6 @@ public class QuicPacketDecoder {
 
         @Override
         public int size() { return size; }
-
-        @Override
-        public List<ByteBuffer> payload() { return null;}
 
         @Override
         public List<QuicFrame> frames() { return List.of(); }

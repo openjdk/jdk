@@ -28,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import jdk.internal.net.http.quic.PeerConnectionId;
 import jdk.internal.net.http.quic.QuicConnectionId;
@@ -229,21 +228,6 @@ public interface QuicPacket {
      */
     default long packetNumber() {
         return -1L;
-    }
-
-    /**
-     * {@return this packet's payload. May be null}
-     */
-    default List<ByteBuffer> payload() {
-        List<QuicFrame> frames = frames();
-        if (frames == null || frames.isEmpty()) return null;
-        Function<QuicFrame, ByteBuffer> toBB = (QuicFrame f) -> {
-            var bb = ByteBuffer.allocate(f.size());
-            f.encode(bb);
-            bb.flip();
-            return bb;
-        };
-        return frames.stream().map(toBB).toList();
     }
 
     /**
