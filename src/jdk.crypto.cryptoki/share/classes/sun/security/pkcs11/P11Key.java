@@ -561,47 +561,81 @@ abstract class P11Key implements Key, Length {
         static P11RSAPrivateKeyInternal of(Session session, long keyID,
                 String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
                 boolean keySensitive) {
-            if (keySensitive) {
-                return new P11RSAPrivateKeyInternal(session, keyID, algorithm,
-                        keyLength, attrs);
-            } else {
-                CK_ATTRIBUTE[] rsaAttrs = new CK_ATTRIBUTE[] {
-                        new CK_ATTRIBUTE(CKA_MODULUS),
-                        new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
-                        new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
-                        new CK_ATTRIBUTE(CKA_PRIME_1),
-                        new CK_ATTRIBUTE(CKA_PRIME_2),
-                        new CK_ATTRIBUTE(CKA_EXPONENT_1),
-                        new CK_ATTRIBUTE(CKA_EXPONENT_2),
-                        new CK_ATTRIBUTE(CKA_COEFFICIENT),
-                };
-                boolean isCRT = true;
-                Session tempSession = null;
+            P11RSAPrivateKeyInternal p11Key = null;
+            if (!keySensitive) {
+                // Key is not sensitive: try to interpret as CRT or non-CRT.
+                Session opSession = null;
                 try {
-                    tempSession = session.token.getOpSession();
-                    session.token.p11.C_GetAttributeValue(tempSession.id(),
-                            keyID, rsaAttrs);
-                    for (CK_ATTRIBUTE attr : rsaAttrs) {
-                        isCRT &= (attr.pValue instanceof byte[]);
-                        if (!isCRT) break;
+                    opSession = session.token.getOpSession();
+                    p11Key = asCRT(session, opSession, keyID, algorithm,
+                            keyLength, attrs);
+                    if (p11Key == null) {
+                        p11Key = asNonCRT(session, opSession, keyID, algorithm,
+                                keyLength, attrs);
                     }
-                } catch (PKCS11Exception e) {
-                    // ignore, assume not available
-                    isCRT = false;
+                } catch (PKCS11Exception ignored) {
+                    // Error getting an OpSession, unlikely.
                 } finally {
-                    session.token.releaseSession(tempSession);
-                }
-                BigInteger n = rsaAttrs[0].getBigInteger();
-                BigInteger d = rsaAttrs[1].getBigInteger();
-                if (isCRT) {
-                    return new P11RSAPrivateKey(session, keyID, algorithm,
-                           keyLength, attrs, n, d,
-                           Arrays.copyOfRange(rsaAttrs, 2, rsaAttrs.length));
-                } else {
-                    return new P11RSAPrivateNonCRTKey(session, keyID,
-                           algorithm, keyLength, attrs, n, d);
+                    session.token.releaseSession(opSession);
                 }
             }
+            if (p11Key == null) {
+                // Key is sensitive or there was a failure while querying its
+                // attributes: handle as opaque.
+                p11Key = new P11RSAPrivateKeyInternal(session, keyID, algorithm,
+                        keyLength, attrs);
+            }
+            return p11Key;
+        }
+
+        private static P11RSAPrivateKeyInternal asCRT(Session session,
+                Session opSession, long keyID, String algorithm, int keyLength,
+                CK_ATTRIBUTE[] attrs) {
+            CK_ATTRIBUTE[] rsaCRTAttrs = new CK_ATTRIBUTE[] {
+                    new CK_ATTRIBUTE(CKA_MODULUS),
+                    new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
+                    new CK_ATTRIBUTE(CKA_PUBLIC_EXPONENT),
+                    new CK_ATTRIBUTE(CKA_PRIME_1),
+                    new CK_ATTRIBUTE(CKA_PRIME_2),
+                    new CK_ATTRIBUTE(CKA_EXPONENT_1),
+                    new CK_ATTRIBUTE(CKA_EXPONENT_2),
+                    new CK_ATTRIBUTE(CKA_COEFFICIENT),
+            };
+            try {
+                session.token.p11.C_GetAttributeValue(opSession.id(),
+                        keyID, rsaCRTAttrs);
+                for (CK_ATTRIBUTE attr : rsaCRTAttrs) {
+                    if (!(attr.pValue instanceof byte[])) {
+                        return null;
+                    }
+                }
+                return new P11RSAPrivateKey(session, keyID, algorithm,
+                        keyLength, attrs, rsaCRTAttrs[0].getBigInteger(),
+                        rsaCRTAttrs[1].getBigInteger(),
+                        Arrays.copyOfRange(rsaCRTAttrs, 2, rsaCRTAttrs.length));
+            } catch (PKCS11Exception ignored) {
+                // ignore, assume not available
+            }
+            return null;
+        }
+
+        private static P11RSAPrivateKeyInternal asNonCRT(Session session,
+                Session opSession, long keyID, String algorithm, int keyLength,
+                CK_ATTRIBUTE[] attrs) {
+            CK_ATTRIBUTE[] rsaNonCRTAttrs = new CK_ATTRIBUTE[] {
+                    new CK_ATTRIBUTE(CKA_MODULUS),
+                    new CK_ATTRIBUTE(CKA_PRIVATE_EXPONENT),
+            };
+            try {
+                session.token.p11.C_GetAttributeValue(opSession.id(), keyID,
+                        rsaNonCRTAttrs);
+                return new P11RSAPrivateNonCRTKey(session, keyID, algorithm,
+                        keyLength, attrs, rsaNonCRTAttrs[0].getBigInteger(),
+                        rsaNonCRTAttrs[1].getBigInteger());
+            } catch (PKCS11Exception ignored) {
+                // ignore, assume not available
+            }
+            return null;
         }
 
         protected transient BigInteger n;
