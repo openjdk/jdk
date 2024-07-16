@@ -52,8 +52,8 @@ public class TestMetaspaceAllocation {
     public static void main(String[] args) {
 
         MetaspaceTestContext context = new MetaspaceTestContext();
-        MetaspaceTestArena arena1 = context.createArena(false, 32L * Unit.valueOf("M").size());
-        MetaspaceTestArena arena2 = context.createArena(true, 32L * Unit.valueOf("M").size());
+        MetaspaceTestArena arena1 = context.createArena(false, 32L * Unit.M.size());
+        MetaspaceTestArena arena2 = context.createArena(true, 32L * Unit.M.size());
 
         Allocation a1 = arena1.allocate(800);
         Allocation a2 = arena2.allocate(800);

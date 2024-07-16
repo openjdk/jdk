@@ -96,14 +96,14 @@ public class TestMetaspaceAllocationMT1 {
 
     public static void main(String[] args) throws Exception {
 
-        final long testAllocationCeiling = 64L * Unit.valueOf("M").size();
+        final long testAllocationCeiling = 64L * Unit.M.size();
 
         final int numThreads = 4;
         final int seconds = Integer.parseInt(args[0]);
 
         for (int i = 0; i < 3; i ++) {
 
-            long commitLimit = (i == 1) ? 2 * Unit.valueOf("M").size() : 0;
+            long commitLimit = (i == 1) ? 2 * Unit.M.size() : 0;
 
             // Note: reserve limit must be a multiple of Metaspace::reserve_alignment_words()
             //  (512K on 64bit, 1M on 32bit)
