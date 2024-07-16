@@ -1805,14 +1805,17 @@ temporarily.
 On Windows, when configuring, `fixpath.sh` may report that some directory names
 have spaces. Usually, it assumes those directories have [short
 paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
-You can run `fsutil file setshortname` in `cmd` on directories to assign short
-paths so `configure` can access them. If the result says "Access denied", it may
-be that there are processes running in that directory; you can reboot Windows in
-safe mode and run the command on those directories again.
+You can run `fsutil file setshortname` in `cmd` on directories to assign
+arbitrary short paths so `configure` can access them. If the result says "Access
+denied", it may be that there are processes running in that directory; in this
+case, you can reboot Windows in safe mode and run the command on those directories
+again.
 
 The only directories required to have short paths are `Microsoft Visual Studio`
-and `Windows Kits`; the rest of the "contains space" warnings from configure
-can be ignored.
+and `Windows Kits`; the rest of the "contains space" warnings from `configure`
+can be ignored. You can choose any short name; once it is set, `configure`'s
+tools like `cygpath` can convert the directory with spaces to your chosen short
+name and pass it to the build system.
 
 ### Getting Help
 
