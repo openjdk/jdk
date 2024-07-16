@@ -198,10 +198,10 @@ public final class SourceLauncher {
         // 1. Find a main method in the first class and if there is one - invoke it
         Class<?> firstClass;
         String firstClassName = program.qualifiedTypeNames().getFirst();
+        ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
+        Thread.currentThread().setContextClassLoader(loader);
         try {
-            ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
             firstClass = Class.forName(firstClassName, false, loader);
-            Thread.currentThread().setContextClassLoader(loader);
         } catch (ClassNotFoundException e) {
             throw new Fault(Errors.CantFindClass(firstClassName));
         }
