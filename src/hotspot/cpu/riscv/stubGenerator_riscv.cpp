@@ -5265,20 +5265,20 @@ class StubGenerator: public StubCodeGenerator {
     __ add(len, len, count);
     __ bltz(len, L_by1);
     // Trying to unroll
-    __ mv(t2, step_64);
-    __ blt(len, t2, L_by16_loop);
+    __ mv(temp3, step_64);
+    __ blt(len, temp3, L_by16_loop);
 
   __ bind(L_by16_loop_unroll);
     adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, count,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
       vtemp1, vtemp2, step_64, Assembler::m4);
     __ sub(len, len, step_64);
-    // By now the count should still be 64
-    __ bge(len, count, L_by16_loop_unroll);
+    // By now the temp3 should still be 64
+    __ bge(len, temp3, L_by16_loop_unroll);
 
   __ bind(L_by16_loop);
     adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, count,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
       vtemp1, vtemp2, step_16, Assembler::m1);
     __ sub(len, len, step_16);
     __ bgez(len, L_by16_loop);
