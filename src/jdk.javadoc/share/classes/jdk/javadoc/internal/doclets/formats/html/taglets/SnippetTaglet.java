@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -348,7 +349,9 @@ public class SnippetTaglet extends BaseTaglet {
             if (containsClass) { // the class attribute means Java
                 lang = "java";
             } else {
-                String fileName = Path.of(fileObject.toUri()).getFileName().toString();
+                var uri = fileObject.toUri();
+                var path = uri.getPath() != null ? uri.getPath() : "";
+                var fileName = path.substring(path.lastIndexOf('/') + 1);
                 lang = languageFromFileName(fileName);
             }
         } else {
