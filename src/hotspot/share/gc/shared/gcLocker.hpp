@@ -66,6 +66,7 @@ class GCLocker: public AllStatic {
   }
 
   static void log_debug_jni(const char* msg);
+  static void log_debug_jni(const char* msg, const elapsedTimer elapsed_timer);
 
   static bool is_at_safepoint();
 
