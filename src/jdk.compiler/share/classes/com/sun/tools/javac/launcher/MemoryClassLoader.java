@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,13 +149,9 @@ final class MemoryClassLoader extends ClassLoader {
         if (sourceFileClasses.containsKey(toBinaryName(name))) {
             return findResource(name);
         }
-        var programPath = programDescriptor.sourceRootPath().resolve(name);
-        if (Files.exists(programPath)) {
-            try {
-                return programPath.toUri().toURL();
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
-            }
+        URL resource = toResourceInRootPath(name);
+        if (resource != null) {
+            return resource;
         }
         return parentClassLoader.getResource(name);
     }
@@ -233,7 +229,7 @@ final class MemoryClassLoader extends ClassLoader {
     public URL findResource(String name) {
         String binaryName = toBinaryName(name);
         if (binaryName == null || sourceFileClasses.get(binaryName) == null) {
-            return null;
+            return toResourceInRootPath(name); // can be null
         }
 
         URLStreamHandler handler = this.handler;
@@ -269,6 +265,25 @@ final class MemoryClassLoader extends ClassLoader {
                 return u;
             }
         };
+    }
+
+    /**
+     * Resolves a "resource name" (as used in the getResource* methods)
+     * to an existing file relative to source root path, or null otherwise.
+     *
+     * @param name the resource name
+     * @return the URL of the resource, or null
+     */
+    private URL toResourceInRootPath(String name) {
+        var file = programDescriptor.sourceRootPath().resolve(name);
+        if (!Files.exists(file)) {
+            return null;
+        }
+        try {
+            return file.toUri().toURL();
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
