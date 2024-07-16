@@ -140,7 +140,7 @@ public final class DirectCodeBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute)element);
+            writeAttribute((CustomAttribute<?>) element);
         }
         return this;
     }
