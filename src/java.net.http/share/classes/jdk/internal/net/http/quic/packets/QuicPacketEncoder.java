@@ -460,16 +460,9 @@ public class QuicPacketEncoder {
     }
 
     public abstract static class OutgoingQuicPacket implements QuicPacket {
-        protected OutgoingQuicPacket() {
-        }
-    }
-
-    private abstract static class OutgoingHeaderPacket
-            extends OutgoingQuicPacket implements QuicPacket {
-
         private final QuicConnectionId destinationId;
-        OutgoingHeaderPacket(QuicConnectionId destinationId) {
-            super();
+
+        protected OutgoingQuicPacket(QuicConnectionId destinationId) {
             this.destinationId = destinationId;
         }
 
@@ -485,7 +478,7 @@ public class QuicPacketEncoder {
     }
 
     private abstract static class OutgoingShortHeaderPacket
-            extends OutgoingHeaderPacket implements ShortHeaderPacket {
+            extends OutgoingQuicPacket implements ShortHeaderPacket {
 
         OutgoingShortHeaderPacket(QuicConnectionId destinationId) {
             super(destinationId);
@@ -493,7 +486,7 @@ public class QuicPacketEncoder {
     }
 
     private abstract static class OutgoingLongHeaderPacket
-            extends OutgoingHeaderPacket implements LongHeaderPacket {
+            extends OutgoingQuicPacket implements LongHeaderPacket {
 
         private final QuicConnectionId sourceId;
         private final int version;
