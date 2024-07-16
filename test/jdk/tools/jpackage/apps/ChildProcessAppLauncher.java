@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,11 +19,19 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.g1;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
-public interface HeapRegionClosure {
-    public void doHeapRegion(G1HeapRegion hr);
+public class ChildProcessAppLauncher {
+
+    public static void main(String[] args) throws IOException {
+            String calcPath = Path.of(System.getenv("SystemRoot"), "system32", "calc.exe").toString();
+            ProcessBuilder processBuilder = new ProcessBuilder(calcPath);
+            Process process = processBuilder.start();
+            System.out.println("Calc id=" + process.pid());
+            System.exit(0);
+    }
 }
