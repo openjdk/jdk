@@ -39,7 +39,7 @@
  *                   -Xcomp
  *                   -server
  *                   compiler.escapeAnalysis.TestReduceAllocationAndNestedScalarized
- * @run main/othervm compiler.escapeAnalysis.TestReduceAllocationAndNestedScalarized
+ * @run main compiler.escapeAnalysis.TestReduceAllocationAndNestedScalarized
  */
 
 package compiler.escapeAnalysis;
