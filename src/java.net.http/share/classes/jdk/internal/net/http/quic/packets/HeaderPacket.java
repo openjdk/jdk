@@ -44,15 +44,5 @@ public interface HeaderPacket extends QuicPacket {
      *     RFC 9000, Section 7.2</a>
      */
     QuicConnectionId destinationId();
-    /**
-     * The length of this packet number, if this packet type is numbered,
-     * 0 otherwise.
-     * @return the packet number length, or 0
-     */
-    default int packetNumberLength() {
-        if (numberSpace() == PacketNumberSpace.NONE) return 0;
-        byte headerBits = headerBits();
-        return (headerBits & PACKET_NUMBER_MASK) + 1;
-    }
 
 }

@@ -362,15 +362,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -562,15 +553,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -755,15 +737,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -939,15 +912,6 @@ public class QuicPacketEncoder {
 
         @Override
         public long packetNumber() { return packetNumber; }
-
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
 
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();

@@ -78,12 +78,6 @@ public interface OneRttPacket extends ShortHeaderPacket {
         return PacketType.ONERTT;
     }
 
-    @Override
-    default int packetNumberLength() {
-        byte headerBits = headerBits();
-        return (headerBits & 0x03) + 1;
-    }
-
     /**
      * {@return the packet's Key Phase Bit: 0 or 1}
      * <a href="https://www.rfc-editor.org/rfc/rfc9000#section-17.3.1">RFC 9000, Section 17.3.1</a>:

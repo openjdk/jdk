@@ -402,7 +402,6 @@ public class PacketEncodingTest {
         }
         assertEquals(packet.version(), versionNumber);
         assertEquals(packet.packetNumber(), packetNumber);
-        assertEquals(packet.packetNumberLength(), packetNumberLength);
         assertEquals(packet.sourceId(), srcConnectionId);
         assertEquals(packet.destinationId(), destConnectionId);
 
@@ -505,7 +504,6 @@ public class PacketEncodingTest {
         assertEquals(packet.numberSpace(), packetNumberSpace);
         assertEquals(Utils.mismatch(packet.payload(), List.of(ByteBuffer.wrap(payload))), -1);
         assertEquals(packet.packetNumber(), packetNumber);
-        assertEquals(packet.packetNumberLength(), packetNumberLength);
         assertEquals(packet.destinationId(), destConnectionId);
     }
 
