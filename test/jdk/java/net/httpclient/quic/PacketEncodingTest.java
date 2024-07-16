@@ -80,6 +80,7 @@ import static org.testng.Assert.*;
  * @run testng/othervm -Dseed=-3723256402256409075 PacketEncodingTest
  * @run testng/othervm -Dseed=-3689060484817342283 PacketEncodingTest
  * @run testng/othervm -Dseed=2425718686525936108 PacketEncodingTest
+ * @run testng/othervm -Dseed=-2996954753243104355 PacketEncodingTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true PacketEncodingTest
  */
 public class PacketEncodingTest {
@@ -338,6 +339,9 @@ public class PacketEncodingTest {
         List<QuicFrame> expected;
         if (padding == 0) {
             expected = payload;
+        } else if (payload.get(0) instanceof PaddingFrame pf) {
+            expected = new ArrayList<>(payload);
+            expected.set(0, new PaddingFrame(padding + pf.size()));
         } else {
             expected = new ArrayList<>(payload.size()+1);
             expected.add(new PaddingFrame(padding));
