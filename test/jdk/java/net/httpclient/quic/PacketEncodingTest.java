@@ -475,7 +475,7 @@ public class PacketEncodingTest {
         return List.copyOf(frames);
     }
 
-    private ByteBuffer toByteBuffer(OutgoingQuicPacket<?> outgoingQuicPacket, CodingContext context)
+    private ByteBuffer toByteBuffer(OutgoingQuicPacket outgoingQuicPacket, CodingContext context)
             throws Exception {
         int size = outgoingQuicPacket.size();
         ByteBuffer buffer = ByteBuffer.allocate(size);

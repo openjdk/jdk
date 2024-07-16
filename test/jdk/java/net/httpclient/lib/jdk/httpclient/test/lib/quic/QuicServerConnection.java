@@ -55,7 +55,6 @@ import jdk.internal.net.http.quic.frames.HandshakeDoneFrame;
 import jdk.internal.net.http.quic.frames.NewTokenFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.packets.InitialPacket;
-import jdk.internal.net.http.quic.packets.OneRttPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
@@ -288,7 +287,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    protected void sendStreamData(OutgoingQuicPacket<OneRttPacket> packet)
+    protected void sendStreamData(OutgoingQuicPacket packet)
             throws IOException, QuicKeyUnavailableException, QuicTransportException {
         boolean closeHandshake = false;
         var handshakeSpace = packetNumberSpaces().handshake();

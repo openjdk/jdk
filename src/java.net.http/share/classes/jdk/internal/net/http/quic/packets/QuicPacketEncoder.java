@@ -121,7 +121,7 @@ public class QuicPacketEncoder {
         };
     }
 
-    public abstract static class OutgoingQuicPacket<T extends QuicPacket> implements QuicPacket {
+    public abstract static class OutgoingQuicPacket implements QuicPacket {
         protected OutgoingQuicPacket() {
         }
 
@@ -144,11 +144,10 @@ public class QuicPacketEncoder {
         public abstract void encode(ByteBuffer buffer, CodingContext context)
                 throws IOException, QuicKeyUnavailableException, QuicTransportException;
 
-        public abstract T packet();
     }
 
-    private abstract static class OutgoingHeaderPacket<T extends QuicPacket>
-            extends OutgoingQuicPacket<T> implements QuicPacket {
+    private abstract static class OutgoingHeaderPacket
+            extends OutgoingQuicPacket implements QuicPacket {
 
         private final QuicConnectionId destinationId;
         OutgoingHeaderPacket(QuicConnectionId destinationId) {
@@ -163,20 +162,20 @@ public class QuicPacketEncoder {
         public String toString() {
 
             return this.getClass().getSimpleName() + "[pn=" + this.packetNumber()
-                    + ", frames=" + this.packet().frames() + "]";
+                    + ", frames=" + frames() + "]";
         }
     }
 
-    private abstract static class OutgoingShortHeaderPacket<T extends ShortHeaderPacket>
-            extends OutgoingHeaderPacket<T> implements ShortHeaderPacket {
+    private abstract static class OutgoingShortHeaderPacket
+            extends OutgoingHeaderPacket implements ShortHeaderPacket {
 
         OutgoingShortHeaderPacket(QuicConnectionId destinationId) {
             super(destinationId);
         }
     }
 
-    private abstract static class OutgoingLongHeaderPacket<T extends LongHeaderPacket>
-            extends OutgoingHeaderPacket<T> implements LongHeaderPacket {
+    private abstract static class OutgoingLongHeaderPacket
+            extends OutgoingHeaderPacket implements LongHeaderPacket {
 
         private final QuicConnectionId sourceId;
         private final int version;
@@ -197,7 +196,7 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingRetryPacket
-            extends OutgoingLongHeaderPacket<RetryPacket> implements RetryPacket {
+            extends OutgoingLongHeaderPacket implements RetryPacket {
 
         final int size;
         final byte[] retryToken;
@@ -234,11 +233,6 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public RetryPacket packet() {
-            return this;
         }
 
         @Override
@@ -304,7 +298,7 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingHandshakePacket
-            extends OutgoingLongHeaderPacket<HandshakePacket> implements HandshakePacket {
+            extends OutgoingLongHeaderPacket implements HandshakePacket {
 
         final long packetNumber;
         final int length;
@@ -368,11 +362,6 @@ public class QuicPacketEncoder {
         @Override
         public int payloadSize() {
             return payloadSize;
-        }
-
-        @Override
-        public HandshakePacket packet() {
-            return this;
         }
 
         /**
@@ -496,7 +485,7 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingZeroRttPacket
-            extends OutgoingLongHeaderPacket<ZeroRttPacket> implements ZeroRttPacket {
+            extends OutgoingLongHeaderPacket implements ZeroRttPacket {
 
         final long packetNumber;
         final int length;
@@ -555,11 +544,6 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public ZeroRttPacket packet() {
-            return this;
         }
 
         /**
@@ -691,7 +675,7 @@ public class QuicPacketEncoder {
     }
 
     private final class OutgoingOneRttPacket
-            extends OutgoingShortHeaderPacket<OneRttPacket> implements OneRttPacket {
+            extends OutgoingShortHeaderPacket implements OneRttPacket {
 
         final long packetNumber;
         final int size;
@@ -740,11 +724,6 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public OneRttPacket packet() {
-            return this;
         }
 
         /**
@@ -847,7 +826,7 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingInitialPacket
-            extends OutgoingLongHeaderPacket<InitialPacket> implements InitialPacket {
+            extends OutgoingLongHeaderPacket implements InitialPacket {
 
         final byte[] token;
         final long packetNumber;
@@ -917,9 +896,6 @@ public class QuicPacketEncoder {
 
         @Override
         public int size() { return size; }
-
-        @Override
-        public InitialPacket packet() { return this; }
 
         /**
          * Computes the value for the packet length field.
@@ -1063,7 +1039,7 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingVersionNegotiationPacket
-            extends OutgoingLongHeaderPacket<VersionNegotiationPacket>
+            extends OutgoingLongHeaderPacket
             implements VersionNegotiationPacket {
 
         final int[] versions;
@@ -1089,9 +1065,6 @@ public class QuicPacketEncoder {
 
         @Override
         public int payloadSize() { return payloadSize; }
-
-        @Override
-        public VersionNegotiationPacket packet() { return this; }
 
         /**
          * Compute the total packet size, starting at the headers byte and
@@ -1209,13 +1182,13 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new initial packet
      */
-    public OutgoingQuicPacket<InitialPacket> newInitialPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              byte[] token,
-                                                              long packetNumber,
-                                                              long ackedPacketNumber,
-                                                              List<QuicFrame> frames,
-                                                              CodingContext codingContext) {
+    public OutgoingQuicPacket newInitialPacket(QuicConnectionId source,
+                                               QuicConnectionId destination,
+                                               byte[] token,
+                                               long packetNumber,
+                                               long ackedPacketNumber,
+                                               List<QuicFrame> frames,
+                                               CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newInitialPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1278,9 +1251,9 @@ public class QuicPacketEncoder {
      * @param versions     The supported quic versions
      * @return the new initial packet
      */
-    public static OutgoingQuicPacket<VersionNegotiationPacket> newVersionNegotiationPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              int[] versions) {
+    public static OutgoingQuicPacket newVersionNegotiationPacket(QuicConnectionId source,
+                                                                 QuicConnectionId destination,
+                                                                 int[] versions) {
         return new OutgoingVersionNegotiationPacket(source, destination, versions);
     }
 
@@ -1293,9 +1266,9 @@ public class QuicPacketEncoder {
      * @param retryToken            The retry token
      * @return the new retry packet
      */
-    public OutgoingQuicPacket<RetryPacket> newRetryPacket(QuicConnectionId source,
-                                                          QuicConnectionId destination,
-                                                          byte[] retryToken) {
+    public OutgoingQuicPacket newRetryPacket(QuicConnectionId source,
+                                             QuicConnectionId destination,
+                                             byte[] retryToken) {
         return new OutgoingRetryPacket(
                 source, destination, this.quicVersion.versionNumber(), retryToken);
     }
@@ -1312,12 +1285,12 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new zero RTT packet
      */
-    public OutgoingQuicPacket<ZeroRttPacket> newZeroRttPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              long packetNumber,
-                                                              long ackedPacketNumber,
-                                                              List<? extends QuicFrame> frames,
-                                                              CodingContext codingContext) {
+    public OutgoingQuicPacket newZeroRttPacket(QuicConnectionId source,
+                                               QuicConnectionId destination,
+                                               long packetNumber,
+                                               long ackedPacketNumber,
+                                               List<? extends QuicFrame> frames,
+                                               CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newZeroRttPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1344,11 +1317,11 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new handshake packet
      */
-    public OutgoingQuicPacket<HandshakePacket> newHandshakePacket(QuicConnectionId source,
-                                                                  QuicConnectionId destination,
-                                                                  long packetNumber,
-                                                                  long largestAckedPN,
-                                                                  List<QuicFrame> frames, CodingContext codingContext) {
+    public OutgoingQuicPacket newHandshakePacket(QuicConnectionId source,
+                                                 QuicConnectionId destination,
+                                                 long packetNumber,
+                                                 long largestAckedPN,
+                                                 List<QuicFrame> frames, CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newHandshakePacket: fullPN=%d ackedPN=%d",
                     packetNumber, largestAckedPN);
@@ -1375,11 +1348,11 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new one RTT packet
      */
-    public OutgoingQuicPacket<OneRttPacket> newOneRttPacket(QuicConnectionId destination,
-                                                            long packetNumber,
-                                                            long ackedPacketNumber,
-                                                            List<? extends QuicFrame> frames,
-                                                            CodingContext codingContext) {
+    public OutgoingQuicPacket newOneRttPacket(QuicConnectionId destination,
+                                              long packetNumber,
+                                              long ackedPacketNumber,
+                                              List<? extends QuicFrame> frames,
+                                              CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newOneRttPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1411,7 +1384,7 @@ public class QuicPacketEncoder {
      * @throws IllegalArgumentException if the packet number space is
      *         not one of INITIAL, HANDSHAKE, or APPLICATION
      */
-    public OutgoingQuicPacket<? extends QuicPacket> newOutgoingPacket(
+    public OutgoingQuicPacket newOutgoingPacket(
             KeySpace keySpace,
             PacketSpace packetSpace,
             QuicConnectionId sourceId,
@@ -1481,7 +1454,7 @@ public class QuicPacketEncoder {
      */
     public void encode(QuicPacket packet, ByteBuffer buffer, CodingContext context)
             throws IOException, QuicKeyUnavailableException, QuicTransportException {
-        if (packet instanceof OutgoingQuicPacket<?> outgoing) {
+        if (packet instanceof OutgoingQuicPacket outgoing) {
             outgoing.encode(buffer, context);
         } else {
             throw new IllegalArgumentException("packet is not an outgoing packet: "

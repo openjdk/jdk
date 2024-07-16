@@ -1172,7 +1172,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // only from the sending loop, and this is the only place where we
             // mutate dataProcessed.
             dataProcessed += produced;
-            OutgoingQuicPacket<OneRttPacket> packet = encoder.newOneRttPacket(peerConnectionId,
+            OutgoingQuicPacket packet = encoder.newOneRttPacket(peerConnectionId,
                     packetNumber, largestPeerAckedPN, frames, codingContext);
             QuicConnectionImpl.this.sendStreamData(packet);
             return true;
@@ -1287,7 +1287,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *
      * @param packet The packet to send.
      */
-    protected void sendStreamData(final OutgoingQuicPacket<OneRttPacket> packet)
+    protected void sendStreamData(final OutgoingQuicPacket packet)
             throws IOException, QuicKeyUnavailableException, QuicTransportException {
         encrypt(ProtectionRecord.single(packet,
                 QuicConnectionImpl.this::allocateDatagramForEncryption));
@@ -3239,7 +3239,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("building initial packet: source=%s, dest=%s",
                         connectionId, peerConnId);
             }
-            OutgoingQuicPacket<InitialPacket> packet = encoder.newInitialPacket(
+            OutgoingQuicPacket packet = encoder.newInitialPacket(
                     connectionId, peerConnId, token,
                     packetNumber, largestAckedPN, frames, codingContext);
             int size = packet.size();
@@ -3289,7 +3289,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("building handshake packet: source=%s, dest=%s",
                         connectionId, peerConnId);
             }
-            OutgoingQuicPacket<HandshakePacket> packet = encoder.newHandshakePacket(
+            OutgoingQuicPacket packet = encoder.newHandshakePacket(
                     connectionId, peerConnId,
                     packetNumber, largestAckedPN, frames, codingContext);
             int size = packet.size();
