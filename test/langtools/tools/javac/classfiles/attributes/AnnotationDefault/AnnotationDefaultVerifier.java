@@ -70,8 +70,8 @@ public class AnnotationDefaultVerifier {
 
     private abstract class TestElementValue {
         public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
-            Util.write(attr.defaultValue(), buf);
+            var buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
+            AnnotationReader.writeAnnotationValue(buf, attr.defaultValue());
             testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), buf.size(),
                     "attribute_length");
         }

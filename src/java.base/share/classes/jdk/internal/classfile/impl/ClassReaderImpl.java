@@ -321,12 +321,13 @@ public final class ClassReaderImpl
         return containedClass;
     }
 
-    boolean writeBootstrapMethods(BufWriter buf) {
+    boolean writeBootstrapMethods(BufWriterImpl buf) {
         Optional<BootstrapMethodsAttribute> a
                 = containedClass.findAttribute(Attributes.bootstrapMethods());
         if (a.isEmpty())
             return false;
-        Util.write(a.get(), buf);
+        // BootstrapMethodAttribute implementations are all internal writable
+        ((Util.Writable) a.get()).writeTo(buf);
         return true;
     }
 

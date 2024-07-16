@@ -109,7 +109,7 @@ public final class MethodImpl
             buf.writeU2(flags().flagsMask());
             buf.writeIndex(methodName());
             buf.writeIndex(methodType());
-            Util.writeList(buf, attributes());
+            Util.writeAttributes(buf, attributes());
         }
     }
 

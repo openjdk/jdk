@@ -191,19 +191,27 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> void write(Object obj, BufWriter writer) {
-        if (obj instanceof CustomAttribute<?> ca) {
+    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+        if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
         } else {
-            ((Writable) obj).writeTo((BufWriterImpl) writer);
+            assert attr instanceof BoundAttribute || attr instanceof UnboundAttribute;
+            ((Writable) attr).writeTo(writer);
         }
     }
 
-    public static void writeList(BufWriter buf, List<?> list) {
+    public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
         buf.writeU2(list.size());
         for (var e : list) {
-            write(e, buf);
+            writeAttribute(buf, e);
+        }
+    }
+
+    static void writeList(BufWriterImpl buf, List<Writable> list) {
+        buf.writeU2(list.size());
+        for (var e : list) {
+            e.writeTo(buf);
         }
     }
 
@@ -268,11 +276,11 @@ public class Util {
         return ((WritableLocalVariable) lvOrLvt).writeLocalTo(buf);
     }
 
-    static interface Writable {
+    interface Writable {
         void writeTo(BufWriterImpl writer);
     }
 
-    static interface WritableLocalVariable {
+    interface WritableLocalVariable {
         boolean writeLocalTo(BufWriterImpl buf);
     }
 }

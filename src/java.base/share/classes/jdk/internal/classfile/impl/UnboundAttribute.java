@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -817,7 +817,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             buf.writeU2(elements.size());
             for (AnnotationElement pair : elements()) {
                 buf.writeIndex(pair.name());
-                Util.write(pair.value(), buf);
+                AnnotationReader.writeAnnotationValue(buf, pair.value());
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,11 @@ public final class AnnotationImpl implements Annotation, Util.Writable {
     @Override
     public void writeTo(BufWriterImpl buf) {
         buf.writeIndex(className());
-        Util.writeList(buf, elements());
+        buf.writeU2(elements().size());
+        for (var e : elements) {
+            buf.writeIndex(e.name());
+            AnnotationReader.writeAnnotationValue(buf, e.value());
+        }
     }
 
     @Override
@@ -86,7 +90,7 @@ public final class AnnotationImpl implements Annotation, Util.Writable {
         @Override
         public void writeTo(BufWriterImpl buf) {
             buf.writeIndex(name());
-            Util.write(value(), buf);
+            AnnotationReader.writeAnnotationValue(buf, value());
         }
     }
 
@@ -251,7 +255,10 @@ public final class AnnotationImpl implements Annotation, Util.Writable {
         @Override
         public void writeTo(BufWriterImpl buf) {
             buf.writeU1(tag());
-            Util.writeList(buf, values);
+            buf.writeU2(values.size());
+            for (var e : values) {
+                AnnotationReader.writeAnnotationValue(buf, e);
+            }
         }
 
     }
@@ -282,7 +289,7 @@ public final class AnnotationImpl implements Annotation, Util.Writable {
         @Override
         public void writeTo(BufWriterImpl buf) {
             buf.writeU1(tag());
-            Util.write(annotation, buf);
+            AnnotationReader.writeAnnotation(buf, annotation);
         }
 
     }

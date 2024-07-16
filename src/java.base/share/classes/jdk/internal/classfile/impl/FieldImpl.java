@@ -86,7 +86,7 @@ public final class FieldImpl
             buf.writeU2(flags().flagsMask());
             buf.writeIndex(fieldName());
             buf.writeIndex(fieldType());
-            Util.writeList(buf, attributes());
+            Util.writeAttributes(buf, attributes());
         }
     }
 

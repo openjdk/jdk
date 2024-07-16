@@ -79,6 +79,7 @@ public class AbstractBoundLocalVariable
         return code.classReader.readU2(offset + 8);
     }
 
+    @Override
     public boolean writeLocalTo(BufWriterImpl b) {
         var lc = b.labelContext();
         int startBci = lc.labelToBci(startScope());

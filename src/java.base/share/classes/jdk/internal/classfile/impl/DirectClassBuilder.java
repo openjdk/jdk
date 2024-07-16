@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.lang.classfile.FieldTransform;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectClassBuilder
@@ -51,8 +50,8 @@ public final class DirectClassBuilder
         implements ClassBuilder {
 
     final ClassEntry thisClassEntry;
-    private final List<WritableElement> fields = new ArrayList<>();
-    private final List<WritableElement> methods = new ArrayList<>();
+    private final List<Util.Writable> fields = new ArrayList<>();
+    private final List<Util.Writable> methods = new ArrayList<>();
     private ClassEntry superclassEntry;
     private List<ClassEntry> interfaceEntries;
     private int majorVersion;
@@ -119,12 +118,12 @@ public final class DirectClassBuilder
 
     // internal / for use by elements
 
-    public ClassBuilder withField(WritableElement field) {
+    ClassBuilder withField(Util.Writable field) {
         fields.add(field);
         return this;
     }
 
-    public ClassBuilder withMethod(WritableElement method) {
+    ClassBuilder withMethod(Util.Writable method) {
         methods.add(method);
         return this;
     }
