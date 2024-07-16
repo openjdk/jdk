@@ -1384,6 +1384,7 @@ class LambdaForm {
         }
 
         Name withIndex(int i) {
+            if (i == this.index) return this;
             return new Name(i, type, function, arguments, constraint);
         }
 
