@@ -1500,11 +1500,11 @@ public sealed class PacketSpaceManager implements PacketSpace
      * @return whether the given pending unacknowledged packet is being
      *         acknowledged by this ack frame.
      */
-    public boolean isAcknowledging(PendingAcknowledgement pending, AckFrame frame) {
+    private boolean isAcknowledging(PendingAcknowledgement pending, AckFrame frame) {
         return emittedAckTracker.trackAcknowlegment(pending, frame);
     }
 
-    public boolean isAcknowledgingLostPacket(PendingAcknowledgement pending, AckFrame frame,
+    private boolean isAcknowledgingLostPacket(PendingAcknowledgement pending, AckFrame frame,
                                              List<PendingAcknowledgement>[] recovered) {
         if (frame.isAcknowledging(pending.packetNumber)) {
             if (recovered != null) {
