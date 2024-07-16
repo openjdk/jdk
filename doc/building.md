@@ -24,7 +24,8 @@ running on Windows), and want to clone the main-line JDK repository.
     `make images`
 
  4. Verify your newly built JDK: \
-    `./build/*/images/jdk/bin/java -version`
+    `./build/*/images/jdk/bin/java -version` \
+    Note the built JDK is at `/images/jdk` instead of `/jdk`.
 
  5. [Run basic tests](#running-tests): \
     `make test-tier1`
@@ -883,7 +884,7 @@ Apart from the default target, here are some common make targets:
 
 * `hotspot` - Build all of hotspot (but only hotspot)
 * `hotspot-<variant>` - Build just the specified jvm variant
-* `images` or `product-images` - Build the JDK image
+* `images` or `product-images` - Build the regular JDK image
 * `docs` or `docs-image` - Build the documentation image
 * `test-image` - Build the test image
 * `all` or `all-images` - Build all images (product, docs and test)
@@ -1804,9 +1805,14 @@ temporarily.
 On Windows, when configuring, `fixpath.sh` may report that some directory names
 have spaces. Usually, it assumes those directories have [short
 paths](https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/fsutil-8dot3name).
-You can run `fsutil file setshortname` in `cmd` on certain directories, such as
-`Microsoft Visual Studio` or `Windows Kits`, to assign arbitrary short paths so
-`configure` can access them.
+You can run `fsutil file setshortname` in `cmd` on directories to assign short
+paths so `configure` can access them. If the result says "Access denied", it may
+be that there are processes running in that directory; you can reboot Windows in
+safe mode and run the command on those directories again.
+
+The only directories required to have short paths are `Microsoft Visual Studio`
+and `Windows Kits`; the rest of the "contains space" warnings from configure
+can be ignored.
 
 ### Getting Help
 
