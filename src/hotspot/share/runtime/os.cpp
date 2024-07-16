@@ -959,7 +959,7 @@ static void print_ascii_form(stringStream& ascii_form, uint64_t value, int units
     uint8_t c[sizeof(v)];
   } u = { value };
   for (int i = 0; i < unitsize; i++) {
-    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
+    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - unitsize + i);
     const uint8_t c = u.c[idx];
     ascii_form.put(isprint(c) && isascii(c) ? c : '.');
   }
