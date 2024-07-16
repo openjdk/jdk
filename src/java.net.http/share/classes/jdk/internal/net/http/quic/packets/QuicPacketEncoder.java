@@ -151,8 +151,8 @@ public class QuicPacketEncoder {
         public abstract T packet();
     }
 
-    private abstract static class OutgoingHeaderPacket<T extends HeaderPacket>
-            extends OutgoingQuicPacket<T> implements HeaderPacket {
+    private abstract static class OutgoingHeaderPacket<T extends QuicPacket>
+            extends OutgoingQuicPacket<T> implements QuicPacket {
 
         private final QuicConnectionId destinationId;
         OutgoingHeaderPacket(byte headers, QuicConnectionId destinationId) {

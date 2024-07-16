@@ -87,8 +87,8 @@ public class QuicPacketDecoder {
         public abstract T packet();
     }
 
-    private abstract static class IncomingHeaderPacket<T extends HeaderPacket>
-            extends IncomingQuicPacket<T> implements HeaderPacket {
+    private abstract static class IncomingHeaderPacket<T extends QuicPacket>
+            extends IncomingQuicPacket<T> implements QuicPacket {
 
         private final QuicConnectionId destinationId;
         IncomingHeaderPacket(byte headers, QuicConnectionId destinationId) {

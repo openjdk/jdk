@@ -48,7 +48,7 @@ package jdk.internal.net.http.quic.packets;
  * @spec https://www.rfc-editor.org/info/rfc9369
  *      RFC 9369: QUIC Version 2
  */
-public interface ShortHeaderPacket extends HeaderPacket {
+public interface ShortHeaderPacket extends QuicPacket {
     @Override
     default HeadersType headersType() { return HeadersType.SHORT; }
 }

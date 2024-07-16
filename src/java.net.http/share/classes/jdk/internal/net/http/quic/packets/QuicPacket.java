@@ -53,6 +53,14 @@ public interface QuicPacket {
     int PACKET_NUMBER_MASK = 0x03;
 
     /**
+     * {@return the packet's Destination Connection ID}
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.2">
+     *     RFC 9000, Section 7.2</a>
+     */
+    QuicConnectionId destinationId();
+
+    /**
      * The packet number space.
      * NONE is for packets that don't have a packet number,
      * such as Stateless Reset.
