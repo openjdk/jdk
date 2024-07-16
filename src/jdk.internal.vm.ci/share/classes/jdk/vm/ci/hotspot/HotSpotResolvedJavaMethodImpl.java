@@ -325,6 +325,16 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
+     * Returns true if this method has a {@code Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise
+     */
+    @Override
+    public boolean isScoped() {
+        return (getConstMethodFlags() & config().constMethodFlagsIsScoped) != 0;
+    }
+
+    /**
      * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
      * VM.
      */
