@@ -590,7 +590,7 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                             .newVersionNegotiationPacket(header.destinationId(),
                             header.sourceId(), supported);
                     ByteBuffer datagram = ByteBuffer.allocateDirect(negotiate.size());
-                    negotiate.encode(datagram, null);
+                    QuicPacketEncoder.of(QuicVersion.QUIC_V1).encode(negotiate, datagram, null);
                     datagram.flip();
                     sendDatagram(source, datagram);
                 }
@@ -683,11 +683,12 @@ public sealed class QuicServer implements QuicInstance, AutoCloseable permits Qu
                 // send RETRY packet
                 final QuicConnectionId serverConnId = this.idFactory().newConnectionId();
                 final byte[] retryToken = buildRetryToken(header.destinationId(), serverConnId);
-                final var retry = QuicPacketEncoder.of(version)
+                QuicPacketEncoder encoder = QuicPacketEncoder.of(version);
+                final var retry = encoder
                         .newRetryPacket(serverConnId, header.sourceId(), retryToken);
                 final ByteBuffer datagram = ByteBuffer.allocateDirect(retry.size());
                 try {
-                    retry.encode(datagram, new RetryCodingContext(header.destinationId(), quicTLSContext));
+                    encoder.encode(retry, datagram, new RetryCodingContext(header.destinationId(), quicTLSContext));
                 } catch (Throwable t) {
                     // TODO: should we throw exception?
                     debug.log("Failed to encode packet", t);

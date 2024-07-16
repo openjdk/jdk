@@ -286,7 +286,7 @@ public class PacketSpaceManagerTest {
 
         @Override
         public int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             int pos = buffer.position();
             encoder.encode(packet, buffer, this);
             return buffer.position() - pos;

@@ -525,7 +525,7 @@ public sealed class PacketSpaceManager implements PacketSpace
          * Create and send a new packet
          * @return true if packet was sent, false if there is no more data to send
          */
-        private boolean sendNewData() throws IOException, QuicKeyUnavailableException, QuicTransportException {
+        private boolean sendNewData() throws QuicKeyUnavailableException, QuicTransportException {
             if (debug.on()) debug.log("handle: sending data...");
             boolean sent = packetEmitter.sendData(packetNumberSpace);
             if (!sent) {
@@ -712,7 +712,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
     }
 
-    private void retransmitPTO() throws IOException, QuicKeyUnavailableException, QuicTransportException {
+    private void retransmitPTO() throws QuicKeyUnavailableException, QuicTransportException {
         if (!isOpenForTransmission()) {
             if (debug.on()) {
                 debug.log("already closed; retransmission on PTO dropped", packetNumberSpace);
@@ -1143,7 +1143,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     // Retransmit one packet for which retransmission has been triggered by
     // the PacketTransmissionTask.
     // return true if something was retransmitted, or false if there was nothing to retransmit
-    private boolean retransmit() throws IOException, QuicKeyUnavailableException, QuicTransportException {
+    private boolean retransmit() throws QuicKeyUnavailableException, QuicTransportException {
         PendingAcknowledgement pending;
         final var closed = !this.isOpenForTransmission();
         if (closed) {
@@ -1194,7 +1194,7 @@ public sealed class PacketSpaceManager implements PacketSpace
      * @return the packet number of the emitted packet
      */
     private long emitAckPacket(AckFrame ackFrame, boolean sendPing)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         final boolean closed = !this.isOpenForTransmission();
         if (closed) {
             if (debug.on()) {
@@ -1205,7 +1205,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
         try {
             return packetEmitter.emitAckPacket(this, ackFrame, sendPing);
-        } catch (IOException | QuicKeyUnavailableException | QuicTransportException e) {
+        } catch (QuicKeyUnavailableException | QuicTransportException e) {
             if (!this.isOpenForTransmission()) {
                 // possible race condition where the packet space was closed (and keys discarded)
                 // while there was an attempt to send an ACK/PING frame.

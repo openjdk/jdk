@@ -862,7 +862,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *                         a destination byte buffer, and various offset information.
      */
     void encrypt(final ProtectionRecord protectionRecord)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         // Processes an outgoing unencrypted packet that needs to be
         // encrypted before being packaged in a datagram.
         var datagram = protectionRecord.datagram();
@@ -1136,7 +1136,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return false;
         }
 
-        private boolean sendStreamData0() throws IOException, QuicKeyUnavailableException, QuicTransportException {
+        private boolean sendStreamData0() throws QuicKeyUnavailableException, QuicTransportException {
             // Loop over all sending streams to see if data is available - include
             // as much data as possible in the quic packet before sending it.
             // The QuicConnectionStreams make sure that streams are polled in a fair
@@ -1288,7 +1288,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param packet The packet to send.
      */
     protected void sendStreamData(final OutgoingQuicPacket packet)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         encrypt(ProtectionRecord.single(packet,
                 QuicConnectionImpl.this::allocateDatagramForEncryption));
     }
@@ -1369,7 +1369,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return QuicConnectionImpl.this.connectionIdLength();
         }
         @Override public int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             int start = buffer.position();
             encoder.encode(packet, buffer, this);
             return buffer.position() - start;
@@ -1408,7 +1408,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             @Override
             public void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                    throws QuicKeyUnavailableException, QuicTransportException {
                 QuicConnectionImpl.this.retransmit(packetSpaceManager, packet, attempts);
             }
 
@@ -1416,7 +1416,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             public long emitAckPacket(PacketSpace packetSpaceManager,
                                       AckFrame frame,
                                       boolean sendPing)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                    throws QuicKeyUnavailableException, QuicTransportException {
                 return QuicConnectionImpl.this.emitAckPacket(packetSpaceManager, frame, sendPing);
             }
 
@@ -1427,7 +1427,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             @Override
             public boolean sendData(PacketNumberSpace packetNumberSpace)
-                        throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                        throws QuicKeyUnavailableException, QuicTransportException {
                 return QuicConnectionImpl.this.sendData(packetNumberSpace);
             }
 
@@ -3161,7 +3161,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     private boolean sendData(PacketNumberSpace packetNumberSpace)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
         if (packetNumberSpace != PacketNumberSpace.APPLICATION) {
             // This method can be called by two packet spaces: INITIAL and HANDSHAKE.
             // We need to lock to make sure that the method is not run concurrently.
@@ -3177,7 +3177,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     private boolean sendHandshakeData0(PacketNumberSpace packetNumberSpace)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (Log.quicCrypto()) {
             Log.logQuic(String.format("%s: Send %s data", logTag(), packetNumberSpace));
         }
@@ -3544,7 +3544,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      */
     private long emitAckPacket(final PacketSpace packetSpaceManager, final AckFrame ackFrame,
                                final boolean sendPing)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (ackFrame == null && !sendPing) {
             return -1L;
         }
@@ -3600,7 +3600,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param packet the unacknowledged packet which should be retransmitted
      */
     private void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (debug.on()) {
             debug.log("Retransmitting packet [type=%s, pn=%d, attempts:%d]: %s",
                     packet.packetType(), packet.packetNumber(), attempts, packet);

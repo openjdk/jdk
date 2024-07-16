@@ -288,7 +288,7 @@ public final class QuicServerConnection extends QuicConnectionImpl {
 
     @Override
     protected void sendStreamData(OutgoingQuicPacket packet)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         boolean closeHandshake = false;
         var handshakeSpace = packetNumberSpaces().handshake();
         if (!handshakeSpace.isClosed()) {

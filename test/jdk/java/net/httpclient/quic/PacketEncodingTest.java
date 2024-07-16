@@ -457,11 +457,11 @@ public class PacketEncodingTest {
         return List.copyOf(frames);
     }
 
-    private ByteBuffer toByteBuffer(OutgoingQuicPacket outgoingQuicPacket, CodingContext context)
+    private ByteBuffer toByteBuffer(QuicPacketEncoder encoder, OutgoingQuicPacket outgoingQuicPacket, CodingContext context)
             throws Exception {
         int size = outgoingQuicPacket.size();
         ByteBuffer buffer = ByteBuffer.allocate(size);
-        outgoingQuicPacket.encode(buffer, context);
+        encoder.encode(outgoingQuicPacket, buffer, context);
         assertEquals(buffer.position(), size, " for " + outgoingQuicPacket);
         buffer.flip();
         return buffer;
@@ -599,7 +599,7 @@ public class PacketEncodingTest {
         // Check that peeking at the encoded packet returns correct information
 
         // Decode the two packets in the datagram
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkLongHeaderPacketAt(encoded, 0, PacketType.INITIAL, quicVersion.versionNumber(),
                 srcConnectionId, destConnectionId);
 
@@ -713,7 +713,7 @@ public class PacketEncodingTest {
 
         // Decode the two packets in the datagram
         // Check that peeking at the encoded packet returns correct information
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkLongHeaderPacketAt(encoded, 0, PacketType.HANDSHAKE, quicVersion.versionNumber(),
                 srcConnectionId, destConnectionId);
 
@@ -825,7 +825,7 @@ public class PacketEncodingTest {
         assertEquals(zeroRttPacket.length(), packetNumberLength + payloadSize);
 
         // Check that peeking at the encoded packet returns correct information
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkLongHeaderPacketAt(encoded, 0, PacketType.ZERORTT, quicVersion.versionNumber(),
                 srcConnectionId, destConnectionId);
 
@@ -932,7 +932,7 @@ public class PacketEncodingTest {
             }
         };
         // Check that peeking at the encoded packet returns correct information
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkLongHeaderPacketAt(encoded, 0, PacketType.VERSIONS, 0,
                 srcConnectionId, destConnectionId);
 
@@ -1035,7 +1035,7 @@ public class PacketEncodingTest {
             @Override public QuicConnectionId originalDestConnId() { return origConnectionId; }
         };
         // Check that peeking at the encoded packet returns correct information
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkLongHeaderPacketAt(encoded, 0, PacketType.RETRY, quicVersion.versionNumber(),
                 srcConnectionId, destConnectionId);
 
@@ -1138,7 +1138,7 @@ public class PacketEncodingTest {
         assertEquals(oneRttPacket.size(), expectedSize);
 
         // Check that peeking at the encoded packet returns correct information
-        ByteBuffer encoded = toByteBuffer(packet, context);
+        ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkShortHeaderPacketAt(encoded, 0, PacketType.ONERTT,
                 destConnectionId);
 
