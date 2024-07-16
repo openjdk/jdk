@@ -59,13 +59,6 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
     boolean hasReservedStackAccess();
 
     /**
-     * Returns true if this method has a {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
-     *
-     * @return true if Scoped annotation present, false otherwise
-     */
-    boolean isScoped();
-
-    /**
      * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
      * VM.
      */

@@ -48,8 +48,6 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
 
     protected final boolean hasUnsafeAccess;
 
-    protected final boolean hasScopedAccess;
-
     /**
      * May be set by VM if code installation fails. It will describe in more detail why installation
      * failed (e.g., exactly which dependency failed).
@@ -73,8 +71,7 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
                     int entryBCI,
                     int id,
                     long compileState,
-                    boolean hasUnsafeAccess,
-                    boolean hasScopedAccess) {
+                    boolean hasUnsafeAccess) {
         super(name,
                         targetCode,
                         targetCodeSize,
@@ -93,7 +90,6 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
         this.id = id;
         this.compileState = compileState;
         this.hasUnsafeAccess = hasUnsafeAccess;
-        this.hasScopedAccess = hasScopedAccess;
     }
 
     @Override

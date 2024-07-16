@@ -453,7 +453,6 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            bool                      has_monitors,
                                            bool                      has_unsafe_access,
                                            bool                      has_wide_vector,
-                                           bool                      has_scoped_access,
                                            JVMCIObject               compiled_code,
                                            JVMCIObject               nmethod_mirror,
                                            FailedSpeculation**       failed_speculations,
