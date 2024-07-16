@@ -126,6 +126,9 @@ HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
   if (object_space()->needs_expand(word_size)) {
     expand(word_size*HeapWordSize);
   }
+
+  // Reuse the CAS API even though this is VM thread in safepoint. This method
+  // is not invoked repeatedly, so the CAS overhead should be negligible.
   return cas_allocate_noexpand(word_size);
 }
 
