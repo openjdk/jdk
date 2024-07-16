@@ -88,7 +88,6 @@ public class QuicPacketEncoder {
      * header's byte, but the fact that a. it is a long header and
      * b. the version number in the packet (the 4 bytes following
      * the header) is 0.
-     * @param version    the packet version
      * @param packetType the packet type
      * @return the headers tag for the given packet type.
      *
@@ -97,8 +96,8 @@ public class QuicPacketEncoder {
      * @see  <a href="https://www.rfc-editor.org/info/rfc9369">
      *      RFC 9369: QUIC Version 2</a>
      */
-    private static byte packetHeadersTag(int version, PacketType packetType) {
-        return (byte) switch (QuicVersion.of(version).get()) {
+    private byte packetHeadersTag(PacketType packetType) {
+        return (byte) switch (quicVersion) {
             case QUIC_V1 -> switch (packetType) {
                 case ONERTT    -> 0x40;
                 case INITIAL   -> 0xC0;
@@ -151,7 +150,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingOneRttPacket.headers(packetHeadersTag(quicVersion.versionNumber(), packet.packetType()),
+        byte headers = OutgoingOneRttPacket.headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : "incorrect packet number prefix in headers: " + headers;
 
@@ -177,11 +176,15 @@ public class QuicPacketEncoder {
      * @param context
      * @throws BufferOverflowException if the buffer is not large enough
      */
-    private static void encodePacket(OutgoingZeroRttPacket packet,
+    private void encodePacket(OutgoingZeroRttPacket packet,
                                      ByteBuffer buffer,
                                      CodingContext context)
                 throws QuicKeyUnavailableException, QuicTransportException {
         int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
         QuicConnectionId destination = packet.destinationId();
         QuicConnectionId source = packet.sourceId();
         if (packet.size > buffer.remaining()) {
@@ -202,7 +205,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingZeroRttPacket.headers(packetHeadersTag(version, packet.packetType()),
+        byte headers = OutgoingZeroRttPacket.headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -301,11 +304,15 @@ public class QuicPacketEncoder {
      * @param context
      * @throws BufferOverflowException if the buffer is not large enough
      */
-    private static void encodePacket(OutgoingHandshakePacket packet,
+    private void encodePacket(OutgoingHandshakePacket packet,
                                      ByteBuffer buffer,
                                      CodingContext context)
                 throws QuicKeyUnavailableException, QuicTransportException {
         int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
         QuicConnectionId destination = packet.destinationId();
         QuicConnectionId source = packet.sourceId();
         if (packet.size > buffer.remaining()) {
@@ -327,7 +334,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingHandshakePacket.headers(packetHeadersTag(version, packet.packetType()),
+        byte headers = OutgoingHandshakePacket.headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -356,11 +363,15 @@ public class QuicPacketEncoder {
      * @param context coding context
      * @throws BufferOverflowException if the buffer is not large enough
      */
-    private static void encodePacket(OutgoingInitialPacket packet,
+    private void encodePacket(OutgoingInitialPacket packet,
                                      ByteBuffer buffer,
                                      CodingContext context)
                 throws QuicKeyUnavailableException, QuicTransportException {
         int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
         QuicConnectionId destination = packet.destinationId();
         QuicConnectionId source = packet.sourceId();
         if (packet.size > buffer.remaining()) {
@@ -383,7 +394,7 @@ public class QuicPacketEncoder {
         assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
         int pnprefix = encodedLength - 1;
 
-        byte headers = OutgoingInitialPacket.headers(packetHeadersTag(version, packet.packetType()),
+        byte headers = OutgoingInitialPacket.headers(packetHeadersTag(packet.packetType()),
                 packet.encodedPacketNumber.length);
         assert (headers & 0x03) == pnprefix : headers;
 
@@ -411,10 +422,14 @@ public class QuicPacketEncoder {
      * @param context
      * @throws BufferOverflowException if the buffer is not large enough
      */
-    private static void encodePacket(OutgoingRetryPacket packet,
+    private void encodePacket(OutgoingRetryPacket packet,
                                      ByteBuffer buffer,
                                      CodingContext context) {
         int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
         QuicConnectionId destination = packet.destinationId();
         QuicConnectionId source = packet.sourceId();
 
@@ -431,7 +446,7 @@ public class QuicPacketEncoder {
 
         PacketWriter writer = new PacketWriter(buffer, context, PacketType.RETRY);
 
-        byte headers = packetHeadersTag(version, packet.packetType());
+        byte headers = packetHeadersTag(packet.packetType());
         headers |= (byte)Encoders.RANDOM.nextInt(0x10);
         writer.writeHeaders(headers);
         writer.writeVersion(version);
@@ -1334,7 +1349,8 @@ public class QuicPacketEncoder {
      * @param packet the packet to encode
      * @param buffer the byte buffer to write the packet into
      * @param context context for encoding
-     * @throws IllegalArgumentException if the packet is not an OutgoingQuicPacket
+     * @throws IllegalArgumentException if the packet is not an OutgoingQuicPacket,
+     *          or if the packet version does not match the encoder version
      * @throws BufferOverflowException if the buffer is not large enough
      * @throws QuicKeyUnavailableException if the packet could not be encrypted
      *          because the required encryption key is not available
