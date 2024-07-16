@@ -626,7 +626,7 @@ JVMCI_CLASSES_DO(EMPTY2, EMPTY0, FIELD2, FIELD2, FIELD2, FIELD2, FIELD2, FIELD3,
   void JNIJVMCI::className::check(JVMCIEnv* jvmciEnv, JVMCIObject obj, const char* field_name, jfieldID offset) {                 \
     assert(obj.is_non_null(), "null field access of %s.%s", #className, field_name);                                              \
     assert(jvmciEnv->isa_##className(obj), "wrong class, " #className " expected, found %s", jvmciEnv->klass_name(obj));          \
-    assert(offset != nullptr, "must be valid offset");                                                                                  \
+    assert(offset != nullptr, "must be valid offset");                                                                            \
   }                                                                                                                               \
   jclass JNIJVMCI::className::_class = nullptr;
 
