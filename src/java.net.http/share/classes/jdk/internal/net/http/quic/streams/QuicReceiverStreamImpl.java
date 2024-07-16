@@ -601,7 +601,7 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 if (!requestedStopSending && unfulfilled() < desiredBufferSize - desiredBufferSize / 4) {
                     demand(desiredBufferSize);
                 }
-                // TODO processed data should be incremented earlier.
+                // TODO processed data could be incremented earlier.
                 // We don't know how much data is consumed by peek, so we only
                 // increase the number of processed bytes when all received bytes
                 // are processed.
