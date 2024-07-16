@@ -5045,11 +5045,11 @@ class StubGenerator: public StubCodeGenerator {
   void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
     VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
     Register temp0, Register temp1, Register temp2,  Register temp3,
-    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL LMUL) {
+    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL lmul) {
 
-    assert((LMUL == Assembler::m4 && step == 64) ||
-           (LMUL == Assembler::m2 && step == 32) ||
-           (LMUL == Assembler::m1 && step == 16),
+    assert((lmul == Assembler::m4 && step == 64) ||
+           (lmul == Assembler::m2 && step == 32) ||
+           (lmul == Assembler::m1 && step == 16),
            "LMUL should be aligned with step: m4 and 64, m2 and 32 or m1 and 16");
     // Below is function for calculating Adler32 checksum with 64-, 32- or 16-byte step. LMUL=m4, m2 or m1 is used.
     // The results are in v12, v13, ..., v22, v23. Example below is for 64-byte step case.
@@ -5070,7 +5070,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ mv(temp3, step);
     // Load data
-    __ vsetvli(temp0, temp3, Assembler::e8, LMUL);
+    __ vsetvli(temp0, temp3, Assembler::e8, lmul);
     __ vle8_v(vbytes, buff);
     __ addi(buff, buff, step);
 
@@ -5088,14 +5088,14 @@ class StubGenerator: public StubCodeGenerator {
 
     // Summing up calculated results for s2_new
     if (MaxVectorSize > 16) {
-      __ vsetvli(temp0, temp3, Assembler::e16, LMUL);
+      __ vsetvli(temp0, temp3, Assembler::e16, lmul);
     } else {
       // Half of vector-widening multiplication result is in successor of vs2acc
       // group for vlen == 16, in which case we need to double vector register
       // group width in order to reduction sum all of them
-      Assembler::LMUL LMULx2 = (LMUL == Assembler::m1) ? Assembler::m2 :
-                               (LMUL == Assembler::m2) ? Assembler::m4 : Assembler::m8;
-      __ vsetvli(temp0, temp3, Assembler::e16, LMULx2);
+      Assembler::LMUL lmulx2 = (lmul == Assembler::m1) ? Assembler::m2 :
+                               (lmul == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+      __ vsetvli(temp0, temp3, Assembler::e16, lmulx2);
     }
     // Upper bound for reduction sum:
     // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
