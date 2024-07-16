@@ -1867,9 +1867,9 @@ JVM_END
 
 static bool select_method(const methodHandle& method, bool want_constructor) {
   if (want_constructor) {
-    return (method->is_initializer() && !method->is_static());
+    return method->is_object_initializer();
   } else {
-    return  (!method->is_initializer() && !method->is_overpass());
+    return !method->is_object_initializer() && !method->is_static_initializer() && !method->is_overpass();
   }
 }
 
@@ -2214,10 +2214,11 @@ static jobject get_method_at_helper(const constantPoolHandle& cp, jint index, bo
     THROW_MSG_0(vmSymbols::java_lang_RuntimeException(), "Unable to look up method in target class");
   }
   oop method;
-  if (!m->is_initializer() || m->is_static()) {
-    method = Reflection::new_method(m, true, CHECK_NULL);
-  } else {
+  if (m->is_object_initializer()) {
     method = Reflection::new_constructor(m, CHECK_NULL);
+  } else {
+    // new_method accepts <clinit> as Method here
+    method = Reflection::new_method(m, true, CHECK_NULL);
   }
   return JNIHandles::make_local(THREAD, method);
 }
