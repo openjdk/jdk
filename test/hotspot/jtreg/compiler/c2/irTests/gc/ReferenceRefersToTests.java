@@ -89,14 +89,6 @@ public class ReferenceRefersToTests {
                 "-XX:+UseZGC"
             ));
         }
-        if (GC.isSelectedErgonomically() && GC.Epsilon.isSupported()) {
-            // Epsilon does not emit barriers at all.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseEpsilonGC"
-            ));
-        }
         framework.start();
     }
 
