@@ -1970,13 +1970,14 @@ class MutableBigInteger {
             final long x = this.toLong(); // unsigned
 
             /* For every long value s in [0, 2^32) such that x == s * s,
-             * it is true that s == (long) Math.sqrt(x >= 0 ? x : x + 0x1p64).
-             * This means that Math.sqrt() returns the correct value for every perfect square,
-             * so the value returned by Math.sqrt() for a long value in the range [0, 2^64)
-             * is either correct, or rounded up by one if the value is too high
+             * it is true that s <= Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)) <= s + 1,
+             * and if x == 2^64 - 1, then Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)) == 2^32.
+             * This means that the value returned by Math.round(Math.sqrt())
+             * for a long value in the range [0, 2^64) is either correct,
+             * or rounded up by one if the value is too high
              * and too close to the next perfect square.
              */
-            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
+            long s = Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64));
             if (s > LONG_MASK // avoid overflow of s * s
                     || Long.compareUnsigned(x, s * s) < 0) {
                 s--;
@@ -2032,7 +2033,7 @@ class MutableBigInteger {
     private MutableBigInteger[] sqrtRemZimmermann(int len, boolean needRemainder) {
         if (len == 2) { // Base case
             long x = ((value[offset] & LONG_MASK) << 32) | (value[offset + 1] & LONG_MASK);
-            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
+            long s = Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64));
             if (s > LONG_MASK || Long.compareUnsigned(x, s * s) < 0)
                 s--;
 
