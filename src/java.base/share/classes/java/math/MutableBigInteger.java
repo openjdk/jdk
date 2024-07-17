@@ -1970,7 +1970,7 @@ class MutableBigInteger {
             final long x = this.toLong(); // unsigned
 
             /* For every long value s in [0, 2^32) such that x == s * s,
-             * it is true that s <= Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)) <= s + 1,
+             * it is true that s == Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)),
              * and if x == 2^64 - 1, then Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)) == 2^32.
              * This means that the value returned by Math.round(Math.sqrt())
              * for a long value in the range [0, 2^64) is either correct,
