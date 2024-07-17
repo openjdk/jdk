@@ -48,36 +48,36 @@ public class ReferenceClearTests {
 
         int idx = 0;
         if (GC.isSelectedErgonomically() && GC.Serial.isSupported()) {
-            // Serial:
-            //   a) does not have SATB/keep-alive barriers at all
-            //   b) has inter-generational barriers on stores, but folded away for null stores
+            // Serial does not have SATB/keep-alive barriers at all.
+            // There are inter-generational barriers on stores, but they are
+            // folded away for null stores like clear().
             framework.addScenarios(new Scenario(idx++,
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UseSerialGC"
             ));
         }
         if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
-            // Parallel:
-            //   a) does not have SATB/keep-alive barriers at all
-            //   b) has inter-generational barriers on stores, but folded away for null stores
+            // Parallel does not have SATB/keep-alive barriers at all.
+            // There are inter-generational barriers on stores, but they
+            // should be folded away for null stores like clear().
             framework.addScenarios(new Scenario(idx++,
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UseParallelGC")
             );
         }
         if (GC.isSelectedErgonomically() && GC.G1.isSupported()) {
-            // G1:
-            //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
-            //   b) has inter-generational barriers on stores, but folded away for null stores
+            // G1 has SATB/keep-alive barriers, but they should not be present
+            // for clear()-s. There are inter-generational barriers on stores,
+            // but they should be folded away for null stores like clear().
             framework.addScenarios(new Scenario(idx++,
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UseG1GC"
             ));
         }
         if (GC.isSelectedErgonomically() && GC.Shenandoah.isSupported()) {
-            // Shenandoah:
-            //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
-            //   b) has load-reference barriers, which would confuse the tests, we enable only SATB barriers
+            // Shenandoah has SATB/keep-alive barriers, but they should not be
+            // present clear()-s. There are load-reference barriers, which would
+            // confuse the tests, so we enable only SATB barriers.
             framework.addScenarios(new Scenario(idx++,
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UnlockDiagnosticVMOptions",
@@ -87,9 +87,7 @@ public class ReferenceClearTests {
             ));
         }
         if (GC.isSelectedErgonomically() && GC.Z.isSupported()) {
-            // Z:
-            //   a) does not have SATB/keep-alive barriers
-            //   b) has inter-generational barriers on stores, but folded away for null stores
+            // Z does not have barriers in C2 IR.
             framework.addScenarios(new Scenario(idx++,
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UseZGC"
@@ -104,20 +102,26 @@ public class ReferenceClearTests {
     static final WeakReference<Object> WR = new WeakReference<>(REF);
     static final PhantomReference<Object> PR = new PhantomReference<>(REF, null);
 
+    // We assert there is only a single load and a single store of Reference.referent.
+    // This serves as signal that no GC barriers are emitted in IR.
+
     @Test
-    @IR(failOn = { IRNode.STORE_PRIMITIVE, IRNode.LOAD_PRIMITIVE })
+    @IR(counts = { IRNode.STORE, "1",
+                   IRNode.LOAD, "1" })
     public void soft() {
         SR.clear();
     }
 
     @Test
-    @IR(failOn = { IRNode.STORE_PRIMITIVE, IRNode.LOAD_PRIMITIVE })
+    @IR(counts = { IRNode.STORE, "1",
+                   IRNode.LOAD, "1" })
     public void weak() {
         WR.clear();
     }
 
     @Test
-    @IR(failOn = { IRNode.STORE_PRIMITIVE, IRNode.LOAD_PRIMITIVE })
+    @IR(counts = { IRNode.STORE, "1",
+                   IRNode.LOAD, "1" })
     public void phantom() {
         PR.clear();
     }
