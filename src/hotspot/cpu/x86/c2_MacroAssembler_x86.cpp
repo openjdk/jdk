@@ -172,310 +172,6 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
   }
 }
 
-#if INCLUDE_RTM_OPT
-
-// Update rtm_counters based on abort status
-// input: abort_status
-//        rtm_counters (RTMLockingCounters*)
-// flags are killed
-void C2_MacroAssembler::rtm_counters_update(Register abort_status, Register rtm_counters) {
-
-  atomic_incptr(Address(rtm_counters, RTMLockingCounters::abort_count_offset()));
-  if (PrintPreciseRTMLockingStatistics) {
-    for (int i = 0; i < RTMLockingCounters::ABORT_STATUS_LIMIT; i++) {
-      Label check_abort;
-      testl(abort_status, (1<<i));
-      jccb(Assembler::equal, check_abort);
-      atomic_incptr(Address(rtm_counters, RTMLockingCounters::abortX_count_offset() + (i * sizeof(uintx))));
-      bind(check_abort);
-    }
-  }
-}
-
-// Branch if (random & (count-1) != 0), count is 2^n
-// tmp, scr and flags are killed
-void C2_MacroAssembler::branch_on_random_using_rdtsc(Register tmp, Register scr, int count, Label& brLabel) {
-  assert(tmp == rax, "");
-  assert(scr == rdx, "");
-  rdtsc(); // modifies EDX:EAX
-  andptr(tmp, count-1);
-  jccb(Assembler::notZero, brLabel);
-}
-
-// Perform abort ratio calculation, set no_rtm bit if high ratio
-// input:  rtm_counters_Reg (RTMLockingCounters* address)
-// tmpReg, rtm_counters_Reg and flags are killed
-void C2_MacroAssembler::rtm_abort_ratio_calculation(Register tmpReg,
-                                                    Register rtm_counters_Reg,
-                                                    RTMLockingCounters* rtm_counters,
-                                                    Metadata* method_data) {
-  Label L_done, L_check_always_rtm1, L_check_always_rtm2;
-
-  if (RTMLockingCalculationDelay > 0) {
-    // Delay calculation
-    movptr(tmpReg, ExternalAddress((address) RTMLockingCounters::rtm_calculation_flag_addr()));
-    testptr(tmpReg, tmpReg);
-    jccb(Assembler::equal, L_done);
-  }
-  // Abort ratio calculation only if abort_count > RTMAbortThreshold
-  //   Aborted transactions = abort_count * 100
-  //   All transactions = total_count *  RTMTotalCountIncrRate
-  //   Set no_rtm bit if (Aborted transactions >= All transactions * RTMAbortRatio)
-
-  movptr(tmpReg, Address(rtm_counters_Reg, RTMLockingCounters::abort_count_offset()));
-  cmpptr(tmpReg, RTMAbortThreshold);
-  jccb(Assembler::below, L_check_always_rtm2);
-  imulptr(tmpReg, tmpReg, 100);
-
-  Register scrReg = rtm_counters_Reg;
-  movptr(scrReg, Address(rtm_counters_Reg, RTMLockingCounters::total_count_offset()));
-  imulptr(scrReg, scrReg, RTMTotalCountIncrRate);
-  imulptr(scrReg, scrReg, RTMAbortRatio);
-  cmpptr(tmpReg, scrReg);
-  jccb(Assembler::below, L_check_always_rtm1);
-  if (method_data != nullptr) {
-    // set rtm_state to "no rtm" in MDO
-    mov_metadata(tmpReg, method_data);
-    lock();
-    orl(Address(tmpReg, MethodData::rtm_state_offset()), NoRTM);
-  }
-  jmpb(L_done);
-  bind(L_check_always_rtm1);
-  // Reload RTMLockingCounters* address
-  lea(rtm_counters_Reg, ExternalAddress((address)rtm_counters));
-  bind(L_check_always_rtm2);
-  movptr(tmpReg, Address(rtm_counters_Reg, RTMLockingCounters::total_count_offset()));
-  cmpptr(tmpReg, RTMLockingThreshold / RTMTotalCountIncrRate);
-  jccb(Assembler::below, L_done);
-  if (method_data != nullptr) {
-    // set rtm_state to "always rtm" in MDO
-    mov_metadata(tmpReg, method_data);
-    lock();
-    orl(Address(tmpReg, MethodData::rtm_state_offset()), UseRTM);
-  }
-  bind(L_done);
-}
-
-// Update counters and perform abort ratio calculation
-// input:  abort_status_Reg
-// rtm_counters_Reg, flags are killed
-void C2_MacroAssembler::rtm_profiling(Register abort_status_Reg,
-                                      Register rtm_counters_Reg,
-                                      RTMLockingCounters* rtm_counters,
-                                      Metadata* method_data,
-                                      bool profile_rtm) {
-
-  assert(rtm_counters != nullptr, "should not be null when profiling RTM");
-  // update rtm counters based on rax value at abort
-  // reads abort_status_Reg, updates flags
-  lea(rtm_counters_Reg, ExternalAddress((address)rtm_counters));
-  rtm_counters_update(abort_status_Reg, rtm_counters_Reg);
-  if (profile_rtm) {
-    // Save abort status because abort_status_Reg is used by following code.
-    if (RTMRetryCount > 0) {
-      push(abort_status_Reg);
-    }
-    assert(rtm_counters != nullptr, "should not be null when profiling RTM");
-    rtm_abort_ratio_calculation(abort_status_Reg, rtm_counters_Reg, rtm_counters, method_data);
-    // restore abort status
-    if (RTMRetryCount > 0) {
-      pop(abort_status_Reg);
-    }
-  }
-}
-
-// Retry on abort if abort's status is 0x6: can retry (0x2) | memory conflict (0x4)
-// inputs: retry_count_Reg
-//       : abort_status_Reg
-// output: retry_count_Reg decremented by 1
-// flags are killed
-void C2_MacroAssembler::rtm_retry_lock_on_abort(Register retry_count_Reg, Register abort_status_Reg, Label& retryLabel) {
-  Label doneRetry;
-  assert(abort_status_Reg == rax, "");
-  // The abort reason bits are in eax (see all states in rtmLocking.hpp)
-  // 0x6 = conflict on which we can retry (0x2) | memory conflict (0x4)
-  // if reason is in 0x6 and retry count != 0 then retry
-  andptr(abort_status_Reg, 0x6);
-  jccb(Assembler::zero, doneRetry);
-  testl(retry_count_Reg, retry_count_Reg);
-  jccb(Assembler::zero, doneRetry);
-  pause();
-  decrementl(retry_count_Reg);
-  jmp(retryLabel);
-  bind(doneRetry);
-}
-
-// Spin and retry if lock is busy,
-// inputs: box_Reg (monitor address)
-//       : retry_count_Reg
-// output: retry_count_Reg decremented by 1
-//       : clear z flag if retry count exceeded
-// tmp_Reg, scr_Reg, flags are killed
-void C2_MacroAssembler::rtm_retry_lock_on_busy(Register retry_count_Reg, Register box_Reg,
-                                               Register tmp_Reg, Register scr_Reg, Label& retryLabel) {
-  Label SpinLoop, SpinExit, doneRetry;
-  int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
-
-  testl(retry_count_Reg, retry_count_Reg);
-  jccb(Assembler::zero, doneRetry);
-  decrementl(retry_count_Reg);
-  movptr(scr_Reg, RTMSpinLoopCount);
-
-  bind(SpinLoop);
-  pause();
-  decrementl(scr_Reg);
-  jccb(Assembler::lessEqual, SpinExit);
-  movptr(tmp_Reg, Address(box_Reg, owner_offset));
-  testptr(tmp_Reg, tmp_Reg);
-  jccb(Assembler::notZero, SpinLoop);
-
-  bind(SpinExit);
-  jmp(retryLabel);
-  bind(doneRetry);
-  incrementl(retry_count_Reg); // clear z flag
-}
-
-// Use RTM for normal stack locks
-// Input: objReg (object to lock)
-void C2_MacroAssembler::rtm_stack_locking(Register objReg, Register tmpReg, Register scrReg,
-                                         Register retry_on_abort_count_Reg,
-                                         RTMLockingCounters* stack_rtm_counters,
-                                         Metadata* method_data, bool profile_rtm,
-                                         Label& DONE_LABEL, Label& IsInflated) {
-  assert(UseRTMForStackLocks, "why call this otherwise?");
-  assert(tmpReg == rax, "");
-  assert(scrReg == rdx, "");
-  Label L_rtm_retry, L_decrement_retry, L_on_abort;
-
-  if (RTMRetryCount > 0) {
-    movl(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
-    bind(L_rtm_retry);
-  }
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
-  testptr(tmpReg, markWord::monitor_value);  // inflated vs stack-locked|neutral
-  jcc(Assembler::notZero, IsInflated);
-
-  if (PrintPreciseRTMLockingStatistics || profile_rtm) {
-    Label L_noincrement;
-    if (RTMTotalCountIncrRate > 1) {
-      // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
-    }
-    assert(stack_rtm_counters != nullptr, "should not be null when profiling RTM");
-    atomic_incptr(ExternalAddress((address)stack_rtm_counters->total_count_addr()), scrReg);
-    bind(L_noincrement);
-  }
-  xbegin(L_on_abort);
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));       // fetch markword
-  andptr(tmpReg, markWord::lock_mask_in_place);     // look at 2 lock bits
-  cmpptr(tmpReg, markWord::unlocked_value);         // bits = 01 unlocked
-  jcc(Assembler::equal, DONE_LABEL);        // all done if unlocked
-
-  Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
-  if (UseRTMXendForLockBusy) {
-    xend();
-    movptr(abort_status_Reg, 0x2);   // Set the abort status to 2 (so we can retry)
-    jmp(L_decrement_retry);
-  }
-  else {
-    xabort(0);
-  }
-  bind(L_on_abort);
-  if (PrintPreciseRTMLockingStatistics || profile_rtm) {
-    rtm_profiling(abort_status_Reg, scrReg, stack_rtm_counters, method_data, profile_rtm);
-  }
-  bind(L_decrement_retry);
-  if (RTMRetryCount > 0) {
-    // retry on lock abort if abort status is 'can retry' (0x2) or 'memory conflict' (0x4)
-    rtm_retry_lock_on_abort(retry_on_abort_count_Reg, abort_status_Reg, L_rtm_retry);
-  }
-}
-
-// Use RTM for inflating locks
-// inputs: objReg (object to lock)
-//         boxReg (on-stack box address (displaced header location) - KILLED)
-//         tmpReg (ObjectMonitor address + markWord::monitor_value)
-void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, Register tmpReg,
-                                            Register scrReg, Register retry_on_busy_count_Reg,
-                                            Register retry_on_abort_count_Reg,
-                                            RTMLockingCounters* rtm_counters,
-                                            Metadata* method_data, bool profile_rtm,
-                                            Label& DONE_LABEL) {
-  assert(UseRTMLocking, "why call this otherwise?");
-  assert(tmpReg == rax, "");
-  assert(scrReg == rdx, "");
-  Label L_rtm_retry, L_decrement_retry, L_on_abort;
-  int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
-
-  movptr(Address(boxReg, 0), checked_cast<int32_t>(markWord::unused_mark().value()));
-  movptr(boxReg, tmpReg); // Save ObjectMonitor address
-
-  if (RTMRetryCount > 0) {
-    movl(retry_on_busy_count_Reg, RTMRetryCount);  // Retry on lock busy
-    movl(retry_on_abort_count_Reg, RTMRetryCount); // Retry on abort
-    bind(L_rtm_retry);
-  }
-  if (PrintPreciseRTMLockingStatistics || profile_rtm) {
-    Label L_noincrement;
-    if (RTMTotalCountIncrRate > 1) {
-      // tmpReg, scrReg and flags are killed
-      branch_on_random_using_rdtsc(tmpReg, scrReg, RTMTotalCountIncrRate, L_noincrement);
-    }
-    assert(rtm_counters != nullptr, "should not be null when profiling RTM");
-    atomic_incptr(ExternalAddress((address)rtm_counters->total_count_addr()), scrReg);
-    bind(L_noincrement);
-  }
-  xbegin(L_on_abort);
-  movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));
-  movptr(tmpReg, Address(tmpReg, owner_offset));
-  testptr(tmpReg, tmpReg);
-  jcc(Assembler::zero, DONE_LABEL);
-  if (UseRTMXendForLockBusy) {
-    xend();
-    jmp(L_decrement_retry);
-  }
-  else {
-    xabort(0);
-  }
-  bind(L_on_abort);
-  Register abort_status_Reg = tmpReg; // status of abort is stored in RAX
-  if (PrintPreciseRTMLockingStatistics || profile_rtm) {
-    rtm_profiling(abort_status_Reg, scrReg, rtm_counters, method_data, profile_rtm);
-  }
-  if (RTMRetryCount > 0) {
-    // retry on lock abort if abort status is 'can retry' (0x2) or 'memory conflict' (0x4)
-    rtm_retry_lock_on_abort(retry_on_abort_count_Reg, abort_status_Reg, L_rtm_retry);
-  }
-
-  movptr(tmpReg, Address(boxReg, owner_offset)) ;
-  testptr(tmpReg, tmpReg) ;
-  jccb(Assembler::notZero, L_decrement_retry) ;
-
-  // Appears unlocked - try to swing _owner from null to non-null.
-  // Invariant: tmpReg == 0.  tmpReg is EAX which is the implicit cmpxchg comparand.
-#ifdef _LP64
-  Register threadReg = r15_thread;
-#else
-  get_thread(scrReg);
-  Register threadReg = scrReg;
-#endif
-  lock();
-  cmpxchgptr(threadReg, Address(boxReg, owner_offset)); // Updates tmpReg
-
-  if (RTMRetryCount > 0) {
-    // success done else retry
-    jccb(Assembler::equal, DONE_LABEL) ;
-    bind(L_decrement_retry);
-    // Spin and retry if lock is busy.
-    rtm_retry_lock_on_busy(retry_on_busy_count_Reg, boxReg, tmpReg, scrReg, L_rtm_retry);
-  }
-  else {
-    bind(L_decrement_retry);
-  }
-}
-
-#endif //  INCLUDE_RTM_OPT
-
 // fast_lock and fast_unlock used by C2
 
 // Because the transitions from emitted code to the runtime
@@ -554,21 +250,13 @@ void C2_MacroAssembler::rtm_inflated_locking(Register objReg, Register boxReg, R
 // scr: tmp -- KILLED
 void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg,
                                  Register scrReg, Register cx1Reg, Register cx2Reg, Register thread,
-                                 RTMLockingCounters* rtm_counters,
-                                 RTMLockingCounters* stack_rtm_counters,
-                                 Metadata* method_data,
-                                 bool use_rtm, bool profile_rtm) {
+                                 Metadata* method_data) {
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_lock_lightweight");
   // Ensure the register assignments are disjoint
   assert(tmpReg == rax, "");
-
-  if (use_rtm) {
-    assert_different_registers(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg);
-  } else {
-    assert(cx1Reg == noreg, "");
-    assert(cx2Reg == noreg, "");
-    assert_different_registers(objReg, boxReg, tmpReg, scrReg);
-  }
+  assert(cx1Reg == noreg, "");
+  assert(cx2Reg == noreg, "");
+  assert_different_registers(objReg, boxReg, tmpReg, scrReg);
 
   // Possible cases that we'll encounter in fast_lock
   // ------------------------------------------------
@@ -593,15 +281,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
     testl(tmpReg, JVM_ACC_IS_VALUE_BASED_CLASS);
     jcc(Assembler::notZero, DONE_LABEL);
   }
-
-#if INCLUDE_RTM_OPT
-  if (UseRTMForStackLocks && use_rtm) {
-    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
-    rtm_stack_locking(objReg, tmpReg, scrReg, cx2Reg,
-                      stack_rtm_counters, method_data, profile_rtm,
-                      DONE_LABEL, IsInflated);
-  }
-#endif // INCLUDE_RTM_OPT
 
   movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes()));          // [FETCH]
   testptr(tmpReg, markWord::monitor_value); // inflated vs stack-locked|neutral
@@ -631,14 +310,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 
   bind(IsInflated);
   // The object is inflated. tmpReg contains pointer to ObjectMonitor* + markWord::monitor_value
-
-#if INCLUDE_RTM_OPT
-  // Use the same RTM locking code in 32- and 64-bit VM.
-  if (use_rtm) {
-    rtm_inflated_locking(objReg, boxReg, tmpReg, scrReg, cx1Reg, cx2Reg,
-                         rtm_counters, method_data, profile_rtm, DONE_LABEL);
-  } else {
-#endif // INCLUDE_RTM_OPT
 
 #ifndef _LP64
   // The object is inflated.
@@ -700,9 +371,6 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
   incq(Address(scrReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   xorq(rax, rax); // Set ZF = 1 (success) for recursive lock, denoting locking success
 #endif // _LP64
-#if INCLUDE_RTM_OPT
-  } // use_rtm()
-#endif
   bind(DONE_LABEL);
 
   // ZFlag == 1 count in fast path
@@ -755,26 +423,12 @@ void C2_MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmp
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
 
-void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg, bool use_rtm) {
+void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpReg) {
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert(boxReg == rax, "");
   assert_different_registers(objReg, boxReg, tmpReg);
 
   Label DONE_LABEL, Stacked, COUNT, NO_COUNT;
-
-#if INCLUDE_RTM_OPT
-  if (UseRTMForStackLocks && use_rtm) {
-    assert(LockingMode != LM_MONITOR, "LockingMode == 0 (LM_MONITOR) and +UseRTMForStackLocks are mutually exclusive");
-    Label L_regular_unlock;
-    movptr(tmpReg, Address(objReg, oopDesc::mark_offset_in_bytes())); // fetch markword
-    andptr(tmpReg, markWord::lock_mask_in_place);                     // look at 2 lock bits
-    cmpptr(tmpReg, markWord::unlocked_value);                         // bits = 01 unlocked
-    jccb(Assembler::notEqual, L_regular_unlock);                      // if !HLE RegularLock
-    xend();                                                           // otherwise end...
-    jmp(DONE_LABEL);                                                  // ... and we're done
-    bind(L_regular_unlock);
-  }
-#endif
 
   if (LockingMode == LM_LEGACY) {
     cmpptr(Address(boxReg, 0), NULL_WORD);                            // Examine the displaced header
@@ -787,19 +441,6 @@ void C2_MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register t
   }
 
   // It's inflated.
-
-#if INCLUDE_RTM_OPT
-  if (use_rtm) {
-    Label L_regular_inflated_unlock;
-    int owner_offset = OM_OFFSET_NO_MONITOR_VALUE_TAG(owner);
-    movptr(boxReg, Address(tmpReg, owner_offset));
-    testptr(boxReg, boxReg);
-    jccb(Assembler::notZero, L_regular_inflated_unlock);
-    xend();
-    jmp(DONE_LABEL);
-    bind(L_regular_inflated_unlock);
-  }
-#endif
 
   // Despite our balanced locking property we still check that m->_owner == Self
   // as java routines or native JNI code called by this thread might
@@ -4491,12 +4132,20 @@ void C2_MacroAssembler::count_positives(Register ary1, Register len,
 // Compare char[] or byte[] arrays aligned to 4 bytes or substrings.
 void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                                       Register limit, Register result, Register chr,
-                                      XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask) {
+                                      XMMRegister vec1, XMMRegister vec2, bool is_char,
+                                      KRegister mask, bool expand_ary2) {
+  // for expand_ary2, limit is the (smaller) size of the second array.
   ShortBranchVerifier sbv(this);
   Label TRUE_LABEL, FALSE_LABEL, DONE, COMPARE_VECTORS, COMPARE_CHAR, COMPARE_BYTE;
 
+  assert((!expand_ary2) || ((expand_ary2) && (UseAVX == 2)),
+         "Expansion only implemented for AVX2");
+
   int length_offset  = arrayOopDesc::length_offset_in_bytes();
   int base_offset    = arrayOopDesc::base_offset_in_bytes(is_char ? T_CHAR : T_BYTE);
+
+  Address::ScaleFactor scaleFactor = expand_ary2 ? Address::times_2 : Address::times_1;
+  int scaleIncr = expand_ary2 ? 8 : 16;
 
   if (is_array_equ) {
     // Check the input args
@@ -4533,14 +4182,20 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
 
   if (UseAVX >= 2) {
     // With AVX2, use 32-byte vector compare
-    Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+    Label COMPARE_WIDE_VECTORS, COMPARE_WIDE_VECTORS_16, COMPARE_TAIL, COMPARE_TAIL_16;
 
     // Compare 32-byte vectors
-    andl(result, 0x0000001f);  //   tail count (in bytes)
-    andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jcc(Assembler::zero, COMPARE_TAIL);
+    if (expand_ary2) {
+      andl(result, 0x0000000f);  //   tail count (in bytes)
+      andl(limit, 0xfffffff0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL);
+    } else {
+      andl(result, 0x0000001f);  //   tail count (in bytes)
+      andl(limit, 0xffffffe0);   // vector count (in bytes)
+      jcc(Assembler::zero, COMPARE_TAIL_16);
+    }
 
-    lea(ary1, Address(ary1, limit, Address::times_1));
+    lea(ary1, Address(ary1, limit, scaleFactor));
     lea(ary2, Address(ary2, limit, Address::times_1));
     negptr(limit);
 
@@ -4583,25 +4238,59 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
     }//if (VM_Version::supports_avx512vlbw())
 #endif //_LP64
     bind(COMPARE_WIDE_VECTORS);
-    vmovdqu(vec1, Address(ary1, limit, Address::times_1));
-    vmovdqu(vec2, Address(ary2, limit, Address::times_1));
+    vmovdqu(vec1, Address(ary1, limit, scaleFactor));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1), Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
     jcc(Assembler::notZero, FALSE_LABEL);
-    addptr(limit, 32);
+    addptr(limit, scaleIncr * 2);
     jcc(Assembler::notZero, COMPARE_WIDE_VECTORS);
 
     testl(result, result);
     jcc(Assembler::zero, TRUE_LABEL);
 
-    vmovdqu(vec1, Address(ary1, result, Address::times_1, -32));
-    vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
+    vmovdqu(vec1, Address(ary1, result, scaleFactor, -32));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, result, Address::times_1, -16), Assembler::AVX_256bit);
+    } else {
+      vmovdqu(vec2, Address(ary2, result, Address::times_1, -32));
+    }
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, FALSE_LABEL);
-    jmpb(TRUE_LABEL);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    jmp(TRUE_LABEL);
+
+    bind(COMPARE_TAIL_16); // limit is zero
+    movl(limit, result);
+
+    // Compare 16-byte chunks
+    andl(result, 0x0000000f);  //   tail count (in bytes)
+    andl(limit, 0xfffffff0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL);
+
+    lea(ary1, Address(ary1, limit, scaleFactor));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+    bind(COMPARE_WIDE_VECTORS_16);
+    movdqu(vec1, Address(ary1, limit, scaleFactor));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1), Assembler::AVX_128bit);
+    } else {
+      movdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
+    pxor(vec1, vec2);
+
+    ptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, scaleIncr);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);
 
     bind(COMPARE_TAIL); // limit is zero
     movl(limit, result);
@@ -4646,19 +4335,34 @@ void C2_MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register
   }
 
   // Compare 4-byte vectors
-  andl(limit, 0xfffffffc); // vector count (in bytes)
-  jccb(Assembler::zero, COMPARE_CHAR);
+  if (expand_ary2) {
+    testl(result, result);
+    jccb(Assembler::zero, TRUE_LABEL);
+  } else {
+    andl(limit, 0xfffffffc); // vector count (in bytes)
+    jccb(Assembler::zero, COMPARE_CHAR);
+  }
 
-  lea(ary1, Address(ary1, limit, Address::times_1));
+  lea(ary1, Address(ary1, limit, scaleFactor));
   lea(ary2, Address(ary2, limit, Address::times_1));
   negptr(limit);
 
   bind(COMPARE_VECTORS);
-  movl(chr, Address(ary1, limit, Address::times_1));
-  cmpl(chr, Address(ary2, limit, Address::times_1));
-  jccb(Assembler::notEqual, FALSE_LABEL);
-  addptr(limit, 4);
-  jcc(Assembler::notZero, COMPARE_VECTORS);
+  if (expand_ary2) {
+    // There are no "vector" operations for bytes to shorts
+    movzbl(chr, Address(ary2, limit, Address::times_1));
+    cmpw(Address(ary1, limit, Address::times_2), chr);
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 1);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+    jmp(TRUE_LABEL);
+  } else {
+    movl(chr, Address(ary1, limit, Address::times_1));
+    cmpl(chr, Address(ary2, limit, Address::times_1));
+    jccb(Assembler::notEqual, FALSE_LABEL);
+    addptr(limit, 4);
+    jcc(Assembler::notZero, COMPARE_VECTORS);
+  }
 
   // Compare trailing char (final 2 bytes), if any
   bind(COMPARE_CHAR);

@@ -57,36 +57,7 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * The following code fragment demonstrates a trivial compression
  * and decompression of a string using {@code Deflater} and
  * {@code Inflater}.
- *
- * <blockquote><pre>
- * try {
- *     // Encode a String into bytes
- *     String inputString = "blahblahblah";
- *     byte[] input = inputString.getBytes("UTF-8");
- *
- *     // Compress the bytes
- *     byte[] output = new byte[100];
- *     Deflater compresser = new Deflater();
- *     compresser.setInput(input);
- *     compresser.finish();
- *     int compressedDataLength = compresser.deflate(output);
- *     compresser.end();
- *
- *     // Decompress the bytes
- *     Inflater decompresser = new Inflater();
- *     decompresser.setInput(output, 0, compressedDataLength);
- *     byte[] result = new byte[100];
- *     int resultLength = decompresser.inflate(result);
- *     decompresser.end();
- *
- *     // Decode the bytes into a String
- *     String outputString = new String(result, 0, resultLength, "UTF-8");
- * } catch (java.io.UnsupportedEncodingException ex) {
- *     // handle
- * } catch (java.util.zip.DataFormatException ex) {
- *     // handle
- * }
- * </pre></blockquote>
+ * {@snippet id="compdecomp" lang="java" class="Snippets" region="DeflaterInflaterExample"}
  *
  * @apiNote
  * To release resources used by this {@code Deflater}, the {@link #end()} method
