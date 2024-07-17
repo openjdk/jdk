@@ -144,7 +144,7 @@ public final class StrikeCache {
     private static final VarHandle managedHandle  = getVarHandle(GlyphImageLayout, "managed");
     private static final VarHandle topLeftXHandle = getVarHandle(GlyphImageLayout, "topLeftX");
     private static final VarHandle topLeftYHandle = getVarHandle(GlyphImageLayout, "topLeftY");
-    private static final VarHandle cellInfoHandle  = getVarHandle(GlyphImageLayout, "cellInfo");
+    private static final VarHandle cellInfoHandle = getVarHandle(GlyphImageLayout, "cellInfo");
     private static final VarHandle imageHandle    = getVarHandle(GlyphImageLayout, "image");
 
     @SuppressWarnings("restricted")
