@@ -176,16 +176,14 @@ public class PerformanceTest {
         long start, end;
         cipher.init(Cipher.ENCRYPT_MODE, cipherKey, params);
 
-        start = System.currentTimeMillis();
+        start = getTimeInMicroseconds();
         for (int i=0; i<count-1; i++) {
             cipher.update(data, 0, data.length);
         }
         cipher.doFinal(data, 0, data.length);
-        end = System.currentTimeMillis();
+        end = getTimeInMicroseconds();
 
-        // To avoid diving by zero if end is equal to start
-        long executionTime = end > start ? end - start : 1L;
-        int speed = (int) ((data.length * count) / executionTime);
+        int speed = (int) ((data.length * count) / (end - start));
         sum += speed;
         col.append(speed);
     }
@@ -198,8 +196,12 @@ public class PerformanceTest {
         System.out.println
             ("=========================================================");
         System.out.println
-            ("Algorithm                      DataSize Rounds Kbytes/sec");
+            ("Algorithm                      DataSize Rounds Kbytes/microsec");
 
+    }
+
+    private static long getTimeInMicroseconds() {
+        return System.nanoTime() / 1000;
     }
 
 }
