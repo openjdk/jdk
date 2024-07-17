@@ -82,8 +82,6 @@ public class TestMergeStoresFuzzer {
 
     Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
     List<String> optionList = new ArrayList<String>();
-    // optionList.add("-classpath");
-    // optionList.add(System.getProperty("test.class.path"));
     optionList.add("-classpath");
     optionList.add(System.getProperty("java.class.path"));
     CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, compilationUnits);
@@ -107,7 +105,7 @@ public class TestMergeStoresFuzzer {
           ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
           // Classpath for all included classes (e.g. IR Framework).
           URL[] urls = new URL[] { new File("").toURI().toURL(),
-                                   new File(System.getProperty("java.class.path")).toURI().toURL()};
+                                   new File(System.getProperty("test.classes")).toURI().toURL()};
           URLClassLoader classLoader = URLClassLoader.newInstance(urls, sysLoader);
           Class.forName("HelloWorld", true, classLoader).getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
 
