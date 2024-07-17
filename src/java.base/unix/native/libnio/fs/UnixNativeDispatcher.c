@@ -251,7 +251,7 @@ static int fstatat_wrapper(int dfd, const char *path,
  * Lookup time functions symbols, trying 64 bit version first
  */
 static void* lookup_time_function(const char* symbol64, const char* symbol) {
-    void * ret = NULL;
+    void* ret = NULL;
     if (sizeof(time_t) > 4) {
         ret = dlsym(RTLD_DEFAULT, symbol64);
     }
