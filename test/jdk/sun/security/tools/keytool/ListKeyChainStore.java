@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7133495 8062264 8046777 8153005
+ * @bug 7133495 8062264 8046777 8153005 8331163
  * @summary KeyChain KeyStore implementation retrieves only one private key entry
  * @requires (os.family == "mac")
  * @library /test/lib
@@ -47,6 +47,7 @@ public class ListKeyChainStore {
     private static final String USER_DIR = System.getProperty("user.dir", ".");
     private static final String FS = System.getProperty("file.separator");
     private static final String PKCS12_KEYSTORE = USER_DIR + FS + "7133495.p12";
+    private static final String CERT_FILE = USER_DIR + FS + "7133495.cert";
     private static final String KEYCHAIN_FILE = USER_DIR + FS + "7133495.keychain";
     private static final String TEMPORARY_FILE = USER_DIR + FS + "7133495.tmp";
     private static final String USER_KEYCHAIN_LIST = USER_DIR + FS + "user.keychain.list";
@@ -159,6 +160,32 @@ public class ListKeyChainStore {
             } else {
                 throw new RuntimeException("Error exporting private key from keychain");
             }
+
+            // Export CN2 certificate from PKCS12
+            LOG_MSG("Export CN2 certificate from the keystore: " + PKCS12_KEYSTORE);
+            SecurityTools.keytool(String.format("-J-Dkeystore.pkcs12.legacy -export" +
+                                " -storetype PKCS12 -keystore %s -storepass %s" +
+                                " -alias 7133495-2 -file %s",
+                        PKCS12_KEYSTORE, PWD, CERT_FILE)).shouldHaveExitValue(0);
+
+            // Update CN2 certificate trust setting to "Never Trust"
+            LOG_MSG("Importing the certificate from " + CERT_FILE
+                    + " to " + KEYCHAIN_FILE + " with Trust Settings restriction");
+
+            ProcessTools.executeCommand("sh", "-c", String.format("security add-trusted-cert" +
+                    " -r deny -k %s %s", KEYCHAIN_FILE, CERT_FILE)).shouldHaveExitValue(0);
+
+            // Export a private key from the keychain (without supplying a password)
+            // Access controls have already been lowered (see 'security import ... -A' above)
+            LOG_MSG("Exporting a private key with restricted Trust Settings from the keychain");
+            try (FileInputStream fis = new FileInputStream(KEYCHAIN_FILE)) {
+                KeyStore ks2 = KeyStore.getInstance("KeychainStore");
+                ks2.load(fis, null);
+                key = ks2.getKey("CN2", null);
+                if (key instanceof PrivateKey) {
+                    throw new RuntimeException("Key should not be accessible");
+                }
+            }
         } finally {
             // Reset earlier keychain list
             ProcessTools.executeCommand("sh", "-c", String.format("security list-keychains -s %s",
@@ -171,6 +198,7 @@ public class ListKeyChainStore {
 
     private static void deleteTestTempFilesIfExists() throws Throwable {
         Files.deleteIfExists(Paths.get(USER_KEYCHAIN_LIST));
+        Files.deleteIfExists(Paths.get(CERT_FILE));
         Files.deleteIfExists(Paths.get(PKCS12_KEYSTORE));
         if (Files.exists(Paths.get(KEYCHAIN_FILE))) {
             ProcessTools.executeCommand("sh", "-c", String.format("security delete-keychain" +
