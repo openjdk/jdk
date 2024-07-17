@@ -26,7 +26,7 @@
 package javax.swing;
 
 import java.awt.Component;
-import java.awt.ComponentiOrientation;
+import java.awt.ComponentOrientation;
 import java.awt.Graphics;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
