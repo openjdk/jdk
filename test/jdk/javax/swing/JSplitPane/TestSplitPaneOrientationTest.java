@@ -35,8 +35,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 public class TestSplitPaneOrientationTest {
-    private static JButton leftOneTouchButton;
-    private static JButton rightOneTouchButton;
 
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
@@ -57,7 +55,6 @@ public class TestSplitPaneOrientationTest {
                 setLookAndFeel(laf);
                 JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                                                 new JButton("Left"), new JButton("Right"));
-                jsp.setEnabled(true);
                 if (jsp.getRightComponent() instanceof JButton button) {
                     System.out.println(button.getText());
                     if (!button.getText().equals("Left")) {
