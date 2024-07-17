@@ -152,6 +152,9 @@ public class CryptoWriterQueue {
             // amount of remaining bytes in the current bytebuffer being processed
             final int numRemainingInBuffer = buffer.remaining();
             if (numRemainingInBuffer == 0) {
+                if (!keepReplayData) {
+                    iterator.remove();
+                }
                 continue;
             }
             if (frameData == null) {
@@ -160,6 +163,9 @@ public class CryptoWriterQueue {
             if (frameData.remaining() >= numRemainingInBuffer) {
                 // frame data can accommodate the entire buffered data, so copy it over
                 frameData.put(buffer);
+                if (!keepReplayData) {
+                    iterator.remove();
+                }
             } else {
                 // target frameData buffer cannot accommodate the entire buffered data,
                 // so we copy over only that much that the target buffer can accommodate
@@ -185,6 +191,7 @@ public class CryptoWriterQueue {
         position += computedFrameLength;
         totalRemaining -= computedFrameLength;
         assert totalRemaining >= 0 : totalRemaining;
+        assert totalRemaining > 0 || keepReplayData || queue.isEmpty();
         return new CryptoFrame(oldPosition, computedFrameLength, frameData);
     }
 
