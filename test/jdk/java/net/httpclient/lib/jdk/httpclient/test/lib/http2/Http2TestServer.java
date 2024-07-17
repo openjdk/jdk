@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
@@ -59,6 +62,7 @@ public class Http2TestServer implements AutoCloseable {
     final Set<Http2TestServerConnection> connections;
     final Properties properties;
     final String name;
+    private volatile BiPredicate<Http2TestServerConnection, String> newRequestApprover;
 
     private static ThreadFactory defaultThreadFac =
         (Runnable r) -> {
@@ -283,6 +287,20 @@ public class Http2TestServer implements AutoCloseable {
 
     public String serverName() {
         return serverName;
+    }
+
+    public void setRequestApprover(final BiPredicate<Http2TestServerConnection, String> approver) {
+        this.newRequestApprover = approver;
+    }
+
+    public boolean shouldProcessNewHTTPRequest(final Http2TestServerConnection serverConn,
+                                               final String reqPath) {
+        final BiPredicate<Http2TestServerConnection, String> approver = this.newRequestApprover;
+        if (approver == null) {
+            // by the default the server will process new requests
+            return true;
+        }
+        return approver.test(serverConn, reqPath);
     }
 
     private synchronized void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
