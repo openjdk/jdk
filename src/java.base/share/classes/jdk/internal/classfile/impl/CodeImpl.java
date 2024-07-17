@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -121,7 +122,7 @@ public final class CodeImpl
         if (!inflated) {
             if (labels == null)
                 labels = new LabelImpl[codeLength + 1];
-            if (((ClassReaderImpl)classReader).context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
+            if (classReader.context().lineNumbersOption() == ClassFile.LineNumbersOption.PASS_LINE_NUMBERS)
                 inflateLineNumbers();
             inflateJumpTargets();
             inflateTypeAnnotations();
@@ -149,7 +150,7 @@ public final class CodeImpl
                                     new Consumer<CodeBuilder>() {
                                         @Override
                                         public void accept(CodeBuilder cb) {
-                                            forEachElement(cb);
+                                            forEach(cb);
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
@@ -166,11 +167,12 @@ public final class CodeImpl
     }
 
     @Override
-    public void forEachElement(Consumer<CodeElement> consumer) {
+    public void forEach(Consumer<? super CodeElement> consumer) {
+        Objects.requireNonNull(consumer);
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
-        if (((ClassReaderImpl)classReader).context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
+        if (classReader.context().debugElementsOption() == ClassFile.DebugElementsOption.PASS_DEBUG)
             generateDebugElements(consumer);
         for (int pos=codeStart; pos<codeEnd; ) {
             if (labels[pos - codeStart] != null)
@@ -199,7 +201,7 @@ public final class CodeImpl
                 public void accept(int s, int e, int h, int c) {
                     ClassEntry catchTypeEntry = c == 0
                                                              ? null
-                                                             : (ClassEntry) constantPool().entryByIndex(c);
+                                                             : constantPool().entryByIndex(c, ClassEntry.class);
                     exceptionTable.add(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchTypeEntry));
                 }
             });
@@ -329,7 +331,7 @@ public final class CodeImpl
         findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
     }
 
-    private void generateCatchTargets(Consumer<CodeElement> consumer) {
+    private void generateCatchTargets(Consumer<? super CodeElement> consumer) {
         // We attach all catch targets to bci zero, because trying to attach them
         // to their range could subtly affect the order of exception processing
         iterateExceptionHandlers(new ExceptionHandlerAction() {
@@ -337,13 +339,13 @@ public final class CodeImpl
             public void accept(int s, int e, int h, int c) {
                 ClassEntry catchType = c == 0
                                                     ? null
-                                                    : (ClassEntry) classReader.entryByIndex(c);
+                                                    : classReader.entryByIndex(c, ClassEntry.class);
                 consumer.accept(new AbstractPseudoInstruction.ExceptionCatchImpl(getLabel(h), getLabel(s), getLabel(e), catchType));
             }
         });
     }
 
-    private void generateDebugElements(Consumer<CodeElement> consumer) {
+    private void generateDebugElements(Consumer<? super CodeElement> consumer) {
         for (Attribute<?> a : attributes()) {
             if (a.attributeMapper() == Attributes.characterRangeTable()) {
                 var attr = (BoundCharacterRangeTableAttribute) a;

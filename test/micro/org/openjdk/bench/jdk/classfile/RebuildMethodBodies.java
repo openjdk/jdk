@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class RebuildMethodBodies {
     }
 
     private static void transform(ClassFile cc, ClassModel clm) {
-        cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
+        cc.transformClass(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
                     cob.fieldAccess(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());

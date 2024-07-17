@@ -81,6 +81,7 @@ import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
+import javax.print.attribute.standard.OutputBin;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
@@ -279,6 +280,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private PageRanges pageRangesAttr;
     protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
+    protected OutputBin outputBinAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
     protected int mDestType = RasterPrinterJob.FILE;
@@ -1228,6 +1230,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        outputBinAttr = null;
         printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
@@ -1272,6 +1275,11 @@ public abstract class RasterPrinterJob extends PrinterJob {
         sidesAttr = (Sides)attributes.get(Sides.class);
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
+        }
+
+        outputBinAttr = (OutputBin)attributes.get(OutputBin.class);
+        if (!isSupportedValue(outputBinAttr,  attributes)) {
+            outputBinAttr = null;
         }
 
         printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);
@@ -2616,5 +2624,27 @@ public abstract class RasterPrinterJob extends PrinterJob {
         if (onTop != null) {
             parentWindowID = DialogOwnerAccessor.getID(onTop);
         }
+    }
+
+    protected String getOutputBinValue(Attribute attr) {
+        if (attr instanceof CustomOutputBin customOutputBin) {
+            return customOutputBin.getChoiceName();
+        } else if (attr instanceof OutputBin) {
+            PrintService ps = getPrintService();
+            if (ps == null) {
+                return null;
+            }
+            String name = attr.toString();
+            OutputBin[] outputBins = (OutputBin[]) ps
+                    .getSupportedAttributeValues(OutputBin.class, null, null);
+            for (OutputBin outputBin : outputBins) {
+                String choice = ((CustomOutputBin) outputBin).getChoiceName();
+                if (name.equalsIgnoreCase(choice) || name.replaceAll("-", "").equalsIgnoreCase(choice)) {
+                    return choice;
+                }
+            }
+            return null;
+        }
+        return null;
     }
 }

@@ -803,8 +803,9 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     // determine whether to use {@link ... } or {@linkplain ...}
                     // based on whether the "link text" is the same as the "link destination"
                     String ref = dest.substring(autorefScheme.length());
-                    int refPos = sourcePosToTreePos(getRefPos(ref, link));
-                    var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(refPos + ref.length());
+                    int[] span = getRefSpan(ref, link);
+                    int refPos = sourcePosToTreePos(span[0]);
+                    var newRefTree = m.at(refPos).newReferenceTree(ref).setEndPos(sourcePosToTreePos(span[1]));
 
                     Node child = link.getFirstChild();
                     DocTree.Kind linkKind = child.getNext() == null
@@ -835,7 +836,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
          * @param ref the reference to find
          * @param link the link containing the reference
          */
-        private int getRefPos(String ref, Link link) {
+        private int[] getRefSpan(String ref, Link link) {
             var spans = link.getSourceSpans();
             var revSpanIter = spans.listIterator(spans.size());
             while (revSpanIter.hasPrevious()) {
@@ -845,11 +846,19 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                 var s = source.substring(start, end);
                 var index = s.lastIndexOf(ref);
                 if (index != -1) {
-                    return start + index;
+                    return new int[] {start + index, start + index + ref.length()};
+                } else {
+                    String escapedRef = ref.replace("[]", "\\[\\]");
+                    var escapedIndex = s.lastIndexOf(escapedRef);
+                    if (escapedIndex != -1) {
+                        return new int[] {start + escapedIndex,
+                                          start + escapedIndex + escapedRef.length()};
+                    }
                 }
             }
-            return NOPOS;
+            return NOSPAN;
         }
+            private static final int[] NOSPAN = new int[] {NOPOS, NOPOS};
 
         /**
          * {@return the position in the original comment for a position in {@code source},

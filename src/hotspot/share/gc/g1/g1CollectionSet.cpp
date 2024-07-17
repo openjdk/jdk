@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void G1CollectionSet::clear() {
   _collection_set_cur_length = 0;
 }
 
-void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
+void G1CollectionSet::iterate(G1HeapRegionClosure* cl) const {
   size_t len = _collection_set_cur_length;
   OrderAccess::loadload();
 
@@ -143,13 +143,13 @@ void G1CollectionSet::iterate(HeapRegionClosure* cl) const {
   }
 }
 
-void G1CollectionSet::par_iterate(HeapRegionClosure* cl,
-                                  HeapRegionClaimer* hr_claimer,
+void G1CollectionSet::par_iterate(G1HeapRegionClosure* cl,
+                                  G1HeapRegionClaimer* hr_claimer,
                                   uint worker_id) const {
   iterate_part_from(cl, hr_claimer, 0, cur_length(), worker_id);
 }
 
-void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
+void G1CollectionSet::iterate_optional(G1HeapRegionClosure* cl) const {
   assert_at_safepoint();
 
   for (G1HeapRegion* r : _optional_old_regions) {
@@ -158,14 +158,14 @@ void G1CollectionSet::iterate_optional(HeapRegionClosure* cl) const {
   }
 }
 
-void G1CollectionSet::iterate_incremental_part_from(HeapRegionClosure* cl,
-                                                    HeapRegionClaimer* hr_claimer,
+void G1CollectionSet::iterate_incremental_part_from(G1HeapRegionClosure* cl,
+                                                    G1HeapRegionClaimer* hr_claimer,
                                                     uint worker_id) const {
   iterate_part_from(cl, hr_claimer, _inc_part_start, increment_length(), worker_id);
 }
 
-void G1CollectionSet::iterate_part_from(HeapRegionClosure* cl,
-                                        HeapRegionClaimer* hr_claimer,
+void G1CollectionSet::iterate_part_from(G1HeapRegionClosure* cl,
+                                        G1HeapRegionClaimer* hr_claimer,
                                         size_t offset,
                                         size_t length,
                                         uint worker_id) const {
@@ -207,11 +207,11 @@ void G1CollectionSet::add_eden_region(G1HeapRegion* hr) {
 }
 
 #ifndef PRODUCT
-class G1VerifyYoungAgesClosure : public HeapRegionClosure {
+class G1VerifyYoungAgesClosure : public G1HeapRegionClosure {
 public:
   bool _valid;
 
-  G1VerifyYoungAgesClosure() : HeapRegionClosure(), _valid(true) { }
+  G1VerifyYoungAgesClosure() : G1HeapRegionClosure(), _valid(true) { }
 
   virtual bool do_heap_region(G1HeapRegion* r) {
     guarantee(r->is_young(), "Region must be young but is %s", r->get_type_str());
@@ -246,10 +246,10 @@ bool G1CollectionSet::verify_young_ages() {
   return cl.valid();
 }
 
-class G1PrintCollectionSetDetailClosure : public HeapRegionClosure {
+class G1PrintCollectionSetDetailClosure : public G1HeapRegionClosure {
   outputStream* _st;
 public:
-  G1PrintCollectionSetDetailClosure(outputStream* st) : HeapRegionClosure(), _st(st) { }
+  G1PrintCollectionSetDetailClosure(outputStream* st) : G1HeapRegionClosure(), _st(st) { }
 
   virtual bool do_heap_region(G1HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
@@ -383,7 +383,7 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
 
-  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx, true);
+  QuickSort::sort(_collection_set_regions, _collection_set_cur_length, compare_region_idx);
 }
 
 void G1CollectionSet::move_candidates_to_collection_set(G1CollectionCandidateRegionList* regions) {
@@ -471,12 +471,12 @@ void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* p
 }
 
 #ifdef ASSERT
-class G1VerifyYoungCSetIndicesClosure : public HeapRegionClosure {
+class G1VerifyYoungCSetIndicesClosure : public G1HeapRegionClosure {
 private:
   size_t _young_length;
   uint* _heap_region_indices;
 public:
-  G1VerifyYoungCSetIndicesClosure(size_t young_length) : HeapRegionClosure(), _young_length(young_length) {
+  G1VerifyYoungCSetIndicesClosure(size_t young_length) : G1HeapRegionClosure(), _young_length(young_length) {
     _heap_region_indices = NEW_C_HEAP_ARRAY(uint, young_length + 1, mtGC);
     for (size_t i = 0; i < young_length + 1; i++) {
       _heap_region_indices[i] = UINT_MAX;

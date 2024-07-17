@@ -106,16 +106,18 @@ inline void ParCompactionManager::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(ParallelScavengeHeap::heap()->is_in(obj), "should be in heap");
 
-    if (mark_bitmap()->is_unmarked(obj) && PSParallelCompact::mark_obj(obj)) {
-      assert(_marking_stats_cache != nullptr, "inv");
-      _marking_stats_cache->push(obj, obj->size());
-      push(obj);
-
+    if (mark_bitmap()->mark_obj(obj)) {
       if (StringDedup::is_enabled() &&
           java_lang_String::is_instance(obj) &&
           psStringDedup::is_candidate_from_mark(obj)) {
         _string_dedup_requests.add(obj);
       }
+
+      ContinuationGCSupport::transform_stack_chunk(obj);
+
+      assert(_marking_stats_cache != nullptr, "inv");
+      _marking_stats_cache->push(obj, obj->size());
+      push(obj);
     }
   }
 }

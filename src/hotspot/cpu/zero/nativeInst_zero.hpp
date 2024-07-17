@@ -70,6 +70,8 @@ class NativeCall : public NativeInstruction {
     instruction_size = 0 // not used within the interpreter
   };
 
+  static int byte_size() { return instruction_size; }
+
   address instruction_address() const {
     ShouldNotCallThis();
     return nullptr;

@@ -901,15 +901,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
       case Op_CountPositives: {
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 
@@ -1074,15 +1065,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
         // String intrinsics are large and have loops.
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 
@@ -1200,9 +1182,11 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         iff->Opcode() == Op_RangeCheck) { // Test?
 
       // Comparing trip+off vs limit
-      Node *bol = iff->in(1);
-      if (bol->req() < 2) {
-        continue; // dead constant test
+      Node* bol = iff->in(1);
+      if (bol->req() != 2) {
+        // Could be a dead constant test or another dead variant (e.g. a Phi with 2 inputs created with split_thru_phi).
+        // Either way, skip this test.
+        continue;
       }
       if (!bol->is_Bool()) {
         assert(bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate(),
@@ -2785,10 +2769,9 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 
 // Same as PhaseIdealLoop::duplicate_predicates() but for range checks
 // eliminated by iteration splitting.
-Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* ctrl,
-                                                                      const int scale_con, Node* offset, Node* limit,
-                                                                      jint stride_con, Node* value,
-                                                                      const bool is_template) {
+Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(
+    IdealLoopTree* loop, Node* ctrl, const int scale_con, Node* offset, Node* limit, jint stride_con, Node* value,
+    const bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type)) {
   bool overflow = false;
   BoolNode* bol = rc_predicate(ctrl, scale_con, offset, value, nullptr, stride_con,
                                limit, (stride_con > 0) != (scale_con > 0), overflow);
@@ -3009,8 +2992,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
           // Add two Template Assertion Predicates to create new Initialized Assertion Predicates from when either
           // unrolling or splitting this main-loop further.
-          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
-                                                                       int_limit, stride_con, opaque_init, true);
+          loop_entry = add_range_check_elimination_assertion_predicate(
+              loop, loop_entry, scale_con, int_offset, int_limit, stride_con, opaque_init, true
+              NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
           Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
@@ -3022,8 +3006,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
           max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
           register_new_node(max_value, loop_entry);
-          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
-                                                                       int_limit, stride_con, max_value, true);
+          loop_entry = add_range_check_elimination_assertion_predicate(
+              loop, loop_entry, scale_con, int_offset, int_limit, stride_con, max_value, true
+              NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
         } else {

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     __ cmpdi(CCR0, R0, 0);
     __ beq(CCR0, filtered);
 
-    __ save_LR_CR(R0);
+    __ save_LR(R0);
     __ push_frame(frame_size, R0);
     int slot_nr = 0;
     __ std(from,  frame_size - (++slot_nr) * wordSize, R1_SP);
@@ -89,7 +89,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_pre_barrier(MacroAssembler* masm
     if (preserve1 != noreg) { __ ld(preserve1, frame_size - (++slot_nr) * wordSize, R1_SP); }
     if (preserve2 != noreg) { __ ld(preserve2, frame_size - (++slot_nr) * wordSize, R1_SP); }
     __ addi(R1_SP, R1_SP, frame_size); // pop_frame()
-    __ restore_LR_CR(R0);
+    __ restore_LR(R0);
 
     __ bind(filtered);
   }
@@ -100,13 +100,13 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   int spill_slots = (preserve != noreg) ? 1 : 0;
   const int frame_size = align_up(frame::native_abi_reg_args_size + spill_slots * BytesPerWord, frame::alignment_in_bytes);
 
-  __ save_LR_CR(R0);
+  __ save_LR(R0);
   __ push_frame(frame_size, R0);
   if (preserve != noreg) { __ std(preserve, frame_size - 1 * wordSize, R1_SP); }
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, G1BarrierSetRuntime::write_ref_array_post_entry), addr, count);
   if (preserve != noreg) { __ ld(preserve, frame_size - 1 * wordSize, R1_SP); }
   __ addi(R1_SP, R1_SP, frame_size); // pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 }
 
 void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, DecoratorSet decorators,
@@ -206,7 +206,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
       __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
     }
 
-    __ save_LR_CR(tmp1);
+    __ save_LR(tmp1);
     __ push_frame_reg_args(nbytes_save, tmp2);
   }
 
@@ -220,7 +220,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm, Decorator
 
   if (needs_frame) {
     __ pop_frame();
-    __ restore_LR_CR(tmp1);
+    __ restore_LR(tmp1);
 
     if (preserve_gp_registers) {
       __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
