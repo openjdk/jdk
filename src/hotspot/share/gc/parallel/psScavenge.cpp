@@ -344,6 +344,9 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
+  assert(young_gen->to_space()->is_empty(),
+         "Attempt to scavenge with live objects in to_space");
+
   heap->increment_total_collections();
 
   if (AdaptiveSizePolicy::should_update_eden_stats(gc_cause)) {
@@ -378,10 +381,6 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
-
-    assert(young_gen->to_space()->is_empty(),
-           "Attempt to scavenge with live objects in to_space");
-    young_gen->to_space()->clear(SpaceDecorator::Mangle);
 
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
