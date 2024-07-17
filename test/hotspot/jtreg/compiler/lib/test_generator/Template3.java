@@ -13,7 +13,7 @@ public class Template3 extends Template {
                 int $val = \\{val};
                 """;
         String nes_template="""
-                for (int $i = \\{init}; $i < \\{limit}; $i++) {
+                for (int $i = \\{var}; $i < \\{limit}; $i++) {
                         if (($i % 2) == 0) {
                             $val = \\{val1};
                         }
@@ -21,7 +21,7 @@ public class Template3 extends Template {
                     // val == 1, known after second loop opts round
                     // it takes two rounds of unrolling (2x, 4x)
             """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
+        String template_com=avoid_conflict(reassemble(statics,nes_template),1);
         /*StringBuilder res=new StringBuilder();
         int count=0;
         for (int i=0;i<template_com.length();i++) {
@@ -39,11 +39,12 @@ public class Template3 extends Template {
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val = getRandomValueAsString(integerValues);
-        String init = getRandomValueAsString(integerValues);
+        //String init = getRandomValueAsString(integerValues);
         String limit = getRandomValueAsString(integerValues);
         replacements.put("val1", val1);
         replacements.put("val", val);
-        replacements.put("init", init);
+        replacements.put("var", values.get(0));
+        //replacements.put("init", init);
         replacements.put("limit", limit);
 
         return doReplacements(template_com,replacements);

@@ -28,8 +28,9 @@ import java.util.Map;
 public class InputTemplate1 extends InputTemplate {
     public InputTemplate1() {
     }
+
     @Override
-    public CodeSegment getTemplate() {
+    public   CodeSegment getTemplate() {
         /* TODO:
          * use $limit, $i, $lFld for variables
          * all defined functions should use uniqueId to avoid conflict
@@ -37,10 +38,10 @@ public class InputTemplate1 extends InputTemplate {
          *           this would require replacing conflicting variables e.g. $i with $i1 and $i2,
          *           and also replace \{init} from the inner CodeTemplate with a var $limit from outer CodeTemplate
         **/
-        Template1 template = new Template1();
+        Template1 template1 = new Template1();
         Template2 template2 = new Template2();
-        String template_nes= template.getTemplate(List.of("j"));
-        String template_nes2= template2.getTemplate(List.of("j"));
+        String template_nes1= template1.getTemplate(List.of("j"));
+        String template_nes2= template2.getTemplate(List.of("i"));
         String imports= """
                 """;
         String statics = """
@@ -51,7 +52,9 @@ public class InputTemplate1 extends InputTemplate {
                     int i;
                 }
                 """;
-        String call = "test_\\{uniqueId}();\n";
+        String call = """
+                test_\\{uniqueId}();
+                """;
         String method = """
                  public static void test_\\{uniqueId}() {
                      long limit = lFld;
@@ -62,7 +65,7 @@ public class InputTemplate1 extends InputTemplate {
                              \\{thing}
                              \\{template}
                              if (j > 0) { // After peeling: j > 0 always true -> loop folded away
-                             \\{template2}
+                                 \\{template2}
                                  break;
                              }
                          }
@@ -70,20 +73,21 @@ public class InputTemplate1 extends InputTemplate {
                  }
                 """;
         Map<String, String> replacement = Map.ofEntries(
-                Map.entry("template",template_nes ),
+                Map.entry("template",template_nes1 ),
                 Map.entry("template2",template_nes2 ));
         method=doReplacements(method,replacement);
         return new CodeSegment(statics, call, method,imports);
     }
     @Override
-    public Map<String, String> getRandomReplacements() {
+    public Map<String, String> getRandomReplacements(int numTest) {
         Map<String, String> replacements = new HashMap<>();
         String init = getRandomValueAsString(integerValues);
         String limit = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
+        String uniqueId = String.valueOf(numTest);
+        //String uniqueId = getUniqueId();
         replacements.put("init", init);
         replacements.put("limit", limit);
         replacements.put("arithm", arithm);
@@ -101,6 +105,11 @@ public class InputTemplate1 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 3;
+        return 4;
+    }
+
+    @Override
+    public int getNumberOfTestMethods() {
+        return 4;
     }
 }

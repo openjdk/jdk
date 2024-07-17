@@ -1,19 +1,16 @@
 package compiler.lib.test_generator;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class InputTemplate2 extends InputTemplate {
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+        Template3 template1 = new Template3();
+        Template4 template2 = new Template4();
+        String template_nes1= template1.getTemplate(List.of("i"));
+        String template_nes2= template2.getTemplate(List.of("j"));
         String imports= """
                 """;
 
@@ -42,18 +39,25 @@ public class InputTemplate2 extends InputTemplate {
                                      acc++;
                                      break;
                                  case 1:
+                                     \\{template1}
                                      break;
                                  case 2:
+                                     \\{template2}
                                      break;
-                                 }
                              }
+                         }
+                 }
                 """;
+        Map<String, String> replacement = Map.ofEntries(
+                Map.entry("template1",template_nes1 ),
+                Map.entry("template2",template_nes2 ));
+        method=doReplacements(method,replacement);
 
         return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
-    public Map<String, String> getRandomReplacements() {
+    public Map<String, String> getRandomReplacements(int numTest) {
         Map<String, String> replacements = new HashMap<>();
 
         String init1 = getRandomValueAsString(integerValues);
@@ -65,7 +69,8 @@ public class InputTemplate2 extends InputTemplate {
         //String stride = getRandomValueAsString(integerValuesNonZero);
         //String arithm = getRandomValue(new String[]{"false", "true"});
         //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
+        //String uniqueId = getUniqueId();
+        String uniqueId = String.valueOf(numTest);
 
         replacements.put("init1", init1);
         replacements.put("init2", init2);
@@ -86,6 +91,11 @@ public class InputTemplate2 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 5;
+        return 4;
+    }
+
+    @Override
+    public int getNumberOfTestMethods() {
+        return 4;
     }
 }

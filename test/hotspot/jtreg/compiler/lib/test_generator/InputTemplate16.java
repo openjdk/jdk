@@ -45,7 +45,7 @@ public class InputTemplate16 extends InputTemplate {
     }
 
     @Override
-    public Map<String, String> getRandomReplacements() {
+    public Map<String, String> getRandomReplacements(int numTest) {
         Map<String, String> replacements = new HashMap<>();
 
         String init = getRandomValueAsString(integerValues);
@@ -56,7 +56,8 @@ public class InputTemplate16 extends InputTemplate {
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"*", "/"});
         String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
+       String uniqueId = getUniqueId();
+
         //String template=VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS;
 
         replacements.put("init", init);
@@ -81,5 +82,10 @@ public class InputTemplate16 extends InputTemplate {
     @Override
     public int getNumberOfTests() {
         return 0;
+    }
+
+    @Override
+    public int getNumberOfTestMethods() {
+        return 4;
     }
 }

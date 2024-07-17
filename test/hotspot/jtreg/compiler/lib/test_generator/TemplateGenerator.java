@@ -69,27 +69,42 @@ public class TemplateGenerator {
                 setOutputFolder(out);
 
                 Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
-                InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-                runTestGen(inputTemplate, threadPool);
-
+                ArrayList<InputTemplate>inputTemplates = new ArrayList<>();
+                InputTemplate inputTemplate1 = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
+                inputTemplates.add(inputTemplate1);
+                Integer [] IDS=InputTemplate.getIntegerValues(inputTemplates.getFirst().getNumberOfTestMethods()) ;
+                for (int i = 1; i <inputTemplates.getFirst().getNumberOfTestMethods() ; i++) {
+                    InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
+                    inputTemplates.add(inputTemplate);
+                }
+                   // InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
+                    runTestGen(inputTemplates, threadPool,IDS);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         threadPool.shutdown();
     }
+    public static void runTestGen(ArrayList<InputTemplate> inputTemplates, ThreadPoolExecutor threadPool, Integer[] numTests) {
+        for (int i = 0; i < inputTemplates.getFirst().getNumberOfTests(); i++) {
+        ArrayList<CodeSegment> templates = new ArrayList<>(inputTemplates.size());
+        ArrayList<Map<String, String>> replacements = new ArrayList<>(inputTemplates.size());
+        int k=0;
+        for (InputTemplate inputTemplate: inputTemplates) {
+                Map<String, String> replacement = inputTemplate.getRandomReplacements(numTests[k]);
+                CodeSegment template = inputTemplate.getTemplate();
+                templates.add(template);
+                replacements.add(replacement);
+                k++;
+            }
 
-    public static void runTestGen(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
-        CodeSegment template = inputTemplate.getTemplate();
-        for (int i = 0; i < inputTemplate.getNumberOfTests(); i++) {
-            Map<String, String> replacements = inputTemplate.getRandomReplacements();
-            String[] compileFlags = inputTemplate.getCompileFlags();
-            long id = getID();
-            threadPool.submit(() -> doWork(template, replacements, compileFlags, id));
-        }
+                    //Map<String, String> replacements = inputTemplate.getRandomReplacements();
+                    String[] compileFlags = inputTemplates.getFirst().getCompileFlags();
+                    long id = getID();
+                    threadPool.submit(() -> doWork(templates, replacements, compileFlags, id));
+            }
     }
-
-    public static void doWork(CodeSegment template, Map<String, String> replacements, String[] compileFlags, long num) {
+    public static void doWork(ArrayList<CodeSegment> template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long num) {
         try {
             String javaCode = InputTemplate.getJavaCode(template, replacements, num);
             String fileName = writeJavaCodeToFile(javaCode, num,OUTPUT_FOLDER);
@@ -103,7 +118,6 @@ public class TemplateGenerator {
     public static void setOutputFolder(String outputFolder) {
         OUTPUT_FOLDER= outputFolder;
     }
-
     private static String writeJavaCodeToFile(String javaCode, long num, String OUTPUT_FOLDER) throws IOException {
         String fileName = String.format("GeneratedTest%d.java", num);
         File OutputFolder = new File(OUTPUT_FOLDER);
@@ -117,28 +131,18 @@ public class TemplateGenerator {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        /*BufferedWriter writer = new BufferedWriter(new FileWriter(fileName));
-        writer.write(javaCode);
-        writer.close();
-
-         */
-
         return fileName;
     }
-
     private static ProcessOutput executeJavaFile(String fileName, String[] compileFlags) throws Exception {
         ProcessBuilder builder = getProcessBuilder(fileName, compileFlags);
-
         Process process = builder.start();
         boolean exited = process.waitFor(TIMEOUT, TimeUnit.SECONDS);
         if (!exited) {
             process.destroyForcibly();
             throw new RuntimeException("Process timeout: execution took too long.");
         }
-
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         int exitCode = process.exitValue();
-
         return new ProcessOutput(exitCode, output);
     }
 

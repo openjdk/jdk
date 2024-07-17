@@ -25,10 +25,10 @@ package compiler.lib.test_generator;
 
 public class CodeSegment {
     private final String statics;
-    private final String calls;
-    private final String methods;
+    private  String calls;
+    private  String methods;
     private final String imports;
-    //private final String template_nes;
+
 
 
     public CodeSegment(String statics, String calls, String methods, String imports) {
@@ -36,7 +36,7 @@ public class CodeSegment {
         this.calls = calls;
         this.methods = methods;
         this.imports = imports;
-        //this.template_nes = templateNes;
+
     }
 
     public String getStatics() {
@@ -48,9 +48,15 @@ public class CodeSegment {
     public String getCalls() {
         return calls;
     }
+    public void AppendCall(String change) {
+        this.calls +=change;
+    }
 
     public String getMethods() {
         return methods;
+    }
+    public void AppendMethods(String methods) {
+        this.methods +=methods;
     }
     public String getImports() {return imports;}
 }

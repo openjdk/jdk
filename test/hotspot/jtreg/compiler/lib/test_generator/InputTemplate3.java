@@ -1,6 +1,7 @@
 package compiler.lib.test_generator;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class InputTemplate3 extends InputTemplate {
@@ -8,14 +9,10 @@ public class InputTemplate3 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+        Template1 template1 = new Template1();
+        Template4 template2 = new Template4();
+        String template_nes1= template1.getTemplate(List.of("i19"));
+        String template_nes2= template2.getTemplate(List.of("i16"));
         String imports= """
                 """;
 
@@ -26,15 +23,17 @@ public class InputTemplate3 extends InputTemplate {
         String call = "test_\\{uniqueId}();\n";
 
         String method = """
-                 public static void test_\\{uniqueId}() {
+                 public static int test_\\{uniqueId}() {
                      int i16 = \\{val1}, i19 = \\{val2}, i20 = \\{val3};
                          do {
                            for (; i19 < \\{limit1}; i19++) {
                              i20 = 0;
+                             \\{template1}
                              try {
                                i20 = iArrFld[i19 - 1];
                              } catch (ArithmeticException a_e) {
                              }
+                             \\{template2}
                            }
                            i16++;
                          }
@@ -42,12 +41,16 @@ public class InputTemplate3 extends InputTemplate {
                          return i20;
                  }
                 """;
+        Map<String, String> replacement = Map.ofEntries(
+                Map.entry("template1",template_nes1 ),
+                Map.entry("template2",template_nes2 ));
+        method=doReplacements(method,replacement);
 
         return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
-    public Map<String, String> getRandomReplacements() {
+    public Map<String, String> getRandomReplacements(int numTest) {
         Map<String, String> replacements = new HashMap<>();
 
         String val1 = getRandomValueAsString(integerValues);
@@ -58,7 +61,8 @@ public class InputTemplate3 extends InputTemplate {
         //String stride = getRandomValueAsString(integerValuesNonZero);
         //String arithm = getRandomValue(new String[]{"+", "-"});
         //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
+        //String uniqueId = getUniqueId();
+        String uniqueId = String.valueOf(numTest);
 
         replacements.put("val1", val1);
         replacements.put("val2", val2);
@@ -77,7 +81,12 @@ public class InputTemplate3 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 10;
+        return 4;
+    }
+
+    @Override
+    public int getNumberOfTestMethods() {
+        return 4;
     }
 
 }

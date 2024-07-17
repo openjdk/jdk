@@ -23,6 +23,8 @@
 
 package compiler.lib.test_generator;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -71,7 +73,6 @@ public abstract class InputTemplate {
 
     public InputTemplate() {
     }
-
     public static <T> T getRandomValue(T[] array) {
         return array[RAND.nextInt(array.length)];
     }
@@ -82,28 +83,36 @@ public abstract class InputTemplate {
     }
 
     public static String getUniqueId() {
-        return String.valueOf(System.currentTimeMillis());
+        return String.valueOf(System.nanoTime());
     }
-
-    public static String getJavaCode(CodeSegment inputTemplate, Map<String, String> inputReplacements, long num) {
+    public static Integer[] getIntegerValues(int size) {
+        Random random = new Random();
+        HashSet<Integer> integers = new HashSet<>(size);
+        while (integers.size() < size) {
+            int number = random.nextInt(Integer.MAX_VALUE - 1) + 1;
+            integers.add(number);
+        }
+        return integers.toArray(new Integer[0]);
+    }
+    public static String getJavaCode(ArrayList <CodeSegment> inputTemplates,  ArrayList<Map<String, String>> inputReplacements, long num) {
         String template = """
                 import java.util.Objects;
                 \\{imports}
-
                 public class GeneratedTest\\{num} {
                     \\{statics}
-
                     public static void main(String args[]) throws Exception {
                         \\{calls}
                         System.out.println("Passed");
                     }
-
                     \\{methods}
                 }
                 """;
-
-        CodeSegment CodeSegment = fillTemplate(inputTemplate, inputReplacements);
-
+        CodeSegment CodeSegment = fillTemplate(inputTemplates.getFirst(), inputReplacements.getFirst());
+        for (int i =1; i<inputTemplates.size(); i++) {
+            CodeSegment codS = fillTemplate(inputTemplates.get(i), inputReplacements.get(i));
+            CodeSegment.AppendCall(codS.getCalls());
+            CodeSegment.AppendMethods(codS.getMethods());
+        }
         Map<String, String> replacements = Map.ofEntries(
                 Map.entry("num", String.valueOf(num)),
                 Map.entry("statics", CodeSegment.getStatics()),
@@ -114,15 +123,11 @@ public abstract class InputTemplate {
 
         return doReplacements(template, replacements);
     }
-
     private static CodeSegment fillTemplate(CodeSegment CodeSegment, Map<String, String> replacements) {
         String statics = doReplacements(CodeSegment.getStatics(), replacements);
         String calls = doReplacements(CodeSegment.getCalls(), replacements);
         String methods = doReplacements(CodeSegment.getMethods(), replacements);
         String imports = doReplacements(CodeSegment.getImports(), replacements);
-        //String template_nes = doReplacements(CodeSegment.getTemplate_nes(), replacements);
-
-
         return new CodeSegment(statics, calls, methods,imports);
     }
 
@@ -147,10 +152,16 @@ public abstract class InputTemplate {
         return template;
     }
 
-    public abstract CodeSegment getTemplate();
+    public  CodeSegment getTemplate() {
+        return null;
+    }
 
-    public abstract Map<String, String> getRandomReplacements();
+    public abstract Map<String, String> getRandomReplacements(int numTest);
 
     public abstract String[] getCompileFlags();
     public abstract int getNumberOfTests();
+
+    public  int getNumberOfTestMethods() {
+        return 0;
+    }
 }

@@ -10,19 +10,25 @@ public class Template4 extends Template{
     public Template4(){}
     public String getTemplate(List<String> values){
         String statics= """
-                MyValue $nonNull = new MyValue(\\{val1});
-                MyValue $val = null;
-                int $zero = \\{val2};
+                 int x, y;
+                 boolean flag=\\{bool};
                 """;
         String nes_template="""
-                int $limit = \\{val3};
-                    for (; $limit < \\{limit1}; $limit \\{arithm}= \\{stride});
-                    for (int $i = \\{init}; $i < $limit; i++) {
-                        $val = nonNull;
-                        $zero = 0;
-                    }
-                    // 'val' is always non-null here but that's only known after CCP
-                    // 'zero' is always 0 here but that's only known after CCP
+                int a;
+                
+                if (flag) {
+                    a = \\{val1};
+                } else {
+                    a = \\{val2};
+                }
+                    \s
+                // y = 34; // Make it more interesting
+                    \s
+                if (a > \\{val2}) {
+                    x = \\{val3};
+                } else {
+                    x = \\{val4};
+                }
             """;
         String template_com=avoid_conflict(reassemble(statics,nes_template),2);
         /*StringBuilder res=new StringBuilder();
@@ -43,19 +49,18 @@ public class Template4 extends Template{
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        String init = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String stride = getRandomValueAsString(integerValuesNonZero);
-        String arithm = getRandomValue(new String[]{"*", "/"});
+        String val4 = getRandomValueAsString(integerValues);
+
+        String bool = getRandomValue(new String[]{"false", "true"});
 
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
-        replacements.put("init", init);
+        replacements.put("val4", val4);
 
-        replacements.put("limit1", limit1);
-        replacements.put("arithm", arithm);
-        replacements.put("stride", stride);
+
+        replacements.put("bool", bool);
+
 
 
         return doReplacements(template_com,replacements);

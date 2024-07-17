@@ -48,7 +48,7 @@ public class InputTemplate4 extends InputTemplate {
     }
 
     @Override
-    public Map<String, String> getRandomReplacements() {
+    public Map<String, String> getRandomReplacements(int numTest) {
         Map<String, String> replacements = new HashMap<>();
         String fooVar1 = getRandomValueAsString(integerValues);
         String fooVar2 = getRandomValueAsString(integerValues);
@@ -84,6 +84,11 @@ public class InputTemplate4 extends InputTemplate {
     @Override
     public int getNumberOfTests() {
         return 10;
+    }
+
+    @Override
+    public int getNumberOfTestMethods() {
+        return 4;
     }
 
 }
