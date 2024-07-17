@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,22 +50,22 @@ static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
 
 static traceid next_class_id() {
   static volatile traceid class_id_counter = LAST_TYPE_ID + 1; // + 1 is for the void.class primitive
-  return atomic_inc(&class_id_counter) << TRACE_ID_SHIFT;
+  return (atomic_inc(&class_id_counter) << TRACE_ID_SHIFT) | EPOCH_CLEARED_BITS;
 }
 
 static traceid next_module_id() {
   static volatile traceid module_id_counter = 0;
-  return atomic_inc(&module_id_counter) << TRACE_ID_SHIFT;
+  return (atomic_inc(&module_id_counter) << TRACE_ID_SHIFT) | EPOCH_CLEARED_BITS;
 }
 
 static traceid next_package_id() {
   static volatile traceid package_id_counter = 0;
-  return atomic_inc(&package_id_counter) << TRACE_ID_SHIFT;
+  return (atomic_inc(&package_id_counter) << TRACE_ID_SHIFT) | EPOCH_CLEARED_BITS;
 }
 
 static traceid next_class_loader_data_id() {
   static volatile traceid cld_id_counter = 0;
-  return atomic_inc(&cld_id_counter) << TRACE_ID_SHIFT;
+  return (atomic_inc(&cld_id_counter) << TRACE_ID_SHIFT) | EPOCH_CLEARED_BITS;
 }
 
 static bool found_jdk_internal_event_klass = false;
@@ -201,18 +201,18 @@ traceid JfrTraceId::load_raw(jclass jc) {
 // used by CDS / APPCDS as part of "remove_unshareable_info"
 void JfrTraceId::remove(const Klass* k) {
   assert(k != nullptr, "invariant");
-  // Mask off and store the event flags.
+  // Mask off and store the event flags and epoch clear bits.
   // This mechanism will retain the event specific flags
   // in the archive, allowing for event flag restoration
   // when renewing the traceid on klass revival.
-  k->set_trace_id(EVENT_KLASS_MASK(k));
+  k->set_trace_id(EPOCH_CLEARED_BITS | EVENT_KLASS_MASK(k));
 }
 
 // used by CDS / APPCDS as part of "remove_unshareable_info"
 void JfrTraceId::remove(const Method* method) {
   assert(method != nullptr, "invariant");
-  // Clear all bits.
-  method->set_trace_flags(0);
+  // Clear tag bits and set epoch cleared bits.
+  method->set_trace_flags(static_cast<uint16_t>(EPOCH_CLEARED_BITS));
 }
 
 // used by CDS / APPCDS as part of "restore_unshareable_info"
