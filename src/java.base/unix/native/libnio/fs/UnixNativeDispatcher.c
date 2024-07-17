@@ -247,6 +247,20 @@ static int fstatat_wrapper(int dfd, const char *path,
 }
 #endif
 
+/**
+ * Lookup time functions symbols, trying 64 bit version first
+ */
+static void* lookup_time_function(const char* symbol64, const char* symbol) {
+   void * ret = NULL;
+    if (sizeof(time_t) > 4) {
+        ret = dlsym(RTLD_DEFAULT, symbol64);
+    }
+    if (ret == NULL) {
+        ret = dlsym(RTLD_DEFAULT, symbol);
+    }
+    return ret;
+}
+
 #if defined(__linux__)
 static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
                          unsigned int mask, struct my_statx *restrict statxbuf) {
@@ -352,10 +366,13 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #ifndef _ALLBSD_SOURCE
-    my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
-    my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
+    my_futimesat_func = (futimesat_func*) lookup_time_function("__futimesat64",
+        "futimesat");
+    my_lutimes_func = (lutimes_func*) lookup_time_function("__lutimes64",
+        "lutimes");
 #endif
-    my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
+    my_futimens_func = (futimens_func*) lookup_time_function("__futimens64",
+        "futimens");
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
