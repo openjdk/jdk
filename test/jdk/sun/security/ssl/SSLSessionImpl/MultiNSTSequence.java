@@ -45,6 +45,8 @@ import java.util.List;
  *
  * Note: Beyond 9 iterations the PSK id verification code becomes complicated
  * with a QueueCacheEntry limit set to retain only the 10 newest entries.
+ *
+ * TLS 1.2 spec does not specify multiple NST behavior.
  */
 
 public class MultiNSTSequence {
@@ -117,13 +119,13 @@ public class MultiNSTSequence {
         System.out.println("------  Initial connection");
         TLSBase.Client initial = new TLSBase.Client();
 
-        SSLSession initialSession = initial.getSession();
+        SSLSession initialSession = initial.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
         System.out.println("session = " + initialSession);
 
         System.out.println("------  Resume client");
         for (int i = 0; i < ITERATIONS; i++) {
-            SSLSession r = initial.getNewSession();
+            SSLSession r = new TLSBase.Client(initial).connect().getSession();
             StringBuilder sb = new StringBuilder(100);
             sb.append("Iteration: ").append(i);
             sb.append("\tid = ").append(hex.formatHex(r.getId()));
@@ -136,7 +138,7 @@ public class MultiNSTSequence {
 
         System.out.println("------  Closing connections");
         initial.close();
-        server.close(initial);
+        server.close();
         System.out.println("------  End");
         System.exit(0);
     }

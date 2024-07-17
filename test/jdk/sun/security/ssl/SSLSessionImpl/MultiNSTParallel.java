@@ -44,7 +44,7 @@ import java.util.concurrent.CountDownLatch;
  * This test verifies that parallel resumption connections successfully get
  * a PSK entry and not initiate a full handshake.
  *
- * Note:  THe first number after 'MultiNSTParallel' is the ticket count
+ * Note:  THe first argument after 'MultiNSTParallel' is the ticket count
  * The test will set 'jdk.tls.server.NewSessionTicketCount` to that number and
  * will start the same number of resumption client attempts. The ticket count
  * must be the same or larger than resumption attempts otherwise the queue runs
@@ -55,7 +55,7 @@ import java.util.concurrent.CountDownLatch;
  * a match is found.  When a match is found, it is removed from the list to
  * verify no NST was used more than once.
  *
- * TLS 1.2 is not tested as the spec is unclear about multiple NST behavior.
+ * TLS 1.2 spec does not specify multiple NST behavior.
  */
 
 public class MultiNSTParallel {
@@ -76,14 +76,17 @@ public class MultiNSTParallel {
             System.err.println("waiting " + Thread.currentThread().getName());
             try {
                 wait.await();
-                r = client.getNewSession();
+                r = new TLSBase.Client(client).connect().getSession();
             } catch (Exception e) {
                 throw new RuntimeException(name + ": " +e);
             }
-            System.out.println("("+name+") id = " + " : " + hex.formatHex(r.getId()));
-            System.out.println("("+name+") session = " + r);
+            StringBuffer sb = new StringBuffer(100);
+            sb.append("(").append(name).append(") id = ");
+            sb.append(hex.formatHex(r.getId()));
+            sb.append("\n(").append(name).append(") session = ").append(r);
             if (!client.getSession().toString().equalsIgnoreCase(r.toString())) {
-                throw new RuntimeException("("+name+") Resumed session did not match");
+                throw new RuntimeException("(" + name +
+                    ") Resumed session did not match");
             }
         }
     }
@@ -135,7 +138,8 @@ public class MultiNSTParallel {
                 clientPSK.stream().forEach(cli -> {
                     for (int i = 0; i < serverPSK.size(); i++) {
                         String svr = serverPSK.get(i);
-                        if (svr.regionMatches(svr.length() - 16, cli, cli.length() - 16, 16)) {
+                        if (svr.regionMatches(svr.length() - 16, cli,
+                            cli.length() - 16, 16)) {
                             System.out.println("entry " + (i + 1) + " match.");
                             serverPSK.remove(i);
                             return;
@@ -198,7 +202,7 @@ public class MultiNSTParallel {
 
         System.out.println("------  Closing connections");
         initial.close();
-        server.close(initial);
+        server.close();
         System.out.println("------  End");
         System.exit(0);
     }

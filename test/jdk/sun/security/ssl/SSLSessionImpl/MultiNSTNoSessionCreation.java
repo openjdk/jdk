@@ -27,16 +27,15 @@
  * @library /javax/net/ssl/templates
  * @bug 8242008
  * @summary Verifies resumption fails with 0 NSTs and session creation off
- * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.server.newSessionTicketCount=0
+ * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=0
+ * @run main/othervm MultiNSTNoSessionCreation -Djdk.tls.client.protocols=TLSv1.2 -Djdk.tls.server.newSessionTicketCount=0
  */
 
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
-import javax.net.ssl.SSLSocket;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  * With no NSTs sent by the server, try to resume the session with
@@ -56,8 +55,7 @@ public class MultiNSTNoSessionCreation {
                 "-Dtest.src=" + System.getProperty("test.src") +
                     " -Dtest.jdk=" + System.getProperty("test.jdk") +
                     " -Dtest.root=" + System.getProperty("test.root") +
-                    " -Djavax.net.debug=ssl,handshake " + params
-                              );
+                    " -Djavax.net.debug=ssl,handshake " + params);
 
             System.out.println("test.java.opts: " +
                 System.getProperty("test.java.opts"));
@@ -66,9 +64,7 @@ public class MultiNSTNoSessionCreation {
                 Utils.addTestJavaOpts("MultiNSTNoSessionCreation", "p"));
 
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
-            List<String> list;
             try {
-                //(protocol_version) New session creation is disabled
                 if (output.stderrContains(
                     "(PROTOCOL_VERSION): New session creation is disabled")) {
                     return;
@@ -83,16 +79,17 @@ public class MultiNSTNoSessionCreation {
 
         System.out.println("------  Initial connection");
         TLSBase.Client initial = new TLSBase.Client();
-
-        System.out.println("------  Resume client w/ setEnableSessionCreation set to false");
-        SSLSocket resumptionSocket = initial.getNewFreshSocket();
-        resumptionSocket.setEnableSessionCreation(false);
-        TLSBase.Client.resetSocket(resumptionSocket);
-        initial.writeRead(resumptionSocket);
+        initial.connect();
+        System.out.println(
+            "------  Resume client w/ setEnableSessionCreation set to false");
+        TLSBase.Client resumClient = new TLSBase.Client(initial);
+        resumClient.socket.setEnableSessionCreation(false);
+        resumClient.connect();
 
         System.out.println("------  Closing connections");
         initial.close();
-        server.close(initial);
+        resumClient.close();
+        server.close();
         System.out.println("------  End");
         System.exit(0);
     }

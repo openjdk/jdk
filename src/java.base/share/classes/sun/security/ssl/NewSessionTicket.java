@@ -505,8 +505,9 @@ final class NewSessionTicket {
 
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            // Is this session resumable?
-            if (!shc.handshakeSession.isRejoinable()) {
+            // Are new tickets allowed?  If so, is this session resumable?
+            if (SSLConfiguration.serverNewSessionTicketCount == 0 ||
+                !shc.handshakeSession.isRejoinable()) {
                 return null;
             }
 
@@ -638,6 +639,7 @@ final class NewSessionTicket {
         }
     }
 
+    /* TLS 1.2 spec does not specify multiple NST behavior.*/
     private static final
     class T12NewSessionTicketConsumer implements SSLConsumer {
         // Prevent instantiation of this class.

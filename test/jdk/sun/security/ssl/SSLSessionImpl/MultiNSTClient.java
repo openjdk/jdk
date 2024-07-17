@@ -130,14 +130,13 @@ public class MultiNSTClient {
 
         System.out.println("------  Start connection");
         TLSBase.Client initial = new TLSBase.Client();
-
-        SSLSession initialSession = initial.getSession();
+        SSLSession initialSession = initial.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
         System.out.println("session = " + initialSession);
 
         System.out.println("------  getNewSession from original client");
-        SSLSession resumption;
-        resumption = initial.getNewSession();
+        TLSBase.Client resumClient = new TLSBase.Client(initial);
+        SSLSession resumption = resumClient.connect().getSession();
         System.out.println("id = " + hex.formatHex(resumption.getId()));
         System.out.println("session = " + resumption);
         if (!initialSession.toString().equalsIgnoreCase(resumption.toString())) {
@@ -145,7 +144,8 @@ public class MultiNSTClient {
         }
 
         System.out.println("------  Second getNewSession from original client");
-        resumption = initial.getNewSession();
+        TLSBase.Client resumClient2 = new TLSBase.Client(initial);
+        resumption = resumClient2.connect().getSession();
         System.out.println("id = " + hex.formatHex(resumption.getId()));
         System.out.println("session = " + resumption);
         if (!initialSession.toString().equalsIgnoreCase(resumption.toString())) {
@@ -154,8 +154,7 @@ public class MultiNSTClient {
 
         System.out.println("------  New client connection");
         TLSBase.Client newConnection = new TLSBase.Client();
-        SSLSession newSession = newConnection.getSession();
-
+        SSLSession newSession = newConnection.connect().getSession();
         System.out.println("id = " + hex.formatHex(newSession.getId()));
         System.out.println("session = " + newSession);
         if (initialSession.toString().equalsIgnoreCase(newSession.toString())) {
@@ -164,8 +163,10 @@ public class MultiNSTClient {
 
         System.out.println("------  Closing connections");
         initial.close();
+        resumClient.close();
+        resumClient2.close();
         newConnection.close();
-        server.close(initial);
+        server.close();
         System.out.println("------  End");
         System.exit(0);
     }
