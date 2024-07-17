@@ -33,7 +33,6 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
-#include "utilities/vmError.hpp"
 
 static bool is_product_build() {
 #ifdef PRODUCT
