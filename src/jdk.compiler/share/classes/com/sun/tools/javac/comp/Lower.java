@@ -3330,7 +3330,8 @@ public class Lower extends TreeTranslator {
     /** Expand a boxing or unboxing conversion if needed. */
     @SuppressWarnings("unchecked") // XXX unchecked
     <T extends JCExpression> T boxIfNeeded(T tree, Type type) {
-        Assert.check(!type.hasTag(VOID));
+        if (type.hasTag(VOID))
+            return tree;
         boolean havePrimitive = tree.type.isPrimitive();
         if (havePrimitive == type.isPrimitive())
             return tree;
@@ -3847,7 +3848,7 @@ public class Lower extends TreeTranslator {
         Type prevRestype = currentRestype;
         try {
             currentRestype = types.erasure(tree.getDescriptorType(types)).getReturnType();
-            tree.body = !currentRestype.hasTag(VOID) && tree.getBodyKind() == BodyKind.EXPRESSION ?
+            tree.body = tree.getBodyKind() == BodyKind.EXPRESSION ?
                     translate((JCExpression) tree.body, currentRestype) :
                     translate(tree.body);
         } finally {
