@@ -33,6 +33,7 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
+#include "utilities/vmError.hpp"
 
 static bool is_product_build() {
 #ifdef PRODUCT
@@ -701,28 +702,25 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
     out->print_cr("[Global flags ranges]");
   }
 
-  // Mark flags clear
+  // Print flags without allocating memory. Start by marking all flags clear.
   for (size_t i = 0; i < length; i++) {
     if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
       flagTable[i].clear_iterated();
     }
   }
-  // Print the flag with highest sort value, then mark it
+  // Print the flag with best sort value, then mark it.
   for (size_t j = 0; j < length; j++) {
-    JVMFlag* max = nullptr;
+    JVMFlag* best = nullptr;
     for (size_t i = 0; i < length; i++) {
       if (!(flagTable[i].is_iterated()) && flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-        if (max == nullptr) {
-          max = &flagTable[i];
-        }
-        if (strcmp(max->name(), flagTable[i].name()) > 0) {
-          max = &flagTable[i];
+        if ((best == nullptr) || (strcmp(best->name(), flagTable[i].name()) > 0)) {
+          best = &flagTable[i];
         }
       }
     }
-    if (max != nullptr) {
-      max->print_on(out, withComments, printRanges);
-      max->set_iterated();
+    if (best != nullptr) {
+      best->print_on(out, withComments, printRanges);
+      best->set_iterated();
     }
   }
 }
