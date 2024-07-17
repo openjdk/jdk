@@ -1788,22 +1788,17 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
+void CodeCache::write_perf_map(const char* filename, outputStream* out) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Perf expects to find the map file at /tmp/perf-<pid>.map
   // if the file name is not specified.
   char fname[JVM_MAXPATHLEN];
-  if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map",
-                 os::current_process_id());
-  }
-  // If the filename contains %p, it will be replaced by the pid.
-  else if (!Arguments::copy_expand_pid(filename, strlen(filename), fname,
-                                       JVM_MAXPATHLEN)) {
-    warning("Invalid file path name specified, fall back to default name");
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map",
-                 os::current_process_id());
+  constexpr char filename_default[] = "/tmp/perf-%p.map";
+  const char *src = filename == nullptr ? filename_default : filename;
+  if (!Arguments::copy_expand_pid(src, strlen(src), fname, sizeof(fname))) {
+    out->print_cr("Invalid file path name specified: %s", src);
+    return;
   }
   filename = fname;
   fileStream fs(filename, "w");
