@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,23 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_JFR_INSTRUMENTATION_JFRJVMTIAGENT_HPP
-#define SHARE_JFR_INSTRUMENTATION_JFRJVMTIAGENT_HPP
+#include <stdio.h>
+#include "jni.h"
 
-#include "jfr/utilities/jfrAllocation.hpp"
+JNIEXPORT jlong JNICALL
+Java_NativeMethodPrefixApp_00024Dummy_fooBarNativeMethod(JNIEnv *env, jclass clazz)
+{
+    fprintf(stderr, "native method called\n");
+    return 42;
+}
 
-class JfrJvmtiAgent : public JfrCHeapObj {
-  friend class JfrRecorder;
- private:
-  JfrJvmtiAgent();
-  ~JfrJvmtiAgent();
-  static bool create() NOT_JVMTI_RETURN_(true);
-  static void destroy() NOT_JVMTI_RETURN;
- public:
-  static void retransform_classes(JNIEnv* env, jobjectArray classes, TRAPS) NOT_JVMTI_RETURN;
-};
-
-#endif // SHARE_JFR_INSTRUMENTATION_JFRJVMTIAGENT_HPP
+JNIEXPORT jint JNICALL
+JNI_OnLoad(JavaVM *vm, void *reserved)
+{
+    fprintf(stderr, "native library loaded\n");
+    return JNI_VERSION_1_1; // this native library needs the very basic JNI support
+}
