@@ -3412,12 +3412,14 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
         }
-        if (params.isPresent(version_information)) {
-            VersionInformation vi =
-                    params.getVersionInformationParameter(version_information);
-            // TODO if chosen version or available version = 0 -> parsing failure
-            // server: if chosen version not in available versions -> parsing failure
-            // TODO if chosen version != packet version -> negotiation error
+        VersionInformation vi =
+                params.getVersionInformationParameter(version_information);
+        if (vi != null) {
+            if (vi.chosenVersion() != quicVersion().versionNumber()) {
+                throw new QuicTransportException(
+                        "[version_information] Chosen Version does not match version in use",
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
             // TODO client: if chosen version was not in available versions -> negotiation error
             // TODO client: if reacted to versions and available versions empty -> negotiation error
         } else {
