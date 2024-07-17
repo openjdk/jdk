@@ -1016,7 +1016,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   return true;
 }
 
-static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
+static void* dll_load_library(const char *filename, int *eno, char *ebuf, int ebuflen) {
 
   log_info(os)("attempting shared library load of %s", filename);
   if (ebuf && ebuflen > 0) {
@@ -1044,7 +1044,7 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
   void* result;
   const char* error_report = nullptr;
   JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
-  result = Aix_dlopen(filename, dflags, &error_report);
+  result = Aix_dlopen(filename, dflags, eno, &error_report);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
@@ -1076,12 +1076,13 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   const char new_extension[] = ".a";
   STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
   // First try to load the existing file.
-  result = dll_load_library(filename, ebuf, ebuflen);
+  int eno=0;
+  result = dll_load_library(filename, &eno, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
+  if (result == nullptr && eno == ENOENT && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
     snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
-    result = dll_load_library(file_path, ebuf, ebuflen);
+    result = dll_load_library(file_path, &eno, ebuf, ebuflen);
   }
   FREE_C_HEAP_ARRAY(char, file_path);
   return result;
