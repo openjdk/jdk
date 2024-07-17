@@ -66,7 +66,7 @@ import java.util.StringJoiner;
  */
 public final class Constructor<T> extends Executable {
     // generic info repository; lazily initialized
-    private transient volatile ConstructorRepository genericInfo;
+    private volatile ConstructorRepository genericInfo;
 
     // Generics infrastructure
     // Accessor for factory

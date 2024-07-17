@@ -51,7 +51,7 @@ import sun.reflect.generics.repository.ConstructorRepository;
  */
 public abstract sealed class Executable extends AccessibleObject
     implements Member, GenericDeclaration permits Constructor, Method {
-    // fields injected by hotspot
+    // all final fields are used by the VM
     final Class<?> clazz;
     final int slot;
     @Stable final Class<?>[] parameterTypes;

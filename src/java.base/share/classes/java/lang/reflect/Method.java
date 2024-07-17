@@ -70,7 +70,7 @@ import java.util.StringJoiner;
  * @since 1.1
  */
 public final class Method extends Executable {
-    // fields injected by hotspot
+    // all final fields are used by the VM
     private final String name; // interned in hotspot
     private final Class<?> returnType;
     private @Stable final byte[] annotationDefault;
