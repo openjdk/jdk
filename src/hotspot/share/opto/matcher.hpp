@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -455,6 +455,10 @@ public:
   // Java-Native vector calling convention
   static bool supports_vector_calling_convention();
   static OptoRegPair vector_return_value(uint ideal_reg);
+
+  // Is it preferred to use the same src and dest register for CastX2P and
+  // CastP2X? If true, we can remove the instructions in the final assembly.
+  static bool use_same_src_and_dest_reg_for_CastX2P();
 
   // Is this branch offset small enough to be addressed by a short branch?
   bool is_short_branch_offset(int rule, int br_size, int offset);
