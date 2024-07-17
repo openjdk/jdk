@@ -24,7 +24,6 @@
 /**
 * @test
 * @summary Test Float16 vector conversion chain.
-* @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver compiler.vectorization.TestFloat16VectorConvChain
 */
