@@ -623,7 +623,7 @@ public class SimpleDateFormat extends DateFormat {
 
         initializeCalendar(locale);
         this.pattern = pattern;
-        this.formatData = DateFormatSymbols.getInstanceRef(locale);
+        formatData = DateFormatSymbols.getInstance(locale);
         this.locale = locale;
         initialize(locale);
     }
@@ -644,7 +644,7 @@ public class SimpleDateFormat extends DateFormat {
         }
 
         this.pattern = pattern;
-        this.formatData = (DateFormatSymbols) formatSymbols.clone();
+        formatData = (DateFormatSymbols) formatSymbols.clone();
         this.locale = Locale.getDefault(Locale.Category.FORMAT);
         initializeCalendar(this.locale);
         initialize(this.locale);
