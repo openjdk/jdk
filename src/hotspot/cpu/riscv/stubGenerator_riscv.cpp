@@ -5140,13 +5140,13 @@ class StubGenerator: public StubCodeGenerator {
     Register s2     = c_rarg3;
     Register buff   = c_rarg1;
     Register len    = c_rarg2;
-    Register nmax  = x29; // t4
-    Register base  = x30; // t5
-    Register count = x31; // t6
-    Register temp0 = c_rarg4;
-    Register temp1 = c_rarg5;
-    Register temp2 = c_rarg6;
-    Register temp3 = x28; // t3
+    Register nmax  = c_rarg4;
+    Register base  = c_rarg5;
+    Register count = c_rarg6;
+    Register temp0 = x28; // t3
+    Register temp1 = x29; // t4
+    Register temp2 = x30; // t5
+    Register temp3 = x31; // t6
 
     VectorRegister vzero = v31;
     VectorRegister vbytes = v8; // group: v8, v9, v10, v11
