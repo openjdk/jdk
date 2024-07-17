@@ -434,8 +434,7 @@ HeapWord* ParallelScavengeHeap::expand_heap_and_allocate(size_t size, bool is_tl
 
   result = young_gen()->allocate(size);
   if (result == nullptr && !is_tlab) {
-    // auto expand inside
-    result = old_gen()->allocate(size);
+    result = old_gen()->expand_and_allocate(size);
   }
   return result;   // Could be null if we are out of space.
 }
