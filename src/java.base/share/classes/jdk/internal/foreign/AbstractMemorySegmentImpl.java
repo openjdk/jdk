@@ -159,7 +159,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
         return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (MemorySessionImpl)scope, action);
+                (MemorySessionImpl)scope, readOnly, action);
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {

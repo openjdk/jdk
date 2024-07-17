@@ -89,7 +89,9 @@ bool ClassPrelinker::is_resolution_deterministic(ConstantPool* cp, int cp_index)
     // currently archive only CP entries that are already resolved.
     Klass* resolved_klass = cp->resolved_klass_at(cp_index);
     return resolved_klass != nullptr && is_class_resolution_deterministic(cp->pool_holder(), resolved_klass);
-  } else if (cp->tag_at(cp_index).is_field()) {
+  } else if (cp->tag_at(cp_index).is_field() ||
+             cp->tag_at(cp_index).is_method() ||
+             cp->tag_at(cp_index).is_interface_method()) {
     int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
     if (!cp->tag_at(klass_cp_index).is_klass()) {
       // Not yet resolved
@@ -263,6 +265,14 @@ void ClassPrelinker::preresolve_field_and_method_cp_entries(JavaThread* current,
           CLEAR_PENDING_EXCEPTION; // just ignore
         }
         break;
+      case Bytecodes::_invokespecial:
+      case Bytecodes::_invokevirtual:
+      case Bytecodes::_invokeinterface:
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
       default:
         break;
       }
@@ -299,6 +309,12 @@ void ClassPrelinker::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecod
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
     InterpreterRuntime::resolve_get_put(bc, raw_index, mh, cp, false /*initialize_holder*/, CHECK);
+    break;
+
+  case Bytecodes::_invokevirtual:
+  case Bytecodes::_invokespecial:
+  case Bytecodes::_invokeinterface:
+    InterpreterRuntime::cds_resolve_invoke(bc, raw_index, cp, CHECK);
     break;
 
   default:

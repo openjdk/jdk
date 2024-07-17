@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
       // see comment above for POLL_FAR
       _instructions->relocate(pc, relocInfo::poll_return_type, Assembler::imm_operand);
       return true;
+#if INCLUDE_ZGC
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_SHL:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeShl);
       return true;
@@ -241,6 +242,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case Z_BARRIER_RELOCATION_FORMAT_STORE_GOOD_AFTER_MOV:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreGoodAfterMov);
       return true;
+#endif
     default:
       return false;
   }

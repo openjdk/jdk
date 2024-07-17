@@ -832,7 +832,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   // resolve method
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
-  ConstantPoolCache* cache = pool->cache();
 
   methodHandle resolved_method;
 
@@ -857,10 +856,18 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
     resolved_method = methodHandle(current, info.resolved_method());
   } // end JvmtiHideSingleStepping
 
+  update_invoke_cp_cache_entry(info, bytecode, resolved_method, pool, method_index);
+}
+
+void InterpreterRuntime::update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                                      methodHandle& resolved_method,
+                                                      constantPoolHandle& pool,
+                                                      int method_index) {
   // Don't allow safepoints until the method is cached.
   NoSafepointVerifier nsv;
 
   // check if link resolution caused cpCache to be updated
+  ConstantPoolCache* cache = pool->cache();
   if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
 
 #ifdef ASSERT
@@ -912,6 +919,33 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   }
 }
 
+void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
+                                            constantPoolHandle& pool, TRAPS) {
+  LinkInfo link_info(pool, method_index, bytecode, CHECK);
+
+  if (!link_info.resolved_klass()->is_instance_klass() || InstanceKlass::cast(link_info.resolved_klass())->is_linked()) {
+    CallInfo call_info;
+    switch (bytecode) {
+      case Bytecodes::_invokevirtual:   LinkResolver::cds_resolve_virtual_call  (call_info, link_info, CHECK); break;
+      case Bytecodes::_invokeinterface: LinkResolver::cds_resolve_interface_call(call_info, link_info, CHECK); break;
+      case Bytecodes::_invokespecial:   LinkResolver::cds_resolve_special_call  (call_info, link_info, CHECK); break;
+
+      default: fatal("Unimplemented: %s", Bytecodes::name(bytecode));
+    }
+    methodHandle resolved_method(THREAD, call_info.resolved_method());
+    guarantee(resolved_method->method_holder()->is_linked(), "");
+    update_invoke_cp_cache_entry(call_info, bytecode, resolved_method, pool, method_index);
+  } else {
+    // FIXME: why a shared class is not linked yet?
+    // Can't link it here since there are no guarantees it'll be prelinked on the next run.
+    ResourceMark rm;
+    InstanceKlass* resolved_iklass = InstanceKlass::cast(link_info.resolved_klass());
+    log_info(cds, resolve)("Not resolved: class not linked: %s %s %s",
+                           resolved_iklass->is_shared() ? "is_shared" : "",
+                           resolved_iklass->init_state_name(),
+                           resolved_iklass->external_name());
+  }
+}
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
 void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {

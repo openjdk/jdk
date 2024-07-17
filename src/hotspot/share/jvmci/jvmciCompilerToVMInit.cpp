@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,10 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+#ifdef X86
+int CompilerToVM::Data::L1_line_size;
+#endif
+
 size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
@@ -123,7 +127,9 @@ int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
 int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
+#if INCLUDE_ZGC
 int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
+#endif
 
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
@@ -237,6 +243,10 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_start_address = 0;
     cardtable_shift = 0;
   }
+
+#ifdef X86
+  L1_line_size = VM_Version::L1_line_size();
+#endif
 
   vm_page_size = os::vm_page_size();
 

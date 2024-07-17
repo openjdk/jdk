@@ -105,6 +105,6 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return re-mapped class file bytes
      */
     default byte[] remapClass(ClassFile context, ClassModel clm) {
-        return context.transform(clm, map(clm.thisClass().asSymbol()), this);
+        return context.transformClass(clm, map(clm.thisClass().asSymbol()), this);
     }
 }

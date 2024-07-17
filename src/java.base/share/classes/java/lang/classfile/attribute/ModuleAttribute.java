@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ public sealed interface ModuleAttribute
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
-        return  mb.build();
+        return mb.build();
     }
 
     /**
@@ -164,7 +164,7 @@ public sealed interface ModuleAttribute
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
-        return  mb.build();
+        return mb.build();
     }
 
     /**
@@ -316,11 +316,5 @@ public sealed interface ModuleAttribute
          * @return this builder
          */
         ModuleAttributeBuilder provides(ModuleProvideInfo provides);
-
-        /**
-         * Builds module attribute.
-         * @return the module attribute
-         */
-        ModuleAttribute build();
     }
 }

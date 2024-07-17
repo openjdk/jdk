@@ -860,6 +860,15 @@ public final class SunPKCS11 extends AuthProvider {
         dA(CIP, "AES_256/KWP/NoPadding",        P11KeyWrapCipher,
                 m(CKM_AES_KEY_WRAP_KWP));
 
+        d(CIP, "AES/CTS/NoPadding",             P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_128/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_192/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+        d(CIP, "AES_256/CTS/NoPadding",         P11Cipher,
+                m(CKM_AES_CTS));
+
         d(CIP, "AES/GCM/NoPadding",             P11AEADCipher,
                 m(CKM_AES_GCM));
         dA(CIP, "AES_128/GCM/NoPadding",        P11AEADCipher,
@@ -1290,7 +1299,13 @@ public final class SunPKCS11 extends AuthProvider {
                 }
                 continue;
             }
-
+            if (longMech == CKM_AES_CTS && token.ctsVariant == null) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to an unspecified " +
+                            "cipherTextStealingVariant in configuration");
+                }
+                continue;
+            }
             if (brokenMechanisms.contains(longMech)) {
                 if (showInfo) {
                     System.out.println("DISABLED due to known issue with NSS");
