@@ -21,15 +21,13 @@
  * questions.
  */
 
-package compiler.c2;
-
 /*
  * @test
  * @bug 8318446 8335392
  * @summary Test merging of consecutive stores, and more specifically the MemPointer.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compiler.c2.TestMergeStoresFuzzer
+ * @run driver TestMergeStoresFuzzer
  */
 
 import javax.tools.Diagnostic;
@@ -55,6 +53,8 @@ import compiler.lib.ir_framework.*;
 
 public class TestMergeStoresFuzzer {
   public static void main(String args[]) throws IOException {
+    if (false) TestFramework.run(); // makes the relevant code javac compile... maybe can do this with an @compile directly?
+
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 
@@ -68,11 +68,11 @@ public class TestMergeStoresFuzzer {
     out.println("        ");
     out.println("        ");
     out.println("        ");
-    out.println("        //TestFramework.run(HelloWorld.class);");
+    out.println("        TestFramework.run(HelloWorld.class);");
     out.println("        System.out.println(\"Done with IR framework.\");");
     out.println("    }");
     out.println("");
-    out.println("    //@Test");
+    out.println("    @Test");
     out.println("    static void test() {");
     out.println("        throw new RuntimeException(\"xyz\");");
     out.println("    }");
@@ -82,8 +82,9 @@ public class TestMergeStoresFuzzer {
 
     Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
     List<String> optionList = new ArrayList<String>();
+    // optionList.add("-classpath");
+    // optionList.add(System.getProperty("test.class.path"));
     optionList.add("-classpath");
-    //optionList.add(System.getProperty("test.classes"));
     optionList.add(System.getProperty("java.class.path"));
     CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, compilationUnits);
 
