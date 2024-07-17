@@ -26,6 +26,7 @@
 package javax.swing;
 
 import java.awt.Component;
+import java.awt.ComponentiOrientation;
 import java.awt.Graphics;
 import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
@@ -354,10 +355,17 @@ public class JSplitPane extends JComponent implements Accessible
                                                "JSplitPane.HORIZONTAL_SPLIT " +
                                                "or JSplitPane.VERTICAL_SPLIT");
         continuousLayout = newContinuousLayout;
-        if (newLeftComponent != null)
-            setLeftComponent(newLeftComponent);
-        if (newRightComponent != null)
-            setRightComponent(newRightComponent);
+        if (this.getComponentOrientation().equals(ComponentOrientation.LEFT_TO_RIGHT)) {
+            if (newLeftComponent != null)
+                setLeftComponent(newLeftComponent);
+            if (newRightComponent != null)
+                setRightComponent(newRightComponent);
+        } else {
+            if (newLeftComponent != null)
+                setRightComponent(newLeftComponent);
+            if (newRightComponent != null)
+                setLeftComponent(newRightComponent);
+        }
         updateUI();
 
     }
