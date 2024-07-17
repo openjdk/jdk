@@ -196,7 +196,7 @@ public class PerformanceTest {
         System.out.println
             ("=========================================================");
         System.out.println
-            ("Algorithm                      DataSize Rounds Kbytes/microsec");
+            ("Algorithm                      DataSize Rounds Bytes/microsec");
 
     }
 
