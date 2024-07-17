@@ -163,6 +163,9 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
+    // this will be set to true only when the peer explicitly states (through a GOAWAY frame)
+    // that the corresponding stream (id) wasn't processed
+    private volatile boolean unprocessedByPeer;
 
     @Override
     HttpConnection connection() {
@@ -1664,6 +1667,31 @@ class Stream<T> extends ExchangeImpl<T> {
 
     final String dbgString() {
         return connection.dbgString() + "/Stream("+streamid+")";
+    }
+
+    /**
+     * An unprocessed exchange is one that hasn't been processed by a peer. The local end of the
+     * connection would be notified about such exchanges when it receives a GOAWAY frame with
+     * a stream id that tells which exchanges have been unprocessed.
+     * This method is called on such unprocessed exchanges and the implementation of this method
+     * will arrange for the request, corresponding to this exchange, to be retried afresh on a
+     * new connection.
+     */
+    void closeAsUnprocessed() {
+        // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
+        this.unprocessedByPeer = true;
+        this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+        if (debug.on()) {
+            debug.log("closing " + this.request + " as unprocessed by peer");
+        }
+        // close the exchange and complete the response CF exceptionally
+        close();
+        completeResponseExceptionally(this.errorRef.get());
+    }
+
+    @Override
+    boolean isUnprocessedByPeer() {
+        return this.unprocessedByPeer;
     }
 
     private class HeadersConsumer extends ValidatingHeadersConsumer {

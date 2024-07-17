@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,4 +71,14 @@ public interface Http2TestExchange {
      * It may also complete exceptionally
      */
     CompletableFuture<Long> sendPing();
+
+    /**
+     * {@return a string that identifies the underlying connection for this exchange}
+     * @apiNote
+     * This connection key can be useful to figure out whether two exchanges
+     * were performed on the same underlying connection.
+     */
+    default String getConnectionKey() {
+        return "{local=%s, remote=%s}".formatted(getLocalAddress(), getRemoteAddress());
+    }
 }
