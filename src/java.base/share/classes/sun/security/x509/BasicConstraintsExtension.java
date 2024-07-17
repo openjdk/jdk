@@ -52,7 +52,7 @@ public class BasicConstraintsExtension extends Extension {
     public static final String NAME = "BasicConstraints";
 
     // Private data members
-    private boolean     ca = false;
+    private boolean ca = false;
     private int pathLen = -1;
 
     // Encode this extension value
@@ -91,7 +91,7 @@ public class BasicConstraintsExtension extends Extension {
      */
     public BasicConstraintsExtension(Boolean critical, boolean ca, int len) {
         this.ca = ca;
-        this.pathLen = len;
+        this.pathLen = (len < 0 || len == Integer.MAX_VALUE) ? -1 : len;
         this.extensionId = PKIXExtensions.BasicConstraints_Id;
         this.critical = critical.booleanValue();
         encodeThis();
@@ -158,10 +158,8 @@ public class BasicConstraintsExtension extends Extension {
       */
      public String toString() {
          String pathLenAsString;
-         if (pathLen < 0) {
-             pathLenAsString = " undefined";
-         } else if (pathLen == Integer.MAX_VALUE) {
-             pathLenAsString = " no limit";
+         if (pathLen < 0 || pathLen == Integer.MAX_VALUE) {
+             pathLenAsString = " unconstained";
          } else {
              pathLenAsString = String.valueOf(pathLen);
          }
@@ -191,7 +189,7 @@ public class BasicConstraintsExtension extends Extension {
     }
 
     public int getPathLen() {
-        return pathLen;
+         return (pathLen < 0) ? Integer.MAX_VALUE : Integer.valueOf(pathLen);
     }
 
     /**
