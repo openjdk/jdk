@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 4162583 7054918 8130181
+ * @bug 4162583 7054918 8130181 8028127
  * @library /test/lib ../testlibrary
  * @summary Make sure Provider api implementations are synchronized properly
- * @run main/othervm SynchronizedAccess
  */
 
 import java.security.*;
@@ -57,10 +56,10 @@ public class SynchronizedAccess {
             acc[i].join();
         }
         var providersCountAfter = Security.getProviders().length;
-        Asserts.assertEquals(providersCountBefore + 1, providersCountAfter);
+        Asserts.assertEquals(providersCountBefore, providersCountAfter);
     }
 
-    public static class AccessorThread extends Thread {
+    static class AccessorThread extends Thread {
 
         public AccessorThread(String str) {
             super(str);
@@ -74,18 +73,23 @@ public class SynchronizedAccess {
 
             int rounds = 20;
             while (rounds-- > 0) {
+                for (int i = 0; i < provs.length; i++) {
+                    // Might install (>=0) or not (-1) if already installed
+                    Security.addProvider(provs[i]);
+                    Thread.yield();
+                }
+
                 try {
-                    for (int i = 0; i < provs.length; i++) {
-                        Security.addProvider(provs[i]);
-                    }
                     Signature.getInstance("sigalg");
-                    // Skip the first provider to ensure one is always available for getInstance.
-                    // This prevents issues if other threads remove providers in parallel.
-                    for (int i = 1; i < provs.length; i++) {
-                        Security.removeProvider("name" + i);
-                    }
+                    Thread.yield();
                 } catch (NoSuchAlgorithmException nsae) {
-                    throw new RuntimeException("Expected algorithm sigalg not found", nsae);
+                    // All providers may have been deregistered.  Ok.
+                }
+
+                for (int i = 0; i < provs.length; i++) {
+                    // Might or might not remove (silent return)
+                    Security.removeProvider("name" + i);
+                    Thread.yield();
                 }
             } // while
         }
