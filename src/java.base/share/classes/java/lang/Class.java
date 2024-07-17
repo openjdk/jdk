@@ -56,6 +56,7 @@ import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -236,11 +237,12 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType, ProtectionDomain pd) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
         componentType = arrayComponentType;
+        protectionDomain = pd;
     }
 
     /**
@@ -1105,13 +1107,11 @@ public final class Class<T> implements java.io.Serializable,
     @Stable
     private transient Module module;
 
-    // Initialized in JVM not by private constructor
-    // This field is filtered from reflection access, i.e. getDeclaredField
-    // will throw NoSuchFieldException
-    private final ClassLoader classLoader;
-
-    // Set by VM
-    private transient Object classData;
+    // Final fields are initialized in JVM not by private constructor
+    private final ClassLoader classLoader; // Set by VM
+    private final transient ProtectionDomain protectionDomain; // Set by VM
+    private transient Object classData; // Set by VM
+    private transient Object[] signers; // Read by VM, mutable
 
     // package-private
     Object getClassData() {
@@ -1510,13 +1510,20 @@ public final class Class<T> implements java.io.Serializable,
      *          a primitive type or void.
      * @since   1.1
      */
-    public native Object[] getSigners();
+    public Object[] getSigners() {
+        var signers = this.signers;
+        return signers == null ? null : signers.clone();
+    }
 
 
     /**
      * Set the signers of this class.
      */
-    native void setSigners(Object[] signers);
+    void setSigners(Object[] signers) {
+        if (!isPrimitive() && !isArray()) {
+            this.signers = signers;
+        }
+    }
 
 
     /**
@@ -3267,7 +3274,9 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns the ProtectionDomain of this class.
      */
-    private native java.security.ProtectionDomain getProtectionDomain0();
+    ProtectionDomain getProtectionDomain0() {
+        return isPrimitive() ? null : protectionDomain;
+    }
 
     /*
      * Return the Virtual Machine's Class object for the named

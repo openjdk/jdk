@@ -2603,8 +2603,8 @@ public final class System {
                 t.setCause(cause);
             }
 
-            public ProtectionDomain protectionDomain(Class<?> c) {
-                return c.protectionDomain();
+            public ProtectionDomain protectionDomain(Class<?> c, boolean raw) {
+                return raw ? c.getProtectionDomain0() : c.protectionDomain();
             }
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {

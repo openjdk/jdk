@@ -31,6 +31,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.ref.Reference;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.Hidden;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
@@ -664,7 +666,12 @@ public final class AccessController {
         return AccHolder.innocuousAcc;
     }
 
-    private static native ProtectionDomain getProtectionDomain(final Class<?> caller);
+    private static ProtectionDomain getProtectionDomain(final Class<?> caller) {
+        class Lazy {
+            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+        }
+        return Lazy.JLA.protectionDomain(caller, true);
+    }
 
     /**
      * Performs the specified {@code PrivilegedExceptionAction} with

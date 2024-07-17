@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,15 +33,6 @@
 #include "jni.h"
 #include "jvm.h"
 #include "java_security_AccessController.h"
-
-JNIEXPORT jobject JNICALL
-Java_java_security_AccessController_getProtectionDomain(
-                                                              JNIEnv *env,
-                                                              jclass cls,
-                                                              jclass caller)
-{
-    return JVM_GetProtectionDomain(env, caller);
-}
 
 JNIEXPORT jobject JNICALL
 Java_java_security_AccessController_getStackAccessControlContext(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,6 @@ TEST_VM(InstanceKlass, class_loader_printer) {
   // See if injected loader_data field is printed in string
   ASSERT_THAT(st.base(), HasSubstr("injected 'loader_data'")) << "Must contain injected fields";
   st.reset();
-  // See if mirror injected fields are printed.
-  oop mirror = vmClasses::ClassLoader_klass()->java_mirror();
-  mirror->print_on(&st);
-  ASSERT_THAT(st.base(), HasSubstr("injected 'protection_domain'")) << "Must contain injected fields";
   // We should test other printing functions too.
 #ifndef PRODUCT
   st.reset();

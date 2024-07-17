@@ -423,9 +423,11 @@ public interface JavaLangAccess {
     void setCause(Throwable t, Throwable cause);
 
     /**
-     * Get protection domain of the given Class
+     * Get protection domain of the given Class bypassing SecurityManager.
+     * If {@code raw}, returns {@link Class#getProtectionDomain0()} instead of
+     * {@link Class#getProtectionDomain()}
      */
-    ProtectionDomain protectionDomain(Class<?> c);
+    ProtectionDomain protectionDomain(Class<?> c, boolean raw);
 
     /**
      * Get a method handle of string concat helper method

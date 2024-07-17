@@ -1220,10 +1220,6 @@ objArrayOop java_lang_Class::signers(oop java_class) {
   assert(_signers_offset != 0, "must be set");
   return (objArrayOop)java_class->obj_field(_signers_offset);
 }
-void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
-  assert(_signers_offset != 0, "must be set");
-  java_class->obj_field_put(_signers_offset, signers);
-}
 
 oop java_lang_Class::class_data(oop java_class) {
   assert(_classData_offset != 0, "must be set");
@@ -1418,12 +1414,14 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
 }
 
 #define CLASS_FIELDS_DO(macro) \
-  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,         false); \
-  macro(_class_loader_offset,        k, "classLoader",         classloader_signature, false); \
-  macro(_component_mirror_offset,    k, "componentType",       class_signature,       false); \
-  macro(_module_offset,              k, "module",              module_signature,      false); \
-  macro(_name_offset,                k, "name",                string_signature,      false); \
-  macro(_classData_offset,           k, "classData",           object_signature,      false);
+  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,              false); \
+  macro(_class_loader_offset,        k, "classLoader",         classloader_signature,      false); \
+  macro(_component_mirror_offset,    k, "componentType",       class_signature,            false); \
+  macro(_module_offset,              k, "module",              module_signature,           false); \
+  macro(_name_offset,                k, "name",                string_signature,           false); \
+  macro(_classData_offset,           k, "classData",           object_signature,           false); \
+  macro(_signers_offset,             k, "signers",             object_array_signature,     false); \
+  macro(_protection_domain_offset,   k, "protectionDomain",    protectiondomain_signature, false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
@@ -4585,7 +4583,7 @@ int java_security_AccessControlContext::_isPrivileged_offset;
 int java_security_AccessControlContext::_isAuthorized_offset;
 
 #define ACCESSCONTROLCONTEXT_FIELDS_DO(macro) \
-  macro(_context_offset,           k, "context",      protectiondomain_signature, false); \
+  macro(_context_offset,           k, "context",      protectiondomain_array_signature, false); \
   macro(_privilegedContext_offset, k, "privilegedContext", accesscontrolcontext_signature, false); \
   macro(_isPrivileged_offset,      k, "isPrivileged", bool_signature, false); \
   macro(_isAuthorized_offset,      k, "isAuthorized", bool_signature, false)
