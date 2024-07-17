@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -280,6 +280,7 @@ TRACE_REQUEST_FUNC(SystemProcess) {
   }
 }
 
+#if INCLUDE_JVMTI
 template <typename AgentEvent>
 static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
   event.set_name(agent->name());
@@ -316,6 +317,10 @@ TRACE_REQUEST_FUNC(NativeAgent) {
   const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
   send_native_agent_events(xrun_agents_it);
 }
+#else  // INCLUDE_JVMTI
+TRACE_REQUEST_FUNC(JavaAgent)   {}
+TRACE_REQUEST_FUNC(NativeAgent) {}
+#endif // INCLUDE_JVMTI
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
   double rate = 0.0;

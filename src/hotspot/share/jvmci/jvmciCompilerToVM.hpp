@@ -126,12 +126,14 @@ class CompilerToVM {
     // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
     static int data_section_item_alignment;
 
+#if INCLUDE_JVMTI
     /*
      * Pointer to JvmtiExport::_should_notify_object_alloc.
      * Exposed as an int* instead of an address so the
      * underlying type is part of the JVMCIVMStructs definition.
      */
     static int* _should_notify_object_alloc;
+#endif
 
    public:
      static void initialize(JVMCI_TRAPS);
