@@ -25,6 +25,8 @@ package org.openjdk.bench.java.lang.foreign;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.*;
@@ -40,6 +42,7 @@ import static java.lang.foreign.ValueLayout.*;
 public class ConcurrentClose {
 
     static final int SIZE = 10_000;
+    static final VarHandle BYTES = MethodHandles.arrayElementVarHandle(byte[].class);
 
     MemorySegment segment;
     byte[] array;
@@ -63,7 +66,7 @@ public class ConcurrentClose {
     @Group("sharedClose")
     public int memorySegmentAccess() {
         int sum = 0;
-        for (int i = 0; i < segment.byteSize(); i++) {
+        for (long i = 0; i < segment.byteSize(); i++) {
             sum += segment.get(JAVA_BYTE, i);
         }
         return sum;
@@ -75,7 +78,7 @@ public class ConcurrentClose {
     public int otherAccess() {
         int sum = 0;
         for (int i = 0; i < array.length; i++) {
-            sum += array[i];
+            sum += (byte) BYTES.get(array, i);
         }
         return sum;
     }
