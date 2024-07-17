@@ -35,5 +35,5 @@ Java_java_lang_ref_PhantomReference_refersTo0(JNIEnv *env, jobject ref, jobject 
 JNIEXPORT void JNICALL
 Java_java_lang_ref_PhantomReference_clear0(JNIEnv *env, jobject ref)
 {
-    return JVM_ReferenceClear(env, ref);
+    JVM_ReferenceClear(env, ref);
 }

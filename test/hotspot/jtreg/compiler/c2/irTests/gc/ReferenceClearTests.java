@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package compiler.c2.irTests;
+package compiler.c2.irTests.gc;
 
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
@@ -36,7 +36,7 @@ import java.lang.ref.*;
  * @build jdk.test.whitebox.WhiteBox
  * @requires vm.compiler2.enabled
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.ReferenceClearTests
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.gc.ReferenceClearTests
 
  */
 public class ReferenceClearTests {
@@ -47,7 +47,7 @@ public class ReferenceClearTests {
         // Use PerMethodTrapLimit=0 to compile all branches in the intrinsics.
 
         int idx = 0;
-        if (GC.Serial.isSupported()) {
+        if (GC.isSelectedErgonomically() && GC.Serial.isSupported()) {
             // Serial:
             //   a) does not have SATB/keep-alive barriers at all
             //   b) has inter-generational barriers on stores, but folded away for null stores
@@ -56,7 +56,7 @@ public class ReferenceClearTests {
                 "-XX:+UseSerialGC"
             ));
         }
-        if (GC.Parallel.isSupported()) {
+        if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
             // Parallel:
             //   a) does not have SATB/keep-alive barriers at all
             //   b) has inter-generational barriers on stores, but folded away for null stores
@@ -65,7 +65,7 @@ public class ReferenceClearTests {
                 "-XX:+UseParallelGC")
             );
         }
-        if (GC.G1.isSupported()) {
+        if (GC.isSelectedErgonomically() && GC.G1.isSupported()) {
             // G1:
             //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
             //   b) has inter-generational barriers on stores, but folded away for null stores
@@ -74,7 +74,7 @@ public class ReferenceClearTests {
                 "-XX:+UseG1GC"
             ));
         }
-        if (GC.Shenandoah.isSupported()) {
+        if (GC.isSelectedErgonomically() && GC.Shenandoah.isSupported()) {
             // Shenandoah:
             //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
             //   b) has load-reference barriers, which would confuse the tests, we enable only SATB barriers
@@ -86,7 +86,7 @@ public class ReferenceClearTests {
                 "-XX:+UseShenandoahGC"
             ));
         }
-        if (GC.Z.isSupported()) {
+        if (GC.isSelectedErgonomically() && GC.Z.isSupported()) {
             // Z:
             //   a) does not have SATB/keep-alive barriers
             //   b) has inter-generational barriers on stores, but folded away for null stores
@@ -94,14 +94,6 @@ public class ReferenceClearTests {
                 "-XX:PerMethodTrapLimit=0",
                 "-XX:+UseZGC"
             ));
-        }
-        if (GC.Epsilon.isSupported()) {
-            // Epsilon: does not emit barriers at all.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
-                "-XX:+UnlockExperimentalVMOptions",
-                "-XX:+UseEpsilonGC")
-            );
         }
         framework.start();
     }

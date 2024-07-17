@@ -6834,7 +6834,7 @@ bool LibraryCallKit::inline_reference_refersTo0(bool is_phantom) {
   return true;
 }
 
-//----------------------------inline_reference_refersTo0----------------------------
+//----------------------------inline_reference_clear0----------------------------
 // void java.lang.ref.Reference.clear0();
 // void java.lang.ref.PhantomReference.clear0();
 bool LibraryCallKit::inline_reference_clear0(bool is_phantom) {
