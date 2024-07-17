@@ -48,22 +48,60 @@ public class ReferenceClearTests {
 
         int idx = 0;
         if (GC.Serial.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseSerialGC"));
+            // Serial:
+            //   a) does not have SATB/keep-alive barriers at all
+            //   b) has inter-generational barriers on stores, but folded away for null stores
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseSerialGC"
+            ));
         }
         if (GC.Parallel.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseParallelGC"));
+            // Parallel:
+            //   a) does not have SATB/keep-alive barriers at all
+            //   b) has inter-generational barriers on stores, but folded away for null stores
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseParallelGC")
+            );
         }
         if (GC.G1.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseG1GC"));
+            // G1:
+            //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
+            //   b) has inter-generational barriers on stores, but folded away for null stores
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseG1GC"
+            ));
         }
         if (GC.Shenandoah.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseShenandoahGC"));
+            // Shenandoah:
+            //   a) has SATB/keep-alive barriers, should not be present for Reference.clear-s
+            //   b) has load-reference barriers, which would confuse the tests, we enable only SATB barriers
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:ShenandoahGCMode=passive",
+                "-XX:+ShenandoahSATBBarrier",
+                "-XX:+UseShenandoahGC"
+            ));
         }
         if (GC.Z.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseZGC"));
+            // Z:
+            //   a) does not have SATB/keep-alive barriers
+            //   b) has inter-generational barriers on stores, but folded away for null stores
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseZGC"
+            ));
         }
         if (GC.Epsilon.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC"));
+            // Epsilon: does not emit barriers at all.
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseEpsilonGC")
+            );
         }
         framework.start();
     }

@@ -46,7 +46,7 @@ Node* ModRefBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
   if (!access.is_oop() || tightly_coupled_alloc ||
-      ((on_weak || on_phantom) && !no_keepalive) ||
+      ((on_weak || on_phantom) && no_keepalive) ||
       (!in_heap && !anonymous)) {
     return BarrierSetC2::store_at_resolved(access, val);
   }

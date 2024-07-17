@@ -48,22 +48,41 @@ public class ReferenceRefersToTests {
 
         int idx = 0;
         if (GC.Serial.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseSerialGC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseSerialGC"
+            ));
         }
         if (GC.Parallel.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseParallelGC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseParallelGC"
+            ));
         }
         if (GC.G1.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseG1GC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseG1GC"
+            ));
         }
         if (GC.Shenandoah.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseShenandoahGC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseShenandoahGC"
+            ));
         }
         if (GC.Z.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UseZGC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UseZGC"
+            ));
         }
         if (GC.Epsilon.isSupported()) {
-            framework.addScenarios(new Scenario(idx++, "-XX:PerMethodTrapLimit=0", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseEpsilonGC"));
+            framework.addScenarios(new Scenario(idx++,
+                "-XX:PerMethodTrapLimit=0",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseEpsilonGC"
+            ));
         }
         framework.start();
     }

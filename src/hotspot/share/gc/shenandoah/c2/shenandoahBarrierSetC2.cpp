@@ -503,7 +503,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
   bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
 
   if (!access.is_oop() ||
-      ((on_weak || on_phantom) && !no_keepalive)) {
+      ((on_weak || on_phantom) && no_keepalive)) {
     return BarrierSetC2::store_at_resolved(access, val);
   }
 
