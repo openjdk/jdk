@@ -114,7 +114,7 @@ class AdaptCodeTest {
     void testCopy() throws Exception {
         var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
-        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
+        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cm::forEach);
 //        TestUtil.writeClass(newBytes, "TestClass.class");
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
