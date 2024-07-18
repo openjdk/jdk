@@ -460,7 +460,6 @@ public abstract class Process {
         throws InterruptedException
     {
         long remainingNanos = unit.toNanos(timeout); // throw NPE before other conditions
-
         if (hasExited())
             return true;
         if (timeout <= 0)
