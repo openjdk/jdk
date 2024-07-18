@@ -46,7 +46,7 @@ public class InfiniteLoopBadControlNeverBranch {
 
     static void test() {
         int i = 0;
-        while(true) {
+        while (true) {
             if (i > 1) {
                 b = 0;
             }
