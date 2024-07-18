@@ -1061,6 +1061,7 @@ void Compile::Init(bool aliasing) {
 
   set_do_vector_loop(false);
   set_has_monitors(false);
+  set_has_scoped_access(false);
 
   if (AllowVectorizeOnDemand) {
     if (has_method() && _directive->VectorizeOption) {

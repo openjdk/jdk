@@ -437,6 +437,7 @@ void Compilation::install_code(int frame_size) {
     has_unsafe_access(),
     SharedRuntime::is_wide_vector(max_vector_size()),
     has_monitors(),
+    has_scoped_access(),
     _immediate_oops_patched
   );
 }
@@ -578,6 +579,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
 , _has_monitors(method->is_synchronized() || method->has_monitor_bytecodes())
+, _has_scoped_access(method->is_scoped())
 , _install_code(install_code)
 , _bailout_msg(nullptr)
 , _first_failure_details(nullptr)

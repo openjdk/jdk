@@ -1234,6 +1234,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
   _has_monitors               = 0;
+  _has_scoped_access          = 0;
   _has_flushed_dependencies   = 0;
   _is_unlinked                = 0;
   _load_reported              = 0; // jvmti state

@@ -3518,6 +3518,9 @@ static void set_flags_for_inlined_callee(Compilation* compilation, ciMethod* cal
   if (callee->is_synchronized() || callee->has_monitor_bytecodes()) {
     compilation->set_has_monitors(true);
   }
+  if (callee->is_scoped()) {
+    compilation->set_has_scoped_access(true);
+  }
 }
 
 bool GraphBuilder::try_inline(ciMethod* callee, bool holder_known, bool ignore_return, Bytecodes::Code bc, Value receiver) {

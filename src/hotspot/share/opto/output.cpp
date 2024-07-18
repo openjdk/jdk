@@ -3458,6 +3458,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->has_monitors(),
+                                     C->has_scoped_access(),
                                      0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
