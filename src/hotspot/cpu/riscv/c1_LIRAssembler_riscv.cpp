@@ -1346,7 +1346,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;
@@ -1607,7 +1607,22 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
 
-void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) { Unimplemented(); }
+void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
+  assert(op->crc()->is_single_cpu(),  "crc must be register");
+  assert(op->val()->is_single_cpu(),  "byte value must be register");
+  assert(op->result_opr()->is_single_cpu(), "result must be register");
+  Register crc = op->crc()->as_register();
+  Register val = op->val()->as_register();
+  Register res = op->result_opr()->as_register();
+
+  assert_different_registers(val, crc, res);
+  __ la(res, ExternalAddress(StubRoutines::crc_table_addr()));
+
+  __ notr(crc, crc); // ~crc
+  __ zero_extend(crc, crc, 32);
+  __ update_byte_crc32(crc, val, res);
+  __ notr(res, crc); // ~crc
+}
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
                                    Register tmp, Label &next, Label &none,

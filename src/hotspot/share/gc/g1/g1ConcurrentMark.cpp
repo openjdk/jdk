@@ -675,7 +675,7 @@ public:
 
 private:
   // Heap region closure used for clearing the _mark_bitmap.
-  class G1ClearBitmapHRClosure : public HeapRegionClosure {
+  class G1ClearBitmapHRClosure : public G1HeapRegionClosure {
   private:
     G1ConcurrentMark* _cm;
     G1CMBitMap* _bitmap;
@@ -715,7 +715,7 @@ private:
 
   public:
     G1ClearBitmapHRClosure(G1ConcurrentMark* cm, bool suspendible) :
-      HeapRegionClosure(),
+      G1HeapRegionClosure(),
       _cm(cm),
       _bitmap(cm->mark_bitmap()),
       _suspendible(suspendible)
@@ -759,7 +759,7 @@ private:
   };
 
   G1ClearBitmapHRClosure _cl;
-  HeapRegionClaimer _hr_claimer;
+  G1HeapRegionClaimer _hr_claimer;
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
@@ -843,7 +843,7 @@ public:
 };
 
 class G1PreConcurrentStartTask::NoteStartOfMarkTask : public G1AbstractSubTask {
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 public:
   NoteStartOfMarkTask() : G1AbstractSubTask(G1GCPhaseTimes::NoteStartOfMark), _claimer(0) { }
 
@@ -863,11 +863,11 @@ void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
   _cm->reset();
 }
 
-class NoteStartOfMarkHRClosure : public HeapRegionClosure {
+class NoteStartOfMarkHRClosure : public G1HeapRegionClosure {
   G1ConcurrentMark* _cm;
 
 public:
-  NoteStartOfMarkHRClosure() : HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
+  NoteStartOfMarkHRClosure() : G1HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
 
   bool do_heap_region(G1HeapRegion* r) override {
     if (r->is_old_or_humongous() && !r->is_collection_set_candidate() && !r->in_collection_set()) {
@@ -1204,14 +1204,14 @@ void G1ConcurrentMark::verify_during_pause(G1HeapVerifier::G1VerifyType type,
 class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
   G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
   uint volatile _total_selected_for_rebuild;
 
   // Reclaimed empty regions
-  FreeRegionList _cleanup_list;
+  G1FreeRegionList _cleanup_list;
 
-  struct G1OnRegionClosure : public HeapRegionClosure {
+  struct G1OnRegionClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1ConcurrentMark* _cm;
     // The number of regions actually selected for rebuild.
@@ -1220,11 +1220,11 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
     size_t _freed_bytes;
     uint _num_old_regions_removed;
     uint _num_humongous_regions_removed;
-    FreeRegionList* _local_cleanup_list;
+    G1FreeRegionList* _local_cleanup_list;
 
     G1OnRegionClosure(G1CollectedHeap* g1h,
                       G1ConcurrentMark* cm,
-                      FreeRegionList* local_cleanup_list) :
+                      G1FreeRegionList* local_cleanup_list) :
       _g1h(g1h),
       _cm(cm),
       _num_selected_for_rebuild(0),
@@ -1325,7 +1325,7 @@ public:
   }
 
   void work(uint worker_id) override {
-    FreeRegionList local_cleanup_list("Local Cleanup List");
+    G1FreeRegionList local_cleanup_list("Local Cleanup List");
     G1OnRegionClosure on_region_cl(_g1h, _cm, &local_cleanup_list);
     _g1h->heap_region_par_iterate_from_worker_offset(&on_region_cl, &_hrclaimer, worker_id);
 
@@ -1352,7 +1352,7 @@ public:
   }
 };
 
-class G1UpdateRegionsAfterRebuild : public HeapRegionClosure {
+class G1UpdateRegionsAfterRebuild : public G1HeapRegionClosure {
   G1CollectedHeap* _g1h;
 
 public:
@@ -3078,7 +3078,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   _total_remset_bytes += g1h->card_set_freelist_pool()->mem_size();
   // add static memory usages to remembered set sizes
-  _total_remset_bytes += HeapRegionRemSet::static_mem_size();
+  _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX

@@ -135,7 +135,6 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return this == other || parent == other;
     }
 
-    @Override
     public boolean writeBootstrapMethods(BufWriter buf) {
         if (bsmSize == 0)
             return false;
