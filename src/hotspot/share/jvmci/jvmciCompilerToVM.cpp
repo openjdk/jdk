@@ -710,6 +710,9 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getJObjectValue, (JNIEnv* env, jobject, jobject constant_jobject))
     requireNotInHotSpot("getJObjectValue", JVMCI_CHECK_0);
+    if (!THREAD->has_last_Java_frame()) {
+        JVMCI_THROW_MSG_0(IllegalStateException, err_msg("Cannot call getJObjectValue without Java frame anchor"));
+    }
     JVMCIObject constant = JVMCIENV->wrap(constant_jobject);
     Handle constant_value = JVMCIENV->asConstant(constant, JVMCI_CHECK_0);
     jobject jni_handle = JNIHandles::make_local(THREAD, constant_value());

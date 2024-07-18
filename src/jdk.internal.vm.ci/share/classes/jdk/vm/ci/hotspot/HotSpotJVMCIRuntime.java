@@ -925,14 +925,18 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     /**
-     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned "naked" value is
-     * a JNI local reference, which is valid for the duration of a JVMCI shared library call. This
-     * method must only be called from within the JVMCI shared library.
-     * @param peerObject a reference to an object in the peer runtime
-     * @return the {@code jobject} value wrapped by {@code peerObject}
+     * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned value is
+     * a JNI local reference whose lifetime is scoped by the nearest Java caller (from
+     * HotSpot's perspective). The current thread's state must be {@code _thread_in_native}.
+     * A call from the JVMCI shared library (e.g. libgraal) is in such a state.
+     *
+     * @param peerObject a reference to an object in the HotSpot heap
+     * @return the {@code jobject} value unpacked from {@code peerObject}
      * @throws IllegalArgumentException if the current runtime is not the JVMCI shared library or
-     *             {@code peerObject} is not a peer object reference
+     *             {@code peerObject} is not a HotSpot heap object reference
      * @throws IllegalStateException if not called from within the JVMCI shared library
+     *         or if there is no Java caller frame on the stack
+     *         (i.e., JavaThread::has_last_Java_frame returns false)
      */
     public long getJObjectValue(HotSpotObjectConstant peerObject) {
         return compilerToVm.getJObjectValue((HotSpotObjectConstantImpl)peerObject);
