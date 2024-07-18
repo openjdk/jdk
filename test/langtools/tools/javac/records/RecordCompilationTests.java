@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  *
  * @test
  * @bug 8250629 8252307 8247352 8241151 8246774 8259025 8288130 8282714 8289647 8294020
+ *      8332600
  * @summary Negative compilation tests, and positive compilation (smoke) tests for records
  * @library /lib/combo /tools/lib /tools/javac/lib
  * @enablePreview
@@ -136,6 +137,7 @@ class RecordCompilationTests extends CompilationTestCase {
         assertFail("compiler.err.repeated.modifier", "public public record R(String foo) { }");
         assertFail("compiler.err.repeated.modifier", "private private record R(String foo) { }");
         assertFail("compiler.err.already.defined", "record R(int x, int x) {}");
+        assertFail("compiler.err.already.defined", "record R(int x, int x, int x) {}");
         for (String s : List.of("var", "record"))
             assertFail("compiler.err.restricted.type.not.allowed.here", "record R(# x) { }", s);
         for (String s : List.of("public", "protected", "private", "static", "final", "transient", "volatile",
