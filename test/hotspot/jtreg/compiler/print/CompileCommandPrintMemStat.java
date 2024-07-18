@@ -78,15 +78,16 @@ public class CompileCommandPrintMemStat {
         // Should see final report
         // Looks like this:
         // total     NA        RA        result  #nodes  limit   time    type  #rc thread              method
-        // 2149912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
+        // 2149912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)
         // or
-        // 537784    98184     208536    ok      267     -       0.096   c2    1   0x0000000153019c00  jdk/internal/classfile/impl/BufWriterImpl::writeU1((I)V) 4521912   0         1986272   ok      -       -       0.101   c1    1   0x000000015180a600  jdk/internal/org/objectweb/asm/Frame::execute((IILjdk/internal/org/objectweb/asm/Symbol;Ljdk/internal/org/objectweb/asm/SymbolTable;)V)        oa.shouldMatch("total.*method");
-        oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
+        // 537784    98184     208536    ok      267     -       0.096   c2    1   0x0000000153019c00  jdk/internal/classfile/impl/BufWriterImpl::writeU1((I)V)
+        oa.shouldMatch("total.*method");
+        oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameIncl + ".*");
 
         // In debug builds, we have a default memory limit enabled. That implies MemStat. Therefore we
         // expect to see all methods, not just the one we specified on the command line.
         if (Platform.isDebugBuild()) {
-            oa.shouldMatch("\\d+ +\\d+ +\\d+ +ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
+            oa.shouldMatch("\\d+ +(\\d+ +){4}ok +(\\d+|-) +.*" + expectedNameExcl + ".*");
         } else {
             oa.shouldNotMatch(".*" + expectedNameExcl + ".*");
         }

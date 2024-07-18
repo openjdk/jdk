@@ -44,6 +44,26 @@ STATIC_ASSERT(is_aligned((int)Chunk::init_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 
+#define ARENA_TAG_STRING_(str) #str
+#define ARENA_TAG_STRING(name, str, desc) ARENA_TAG_STRING_(str),
+
+const char* Arena::tag_name[] = {
+  DO_ARENA_TAG(ARENA_TAG_STRING)
+};
+
+#undef ARENA_TAG_STRING
+#undef ARENA_TAG_STRING_
+
+#define ARENA_TAG_DESC_(desc) #desc
+#define ARENA_TAG_DESC(name, str, desc) ARENA_TAG_DESC_(desc),
+
+const char* Arena::tag_desc[] = {
+  DO_ARENA_TAG(ARENA_TAG_DESC)
+};
+
+#undef ARENA_TAG_DESC
+#undef ARENA_TAG_DESC_
+
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {

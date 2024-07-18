@@ -50,6 +50,6 @@ public class CompilerMemoryStatisticTest {
         // total     NA        RA        result  #nodes  time    type  #rc thread              method
         // 211488    66440     77624     ok      13      0.057   c2    2   0x00007fb49428db70  compiler/print/CompileCommandPrintMemStat$TestMain::method1(()V)
         out.shouldMatch("total.*method");
-        out.shouldMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*java.*\\(.*\\)");
+        out.shouldMatch("\\d+ +(\\d+ +){4}\\S+ +\\d+.*java.*\\(.*\\)");
     }
 }

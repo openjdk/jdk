@@ -29,48 +29,46 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
+#include "memory/arena.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
 class Symbol;
 class DirectiveSet;
 
-// Counters for allocations from one arena
+// Counters for allocations from arenas during compilation
 class ArenaStatCounter : public CHeapObj<mtCompiler> {
   // Current bytes, total
   size_t _current;
-  // bytes when compilation started
-  size_t _start;
   // bytes at last peak, total
   size_t _peak;
-  // Current bytes used for node arenas, total
-  size_t _na;
-  // Current bytes used for resource areas
-  size_t _ra;
+  // Current bytes used by arenas per tag
+  size_t _tags_size[Arena::tag_count()];
   // MemLimit handling
   size_t _limit;
   bool _hit_limit;
   bool _limit_in_process;
 
   // Peak composition:
-  // Size of node arena when total peaked (c2 only)
-  size_t _na_at_peak;
-  // Size of resource area when total peaked
-  size_t _ra_at_peak;
+  size_t _tags_size_at_peak[Arena::tag_count()];
   // Number of live nodes when total peaked (c2 only)
   unsigned _live_nodes_at_peak;
 
+  // When to start account
+  bool _active;
+
   void update_c2_node_count();
+
+  void init();
 
 public:
   ArenaStatCounter();
 
   // Size of peak since last compilation
-  size_t peak_since_start() const;
+  size_t peak() const { return _peak; }
 
   // Peak details
-  size_t na_at_peak() const { return _na_at_peak; }
-  size_t ra_at_peak() const { return _ra_at_peak; }
+  const size_t* tags_size_at_peak() const { return _tags_size_at_peak; }
   unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
 
   // Mark the start and end of a compilation.
@@ -89,7 +87,7 @@ public:
   bool   hit_limit() const          { return _hit_limit; }
   bool   limit_in_process() const     { return _limit_in_process; }
   void   set_limit_in_process(bool v) { _limit_in_process = v; }
-
+  bool   is_active() const          { return _active; }
 };
 
 class CompilationMemoryStatistic : public AllStatic {

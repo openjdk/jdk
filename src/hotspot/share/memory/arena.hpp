@@ -83,16 +83,33 @@ public:
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
 };
 
+#define DO_ARENA_TAG(template) \
+  template(other, Others, Other arenas) \
+  template(ra, RA, Resource areas) \
+  template(ha, HA, Handle area) \
+  template(node, NA, Node arena) \
+
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 public:
 
-  enum class Tag : uint8_t {
-    tag_other = 0,
-    tag_ra,   // resource area
-    tag_ha,   // handle area
-    tag_node  // C2 Node arena
+#define ARENA_TAG_ENUM_(name) tag_##name
+#define ARENA_TAG_ENUM(name, str, desc) ARENA_TAG_ENUM_(name),
+
+  enum class Tag: uint8_t {
+    DO_ARENA_TAG(ARENA_TAG_ENUM)
+    tag_count
   };
+
+#undef ARENA_TAG_ENUM
+#undef ARENA_TAG_ENUM_
+
+  constexpr static int tag_count() {
+    return static_cast<int>(Tag::tag_count);
+  }
+
+  static const char* tag_name[static_cast<int>(Arena::Tag::tag_count)];
+  static const char* tag_desc[static_cast<int>(Arena::Tag::tag_count)];
 
 private:
   const MEMFLAGS _flags;        // Memory tracking flags
