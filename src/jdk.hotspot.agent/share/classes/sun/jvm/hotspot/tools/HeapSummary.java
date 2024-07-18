@@ -80,7 +80,6 @@ public class HeapSummary extends Tool {
       printValMB("MaxHeapSize              = ", getFlagValue("MaxHeapSize", flagMap));
       printValMB("NewSize                  = ", getFlagValue("NewSize", flagMap));
       printValMB("MaxNewSize               = ", getFlagValue("MaxNewSize", flagMap));
-      printValMB("OldSize                  = ", getFlagValue("OldSize", flagMap));
       printValue("NewRatio                 = ", getFlagValue("NewRatio", flagMap));
       printValue("SurvivorRatio            = ", getFlagValue("SurvivorRatio", flagMap));
       printValMB("MetaspaceSize            = ", getFlagValue("MetaspaceSize", flagMap));
@@ -253,8 +252,8 @@ public class HeapSummary extends Tool {
       G1MonitoringSupport monitoringSupport = g1h.monitoringSupport();
       long edenSpaceRegionNum = monitoringSupport.edenSpaceRegionNum();
       long survivorSpaceRegionNum = monitoringSupport.survivorSpaceRegionNum();
-      HeapRegionSetBase oldSet = g1h.oldSet();
-      HeapRegionSetBase humongousSet = g1h.humongousSet();
+      G1HeapRegionSetBase oldSet = g1h.oldSet();
+      G1HeapRegionSetBase humongousSet = g1h.humongousSet();
       long oldGenRegionNum = oldSet.length() + humongousSet.length();
       printG1Space(tty, "G1 Heap:", g1h.n_regions(),
                    g1h.used(), g1h.capacity());

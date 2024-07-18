@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/utf8.hpp"
@@ -431,12 +432,16 @@ int UNICODE::utf8_size(jbyte c) {
 
 template<typename T>
 int UNICODE::utf8_length(const T* base, int length) {
-  int result = 0;
+  size_t result = 0;
   for (int index = 0; index < length; index++) {
     T c = base[index];
-    result += utf8_size(c);
+    int sz = utf8_size(c);
+    if (result + sz > INT_MAX-1) {
+      break;
+    }
+    result += sz;
   }
-  return result;
+  return checked_cast<int>(result);
 }
 
 template<typename T>
