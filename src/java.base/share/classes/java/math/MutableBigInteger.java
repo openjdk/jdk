@@ -2023,7 +2023,7 @@ class MutableBigInteger {
          */
         long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
         long s2 = s * s;  // overflows iff s == 2^32
-        return s > LONG_MASK || Long.compareUnsigned(x, s2) < 0
+        return Long.compareUnsigned(x, s2) < 0 || s > LONG_MASK
                 ? s - 1
                 : (Long.compareUnsigned(x, s2 + (s << 1)) <= 0 // x <= (s + 1)^2 - 1, does not overflow
                         ? s
