@@ -638,7 +638,7 @@ static void usage() {
   tty->print_cr("commands to the same method results in undefined behavior.");
   tty->cr();
   tty->print_cr("The 'exclude' command excludes methods from top-level compilations as well as");
-  tty->print_cr("from inlining whereas the 'compileonly' command only excludes methods from");
+  tty->print_cr("from inlining, whereas the 'compileonly' command only excludes methods from");
   tty->print_cr("top-level compilations (i.e. they can still be inlined into other compilation units).");
   tty->cr();
 };
