@@ -2664,6 +2664,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 handshakeFlow.localInitial.reset();
                 continueHandshake();
                 packetSpaces.initial.runTransmitter();
+                this.versionCompatible = true;
             }
         } catch (Throwable t) {
             if (debug.on()) {
