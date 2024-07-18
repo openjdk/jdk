@@ -147,6 +147,12 @@ public class PacketSpaceManagerTest {
         public void setLocalQuicTransportParameters(ByteBuffer params) {
             throw new AssertionError("should not come here!");
         }
+
+        @Override
+        public void restartHandshake() throws IOException {
+            throw new AssertionError("should not come here!");
+        }
+
         @Override
         public void setRemoteQuicTransportParametersConsumer(QuicTransportParametersConsumer consumer) {
             throw new AssertionError("should not come here!");

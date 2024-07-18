@@ -2657,7 +2657,12 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // a different version than the current client chosen version has been negotiated,
             // switch the client connection to use this negotiated version
             if (switchVersion(negotiatedVersion)) {
-                handshakeFlow.localInitial.replayData();
+                final ByteBuffer quicInitialParameters = buildInitialParameters();
+                quicTLSEngine.setLocalQuicTransportParameters(quicInitialParameters);
+                quicTLSEngine.restartHandshake();
+                packetSpace(PacketNumberSpace.INITIAL).retry();
+                handshakeFlow.localInitial.reset();
+                continueHandshake();
                 packetSpaces.initial.runTransmitter();
             }
         } catch (Throwable t) {

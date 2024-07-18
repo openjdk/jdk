@@ -104,6 +104,15 @@ public class CryptoWriterQueue {
     }
 
     /**
+     * Clears the queue and resets position back to zero
+     */
+    public synchronized void reset() {
+        position = 0;
+        totalRemaining = 0;
+        queue.clear();
+    }
+
+    /**
      * Enqueues the provided crypto data
      * @param buffer data to enqueue
      */

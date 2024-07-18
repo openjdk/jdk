@@ -193,6 +193,16 @@ public interface QuicTLSEngine {
     void setLocalQuicTransportParameters(ByteBuffer params);
 
     /**
+     * Reset the handshake state and produce a new ClientHello message.
+     *
+     * When a Quic client receives a Version Negotiation packet,
+     * it restarts the handshake by calling this method after updating the
+     * {@link #setLocalQuicTransportParameters(ByteBuffer) transport parameters}
+     * with the new version information.
+     */
+    void restartHandshake() throws IOException;
+
+    /**
      * Set consumer for quic_transport_parameters sent by the remote side.
      * Consumer will receive a byte buffer containing the value of
      * quic_transport_parameters extension sent by the remote endpoint.

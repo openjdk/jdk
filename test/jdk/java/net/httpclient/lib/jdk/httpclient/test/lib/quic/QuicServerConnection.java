@@ -464,13 +464,12 @@ public final class QuicServerConnection extends QuicConnectionImpl {
                         "[version_information] Chosen Version not in Available Versions",
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
-            // TODO uncomment this once the client is fixed
-//            if (vi.chosenVersion() != quicVersion().versionNumber()) {
-//                throw new QuicTransportException(
-//                        "[version_information] Chosen Version %s does not match version in use %s"
-//                                .formatted(vi.chosenVersion(), quicVersion().versionNumber()),
-//                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
-//            }
+            if (vi.chosenVersion() != quicVersion().versionNumber()) {
+                throw new QuicTransportException(
+                        "[version_information] Chosen Version %s does not match version in use %s"
+                                .formatted(vi.chosenVersion(), quicVersion().versionNumber()),
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
             assert Arrays.stream(vi.availableVersions()).anyMatch(v -> v == preferredQuicVersion.versionNumber());
             if (preferredQuicVersion != quicVersion()) {
                 if (!switchVersion(preferredQuicVersion)) {
