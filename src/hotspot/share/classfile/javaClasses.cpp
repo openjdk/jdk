@@ -754,7 +754,8 @@ bool java_lang_String::equals(oop str1, oop str2) {
 // Print the given string to the given outputStream, limiting the output to
 // at most max_length of the string's characters. If the length exceeds the
 // limit we print an abridged version of the string with the "middle" elided
-// and replaced by " ... ". If max_length is odd it is treated as max_length-1.
+// and replaced by " ... (N characters ommitted) ... ". If max_length is odd
+// it is treated as max_length-1.
 void java_lang_String::print(oop java_string, outputStream* st, int max_length) {
   assert(java_string->klass() == vmClasses::String_klass(), "must be java_string");
   // We need at least two characters to print A ... B
