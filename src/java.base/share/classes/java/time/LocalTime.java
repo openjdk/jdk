@@ -92,8 +92,7 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
+import jdk.internal.util.DecimalDigits;
 
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
@@ -128,7 +127,6 @@ import jdk.internal.access.SharedSecrets;
 @jdk.internal.ValueBased
 public final class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
-    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * The minimum supported {@code LocalTime}, '00:00'.
@@ -1644,7 +1642,7 @@ public final class LocalTime
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
                 buf.append('.');
-                int zeros = 9 - JLA.stringSize(nanoValue);
+                int zeros = 9 - DecimalDigits.stringSize(nanoValue);
                 if (zeros > 0) {
                     buf.repeat('0', zeros);
                 }
