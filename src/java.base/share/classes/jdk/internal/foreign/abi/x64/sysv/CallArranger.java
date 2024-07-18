@@ -50,6 +50,7 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
+import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.Binding.vmStore;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
@@ -276,7 +277,7 @@ public class CallArranger {
                         boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.bufferLoad(offset, type, (int) copy)
-                                .vmStore(storage, type, true);
+                                .vmStore(storage, type, ZERO_EXTEND);
                         offset += copy;
                     }
                 }

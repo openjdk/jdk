@@ -52,9 +52,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
+import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
-import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
 
 /**
  * For the RISCV64 C ABI specifically, this class uses CallingSequenceBuilder
@@ -315,7 +316,7 @@ public class LinuxRISCV64CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type, (int) copy)
-                                .vmStore(storage, type, true);
+                                .vmStore(storage, type, ZERO_EXTEND);
                         offset += copy;
                     }
                 }
@@ -356,7 +357,7 @@ public class LinuxRISCV64CallArranger {
                                 bindings.dup();
                             }
                             bindings.bufferLoad(desc.offset(), type)
-                                    .vmStore(storage, type, true);
+                                    .vmStore(storage, type, ZERO_EXTEND);
                         }
                     } else {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);

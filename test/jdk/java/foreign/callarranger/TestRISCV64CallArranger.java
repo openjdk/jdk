@@ -52,6 +52,7 @@ import java.lang.invoke.MethodType;
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.abi.Binding.*;
+import static jdk.internal.foreign.abi.Binding.ExtendBehavior.SIGN_EXTEND;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 import static platform.PlatformLayouts.RISCV64.*;
@@ -108,8 +109,8 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
-            { cast(byte.class, int.class, false), vmStore(x10, int.class) },
-            { cast(short.class, int.class, false), vmStore(x11, int.class) },
+            { cast(byte.class, int.class, SIGN_EXTEND), vmStore(x10, int.class) },
+            { cast(short.class, int.class, SIGN_EXTEND), vmStore(x11, int.class) },
             { vmStore(x12, int.class) },
             { vmStore(x13, int.class) },
             { vmStore(x14, int.class) },
@@ -117,7 +118,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             { vmStore(x16, long.class) },
             { vmStore(x17, int.class) },
             { vmStore(stackStorage(STACK_SLOT_SIZE, 0), int.class) },
-            { cast(byte.class, int.class, false), vmStore(stackStorage(STACK_SLOT_SIZE, 8), int.class) }
+            { cast(byte.class, int.class, SIGN_EXTEND), vmStore(stackStorage(STACK_SLOT_SIZE, 8), int.class) }
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

@@ -50,6 +50,7 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
+import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.StorageType;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.abiFor;
@@ -424,7 +425,7 @@ public abstract class CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth())
-                                .vmStore(structStorage.storage(), structStorage.carrier(), true);
+                                .vmStore(structStorage.storage(), structStorage.carrier(), ZERO_EXTEND);
                     }
                 }
                 case STRUCT_REFERENCE -> {
