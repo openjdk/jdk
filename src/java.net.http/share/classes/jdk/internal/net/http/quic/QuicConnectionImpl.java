@@ -2613,7 +2613,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
             assert this.quicInstance() instanceof QuicClient : "Not a quic client";
             final QuicClient client = (QuicClient) this.quicInstance();
-            jdk.internal.net.quic.QuicVersion negotiatedVersion = null;
+            QuicVersion negotiatedVersion = null;
             for (final int v : serverSupportedVersions) {
                 final QuicVersion serverVersion = QuicVersion.of(v).orElse(null);
                 if (serverVersion == null) {
@@ -2641,11 +2641,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     continue;
                 }
                 if (debug.on()) {
-                    debug.log("Accepting server supported version %d",
-                            serverVersion.versionNumber());
+                    if (negotiatedVersion == null) {
+                        debug.log("Accepting server supported version %d",
+                                serverVersion.versionNumber());
+                        negotiatedVersion = serverVersion;
+                    } else {
+                        // currently all versions are equal
+                        debug.log("Skipping server supported version %d",
+                                serverVersion.versionNumber());
+                    }
                 }
-                negotiatedVersion = serverVersion;
-                break;
             }
             // at this point if negotiatedVersion is null, then it implies that none of the server
             // supported versions are supported by the client. The spec expects us to abandon the
