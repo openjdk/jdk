@@ -24,7 +24,6 @@
 /**
 * @test
 * @summary Test Float16 vector conversion chain.
-* @requires vm.compiler2.enabled
 * @library /test/lib /
 * @run driver compiler.vectorization.TestFloat16VectorConvChain
 */
@@ -39,7 +38,7 @@ import java.util.Arrays;
 public class TestFloat16VectorConvChain {
 
     @Test
-    @IR(counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
+    @IR(applyIfCPUFeatureOr = {"f16c", "true", "avx512vl", "true"}, counts = {IRNode.VECTOR_CAST_HF2F, IRNode.VECTOR_SIZE_ANY, ">= 1", IRNode.VECTOR_CAST_F2HF, IRNode.VECTOR_SIZE_ANY, " >= 1"})
     public static void test(short [] res, short [] src1, short [] src2) {
         for (int i = 0; i < res.length; i++) {
             res[i] = (short)Float.float16ToFloat(Float.floatToFloat16(Float.float16ToFloat(src1[i]) + Float.float16ToFloat(src2[i])));
