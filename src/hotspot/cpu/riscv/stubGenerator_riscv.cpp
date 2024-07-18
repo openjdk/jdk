@@ -5103,6 +5103,262 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+  void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
+    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
+    Register temp0, Register temp1, Register temp2,  Register temp3,
+    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL lmul) {
+
+    assert((lmul == Assembler::m4 && step == 64) ||
+           (lmul == Assembler::m2 && step == 32) ||
+           (lmul == Assembler::m1 && step == 16),
+           "LMUL should be aligned with step: m4 and 64, m2 and 32 or m1 and 16");
+    // Below is function for calculating Adler32 checksum with 64-, 32- or 16-byte step. LMUL=m4, m2 or m1 is used.
+    // The results are in v12, v13, ..., v22, v23. Example below is for 64-byte step case.
+    // We use b1, b2, ..., b64 to denote the 64 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b64
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b64
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b64) =
+    //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
+    //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
+
+    __ mv(temp3, step);
+    // Load data
+    __ vsetvli(temp0, temp3, Assembler::e8, lmul);
+    __ vle8_v(vbytes, buff);
+    __ addi(buff, buff, step);
+
+    // Upper bound reduction sum for s1_new:
+    // 0xFF * 64 = 0x3FC0, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
+    __ vwredsumu_vs(vs1acc, vbytes, vzero);
+    // Multiplication for s2_new
+    __ vwmulu_vv(vs2acc, vtable, vbytes);
+
+    // s2 = s2 + s1 * log2(step)
+    __ slli(temp1, s1, exact_log2(step));
+    __ add(s2, s2, temp1);
+
+    // Summing up calculated results for s2_new
+    if (MaxVectorSize > 16) {
+      __ vsetvli(temp0, temp3, Assembler::e16, lmul);
+    } else {
+      // Half of vector-widening multiplication result is in successor of vs2acc
+      // group for vlen == 16, in which case we need to double vector register
+      // group width in order to reduction sum all of them
+      Assembler::LMUL lmulx2 = (lmul == Assembler::m1) ? Assembler::m2 :
+                               (lmul == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+      __ vsetvli(temp0, temp3, Assembler::e16, lmulx2);
+    }
+    // Upper bound for reduction sum:
+    // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
+    __ vwredsumu_vs(vtemp1, vs2acc, vzero);
+
+    // Extracting results for:
+    // s1_new
+    __ vmv_x_s(temp0, vs1acc);
+    __ add(s1, s1, temp0);
+    // s2_new
+    __ vsetvli(temp0, temp3, Assembler::e32, Assembler::m1);
+    __ vmv_x_s(temp1, vtemp1);
+    __ add(s2, s2, temp1);
+  }
+
+  /***
+   *  int java.util.zip.Adler32.updateBytes(int adler, byte[] b, int off, int len)
+   *
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff (b + off)
+   *   c_rarg2   - int   len
+   *
+   *  Output:
+   *   c_rarg0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop,
+      L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
+
+    // Aliases
+    Register adler  = c_rarg0;
+    Register s1     = c_rarg0;
+    Register s2     = c_rarg3;
+    Register buff   = c_rarg1;
+    Register len    = c_rarg2;
+    Register nmax  = c_rarg4;
+    Register base  = c_rarg5;
+    Register count = c_rarg6;
+    Register temp0 = x28; // t3
+    Register temp1 = x29; // t4
+    Register temp2 = x30; // t5
+    Register temp3 = x31; // t6
+
+    VectorRegister vzero = v31;
+    VectorRegister vbytes = v8; // group: v8, v9, v10, v11
+    VectorRegister vs1acc = v12; // group: v12, v13, v14, v15
+    VectorRegister vs2acc = v16; // group: v16, v17, v18, v19, v20, v21, v22, v23
+    VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
+    VectorRegister vtable_32 = v4; // group: v4, v5
+    VectorRegister vtable_16 = v30;
+    VectorRegister vtemp1 = v28;
+    VectorRegister vtemp2 = v29;
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    const uint64_t BASE = 0xfff1;
+    const uint64_t NMAX = 0x15B0;
+
+    // Loops steps
+    int step_64 = 64;
+    int step_32 = 32;
+    int step_16 = 16;
+    int step_1  = 1;
+
+    __ enter(); // Required for proper stackwalking of RuntimeStub frame
+    __ mv(temp1, 64);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
+
+    // Generating accumulation coefficients for further calculations
+    // vtable_64:
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_64, vtemp1, temp1);
+    // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
+
+    // vtable_32:
+    __ mv(temp1, 32);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_32, vtemp1, temp1);
+    // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
+
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+    // vtable_16:
+    __ mv(temp1, 16);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_16, vtemp1, temp1);
+    // vtable_16 now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+
+    __ vmv_v_i(vzero, 0);
+
+    __ mv(base, BASE);
+    __ mv(nmax, NMAX);
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ srliw(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
+    __ zero_extend(s1, adler, 16); // s1 = (adler & 0xffff)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    __ mv(temp0, step_16);
+    __ bgeu(len, temp0, L_nmax);
+    __ beqz(len, L_combine);
+
+    // Jumping to L_by1_loop
+    __ sub(len, len, step_1);
+    __ j(L_by1_loop);
+
+  __ bind(L_nmax);
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bltz(len, L_by16);
+
+  // Align L_nmax loop by 64
+  __ bind(L_nmax_loop_entry);
+    __ sub(count, count, 32);
+
+  __ bind(L_nmax_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(count, count, step_64);
+    __ bgtz(count, L_nmax_loop);
+
+    // There are three iterations left to do
+    adler32_process_bytes(buff, s1, s2, vtable_32, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_32, Assembler::m2);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bgez(len, L_nmax_loop_entry);
+
+  __ bind(L_by16);
+    __ add(len, len, count);
+    __ bltz(len, L_by1);
+    // Trying to unroll
+    __ mv(temp3, step_64);
+    __ blt(len, temp3, L_by16_loop);
+
+  __ bind(L_by16_loop_unroll);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(len, len, step_64);
+    // By now the temp3 should still be 64
+    __ bge(len, temp3, L_by16_loop_unroll);
+
+  __ bind(L_by16_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+    __ sub(len, len, step_16);
+    __ bgez(len, L_by16_loop);
+
+  __ bind(L_by1);
+    __ add(len, len, 15);
+    __ bltz(len, L_do_mod);
+
+  __ bind(L_by1_loop);
+    __ lbu(temp0, Address(buff, 0));
+    __ addi(buff, buff, step_1);
+    __ add(s1, temp0, s1);
+    __ add(s2, s2, s1);
+    __ sub(len, len, step_1);
+    __ bgez(len, L_by1_loop);
+
+  __ bind(L_do_mod);
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    // Combine lower bits and higher bits
+    // adler = s1 | (s2 << 16)
+  __ bind(L_combine);
+    __ slli(s2, s2, 16);
+    __ orr(s1, s1, s2);
+
+    __ leave(); // Required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -5744,6 +6000,10 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseSHA1Intrinsics) {
       StubRoutines::_sha1_implCompress     = generate_sha1_implCompress(false, "sha1_implCompress");
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
+    }
+
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
 #endif // COMPILER2_OR_JVMCI
