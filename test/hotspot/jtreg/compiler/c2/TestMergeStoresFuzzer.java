@@ -27,6 +27,7 @@
  * @summary Test merging of consecutive stores, and more specifically the MemPointer.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
+ * @compile ../lib/ir_framework/TestFramework.java
  * @run driver TestMergeStoresFuzzer
  */
 
@@ -53,14 +54,12 @@ import compiler.lib.ir_framework.*;
 
 public class TestMergeStoresFuzzer {
   public static void main(String args[]) throws IOException {
-    if (false) TestFramework.run(); // makes the relevant code javac compile... maybe can do this with an @compile directly?
-
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 
     StringWriter writer = new StringWriter();
     PrintWriter out = new PrintWriter(writer);
-    out.println("import compiler.lib.ir_framework.*;"); // TODO make this work
+    out.println("import compiler.lib.ir_framework.*;");
     out.println("");
     out.println("public class HelloWorld {");
     out.println("    public static void main(String args[]) {");
@@ -72,7 +71,7 @@ public class TestMergeStoresFuzzer {
     out.println("        System.out.println(\"Done with IR framework.\");");
     out.println("    }");
     out.println("");
-    out.println("    @Test");
+    out.println("    @Test"); // TODO: somehow does not find this... why?
     out.println("    static void test() {");
     out.println("        throw new RuntimeException(\"xyz\");");
     out.println("    }");
