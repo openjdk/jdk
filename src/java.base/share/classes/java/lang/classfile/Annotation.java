@@ -37,10 +37,24 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an annotation on a declaration.
+ * Models an {@code annotation} structure, as defined in {@jvms 4.7.16}.
+ *
+ * <p>This structure represents, in the Java Programming Language ({@jls 9.7.4}):
+ * <ul><li>a <i>declaration annotation</i>, in
+ * {@link RuntimeVisibleAnnotationsAttribute} or {@link
+ * RuntimeInvisibleAnnotationsAttribute};
+ * <li>a <i>declaration annotation</i> on
+ * a method parameter, in {@link RuntimeVisibleParameterAnnotationsAttribute}
+ * or {@link RuntimeInvisibleParameterAnnotationsAttribute};
+ * <li>a <i>type annotation</i>, as {@linkplain TypeAnnotation#annotation part of}
+ * {@link TypeAnnotation};
+ * <li>an annotation {@linkplain AnnotationValue.OfAnnotation element value}
+ * whose element type is an annotation type. ({@jls 9.7.1})
+ * </ul>
  *
  * @see AnnotationElement
  * @see AnnotationValue
+ * @see TypeAnnotation
  * @see RuntimeVisibleAnnotationsAttribute
  * @see RuntimeInvisibleAnnotationsAttribute
  * @see RuntimeVisibleParameterAnnotationsAttribute
@@ -51,7 +65,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface Annotation
-        permits TypeAnnotation, AnnotationImpl {
+        permits AnnotationImpl {
 
     /**
      * {@return the class of the annotation}

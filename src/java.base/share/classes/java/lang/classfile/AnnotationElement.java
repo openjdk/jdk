@@ -32,7 +32,9 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a key-value pair of an annotation.
+ * Models a key-value pair in the {@code element_value_pairs}
+ * table in the {@code annotation} structure defined in
+ * {@jvms 4.7.16}.
  *
  * @see Annotation
  * @see AnnotationValue
