@@ -1010,7 +1010,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
+         * <a href="{@docRoot}/java.base/java/util/concurrent/StructuredTaskScope.html#TreeStructure">Tree Structure</a> section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *
@@ -1197,7 +1197,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * <a href="#TreeStructure">Tree Structure</a> section in the class description
+         * <a href="{@docRoot}/java.base/java/util/concurrent/StructuredTaskScope.html#TreeStructure">Tree Structure</a> section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *

@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
  * and calculating max stack size.
  * <p>
  * Sample use:
- * <p>
+ * </p>
  * {@snippet lang=java :
  *     var stackTracker = CodeStackTracker.of();
  *     codeBuilder.transforming(stackTracker, trackedBuilder -> {

@@ -109,8 +109,8 @@ import sun.security.util.ResourcesMgr;
  * input type and exceptions thrown are slightly different.
  *
  * <p><b><a id="sm-allowed">These methods behave differently depending on
- * whether a security manager is
- * <a href="../../../java/lang/SecurityManager.html#set-security-manager">allowed or disallowed</a></a></b>:
+ * whether a security manager is</a>
+ * <a href="../../../java/lang/SecurityManager.html#set-security-manager">allowed or disallowed</a></b>:
  * <ul>
  * <li>If a security manager is allowed, which means it is either already set
  * or allowed to be set dynamically, a {@code Subject} object is associated

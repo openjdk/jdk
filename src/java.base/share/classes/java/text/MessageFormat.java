@@ -371,8 +371,7 @@ import java.util.Objects;
  * The following example demonstrates a general usage of {@code MessageFormat}.
  * In internationalized programs, the message format pattern and other
  * static strings will likely be obtained from resource bundles.
- *
- * <p>
+ * </p>
  * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";

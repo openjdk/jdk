@@ -92,7 +92,7 @@ public interface InetAddressResolver {
      * {@linkplain InetAddressResolver#lookupByName(String, LookupPolicy) looking up host addresses}.
      *
      * <p> The default platform-wide lookup policy is constructed by consulting
-     * <a href="doc-files/net-properties.html#Ipv4IPv6">System Properties</a> which affect
+     * <a href="../doc-files/net-properties.html#Ipv4IPv6">System Properties</a> which affect
      * how IPv4 and IPv6 addresses are returned.
      *
      * @since 18
