@@ -60,18 +60,20 @@ import static sun.awt.screencast.ScreencastHelper.SCREENCAST_DEBUG;
  * The restore token allows the ScreenCast session to be restored
  * with previously granted screen access permissions.
  */
-@SuppressWarnings("removal")
 final class TokenStorage {
 
     private TokenStorage() {}
 
     private static final String REL_NAME =
+            ".java/robot/screencast-tokens.properties";
+    private static final String REL_NAME_SECONDARY =
             ".awt/robot/screencast-tokens.properties";
 
     private static final Properties PROPS = new Properties();
     private static final Path PROPS_PATH;
     private static final Path PROP_FILENAME;
 
+    @SuppressWarnings("removal")
     private static void doPrivilegedRunnable(Runnable runnable) {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
@@ -83,12 +85,15 @@ final class TokenStorage {
     }
 
     static {
-        PROPS_PATH = AccessController.doPrivileged(new PrivilegedAction<Path>() {
+        @SuppressWarnings("removal")
+        Path propsPath = AccessController.doPrivileged(new PrivilegedAction<Path>() {
             @Override
             public Path run() {
                 return setupPath();
             }
         });
+
+        PROPS_PATH = propsPath;
 
         if (PROPS_PATH != null) {
             PROP_FILENAME = PROPS_PATH.getFileName();
@@ -109,26 +114,33 @@ final class TokenStorage {
             return null;
         }
 
-        Path path = Path.of(userHome, REL_NAME);
+        Path primaryPath = Path.of(userHome, REL_NAME);
+        Path secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
+
+        Path path = Files.isWritable(secondaryPath) && !Files.isWritable(primaryPath)
+                ? secondaryPath
+                : primaryPath;
         Path workdir = path.getParent();
 
-        if (!Files.exists(workdir)) {
-            try {
-                Files.createDirectories(workdir);
-            } catch (Exception e) {
+        if (!Files.isWritable(path)) {
+            if (!Files.exists(workdir)) {
+                try {
+                    Files.createDirectories(workdir);
+                } catch (Exception e) {
+                    if (SCREENCAST_DEBUG) {
+                        System.err.printf("Token storage: cannot create" +
+                                " directory %s %s\n", workdir, e);
+                    }
+                    return null;
+                }
+            }
+
+            if (!Files.isWritable(workdir)) {
                 if (SCREENCAST_DEBUG) {
-                    System.err.printf("Token storage: cannot create" +
-                                    " directory %s %s\n", workdir, e);
+                    System.err.printf("Token storage: %s is not writable\n", workdir);
                 }
                 return null;
             }
-        }
-
-        if (!Files.isWritable(workdir)) {
-            if (SCREENCAST_DEBUG) {
-                System.err.printf("Token storage: %s is not writable\n", workdir);
-            }
-            return null;
         }
 
         try {
