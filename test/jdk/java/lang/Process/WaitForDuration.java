@@ -25,12 +25,14 @@
  * @test
  * @bug 8336479
  * @summary Tests for Process.waitFor(Duration)
+ * @library /test/lib
  * @run junit WaitForDuration
  */
 
 import java.io.IOException;
 import java.time.Duration;
 import java.util.stream.Stream;
+import jdk.test.lib.process.ProcessTools;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,25 +43,31 @@ import static org.junit.jupiter.api.Assertions.*;
 public class WaitForDuration {
     static Stream<Arguments> durations() {
         return Stream.of(
-            Arguments.of(Duration.ZERO, false),
-            Arguments.of(Duration.ofSeconds(-100), false),
-            Arguments.of(Duration.ofSeconds(100), true),
-            Arguments.of(Duration.ofSeconds(Long.MAX_VALUE), true), // nano overflow
-            Arguments.of(Duration.ofSeconds(Long.MIN_VALUE), false) // nano underflow
+            Arguments.of(Duration.ZERO, 3_600_000, false),
+            Arguments.of(Duration.ofSeconds(-100), 3_600_000, false),
+            Arguments.of(Duration.ofSeconds(100), 0, true),
+            Arguments.of(Duration.ofSeconds(Long.MAX_VALUE), 0, true), // nano overflow
+            Arguments.of(Duration.ofSeconds(Long.MIN_VALUE), 3_600_000, false) // nano underflow
         );
     }
 
     @ParameterizedTest
     @MethodSource("durations")
-    void testEdgeDurations(Duration d, boolean expected)
+    void testEdgeDurations(Duration d, int sleepMillis, boolean expected)
             throws IOException, InterruptedException {
-        assertEquals(expected,
-            new ProcessBuilder("sleep", "3").start().waitFor(d));
+        var pb = ProcessTools.createTestJavaProcessBuilder(
+            WaitForDuration.class.getSimpleName(), Integer.toString(sleepMillis));
+        assertEquals(expected, pb.start().waitFor(d));
     }
 
     @Test
     void testNullDuration() throws IOException, InterruptedException {
-        assertThrows(NullPointerException.class, () ->
-            new ProcessBuilder("sleep", "3").start().waitFor(null));
+        var pb = ProcessTools.createTestJavaProcessBuilder(
+            WaitForDuration.class.getSimpleName(), "0");
+        assertThrows(NullPointerException.class, () -> pb.start().waitFor(null));
+    }
+
+    public static void main(String... args) throws InterruptedException {
+        Thread.sleep(Integer.parseInt(args[0]));
     }
 }

@@ -498,7 +498,7 @@ public abstract class Process {
 
         if (hasExited())
             return true;
-        if (duration.isZero() || duration.isNegative())
+        if (!duration.isPositive())
             return false;
 
         return waitForNanos(TimeUnit.NANOSECONDS.convert(duration));
@@ -618,8 +618,8 @@ public abstract class Process {
 
     /**
      * This is called from the default implementation of
-     * {@code waitFor(long, TimeUnit)}, which is specified to poll
-     * {@code exitValue()}.
+     * {@code waitFor(long, TimeUnit)} and {@code waitFor(Duration)},
+     * which are specified to poll {@code exitValue()}.
      */
     private boolean hasExited() {
         try {
