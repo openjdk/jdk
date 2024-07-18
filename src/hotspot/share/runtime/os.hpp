@@ -231,7 +231,7 @@ class os: AllStatic {
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
-  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // Returns 0 if pretouch is done via platform dependent method, or otherwise
@@ -520,7 +520,7 @@ class os: AllStatic {
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false, MEMFLAGS flags = mtNone);
   static bool   unmap_memory(char *addr, size_t bytes);
-  static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);
 
   // NUMA-specific interface
