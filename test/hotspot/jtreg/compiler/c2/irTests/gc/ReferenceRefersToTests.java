@@ -30,14 +30,13 @@ import java.lang.ref.*;
 
 /*
  * @test
- * @bug 8336635
+ * @bug 8256999
  * @summary Test that Reference.refersTo intrinsics are properly handled
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @requires vm.compiler2.enabled
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.gc.ReferenceRefersToTests
-
  */
 public class ReferenceRefersToTests {
 
