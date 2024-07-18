@@ -84,6 +84,11 @@ public sealed interface ValueLayout extends MemoryLayout
     Class<?> carrier();
 
     /**
+     * {@return {@code true}, if this value layout is signed}
+     */
+    boolean isSigned();
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -413,55 +418,55 @@ public sealed interface ValueLayout extends MemoryLayout
      * machine address ({@code size_t}), byte alignment set to {@code sizeof(size_t)},
      * byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
+    AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder(), false);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code byte},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder());
+    OfByte JAVA_BYTE = ValueLayouts.OfByteImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code boolean},
      * byte alignment set to 1, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder());
+    OfBoolean JAVA_BOOLEAN = ValueLayouts.OfBooleanImpl.of(ByteOrder.nativeOrder(), false);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code char},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder());
+    OfChar JAVA_CHAR = ValueLayouts.OfCharImpl.of(ByteOrder.nativeOrder(), false);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code short},
      * byte alignment set to 2, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder());
+    OfShort JAVA_SHORT = ValueLayouts.OfShortImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code int},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder());
+    OfInt JAVA_INT = ValueLayouts.OfIntImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code long},
      * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder());
+    OfLong JAVA_LONG = ValueLayouts.OfLongImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code float},
      * byte alignment set to 4, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder());
+    OfFloat JAVA_FLOAT = ValueLayouts.OfFloatImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * A value layout constant whose size is the same as that of a Java {@code double},
      * byte alignment set to 8, and byte order set to {@link ByteOrder#nativeOrder()}.
      */
-    OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
+    OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder(), true);
 
     /**
      * An unaligned address layout constant whose size is the same as that of a

@@ -43,6 +43,7 @@ import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+
 import java.lang.invoke.MethodType;
 import java.lang.ref.Reference;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ import java.util.Map;
 
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.invoke.MethodHandles.foldArguments;
+import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
 
 public final class FallbackLinker extends AbstractLinker {
 
@@ -294,24 +296,32 @@ public final class FallbackLinker extends AbstractLinker {
 
             static {
                 int wchar_size = LibFallback.wcharSize();
-                MemoryLayout wchartLayout = switch(wchar_size) {
+                ValueLayout wchartLayout = switch(wchar_size) {
                     case 2 -> JAVA_CHAR; // prefer JAVA_CHAR
                     default -> FFIType.layoutFor(wchar_size);
                 };
+                if (!LibFallback.wcharSign()) {
+                    wchartLayout = asUnsigned(wchartLayout);
+                }
 
                 CANONICAL_LAYOUTS = Map.ofEntries(
                     // specified canonical layouts
                     Map.entry("bool", JAVA_BOOLEAN),
-                    Map.entry("char", JAVA_BYTE),
+                    Map.entry("char", LibFallback.charSign() ? JAVA_BYTE : asUnsigned(JAVA_BYTE)),
+                    Map.entry("unsigned char", asUnsigned(JAVA_BYTE)),
                     Map.entry("float", JAVA_FLOAT),
                     Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),
+                    Map.entry("unsigned long long", asUnsigned(JAVA_LONG.withByteAlignment(LibFallback.longLongAlign()))),
                     Map.entry("double", JAVA_DOUBLE.withByteAlignment(LibFallback.doubleAlign())),
                     Map.entry("void*", ADDRESS),
                     // platform-dependent sizes
                     Map.entry("size_t", FFIType.SIZE_T),
                     Map.entry("short", FFIType.layoutFor(LibFallback.shortSize())),
+                    Map.entry("unsigned short", asUnsigned(FFIType.layoutFor(LibFallback.shortSize()))),
                     Map.entry("int", FFIType.layoutFor(LibFallback.intSize())),
+                    Map.entry("unsigned int", asUnsigned(FFIType.layoutFor(LibFallback.intSize()))),
                     Map.entry("long", FFIType.layoutFor(LibFallback.longSize())),
+                    Map.entry("unsigned long", asUnsigned(FFIType.layoutFor(LibFallback.longSize()))),
                     Map.entry("wchar_t", wchartLayout),
                     // JNI types
                     Map.entry("jboolean", JAVA_BOOLEAN),

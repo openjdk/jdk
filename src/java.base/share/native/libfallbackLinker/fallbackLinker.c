@@ -312,6 +312,16 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1sizeof_1wchar(JNIEnv* en
   return sizeof(wchar_t);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1signof_1wchar(JNIEnv* env, jclass cls) {
+  return std::is_unsigned<wchar_t>::value
+}
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1signof_1char(JNIEnv* env, jclass cls) {
+  return std::is_unsigned<char>::value
+}
+
 JNIEXPORT jint JNICALL
 Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1long_1long(JNIEnv* env, jclass cls) {
   return alignof(long long);

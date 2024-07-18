@@ -40,6 +40,7 @@ import jdk.internal.foreign.abi.riscv64.linux.LinuxRISCV64Linker;
 import jdk.internal.foreign.abi.s390.linux.LinuxS390Linker;
 import jdk.internal.foreign.abi.x64.sysv.SysVx64Linker;
 import jdk.internal.foreign.abi.x64.windows.Windowsx64Linker;
+import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.AddressLayout;
@@ -66,6 +67,7 @@ import java.util.stream.IntStream;
 import static java.lang.foreign.ValueLayout.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.methodType;
+import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
 
 public final class SharedUtils {
 
@@ -491,7 +493,7 @@ public final class SharedUtils {
         return Map.ofEntries(
                 // specified canonical layouts
                 Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
-                Map.entry("char", ValueLayout.JAVA_BYTE),
+                Map.entry("char", ValueLayout.JAVA_BYTE), // @@@ signed-ness is platform-dependent here?
                 Map.entry("short", ValueLayout.JAVA_SHORT),
                 Map.entry("int", ValueLayout.JAVA_INT),
                 Map.entry("float", ValueLayout.JAVA_FLOAT),
@@ -499,13 +501,22 @@ public final class SharedUtils {
                 Map.entry("long long", ValueLayout.JAVA_LONG),
                 Map.entry("double", ValueLayout.JAVA_DOUBLE),
                 Map.entry("void*", ValueLayout.ADDRESS),
-                Map.entry("size_t", sizetLayout),
-                Map.entry("wchar_t", wchartLayout),
+                Map.entry("size_t", asUnsigned(sizetLayout)),
+                Map.entry("wchar_t", asUnsigned(wchartLayout)), // @@@ signed-ness is platform-dependent here?
+                Map.entry("unsigned char", asUnsigned(ValueLayout.JAVA_BYTE)),
+                Map.entry("unsigned short", asUnsigned(ValueLayout.JAVA_SHORT)),
+                Map.entry("unsigned int", asUnsigned(ValueLayout.JAVA_INT)),
+                Map.entry("unsigned long", asUnsigned(longLayout)),
+                Map.entry("unsigned long long", asUnsigned(ValueLayout.JAVA_LONG)),
                 // unspecified size-dependent layouts
                 Map.entry("int8_t", ValueLayout.JAVA_BYTE),
                 Map.entry("int16_t", ValueLayout.JAVA_SHORT),
                 Map.entry("int32_t", ValueLayout.JAVA_INT),
                 Map.entry("int64_t", ValueLayout.JAVA_LONG),
+                Map.entry("uint8_t", asUnsigned(ValueLayout.JAVA_BYTE)),
+                Map.entry("uint16_t", asUnsigned(ValueLayout.JAVA_SHORT)),
+                Map.entry("uint32_t", asUnsigned(ValueLayout.JAVA_INT)),
+                Map.entry("uint64_t", asUnsigned(ValueLayout.JAVA_LONG)),
                 // unspecified JNI layouts
                 Map.entry("jboolean", ValueLayout.JAVA_BOOLEAN),
                 Map.entry("jchar", ValueLayout.JAVA_CHAR),
