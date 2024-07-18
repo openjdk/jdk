@@ -779,7 +779,7 @@ void java_lang_String::print(oop java_string, outputStream* st, int max_length) 
     // If we need to abridge and we've printed half the allowed characters
     // then jump to the tail of the string.
     if (abridge && index >= max_length / 2) {
-      st->print(" ... ");
+      st->print(" ... (%d characters ommitted) ... ", length - 2 * (max_length / 2));
       index = length - (max_length / 2);
       abridge = false; // only do this once
     }

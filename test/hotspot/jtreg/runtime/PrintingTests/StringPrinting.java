@@ -50,8 +50,9 @@ public class StringPrinting {
     }
 
     public static void main(String[] args) {
-        // Modified string format is "xxx ... xxx" (abridged)
-        final String padding = " ... ";
+        // Modified string format is "xxx ... (N characters ommitted) ... xxx" (abridged)
+        final String elipse = " ... ";
+        final String text = " characters ommitted)";
         final String abridged = "\" (abridged) ";
 
         // Define a set of maxLengths for ease of inspection in the test outout
@@ -93,17 +94,27 @@ public class StringPrinting {
                     }
 
                     // Now extract the two "halves"
-                    int padStart = r.indexOf(padding);
-                    String firstHalf = r.substring(0, padStart);
-                    String secondHalf = r.substring(padStart + padding.length(), r.length());
+                    int elipseStart = r.indexOf(elipse);
+                    String firstHalf = r.substring(0, elipseStart);
+                    int secondElipseStart = r.lastIndexOf(elipse);
+                    String secondHalf = r.substring(secondElipseStart + elipse.length(), r.length());
 
                     System.out.println("S1: >" + firstHalf + "<");
                     System.out.println("S2: >" + secondHalf + "<");
 
                     checkEqual(firstHalf.length(), maxLength / 2);
                     checkEqual(secondHalf.length(), maxLength /2);
-                    // Note: if maxlength is odd the div effectively rounds down
-                    checkEqual(r.length(), (maxLength / 2) * 2 + padding.length());
+
+                    // Now check number of characters ommitted
+                    String tail = r.substring(r.indexOf("("), r.length());
+                    int numberEnd = tail.indexOf(" ");
+                    String nChars = tail.substring(1, numberEnd);
+                    System.out.println("N: >" + nChars + "<");
+
+                    // Now add all the bits back together to get the expected full length
+                    int fullLength = maxLength / 2 + elipse.length() + 1 /* for ( */
+                        + nChars.length() + text.length() + elipse.length() + maxLength / 2;
+                    checkEqual(r.length(), fullLength);
                 }
             }
         }
