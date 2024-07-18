@@ -1970,17 +1970,21 @@ class MutableBigInteger {
             final long x = this.toLong(); // unsigned
 
             /* For every long value s in [0, 2^32) such that x == s * s,
-             * it is true that s == Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)),
-             * and if x == 2^64 - 1, then Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64)) == 2^32.
-             * This means that the value returned by Math.round(Math.sqrt())
+             * it is true that s - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= s,
+             * and if x == 2^64 - 1, then (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) == 2^32.
+             * This means that the value returned by Math.sqrt()
              * for a long value in the range [0, 2^64) is either correct,
-             * or rounded up by one if the value is too high
-             * and too close to the next perfect square.
+             * or rounded up/down by one if the value is too high
+             * and too close to a perfect square.
              */
-            long s = Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64));
+            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
             if (s > LONG_MASK // avoid overflow of s * s
                     || Long.compareUnsigned(x, s * s) < 0) {
                 s--;
+            } else if (s < LONG_MASK) { // avoid overflow of (s + 1) * (s + 1)
+                long s1 = s + 1;
+                if (Long.compareUnsigned(x, s1 * s1) >= 0)
+                    s = s1;
             }
 
             return new MutableBigInteger[] {
@@ -2033,9 +2037,12 @@ class MutableBigInteger {
     private MutableBigInteger[] sqrtRemZimmermann(int len, boolean needRemainder) {
         if (len == 2) { // Base case
             long x = ((value[offset] & LONG_MASK) << 32) | (value[offset + 1] & LONG_MASK);
-            long s = Math.round(Math.sqrt(x >= 0 ? x : x + 0x1p64));
-            if (s > LONG_MASK || Long.compareUnsigned(x, s * s) < 0)
+            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
+            if (s > LONG_MASK || Long.compareUnsigned(x, s * s) < 0) {
                 s--;
+            } else if (s < LONG_MASK && Long.compareUnsigned(x, (s + 1) * (s + 1)) >= 0) {
+                s++;
+            }
 
             // Allocate sufficient space to hold the normalized final square root
             MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3)) >> 1]);
