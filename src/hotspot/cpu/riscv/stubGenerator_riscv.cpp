@@ -5234,7 +5234,7 @@ class StubGenerator: public StubCodeGenerator {
       vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
       vtemp1, vtemp2, step_32, Assembler::m2);
     adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
-      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3, 
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
       vtemp1, vtemp2, step_16, Assembler::m1);
 
     // s1 = s1 % BASE
