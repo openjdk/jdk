@@ -75,23 +75,16 @@ final class TokenStorage {
 
     @SuppressWarnings("removal")
     private static void doPrivilegedRunnable(Runnable runnable) {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            @Override
-            public Void run() {
-                runnable.run();
-                return null;
-            }
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            runnable.run();
+            return null;
         });
     }
 
     static {
         @SuppressWarnings("removal")
-        Path propsPath = AccessController.doPrivileged(new PrivilegedAction<Path>() {
-            @Override
-            public Path run() {
-                return setupPath();
-            }
-        });
+        Path propsPath = AccessController
+                .doPrivileged((PrivilegedAction<Path>) () -> setupPath());
 
         PROPS_PATH = propsPath;
 
