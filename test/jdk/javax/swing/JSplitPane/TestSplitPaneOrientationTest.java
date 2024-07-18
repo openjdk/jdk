@@ -57,7 +57,6 @@ public class TestSplitPaneOrientationTest {
                 JSplitPane jsp = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                                                 new JButton("Left"), new JButton("Right"));
                 jsp.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-                jsp.setEnabled(true);
                 if (jsp.getRightComponent() instanceof JButton button) {
                     System.out.println(button.getText());
                     if (!button.getText().equals("Left")) {
