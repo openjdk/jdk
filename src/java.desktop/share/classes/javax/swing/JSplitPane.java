@@ -355,21 +355,10 @@ public class JSplitPane extends JComponent implements Accessible
                                                "JSplitPane.HORIZONTAL_SPLIT " +
                                                "or JSplitPane.VERTICAL_SPLIT");
         continuousLayout = newContinuousLayout;
-        if (this.getComponentOrientation().equals(ComponentOrientation.LEFT_TO_RIGHT)) {
-            if (newLeftComponent != null) {
-                setLeftComponent(newLeftComponent);
-            }
-            if (newRightComponent != null) {
-                setRightComponent(newRightComponent);
-            }
-        } else {
-            if (newLeftComponent != null) {
-                setRightComponent(newLeftComponent);
-            }
-            if (newRightComponent != null) {
-                setLeftComponent(newRightComponent);
-            }
-        }
+        if (newLeftComponent != null)
+            setLeftComponent(newLeftComponent);
+        if (newRightComponent != null)
+            setRightComponent(newRightComponent);
         updateUI();
 
     }
@@ -383,6 +372,16 @@ public class JSplitPane extends JComponent implements Accessible
         super.setEnabled(enabled);
         if (this.getUI() instanceof BasicSplitPaneUI) {
             ((BasicSplitPaneUI)(this.getUI())).getDivider().setEnabled(enabled);
+        }
+        if (this.getComponentOrientation().equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+            Component leftComponent = this.getLeftComponent();
+            Component rightComponent = this.getRightComponent();
+            if (rightComponent != null) {
+                setLeftComponent(rightComponent);
+            }
+            if (leftComponent != null) {
+                setRightComponent(leftComponent);
+            }
         }
     }
 
