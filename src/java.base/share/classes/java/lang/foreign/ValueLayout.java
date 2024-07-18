@@ -84,11 +84,6 @@ public sealed interface ValueLayout extends MemoryLayout
     Class<?> carrier();
 
     /**
-     * {@return {@code true}, if this value layout is signed}
-     */
-    boolean isSigned();
-
-    /**
      * {@inheritDoc}
      */
     @Override

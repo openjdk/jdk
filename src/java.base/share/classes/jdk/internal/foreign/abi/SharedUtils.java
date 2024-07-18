@@ -489,11 +489,12 @@ public final class SharedUtils {
         }
     }
 
-    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout, ValueLayout wchartLayout) {
+    public static Map<String, MemoryLayout> canonicalLayouts(ValueLayout longLayout, ValueLayout sizetLayout,
+                                                             ValueLayout charLayout, ValueLayout wchartLayout) {
         return Map.ofEntries(
                 // specified canonical layouts
                 Map.entry("bool", ValueLayout.JAVA_BOOLEAN),
-                Map.entry("char", ValueLayout.JAVA_BYTE), // @@@ signed-ness is platform-dependent here?
+                Map.entry("char", charLayout),
                 Map.entry("short", ValueLayout.JAVA_SHORT),
                 Map.entry("int", ValueLayout.JAVA_INT),
                 Map.entry("float", ValueLayout.JAVA_FLOAT),
@@ -502,7 +503,7 @@ public final class SharedUtils {
                 Map.entry("double", ValueLayout.JAVA_DOUBLE),
                 Map.entry("void*", ValueLayout.ADDRESS),
                 Map.entry("size_t", asUnsigned(sizetLayout)),
-                Map.entry("wchar_t", asUnsigned(wchartLayout)), // @@@ signed-ness is platform-dependent here?
+                Map.entry("wchar_t", wchartLayout),
                 Map.entry("unsigned char", asUnsigned(ValueLayout.JAVA_BYTE)),
                 Map.entry("unsigned short", asUnsigned(ValueLayout.JAVA_SHORT)),
                 Map.entry("unsigned int", asUnsigned(ValueLayout.JAVA_INT)),

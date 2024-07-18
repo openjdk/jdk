@@ -39,6 +39,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
+import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+
 /**
  * ABI implementation for Windows/AArch64. Based on AAPCS with
  * changes to va_list.
@@ -46,7 +48,8 @@ import java.util.Map;
 public final class WindowsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG,
+                    asUnsigned(ValueLayout.JAVA_BYTE), ValueLayout.JAVA_CHAR);
 
     public static WindowsAArch64Linker getInstance() {
         class Holder {

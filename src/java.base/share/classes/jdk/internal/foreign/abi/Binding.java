@@ -28,6 +28,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.BindingInterpreter.LoadFunc;
 import jdk.internal.foreign.abi.BindingInterpreter.StoreFunc;
+import jdk.internal.foreign.layout.ValueLayouts;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -303,7 +304,15 @@ public sealed interface Binding {
     enum ExtendBehavior {
         ZERO_EXTEND,
         SIGN_EXTEND,
-        UNSPECIFIED
+        UNSPECIFIED;
+
+        public <T> T select(T ifZeroExtend, T ifSignExtend) {
+            return switch (this) {
+                case ZERO_EXTEND -> ifZeroExtend;
+                case SIGN_EXTEND -> ifSignExtend;
+                case UNSPECIFIED -> throw new IllegalStateException("Sign extension behavior not specified");
+            };
+        }
     }
 
     static Binding cast(Class<?> fromType, Class<?> toType) {
@@ -327,13 +336,9 @@ public sealed interface Binding {
             if (fromType == boolean.class) {
                 return Cast.BOOLEAN_TO_INT;
             } else if (fromType == byte.class) {
-                return extendBehavior == ExtendBehavior.ZERO_EXTEND
-                        ? Cast.UBYTE_TO_INT
-                        : Cast.BYTE_TO_INT;
+                return extendBehavior.select(Cast.UBYTE_TO_INT, Cast.BYTE_TO_INT);
             } else if (fromType == short.class) {
-                return extendBehavior == ExtendBehavior.ZERO_EXTEND
-                        ? Cast.USHORT_TO_INT
-                        : Cast.SHORT_TO_INT;
+                return extendBehavior.select(Cast.USHORT_TO_INT, Cast.SHORT_TO_INT);
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
             } else if (fromType == long.class) {
@@ -349,13 +354,9 @@ public sealed interface Binding {
             }
         } else if (toType == long.class) {
             if (fromType == byte.class) {
-                return extendBehavior == ExtendBehavior.ZERO_EXTEND
-                        ? Cast.UBYTE_TO_LONG
-                        : Cast.BYTE_TO_LONG;
+                return extendBehavior.select(Cast.UBYTE_TO_LONG, Cast.BYTE_TO_LONG);
             } else if (fromType == short.class) {
-                return extendBehavior == ExtendBehavior.ZERO_EXTEND
-                        ? Cast.USHORT_TO_LONG
-                        : Cast.SHORT_TO_LONG;
+                return extendBehavior.select(Cast.USHORT_TO_LONG, Cast.SHORT_TO_LONG);
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_LONG;
             }
@@ -386,7 +387,7 @@ public sealed interface Binding {
         }
 
         public Binding.Builder vmStore(VMStorage storage, ValueLayout type) {
-            ExtendBehavior extendBehavior = type.isSigned() ? SIGN_EXTEND : ExtendBehavior.ZERO_EXTEND;
+            ExtendBehavior extendBehavior = ValueLayouts.isSigned(type) ? SIGN_EXTEND : ExtendBehavior.ZERO_EXTEND;
             return vmStore(storage, type.carrier(), extendBehavior);
         }
 

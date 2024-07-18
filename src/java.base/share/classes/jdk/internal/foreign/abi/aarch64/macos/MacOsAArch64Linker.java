@@ -38,6 +38,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
+import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+
 /**
  * ABI implementation for macOS on Apple Silicon. Based on AAPCS with
  * changes to va_list and passing arguments on the stack.
@@ -45,7 +47,8 @@ import java.util.Map;
 public final class MacOsAArch64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG, ValueLayout.JAVA_INT);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_LONG, ValueLayout.JAVA_LONG,
+                    asUnsigned(ValueLayout.JAVA_BYTE), asUnsigned(ValueLayout.JAVA_INT));
 
     public static MacOsAArch64Linker getInstance() {
         final class Holder {

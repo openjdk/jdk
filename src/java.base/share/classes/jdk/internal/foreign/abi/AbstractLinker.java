@@ -164,11 +164,9 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
             List<MemoryLayout> variadicLayouts = argumentLayouts.subList(optionSet.firstVariadicArgIndex(), argumentLayouts.size());
 
             for (MemoryLayout variadicLayout : variadicLayouts) {
-                if (variadicLayout.equals(ValueLayout.JAVA_BOOLEAN)
-                    || variadicLayout.equals(ValueLayout.JAVA_BYTE)
-                    || variadicLayout.equals(ValueLayout.JAVA_CHAR)
-                    || variadicLayout.equals(ValueLayout.JAVA_SHORT)
-                    || variadicLayout.equals(ValueLayout.JAVA_FLOAT)) {
+                if (variadicLayout instanceof ValueLayout valueLayout &&
+                        (valueLayout.carrier().equals(float.class) ||
+                        valueLayout.byteSize() < canonicalLayouts().get("int").byteSize())) {
                     throw new IllegalArgumentException("Invalid variadic argument layout: " + variadicLayout);
                 }
             }

@@ -102,7 +102,7 @@ public final class ValueLayouts {
         /**
          * {@return {@code true}, if this value layout is signed}
          */
-        public boolean isSigned() {
+        boolean isSigned() {
             return signed;
         }
 
@@ -439,5 +439,9 @@ public final class ValueLayouts {
 
     public static ValueLayout asUnsigned(ValueLayout layout) {
         return ((AbstractValueLayout<?>)layout).withSign(false);
+    }
+
+    public static boolean isSigned(ValueLayout valueLayout) {
+        return ((AbstractValueLayout<?>)valueLayout).isSigned();
     }
 }

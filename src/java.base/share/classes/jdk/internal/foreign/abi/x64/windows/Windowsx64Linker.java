@@ -36,13 +36,16 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.Map;
 
+import static jdk.internal.foreign.layout.ValueLayouts.asUnsigned;
+
 /**
  * ABI implementation based on Windows ABI AMD64 supplement v.0.99.6
  */
 public final class Windowsx64Linker extends AbstractLinker {
 
     static final Map<String, MemoryLayout> CANONICAL_LAYOUTS =
-            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG, ValueLayout.JAVA_CHAR);
+            SharedUtils.canonicalLayouts(ValueLayout.JAVA_INT, ValueLayout.JAVA_LONG,
+                    asUnsigned(ValueLayout.JAVA_BYTE), ValueLayout.JAVA_CHAR);
 
     public static Windowsx64Linker getInstance() {
         final class Holder {

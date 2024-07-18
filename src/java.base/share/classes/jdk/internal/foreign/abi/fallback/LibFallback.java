@@ -57,7 +57,9 @@ final class LibFallback {
     static MemorySegment uint16Type() { return NativeConstants.UINT16_TYPE; }
     static MemorySegment sint16Type() { return NativeConstants.SINT16_TYPE; }
     static MemorySegment sint32Type() { return NativeConstants.SINT32_TYPE; }
+    static MemorySegment uint32Type() { return NativeConstants.UINT32_TYPE; }
     static MemorySegment sint64Type() { return NativeConstants.SINT64_TYPE; }
+    static MemorySegment uint64Type() { return NativeConstants.UINT64_TYPE; }
     static MemorySegment floatType() { return NativeConstants.FLOAT_TYPE; }
     static MemorySegment doubleType() { return NativeConstants.DOUBLE_TYPE; }
     static MemorySegment pointerType() { return NativeConstants.POINTER_TYPE; }
@@ -259,7 +261,9 @@ final class LibFallback {
         static final MemorySegment UINT16_TYPE = MemorySegment.ofAddress(ffi_type_uint16());
         static final MemorySegment SINT16_TYPE = MemorySegment.ofAddress(ffi_type_sint16());
         static final MemorySegment SINT32_TYPE = MemorySegment.ofAddress(ffi_type_sint32());
+        static final MemorySegment UINT32_TYPE = MemorySegment.ofAddress(ffi_type_uint32());
         static final MemorySegment SINT64_TYPE = MemorySegment.ofAddress(ffi_type_sint64());
+        static final MemorySegment UINT64_TYPE = MemorySegment.ofAddress(ffi_type_uint64());
         static final MemorySegment FLOAT_TYPE = MemorySegment.ofAddress(ffi_type_float());
         static final MemorySegment DOUBLE_TYPE = MemorySegment.ofAddress(ffi_type_double());
         static final MemorySegment POINTER_TYPE = MemorySegment.ofAddress(ffi_type_pointer());
