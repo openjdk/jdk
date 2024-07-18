@@ -293,8 +293,29 @@ public class BigIntegerTest {
         report("squareRootSmall", failCount);
     }
 
+    private static void perfectSquaresLong() {
+        /* For every long value n in [0, 2^32) such that x == n * n,
+         * n - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= n
+         * must be true.
+         */
+        int failCount = 0;
+
+        long limit = 1L << 32;
+        for (long n = 0; n < limit; n++) {
+            long x = n * n;
+            long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
+            if (!(s == n || s == n - 1)) {
+                failCount++;
+                System.err.println(s + "^2 != " + x + " && (" + s + "+1)^2 != " + x);
+            }
+        }
+
+        report("perfectSquaresLong", failCount);
+    }
+
     public static void squareRoot() {
         squareRootSmall();
+        perfectSquaresLong();
 
         ToIntFunction<BigInteger> f = (n) -> {
             int failCount = 0;

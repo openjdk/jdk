@@ -2015,21 +2015,19 @@ class MutableBigInteger {
         /* For every long value s in [0, 2^32) such that x == s * s,
          * it is true that s - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= s,
          * and if x == 2^64 - 1, then (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) == 2^32.
-         * This means that the value returned by Math.sqrt()
+         * Since both cast to long and `Math.sqrt()` are (weakly) increasing,
+         * this means that the value returned by Math.sqrt()
          * for a long value in the range [0, 2^64) is either correct,
          * or rounded up/down by one if the value is too high
          * and too close to a perfect square.
          */
         long s = (long) Math.sqrt(x >= 0 ? x : x + 0x1p64);
-        if (s > LONG_MASK // avoid overflow of s * s
-                || Long.compareUnsigned(x, s * s) < 0) {
-            s--;
-        } else if (s < LONG_MASK) { // avoid overflow of (s + 1) * (s + 1)
-            long s1 = s + 1;
-            if (Long.compareUnsigned(x, s1 * s1) >= 0)
-                s = s1;
-        }
-        return s;
+        long s2 = s * s;  // overflows iff s == 2^32
+        return s > LONG_MASK || Long.compareUnsigned(x, s2) < 0
+                ? s - 1
+                : (Long.compareUnsigned(x, s2 + (s << 1)) <= 0 // x <= (s + 1)^2 - 1, does not overflow
+                        ? s
+                        : s + 1);
     }
 
     /**
@@ -2044,6 +2042,7 @@ class MutableBigInteger {
             long s = ulongSqrt(x);
 
             // Allocate sufficient space to hold the normalized final square root
+            // (4 * ceil(intLen / 4)) / 2 == (intLen + ((-intLen) & 3)) >> 1
             MutableBigInteger sqrt = new MutableBigInteger(new int[(intLen + ((-intLen) & 3)) >> 1]);
 
             // Place the partial square root
@@ -2080,14 +2079,14 @@ class MutableBigInteger {
         MutableBigInteger sqrt = sr[0];
         sqrt.shiftAdd(q, blockLen);
 
-        MutableBigInteger chunk = u; // Corresponds to ub + a_0 in the paper
-        chunk.shiftAddDisjoint(getBlockZimmermann(0, len, limit, blockLen), blockLen);
+        // Corresponds to ub + a_0 in the paper
+        u.shiftAddDisjoint(getBlockZimmermann(0, len, limit, blockLen), blockLen);
         BigInteger qBig = q.toBigInteger(); // Cast to BigInteger to use fast multiplication
         MutableBigInteger qSqr = new MutableBigInteger(qBig.multiply(qBig).mag);
 
         MutableBigInteger rem;
         if (needRemainder) {
-            rem = chunk;
+            rem = u;
             if (rem.subtract(qSqr) == -1) {
                 twiceSqrt = new MutableBigInteger(sqrt);
                 twiceSqrt.leftShift(1);
@@ -2098,7 +2097,7 @@ class MutableBigInteger {
             }
         } else {
             rem = null;
-            if (chunk.compare(qSqr) == -1)
+            if (u.compare(qSqr) == -1)
                 sqrt.subtract(ONE);
         }
 
@@ -2131,13 +2130,16 @@ class MutableBigInteger {
     }
 
     /**
-     * Returns a {@code MutableBigInteger} obtained taking {@code blockLen} ints from
-     * {@code this} number, starting at {@code blockIndex*blockLen}.<br/>
-     * Used by Zimmermann square root.
-     * @param blockIndex the block index
+     * Returns a {@code MutableBigInteger} obtained by taking {@code blockLen} ints from
+     * {@code this} number, ending at {@code blockIndex*blockLen} (exclusive).<br/>
+     * Used in Zimmermann's square root.
+     * @param blockIndex the block index, starting from the lowest
      * @param len the logical length of the input value in units of 32 bits
      * @param limit the offset which is the end of valid words in the input value
      * @param blockLen the length of the block in units of 32 bits
+     *
+     * @return a {@code MutableBigInteger} obtained by taking {@code blockLen} ints from
+     * {@code this} number, ending at {@code blockIndex*blockLen} (exclusive).
      */
     private MutableBigInteger getBlockZimmermann(int blockIndex, int len, int limit, int blockLen) {
         final int blockEnd = offset + len - blockIndex * blockLen;
