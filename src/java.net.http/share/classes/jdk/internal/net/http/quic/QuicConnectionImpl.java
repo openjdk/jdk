@@ -267,13 +267,18 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private volatile long peerActiveConnIdsLimit = 2; // default is 2 as per RFC
 
     private volatile int state;
+    // the quic version currently in use
     private volatile QuicVersion quicVersion;
+    // the quic version from the first packet
+    private final QuicVersion originalVersion;
     private volatile QuicPacketDecoder decoder;
     private volatile QuicPacketEncoder encoder;
     // (client-only) if true, we no longer accept VERSIONS packets
     private volatile boolean versionCompatible;
     // if true, we no longer accept version changes
     private volatile boolean versionNegotiated;
+    // true if we changed version in response to VERSIONS packet
+    private volatile boolean processedVersionsPacket;
     // start off with 1200 or whatever is configured through
     // jdk.net.httpclient.quic.defaultPDU system property
     private int maxPeerAdvertisedPayloadSize = DEFAULT_DATAGRAM_SIZE;
@@ -305,7 +310,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.logTag = logTag;
         this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
-        this.quicVersion = firstFlightVersion == null
+        this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
         final boolean isClientConn = isClientConnection();
@@ -2665,6 +2670,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 continueHandshake();
                 packetSpaces.initial.runTransmitter();
                 this.versionCompatible = true;
+                processedVersionsPacket = true;
             }
         } catch (Throwable t) {
             if (debug.on()) {
@@ -3426,10 +3432,25 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         "[version_information] Chosen Version does not match version in use",
                         null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
             }
-            // TODO client: if chosen version was not in available versions -> negotiation error
-            // TODO client: if reacted to versions and available versions empty -> negotiation error
+            if (processedVersionsPacket) {
+                if (vi.availableVersions().length == 0) {
+                    throw new QuicTransportException(
+                            "[version_information] available versions empty",
+                            null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+                }
+                if (Arrays.stream(vi.availableVersions())
+                        .anyMatch(i -> i == originalVersion.versionNumber())) {
+                    throw new QuicTransportException(
+                            "[version_information] original version was available",
+                            null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+                }
+            }
         } else {
-            // TODO client: if reacted to versions packet and version information absent -> negotiation error
+            if (processedVersionsPacket && quicVersion != QuicVersion.QUIC_V1) {
+                throw new QuicTransportException(
+                        "version_information parameter absent",
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
         }
         handleIncomingPeerTransportParams(params);
 
