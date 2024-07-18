@@ -484,7 +484,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #ifdef LINUX
   if (DumpPerfMapAtExit) {
-    CodeCache::write_perf_map(nullptr, tty);
+    CodeCache::write_perf_map();
   }
   if (PrintMemoryMapAtExit) {
     MemMapPrinter::print_all_mappings(tty);

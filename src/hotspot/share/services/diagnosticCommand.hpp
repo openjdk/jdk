@@ -316,7 +316,7 @@ public:
 // See also: dump_heap in attachListener.cpp
 class HeapDumpDCmd : public DCmdWithParser {
 protected:
-  DCmdArgument<char*> _filename;
+  DCmdArgument<FileArgument> _filename;
   DCmdArgument<bool>  _all;
   DCmdArgument<jlong> _gzip;
   DCmdArgument<bool> _overwrite;
@@ -399,7 +399,7 @@ public:
 class DumpSharedArchiveDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<char*> _suboption;   // option of VM.cds
-  DCmdArgument<char*> _filename;    // file name, optional
+  DCmdArgument<FileArgument> _filename;    // file name, optional
 public:
   static int num_arguments() { return 2; }
   DumpSharedArchiveDCmd(outputStream* output, bool heap);
@@ -579,7 +579,7 @@ public:
 #ifdef LINUX
 class PerfMapDCmd : public DCmdWithParser {
 protected:
-  DCmdArgument<char*> _filename;
+  DCmdArgument<FileArgument> _filename;
 public:
   static int num_arguments() { return 1; }
   PerfMapDCmd(outputStream* output, bool heap);
@@ -937,7 +937,7 @@ private:
 protected:
   DCmdArgument<bool> _overwrite;
   DCmdArgument<char*> _format;
-  DCmdArgument<char*> _filepath;
+  DCmdArgument<FileArgument> _filepath;
 public:
   static int num_arguments() { return 3; }
   ThreadDumpToFileDCmd(outputStream *output, bool heap);
@@ -1000,7 +1000,7 @@ public:
 };
 
 class SystemDumpMapDCmd : public DCmdWithParser {
-  DCmdArgument<char*> _filename;
+  DCmdArgument<FileArgument> _filename;
 public:
   static int num_arguments() { return 1; }
   SystemDumpMapDCmd(outputStream* output, bool heap);

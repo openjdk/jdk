@@ -1788,19 +1788,8 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename, outputStream* out) {
+void CodeCache::write_perf_map(const char* filename) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map
-  // if the file name is not specified.
-  char fname[JVM_MAXPATHLEN];
-  constexpr char filename_default[] = "/tmp/perf-%p.map";
-  const char *src = filename == nullptr ? filename_default : filename;
-  if (!Arguments::copy_expand_pid(src, strlen(src), fname, sizeof(fname))) {
-    out->print_cr("Invalid file path name specified: %s", src);
-    return;
-  }
-  filename = fname;
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
     log_warning(codecache)("Failed to create %s for perf map", filename);

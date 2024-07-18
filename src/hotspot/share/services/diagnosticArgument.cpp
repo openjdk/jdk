@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,6 +106,10 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) c
       strcat(buf, ",");
     }
   }
+}
+
+void GenDCmdArgument::to_string(FileArgument f, char *buf, size_t len) const {
+  jio_snprintf(buf, len, "%s", (f._name != nullptr) ? f._name : "");
 }
 
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
@@ -350,3 +354,31 @@ template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
 }
 
 template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
+
+template <>
+void DCmdArgument<FileArgument>::parse_value(const char *str, size_t len,
+                                                   TRAPS) {
+  if (str == NULL) {
+    _value._name = nullptr;
+  } else {
+    _value._name = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtInternal);
+    if (!Arguments::copy_expand_pid(str, len, _value._name, JVM_MAXPATHLEN)) {
+      fatal("Invalid file path: %s", str);
+    }
+  }
+}
+
+template <> void DCmdArgument<FileArgument>::init_value(TRAPS) {
+  if (has_default() && _default_string != NULL) {
+    this->parse_value(_default_string, strlen(_default_string), THREAD);
+  } else {
+    _value._name = nullptr;
+  }
+}
+
+template <> void DCmdArgument<FileArgument>::destroy_value() {
+  if (_value._name != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _value._name);
+    _value._name = nullptr;
+  }
+}

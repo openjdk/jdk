@@ -516,19 +516,11 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
     }
   }
 
-  // If the filename contains %p, it will be replaced by the pid.
-  char fname[JVM_MAXPATHLEN];
-  if (!Arguments::copy_expand_pid(_filename.value(), strlen(_filename.value()),
-                                  fname, sizeof(fname))) {
-    output()->print_cr("Invalid file path name specified: %s", _filename.value());
-    return;
-  }
-
   // Request a full GC before heap dump if _all is false
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(fname, output(), (int)level, _overwrite.value(),
+  dumper.dump(_filename.value()._name, output(), (int)level, _overwrite.value(),
               (uint)parallel);
 }
 
@@ -861,7 +853,7 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
-#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-<pid>.map"
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
 
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
@@ -871,10 +863,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  // The check for _filename.is_set() is because we don't want to use
-  // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
-  // of the default, not the actual default.
-  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr, output());
+  CodeCache::write_perf_map(_filename.value()._name);
 }
 #endif // LINUX
 
@@ -1025,7 +1014,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   // The check for _filename.is_set() is because we don't want to use
   // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
   // of the default, not the actual default.
-  const char* file = _filename.is_set() ? _filename.value() : nullptr;
+  const char* file = _filename.is_set() ? _filename.value()._name : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
@@ -1048,14 +1037,8 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
 
   // call CDS.dumpSharedArchive
   Handle fileh;
-  char fname[JVM_MAXPATHLEN];
   if (file != nullptr) {
-    // If the filename contains %p, it will be replaced by the pid.
-    if (Arguments::copy_expand_pid(file, strlen(file), fname, sizeof(fname))) {
-      fileh = java_lang_String::create_from_str(fname, CHECK);
-    } else {
-      output()->print_cr("Invalid file path name specified %s, fall back to default name.", file);
-    }
+    fileh = java_lang_String::create_from_str(file, CHECK);
   }
   Symbol* cds_name  = vmSymbols::jdk_internal_misc_CDS();
   Klass*  cds_klass = SystemDictionary::resolve_or_fail(cds_name, true /*throw error*/,  CHECK);
@@ -1128,16 +1111,9 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
-  char path[JVM_MAXPATHLEN];
-  if (!Arguments::copy_expand_pid(_filepath.value(), strlen(_filepath.value()),
-                                  path, sizeof(path))) {
-    output()->print_cr("Invalid file path name specified: %s",
-                       _filepath.value());
-    return;
-  }
   bool overwrite = _overwrite.value();
   Symbol* name = (json) ? vmSymbols::dumpThreadsToJson_name() : vmSymbols::dumpThreads_name();
-  dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), path, overwrite, CHECK);
+  dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), _filepath.value()._name, overwrite, CHECK);
 }
 
 void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS) {
@@ -1207,7 +1183,7 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MemMapPrinter::print_all_mappings(output());
 }
 
-static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+static constexpr char default_filename[] = "vm_memory_map_%p.txt";
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
@@ -1216,15 +1192,7 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  const char *name = nullptr;
-  char fname[JVM_MAXPATHLEN];
-  constexpr char filename_default[] = "vm_memory_map_%p.txt";
-  const char* src = _filename.is_set() ? _filename.value() : filename_default;
-  if (!Arguments::copy_expand_pid(src, strlen(src), fname, sizeof(fname))) {
-    output()->print_cr("Invalid file path name specified: %s", src);
-    return;
-  }
-  name = fname;
+  const char *name = _filename.value()._name;
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
