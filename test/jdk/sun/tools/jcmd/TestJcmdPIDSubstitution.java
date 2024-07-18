@@ -29,7 +29,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm TestJcmdPIDSubstitution
+ * @run driver TestJcmdPIDSubstitution
  *
  */
 
@@ -53,11 +53,8 @@ public class TestJcmdPIDSubstitution {
 
     private static void verifyOutputFilenames(String... args) throws Exception {
         long pid = ProcessTools.getProcessId();
-        Path path;
-        do {
-            path = Paths.get("myfile%d".formatted(pid));
-        } while(Files.exists(path));
-
+        String test_dir = System.getProperty("test.dir", ".");
+        Path path = Paths.get("%s/myfile%d".formatted(test_dir, pid));
         OutputAnalyzer output = JcmdBase.jcmd(args);
         output.shouldHaveExitValue(0);
         if (Files.exists(path)) {
