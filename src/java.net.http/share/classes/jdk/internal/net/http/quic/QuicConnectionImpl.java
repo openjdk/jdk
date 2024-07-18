@@ -223,7 +223,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     protected final Logger debug = Utils.getDebugLogger(this::dbgTag);
 
-    // TODO we should have one RTT estimator per path, not connection
     final QuicRttEstimator rttEstimator = new QuicRttEstimator();
     final QuicCongestionController congestionController;
     /**
@@ -2277,8 +2276,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     final QuicPacket makeConnectionClosePacket(final ConnectionCloseFrame frame,
                                                final KeySpace keySpace) {
         final PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.of(keySpace));
-        // TODO: check packetspace closed and other things that were
-        //  done in sendConnectionCloseFrame
         return encoder.newOutgoingPacket(keySpace, packetSpace,
                 localConnectionId(), peerConnectionId(), initialToken(),
                 List.of(frame),
@@ -3016,7 +3013,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return handshakeFlow;
     }
 
-    // TODO create one secureRandom for all QUIC needs (see QuicClient#RANDOM)
     private static final Random RANDOM = new SecureRandom();
 
     private QuicConnectionId initialServerConnectionId() {
