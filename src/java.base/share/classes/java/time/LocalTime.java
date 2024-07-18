@@ -1647,8 +1647,8 @@ public final class LocalTime
                     buf.repeat('0', zeros);
                 }
                 int digits;
-                if (nanoValue % 1000_000 == 0) {
-                    digits = nanoValue / 1000_000;
+                if (nanoValue % 1_000_000 == 0) {
+                    digits = nanoValue / 1_000_000;
                 } else if (nanoValue % 1000 == 0) {
                     digits = nanoValue / 1000;
                 } else {
