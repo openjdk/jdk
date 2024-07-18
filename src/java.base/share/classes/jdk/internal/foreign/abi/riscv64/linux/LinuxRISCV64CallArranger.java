@@ -29,6 +29,8 @@
 package jdk.internal.foreign.abi.riscv64.linux;
 
 import jdk.internal.foreign.Utils;
+import java.lang.foreign.*;
+
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
@@ -275,7 +277,7 @@ public class LinuxRISCV64CallArranger {
             switch (argumentClass) {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, carrier);
+                    bindings.vmStore(storage, (ValueLayout) layout);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
@@ -313,7 +315,7 @@ public class LinuxRISCV64CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type, (int) copy)
-                                .vmStore(storage, type);
+                                .vmStore(storage, type, true);
                         offset += copy;
                     }
                 }
@@ -354,7 +356,7 @@ public class LinuxRISCV64CallArranger {
                                 bindings.dup();
                             }
                             bindings.bufferLoad(desc.offset(), type)
-                                    .vmStore(storage, type);
+                                    .vmStore(storage, type, true);
                         }
                     } else {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);

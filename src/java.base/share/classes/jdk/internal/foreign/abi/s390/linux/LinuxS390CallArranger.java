@@ -26,6 +26,8 @@
 
 package jdk.internal.foreign.abi.s390.linux;
 
+import java.lang.foreign.*;
+
 import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
@@ -217,7 +219,7 @@ public class LinuxS390CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
-                            .vmStore(storage, type);
+                            .vmStore(storage, type, true);
                 }
                 case STRUCT_SFA -> {
                     assert carrier == MemorySegment.class;
@@ -249,7 +251,7 @@ public class LinuxS390CallArranger {
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, carrier);
+                    bindings.vmStore(storage, (ValueLayout) layout);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, carrier == float.class);

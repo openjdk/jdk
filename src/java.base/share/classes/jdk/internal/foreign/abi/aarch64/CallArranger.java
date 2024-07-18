@@ -424,7 +424,7 @@ public abstract class CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth())
-                                .vmStore(structStorage.storage(), structStorage.carrier());
+                                .vmStore(structStorage.storage(), structStorage.carrier(), true);
                     }
                 }
                 case STRUCT_REFERENCE -> {
@@ -449,7 +449,7 @@ public abstract class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
-                    bindings.vmStore(storage, carrier);
+                    bindings.vmStore(storage, (ValueLayout) layout);
                 }
                 case FLOAT -> {
                     boolean forVariadicFunctionArgs = forArguments && forVariadicFunction;

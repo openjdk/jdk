@@ -114,8 +114,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
             { vmStore(r7, int.class) },
             { vmStore(stackStorage((short) 4, 0), int.class) },
             { vmStore(stackStorage((short) 4, 4), int.class) },
-            { cast(short.class, int.class), vmStore(stackStorage((short) 2, 8), int.class) },
-            { cast(byte.class, int.class), vmStore(stackStorage((short) 1, 10), int.class) },
+            { cast(short.class, int.class, false), vmStore(stackStorage((short) 2, 8), int.class) },
+            { cast(byte.class, int.class, false), vmStore(stackStorage((short) 1, 10), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

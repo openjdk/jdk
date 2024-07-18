@@ -384,7 +384,7 @@ public abstract class CallArranger {
                             bindings.shiftLeft(shiftAmount, type)
                                     .vmStore(storage, long.class);
                         } else {
-                            bindings.vmStore(storage, type);
+                            bindings.vmStore(storage, type, true);
                         }
                         offset += size;
                     }
@@ -405,7 +405,7 @@ public abstract class CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type)
-                                .vmStore(storage, type);
+                                .vmStore(storage, type, true);
                         VMStorage storage2 = regs.second()[index];
                         if (storage2 != null) {
                             // We have a second slot to fill (always 64 bit GP reg or stack slot).
@@ -435,7 +435,7 @@ public abstract class CallArranger {
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, carrier);
+                    bindings.vmStore(storage, (ValueLayout) layout);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.FLOAT, carrier == float.class);
