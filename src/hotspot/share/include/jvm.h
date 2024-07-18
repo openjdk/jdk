@@ -552,12 +552,6 @@ JVM_GetClassInterfaces(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_IsInterface(JNIEnv *env, jclass cls);
 
-JNIEXPORT jobjectArray JNICALL
-JVM_GetClassSigners(JNIEnv *env, jclass cls);
-
-JNIEXPORT void JNICALL
-JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers);
-
 JNIEXPORT jobject JNICALL
 JVM_GetProtectionDomain(JNIEnv *env, jclass cls);
 
