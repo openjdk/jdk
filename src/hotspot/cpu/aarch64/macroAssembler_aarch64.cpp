@@ -1690,14 +1690,14 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    bool set_cond_codes) {
-  if (! UseSecondarySupersTable) {
-    check_klass_subtype_slow_path_linear
-      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
-  } else {
+  if (UseSecondarySupersTable) {
     check_klass_subtype_slow_path_table
       (sub_klass, super_klass, temp_reg, temp2_reg, /*temp3*/noreg, /*result*/noreg,
        /*vtemp*/fnoreg,
        L_success, L_failure, set_cond_codes);
+  } else {
+    check_klass_subtype_slow_path_linear
+      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, set_cond_codes);
   }
 }
 

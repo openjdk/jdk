@@ -1979,11 +1979,7 @@ class StubGenerator: public StubCodeGenerator {
       __ load_klass(r19_klass, copied_oop);// query the object klass
 
       BLOCK_COMMENT("type_check:");
-      if (!UseSecondarySupersTable) {
-        generate_type_check(/*sub_klass*/r19_klass,
-                            /*super_check_offset*/ckoff,
-                            /*super_klass*/ckval, L_store_element);
-      } else {
+      if (UseSecondarySupersTable) {
         Label L_miss;
         __ check_klass_subtype_fast_path(/*sub_klass*/r19_klass, /*super_klass*/ckval, noreg,
                                          &L_store_element, &L_miss, nullptr,
@@ -2000,6 +1996,10 @@ class StubGenerator: public StubCodeGenerator {
                                          /*result*/r10, &L_store_element);
 
         // Fall through on failure!
+      } else {
+        generate_type_check(/*sub_klass*/r19_klass,
+                            /*super_check_offset*/ckoff,
+                            /*super_klass*/ckval, L_store_element);
       }
     }
 
