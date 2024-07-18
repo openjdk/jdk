@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,27 +109,19 @@ Java_java_lang_ProcessHandleImpl_waitForProcessExit0(JNIEnv* env,
     if (handle == NULL) {
         return exitValue;          // No process with that pid is alive
     }
-    do {
-        if (!GetExitCodeProcess(handle, &exitValue)) {
+    if (!GetExitCodeProcess(handle, &exitValue)) {
+        JNU_ThrowByNameWithLastError(env,
+            "java/lang/RuntimeException", "GetExitCodeProcess");
+    } else if (exitValue == STILL_ACTIVE) {
+        if (WaitForSingleObject(handle, INFINITE) /* Wait forever */
+            == WAIT_FAILED) {
+            JNU_ThrowByNameWithLastError(env,
+                "java/lang/RuntimeException", "WaitForSingleObjects");
+        } else if (!GetExitCodeProcess(handle, &exitValue)) {
             JNU_ThrowByNameWithLastError(env,
                 "java/lang/RuntimeException", "GetExitCodeProcess");
-            break;
         }
-        if (exitValue == STILL_ACTIVE) {
-            HANDLE events[2];
-            events[0] = handle;
-            events[1] = JVM_GetThreadInterruptEvent();
-
-            if (WaitForMultipleObjects(sizeof(events)/sizeof(events[0]), events,
-                                       FALSE,    /* Wait for ANY event */
-                                       INFINITE) /* Wait forever */
-                == WAIT_FAILED) {
-                JNU_ThrowByNameWithLastError(env,
-                    "java/lang/RuntimeException", "WaitForMultipleObjects");
-                break;
-            }
-        }
-    } while (exitValue == STILL_ACTIVE);
+    }
     CloseHandle(handle);         // Ignore return code
     return exitValue;
 }

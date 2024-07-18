@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include "jvmti.h"
 #include "agent_common.hpp"
+#include "jvmti_common.hpp"
 #include "JVMTITools.hpp"
 
 extern "C" {
@@ -108,6 +109,13 @@ void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
     }
     fld_ind = (int)(fld_name[len - 1] - '0'); /* last digit is index in the array */
     fields[fld_ind].thrown_fid = field;
+
+    if (field == nullptr) {
+      fatal(env, "null field ID in FieldModification event.");
+    }
+    LOG("Event: (Field %d) field ID expected: 0x%p, got: 0x%p\n",
+        fld_ind, fields[fld_ind].fid, field);
+
     jvmti_env->Deallocate((unsigned char*) fld_name);
 }
 

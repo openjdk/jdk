@@ -875,13 +875,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(float f) {
-        try {
-            FloatToDecimal.appendTo(f, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + FloatToDecimal.MAX_CHARS);
+        FloatToDecimal toDecimal = isLatin1() ? FloatToDecimal.LATIN1 : FloatToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, f);
         return this;
-
     }
 
     /**
@@ -897,11 +894,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * @return  a reference to this object.
      */
     public AbstractStringBuilder append(double d) {
-        try {
-            DoubleToDecimal.appendTo(d, this);
-        } catch (IOException e) {
-            throw new AssertionError(e);
-        }
+        ensureCapacityInternal(count + DoubleToDecimal.MAX_CHARS);
+        DoubleToDecimal toDecimal = isLatin1() ? DoubleToDecimal.LATIN1 : DoubleToDecimal.UTF16;
+        count = toDecimal.putDecimal(value, count, d);
         return this;
     }
 

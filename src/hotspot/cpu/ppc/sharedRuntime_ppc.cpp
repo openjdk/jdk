@@ -2472,11 +2472,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     case T_ARRAY:   break;
 
     case T_BOOLEAN: {             // 0 -> false(0); !0 -> true(1)
-      Label skip_modify;
-      __ cmpwi(CCR0, R3_RET, 0);
-      __ beq(CCR0, skip_modify);
-      __ li(R3_RET, 1);
-      __ bind(skip_modify);
+      __ normalize_bool(R3_RET);
       break;
       }
     case T_BYTE: {                // sign extension
