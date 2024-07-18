@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,6 +92,9 @@ import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+
 /**
  * A time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 10:15:30}.
@@ -125,6 +128,7 @@ import java.util.Objects;
 @jdk.internal.ValueBased
 public final class LocalTime
         implements Temporal, TemporalAdjuster, Comparable<LocalTime>, Serializable {
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * The minimum supported {@code LocalTime}, '00:00'.
@@ -1640,13 +1644,19 @@ public final class LocalTime
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
                 buf.append('.');
-                if (nanoValue % 1000_000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000_000) + 1000).substring(1));
-                } else if (nanoValue % 1000 == 0) {
-                    buf.append(Integer.toString((nanoValue / 1000) + 1000_000).substring(1));
-                } else {
-                    buf.append(Integer.toString((nanoValue) + 1000_000_000).substring(1));
+                int zeros = 9 - JLA.stringSize(nanoValue);
+                if (zeros > 0) {
+                    buf.repeat('0', zeros);
                 }
+                int digits;
+                if (nanoValue % 1000_000 == 0) {
+                    digits = nanoValue / 1000_000;
+                } else if (nanoValue % 1000 == 0) {
+                    digits = nanoValue / 1000;
+                } else {
+                    digits = nanoValue;
+                }
+                buf.append(digits);
             }
         }
         return buf.toString();
