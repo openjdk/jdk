@@ -629,7 +629,14 @@ class StubGenerator: public StubCodeGenerator {
 
     return start;
   }
+address generate_ghash_processBlocks() {
+  StubCodeMark mark(this, "StubRoutines", name);
+  address start = __ function_entry();
 
+  return start;
+
+
+}
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -4766,6 +4773,9 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     if (VM_Version::supports_data_cache_line_flush()) {
       StubRoutines::_data_cache_writeback = generate_data_cache_writeback();
       StubRoutines::_data_cache_writeback_sync = generate_data_cache_writeback_sync();
+    }
+    if (UseGHASHIntrinsics) {
+      StubRoutines::_ghash_processBlocks = generate_ghash_processBlocks();
     }
 
     if (UseAESIntrinsics) {
