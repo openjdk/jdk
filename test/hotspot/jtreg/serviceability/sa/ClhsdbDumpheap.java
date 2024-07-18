@@ -40,6 +40,7 @@ import jtreg.SkippedException;
  * @bug 8240989
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @run main/othervm/timeout=240 ClhsdbDumpheap
  */
