@@ -116,8 +116,8 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * <p>To provide the appropriate semantics for {@code equals} and
  * {@code compareTo} methods, those methods cannot simply be wrappers
  * around {@code ==} or ordered comparison operations. Instead, {@link
- * Double#equals equals} uses <a href=#repEquivalence> representation
- * equivalence</a>, defining NaN arguments to be equal to each other,
+ * Double#equals equals} uses {@linkplain ##repEquivalence representation
+ * equivalence}, defining NaN arguments to be equal to each other,
  * restoring reflexivity, and defining {@code +0.0} to <em>not</em> be
  * equal to {@code -0.0}. For comparisons, {@link Double#compareTo
  * compareTo} defines a total order where {@code -0.0} is less than
@@ -591,6 +591,23 @@ public final class Double extends Number
      * <p>To create localized string representations of a floating-point
      * value, use subclasses of {@link java.text.NumberFormat}.
      *
+     * @apiNote
+     * This method corresponds to the general functionality of the
+     * convertToDecimalCharacter operation defined in IEEE 754;
+     * however, that operation is defined in terms of specifying the
+     * number of significand digits used in the conversion.
+     * Code to do such a conversion in the Java platform includes
+     * converting the {@code double} to a {@link java.math.BigDecimal
+     * BigDecimal} exactly and then rounding the {@code BigDecimal} to
+     * the desired number of digits; sample code:
+     * {@snippet lang=java :
+     * double d = 0.1;
+     * int digits = 25;
+     * BigDecimal bd = new BigDecimal(d);
+     * String result = bd.round(new MathContext(digits,  RoundingMode.HALF_UP));
+     * // 0.1000000000000000055511151
+     * }
+     *
      * @param   d   the {@code double} to be converted.
      * @return a string representation of the argument.
      */
@@ -671,6 +688,11 @@ public final class Double extends Number
      *     <td>{@code 0x0.0000000000001p-1022}</td>
      * </tbody>
      * </table>
+     *
+     * @apiNote
+     * This method corresponds to the convertToHexCharacter operation
+     * defined in IEEE 754.
+     *
      * @param   d   the {@code double} to be converted.
      * @return a hex string representation of the argument.
      * @since 1.5
@@ -897,6 +919,10 @@ public final class Double extends Number
      * where {@code l} is the desired locale, or
      * {@link java.util.Locale#ROOT} if locale insensitive.
      *
+     * @apiNote
+     * This method corresponds to the convertFromDecimalCharacter and
+     * convertFromHexCharacter operations defined in IEEE 754.
+     *
      * @param      s   the string to be parsed.
      * @return     a {@code Double} object holding the value
      *             represented by the {@code String} argument.
@@ -1087,6 +1113,7 @@ public final class Double extends Number
      * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
+    @Override
     public byte byteValue() {
         return (byte)value;
     }
@@ -1100,6 +1127,7 @@ public final class Double extends Number
      * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.1
      */
+    @Override
     public short shortValue() {
         return (short)value;
     }
@@ -1109,9 +1137,14 @@ public final class Double extends Number
      * after a narrowing primitive conversion.
      * @jls 5.1.3 Narrowing Primitive Conversion
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code int}
      */
+    @Override
     public int intValue() {
         return (int)value;
     }
@@ -1120,10 +1153,15 @@ public final class Double extends Number
      * Returns the value of this {@code Double} as a {@code long}
      * after a narrowing primitive conversion.
      *
+     * @apiNote
+     * This method corresponds to the convertToIntegerTowardZero
+     * operation defined in IEEE 754.
+     *
      * @return  the {@code double} value represented by this object
      *          converted to type {@code long}
      * @jls 5.1.3 Narrowing Primitive Conversion
      */
+    @Override
     public long longValue() {
         return (long)value;
     }
@@ -1141,6 +1179,7 @@ public final class Double extends Number
      * @jls 5.1.3 Narrowing Primitive Conversion
      * @since 1.0
      */
+    @Override
     public float floatValue() {
         return (float)value;
     }
@@ -1150,6 +1189,7 @@ public final class Double extends Number
      *
      * @return the {@code double} value represented by this object
      */
+    @Override
     @IntrinsicCandidate
     public double doubleValue() {
         return value;
@@ -1210,9 +1250,8 @@ public final class Double extends Number
      * on {@code double} values since the {@code ==} operator does
      * <em>not</em> define an equivalence relation and to satisfy the
      * {@linkplain Object#equals equals contract} an equivalence
-     * relation must be implemented; see <a
-     * href="#equivalenceRelation">this discussion</a> for details of
-     * floating-point equality and equivalence.
+     * relation must be implemented; see {@linkplain ##equivalenceRelation
+     * this discussion for details of floating-point equality and equivalence}.
      *
      * @see java.lang.Double#doubleToLongBits(double)
      * @jls 15.21.1 Numerical Equality Operators == and !=
@@ -1389,9 +1428,9 @@ public final class Double extends Number
 
      * This ensures that the <i>natural ordering</i> of {@code Double}
      * objects imposed by this method is <i>consistent with
-     * equals</i>; see <a href="#equivalenceRelation">this
-     * discussion</a> for details of floating-point comparison and
-     * ordering.
+     * equals</i>; see {@linkplain ##equivalenceRelation this
+     * discussion for details of floating-point comparison and
+     * ordering}.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
@@ -1405,6 +1444,7 @@ public final class Double extends Number
      * @jls 15.20.1 Numerical Comparison Operators {@code <}, {@code <=}, {@code >}, and {@code >=}
      * @since   1.2
      */
+    @Override
     public int compareTo(Double anotherDouble) {
         return Double.compare(value, anotherDouble.value);
     }
