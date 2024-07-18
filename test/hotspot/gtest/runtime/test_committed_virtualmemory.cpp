@@ -132,7 +132,7 @@ public:
     }
 
     // Cleanup
-    os::free_memory(base, size, page_sz);
+    os::disclaim_memory(base, size);
     VirtualMemoryTracker::remove_released_region((address)base, size);
 
     rmr = VirtualMemoryTracker::_reserved_regions->find(ReservedMemoryRegion((address)base, size));

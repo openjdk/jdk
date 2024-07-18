@@ -344,6 +344,9 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   PSOldGen* old_gen = heap->old_gen();
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
+  assert(young_gen->to_space()->is_empty(),
+         "Attempt to scavenge with live objects in to_space");
+
   heap->increment_total_collections();
 
   if (AdaptiveSizePolicy::should_update_eden_stats(gc_cause)) {
@@ -379,10 +382,6 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
 
-    assert(young_gen->to_space()->is_empty(),
-           "Attempt to scavenge with live objects in to_space");
-    young_gen->to_space()->clear(SpaceDecorator::Mangle);
-
 #if COMPILER2_OR_JVMCI
     DerivedPointerTable::clear();
 #endif
@@ -402,8 +401,6 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
     PSPromotionManager::pre_scavenge();
 
-    // We'll use the promotion manager again later.
-    PSPromotionManager* promotion_manager = PSPromotionManager::vm_thread_promotion_manager();
     {
       GCTraceTime(Debug, gc, phases) tm("Scavenge", &_gc_timer);
 
@@ -426,16 +423,11 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
       pt.print_all_references();
     }
 
-    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
-
     {
       GCTraceTime(Debug, gc, phases) tm("Weak Processing", &_gc_timer);
       PSAdjustWeakRootsClosure root_closure;
       WeakProcessor::weak_oops_do(&ParallelScavengeHeap::heap()->workers(), &_is_alive_closure, &root_closure, 1);
     }
-
-    // Verify that usage of root_closure didn't copy any objects.
-    assert(promotion_manager->stacks_empty(),"stacks should be empty at this point");
 
     // Finally, flush the promotion_manager's labs, and deallocate its stacks.
     promotion_failure_occurred = PSPromotionManager::post_scavenge(_gc_tracer);
