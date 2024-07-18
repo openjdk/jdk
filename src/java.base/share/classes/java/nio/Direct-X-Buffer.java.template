@@ -67,7 +67,7 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[byte]
     // Cached unaligned-access capability
-    protected static final boolean UNALIGNED = Bits.unaligned();
+    static final boolean UNALIGNED = Bits.unaligned();
 
     private record Deallocator(long address, long size, int capacity) implements Runnable {
         private Deallocator {
