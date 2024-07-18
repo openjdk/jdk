@@ -457,15 +457,24 @@ public abstract class Process {
      * @since 1.8
      */
     public boolean waitFor(long timeout, TimeUnit unit)
-        throws InterruptedException {
-        Objects.requireNonNull(unit, "unit"); // throw NPE before other conditions
+        throws InterruptedException
+    {
+        long remainingNanos = unit.toNanos(timeout); // throw NPE before other conditions
 
         if (hasExited())
             return true;
         if (timeout <= 0)
             return false;
 
-        return waitForNanos(unit.toNanos(timeout));
+        long deadline = System.nanoTime() + remainingNanos;
+        do {
+            Thread.sleep(Math.min(TimeUnit.NANOSECONDS.toMillis(remainingNanos) + 1, 100));
+            if (hasExited())
+                return true;
+            remainingNanos = deadline - System.nanoTime();
+        } while (remainingNanos > 0);
+
+        return false;
     }
 
     /**
@@ -492,28 +501,9 @@ public abstract class Process {
      * @throws NullPointerException if duration is null
      * @since 24
      */
-    public boolean waitFor(Duration duration)
-            throws InterruptedException {
-        Objects.requireNonNull(duration, "duration"); // throw NPE before other conditions
-
-        if (hasExited())
-            return true;
-        if (!duration.isPositive())
-            return false;
-
-        return waitForNanos(TimeUnit.NANOSECONDS.convert(duration));
-    }
-
-    private boolean waitForNanos(long remainingNanos) throws InterruptedException {
-        long deadline = System.nanoTime() + remainingNanos;
-        do {
-            Thread.sleep(Math.min(TimeUnit.NANOSECONDS.toMillis(remainingNanos) + 1, 100));
-            if (hasExited())
-                return true;
-            remainingNanos = deadline - System.nanoTime();
-        } while (remainingNanos > 0);
-
-        return false;
+    public boolean waitFor(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration, "duration");
+        return waitFor(TimeUnit.NANOSECONDS.convert(duration), TimeUnit.NANOSECONDS);
     }
 
     /**
