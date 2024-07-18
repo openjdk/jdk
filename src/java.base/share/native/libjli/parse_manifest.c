@@ -518,6 +518,7 @@ find_file(int fd, zentry *entry, const char *file_name)
                     free(buffer);
                     return (-1);
                   }
+                  break;
                 }
                 offset += 4 + headerSize;
               }
