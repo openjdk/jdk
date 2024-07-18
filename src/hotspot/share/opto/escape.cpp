@@ -4039,7 +4039,7 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
 //
 #define FIND_INST_MEM_RECURSION_DEPTH_LIMIT 1000
 Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArray<PhiNode *>  &orig_phis, uint rec_depth) {
-  if (rec_depth > FIND_INST_MEM_RECURSION_DEPTH_LIMIT ) {
+  if (rec_depth > FIND_INST_MEM_RECURSION_DEPTH_LIMIT) {
     _compile->record_failure(_invocation > 0 ? C2Compiler::retry_no_iterative_escape_analysis() : C2Compiler::retry_no_escape_analysis());
     return nullptr;
   }
