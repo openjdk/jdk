@@ -536,6 +536,7 @@ constexpr JVMFlag flagTable_verify_constexpr[] = { MATERIALIZE_ALL_FLAGS };
 
 JVMFlag* JVMFlag::flags = flagTable;
 size_t JVMFlag::numFlags = (sizeof(flagTable) / sizeof(JVMFlag));
+CHeapBitMap* JVMFlag::iteratorMarkers = new CHeapBitMap(JVMFlag::numFlags, mtNMT);
 
 #define JVM_FLAG_TYPE_SIGNATURE(t) JVMFlag::type_signature<t>(),
 
@@ -702,24 +703,23 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
   }
 
   // Print flags without allocating memory. Start by marking all flags clear.
-  for (size_t i = 0; i < length; i++) {
-    if (flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-      flagTable[i].clear_iterated();
-    }
-  }
+  iteratorMarkers->clear();
+
   // Print the flag with best sort value, then mark it.
   for (size_t j = 0; j < length; j++) {
-    JVMFlag* best = nullptr;
+    JVMFlag* best_flag = nullptr;
+    size_t best_i = 0;
     for (size_t i = 0; i < length; i++) {
-      if (!(flagTable[i].is_iterated()) && flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
-        if ((best == nullptr) || (strcmp(best->name(), flagTable[i].name()) > 0)) {
-          best = &flagTable[i];
+      if (!iteratorMarkers->at(i) && flagTable[i].is_unlocked() && !(skipDefaults && flagTable[i].is_default())) {
+        if ((best_flag == nullptr) || (strcmp(best_flag->name(), flagTable[i].name()) > 0)) {
+          best_flag = &flagTable[i];
+          best_i = i;
         }
       }
     }
-    if (best != nullptr) {
-      best->print_on(out, withComments, printRanges);
-      best->set_iterated();
+    if (best_flag != nullptr) {
+      best_flag->print_on(out, withComments, printRanges);
+      iteratorMarkers->at_put(best_i, true);
     }
   }
 }

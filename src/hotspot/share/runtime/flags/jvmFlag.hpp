@@ -25,6 +25,7 @@
 #ifndef SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 #define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
+#include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
@@ -78,8 +79,6 @@ public:
     //    f was specified on the command-line (but may have since been updated by
     //    someone else like FLAG_SET_ERGO)
     WAS_SET_ON_COMMAND_LINE = 1 << 17,
-
-    VALUE_ITERATED          = 1 << 18,
 
     KIND_MASK = ~(VALUE_ORIGIN_MASK | WAS_SET_ON_COMMAND_LINE)
   };
@@ -153,6 +152,8 @@ public:
 
   // number of flags
   static size_t numFlags;
+
+  static CHeapBitMap* iteratorMarkers;
 
 private:
   static JVMFlag* find_flag(const char* name, size_t length, bool allow_locked, bool return_flag);
@@ -298,10 +299,6 @@ private:
   }
 
   static const int type_signatures[];
-
-  void clear_iterated()           { _flags = Flags(_flags & ~VALUE_ITERATED);                 }
-  void set_iterated()             { _flags = Flags(_flags | VALUE_ITERATED);                  }
-  bool is_iterated()              { return (_flags & VALUE_ITERATED) != 0;                    }
 
 public:
   template <typename T>
