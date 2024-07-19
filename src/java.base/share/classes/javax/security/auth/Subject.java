@@ -110,7 +110,7 @@ import sun.security.util.ResourcesMgr;
  *
  * <p id="sm-allowed"><b>These methods behave differently depending on
  * whether a security manager is
- * <a href="../../../java/lang/SecurityManager.html#set-security-manager">allowed or disallowed</a></b>:
+ * {@linkplain SecurityManager##set-security-manager allowed or disallowed}</b>:
  * <ul>
  * <li>If a security manager is allowed, which means it is either already set
  * or allowed to be set dynamically, a {@code Subject} object is associated
