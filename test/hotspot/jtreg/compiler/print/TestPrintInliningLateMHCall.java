@@ -23,37 +23,49 @@
 
 /*
  * @test
- * @bug 8327741
- * @summary JVM crash in hotspot/share/opto/compile.cpp - failed: missing inlining msg
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining TestPrintInliningLateVirtualCall
+ * @bug 8335843
+ * @summary C2 hits assert(_print_inlining_stream->size() > 0) failed: missing inlining msg
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-BackgroundCompilation -XX:+PrintCompilation -XX:+PrintInlining TestPrintInliningLateMHCall
  */
 
-public class TestPrintInliningLateVirtualCall {
-    static final A fieldA = new A();
-    static final B fieldB = new B();
-    static final C fieldC = new C();
-    public static void main(String[] args) {
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+
+public class TestPrintInliningLateMHCall {
+    static final MethodHandle mh1;
+    static MethodHandle mh2;
+
+    static {
+        try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
+            mh1 = lookup.findStatic(TestPrintInliningLateMHCall.class, "lateResolved", MethodType.methodType(void.class));
+            mh2 = mh1;
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Method handle lookup failed");
+        }
+    }
+
+    public static void main(String[] args) throws Throwable {
         for (int i = 0; i < 20_000; i++) {
             testHelper(0);
             testHelper(10);
-            testHelper(100);
             test();
         }
     }
 
-    private static void testHelper(int i) {
-        A a;
+    private static void testHelper(int i) throws Throwable {
+        MethodHandle mh = null;
         if (i == 10) {
-            a = fieldB;
-        } else if (i > 10) {
-            a = fieldA;
+            mh = mh1;
         } else {
-            a = fieldC;
+            mh = mh2;
         }
-        a.m();
+        mh.invokeExact();
     }
 
-    private static void test() {
+    private static void test() throws Throwable {
         int i;
         for (i = 0; i < 10; i++) {
 
@@ -61,21 +73,7 @@ public class TestPrintInliningLateVirtualCall {
         testHelper(i);
     }
 
-    static class A {
-        void m() {
-
-        }
-    }
-
-    static class B extends A {
-        void m() {
-
-        }
-    }
-
-    static class C extends A {
-        void m() {
-
-        }
+    private static void lateResolved() {
+        // noop
     }
 }
