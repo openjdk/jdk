@@ -369,8 +369,8 @@ final class StringConcatHelper {
             return new String(s1);
         }
         byte coder = (byte) (s1.coder() | s2.coder());
-        int len = s1.length() + s2.length();
-        byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, len << coder);
+        int newLength = (s1.length() + s2.length()) << coder;
+        byte[] buf = newArray(newLength);
         s1.getBytes(buf, 0, coder);
         s2.getBytes(buf, s1.length(), coder);
         return new String(buf, coder);
@@ -441,10 +441,20 @@ final class StringConcatHelper {
     static byte[] newArray(long indexCoder) {
         byte coder = (byte)(indexCoder >> 32);
         int index = ((int)indexCoder) << coder;
-        if (index < 0) {
+        return newArray(index);
+    }
+
+    /**
+     * Allocates an uninitialized byte array based on the length
+     * @param length
+     * @return the newly allocated byte array
+     */
+    @ForceInline
+    static byte[] newArray(int length) {
+        if (length < 0) {
             throw new OutOfMemoryError("Overflow: String length out of range");
         }
-        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index);
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length);
     }
 
     /**
