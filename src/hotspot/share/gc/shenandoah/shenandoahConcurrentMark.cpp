@@ -119,8 +119,7 @@ public:
       assert(!heap->has_forwarded_objects(), "Not expected");
 
       ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp);
-      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
-                                               ShenandoahIUBarrier ? &mark_cl : nullptr);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set, nullptr);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,

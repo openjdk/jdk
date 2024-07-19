@@ -89,7 +89,6 @@ public:
   template <DecoratorSet decorators, typename T>
   inline void satb_barrier(T* field);
   inline void satb_enqueue(oop value);
-  inline void iu_barrier(oop obj);
 
   inline void keep_alive_if_weak(DecoratorSet decorators, oop value);
 

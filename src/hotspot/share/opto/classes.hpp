@@ -324,7 +324,7 @@ shmacro(ShenandoahCompareAndSwapN)
 shmacro(ShenandoahCompareAndSwapP)
 shmacro(ShenandoahWeakCompareAndSwapN)
 shmacro(ShenandoahWeakCompareAndSwapP)
-shmacro(ShenandoahIUBarrier)
+
 shmacro(ShenandoahLoadReferenceBarrier)
 macro(SCMemProj)
 macro(CopySignD)
