@@ -1849,16 +1849,6 @@ class StubGenerator: public StubCodeGenerator {
     __ BIND(L_miss);
   }
 
-  // As above, but with fewer registers available
-  // Smashes rscratch1, rscratch2.
-  void generate_type_check(Register sub_klass,
-                           Register super_check_offset,
-                           Register super_klass,
-                           Label& L_success) {
-    generate_type_check(sub_klass, super_check_offset, super_klass,
-                        /*temps*/noreg, noreg, noreg, L_success);
-  }
-
   //
   //  Generate checkcasting array copy stub
   //
@@ -2375,7 +2365,8 @@ class StubGenerator: public StubCodeGenerator {
       __ ldrw(sco_temp, Address(dst_klass, sco_offset));
 
       // Smashes rscratch1, rscratch2
-      generate_type_check(scratch_src_klass, sco_temp, dst_klass, L_plain_copy);
+      generate_type_check(scratch_src_klass, sco_temp, dst_klass, /*temps*/ noreg, noreg, noreg,
+                          L_plain_copy);
 
       // Fetch destination element klass from the ObjArrayKlass header.
       int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
