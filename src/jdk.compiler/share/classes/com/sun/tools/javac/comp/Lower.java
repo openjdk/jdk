@@ -1828,11 +1828,10 @@ public class Lower extends TreeTranslator {
      *                       due to protection?
      */
     JCExpression makeOwnerThis(DiagnosticPosition pos, Symbol sym, boolean preciseMatch) {
-        Symbol c = sym.owner;
         if (preciseMatch ? sym.isMemberOf(currentClass, types)
                          : currentClass.isSubClass(sym.owner, types)) {
             // in this case, `this' works fine
-            return make.at(pos).This(c.erasure(types));
+            return make.at(pos).This(currentClass.erasure(types));
         } else {
             // need to go via this$n
             return makeOwnerThisN(pos, sym, preciseMatch);
