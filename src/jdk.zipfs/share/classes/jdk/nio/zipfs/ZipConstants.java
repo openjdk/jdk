@@ -130,7 +130,6 @@ class ZipConstants {
     static final int  ZIP64_ENDHDR = 56;           // ZIP64 end header size
     static final int  ZIP64_LOCHDR = 20;           // ZIP64 end loc header size
     static final int  ZIP64_EXTHDR = 24;           // EXT header size
-    static final int  ZIP64_EXTID  = 0x0001;       // Extra field Zip64 header ID
 
     static final int  ZIP64_MINVAL32 = 0xFFFF;
     static final long ZIP64_MINVAL = 0xFFFFFFFFL;
