@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,13 @@ public interface HotSpotResolvedJavaMethod extends ResolvedJavaMethod {
      * @return true if ReservedStackAccess annotation present, false otherwise
      */
     boolean hasReservedStackAccess();
+
+    /**
+     * Returns true if this method has a {@code Scoped} annotation.
+     *
+     * @return true if Scoped annotation present, false otherwise
+     */
+    boolean isScoped();
 
     /**
      * Sets flags on {@code method} indicating that it should never be inlined or compiled by the
