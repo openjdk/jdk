@@ -286,7 +286,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundLocalVariableTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTableAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-            codeAttribute = (CodeImpl) enclosing;
+            if (enclosing instanceof CodeImpl ci) {
+                this.codeAttribute = ci;
+            } else {
+                throw new IllegalArgumentException("Invalid LocalVariableTable attribute location");
+            }
         }
 
         @Override
@@ -313,7 +317,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundLocalVariableTypeTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTypeTableAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-            this.codeAttribute = (CodeImpl) enclosing;
+            if (enclosing instanceof CodeImpl ci) {
+                this.codeAttribute = ci;
+            } else {
+                throw new IllegalArgumentException("Invalid LocalVariableTypeTable attribute location");
+            }
         }
 
         @Override
