@@ -813,7 +813,7 @@ public interface RandomGenerator {
      * It then invokes {@link #nextInt()} one or more times to ensure a uniform
      * distribution in the range 0 (inclusive)
      * to {@code bound} (exclusive).
-     * It assumes the distribution of {@link #nextInt()} to be uniform in turn.
+     * It assumes the distribution of {@link #nextInt()} to be uniform.
      */
     default int nextInt(int bound) {
         RandomSupport.checkBound(bound);
@@ -839,7 +839,7 @@ public interface RandomGenerator {
      * It then invokes {@link #nextInt()} one or more times to ensure a uniform
      * distribution in the range {@code origin} (inclusive)
      * to {@code bound} (exclusive).
-     * It assumes the distribution of {@link #nextInt()} to be uniform in turn.
+     * It assumes the distribution of {@link #nextInt()} to be uniform.
      */
     default int nextInt(int origin, int bound) {
         RandomSupport.checkRange(origin, bound);
@@ -870,7 +870,7 @@ public interface RandomGenerator {
      * It then invokes {@link #nextLong()} one or more times to ensure a uniform
      * distribution in the range 0 (inclusive)
      * to {@code bound} (exclusive).
-     * It assumes the distribution of {@link #nextLong()} to be uniform in turn.
+     * It assumes the distribution of {@link #nextLong()} to be uniform.
      */
     default long nextLong(long bound) {
         RandomSupport.checkBound(bound);
@@ -896,7 +896,7 @@ public interface RandomGenerator {
      * It then invokes {@link #nextLong()} one or more times to ensure a uniform
      * distribution in the range {@code origin} (inclusive)
      * to {@code bound} (exclusive).
-     * It assumes the distribution of {@link #nextLong()} to be uniform in turn.
+     * It assumes the distribution of {@link #nextLong()} to be uniform.
      */
     default long nextLong(long origin, long bound) {
         RandomSupport.checkRange(origin, bound);
