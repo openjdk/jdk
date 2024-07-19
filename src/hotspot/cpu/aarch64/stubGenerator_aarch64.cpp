@@ -1831,6 +1831,9 @@ class StubGenerator: public StubCodeGenerator {
   void generate_type_check(Register sub_klass,
                            Register super_check_offset,
                            Register super_klass,
+                           Register temp1,
+                           Register temp2,
+                           Register result,
                            Label& L_success) {
     assert_different_registers(sub_klass, super_check_offset, super_klass);
 
@@ -1840,10 +1843,20 @@ class StubGenerator: public StubCodeGenerator {
 
     __ check_klass_subtype_fast_path(sub_klass, super_klass, noreg,        &L_success, &L_miss, nullptr,
                                      super_check_offset);
-    __ check_klass_subtype_slow_path(sub_klass, super_klass, noreg, noreg, &L_success, nullptr);
+    __ check_klass_subtype_slow_path(sub_klass, super_klass, temp1, temp2, &L_success, nullptr);
 
     // Fall through on failure!
     __ BIND(L_miss);
+  }
+
+  // As above, but with fewer registers available
+  // Smashes rscratch1, rscratch2.
+  void generate_type_check(Register sub_klass,
+                           Register super_check_offset,
+                           Register super_klass,
+                           Label& L_success) {
+    generate_type_check(sub_klass, super_check_offset, super_klass,
+                        /*temps*/noreg, noreg, noreg, L_success);
   }
 
   //
@@ -1975,33 +1988,17 @@ class StubGenerator: public StubCodeGenerator {
                      gct1);
     __ cbz(copied_oop, L_store_element);
 
-    {
-      __ load_klass(r19_klass, copied_oop);// query the object klass
+    __ load_klass(r19_klass, copied_oop);// query the object klass
 
-      BLOCK_COMMENT("type_check:");
-      if (UseSecondarySupersTable) {
-        Label L_miss;
-        __ check_klass_subtype_fast_path(/*sub_klass*/r19_klass, /*super_klass*/ckval, noreg,
-                                         &L_store_element, &L_miss, nullptr,
-                                         /*super_check_offset*/ckoff);
-        __ BIND(L_miss);
+    BLOCK_COMMENT("type_check:");
+    generate_type_check(/*sub_klass*/r19_klass,
+                        /*super_check_offset*/ckoff,
+                        /*super_klass*/ckval,
+                        /*r_array_base*/gct1,
+                        /*temp2*/gct2,
+                        /*result*/r10, L_store_element);
 
-        // We will consult the secondary-super array.
-        __ lookup_secondary_supers_table_var(/*r_sub_klass*/r19_klass,
-                                             /*r_super_klass*/ckval,
-                                             /*r_array_base*/gct1,
-                                             /*temp2*/gct2,
-                                             /*temp3*/gct3,
-                                             /*vtemp*/v0,
-                                             /*result*/r10, &L_store_element);
-
-        // Fall through on failure!
-      } else {
-        generate_type_check(/*sub_klass*/r19_klass,
-                            /*super_check_offset*/ckoff,
-                            /*super_klass*/ckval, L_store_element);
-      }
-    }
+    // Fall through on failure!
 
     // ======== end loop ========
 
