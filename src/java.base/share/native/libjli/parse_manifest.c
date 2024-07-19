@@ -183,7 +183,7 @@ read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
   return JNI_TRUE;
 }
 
-/**
+/*
  * Validates the associated LOC headers for a CEN entry, with support for
  * reading the LOC offset using the zip64 extended information extra field.
  */
