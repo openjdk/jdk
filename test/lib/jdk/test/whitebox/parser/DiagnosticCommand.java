@@ -26,7 +26,7 @@ package jdk.test.whitebox.parser;
 public class DiagnosticCommand {
 
     public enum DiagnosticArgumentType {
-        JLONG, BOOLEAN, STRING, NANOTIME, STRINGARRAY, MEMORYSIZE
+        JLONG, BOOLEAN, STRING, NANOTIME, STRINGARRAY, MEMORYSIZE, FILE
     }
 
     private String name;
