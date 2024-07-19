@@ -113,7 +113,7 @@ class VerifierSelfTest {
     @Test
     void testInvalidClassNameEntry() {
         var cc = ClassFile.of();
-        var bytes = ClassFile.of().parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
+        var bytes = cc.parse(new byte[]{(byte)0xCA, (byte)0xFE, (byte)0xBA, (byte)0xBE,
             0, 0, 0, 0, 0, 2, ClassFile.TAG_INTEGER, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0});
         assertTrue(cc.verify(bytes).stream().anyMatch(e -> e.getMessage().contains("expected ClassEntry")));
     }
