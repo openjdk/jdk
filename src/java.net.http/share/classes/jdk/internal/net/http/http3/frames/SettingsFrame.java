@@ -167,11 +167,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
         }
     }
 
-    @Override
-    public long type() {
-        return TYPE;
-    }
-
     /**
      * Get the parameter value for the given parameter id
      *

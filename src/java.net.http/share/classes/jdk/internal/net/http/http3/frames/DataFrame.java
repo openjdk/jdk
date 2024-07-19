@@ -58,12 +58,6 @@ public final class DataFrame extends PartialFrame<DataFrame> {
     }
 
     @Override
-    public long type() {
-        return TYPE;
-    }
-
-
-    @Override
     public long length() {
         return length;
     }
