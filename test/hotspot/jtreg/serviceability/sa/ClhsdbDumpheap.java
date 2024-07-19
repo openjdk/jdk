@@ -37,10 +37,13 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8240989
+ * @bug 8240989 8336753
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
  * @requires vm.compMode != "Xcomp"
+ * @comment Running this test with -Xcomp is slow and therefore tends to cause
+ *          timeouts. As there is no known direct benefit from running the test
+ *          with -Xcomp, we disable such testing.
  * @library /test/lib
  * @run main/othervm/timeout=240 ClhsdbDumpheap
  */
