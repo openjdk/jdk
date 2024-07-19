@@ -103,12 +103,8 @@ public:
   static bool has_fsqrts()  { return (_features & fsqrts_m) != 0; }
   static bool has_isel()    { return (_features & isel_m) != 0; }
   static bool has_lxarxeh() { return (_features & lxarxeh_m) !=0; }
-  static bool has_cmpb()    { return (_features & cmpb_m) != 0; }
-  static bool has_popcntb() { return (_features & popcntb_m) != 0; }
-  static bool has_popcntw() { return (_features & popcntw_m) != 0; }
   static bool has_fcfids()  { return (_features & fcfids_m) != 0; }
   static bool has_vand()    { return (_features & vand_m) != 0; }
-  static bool has_lqarx()   { return (_features & lqarx_m) != 0; }
   static bool has_vcipher() { return (_features & vcipher_m) != 0; }
   static bool has_vpmsumb() { return (_features & vpmsumb_m) != 0; }
   static bool has_mfdscr()  { return (_features & mfdscr_m) != 0; }
