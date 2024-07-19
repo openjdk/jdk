@@ -238,29 +238,26 @@ static int fstatat_wrapper(int dfd, const char *path,
 }
 #endif
 
+#if defined(__linux__) && defined(__arm__)
+/**
+ * Lookup functions with time_t parameter. Try to use 64 bit symbol
+ * if sizeof(time_t) exceeds 32 bit.
+ */
+static void* lookup_time_t_function(const char* symbol32, const char* symbol64) {
+    if (sizeof(time_t) > 4) {
+        return dlsym(RTLD_DEFAULT, symbol64);
+    } else {
+        return dlsym(RTLD_DEFAULT, symbol32);
+    }
+}
+#endif
+
 #if defined(__linux__) && defined(_LP64) && defined(__NR_newfstatat)
 #define FSTATAT64_SYSCALL_AVAILABLE
 static int fstatat_wrapper(int dfd, const char *path,
                            struct stat *statbuf, int flag)
 {
     return syscall(__NR_newfstatat, dfd, path, statbuf, flag);
-}
-#endif
-
-#if defined(__linux__)
-/**
- * Lookup functions with time_t parameter. Try to use 64 bit symbol
- * if sizeof(time_t) exceeds 32 bit.
- */
-static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
-    void* ret = NULL;
-    if (sizeof(time_t) > 4) {
-        ret = dlsym(RTLD_DEFAULT, symbol64);
-    }
-    if (ret == NULL) {
-        return dlsym(RTLD_DEFAULT, symbol);
-    }
-    return ret;
 }
 #endif
 
@@ -368,7 +365,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
-#if defined(__linux__)
+#if defined(__linux__) && defined(__arm__)
     my_futimesat_func = (futimesat_func*) lookup_time_t_function("futimesat",
         "__futimesat64");
     my_lutimes_func = (lutimes_func*) lookup_time_t_function("lutimes",
