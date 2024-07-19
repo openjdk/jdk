@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.*;
 import jdk.test.whitebox.gc.GC;
 
 import java.lang.ref.*;
+import java.util.*;
 
 /*
  * @test
@@ -41,57 +42,67 @@ import java.lang.ref.*;
  */
 public class ReferenceClearTests {
 
+    private static String[] args(String... add) {
+        List<String> args = new ArrayList<>();
+
+         // Use PerMethodTrapLimit=0 to compile all branches in the intrinsics.
+        args.add("-XX:PerMethodTrapLimit=0");
+
+        // Forcefully inline all methods to reach the intrinsic code.
+        args.add("-XX:CompileCommand=inline,compiler.c2.irTests.gc.ReferenceClearTests::*");
+        args.add("-XX:CompileCommand=inline,java.lang.ref.Reference::*");
+        args.add("-XX:CompileCommand=inline,java.lang.ref.PhantomReference::*");
+
+        // Mix in test config code.
+        args.addAll(Arrays.asList(add));
+
+        return args.toArray(new String[0]);
+    }
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-
-        // Use PerMethodTrapLimit=0 to compile all branches in the intrinsics.
 
         int idx = 0;
         if (GC.isSelectedErgonomically() && GC.Serial.isSupported()) {
             // Serial does not have SATB/keep-alive barriers at all.
             // There are inter-generational barriers on stores, but they are
             // folded away for null stores like clear().
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseSerialGC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
             // Parallel does not have SATB/keep-alive barriers at all.
             // There are inter-generational barriers on stores, but they
             // should be folded away for null stores like clear().
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
-                "-XX:+UseParallelGC")
-            );
+            framework.addScenarios(new Scenario(idx++, args(
+                "-XX:+UseParallelGC"
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.G1.isSupported()) {
             // G1 has SATB/keep-alive barriers, but they should not be present
             // for clear()-s. There are inter-generational barriers on stores,
             // but they should be folded away for null stores like clear().
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseG1GC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Shenandoah.isSupported()) {
             // Shenandoah has SATB/keep-alive barriers, but they should not be
             // present clear()-s. There are load-reference barriers, which would
             // confuse the tests, so we enable only SATB barriers.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:ShenandoahGCMode=passive",
                 "-XX:+ShenandoahSATBBarrier",
                 "-XX:+UseShenandoahGC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Z.isSupported()) {
             // Z does not have barriers in C2 IR.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseZGC"
-            ));
+            )));
         }
         framework.start();
     }
