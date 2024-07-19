@@ -371,6 +371,13 @@ final class StringConcatHelper {
         return doConcat(s1, s2);
     }
 
+    /**
+     * Perform a simple concatenation between two non-empty strings.
+     *
+     * @param s1         first argument
+     * @param s2         second argument
+     * @return String    resulting string
+     */
     @ForceInline
     static String doConcat(String s1, String s2) {
         byte coder = (byte) (s1.coder() | s2.coder());
