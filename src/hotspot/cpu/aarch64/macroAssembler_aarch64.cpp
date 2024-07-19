@@ -1632,10 +1632,10 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
 
   push(pushed_regs, sp);
 
-  lookup_secondary_supers_table(sub_klass,
-                                super_klass,
-                                temp_reg, temp2_reg, temp3_reg, vtemp, result_reg,
-                                nullptr);
+  lookup_secondary_supers_table_var(sub_klass,
+                                    super_klass,
+                                    temp_reg, temp2_reg, temp3_reg, vtemp, result_reg,
+                                    nullptr);
   cmp(result_reg, zr);
 
   // Unspill the temp. registers:
@@ -1685,15 +1685,15 @@ do {                                                               \
          (result        == r5        || result        == noreg), "registers must match aarch64.ad"); \
 } while(0)
 
-bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
-                                                   Register r_super_klass,
-                                                   Register temp1,
-                                                   Register temp2,
-                                                   Register temp3,
-                                                   FloatRegister vtemp,
-                                                   Register result,
-                                                   u1 super_klass_slot,
-                                                   bool stub_is_near) {
+bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
+                                                         Register r_super_klass,
+                                                         Register temp1,
+                                                         Register temp2,
+                                                         Register temp3,
+                                                         FloatRegister vtemp,
+                                                         Register result,
+                                                         u1 super_klass_slot,
+                                                         bool stub_is_near) {
   assert_different_registers(r_sub_klass, temp1, temp2, temp3, result, rscratch1, rscratch2);
 
   Label L_fallthrough;
@@ -1787,14 +1787,14 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 // which superclass will be searched for. Used by interpreter and
 // runtime stubs. It is larger and has somewhat greater latency than
 // the version above, which takes a constant super_klass_slot.
-void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
-                                                   Register r_super_klass,
-                                                   Register temp1,
-                                                   Register temp2,
-                                                   Register temp3,
-                                                   FloatRegister vtemp,
-                                                   Register result,
-                                                   Label *L_success) {
+void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
+                                                       Register r_super_klass,
+                                                       Register temp1,
+                                                       Register temp2,
+                                                       Register temp3,
+                                                       FloatRegister vtemp,
+                                                       Register result,
+                                                       Label *L_success) {
   assert_different_registers(r_sub_klass, temp1, temp2, temp3, result, rscratch1, rscratch2);
 
   Label L_fallthrough;

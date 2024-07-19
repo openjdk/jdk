@@ -1987,13 +1987,13 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(L_miss);
 
         // We will consult the secondary-super array.
-        __ lookup_secondary_supers_table(/*r_sub_klass*/r19_klass,
-                                         /*r_super_klass*/ckval,
-                                         /*r_array_base*/gct1,
-                                         /*temp2*/gct2,
-                                         /*temp3*/gct3,
-                                         /*vtemp*/v0,
-                                         /*result*/r10, &L_store_element);
+        __ lookup_secondary_supers_table_var(/*r_sub_klass*/r19_klass,
+                                             /*r_super_klass*/ckval,
+                                             /*r_array_base*/gct1,
+                                             /*temp2*/gct2,
+                                             /*temp3*/gct3,
+                                             /*vtemp*/v0,
+                                             /*result*/r10, &L_store_element);
 
         // Fall through on failure!
       } else {
@@ -6811,10 +6811,10 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_success;
     __ enter();
-    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass,
-                                     r_array_base, r_array_length, r_array_index,
-                                     vtemp, result, super_klass_index,
-                                     /*stub_is_near*/true);
+    __ lookup_secondary_supers_table_const(r_sub_klass, r_super_klass,
+                                           r_array_base, r_array_length, r_array_index,
+                                           vtemp, result, super_klass_index,
+                                           /*stub_is_near*/true);
     __ leave();
     __ ret(lr);
 

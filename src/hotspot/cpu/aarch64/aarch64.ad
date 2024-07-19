@@ -16248,10 +16248,10 @@ instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, 
 
   ins_encode %{
     bool success = false;
-    __ lookup_secondary_supers_table($sub$$Register, $super$$Register,
-                                     $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                     $vtemp$$FloatRegister,
-                                     $result$$Register, /*L_success*/nullptr);
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register,
+                                         $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                         $vtemp$$FloatRegister,
+                                         $result$$Register, /*L_success*/nullptr);
   %}
 
   ins_pipe(pipe_class_memory);
@@ -16272,11 +16272,12 @@ instruct partialSubtypeCheckConstSuper(iRegP_R4 sub, iRegP_R0 super_reg, immP su
     bool success = false;
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      success = __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register,
-                                                 $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
-                                                 $vtemp$$FloatRegister,
-                                                 $result$$Register,
-                                                 super_klass_slot);
+      success =
+        __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register,
+                                               $tempR1$$Register, $tempR2$$Register, $tempR3$$Register,
+                                               $vtemp$$FloatRegister,
+                                               $result$$Register,
+                                               super_klass_slot);
     } else {
       address call = __ trampoline_call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
       success = (call != nullptr);
