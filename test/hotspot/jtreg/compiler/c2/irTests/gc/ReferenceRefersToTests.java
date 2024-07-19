@@ -27,6 +27,7 @@ import compiler.lib.ir_framework.*;
 import jdk.test.whitebox.gc.GC;
 
 import java.lang.ref.*;
+import java.util.*;
 
 /*
  * @test
@@ -40,53 +41,63 @@ import java.lang.ref.*;
  */
 public class ReferenceRefersToTests {
 
+    private static String[] args(String... add) {
+        List<String> args = new ArrayList<>();
+
+         // Use PerMethodTrapLimit=0 to compile all branches in the intrinsics.
+        args.add("-XX:PerMethodTrapLimit=0");
+
+        // Forcefully inline all methods to reach the intrinsic code.
+        args.add("-XX:CompileCommand=inline,compiler.c2.irTests.gc.ReferenceRefersToTests::*");
+        args.add("-XX:CompileCommand=inline,java.lang.ref.Reference::*");
+        args.add("-XX:CompileCommand=inline,java.lang.ref.PhantomReference::*");
+
+        // Mix in test config code.
+        args.addAll(Arrays.asList(add));
+
+        return args.toArray(new String[0]);
+    }
+
     public static void main(String[] args) {
         TestFramework framework = new TestFramework();
-
-        // Use PerMethodTrapLimit=0 to compile all branches in the intrinsics.
 
         int idx = 0;
         if (GC.isSelectedErgonomically() && GC.Serial.isSupported()) {
             // Serial does not have any barriers in refersTo.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseSerialGC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
             // Parallel does not have any barriers in refersTo.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseParallelGC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.G1.isSupported()) {
             // G1 nominally needs keep-alive barriers for Reference loads,
             // but should not have them for refersTo.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseG1GC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Shenandoah.isSupported()) {
             // Shenandoah nominally needs keep-alive barriers for Reference loads,
             // but should not have them for refersTo. We only care to check that
             // SATB barrier is not emitted. Shenandoah would also emit LRB barrier,
             // which would false-negative the test.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:ShenandoahGCMode=passive",
                 "-XX:+ShenandoahSATBBarrier",
                 "-XX:+UseShenandoahGC"
-            ));
+            )));
         }
         if (GC.isSelectedErgonomically() && GC.Z.isSupported()) {
             // ZGC does not emit barriers in IR.
-            framework.addScenarios(new Scenario(idx++,
-                "-XX:PerMethodTrapLimit=0",
+            framework.addScenarios(new Scenario(idx++, args(
                 "-XX:+UseZGC"
-            ));
+            )));
         }
         framework.start();
     }
