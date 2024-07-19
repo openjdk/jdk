@@ -2987,7 +2987,10 @@ public final class String
         if (str.isEmpty()) {
             return this;
         }
-        return StringConcatHelper.doConcat(this, str == null ? "null" : str);
+        if (isEmpty()) {
+            return str;
+        }
+        return StringConcatHelper.doConcat(this, str);
     }
 
     /**
