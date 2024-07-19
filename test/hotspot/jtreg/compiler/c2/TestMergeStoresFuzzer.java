@@ -66,7 +66,8 @@ public class TestMergeStoresFuzzer {
     out.println("        System.out.println(\"This is in another java file\");");
     out.println("        ");
     out.println("        ");
-    out.println("        ");
+    out.println("        System.out.println(Test.class.getName());");
+    out.println("        System.out.println(Test.class);");
     out.println("        TestFramework.run(HelloWorld.class);");
     out.println("        System.out.println(\"Done with IR framework.\");");
     out.println("    }");
@@ -85,6 +86,8 @@ public class TestMergeStoresFuzzer {
     optionList.add(System.getProperty("java.class.path"));
     CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, compilationUnits);
 
+    System.out.println(Test.class.getName());
+    System.out.println(Test.class);
     System.out.println("classpath: " + System.getProperty("java.class.path"));
 
     boolean success = task.call();
