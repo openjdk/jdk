@@ -1541,7 +1541,7 @@ void MacroAssembler::atomic_get_and_modify_generic(Register dest_current_value, 
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
+  const int instruction_type =  size ;
 
   Label retry;
   Register shift_amount = noreg,
@@ -1619,7 +1619,7 @@ void MacroAssembler::cmpxchg_loop_body(ConditionRegister flag, Register dest_cur
   // For older processors, instruction_type != size holds, and we
   // emulate the sub-word instructions by constructing a 4-byte value
   // that leaves the other bytes unchanged.
-  const int instruction_type = VM_Version::has_lqarx() ? size : 4;
+  const int instruction_type =  size ;
 
   Register shift_amount = noreg,
            val32 = dest_current_value,
