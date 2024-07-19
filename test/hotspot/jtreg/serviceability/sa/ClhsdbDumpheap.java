@@ -37,7 +37,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8240989 8336753
+ * @bug 8240989
  * @summary Test clhsdb dumpheap command
  * @requires vm.hasSA
  * @requires vm.compMode != "Xcomp"
