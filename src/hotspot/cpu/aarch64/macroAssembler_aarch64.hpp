@@ -995,7 +995,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.

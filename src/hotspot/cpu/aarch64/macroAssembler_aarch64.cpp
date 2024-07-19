@@ -1387,13 +1387,10 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
                                                    Label* L_success,
                                                    Label* L_failure,
                                                    Label* L_slow_path,
-                                        RegisterOrConstant super_check_offset) {
-  assert_different_registers(sub_klass, super_klass, temp_reg);
-  bool must_load_sco = (super_check_offset.constant_or_zero() == -1);
-  if (super_check_offset.is_register()) {
-    assert_different_registers(sub_klass, super_klass,
-                               super_check_offset.as_register());
-  } else if (must_load_sco) {
+                                                   Register super_check_offset) {
+  assert_different_registers(sub_klass, super_klass, temp_reg, super_check_offset);
+  bool must_load_sco = ! super_check_offset->is_valid();
+  if (must_load_sco) {
     assert(temp_reg != noreg, "supply either a temp or a register offset");
   }
 
@@ -1404,7 +1401,6 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   if (L_slow_path == nullptr) { L_slow_path = &L_fallthrough; label_nulls++; }
   assert(label_nulls <= 1, "at most one null in the batch");
 
-  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
   int sco_offset = in_bytes(Klass::super_check_offset_offset());
   Address super_check_offset_addr(super_klass, sco_offset);
 
@@ -1426,19 +1422,13 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // Check the supertype display:
   if (must_load_sco) {
     ldrw(temp_reg, super_check_offset_addr);
-    super_check_offset = RegisterOrConstant(temp_reg);
-  }
-
-  // Don't check secondary_super_cache
-  if (super_check_offset.is_register()
-      && !UseSecondarySupersCache) {
-    subs(zr, super_check_offset.as_register(), sc_offset);
-    br(Assembler::EQ, *L_slow_path);
+    super_check_offset = temp_reg;
   }
 
   Address super_check_addr(sub_klass, super_check_offset);
   ldr(rscratch1, super_check_addr);
   cmp(super_klass, rscratch1); // load displayed supertype
+  br(Assembler::EQ, *L_success);
 
   // This check has worked decisively for primary supers.
   // Secondary supers are sought in the super_cache ('super_cache_addr').
@@ -1451,31 +1441,12 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
   // So if it was a primary super, we can just fail immediately.
   // Otherwise, it's the slow path for us (no success at this point).
 
-  if (super_check_offset.is_register()) {
-    br(Assembler::EQ, *L_success);
-    subs(zr, super_check_offset.as_register(), sc_offset);
-    if (L_failure == &L_fallthrough) {
-      br(Assembler::EQ, *L_slow_path);
-    } else {
-      br(Assembler::NE, *L_failure);
-      final_jmp(*L_slow_path);
-    }
-  } else if (super_check_offset.as_constant() == sc_offset) {
-    // Need a slow path; fast failure is impossible.
-    if (L_slow_path == &L_fallthrough) {
-      br(Assembler::EQ, *L_success);
-    } else {
-      br(Assembler::NE, *L_slow_path);
-      final_jmp(*L_success);
-    }
+  sub(rscratch1, super_check_offset, in_bytes(Klass::secondary_super_cache_offset()));
+  if (L_failure == &L_fallthrough) {
+    cbz(rscratch1, *L_slow_path);
   } else {
-    // No slow path; it's a fast decision.
-    if (L_failure == &L_fallthrough) {
-      br(Assembler::EQ, *L_success);
-    } else {
-      br(Assembler::NE, *L_failure);
-      final_jmp(*L_success);
-    }
+    cbnz(rscratch1, *L_failure);
+    final_jmp(*L_slow_path);
   }
 
   bind(L_fallthrough);
