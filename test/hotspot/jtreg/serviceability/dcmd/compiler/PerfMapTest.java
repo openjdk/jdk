@@ -118,9 +118,12 @@ public class PerfMapTest {
     public void logErrorsDcmdOutputStream() throws IOException {
         String test_dir = System.getProperty("test.dir", ".");
         Path path = Paths.get("nonexistent", test_dir);
-        OutputAnalyzer output = new JMXExecutor().execute("Compiler.perfmap %s".formatted(path));
-        output.shouldContain("Failed to create nonexistent/%s for perf map".formatted(test_dir));
-        output.shouldNotHaveExitValue(0);
-        Files.deleteIfExists(path);
+        try {
+            OutputAnalyzer output = new JMXExecutor().execute("Compiler.perfmap %s".formatted(path));
+            output.shouldContain("Failed to create nonexistent/%s for perf map".formatted(test_dir));
+            output.shouldNotHaveExitValue(0);
+        } finally {
+            Files.deleteIfExists(path);
+        }
     }
 }
