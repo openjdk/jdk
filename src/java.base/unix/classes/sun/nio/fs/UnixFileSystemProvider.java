@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,6 @@ import java.nio.file.NotDirectoryException;
 import java.nio.file.NotLinkException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
-import java.nio.file.ProviderMismatchException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
@@ -124,14 +123,6 @@ public abstract class UnixFileSystemProvider
     @Override
     public Path getPath(URI uri) {
         return UnixUriUtils.fromUri(theFileSystem, uri);
-    }
-
-    UnixPath checkPath(Path obj) {
-        if (obj == null)
-            throw new NullPointerException();
-        if (!(obj instanceof UnixPath))
-            throw new ProviderMismatchException();
-        return (UnixPath)obj;
     }
 
     @Override
@@ -216,7 +207,7 @@ public abstract class UnixFileSystemProvider
                                       FileAttribute<?>... attrs)
         throws IOException
     {
-        UnixPath file = checkPath(obj);
+        UnixPath file = UnixPath.toUnixPath(obj);
         int mode = UnixFileModeAttribute
             .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
         try {
@@ -233,7 +224,7 @@ public abstract class UnixFileSystemProvider
                                                               ExecutorService executor,
                                                               FileAttribute<?>... attrs) throws IOException
     {
-        UnixPath file = checkPath(obj);
+        UnixPath file = UnixPath.toUnixPath(obj);
         int mode = UnixFileModeAttribute
             .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
         ThreadPool pool = (executor == null) ? null : ThreadPool.wrap(executor, 0);
@@ -253,15 +244,7 @@ public abstract class UnixFileSystemProvider
                                               FileAttribute<?>... attrs)
          throws IOException
     {
-        UnixPath file = UnixPath.toUnixPath(obj);
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
-        try {
-            return UnixChannelFactory.newFileChannel(file, options, mode);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(file);
-            return null;  // keep compiler happy
-        }
+        return newFileChannel(obj, options, attrs);
     }
 
     @Override
