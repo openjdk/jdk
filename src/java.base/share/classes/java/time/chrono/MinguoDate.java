@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -378,11 +378,6 @@ public final class MinguoDate
     }
 
     @Override
-    MinguoDate plusWeeks(long weeksToAdd) {
-        return super.plusWeeks(weeksToAdd);
-    }
-
-    @Override
     MinguoDate plusDays(long days) {
         return with(isoDate.plusDays(days));
     }
@@ -395,26 +390,6 @@ public final class MinguoDate
     @Override
     public MinguoDate minus(long amountToSubtract, TemporalUnit unit) {
         return super.minus(amountToSubtract, unit);
-    }
-
-    @Override
-    MinguoDate minusYears(long yearsToSubtract) {
-        return super.minusYears(yearsToSubtract);
-    }
-
-    @Override
-    MinguoDate minusMonths(long monthsToSubtract) {
-        return super.minusMonths(monthsToSubtract);
-    }
-
-    @Override
-    MinguoDate minusWeeks(long weeksToSubtract) {
-        return super.minusWeeks(weeksToSubtract);
-    }
-
-    @Override
-    MinguoDate minusDays(long daysToSubtract) {
-        return super.minusDays(daysToSubtract);
     }
 
     private MinguoDate with(LocalDate newDate) {

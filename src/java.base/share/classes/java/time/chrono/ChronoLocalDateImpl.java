@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,25 +259,6 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     abstract D plusMonths(long monthsToAdd);
 
     /**
-     * Returns a copy of this date with the specified number of weeks added.
-     * <p>
-     * This adds the specified period in weeks to the date.
-     * In some cases, adding weeks can cause the resulting date to become invalid.
-     * If this occurs, then other fields will be adjusted to ensure that the result is valid.
-     * <p>
-     * The default implementation uses {@link #plusDays(long)} using a 7 day week.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param weeksToAdd  the weeks to add, may be negative
-     * @return a date based on this one with the weeks added, not null
-     * @throws DateTimeException if the result exceeds the supported date range
-     */
-    D plusWeeks(long weeksToAdd) {
-        return plusDays(Math.multiplyExact(weeksToAdd, 7));
-    }
-
-    /**
      * Returns a copy of this date with the specified number of days added.
      * <p>
      * This adds the specified period in days to the date.
@@ -291,85 +272,6 @@ abstract class ChronoLocalDateImpl<D extends ChronoLocalDate>
     abstract D plusDays(long daysToAdd);
 
     //-----------------------------------------------------------------------
-    /**
-     * Returns a copy of this date with the specified number of years subtracted.
-     * <p>
-     * This subtracts the specified period in years to the date.
-     * In some cases, subtracting years can cause the resulting date to become invalid.
-     * If this occurs, then other fields, typically the day-of-month, will be adjusted to ensure
-     * that the result is valid. Typically this will select the last valid day of the month.
-     * <p>
-     * The default implementation uses {@link #plusYears(long)}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param yearsToSubtract  the years to subtract, may be negative
-     * @return a date based on this one with the years subtracted, not null
-     * @throws DateTimeException if the result exceeds the supported date range
-     */
-    @SuppressWarnings("unchecked")
-    D minusYears(long yearsToSubtract) {
-        return (yearsToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusYears(Long.MAX_VALUE)).plusYears(1) : plusYears(-yearsToSubtract));
-    }
-
-    /**
-     * Returns a copy of this date with the specified number of months subtracted.
-     * <p>
-     * This subtracts the specified period in months to the date.
-     * In some cases, subtracting months can cause the resulting date to become invalid.
-     * If this occurs, then other fields, typically the day-of-month, will be adjusted to ensure
-     * that the result is valid. Typically this will select the last valid day of the month.
-     * <p>
-     * The default implementation uses {@link #plusMonths(long)}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param monthsToSubtract  the months to subtract, may be negative
-     * @return a date based on this one with the months subtracted, not null
-     * @throws DateTimeException if the result exceeds the supported date range
-     */
-    @SuppressWarnings("unchecked")
-    D minusMonths(long monthsToSubtract) {
-        return (monthsToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusMonths(Long.MAX_VALUE)).plusMonths(1) : plusMonths(-monthsToSubtract));
-    }
-
-    /**
-     * Returns a copy of this date with the specified number of weeks subtracted.
-     * <p>
-     * This subtracts the specified period in weeks to the date.
-     * In some cases, subtracting weeks can cause the resulting date to become invalid.
-     * If this occurs, then other fields will be adjusted to ensure that the result is valid.
-     * <p>
-     * The default implementation uses {@link #plusWeeks(long)}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param weeksToSubtract  the weeks to subtract, may be negative
-     * @return a date based on this one with the weeks subtracted, not null
-     * @throws DateTimeException if the result exceeds the supported date range
-     */
-    @SuppressWarnings("unchecked")
-    D minusWeeks(long weeksToSubtract) {
-        return (weeksToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusWeeks(Long.MAX_VALUE)).plusWeeks(1) : plusWeeks(-weeksToSubtract));
-    }
-
-    /**
-     * Returns a copy of this date with the specified number of days subtracted.
-     * <p>
-     * This subtracts the specified period in days to the date.
-     * <p>
-     * The default implementation uses {@link #plusDays(long)}.
-     * <p>
-     * This instance is immutable and unaffected by this method call.
-     *
-     * @param daysToSubtract  the days to subtract, may be negative
-     * @return a date based on this one with the days subtracted, not null
-     * @throws DateTimeException if the result exceeds the supported date range
-     */
-    @SuppressWarnings("unchecked")
-    D minusDays(long daysToSubtract) {
-        return (daysToSubtract == Long.MIN_VALUE ? ((ChronoLocalDateImpl<D>)plusDays(Long.MAX_VALUE)).plusDays(1) : plusDays(-daysToSubtract));
-    }
 
     //-----------------------------------------------------------------------
     @Override

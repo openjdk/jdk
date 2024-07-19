@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,11 +617,6 @@ public final class JapaneseDate
     }
 
     @Override
-    JapaneseDate plusWeeks(long weeksToAdd) {
-        return with(isoDate.plusWeeks(weeksToAdd));
-    }
-
-    @Override
     JapaneseDate plusDays(long days) {
         return with(isoDate.plusDays(days));
     }
@@ -634,26 +629,6 @@ public final class JapaneseDate
     @Override
     public JapaneseDate minus(long amountToSubtract, TemporalUnit unit) {
         return super.minus(amountToSubtract, unit);
-    }
-
-    @Override
-    JapaneseDate minusYears(long yearsToSubtract) {
-        return super.minusYears(yearsToSubtract);
-    }
-
-    @Override
-    JapaneseDate minusMonths(long monthsToSubtract) {
-        return super.minusMonths(monthsToSubtract);
-    }
-
-    @Override
-    JapaneseDate minusWeeks(long weeksToSubtract) {
-        return super.minusWeeks(weeksToSubtract);
-    }
-
-    @Override
-    JapaneseDate minusDays(long daysToSubtract) {
-        return super.minusDays(daysToSubtract);
     }
 
     private JapaneseDate with(LocalDate newDate) {

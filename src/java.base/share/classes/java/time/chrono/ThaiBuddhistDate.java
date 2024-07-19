@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -380,11 +380,6 @@ public final class ThaiBuddhistDate
     }
 
     @Override
-    ThaiBuddhistDate plusWeeks(long weeksToAdd) {
-        return super.plusWeeks(weeksToAdd);
-    }
-
-    @Override
     ThaiBuddhistDate plusDays(long days) {
         return with(isoDate.plusDays(days));
     }
@@ -397,26 +392,6 @@ public final class ThaiBuddhistDate
     @Override
     public ThaiBuddhistDate minus(long amountToSubtract, TemporalUnit unit) {
         return super.minus(amountToSubtract, unit);
-    }
-
-    @Override
-    ThaiBuddhistDate minusYears(long yearsToSubtract) {
-        return super.minusYears(yearsToSubtract);
-    }
-
-    @Override
-    ThaiBuddhistDate minusMonths(long monthsToSubtract) {
-        return super.minusMonths(monthsToSubtract);
-    }
-
-    @Override
-    ThaiBuddhistDate minusWeeks(long weeksToSubtract) {
-        return super.minusWeeks(weeksToSubtract);
-    }
-
-    @Override
-    ThaiBuddhistDate minusDays(long daysToSubtract) {
-        return super.minusDays(daysToSubtract);
     }
 
     private ThaiBuddhistDate with(LocalDate newDate) {

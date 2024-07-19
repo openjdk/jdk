@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -545,11 +545,6 @@ public final class HijrahDate
     }
 
     @Override
-    HijrahDate plusWeeks(long weeksToAdd) {
-        return super.plusWeeks(weeksToAdd);
-    }
-
-    @Override
     HijrahDate plusDays(long days) {
         return new HijrahDate(chrono, toEpochDay() + days);
     }
@@ -562,26 +557,6 @@ public final class HijrahDate
     @Override
     public HijrahDate minus(long amountToSubtract, TemporalUnit unit) {
         return super.minus(amountToSubtract, unit);
-    }
-
-    @Override
-    HijrahDate minusYears(long yearsToSubtract) {
-        return super.minusYears(yearsToSubtract);
-    }
-
-    @Override
-    HijrahDate minusMonths(long monthsToSubtract) {
-        return super.minusMonths(monthsToSubtract);
-    }
-
-    @Override
-    HijrahDate minusWeeks(long weeksToSubtract) {
-        return super.minusWeeks(weeksToSubtract);
-    }
-
-    @Override
-    HijrahDate minusDays(long daysToSubtract) {
-        return super.minusDays(daysToSubtract);
     }
 
     @Override        // for javadoc and covariant return type
