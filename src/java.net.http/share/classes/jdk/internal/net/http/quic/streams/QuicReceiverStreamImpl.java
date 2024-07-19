@@ -485,10 +485,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         var payload = frame.payload();
         var isLast = frame.isLast();
         if (payload.hasRemaining()) {
-            orderedQueue.offer(payload);
+            orderedQueue.add(payload.slice());
         }
         if (isLast) {
-            orderedQueue.offer(QuicStreamReader.EOF);
+            orderedQueue.add(QuicStreamReader.EOF);
         }
     }
 
@@ -549,6 +549,20 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     /**
      * Notifies the connection about received data that is no longer buffered.
      */
+    private void increaseProcessedDataBy(int diff) {
+        assert diff >= 0;
+        if (diff <= 0) return;
+        // OK to use synchronized: no method calls
+        synchronized (this) {
+            assert processed + diff <= received;
+            processed += diff;
+        }
+        connection().increaseProcessedData(diff);
+    }
+
+    /**
+     * Notifies the connection about received data that is no longer buffered.
+     */
     private void increaseProcessedData(long newProcessed) {
         long diff;
         // OK to use synchronized: no method calls
@@ -601,13 +615,11 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 if (!requestedStopSending && unfulfilled() < desiredBufferSize - desiredBufferSize / 4) {
                     demand(desiredBufferSize);
                 }
-                // TODO processed data could be incremented earlier.
-                // We don't know how much data is consumed by peek, so we only
-                // increase the number of processed bytes when all received bytes
-                // are processed.
-                increaseProcessedData(received);
                 return null;
             }
+
+            increaseProcessedDataBy(buffer.capacity());
+
             if (requestedStopSending) {
                 // check reset again
                 checkReset(true);
