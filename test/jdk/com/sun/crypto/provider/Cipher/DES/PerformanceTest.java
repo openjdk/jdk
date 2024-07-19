@@ -183,7 +183,9 @@ public class PerformanceTest {
         cipher.doFinal(data, 0, data.length);
         end = getTimeInMicroseconds();
 
-        int speed = (int) ((data.length * count) / (end - start));
+        // To avoid dividing by zero in the rare case where end is equal to start
+        long executionTime = end != start ? end - start : 1L;
+        int speed = (int) ((data.length * count) / executionTime);
         sum += speed;
         col.append(speed);
     }
