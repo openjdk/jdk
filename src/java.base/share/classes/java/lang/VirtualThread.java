@@ -270,7 +270,7 @@ final class VirtualThread extends BaseVirtualThread {
                 // carrier thread. For the default scheduler this ensures that the
                 // current thread is a ForkJoinWorkerThread so the task will be pushed
                 // to the local queue. For other schedulers, it avoids deadlock that
-                // would arise due to platform and virtual threads contenting for a
+                // would arise due to platform and virtual threads contending for a
                 // lock on the scheduler's submission queue.
                 if (currentThread() instanceof VirtualThread vthread) {
                     vthread.switchToCarrierThread();

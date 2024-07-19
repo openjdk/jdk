@@ -1109,7 +1109,7 @@ class ThreadAPI {
      * Test Thread.yield when thread is pinned by native frame.
      */
     @Test
-    void testYield3() throws Exception {
+    void testYield2() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
@@ -1136,7 +1136,7 @@ class ThreadAPI {
      * Test Thread.yield does not consume the thread's parking permit.
      */
     @Test
-    void testYield4() throws Exception {
+    void testYield3() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             LockSupport.unpark(Thread.currentThread());
             Thread.yield();
@@ -1149,7 +1149,7 @@ class ThreadAPI {
      * Test Thread.yield does not make available the thread's parking permit.
      */
     @Test
-    void testYield5() throws Exception {
+    void testYield4() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             Thread.yield();
             LockSupport.park();  // should park

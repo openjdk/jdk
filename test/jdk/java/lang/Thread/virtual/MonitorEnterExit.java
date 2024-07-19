@@ -213,7 +213,7 @@ class MonitorEnterExit {
         var lock = new Object();
         var started = new CountDownLatch(1);
         var entered = new AtomicBoolean();
-        Thread vthread  = Thread.ofVirtual().unstarted(() -> {
+        Thread vthread = Thread.ofVirtual().unstarted(() -> {
             VThreadPinner.runPinned(() -> {
                 started.countDown();
                 synchronized (lock) {
