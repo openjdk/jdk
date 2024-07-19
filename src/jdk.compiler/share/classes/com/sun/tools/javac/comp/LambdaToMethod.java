@@ -1291,6 +1291,7 @@ public class LambdaToMethod extends TreeTranslator {
          * in nested scopes (which do not need to undergo capture).
          */
         private JCTree capturedDecl(int depth, Symbol sym) {
+            Assert.check(sym.kind != TYP);
             int currentDepth = frameStack.size() - 1;
             for (Frame block : frameStack) {
                 switch (block.tree.getTag()) {
