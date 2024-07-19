@@ -388,7 +388,7 @@ public class JSplitPane extends JComponent implements Accessible
             }
         }
     }
-    
+
     /**
      * {@inheritDoc}
      * @param enabled {@inheritDoc}
