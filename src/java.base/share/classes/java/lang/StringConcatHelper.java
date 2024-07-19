@@ -368,6 +368,11 @@ final class StringConcatHelper {
             // newly created string required, see JLS 15.18.1
             return new String(s1);
         }
+        return doConcat(s1, s2);
+    }
+
+    @ForceInline
+    static String doConcat(String s1, String s2) {
         byte coder = (byte) (s1.coder() | s2.coder());
         int newLength = (s1.length() + s2.length()) << coder;
         byte[] buf = newArray(newLength);
