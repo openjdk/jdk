@@ -2662,7 +2662,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * invalidated, either {@link Arena#close() explicitly}, or automatically, by the
      * garbage collector. A segment scope that is invalidated automatically is an
      * <em>automatic scope</em>. An automatic scope is always {@link #isAlive() alive}
-     * as long as it is <a href="../../../java/lang/ref/package-summary.html#reachability">reachable</a>.
+     * as long as it is {@linkplain java.lang.ref##reachability reachable}.
      * Segments associated with an automatic scope are:
      * <ul>
      *     <li>Segments obtained from an {@linkplain Arena#ofAuto() automatic arena};</li>
