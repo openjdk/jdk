@@ -751,8 +751,16 @@ bool java_lang_String::equals(oop str1, oop str2) {
   return value_equals(value1, value2);
 }
 
-void java_lang_String::print(oop java_string, outputStream* st) {
+// Print the given string to the given outputStream, limiting the output to
+// at most max_length of the string's characters. If the length exceeds the
+// limit we print an abridged version of the string with the "middle" elided
+// and replaced by " ... (N characters ommitted) ... ". If max_length is odd
+// it is treated as max_length-1.
+void java_lang_String::print(oop java_string, outputStream* st, int max_length) {
   assert(java_string->klass() == vmClasses::String_klass(), "must be java_string");
+  // We need at least two characters to print A ... B
+  assert(max_length > 1, "invalid max_length: %d", max_length);
+
   typeArrayOop value  = java_lang_String::value_no_keepalive(java_string);
 
   if (value == nullptr) {
@@ -765,8 +773,17 @@ void java_lang_String::print(oop java_string, outputStream* st) {
   int length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
 
+  bool abridge = length > max_length;
+
   st->print("\"");
   for (int index = 0; index < length; index++) {
+    // If we need to abridge and we've printed half the allowed characters
+    // then jump to the tail of the string.
+    if (abridge && index >= max_length / 2) {
+      st->print(" ... (%d characters ommitted) ... ", length - 2 * (max_length / 2));
+      index = length - (max_length / 2);
+      abridge = false; // only do this once
+    }
     jchar c = (!is_latin1) ?  value->char_at(index) :
                              ((jchar) value->byte_at(index)) & 0xff;
     if (c < ' ') {
@@ -776,6 +793,10 @@ void java_lang_String::print(oop java_string, outputStream* st) {
     }
   }
   st->print("\"");
+
+  if (length > max_length) {
+    st->print(" (abridged) ");
+  }
 }
 
 // java_lang_Class
@@ -1220,10 +1241,6 @@ objArrayOop java_lang_Class::signers(oop java_class) {
   assert(_signers_offset != 0, "must be set");
   return (objArrayOop)java_class->obj_field(_signers_offset);
 }
-void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
-  assert(_signers_offset != 0, "must be set");
-  java_class->obj_field_put(_signers_offset, signers);
-}
 
 oop java_lang_Class::class_data(oop java_class) {
   assert(_classData_offset != 0, "must be set");
@@ -1418,12 +1435,13 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
 }
 
 #define CLASS_FIELDS_DO(macro) \
-  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,         false); \
-  macro(_class_loader_offset,        k, "classLoader",         classloader_signature, false); \
-  macro(_component_mirror_offset,    k, "componentType",       class_signature,       false); \
-  macro(_module_offset,              k, "module",              module_signature,      false); \
-  macro(_name_offset,                k, "name",                string_signature,      false); \
-  macro(_classData_offset,           k, "classData",           object_signature,      false);
+  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,          false); \
+  macro(_class_loader_offset,        k, "classLoader",         classloader_signature,  false); \
+  macro(_component_mirror_offset,    k, "componentType",       class_signature,        false); \
+  macro(_module_offset,              k, "module",              module_signature,       false); \
+  macro(_name_offset,                k, "name",                string_signature,       false); \
+  macro(_classData_offset,           k, "classData",           object_signature,       false); \
+  macro(_signers_offset,             k, "signers",             object_array_signature, false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
