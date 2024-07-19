@@ -368,16 +368,12 @@ final class StringConcatHelper {
             // newly created string required, see JLS 15.18.1
             return new String(s1);
         }
-        // start "mixing" in length and coder or arguments, order is not
-        // important
-        long indexCoder = mix(initialCoder(), s1);
-        indexCoder = mix(indexCoder, s2);
-        byte[] buf = newArray(indexCoder);
-        // prepend each argument in reverse order, since we prepending
-        // from the end of the byte array
-        indexCoder = prepend(indexCoder, buf, s2);
-        indexCoder = prepend(indexCoder, buf, s1);
-        return newString(buf, indexCoder);
+        byte coder = (byte) (s1.coder() | s2.coder());
+        int len = s1.length() + s2.length();
+        byte[] buf = (byte[]) UNSAFE.allocateUninitializedArray(byte.class, len << coder);
+        s1.getBytes(buf, 0, coder);
+        s2.getBytes(buf, s1.length(), coder);
+        return new String(buf, coder);
     }
 
     /**
