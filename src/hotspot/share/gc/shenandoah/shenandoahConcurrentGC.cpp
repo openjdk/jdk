@@ -555,7 +555,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
+    jlong start = os::javaTimeNanos();
     heap->parallel_heap_region_iterate(&cl);
+    jlong end = os::javaTimeNanos();
+    log_info(gc)("ShenandoahInitMarkUpdateRegionStateClosure Total time %ld ns.", end - start);
   }
 
   // Weak reference processing

@@ -1773,7 +1773,10 @@ void ShenandoahHeap::prepare_gc() {
   reset_mark_bitmap();
 
   ShenandoahResetUpdateRegionStateClosure cl;
+  jlong start = os::javaTimeNanos();
   parallel_heap_region_iterate(&cl);
+  jlong end = os::javaTimeNanos();
+  log_info(gc)("ShenandoahResetUpdateRegionStateClosure Total time %ld ns.", end - start);
 }
 
 class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
@@ -1829,7 +1832,10 @@ void ShenandoahHeap::prepare_regions_and_collection_set(bool concurrent) {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
                                          ShenandoahPhaseTimings::degen_gc_final_update_region_states);
     ShenandoahFinalMarkUpdateRegionStateClosure cl;
+    jlong start = os::javaTimeNanos();
     parallel_heap_region_iterate(&cl);
+    jlong end = os::javaTimeNanos();
+    log_info(gc)("ShenandoahFinalMarkUpdateRegionStateClosure Total time %ld ns.", end - start);
 
     assert_pinned_region_status();
   }
@@ -2286,7 +2292,10 @@ void ShenandoahHeap::update_heap_region_states(bool concurrent) {
                             ShenandoahPhaseTimings::final_update_refs_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_refs_update_region_states);
     ShenandoahFinalUpdateRefsUpdateRegionStateClosure cl;
+    jlong start = os::javaTimeNanos();
     parallel_heap_region_iterate(&cl);
+    jlong end = os::javaTimeNanos();
+    log_info(gc)("ShenandoahFinalUpdateRefsUpdateRegionStateClosure Total time %ld ns.", end - start);
 
     assert_pinned_region_status();
   }
