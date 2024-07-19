@@ -751,8 +751,16 @@ bool java_lang_String::equals(oop str1, oop str2) {
   return value_equals(value1, value2);
 }
 
-void java_lang_String::print(oop java_string, outputStream* st) {
+// Print the given string to the given outputStream, limiting the output to
+// at most max_length of the string's characters. If the length exceeds the
+// limit we print an abridged version of the string with the "middle" elided
+// and replaced by " ... (N characters ommitted) ... ". If max_length is odd
+// it is treated as max_length-1.
+void java_lang_String::print(oop java_string, outputStream* st, int max_length) {
   assert(java_string->klass() == vmClasses::String_klass(), "must be java_string");
+  // We need at least two characters to print A ... B
+  assert(max_length > 1, "invalid max_length: %d", max_length);
+
   typeArrayOop value  = java_lang_String::value_no_keepalive(java_string);
 
   if (value == nullptr) {
@@ -765,8 +773,17 @@ void java_lang_String::print(oop java_string, outputStream* st) {
   int length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
 
+  bool abridge = length > max_length;
+
   st->print("\"");
   for (int index = 0; index < length; index++) {
+    // If we need to abridge and we've printed half the allowed characters
+    // then jump to the tail of the string.
+    if (abridge && index >= max_length / 2) {
+      st->print(" ... (%d characters ommitted) ... ", length - 2 * (max_length / 2));
+      index = length - (max_length / 2);
+      abridge = false; // only do this once
+    }
     jchar c = (!is_latin1) ?  value->char_at(index) :
                              ((jchar) value->byte_at(index)) & 0xff;
     if (c < ' ') {
@@ -776,6 +793,10 @@ void java_lang_String::print(oop java_string, outputStream* st) {
     }
   }
   st->print("\"");
+
+  if (length > max_length) {
+    st->print(" (abridged) ");
+  }
 }
 
 // java_lang_Class
