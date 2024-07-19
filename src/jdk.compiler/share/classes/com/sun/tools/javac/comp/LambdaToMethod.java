@@ -1297,7 +1297,7 @@ public class LambdaToMethod extends TreeTranslator {
                 switch (block.tree.getTag()) {
                     case CLASSDEF:
                         ClassSymbol clazz = ((JCClassDecl)block.tree).sym;
-                        if (clazz.isSubClass(sym, types) || sym.isMemberOf(clazz, types)) {
+                        if (sym.isMemberOf(clazz, types)) {
                             return currentDepth > depth ? null : block.tree;
                         }
                         break;
