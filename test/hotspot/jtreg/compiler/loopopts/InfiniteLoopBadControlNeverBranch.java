@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,25 +20,38 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.constantpool.Utf8Entry;
+/*
+ * @test
+ * @bug 8335709
+ * @summary C2: assert(!loop->is_member(get_loop(useblock))) failed: must be outside loop
+ * @library /test/lib
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,InfiniteLoopBadControlNeverBranch::* InfiniteLoopBadControlNeverBranch
+ *
+ */
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
 
-public sealed interface MethodInfo
-        permits MethodImpl, TerminalMethodBuilder, BufferedMethodBuilder.Model {
-    Utf8Entry methodName();
-    Utf8Entry methodType();
-    MethodTypeDesc methodTypeSymbol();
-    int methodFlags();
+import jdk.test.lib.Utils;
 
-    default int receiverSlot() {
-        if ((methodFlags() & ACC_STATIC) != 0)
-            throw new IllegalStateException("not an instance method");
-        return 0;
+public class InfiniteLoopBadControlNeverBranch {
+    static int b;
+    static short c;
+
+    public static void main(String[] args) throws InterruptedException {
+        Thread thread = new Thread(() -> test());
+        thread.setDaemon(true);
+        thread.start();
+        Thread.sleep(Utils.adjustTimeout(4000));
     }
 
-    int parameterSlot(int paramNo);
+    static void test() {
+        int i = 0;
+        while (true) {
+            if (i > 1) {
+                b = 0;
+            }
+            c = (short) (b * 7);
+            i++;
+        }
+    }
 }

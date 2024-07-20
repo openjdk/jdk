@@ -40,7 +40,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
-        implements TerminalMethodBuilder, MethodInfo, Util.Writable {
+        implements TerminalMethodBuilder, Util.Writable {
 
     final Utf8Entry name;
     final Utf8Entry desc;
