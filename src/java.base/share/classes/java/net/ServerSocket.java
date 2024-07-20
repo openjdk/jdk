@@ -329,7 +329,7 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @param   endpoint        The IP address and port number to bind to.
      * @throws  IOException if the bind operation fails, or if the socket
-     *                      is already bound or closed.
+     *                      is already bound or is closed.
      * @throws  SecurityException       if a {@code SecurityManager} is present and
      * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
@@ -358,7 +358,7 @@ public class ServerSocket implements java.io.Closeable {
      * @param   backlog         requested maximum length of the queue of
      *                          incoming connections.
      * @throws  IOException if the bind operation fails, or if the socket
-     *                      is already bound or closed.
+     *                      is already bound or is closed.
      * @throws  SecurityException       if a {@code SecurityManager} is present and
      * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
@@ -806,8 +806,8 @@ public class ServerSocket implements java.io.Closeable {
      * operation to have effect.
      *
      * @param timeout the specified timeout, in milliseconds
-     * @throws  SocketException if there is an error in the underlying protocol,
-     *          such as a TCP error
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or if the socket is closed.
      * @throws  IllegalArgumentException  if {@code timeout} is negative
      * @since   1.1
      * @see #getSoTimeout()
@@ -824,7 +824,7 @@ public class ServerSocket implements java.io.Closeable {
      * Retrieve setting for {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT}.
      * 0 returns implies that the option is disabled (i.e., timeout of infinity).
      * @return the {@link SocketOptions#SO_TIMEOUT SO_TIMEOUT} value
-     * @throws    IOException if an I/O error occurs
+     * @throws IOException if an I/O error occurs or if the socket is closed.
      * @since   1.1
      * @see #setSoTimeout(int)
      */
@@ -887,8 +887,8 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @return a {@code boolean} indicating whether or not
      *         {@code SO_REUSEADDR} is enabled.
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol, such as a TCP error,
+     *         or if the socket is closed.
      * @since   1.4
      * @see #setReuseAddress(boolean)
      */
@@ -1001,8 +1001,8 @@ public class ServerSocket implements java.io.Closeable {
      * requested value but the TCP receive window in sockets accepted from
      * this ServerSocket will be no larger than 64K bytes.
      *
-     * @throws    SocketException if there is an error
-     * in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or if the socket is closed.
      *
      * @param size the size to which to set the receive buffer
      * size. This value must be greater than 0.
@@ -1029,8 +1029,8 @@ public class ServerSocket implements java.io.Closeable {
      * <p>Note, the value actually set in the accepted socket is determined by
      * calling {@link Socket#getReceiveBufferSize()}.
      * @return the value of the {@code SO_RCVBUF} option for this {@code Socket}.
-     * @throws    SocketException if there is an error
-     *            in the underlying protocol, such as a TCP error.
+     * @throws SocketException if there is an error in the underlying protocol,
+     *         such as a TCP error, or if the socket is closed.
      * @see #setReceiveBufferSize(int)
      * @since 1.4
      */
