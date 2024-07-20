@@ -143,6 +143,7 @@ public class Tokens {
         THROWS("throws"),
         TRANSIENT("transient"),
         TRY("try"),
+        VAR("var", Tag.NAMED),
         VOID("void", Tag.NAMED),
         VOLATILE("volatile"),
         WHILE("while"),
