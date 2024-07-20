@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alphabet LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,25 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.impl;
 
-import java.lang.constant.MethodTypeDesc;
-import java.lang.classfile.constantpool.Utf8Entry;
+/*
+ * @test
+ * @bug 8336786
+ * @summary VerifyError with lambda capture and enclosing instance references
+ * @compile a/A.java SuperClassThisCapture.java
+ * @run main SuperClassThisCapture
+ */
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
+public class SuperClassThisCapture extends a.A {
 
-public sealed interface MethodInfo
-        permits MethodImpl, TerminalMethodBuilder, BufferedMethodBuilder.Model {
-    Utf8Entry methodName();
-    Utf8Entry methodType();
-    MethodTypeDesc methodTypeSymbol();
-    int methodFlags();
+  public static void main(String[] args) {
+    new SuperClassThisCapture().f(42);
+    new SuperClassThisCapture().g();
+  }
 
-    default int receiverSlot() {
-        if ((methodFlags() & ACC_STATIC) != 0)
-            throw new IllegalStateException("not an instance method");
-        return 0;
-    }
+  public void f(int x) {
+    Runnable r = () -> {
+      System.err.println(x);
+      new I();
+    };
+    r.run();
+  }
 
-    int parameterSlot(int paramNo);
+  public void g() {
+    Runnable r = () -> new I();
+    r.run();
+  }
 }
