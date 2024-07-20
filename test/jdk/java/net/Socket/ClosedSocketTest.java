@@ -27,13 +27,11 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.StandardSocketOptions;
-import java.util.stream.Stream;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -46,202 +44,133 @@ public class ClosedSocketTest {
     private static final InetAddress loopback = InetAddress.getLoopbackAddress();
     private static final InetSocketAddress loopbackEphemeral = new InetSocketAddress(loopback, 0);
 
-    @FunctionalInterface
-    private interface SocketOp {
-        void apply(Socket s) throws IOException;
-    }
-
-
-    static Stream<Arguments> ioExceptionOperations() {
-        return Stream.of(
-                Arguments.of("bind()", (SocketOp) s -> {
-                    s.bind(loopbackEphemeral);
-                }),
-                Arguments.of("connect()", (SocketOp) s -> {
-                    // connect() will never get to the stage of attempting
-                    // a connection against this port
-                    final int dummyPort = 12345;
-                    s.connect(new InetSocketAddress(loopback, dummyPort));
-                }),
-                Arguments.of("connect(SocketAddress, int)", (SocketOp) s -> {
-                    // connect() will never get to the stage of attempting
-                    // a connection against this port
-                    final int dummyPort = 12345;
-                    s.connect(new InetSocketAddress(loopback, dummyPort), 10);
-                }),
-                Arguments.of("getOption()", (SocketOp) s -> {
-                    var _ = s.getOption(StandardSocketOptions.SO_RCVBUF);
-                }),
-                Arguments.of("getOutputStream()", (SocketOp) s -> {
-                    var _ = s.getOutputStream();
-                }),
-                Arguments.of("shutdownInput()", (SocketOp) s -> {
-                    s.shutdownInput();
-                }),
-                Arguments.of("shutdownOutput()", (SocketOp) s -> {
-                    s.shutdownOutput();
-                })
-        );
-    }
-
-    static Stream<Arguments> socketExceptionOperations() {
-        return Stream.of(
-                Arguments.of("getKeepAlive()", (SocketOp) s -> {
-                    var _ = s.getKeepAlive();
-                }),
-                Arguments.of("getOOBInline()", (SocketOp) s -> {
-                    var _ = s.getOOBInline();
-                }),
-                Arguments.of("getReceiveBufferSize()", (SocketOp) s -> {
-                    var _ = s.getReceiveBufferSize();
-                }),
-                Arguments.of("getReuseAddress()", (SocketOp) s -> {
-                    var _ = s.getReuseAddress();
-                }),
-                Arguments.of("getSendBufferSize()", (SocketOp) s -> {
-                    var _ = s.getSendBufferSize();
-                }),
-                Arguments.of("getSoLinger()", (SocketOp) s -> {
-                    var _ = s.getSoLinger();
-                }),
-                Arguments.of("getSoTimeout()", (SocketOp) s -> {
-                    var _ = s.getSoTimeout();
-                }),
-                Arguments.of("getTcpNoDelay()", (SocketOp) s -> {
-                    var _ = s.getTcpNoDelay();
-                }),
-                Arguments.of("getTrafficClass()", (SocketOp) s -> {
-                    var _ = s.getTrafficClass();
-                }),
-                Arguments.of("setKeepAlive()", (SocketOp) s -> {
-                    s.setKeepAlive(false);
-                }),
-                Arguments.of("setOOBInline()", (SocketOp) s -> {
-                    s.setOOBInline(false);
-                }),
-                Arguments.of("setOption()", (SocketOp) s -> {
-                    s.setOption(StandardSocketOptions.SO_RCVBUF, 1024);
-                }),
-                Arguments.of("setReceiveBufferSize()", (SocketOp) s -> {
-                    s.setReceiveBufferSize(1024);
-                }),
-                Arguments.of("setReuseAddress()", (SocketOp) s -> {
-                    s.setReuseAddress(false);
-                }),
-                Arguments.of("setSendBufferSize()", (SocketOp) s -> {
-                    s.setSendBufferSize(1024);
-                }),
-                Arguments.of("setSoLinger()", (SocketOp) s -> {
-                    s.setSoLinger(false, 0);
-                }),
-                Arguments.of("setSoTimeout()", (SocketOp) s -> {
-                    s.setSoTimeout(1000);
-                }),
-                Arguments.of("setTcpNoDelay()", (SocketOp) s -> {
-                    s.setTcpNoDelay(false);
-                }),
-                Arguments.of("setTrafficClass()", (SocketOp) s -> {
-                    s.setTrafficClass(123);
-                })
-        );
-    }
-
-    static Stream<Arguments> noExceptionOperations() {
-        return Stream.of(
-                Arguments.of("close()", (SocketOp) s -> {
-                    s.close();
-                }),
-                Arguments.of("getInetAddress()", (SocketOp) s -> {
-                    var _ = s.getInetAddress();
-                }),
-                Arguments.of("getLocalAddress()", (SocketOp) s -> {
-                    var _ = s.getLocalAddress();
-                }),
-                Arguments.of("getLocalPort()", (SocketOp) s -> {
-                    var _ = s.getLocalPort();
-                }),
-                Arguments.of("getLocalSocketAddress()", (SocketOp) s -> {
-                    var _ = s.getLocalSocketAddress();
-                }),
-                Arguments.of("getPort()", (SocketOp) s -> {
-                    var _ = s.getPort();
-                }),
-                Arguments.of("getRemoteSocketAddress()", (SocketOp) s -> {
-                    var _ = s.getRemoteSocketAddress();
-                }),
-                Arguments.of("isBound()", (SocketOp) s -> {
-                    var _ = s.isBound();
-                }),
-                Arguments.of("isClosed()", (SocketOp) s -> {
-                    var _ = s.isClosed();
-                }),
-                Arguments.of("isConnected()", (SocketOp) s -> {
-                    var _ = s.isConnected();
-                }),
-                Arguments.of("isInputShutdown()", (SocketOp) s -> {
-                    var _ = s.isInputShutdown();
-                }),
-                Arguments.of("isOutputShutdown()", (SocketOp) s -> {
-                    var _ = s.isOutputShutdown();
-                }),
-                Arguments.of("supportedOptions()", (SocketOp) s -> {
-                    var _ = s.supportedOptions();
-                })
-        );
-    }
-
     /**
      * Verifies that various operations that specify to throw an IOException on a closed socket,
      * do indeed throw it.
      */
-    @ParameterizedTest
-    @MethodSource("ioExceptionOperations")
-    public void testIOExceptionThrown(final String opName, final SocketOp op)
-            throws Exception {
-        test(IOException.class, false, opName, op);
+    @Test
+    public void testIOExceptionThrown() throws Exception {
+        try (final Socket s = new Socket()) {
+            // close and then invoke the operation on the socket
+            s.close();
+            assertTrue(s.isClosed(), "socket isn't closed");
+            assertThrows(IOException.class, () -> s.bind(loopbackEphemeral),
+                    "bind() when already closed didn't throw IOException");
+            // connect() will never get to the stage of attempting
+            // a connection against this port
+            final int dummyPort = 12345;
+            assertThrows(IOException.class,
+                    () -> s.connect(new InetSocketAddress(loopback, dummyPort)),
+                    "connect() when already closed didn't throw IOException");
+            assertThrows(IOException.class,
+                    () -> s.connect(new InetSocketAddress(loopback, dummyPort), 10),
+                    "connect(SocketAddress, int) when already closed didn't throw IOException");
+            assertThrows(IOException.class,
+                    () -> s.getOption(StandardSocketOptions.SO_RCVBUF),
+                    "getOption() when already closed didn't throw IOException");
+            assertThrows(IOException.class,
+                    s::getOutputStream,
+                    "getOutputStream() when already closed didn't throw IOException");
+            assertThrows(IOException.class,
+                    s::shutdownInput,
+                    "shutdownInput() when already closed didn't throw IOException");
+            assertThrows(IOException.class,
+                    s::shutdownOutput,
+                    "shutdownOutput() when already closed didn't throw IOException");
+        }
     }
 
     /**
      * Verifies that various operations that specify to throw a SocketOperation on a closed socket,
      * do indeed throw it.
      */
-    @ParameterizedTest
-    @MethodSource("socketExceptionOperations")
-    public void testSocketExceptionThrown(final String opName, final SocketOp op)
-            throws Exception {
-        test(SocketException.class, true, opName, op);
+    @Test
+    public void testSocketExceptionThrown() throws Exception {
+        try (final Socket s = new Socket()) {
+            // close and then invoke the operations on the socket
+            s.close();
+            assertTrue(s.isClosed(), "socket isn't closed");
+            assertThrowsExactly(SocketException.class,
+                    s::getKeepAlive,
+                    "getKeepAlive() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getOOBInline,
+                    "getOOBInline() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getReceiveBufferSize,
+                    "getReceiveBufferSize() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getReuseAddress,
+                    "getReuseAddress() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getSendBufferSize,
+                    "getSendBufferSize() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getSoLinger,
+                    "getSoLinger() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getSoTimeout,
+                    "getSoTimeout() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getTcpNoDelay,
+                    "getTcpNoDelay() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    s::getTrafficClass,
+                    "getTrafficClass() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setKeepAlive(false),
+                    "setKeepAlive() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setOOBInline(false),
+                    "setOOBInline() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setOption(StandardSocketOptions.SO_RCVBUF, 1024),
+                    "setOption() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setReceiveBufferSize(1024),
+                    "setReceiveBufferSize() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setReuseAddress(false),
+                    "setReuseAddress() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setSendBufferSize(1024),
+                    "setSendBufferSize() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setSoLinger(false, 0),
+                    "setSoLinger() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setSoTimeout(1000),
+                    "setSoTimeout() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setTcpNoDelay(false),
+                    "setTcpNoDelay() when already closed didn't throw SocketException");
+            assertThrowsExactly(SocketException.class,
+                    () -> s.setTrafficClass(123),
+                    "setTrafficClass() when already closed didn't throw SocketException");
+        }
     }
 
     /**
      * Verifies that various operations that aren't expected to throw an exception on a
      * closed socket, complete normally.
      */
-    @ParameterizedTest
-    @MethodSource("noExceptionOperations")
-    public void testNoExceptionThrown(final String opName, final SocketOp op)
-            throws Exception {
+    @Test
+    public void testNoExceptionThrown() throws Exception {
         try (final Socket s = new Socket()) {
-            // close and then invoke the operation on the socket
+            // close and then invoke various operation on the socket and don't expect an exception
             s.close();
-            op.apply(s);
-        }
-    }
-
-    private static void test(final Class<? extends Exception> expectedExceptionType,
-                             final boolean exactType,
-                             final String opName, final SocketOp op) throws Exception {
-        try (final Socket s = new Socket()) {
-            // close and then invoke the operation on the socket
-            s.close();
-            if (exactType) {
-                assertThrowsExactly(expectedExceptionType,
-                        () -> op.apply(s), opName + " when already closed didn't throw "
-                                + expectedExceptionType.getName());
-            } else {
-                assertThrows(expectedExceptionType,
-                        () -> op.apply(s), opName + " when already closed didn't throw "
-                                + expectedExceptionType.getName());
-            }
+            assertTrue(s.isClosed(), "socket isn't closed");
+            s.getInetAddress();
+            s.getLocalAddress();
+            s.getLocalPort();
+            s.getLocalSocketAddress();
+            s.getPort();
+            s.getRemoteSocketAddress();
+            s.isBound();
+            s.isConnected();
+            s.isInputShutdown();
+            s.isOutputShutdown();
+            s.supportedOptions();
         }
     }
 }
