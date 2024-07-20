@@ -142,12 +142,12 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *
  * <p>
  *
- * For IPv4 address format, please refer to <A
- * HREF="Inet4Address.html#format">Inet4Address#format</A>; For IPv6
- * address format, please refer to <A
- * HREF="Inet6Address.html#format">Inet6Address#format</A>.
+ * For IPv4 address format, please refer to the supported
+ * {@linkplain Inet4Address##format IPv4 address textual representations};
+ * For IPv6 address format, please refer to the supported
+ * {@linkplain Inet6Address##format IPv6 address textual representations}.
  *
- * <p> There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
+ * <p> There are a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
  * System Properties</a> affecting how IPv4 and IPv6 addresses are used.
  *
  * <h2 id="host-name-resolution"> Host Name Resolution </h2>
