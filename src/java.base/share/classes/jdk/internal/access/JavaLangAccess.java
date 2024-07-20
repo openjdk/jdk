@@ -433,25 +433,9 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
-
-    /**
      * Get the string concat initial coder
      */
-    long stringConcatInitialCoder();
-
-    /**
-     * Update lengthCoder for constant
-     */
-    long stringConcatMix(long lengthCoder, String constant);
-
-    /**
-     * Mix value length and coder into current length and coder.
-     */
-    long stringConcatMix(long lengthCoder, char value);
+    byte stringConcatInitialCoder();
 
     /**
      * Join strings
@@ -470,6 +454,8 @@ public interface JavaLangAccess {
     int getCharsLatin1(long i, int index, byte[] buf);
 
     int getCharsUTF16(long i, int index, byte[] buf);
+
+    byte stringCoder(String str);
 
     long findNative(ClassLoader loader, String entry);
 

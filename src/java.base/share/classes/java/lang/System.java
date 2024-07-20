@@ -2611,20 +2611,8 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
-                return StringConcatHelper.prepend(indexCoder, buf, value);
-            }
-
-            public long stringConcatInitialCoder() {
+            public byte stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
-            }
-
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
             }
 
             public int stringSize(long i) {
@@ -2641,6 +2629,10 @@ public final class System {
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
+            }
+
+            public byte stringCoder(String str) {
+                return str.coder();
             }
 
             public Object classData(Class<?> c) {
