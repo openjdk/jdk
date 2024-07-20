@@ -329,7 +329,7 @@ public class ServerSocket implements java.io.Closeable {
      *
      * @param   endpoint        The IP address and port number to bind to.
      * @throws  IOException if the bind operation fails, or if the socket
-     *                     is already bound.
+     *                      is already bound or closed.
      * @throws  SecurityException       if a {@code SecurityManager} is present and
      * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
@@ -358,7 +358,7 @@ public class ServerSocket implements java.io.Closeable {
      * @param   backlog         requested maximum length of the queue of
      *                          incoming connections.
      * @throws  IOException if the bind operation fails, or if the socket
-     *                     is already bound.
+     *                      is already bound or closed.
      * @throws  SecurityException       if a {@code SecurityManager} is present and
      * its {@code checkListen} method doesn't allow the operation.
      * @throws  IllegalArgumentException if endpoint is a
@@ -518,7 +518,7 @@ public class ServerSocket implements java.io.Closeable {
      * client socket implementation factory}, if one has been set.
      *
      * @throws     IOException  if an I/O error occurs when waiting for a
-     *               connection.
+     *               connection, or if the socket isn't bound or is already closed.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkAccept} method doesn't allow the operation.
      * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and
