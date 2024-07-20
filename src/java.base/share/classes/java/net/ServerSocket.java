@@ -518,7 +518,7 @@ public class ServerSocket implements java.io.Closeable {
      * client socket implementation factory}, if one has been set.
      *
      * @throws     IOException  if an I/O error occurs when waiting for a
-     *               connection, or if the socket isn't bound or is already closed.
+     *               connection, or if the socket is not bound or is closed.
      * @throws     SecurityException  if a security manager exists and its
      *             {@code checkAccept} method doesn't allow the operation.
      * @throws     SocketTimeoutException if a timeout was previously set with setSoTimeout and

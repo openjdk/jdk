@@ -684,7 +684,7 @@ public class Socket implements java.io.Closeable {
      *
      * @param   endpoint the {@code SocketAddress}
      * @throws  IOException if an error occurs during the connection, or if the socket
-     *                      is either already connected or closed
+     *                      is already connected or closed
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
      *          and the channel is in non-blocking mode
@@ -719,7 +719,7 @@ public class Socket implements java.io.Closeable {
      * @param   endpoint the {@code SocketAddress}
      * @param   timeout  the timeout value to be used in milliseconds.
      * @throws  IOException if an error occurs during the connection, or if the socket
-     *                      is either already connected or closed
+     *                      is already connected or closed
      * @throws  SocketTimeoutException if timeout expires before connecting
      * @throws  java.nio.channels.IllegalBlockingModeException
      *          if this socket has an associated channel,
