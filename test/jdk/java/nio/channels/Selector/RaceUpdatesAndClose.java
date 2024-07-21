@@ -63,7 +63,6 @@ class RaceUpdatesAndClose {
              DatagramChannel dc = DatagramChannel.open()) {
 
             dc.configureBlocking(false);
-            SelectionKey key = dc.register(sel, SelectionKey.OP_READ);
 
             Phaser phaser = new Phaser(2);
 
