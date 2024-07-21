@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1010,7 +1010,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section in the class description
+         * <a href="#TreeStructure">Tree Structure</a> section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *
@@ -1197,7 +1197,7 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
          * value} bindings for inheritance by threads started in the task scope. The
-         * {@linkplain StructuredTaskScope##TreeStructure Tree Structure} section in the class description
+         * <a href="#TreeStructure">Tree Structure</a> section in the class description
          * details how parent-child relations are established implicitly for the purpose
          * of inheritance of scoped value bindings.
          *
