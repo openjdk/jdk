@@ -97,6 +97,20 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       return _cm->has_aborted();
     }
 
+    // Yield if enough has been processed; returns if the concurrent marking cycle
+    // has been aborted for any reason.
+    bool yield_if_necessary(G1HeapRegion* hr) {
+      if (_processed_words >= ProcessingYieldLimitInWords) {
+        reset_processed_words();
+        // If a yield occurs (potential young-gc pause), must recheck for
+        // potential regions reclamation.
+        if (_cm->do_yield_check() && !should_rebuild_or_scrub(hr)) {
+          return true;
+        }
+      }
+      return _cm->has_aborted();
+    }
+
     // Returns whether the top at rebuild start value for the given region indicates
     // that there is some rebuild or scrubbing work.
     //
@@ -111,7 +125,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     // Helper used by both humongous objects and when chunking an object larger than the
     // G1RebuildRemSetChunkSize. The heap region is needed check whether the region has
     // been reclaimed during yielding.
-    void scan_object_in_chunks(G1HeapRegion* hr, const oop obj, MemRegion scan_range) {
+    void scan_large_object(G1HeapRegion* hr, const oop obj, MemRegion scan_range) {
       HeapWord* start = scan_range.start();
       HeapWord* limit = scan_range.end();
       do {
@@ -122,7 +136,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         // after each chunk.
         add_processed_words(mr.word_size());
 
-        if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+        if (yield_if_necessary(hr)) {
           return;
         }
 
@@ -140,26 +154,36 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       if (!_should_rebuild_remset) {
         // Not rebuilding, just step to next object.
         add_processed_words(obj_size);
-      } else {
+      } else if (obj_size > ProcessingYieldLimitInWords) {
+        // Large object, needs to be chunked to avoid stalling safepoints.
         MemRegion mr(current, obj_size);
-        scan_object_in_chunks(hr, obj, mr);
+        scan_large_object(hr, obj, mr);
         // No need to add to _processed_words, this is all handled by the above call;
-        // we also ignore the marking abort result of scan_object_in_chunks - we will check
+        // we also ignore the marking abort result of scan_large_object - we will check
         // again right afterwards.
+      } else {
+        // Object smaller than yield limit, process it fully.
+        obj->oop_iterate(&_rebuild_closure);
+        // Update how much we have processed. Yield check in main loop
+        // will handle this case.
+        add_processed_words(obj_size);
       }
 
       return obj_size;
     }
 
-    // Scrub a range of dead objects starting at scrub_start. Will never scrub past limit.
-    HeapWord* scrub_to_next_live(G1HeapRegion* hr, HeapWord* scrub_start, HeapWord* limit) {
-      assert(!_bitmap->is_marked(scrub_start), "Should not scrub live object");
-
-      HeapWord* scrub_end = _bitmap->get_next_marked_addr(scrub_start, limit);
-      hr->fill_range_with_dead_objects(scrub_start, scrub_end);
-
-      // Return the next object to handle.
-      return scrub_end;
+    // Scan or scrub depending on if addr is marked.
+    HeapWord* scan_or_scrub(G1HeapRegion* hr, HeapWord* addr, HeapWord* limit) {
+      if (_bitmap->is_marked(addr)) {
+        //  Live object, need to scan to rebuild remembered sets for this object.
+        return addr + scan_object(hr, addr);
+      } else {
+        // Found dead object (which klass has potentially been unloaded). Scrub to next marked object.
+        HeapWord* scrub_end = _bitmap->get_next_marked_addr(addr, limit);
+        hr->fill_range_with_dead_objects(addr, scrub_end);
+        // Return the next object to handle.
+        return scrub_end;
+      }
     }
 
     // Scan and scrub the given region to tars.
@@ -174,16 +198,9 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         HeapWord* start = hr->bottom();
         HeapWord* limit = pb;
         while (start < limit) {
-          if (_bitmap->is_marked(start)) {
-            //  Live object, need to scan to rebuild remembered sets for this object.
-            start += scan_object(hr, start);
-          } else {
-            // Found dead object (which klass has potentially been unloaded). Scrub to next
-            // marked object and continue.
-            start = scrub_to_next_live(hr, start, limit);
-          }
+          start = scan_or_scrub(hr, start, limit);
 
-          if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+          if (yield_if_necessary(hr)) {
             return;
           }
         }
@@ -200,7 +217,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
         while (start < limit) {
           start += scan_object(hr, start);
 
-          if (yield_if_necessary() || !should_rebuild_or_scrub(hr)) {
+          if (yield_if_necessary(hr)) {
             return;
           }
         }
@@ -232,7 +249,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       HeapWord* humongous_end = hr->humongous_start_region()->bottom() + humongous->size();
       MemRegion mr(hr->bottom(), MIN2(hr->top(), humongous_end));
 
-      scan_object_in_chunks(hr, humongous, mr);
+      scan_large_object(hr, humongous, mr);
     }
 
   public:
