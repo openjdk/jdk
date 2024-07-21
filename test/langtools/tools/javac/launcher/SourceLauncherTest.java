@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339 8335896
  * @summary Test source launcher
  * @library /tools/lib
  * @enablePreview
@@ -274,6 +274,27 @@ public class SourceLauncherTest extends TestRunner {
                 .run(Task.Expect.SUCCESS)
                 .getOutput(Task.OutputKind.STDOUT);
         checkEqual("stdout", log.trim(), file.toAbsolutePath().toString());
+    }
+
+    @Test
+    public void testThreadContextClassLoader(Path base) throws IOException {
+        tb.writeJavaFiles(base, //language=java
+                """
+                class ThreadContextClassLoader {
+                    public static void main(String... args) {
+                        var expected = ThreadContextClassLoader.class.getClassLoader();
+                        var actual = Thread.currentThread().getContextClassLoader();
+                        System.out.println(expected == actual);
+                    }
+                }
+                """);
+
+        Path file = base.resolve("ThreadContextClassLoader.java");
+        String log = new JavaTask(tb)
+                .className(file.toString())
+                .run(Task.Expect.SUCCESS)
+                .getOutput(Task.OutputKind.STDOUT);
+        checkEqual("stdout", log.trim(), "true");
     }
 
     void testSuccess(Path file, String expect) throws IOException {
