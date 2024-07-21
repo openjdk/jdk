@@ -63,6 +63,8 @@ import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipException;
 
+import sun.nio.ch.FileChannelImpl;
+
 import static java.lang.Boolean.TRUE;
 import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -175,6 +177,8 @@ class ZipFileSystem extends FileSystem {
         this.zc = ZipCoder.get(nameEncoding);
         this.rootdir = new ZipPath(this, new byte[]{'/'});
         this.ch = Files.newByteChannel(zfpath, READ);
+        if (this.ch instanceof FileChannelImpl fci)
+            fci.setUninterruptible();
         try {
             this.cen = initCEN();
         } catch (IOException x) {
