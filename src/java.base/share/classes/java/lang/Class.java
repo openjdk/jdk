@@ -1110,8 +1110,8 @@ public final class Class<T> implements java.io.Serializable,
     // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
-    // Set by VM
-    private transient Object classData;
+    private transient Object classData; // Set by VM
+    private transient Object[] signers; // Read by VM, mutable
 
     // package-private
     Object getClassData() {
@@ -1510,14 +1510,19 @@ public final class Class<T> implements java.io.Serializable,
      *          a primitive type or void.
      * @since   1.1
      */
-    public native Object[] getSigners();
-
+    public Object[] getSigners() {
+        var signers = this.signers;
+        return signers == null ? null : signers.clone();
+    }
 
     /**
      * Set the signers of this class.
      */
-    native void setSigners(Object[] signers);
-
+    void setSigners(Object[] signers) {
+        if (!isPrimitive() && !isArray()) {
+            this.signers = signers;
+        }
+    }
 
     /**
      * If this {@code Class} object represents a local or anonymous
