@@ -1728,7 +1728,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
   if (workers() -> active_workers() > 1 && num_regions() > ShenandoahParallelRegionStride) {
     auto num_workers = checked_cast<uint>(
       ceil(checked_cast<float>(num_regions()) / checked_cast<float>(ShenandoahParallelRegionStride)));
-    num_workers = MAX2(num_workers, workers() -> active_workers());
+    num_workers = MIN2(num_workers, workers() -> active_workers());
     ShenandoahParallelHeapRegionTask task(blk);
     workers()->run_task(&task, num_workers);
   } else {
