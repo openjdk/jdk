@@ -605,7 +605,6 @@ class UnixNativeDispatcher {
 
     private static native int init();
     static {
-        jdk.internal.loader.BootLoader.loadLibrary("nio");
         capabilities = init();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import sun.nio.ch.IOStatus;
 import sun.nio.ch.IOUtil;
 import sun.nio.ch.NativeThread;
 import sun.nio.ch.Net;
+import sun.nio.ch.NIOUtil;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
 import sun.nio.ch.Util;
@@ -543,7 +544,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
-        IOUtil.configureBlocking(fd, block);
+        NIOUtil.configureBlocking(fd, block);
     }
 
     @Override
@@ -1096,7 +1097,7 @@ public class SctpChannelImpl extends SctpChannel
 
     @SuppressWarnings("removal")
     private static void loadSctpLibrary() {
-        IOUtil.load();   /* loads nio & net native libraries */
+        NIOUtil.load();   /* loads nio & net native libraries */
         AccessController.doPrivileged(
             new PrivilegedAction<>() {
                 public Void run() {

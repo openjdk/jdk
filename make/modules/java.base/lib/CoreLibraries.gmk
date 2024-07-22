@@ -53,19 +53,22 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     NAME := java, \
     OPTIMIZATION := HIGH, \
+    EXTRA_HEADER_DIRS := \
+        libnio/ch, \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     java_props_md.c_CFLAGS := \
         -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
     JDK_LIBS := libjvm, \
-    LIBS_linux := $(LIBDL), \
+    LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_aix := $(LIBDL) $(LIBM),\
     LIBS_macosx := \
         -framework CoreFoundation \
+        -framework CoreServices \
         -framework Foundation \
         -framework SystemConfiguration, \
-    LIBS_windows := advapi32.lib ole32.lib shell32.lib version.lib, \
+    LIBS_windows := advapi32.lib ole32.lib shell32.lib version.lib mswsock.lib ws2_32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)

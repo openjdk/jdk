@@ -74,7 +74,7 @@ class PollSelectorImpl extends SelectorImpl {
         this.pollArray = new AllocatedNativeObject(size, false);
 
         try {
-            long fds = IOUtil.makePipe(false);
+            long fds = NIOUtil.makePipe(false);
             this.fd0 = (int) (fds >>> 32);
             this.fd1 = (int) fds;
         } catch (IOException ioe) {
@@ -242,7 +242,7 @@ class PollSelectorImpl extends SelectorImpl {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
                 try {
-                    IOUtil.write1(fd1, (byte)0);
+                    NIOUtil.write1(fd1, (byte)0);
                 } catch (IOException ioe) {
                     throw new InternalError(ioe);
                 }
@@ -254,7 +254,7 @@ class PollSelectorImpl extends SelectorImpl {
 
     private void clearInterrupt() throws IOException {
         synchronized (interruptLock) {
-            IOUtil.drain(fd0);
+            NIOUtil.drain(fd0);
             interruptTriggered = false;
         }
     }
@@ -385,6 +385,6 @@ class PollSelectorImpl extends SelectorImpl {
     private static native int poll(long pollAddress, int numfds, int timeout);
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }

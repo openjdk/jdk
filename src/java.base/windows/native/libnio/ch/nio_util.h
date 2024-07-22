@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,11 +40,11 @@
 #define MAX_UNIX_DOMAIN_PATH_LEN \
         (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
 
-jint fdval(JNIEnv *env, jobject fdo);
-void setfdval(JNIEnv *env, jobject fdo, jint val);
-jlong handleval(JNIEnv *env, jobject fdo);
-jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
-jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);
+JNIEXPORT jint fdval(JNIEnv *env, jobject fdo);
+JNIEXPORT void setfdval(JNIEnv *env, jobject fdo, jint val);
+JNIEXPORT jlong handleval(JNIEnv *env, jobject fdo);
+JNIEXPORT jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
+JNIEXPORT jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);
 jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd);
 
 #ifdef _WIN64

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ class UnixAsynchronousSocketChannelImpl
 
         // set non-blocking
         try {
-            IOUtil.configureBlocking(fd, false);
+            NIOUtil.configureBlocking(fd, false);
         } catch (IOException x) {
             nd.close(fd);
             throw x;
@@ -123,7 +123,7 @@ class UnixAsynchronousSocketChannelImpl
         super(port, fd, remote);
 
         this.fdVal = IOUtil.fdVal(fd);
-        IOUtil.configureBlocking(fd, false);
+        NIOUtil.configureBlocking(fd, false);
 
         try {
             port.register(fdVal, this);
@@ -771,6 +771,6 @@ class UnixAsynchronousSocketChannelImpl
     private static native void checkConnect(int fdVal) throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }
