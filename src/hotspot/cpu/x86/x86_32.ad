@@ -1718,7 +1718,7 @@ encode %{
     Label miss;
 
     // NB: Callers may assume that, when $result is a valid register,
-    // check_klass_subtype_slow_path Sets it to a nonzero value.
+    // check_klass_subtype_slow_path sets it to a nonzero value.
      __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
                                      nullptr, &miss,
                                      /*set_cond_codes:*/ true);
