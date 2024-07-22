@@ -23,7 +23,7 @@
  */
 
 /* @test
- * @summary Test that disabling wrong barriers fails early
+ * @summary Test that SATB barrier may be enabled for all modes
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @run driver TestWrongBarrierEnable
@@ -44,7 +44,7 @@ public class TestWrongBarrierEnable {
         shouldPassAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=compact",    concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=aggressive", concurrent);
-        shouldFailAll("-XX:ShenandoahGCMode=passive",          concurrent);
+        shouldPassAll("-XX:ShenandoahGCMode=passive",          concurrent);
     }
 
     private static void shouldFailAll(String h, String[] barriers) throws Exception {
