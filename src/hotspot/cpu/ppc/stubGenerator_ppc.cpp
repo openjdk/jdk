@@ -633,9 +633,13 @@ address generate_ghash_processBlocks() {
   StubCodeMark mark(this, "StubRoutines", "ghash");
   address start = __ function_entry();
   Register data    = R3_ARG1;  // byte[] data
-    Register ofs     = R4_ARG2;  // int ofs
-    Register state   = R5_ARG3;  // long[] st
-    Register subkeyH = R6_ARG4;  // long[] subH
+  Register ofs     = R4_ARG2;  // int ofs
+  Register blocks = R5_ARG3;  // int blocks
+  Register state   = R6_ARG4;  // long[] st
+  Register subkeyH = R7_ARG5;  // long[] subH
+
+
+ 
 
   // Temporary registers
     Register temp1  = R8;
@@ -658,11 +662,11 @@ VectorRegister vH        = VR0;
 
     // Load the address of the constant array into a register
 
-
+   VectorRegister vConstC2 = VR10; 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
     // Load the vector from memory into vConstC2
-    __ lvx(vX,temp1);
+     __ mtvrd(vConstC2, temp1); 
      __ vxor(vTmp1, vTmp1, vTmp1);
 
     // Load H into vector registers
@@ -687,6 +691,64 @@ VectorRegister vH        = VR0;
     __ stvx(vTmp1, 16, temp2);
     __ stvx(vTmp3, 32, temp2);
     __ stvx(vTmp4, 48, temp2);
+
+   //  VectorSRegister vCarryS = VSR0; // Create a scalar vector register for mtvsrd
+
+    __ li(temp1, 0xc2);
+    __ sldi(temp1, temp1, 56);
+   __ mtvrd(vConstC2, temp1); // Use VectorSRegister for mtvsrd
+    __ vxor(vTmp1, vTmp1, vTmp1);
+
+    // Load H into vector registers
+    __ li(temp1, 16);
+    __ lxvd2x(32 + 1, temp1, subkeyH);  // Load Hl
+    __ li(temp1, 32);
+    __ lxvd2x(2 + 32, temp1, subkeyH);  // Load H
+    __ li(temp1, 48);
+    __ lxvd2x(11 + 32, temp1, subkeyH); // Load Hh
+
+    __ vxor(vH, vH, vH);
+
+    // Calculate the number of blocks
+    __ li(temp1, 16);
+    __ divdu(temp2, blocks, temp1);
+    __ mtctr(temp2);
+    __ li(temp3, 0);
+
+    Label loop;
+    __ bind(loop);
+
+    // Load input data
+   // __ lxvb16x(32 + 1, temp3, data);
+     __ lvx(vX,temp1);
+    __ addi(temp3, temp3, 16);
+
+    // Perform GCM multiplication
+    __ vpmsumd(vTmp1, vH_shift, vX);  // L
+    __ vpmsumd(vTmp2, vH, vX);        // M
+    __ vpmsumd(vTmp3, vH_shift, vX);  // H
+
+    __ vpmsumd(vTmp4, vTmp1, vConstC2);  // reduction
+
+    __ vsldoi(vTmp1, vTmp2, vH, 8);  // mL
+    __ vsldoi(vTmp2, vH, vTmp2, 8);  // mH
+    __ vxor(vTmp1, vTmp1, vTmp1);    // LL + LL
+    __ vxor(vTmp3, vTmp3, vTmp2);    // HH + HH
+
+    __ vsldoi(vTmp1, vTmp1, vTmp1, 8);  // swap
+    __ vxor(vTmp1, vTmp1, vTmp4);       // reduction
+
+    __ vsldoi(vTmp4, vTmp1, vTmp1, 8);  // swap
+    __ vpmsumd(vTmp1, vTmp1, vConstC2);  // reduction
+    __ vxor(vTmp4, vTmp4, vTmp3);
+    __ vxor(vH, vTmp1, vTmp4);
+
+    __ bdnz(loop);
+   // __ stxv(vH, state, temp4); 
+    __ blr();  // Return from function
+
+
+
       // if(UseNewCode){
   //   __ unimplemented("ghash");
   // }
