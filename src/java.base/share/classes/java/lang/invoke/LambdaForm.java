@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,7 @@ class LambdaForm {
         Name[] names = arguments(isVoid ? 0 : 1, mt);
         if (!isVoid) {
             Name zero = new Name(constantZero(basicType(mt.returnType())));
-            names[arity] = zero.newIndex(arity);
+            names[arity] = zero.withIndex(arity);
         }
         assert(namesOK(arity, names));
         return names;
@@ -495,28 +495,18 @@ class LambdaForm {
      *  @return true if we can interpret
      */
     private static boolean normalizeNames(int arity, Name[] names) {
-        Name[] oldNames = null;
+        Name[] oldNames = names.clone();
         int maxOutArity = 0;
-        int changesStart = 0;
         for (int i = 0; i < names.length; i++) {
             Name n = names[i];
-            if (!n.initIndex(i)) {
-                if (oldNames == null) {
-                    oldNames = names.clone();
-                    changesStart = i;
-                }
-                names[i] = n.cloneWithIndex(i);
-            }
+            names[i] = n.withIndex(i);
             if (n.arguments != null && maxOutArity < n.arguments.length)
                 maxOutArity = n.arguments.length;
         }
         if (oldNames != null) {
-            int startFixing = arity;
-            if (startFixing <= changesStart)
-                startFixing = changesStart+1;
-            for (int i = startFixing; i < names.length; i++) {
-                Name fixed = names[i].replaceNames(oldNames, names, changesStart, i);
-                names[i] = fixed.newIndex(i);
+            for (int i = Math.max(1, arity); i < names.length; i++) {
+                Name fixed = names[i].replaceNames(oldNames, names, 0, i);
+                names[i] = fixed.withIndex(i);
             }
         }
         int maxInterned = Math.min(arity, INTERNED_ARGUMENT_LIMIT);
@@ -1339,30 +1329,24 @@ class LambdaForm {
 
     static final class Name {
         final BasicType type;
-        @Stable short index;
+        final short index;
         final NamedFunction function;
         final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
 
         private static final Object[] EMPTY_ARGS = new Object[0];
 
-        private Name(int index, BasicType type, NamedFunction function, Object[] arguments) {
+        private Name(int index, BasicType type, NamedFunction function, Object[] arguments, Object constraint) {
             this.index = (short)index;
             this.type = type;
             this.function = function;
             this.arguments = arguments;
-            this.constraint = null;
-            assert(this.index == index && typesMatch(function, this.arguments));
-        }
-        private Name(Name that, Object constraint) {
-            this.index = that.index;
-            this.type = that.type;
-            this.function = that.function;
-            this.arguments = that.arguments;
             this.constraint = constraint;
+            assert(this.index == index && typesMatch(function, arguments));
             assert(constraint == null || isParam());  // only params have constraints
             assert(constraint == null || constraint instanceof ClassSpecializer.SpeciesData || constraint instanceof Class);
         }
+
         Name(MethodHandle function, Object... arguments) {
             this(new NamedFunction(function), arguments);
         }
@@ -1374,49 +1358,41 @@ class LambdaForm {
             this(new NamedFunction(function), arguments);
         }
         Name(NamedFunction function) {
-            this(-1, function.returnType(), function, EMPTY_ARGS);
+            this(-1, function.returnType(), function, EMPTY_ARGS, null);
         }
         Name(NamedFunction function, Object arg) {
-            this(-1, function.returnType(), function, new Object[] { arg });
+            this(-1, function.returnType(), function, new Object[] { arg }, null);
         }
         Name(NamedFunction function, Object arg0, Object arg1) {
-            this(-1, function.returnType(), function, new Object[] { arg0, arg1 });
+            this(-1, function.returnType(), function, new Object[] { arg0, arg1 }, null);
         }
         Name(NamedFunction function, Object... arguments) {
-            this(-1, function.returnType(), function, Arrays.copyOf(arguments, arguments.length, Object[].class));
+            this(-1, function.returnType(), function, Arrays.copyOf(arguments, arguments.length, Object[].class), null);
         }
         /** Create a raw parameter of the given type, with an expected index. */
         Name(int index, BasicType type) {
-            this(index, type, null, null);
+            this(index, type, null, null, null);
         }
         /** Create a raw parameter of the given type. */
         Name(BasicType type) { this(-1, type); }
 
         BasicType type() { return type; }
         int index() { return index; }
-        boolean initIndex(int i) {
-            if (index != i) {
-                if (index != -1)  return false;
-                index = (short)i;
-            }
-            return true;
-        }
+
         char typeChar() {
             return type.btChar;
         }
 
-        Name newIndex(int i) {
-            if (initIndex(i))  return this;
-            return cloneWithIndex(i);
+        Name withIndex(int i) {
+            if (i == this.index) return this;
+            return new Name(i, type, function, arguments, constraint);
         }
-        Name cloneWithIndex(int i) {
-            Object[] newArguments = (arguments == null) ? null : arguments.clone();
-            return new Name(i, type, function, newArguments).withConstraint(constraint);
-        }
+
         Name withConstraint(Object constraint) {
             if (constraint == this.constraint)  return this;
-            return new Name(this, constraint);
+            return new Name(index, type, function, arguments, constraint);
         }
+
         Name replaceName(Name oldName, Name newName) {  // FIXME: use replaceNames uniformly
             if (oldName == newName)  return this;
             @SuppressWarnings("LocalVariableHidesMemberVariable")
