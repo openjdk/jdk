@@ -47,7 +47,6 @@
 
 typedef ssize_t idx_t;
 
-
 const uintptr_t OneBitUnsigned = 1;
 #define u_nth_bit(n)      (((n) >= BitsPerWord) ? 0 : (OneBitUnsigned << (n)))
 // unsigned version of right_n_bits to prevent undefined behavior from shifting and overflow
