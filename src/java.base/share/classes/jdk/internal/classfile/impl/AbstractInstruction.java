@@ -317,7 +317,7 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
-            if (high < low || high - low > code.codeLength >> 2) {
+            if (high < low || (long)high - low > code.codeLength >> 2) {
                 throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
             }
             int cnt = high - low + 1;
