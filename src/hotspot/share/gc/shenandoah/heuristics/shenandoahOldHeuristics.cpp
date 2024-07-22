@@ -376,7 +376,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   // old-gen, we want to pack these underutilized regions together so we can have more unaffiliated (unfragmented) free regions
   // in old-gen.
 
-  QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_live, false);
+  QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_live);
 
   // Any old-gen region that contains (ShenandoahOldGarbageThreshold (default value 25)% garbage or more is to be
   // added to the list of candidates for subsequent mixed evacuations.
@@ -430,7 +430,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     // Sort the regions that were initially rejected from the collection set in order of index.  This allows us to
     // focus our attention on the regions that have low index value (i.e. the old-gen regions at the bottom of the heap).
     QuickSort::sort<RegionData>(candidates + _last_old_collection_candidate, cand_idx - _last_old_collection_candidate,
-                                compare_by_index, false);
+                                compare_by_index);
 
     const size_t first_unselected_old_region = candidates[_last_old_collection_candidate]._region->index();
     const size_t last_unselected_old_region = candidates[cand_idx - 1]._region->index();

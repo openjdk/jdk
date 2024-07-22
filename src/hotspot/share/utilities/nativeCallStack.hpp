@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/resourceHash.hpp"
 
 /*
  * This class represents a native call path (does not include Java frame)
@@ -123,8 +124,8 @@ public:
     return (unsigned int)hash;
   }
 
+  void print_frame(outputStream* out, address pc) const;
   void print_on(outputStream* out) const;
-  void print_on(outputStream* out, int indent) const;
 };
 
 #define FAKE_CALLSTACK NativeCallStack(NativeCallStack::FakeMarker::its_fake)

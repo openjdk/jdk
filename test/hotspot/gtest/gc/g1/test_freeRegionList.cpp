@@ -34,12 +34,12 @@
 #include "unittest.hpp"
 
 // @requires UseG1GC
-TEST_OTHER_VM(FreeRegionList, length) {
+TEST_OTHER_VM(G1FreeRegionList, length) {
   if (!UseG1GC) {
     return;
   }
 
-  FreeRegionList l("test");
+  G1FreeRegionList l("test");
   const uint num_regions_in_test = 5;
 
   // Create a fake heap. It does not need to be valid, as the G1HeapRegion constructor

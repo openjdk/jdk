@@ -950,7 +950,6 @@ public class Attr extends JCTree.Visitor {
                 Optional.ofNullable(env.info.attributionMode.isSpeculative ?
                         argumentAttr.withLocalCacheContext() : null);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
         try {
             // Local and anonymous classes have not been entered yet, so we need to
             // do it now.
@@ -995,7 +994,7 @@ public class Attr extends JCTree.Visitor {
         Lint lint = env.info.lint.augment(m);
         Lint prevLint = chk.setLint(lint);
         boolean ctorProloguePrev = env.info.ctorPrologue;
-        env.info.ctorPrologue = false;
+        Assert.check(!env.info.ctorPrologue);
         MethodSymbol prevMethod = chk.setMethod(m);
         try {
             deferredLintHandler.flush(tree.pos(), lint);
@@ -4647,9 +4646,6 @@ public class Attr extends JCTree.Visitor {
                      Type pt,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            if (pt.isErroneous()) {
-                return types.createErrorType(site);
-            }
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
             case TYP:
@@ -4756,6 +4752,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
                 chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+            }
+
+            if (pt.isErroneous()) {
+                owntype = types.createErrorType(owntype);
             }
 
             // If symbol is a variable, check that its type and

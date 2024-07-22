@@ -575,6 +575,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
+#ifdef COMPILER2
+  void generate_string_indexof(address *fnptrs);
+#endif
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();

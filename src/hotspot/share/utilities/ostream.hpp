@@ -46,9 +46,10 @@ DEBUG_ONLY(class ResourceMark;)
 class outputStream : public CHeapObjBase {
  private:
    NONCOPYABLE(outputStream);
+   int _indentation; // current indentation
+   bool _autoindent; // if true, every line starts with indentation
 
  protected:
-   int _indentation; // current indentation
    int _position;    // visual position on the current line
    uint64_t _precount; // number of chars output, less than _position
    TimeStamp _stamp; // for time stamps
@@ -90,8 +91,7 @@ class outputStream : public CHeapObjBase {
    class TestSupport;  // Unit test support
 
    // creation
-   outputStream();
-   outputStream(bool has_time_stamps);
+   outputStream(bool has_time_stamps = false);
 
    // indentation
    outputStream& indent();
@@ -101,8 +101,16 @@ class outputStream : public CHeapObjBase {
    void dec(int n) { _indentation -= n; };
    int  indentation() const    { return _indentation; }
    void set_indentation(int i) { _indentation = i;    }
-   void fill_to(int col);
+   int fill_to(int col);
    void move_to(int col, int slop = 6, int min_space = 2);
+
+   // Automatic indentation:
+   // If autoindent mode is on, the following APIs will automatically indent
+   // line starts depending on the current indentation level:
+   // print(), print_cr(), print_raw(), print_raw_cr()
+   // Other APIs are unaffected
+   // Returns old autoindent state.
+   bool set_autoindent(bool value);
 
    // sizing
    int position() const { return _position; }
@@ -119,10 +127,10 @@ class outputStream : public CHeapObjBase {
    void print_cr(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
    void vprint(const char *format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
    void vprint_cr(const char* format, va_list argptr) ATTRIBUTE_PRINTF(2, 0);
-   void print_raw(const char* str) { write(str, strlen(str)); }
-   void print_raw(const char* str, size_t len) { write(str, len); }
-   void print_raw_cr(const char* str) { write(str, strlen(str)); cr(); }
-   void print_raw_cr(const char* str, size_t len){ write(str, len); cr(); }
+   void print_raw(const char* str)                { print_raw(str, strlen(str)); }
+   void print_raw(const char* str, size_t len);
+   void print_raw_cr(const char* str)             { print_raw(str); cr(); }
+   void print_raw_cr(const char* str, size_t len) { print_raw(str, len); cr(); }
    void print_data(void* data, size_t len, bool with_ascii, bool rel_addr=true);
    void put(char ch);
    void sp(int count = 1);
@@ -168,15 +176,24 @@ class outputStream : public CHeapObjBase {
 extern outputStream* tty;           // tty output
 
 class streamIndentor : public StackObj {
- private:
-  outputStream* _str;
-  int _amount;
-
- public:
+  outputStream* const _str;
+  const int _amount;
+  NONCOPYABLE(streamIndentor);
+public:
   streamIndentor(outputStream* str, int amt = 2) : _str(str), _amount(amt) {
     _str->inc(_amount);
   }
   ~streamIndentor() { _str->dec(_amount); }
+};
+
+class StreamAutoIndentor : public StackObj {
+  outputStream* const _os;
+  const bool _old;
+  NONCOPYABLE(StreamAutoIndentor);
+ public:
+  StreamAutoIndentor(outputStream* os) :
+    _os(os), _old(os->set_autoindent(true)) {}
+  ~StreamAutoIndentor() { _os->set_autoindent(_old); }
 };
 
 // advisory locking for the shared tty stream:
@@ -250,6 +267,7 @@ class stringStream : public outputStream {
     return _buffer;
   };
   void  reset();
+  bool is_empty() const { return _buffer[0] == '\0'; }
   // Copy to a resource, or C-heap, array as requested
   char* as_string(bool c_heap = false) const;
 };

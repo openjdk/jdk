@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -167,12 +168,7 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   // we will not age young-gen objects in the case that we skip evacuation.
   entry_cleanup_early();
 
-  {
-    // TODO: Not sure there is value in logging free-set status right here.  Note that whenever the free set is rebuilt,
-    // it logs the newly rebuilt status.
-    ShenandoahHeapLocker locker(heap->lock());
-    heap->free_set()->log_status();
-  }
+  heap->free_set()->log_status_under_lock();
 
   // Perform concurrent class unloading
   if (heap->unload_classes() &&
@@ -928,14 +924,12 @@ public:
     _nmethod_itr(ShenandoahCodeRoots::table()),
     _phase(phase) {
     if (ShenandoahHeap::heap()->unload_classes()) {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
     if (ShenandoahHeap::heap()->unload_classes()) {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();
     }
     // Notify runtime data structures of potentially dead oops
@@ -1044,14 +1038,12 @@ public:
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()) {
     if (!ShenandoahHeap::heap()->unload_classes()) {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_begin();
     }
   }
 
   ~ShenandoahConcurrentRootsEvacUpdateTask() {
     if (!ShenandoahHeap::heap()->unload_classes()) {
-      MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
       _nmethod_itr.nmethods_do_end();
     }
   }

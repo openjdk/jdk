@@ -65,7 +65,7 @@ void ShenandoahGlobalHeuristics::choose_collection_set_from_regiondata(Shenandoa
 
 
   // Better select garbage-first regions
-  QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage, false);
+  QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
 
   size_t cur_young_garbage = add_preselected_regions_to_collection_set(cset, data, size);
 

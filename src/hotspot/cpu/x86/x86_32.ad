@@ -13613,25 +13613,8 @@ instruct RethrowException()
 
 // inlined locking and unlocking
 
-instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eDXRegI scr, rRegI cx1, rRegI cx2, eRegP thread) %{
-  predicate(Compile::current()->use_rtm());
-  match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP scr, TEMP cx1, TEMP cx2, USE_KILL box, TEMP thread);
-  ins_cost(300);
-  format %{ "FASTLOCK $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
-  ins_encode %{
-    __ get_thread($thread$$Register);
-    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register, $thread$$Register,
-                 _rtm_counters, _stack_rtm_counters,
-                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
-                 true, ra_->C->profile_rtm());
-  %}
-  ins_pipe(pipe_slow);
-%}
-
 instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr, eRegP thread) %{
-  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box, TEMP thread);
   ins_cost(300);
@@ -13639,7 +13622,7 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
   ins_encode %{
     __ get_thread($thread$$Register);
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, $thread$$Register, nullptr, nullptr, nullptr, false, false);
+                 $scr$$Register, noreg, noreg, $thread$$Register, nullptr);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -13651,7 +13634,7 @@ instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
-    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

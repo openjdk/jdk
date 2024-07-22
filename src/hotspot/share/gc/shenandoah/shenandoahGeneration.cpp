@@ -618,7 +618,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   if (candidates > 0) {
     size_t selected_regions = 0;
     size_t selected_live = 0;
-    QuickSort::sort<AgedRegionData>(sorted_regions, candidates, compare_by_aged_live, false);
+    QuickSort::sort<AgedRegionData>(sorted_regions, candidates, compare_by_aged_live);
     for (size_t i = 0; i < candidates; i++) {
       ShenandoahHeapRegion* const region = sorted_regions[i]._region;
       size_t region_live_data = sorted_regions[i]._live_data;

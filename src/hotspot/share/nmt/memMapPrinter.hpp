@@ -35,39 +35,20 @@
 class outputStream;
 class CachedNMTInformation;
 
-class MappingPrintInformation {
-  const void* const _from;
-  const void* const _to;
-public:
-  MappingPrintInformation(const void* from, const void* to) : _from(from), _to(to) {}
-  const void* from() const { return _from; }
-  const void* to() const { return _to; }
-  // Will be called for each mapping before VM annotations are printed.
-  virtual void print_OS_specific_details(outputStream* st) const {}
-  // If mapping is backed by a file, the name of that file
-  virtual const char* filename() const { return nullptr; }
-};
-
-class MappingPrintClosure {
+class MappingPrintSession {
   outputStream* const _out;
-  const bool _human_readable;
-  uintx _total_count;
-  size_t _total_vsize;
   const CachedNMTInformation& _nmt_info;
 public:
-  MappingPrintClosure(outputStream* st, bool human_readable, const CachedNMTInformation& nmt_info);
-  void do_it(const MappingPrintInformation* info); // returns false if timeout reached.
-  uintx total_count() const { return _total_count; }
-  size_t total_vsize() const { return _total_vsize; }
+  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info);
+  bool print_nmt_info_for_region(const void* from, const void* to) const;
+  void print_nmt_flag_legend() const;
+  outputStream* out() const { return _out; }
 };
 
 class MemMapPrinter : public AllStatic {
-  static void pd_print_header(outputStream* st);
-  static void print_header(outputStream* st);
-  static void pd_iterate_all_mappings(MappingPrintClosure& closure);
+  static void pd_print_all_mappings(const MappingPrintSession& session);
 public:
-  static void mark_page_malloced(const void* p, MEMFLAGS f);
-  static void print_all_mappings(outputStream* st, bool human_readable);
+  static void print_all_mappings(outputStream* st);
 };
 
 #endif // LINUX

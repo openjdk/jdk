@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ class LvtTest {
         ClassModel c = cc.parse(fileBytes);
 
         // Compare transformed model and original with CodeBuilder filter
-        byte[] newClass = cc.transform(c, Transforms.threeLevelNoop);
+        byte[] newClass = cc.transformClass(c, Transforms.threeLevelNoop);
         ClassRecord orig = ClassRecord.ofClassModel(cc.parse(fileBytes), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord transformed = ClassRecord.ofClassModel(cc.parse(newClass), ClassRecord.CompatibilityFilter.By_ClassBuilder);
         ClassRecord.assertEqualsDeep(transformed, orig);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,6 @@ class OopMapCacheEntry: private InterpreterOopMap {
  public:
   OopMapCacheEntry() : InterpreterOopMap() {
     _next = nullptr;
-#ifdef ASSERT
-    _resource_allocate_bit_mask = false;
-#endif
   }
 };
 
@@ -177,9 +174,13 @@ class VerifyClosure : public OffsetClosure {
 
 InterpreterOopMap::InterpreterOopMap() {
   initialize();
-#ifdef ASSERT
-  _resource_allocate_bit_mask = true;
-#endif
+}
+
+InterpreterOopMap::~InterpreterOopMap() {
+  if (has_valid_mask() && mask_size() > small_mask_limit) {
+    assert(_bit_mask[0] != 0, "should have pointer to C heap");
+    FREE_C_HEAP_ARRAY(uintptr_t, _bit_mask[0]);
+  }
 }
 
 bool InterpreterOopMap::is_empty() const {
@@ -399,37 +400,24 @@ void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
 
 // Implementation of OopMapCache
 
-void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
-  assert(_resource_allocate_bit_mask,
-    "Should not resource allocate the _bit_mask");
-  assert(from->has_valid_mask(),
-    "Cannot copy entry with an invalid mask");
+void InterpreterOopMap::copy_from(const OopMapCacheEntry* src) {
+  // The expectation is that this InterpreterOopMap is recently created
+  // and empty. It is used to get a copy of a cached entry.
+  assert(!has_valid_mask(), "InterpreterOopMap object can only be filled once");
+  assert(src->has_valid_mask(), "Cannot copy entry with an invalid mask");
 
-  set_method(from->method());
-  set_bci(from->bci());
-  set_mask_size(from->mask_size());
-  set_expression_stack_size(from->expression_stack_size());
-  _num_oops = from->num_oops();
+  set_method(src->method());
+  set_bci(src->bci());
+  set_mask_size(src->mask_size());
+  set_expression_stack_size(src->expression_stack_size());
+  _num_oops = src->num_oops();
 
   // Is the bit mask contained in the entry?
-  if (from->mask_size() <= small_mask_limit) {
-    memcpy((void *)_bit_mask, (void *)from->_bit_mask,
-      mask_word_size() * BytesPerWord);
+  if (src->mask_size() <= small_mask_limit) {
+    memcpy(_bit_mask, src->_bit_mask, mask_word_size() * BytesPerWord);
   } else {
-    // The expectation is that this InterpreterOopMap is a recently created
-    // and empty. It is used to get a copy of a cached entry.
-    // If the bit mask has a value, it should be in the
-    // resource area.
-    assert(_bit_mask[0] == 0 ||
-      Thread::current()->resource_area()->contains((void*)_bit_mask[0]),
-      "The bit mask should have been allocated from a resource area");
-    // Allocate the bit_mask from a Resource area for performance.  Allocating
-    // from the C heap as is done for OopMapCache has a significant
-    // performance impact.
-    _bit_mask[0] = (uintptr_t) NEW_RESOURCE_ARRAY(uintptr_t, mask_word_size());
-    assert(_bit_mask[0] != 0, "bit mask was not allocated");
-    memcpy((void*) _bit_mask[0], (void*) from->_bit_mask[0],
-      mask_word_size() * BytesPerWord);
+    _bit_mask[0] = (uintptr_t) NEW_C_HEAP_ARRAY(uintptr_t, mask_word_size(), mtClass);
+    memcpy((void*) _bit_mask[0], (void*) src->_bit_mask[0], mask_word_size() * BytesPerWord);
   }
 }
 
@@ -445,29 +433,25 @@ inline unsigned int OopMapCache::hash_value_for(const methodHandle& method, int 
 OopMapCacheEntry* volatile OopMapCache::_old_entries = nullptr;
 
 OopMapCache::OopMapCache() {
-  _array  = NEW_C_HEAP_ARRAY(OopMapCacheEntry*, _size, mtClass);
-  for(int i = 0; i < _size; i++) _array[i] = nullptr;
+  for(int i = 0; i < size; i++) _array[i] = nullptr;
 }
 
 
 OopMapCache::~OopMapCache() {
-  assert(_array != nullptr, "sanity check");
   // Deallocate oop maps that are allocated out-of-line
   flush();
-  // Deallocate array
-  FREE_C_HEAP_ARRAY(OopMapCacheEntry*, _array);
 }
 
 OopMapCacheEntry* OopMapCache::entry_at(int i) const {
-  return Atomic::load_acquire(&(_array[i % _size]));
+  return Atomic::load_acquire(&(_array[i % size]));
 }
 
 bool OopMapCache::put_at(int i, OopMapCacheEntry* entry, OopMapCacheEntry* old) {
-  return Atomic::cmpxchg(&_array[i % _size], old, entry) == old;
+  return Atomic::cmpxchg(&_array[i % size], old, entry) == old;
 }
 
 void OopMapCache::flush() {
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr) {
       _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
@@ -478,7 +462,7 @@ void OopMapCache::flush() {
 
 void OopMapCache::flush_obsolete_entries() {
   assert(SafepointSynchronize::is_at_safepoint(), "called by RedefineClasses in a safepoint");
-  for (int i = 0; i < _size; i++) {
+  for (int i = 0; i < size; i++) {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr && !entry->is_empty() && entry->method()->is_old()) {
       // Cache entry is occupied by an old redefined method and we don't want
@@ -513,10 +497,10 @@ void OopMapCache::lookup(const methodHandle& method,
   // Need a critical section to avoid race against concurrent reclamation.
   {
     GlobalCounter::CriticalSection cs(Thread::current());
-    for (int i = 0; i < _probe_depth; i++) {
+    for (int i = 0; i < probe_depth; i++) {
       OopMapCacheEntry *entry = entry_at(probe + i);
       if (entry != nullptr && !entry->is_empty() && entry->match(method, bci)) {
-        entry_for->resource_copy(entry);
+        entry_for->copy_from(entry);
         assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
         log_debug(interpreter, oopmap)("- found at hash %d", probe + i);
         return;
@@ -530,7 +514,7 @@ void OopMapCache::lookup(const methodHandle& method,
   OopMapCacheEntry* tmp = NEW_C_HEAP_OBJ(OopMapCacheEntry, mtClass);
   tmp->initialize();
   tmp->fill(method, bci);
-  entry_for->resource_copy(tmp);
+  entry_for->copy_from(tmp);
 
   if (method->should_not_be_cached()) {
     // It is either not safe or not a good idea to cache this Method*
@@ -542,7 +526,7 @@ void OopMapCache::lookup(const methodHandle& method,
   }
 
   // First search for an empty slot
-  for (int i = 0; i < _probe_depth; i++) {
+  for (int i = 0; i < probe_depth; i++) {
     OopMapCacheEntry* entry = entry_at(probe + i);
     if (entry == nullptr) {
       if (put_at(probe + i, tmp, nullptr)) {
@@ -592,10 +576,13 @@ bool OopMapCache::has_cleanup_work() {
   return Atomic::load(&_old_entries) != nullptr;
 }
 
-void OopMapCache::trigger_cleanup() {
-  if (has_cleanup_work()) {
-    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+void OopMapCache::try_trigger_cleanup() {
+  // See we can take the lock for the notification without blocking.
+  // This allows triggering the cleanup from GC paths, that can hold
+  // the service lock for e.g. oop iteration in service thread.
+  if (has_cleanup_work() && Service_lock->try_lock_without_rank_check()) {
     Service_lock->notify_all();
+    Service_lock->unlock();
   }
 }
 
@@ -628,7 +615,7 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   tmp->initialize();
   tmp->fill(method, bci);
   if (tmp->has_valid_mask()) {
-    entry->resource_copy(tmp);
+    entry->copy_from(tmp);
   }
   OopMapCacheEntry::deallocate(tmp);
 }
