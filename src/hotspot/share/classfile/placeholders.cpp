@@ -62,8 +62,6 @@ static InternalPlaceholderTable* _placeholders;
 // For DEFINE_CLASS, the head of the queue owns the
 // define token and the rest of the threads wait to return the
 // result the first thread gets.
-// For INLINE_FIELD, set when loading inline type fields for
-// class circularity checking.
 class SeenThread: public CHeapObj<mtInternal> {
 private:
    JavaThread* _thread;
