@@ -93,7 +93,7 @@ void GCLocker::log_debug_jni(const char* msg, const elapsedTimer elapsed_timer) 
   Log(gc, jni) log;
   if (log.is_debug()) {
     ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-    log.debug("%s %3.7ld ms. Thread \"%s\" %d locked.", msg, elapsed_timer.milliseconds(), Thread::current()->name(), _jni_lock_count);
+    log.debug("%s " JLONG_FORMAT "ms. Thread \"%s\" %d locked.", msg, elapsed_timer.milliseconds(), Thread::current()->name(), _jni_lock_count);
   }
 }
 
