@@ -25,6 +25,8 @@
 package jdk.jpackage.internal;
 
 import java.util.Map;
+import java.util.Optional;
+import static jdk.jpackage.internal.BundlerParamInfo.createStringBundlerParam;
 import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
 import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 
@@ -33,7 +35,8 @@ final class LinuxDebPackageFromParams {
     private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
         var pkg = LinuxPackageFromParams.create(params, LinuxDeb);
 
-        var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
+        var maintainerEmail = Optional.ofNullable(MAINTAINER_EMAIL.fetchFrom(params)).orElseGet(
+                LinuxDebPackage.DEFAULTS::maintainerEmail);
 
         return new LinuxDebPackage.Impl(pkg, maintainerEmail);
     }
@@ -41,10 +44,6 @@ final class LinuxDebPackageFromParams {
     static final BundlerParamInfo<LinuxDebPackage> PACKAGE = createBundlerParam(
             LinuxDebPackageFromParams::create);
 
-    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new BundlerParamInfo<>(
-            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
-            String.class,
-            params -> "Unknown",
-            (s, p) -> s);
-
+    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = createStringBundlerParam(
+            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId());
 }

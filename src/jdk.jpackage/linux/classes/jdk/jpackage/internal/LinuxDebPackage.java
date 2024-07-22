@@ -63,4 +63,9 @@ interface LinuxDebPackage extends LinuxPackage {
 
         private final String maintainerEmail;
     }
+
+    static record Defaults(String maintainerEmail) {
+    }
+
+    static final Defaults DEFAULTS = new Defaults("Unknown");
 }
