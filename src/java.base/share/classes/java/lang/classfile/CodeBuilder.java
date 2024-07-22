@@ -86,7 +86,8 @@ import java.lang.classfile.instruction.TypeCheckInstruction;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-import jdk.internal.classfile.impl.TransformingCodeBuilder;
+
+import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -190,9 +191,9 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder transforming(CodeTransform transform, Consumer<CodeBuilder> handler) {
-        var resolved = transform.resolve(this);
+        var resolved = TransformImpl.resolve(transform, this);
         resolved.startHandler().run();
-        handler.accept(new TransformingCodeBuilder(this, resolved.consumer()));
+        handler.accept(new ChainedCodeBuilder(this, resolved.consumer()));
         resolved.endHandler().run();
         return this;
     }

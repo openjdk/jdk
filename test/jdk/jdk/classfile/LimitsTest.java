@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8320360 8330684 8331320 8331655 8331940 8332486
+ * @bug 8320360 8330684 8331320 8331655 8331940 8332486 8335820 8336833
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
@@ -39,6 +39,7 @@ import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
 import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTableAttribute;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
 import java.lang.classfile.instruction.LocalVariable;
@@ -167,6 +168,28 @@ class LimitsTest {
                                     b.writeU2(0);//exception handlers
                                     b.writeU2(0);//attributes
                                 }})))).methods().get(0).code().get().elementList());
+        assertThrows(IllegalArgumentException.class, () ->
+                ClassFile.of().parse(ClassFile.of().build(ClassDesc.of("TableSwitchClass"), cb -> cb.withMethod(
+                "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
+                        ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
+                                @Override
+                                public void writeBody(BufWriter b) {
+                                    b.writeU2(-1);//max stack
+                                    b.writeU2(-1);//max locals
+                                    b.writeInt(20);
+                                    b.writeU1(Opcode.NOP.bytecode());
+                                    b.writeU1(Opcode.NOP.bytecode());
+                                    b.writeU1(Opcode.NOP.bytecode());
+                                    b.writeU1(Opcode.NOP.bytecode());
+                                    b.writeU1(Opcode.TABLESWITCH.bytecode());
+                                    b.writeU1(0); //padding
+                                    b.writeU2(0); //padding
+                                    b.writeInt(0); //default
+                                    b.writeInt(Integer.MIN_VALUE); //low
+                                    b.writeInt(Integer.MAX_VALUE - 4); //high to jump back and cause infinite loop
+                                    b.writeU2(0);//exception handlers
+                                    b.writeU2(0);//attributes
+                                }})))).methods().get(0).code().get().elementList());
     }
 
     @Test
@@ -189,5 +212,11 @@ class LimitsTest {
                                 new UnboundAttribute.UnboundLocalVariableInfo(0, 200,
                                         cob.constantPool().utf8Entry("a"), cob.constantPool().utf8Entry("A"), 0))))
                 ))).methods().get(0).code().get().elementList());
+    }
+
+    @Test
+    void testZeroHashCPEntry() {
+        var cpb = ConstantPoolBuilder.of();
+        cpb.intEntry(-cpb.intEntry(0).hashCode());
     }
 }
