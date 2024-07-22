@@ -679,7 +679,7 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
                 if (i + headerSize + dsize > extra.length) {
                     return false; // Invalid size
                 }
-                if (id == ZIP64_EXTID) {
+                if (id == EXTID_ZIP64) {
                     return true;
                 }
                 i += headerSize + dsize;
