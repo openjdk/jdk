@@ -58,12 +58,12 @@ import java.security.PrivilegedAction;
 public class ProtectionDomainRace {
     private static volatile Throwable failed = null;
     public static void main(String[] args) throws Throwable {
-        var ac = (PrivilegedAction<? extends Object>) () -> null;
+        var pa = (PrivilegedAction<? extends Object>) () -> null;
         var threads = new Thread[100];
         for (int i = 0; i < 100; i++) {
             threads[i] = new Thread(() -> {
                 try {
-                    Subject.doAs(null, ac);
+                    Subject.doAs(null, pa);
                 } catch (Throwable t) {
                     failed = t;
                 }
