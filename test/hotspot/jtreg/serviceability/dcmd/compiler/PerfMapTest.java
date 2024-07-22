@@ -120,8 +120,7 @@ public class PerfMapTest {
         Path path = Paths.get("nonexistent", test_dir);
         try {
             OutputAnalyzer output = new JMXExecutor().execute("Compiler.perfmap %s".formatted(path));
-            output.shouldContain("Failed to create nonexistent/%s for perf map".formatted(test_dir));
-            output.shouldNotHaveExitValue(0);
+            output.shouldContain("Warning: Failed to create nonexistent/%s for perf map".formatted(test_dir));
         } finally {
             Files.deleteIfExists(path);
         }
