@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,14 +173,6 @@ public class Longs {
     public void reverse() {
         for (int i = 0; i < size; i++) {
             res[i] = Long.reverse(longArraySmall[i]);
-        }
-    }
-
-    @Benchmark
-    public void cmovConstant01(Blackhole bh) {
-        for (int i = 0; i < size; i++) {
-            long r = longArraySmall[i] > bound ? 1L : 0L;
-            bh.consume(r);
         }
     }
 }
