@@ -47,6 +47,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import static java.lang.constant.ConstantDescs.*;
+
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
 
@@ -371,14 +373,13 @@ public final class StringConcatFactory {
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }
 
+        MethodHandle mh;
         try {
-            if (concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
-                return new ConstantCallSite(
-                        generateMHInlineCopy(concatType, constantStrings)
-                                .viewAsType(concatType, true));
+            mh = generateMHInlineCopy(concatType, constantStrings);
+            if (mh != null) {
+                mh = mh.viewAsType(concatType, true);
             } else {
-                return new ConstantCallSite(
-                        SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings));
+                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
             }
         } catch (Error e) {
             // Pass through any error
@@ -386,6 +387,7 @@ public final class StringConcatFactory {
         } catch (Throwable t) {
             throw new StringConcatException("Generator failed", t);
         }
+        return new ConstantCallSite(mh);
     }
 
     private static String[] parseRecipe(MethodType concatType,
@@ -501,464 +503,8 @@ public final class StringConcatFactory {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
         }
-        // else... fall-through to slow-path
 
-        // Create filters and obtain filtered parameter types. Filters would be used in the beginning
-        // to convert the incoming arguments into the arguments we can process (e.g. Objects -> Strings).
-        // The filtered argument type list is used all over in the combinators below.
-
-        Class<?>[] ptypes = mt.erase().parameterArray();
-        MethodHandle[] objFilters = null;
-        MethodHandle[] floatFilters = null;
-        MethodHandle[] doubleFilters = null;
-        for (int i = 0; i < ptypes.length; i++) {
-            Class<?> cl = ptypes[i];
-            // Use int as the logical type for subword integral types
-            // (byte and short). char and boolean require special
-            // handling so don't change the logical type of those
-            ptypes[i] = promoteToIntType(ptypes[i]);
-            // Object, float and double will be eagerly transformed
-            // into a (non-null) String as a first step after invocation.
-            // Set up to use String as the logical type for such arguments
-            // internally.
-            if (cl == Object.class) {
-                if (objFilters == null) {
-                    objFilters = new MethodHandle[ptypes.length];
-                }
-                objFilters[i] = objectStringifier();
-                ptypes[i] = String.class;
-            } else if (cl == float.class) {
-                if (floatFilters == null) {
-                    floatFilters = new MethodHandle[ptypes.length];
-                }
-                floatFilters[i] = floatStringifier();
-                ptypes[i] = String.class;
-            } else if (cl == double.class) {
-                if (doubleFilters == null) {
-                    doubleFilters = new MethodHandle[ptypes.length];
-                }
-                doubleFilters[i] = doubleStringifier();
-                ptypes[i] = String.class;
-            }
-        }
-
-        // Start building the combinator tree. The tree "starts" with (<parameters>)String, and "finishes"
-        // with the (byte[], long)String shape to invoke newString in StringConcatHelper. The combinators are
-        // assembled bottom-up, which makes the code arguably hard to read.
-
-        // Drop all remaining parameter types, leave only helper arguments:
-        MethodHandle mh = MethodHandles.dropArgumentsTrusted(newString(), 1, new Class<?>[]{int.class});
-        mh = MethodHandles.dropArgumentsTrusted(mh, 3, ptypes);
-
-        // Calculate the initialLengthCoder value by looking at all constant values and summing up
-        // their lengths and adjusting the encoded coder bit if needed
-        int initialCoder = INITIAL_CODER;
-        int initialSize = 0;
-
-        for (String constant : constants) {
-            if (constant != null) {
-                initialSize += constant.length();
-                initialCoder |= JLA.stringCoder(constant);
-            }
-        }
-
-        // size and coder in prependers. This happens when (byte[], int, byte) = (storage, index, coder) is already
-        // known from the combinators below. We are assembling the string backwards, so the index coded
-        // into indexCoder is the *ending* index.
-        mh = filterInPrependers(mh, constants, ptypes);
-
-        // Fold in byte[] instantiation at argument 0
-        MethodHandle newArrayCombinator;
-        if (suffix != null) {
-            // newArray variant that deals with prepending any trailing constant
-            //
-            // initialLengthCoder is adjusted to have the correct coder
-            // and length: The newArrayWithSuffix method expects only the coder of the
-            // suffix to be encoded into indexCoder
-            initialSize -= suffix.length();
-            newArrayCombinator = newArrayWithSuffix(suffix);
-        } else {
-            newArrayCombinator = newArray();
-        }
-        mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArrayCombinator,
-                1, // index
-                2  // coder
-        );
-
-        // Start combining size and coder.
-        //
-        // Length is easy: constant lengths can be computed on the spot, and all non-constant
-        // shapes have been either converted to Strings, or explicit methods for getting the
-        // string length out of primitives are provided.
-        //
-        // Coders are more interesting. Only Object, String and char arguments (and constants)
-        // can have non-Latin1 encoding. It is easier to blindly convert constants to String,
-        // and deduce the coder from there. Arguments would be either converted to Strings
-        // during the initial filtering, or handled by specializations in size and coder.
-        //
-        // The method handle shape before all size and coder are combined in is:
-        //   (long, <args>)String = ("indexCoder", <args>)
-        //
-        // We will bind the initialLengthCoder value to the last size and coder (the one that will be
-        // executed first), then fold that in. This leaves the shape after all size and coder are
-        // combined in as:
-        //   (<args>)String = (<args>)
-
-        mh = filterAndFoldInSizeCoders(mh, initialSize, (byte) initialCoder, ptypes);
-
-        // The method handle shape here is (<args>).
-
-        // Apply filters, converting the arguments:
-        if (objFilters != null) {
-            mh = MethodHandles.filterArguments(mh, 0, objFilters);
-        }
-        if (floatFilters != null) {
-            mh = MethodHandles.filterArguments(mh, 0, floatFilters);
-        }
-        if (doubleFilters != null) {
-            mh = MethodHandles.filterArguments(mh, 0, doubleFilters);
-        }
-
-        return mh;
-    }
-
-    // We need one prepender per argument, but also need to fold in constants. We do so by greedily
-    // creating prependers that fold in surrounding constants into the argument prepender. This reduces
-    // the number of unique MH combinator tree shapes we'll create in an application.
-    // Additionally we do this in chunks to reduce the number of combinators bound to the root tree,
-    // which simplifies the shape and makes construction of similar trees use less unique LF classes
-    private static MethodHandle filterInPrependers(MethodHandle mh, String[] constants, Class<?>[] ptypes) {
-        int pos;
-        int[] argPositions = null;
-        MethodHandle prepend;
-        for (pos = 0; pos < ptypes.length - 3; pos += 4) {
-            prepend = prepender(pos, constants, ptypes, 4);
-            argPositions = filterPrependArgPositions(argPositions, pos, 4);
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
-        }
-        if (pos < ptypes.length) {
-            int count = ptypes.length - pos;
-            prepend = prepender(pos, constants, ptypes, count);
-            argPositions = filterPrependArgPositions(argPositions, pos, count);
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepend, argPositions);
-        }
-        return mh;
-    }
-
-    static int[] filterPrependArgPositions(int[] argPositions, int pos, int count) {
-        if (argPositions == null || argPositions.length != count + 3) {
-            argPositions = new int[count + 3];
-            argPositions[0] = 1; // index
-            argPositions[1] = 2; // coder
-            argPositions[2] = 0; // storage
-        }
-        int limit = count + 3;
-        for (int i = 3; i < limit; i++) {
-            argPositions[i] = i + pos;
-        }
-        return argPositions;
-    }
-
-
-    // We need one size and coder per argument.
-    private static MethodHandle filterAndFoldInSizeCoders(MethodHandle mh, int initialSize, byte initialCoder, Class<?>[] ptypes) {
-        int pos;
-        int[] argPositions = null;
-        for (pos = 0; pos < ptypes.length - 4; pos += 4) {
-            // Compute new "index" in-place pairwise using old value plus the appropriate arguments.
-            MethodHandle stringSize = stringSize(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            argPositions = filterSizeArgPositions(argPositions, pos, 4);
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 0,
-                    stringSize, argPositions);
-
-            MethodHandle stringCoder = stringCoder(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            argPositions = filterCoderArgPositions(argPositions, pos, 4);
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1,
-                    stringCoder, argPositions);
-        }
-
-        if (pos < ptypes.length) {
-            // size and coder in the last 1 to 4 parameters, insert the initialSize and initialCoder into the final size and coder and
-            // fold the result into the main combinator
-            mh = foldInLastSizeCoders(mh, initialSize, initialCoder, pos, ptypes, ptypes.length - pos);
-        } else if (ptypes.length == 0) {
-            // No size and coder (constants only concat), insert initialSize and initialCoder directly
-            mh = MethodHandles.insertArguments(mh, 0, initialSize, initialCoder);
-        }
-        return mh;
-    }
-
-    static int[] filterSizeArgPositions(int[] argPositions, int pos, int count) {
-        if (argPositions == null || argPositions.length != count + 2) {
-            argPositions = new int[count + 1];
-            argPositions[0] = 0; // index
-        }
-        int limit = count + 1;
-        for (int i = 1; i < limit; i++) {
-            argPositions[i] = i + pos + 1;
-        }
-        return argPositions;
-    }
-
-    static int[] filterCoderArgPositions(int[] argPositions, int pos, int count) {
-        if (argPositions == null || argPositions.length != count + 2) {
-            argPositions = new int[count + 1];
-            argPositions[0] = 1; // coder
-        }
-        int limit = count + 1;
-        for (int i = 1; i < limit; i++) {
-            argPositions[i] = i + pos + 1;
-        }
-        return argPositions;
-    }
-
-    private static MethodHandle foldInLastSizeCoders(MethodHandle mh, int initialLength, byte initalCoder, int pos, Class<?>[] ptypes, int count) {
-        MethodHandle stringSize = switch (count) {
-            case 1 -> stringSize(ptypes[pos]);
-            case 2 -> stringSize(ptypes[pos], ptypes[pos + 1]);
-            case 3 -> stringSize(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
-            case 4 -> stringSize(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            default -> throw new IllegalArgumentException("Unexpected count: " + count);
-        };
-        stringSize = MethodHandles.insertArguments(stringSize, 0, initialLength);
-
-        MethodHandle coder = switch (count) {
-            case 1 -> stringCoder(ptypes[pos]);
-            case 2 -> stringCoder(ptypes[pos], ptypes[pos + 1]);
-            case 3 -> stringCoder(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
-            case 4 -> stringCoder(ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            default -> throw new IllegalArgumentException("Unexpected count: " + count);
-        };
-        coder = MethodHandles.insertArguments(coder, 0, initalCoder);
-
-        // MethodHandles.identity(int.class)
-        // apply selected arguments on the 1-4 arg size & coder and fold in the result
-        switch (count) {
-            case 1:
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, stringSize,
-                        2 + pos);
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, coder,
-                        1 + pos);
-                break;
-            case 2:
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, stringSize,
-                        2 + pos, 3 + pos);
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, coder,
-                        1 + pos, 2 + pos);
-                break;
-            case 3:
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, stringSize,
-                        2 + pos, 3 + pos, 4 + pos);
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, coder,
-                        1 + pos, 2 + pos, 3 + pos);
-                break;
-            case 4:
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, stringSize,
-                        2 + pos, 3 + pos, 4 + pos, 5 + pos);
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, coder,
-                        1 + pos, 2 + pos, 3 + pos, 4 + pos);
-                break;
-            default:
-                throw new IllegalArgumentException();
-        };
-
-        return mh;
-    }
-
-    // Simple prependers, single argument. May be used directly or as a
-    // building block for complex prepender combinators.
-    private static MethodHandle prepender(String prefix, Class<?> cl) {
-        if (prefix == null || prefix.isEmpty()) {
-            return noPrefixPrepender(cl);
-        } else {
-            return MethodHandles.insertArguments(
-                    prepender(cl), 4, prefix);
-        }
-    }
-
-    private static MethodHandle prepender(Class<?> cl) {
-        int idx = classIndex(cl);
-        MethodHandle prepend = PREPENDERS[idx];
-        if (prepend == null) {
-            PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
-                    methodType(int.class, int.class, byte.class, byte[].class,
-                            Wrapper.asPrimitiveType(cl), String.class)).rebind();
-        }
-        return prepend;
-    }
-
-    private static MethodHandle noPrefixPrepender(Class<?> cl) {
-        int idx = classIndex(cl);
-        MethodHandle prepend = NO_PREFIX_PREPENDERS[idx];
-        if (prepend == null) {
-            NO_PREFIX_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
-                    methodType(int.class, int.class, byte.class, byte[].class,
-                            Wrapper.asPrimitiveType(cl))).rebind();
-        }
-        return prepend;
-    }
-
-    private static final int INT_IDX = 0,
-            CHAR_IDX = 1,
-            LONG_IDX = 2,
-            BOOLEAN_IDX = 3,
-            STRING_IDX = 4,
-            TYPE_COUNT = 5;
-    private static int classIndex(Class<?> cl) {
-        if (cl == String.class)                          return STRING_IDX;
-        if (cl == int.class)                             return INT_IDX;
-        if (cl == boolean.class)                         return BOOLEAN_IDX;
-        if (cl == char.class)                            return CHAR_IDX;
-        if (cl == long.class)                            return LONG_IDX;
-        throw new IllegalArgumentException("Unexpected class: " + cl);
-    }
-
-    // Constant argument lists used by the prepender MH builders
-    private static final int[] PREPEND_FILTER_FIRST_ARGS  = new int[] { 0, 1, 2, 3 };
-    private static final int[] PREPEND_FILTER_SECOND_ARGS = new int[] { 0, 1, 2, 4 };
-    private static final int[] PREPEND_FILTER_THIRD_ARGS  = new int[] { 0, 1, 2, 5 };
-    private static final int[] PREPEND_FILTER_FIRST_PAIR_ARGS  = new int[] { 0, 1, 2, 3, 4 };
-    private static final int[] PREPEND_FILTER_SECOND_PAIR_ARGS = new int[] { 0, 1, 2, 5, 6 };
-
-    // Base MH for complex prepender combinators.
-    private static @Stable MethodHandle PREPEND_BASE;
-    private static MethodHandle prependBase() {
-        MethodHandle base = PREPEND_BASE;
-        if (base == null) {
-            base = PREPEND_BASE = MethodHandles.dropArguments(
-                    MethodHandles.identity(int.class), 1, byte.class, byte[].class);
-        }
-        return base;
-    }
-
-    private static final @Stable MethodHandle[][] DOUBLE_PREPENDERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
-
-    private static MethodHandle prepender(String prefix, Class<?> cl, String prefix2, Class<?> cl2) {
-        int idx1 = classIndex(cl);
-        int idx2 = classIndex(cl2);
-        MethodHandle prepend = DOUBLE_PREPENDERS[idx1][idx2];
-        if (prepend == null) {
-            prepend = DOUBLE_PREPENDERS[idx1][idx2] =
-                    MethodHandles.dropArguments(prependBase(), 3, cl, cl2);
-        }
-        prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix, cl),
-                PREPEND_FILTER_FIRST_ARGS);
-        return MethodHandles.filterArgumentsWithCombiner(prepend, 0, prepender(prefix2, cl2),
-                PREPEND_FILTER_SECOND_ARGS);
-    }
-
-    private static MethodHandle prepender(int pos, String[] constants, Class<?>[] ptypes, int count) {
-        // build the simple cases directly
-        if (count == 1) {
-            return prepender(constants[pos], ptypes[pos]);
-        }
-        if (count == 2) {
-            return prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]);
-        }
-        // build a tree from an unbound prepender, allowing us to bind the constants in a batch as a final step
-        MethodHandle prepend = prependBase();
-        if (count == 3) {
-            prepend = MethodHandles.dropArguments(prepend, 3,
-                    ptypes[pos], ptypes[pos + 1], ptypes[pos + 2]);
-            prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]),
-                    PREPEND_FILTER_FIRST_PAIR_ARGS);
-            return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants[pos + 2], ptypes[pos + 2]),
-                    PREPEND_FILTER_THIRD_ARGS);
-        } else if (count == 4) {
-            prepend = MethodHandles.dropArguments(prepend, 3,
-                    ptypes[pos], ptypes[pos + 1], ptypes[pos + 2], ptypes[pos + 3]);
-            prepend = MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants[pos], ptypes[pos], constants[pos + 1], ptypes[pos + 1]),
-                    PREPEND_FILTER_FIRST_PAIR_ARGS);
-            return MethodHandles.filterArgumentsWithCombiner(prepend, 0,
-                    prepender(constants[pos + 2], ptypes[pos + 2], constants[pos + 3], ptypes[pos + 3]),
-                    PREPEND_FILTER_SECOND_PAIR_ARGS);
-        } else {
-            throw new IllegalArgumentException("Unexpected count: " + count);
-        }
-    }
-
-    // Constant argument lists used by the size MH builders
-    private static final int[] SIZE_FILTER_SECOND_ARGS = new int[] { 0, 2 };
-    private static final int[] SIZE_FILTER_THIRD_ARGS = new int[] { 0, 3 };
-    private static final int[] SIZE_FILTER_SECOND_PAIR_ARGS = new int[] { 0, 3, 4 };
-    private static MethodHandle stringSize(Class<?> cl) {
-        int index = classIndex(cl);
-        MethodHandle size = SIZERS[index];
-        if (size == null) {
-            SIZERS[index] = size = JLA.stringConcatHelper("stringSize",
-                    methodType(int.class, int.class, Wrapper.asPrimitiveType(cl))).rebind();
-        }
-        return size;
-    }
-
-    private static final @Stable MethodHandle[][] DOUBLE_SIZERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
-    private static MethodHandle stringSize(Class<?> cl, Class<?> cl2) {
-        int idx1 = classIndex(cl);
-        int idx2 = classIndex(cl2);
-        MethodHandle sizer = DOUBLE_SIZERS[idx1][idx2];
-        if (sizer == null) {
-            sizer = stringSize(cl);
-            sizer = MethodHandles.dropArguments(sizer, 2, cl2);
-            DOUBLE_SIZERS[idx1][idx2] = sizer = MethodHandles.filterArgumentsWithCombiner(sizer, 0,
-                    stringSize(cl2), SIZE_FILTER_SECOND_ARGS);
-        }
-        return sizer;
-    }
-
-    private static MethodHandle stringSize(Class<?> cl, Class<?> cl2, Class<?> cl3) {
-        MethodHandle size = stringSize(cl, cl2);
-        size = MethodHandles.dropArguments(size, 3, cl3);
-        return MethodHandles.filterArgumentsWithCombiner(size, 0,
-                stringSize(cl3), SIZE_FILTER_THIRD_ARGS);
-    }
-
-    private static MethodHandle stringSize(Class<?> cl, Class<?> cl2, Class<?> cl3, Class<?> cl4) {
-        MethodHandle size = stringSize(cl, cl2);
-        size = MethodHandles.dropArguments(size, 3, cl3, cl4);
-        return MethodHandles.filterArgumentsWithCombiner(size, 0,
-                stringSize(cl3, cl4), SIZE_FILTER_SECOND_PAIR_ARGS);
-    }
-
-    private @Stable static MethodHandle STRING_CODER;
-    private static MethodHandle stringCoder(Class<?> cl) {
-        int index = classIndex(cl);
-        MethodHandle coder = CODERS[index];
-        if (coder == null) {
-            CODERS[index] = coder = JLA.stringConcatHelper("stringCoder",
-                    methodType(byte.class, byte.class, Wrapper.asPrimitiveType(cl))).rebind();
-        }
-        return coder;
-    }
-
-    private static final @Stable MethodHandle[][] DOUBLE_CODERS = new MethodHandle[TYPE_COUNT][TYPE_COUNT];
-    private static MethodHandle stringCoder(Class<?> cl, Class<?> cl2) {
-        int idx1 = classIndex(cl);
-        int idx2 = classIndex(cl2);
-        MethodHandle coder = DOUBLE_CODERS[idx1][idx2];
-        if (coder == null) {
-            coder = stringCoder(cl);
-            coder = MethodHandles.dropArguments(coder, 2, cl2);
-            DOUBLE_CODERS[idx1][idx2] = coder = MethodHandles.filterArgumentsWithCombiner(coder, 0,
-                    stringCoder(cl2), SIZE_FILTER_SECOND_ARGS);
-        }
-        return coder;
-    }
-
-    private static MethodHandle stringCoder(Class<?> cl, Class<?> cl2, Class<?> cl3) {
-        MethodHandle coder = stringCoder(cl, cl2);
-        coder = MethodHandles.dropArguments(coder, 3, cl3);
-        return MethodHandles.filterArgumentsWithCombiner(coder, 0,
-                stringCoder(cl3), SIZE_FILTER_THIRD_ARGS);
-    }
-
-    private static MethodHandle stringCoder(Class<?> cl, Class<?> cl2, Class<?> cl3, Class<?> cl4) {
-        MethodHandle coder = stringCoder(cl, cl2);
-        coder = MethodHandles.dropArguments(coder, 3, cl3, cl4);
-        return MethodHandles.filterArgumentsWithCombiner(coder, 0,
-                stringCoder(cl3, cl4), SIZE_FILTER_SECOND_PAIR_ARGS);
+        return null;
     }
 
     private @Stable static MethodHandle SIMPLE_CONCAT;
@@ -1009,15 +555,6 @@ public final class StringConcatFactory {
      * form String apply(T obj), and normally delegate to {@code String.valueOf},
      * depending on argument's type.
      */
-    private @Stable static MethodHandle OBJECT_STRINGIFIER;
-    private static MethodHandle objectStringifier() {
-        MethodHandle mh = OBJECT_STRINGIFIER;
-        if (mh == null) {
-            OBJECT_STRINGIFIER = mh = JLA.stringConcatHelper("stringOf",
-                    methodType(String.class, Object.class));
-        }
-        return mh;
-    }
     private @Stable static MethodHandle FLOAT_STRINGIFIER;
     private static MethodHandle floatStringifier() {
         MethodHandle mh = FLOAT_STRINGIFIER;
@@ -1101,39 +638,6 @@ public final class StringConcatFactory {
         }
     }
 
-    private static final @Stable MethodHandle[] NO_PREFIX_PREPENDERS = new MethodHandle[TYPE_COUNT];
-    private static final @Stable MethodHandle[] PREPENDERS           = new MethodHandle[TYPE_COUNT];
-    private static final @Stable MethodHandle[] SIZERS               = new MethodHandle[TYPE_COUNT];
-    private static final @Stable MethodHandle[] CODERS               = new MethodHandle[TYPE_COUNT];
-    private static final int INITIAL_CODER = JLA.stringConcatInitialCoder();
-
-    /**
-     * Promote integral types to int.
-     */
-    private static Class<?> promoteToIntType(Class<?> t) {
-        // use int for subword integral types; still need special sizer
-        // and prependers for char, boolean
-        return t == byte.class || t == short.class ? int.class : t;
-    }
-
-    /**
-     * Returns a stringifier for references and floats/doubles only.
-     * Always returns null for other primitives.
-     *
-     * @param t class to stringify
-     * @return stringifier; null, if not available
-     */
-    private static MethodHandle stringifierFor(Class<?> t) {
-        if (t == Object.class) {
-            return objectStringifier();
-        } else if (t == float.class) {
-            return floatStringifier();
-        } else if (t == double.class) {
-            return doubleStringifier();
-        }
-        return null;
-    }
-
     private static MethodHandle stringValueOf(Class<?> ptype) {
         try {
             return MethodHandles.publicLookup()
@@ -1168,6 +672,26 @@ public final class StringConcatFactory {
         static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_String);
         static final MethodTypeDesc INT_CONSTRUCTOR_TYPE = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
         static final MethodTypeDesc TO_STRING_TYPE = MethodTypeDesc.of(ConstantDescs.CD_String);
+
+        static final ClassDesc STRING_CONCAT_HELPER = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_byteArray = ClassDesc.ofDescriptor("[B");
+        static final MethodTypeDesc STRING_OFF = MethodTypeDesc.of(CD_String, CD_Object);
+        static final MethodTypeDesc FLOAT_TO_STRING = MethodTypeDesc.of(CD_String, CD_float);
+        static final MethodTypeDesc DOUBLE_TO_STRING = MethodTypeDesc.of(CD_String, CD_double);
+        static final MethodTypeDesc TO_INT = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc INT_TO_INT = MethodTypeDesc.of(CD_int, CD_int);
+        static final MethodTypeDesc LONG_TO_INT = MethodTypeDesc.of(CD_int, CD_long);
+        static final MethodTypeDesc BOOLEAN_TO_INT = MethodTypeDesc.of(CD_int, CD_boolean);
+        static final MethodTypeDesc TO_BYTE = MethodTypeDesc.of(CD_byte);
+        static final MethodTypeDesc CHAR_TO_BYTE = MethodTypeDesc.of(CD_byte, CD_char);
+        static final MethodTypeDesc NEW_ARRAY = MethodTypeDesc.of(CD_byteArray, CD_int, CD_byte);
+        static final MethodTypeDesc NEW_STRING = MethodTypeDesc.of(CD_void, CD_byteArray, CD_byte);
+        static final MethodTypeDesc PREPEND_STRING = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_String);
+        static final MethodTypeDesc PREPEND_INT = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_int);
+        static final MethodTypeDesc PREPEND_LONG = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_long);
+        static final MethodTypeDesc PREPEND_BOOLEAN = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_boolean);
+        static final MethodTypeDesc PREPEND_CHAR = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_char);
+
 
         /**
          * Ensure a capacity in the initial StringBuilder to accommodate all
@@ -1244,6 +768,158 @@ public final class StringConcatFactory {
 
                     cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
                     cb.areturn();
+                }
+
+                public void acceptInlineCopy(CodeBuilder cb) {
+                    int initalIndex = 0;
+                    int initalCoder = JLA.stringConcatInitialCoder();
+                    for (String constant : constants) {
+                        if (constant != null) {
+                            initalIndex += constant.length();
+                            initalCoder |= JLA.stringCoder(constant);
+                        }
+                    }
+
+                    final int paramCount = args.parameterCount();
+                    int[] paramSlots = new int[paramCount];
+                    int[] paramStrings = new int[paramCount];
+                    int strings = 0;
+                    int argSlots = 0;
+                    for (int i = 0; i < args.parameterCount(); i++) {
+                        Class<?> cl = args.parameterType(i);
+                        TypeKind kind = TypeKind.from(cl);
+                        paramSlots[i] = argSlots;
+                        argSlots += kind.slotSize();
+                        if (!directPrimive(cl)) {
+                            paramStrings[i] = strings++;
+                        }
+                    }
+
+                    // string variants
+                    for (int i = 0; i < paramCount; i++) {
+                        Class<?> cl = args.parameterType(i);
+                        TypeKind kind = TypeKind.from(cl);
+                        if (!directPrimive(cl)) {
+                            cb.loadLocal(kind, paramSlots[i]);
+                            if (cl == float.class) {
+                                cb.invokestatic(ConstantDescs.CD_Float, "toString", FLOAT_TO_STRING);
+                            } else if (cl == double.class) {
+                                cb.invokestatic(ConstantDescs.CD_Double, "toString", DOUBLE_TO_STRING);
+                            } else {
+                                cb.invokestatic(STRING_CONCAT_HELPER, "stringOf", STRING_OFF);
+                            }
+                            cb.astore(argSlots + paramStrings[i]);
+                        }
+                    }
+
+                    int INIT_CODER = argSlots + strings;
+                    int INIT_INDEX = argSlots + strings + 1;
+                    int BUF = argSlots + strings + 2;
+                    cb.loadConstant(initalCoder);
+                    for (int i = 0; i < paramCount; i++) {
+                        Class<?> cl = args.parameterType(i);
+                        TypeKind kind = TypeKind.from(cl);
+                        if (!directPrimive(cl)) {
+                            cb.aload(argSlots + paramStrings[i])
+                              .invokevirtual(ConstantDescs.CD_String, "coder", TO_BYTE)
+                              .ior();
+                        } else if (cl == char.class) {
+                            cb.loadLocal(kind, paramSlots[i])
+                              .invokestatic(STRING_CONCAT_HELPER, "stringCoder", CHAR_TO_BYTE)
+                              .ior();
+                        }
+                    }
+                    cb.istore(INIT_CODER);
+
+                    cb.loadConstant(initalIndex);
+                    for (int i = 0; i < paramCount; i++) {
+                        Class<?> cl = args.parameterType(i);
+                        TypeKind kind = TypeKind.from(cl);
+                        int pparamSlot = paramSlots[i];
+                        if (cl == byte.class || cl == short.class || cl == int.class) {
+                            cb.loadLocal(kind, pparamSlot)
+                              .invokestatic(ConstantDescs.CD_Integer, "stringSize", INT_TO_INT);
+                        } else if (cl == long.class) {
+                            cb.loadLocal(kind, pparamSlot)
+                              .invokestatic(ConstantDescs.CD_Long, "stringSize", LONG_TO_INT);
+                        } else if (cl == boolean.class) {
+                            cb.loadLocal(kind, pparamSlot)
+                              .invokestatic(STRING_CONCAT_HELPER, "stringSize", BOOLEAN_TO_INT);
+                        } else if (cl == char.class) {
+                            cb.iconst_1();
+                        } else {
+                            cb.aload(argSlots + paramStrings[i])
+                              .invokevirtual(ConstantDescs.CD_String, "length", TO_INT);
+                        }
+                        cb.iadd();
+                    }
+                    cb.dup()
+                      .istore(INIT_INDEX)
+                      .iload(INIT_CODER).i2b()
+                      .invokestatic(STRING_CONCAT_HELPER, "newArray", NEW_ARRAY)
+                      .astore(BUF);
+
+                    if (constants[constants.length - 1] != null) {
+                        cb.iload(INIT_INDEX)
+                          .iload(INIT_CODER)
+                          .aload(BUF)
+                          .ldc(constants[constants.length - 1])
+                          .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_STRING)
+                          .istore(INIT_INDEX);
+                    }
+                    // paramSlots
+                    for (int i = paramCount - 1; i >= 0; i--) {
+                        int paramSlot = paramSlots[i];
+                        Class<?> cl = args.parameterType(i);
+                        TypeKind kind = TypeKind.from(cl);
+
+                        cb.iload(INIT_INDEX)
+                          .iload(INIT_CODER)
+                          .aload(BUF);
+
+                        if (cl == byte.class || cl == short.class || cl == int.class) {
+                            cb.loadLocal(kind, paramSlot)
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_INT);
+                        } else if (cl == long.class) {
+                            cb.loadLocal(kind, paramSlot)
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_LONG);
+                        } else if (cl == boolean.class) {
+                            cb.loadLocal(kind, paramSlot)
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_BOOLEAN);
+                        } else if (cl == char.class) {
+                            cb.loadLocal(kind, paramSlot)
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_CHAR);
+                        } else {
+                            cb.aload(argSlots + paramStrings[i])
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_STRING);
+                        }
+                        cb.istore(INIT_INDEX);
+
+                        if (constants[i] != null) {
+                            cb.iload(INIT_INDEX)
+                              .iload(INIT_CODER)
+                              .aload(BUF)
+                              .ldc(constants[i])
+                              .invokestatic(STRING_CONCAT_HELPER, "prepend", PREPEND_STRING)
+                              .istore(INIT_INDEX);
+                        }
+                    }
+
+                    cb.new_(ConstantDescs.CD_String)
+                      .dup()
+                      .aload(BUF)
+                      .iload(INIT_CODER)
+                      .invokespecial(ConstantDescs.CD_String, "<init>", NEW_STRING)
+                      .areturn();
+                }
+
+                static boolean directPrimive(Class<?> cl) {
+                    return cl == byte.class
+                            || cl == short.class
+                            || cl == int.class
+                            || cl == long.class
+                            || cl == boolean.class
+                            || cl == char.class;
                 }
             };
         }

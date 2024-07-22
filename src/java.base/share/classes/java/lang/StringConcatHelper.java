@@ -45,57 +45,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * add value length into current length
-     * @param length      String length
-     * @param value       value to mix in
-     * @return            new length
-     */
-    @ForceInline
-    static int stringSize(int length, boolean value) {
-        return length + (value ? 4 : 5);
-    }
-
-    /**
-     * add value length into current length
-     * @param length      String length
-     * @param value       value to mix in
-     * @return            new length
-     */
-    static int stringSize(int length, char value) {
-        return length + 1;
-    }
-
-    /**
-     * add value length into current length
-     * @param length      String length
-     * @param value       value to mix in
-     * @return            new length
-     */
-    static int stringSize(int length, int value) {
-        return length + Integer.stringSize(value);
-    }
-
-    /**
-     * add value length into current length
-     * @param length      String length
-     * @param value       value to mix in
-     * @return            new length
-     */
-    static int stringSize(int length, long value) {
-        return length + Long.stringSize(value);
-    }
-
-    /**
-     * add value length into current length
-     * @param length      String length
-     * @param value       value to mix in
-     * @return            new length
-     */
-    static int stringSize(int length, String value) {
-        return length + value.length();
-    }
-
-    /**
      * Prepends the stringly representation of boolean value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
@@ -137,23 +86,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param index      final char index in the buffer
-     * @param coder      the coder of buf
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, boolean value, String prefix) {
-        index = prepend(index, coder, buf, value);
-        index = prepend(index, coder, buf, prefix);
-        return index;
-    }
-
-    /**
      * Prepends the stringly representation of char value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
@@ -170,23 +102,6 @@ final class StringConcatHelper {
         } else {
             StringUTF16.putChar(buf, index, value);
         }
-        return index;
-    }
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param indexCoder final char index in the buffer, along with coder packed
-     *                   into higher bits.
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, char value, String prefix) {
-        index = prepend(index, coder, buf, value);
-        index = prepend(index, coder, buf, prefix);
         return index;
     }
 
@@ -209,23 +124,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param index      final char index in the buffer
-     * @param coder      the coder of buf
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, int value, String prefix) {
-        index = prepend(index, coder, buf, value);
-        index = prepend(index, coder, buf, prefix);
-        return index;
-    }
-
-    /**
      * Prepends the stringly representation of long value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
@@ -244,23 +142,6 @@ final class StringConcatHelper {
     }
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param index      final char index in the buffer
-     * @param coder      the coder of buf
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, long value, String prefix) {
-        index = prepend(index, coder, buf, value);
-        index = prepend(index, coder, buf, prefix);
-        return index;
-    }
-
-    /**
      * Prepends the stringly representation of String value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      *
@@ -274,55 +155,6 @@ final class StringConcatHelper {
         index -= value.length();
         value.getBytes(buf, index, coder);
         return index;
-    }
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param index      final char index in the buffer
-     * @param coder      the coder of buf
-     * @param buf        buffer to append to
-     * @param value      boolean value to encode
-     * @param prefix     a constant to prepend before value
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, String value, String prefix) {
-        index = prepend(index, coder, buf, value);
-        index = prepend(index, coder, buf, prefix);
-        return index;
-    }
-
-    /**
-     * Instantiates the String with given buffer and coder
-     * @param buf           buffer to use
-     * @param indexCoder    remaining index (should be zero) and coder
-     * @return String       resulting string
-     */
-    @ForceInline
-    static String newString(byte[] buf, byte coder) {
-        // Use the private, non-copying constructor (unsafe!)
-        return new String(buf, coder);
-    }
-
-    static byte stringCoder(byte coder, char value) {
-        return StringLatin1.canEncode(value) ? coder : String.UTF16;
-    }
-
-    static byte stringCoder(byte coder, int value) {
-        return coder;
-    }
-
-    static byte stringCoder(byte coder, long value) {
-        return coder;
-    }
-
-    static byte stringCoder(byte coder, boolean value) {
-        return coder;
-    }
-
-    static byte stringCoder(byte coder, String str) {
-        return (byte) (coder | str.coder());
     }
 
     /**
@@ -397,24 +229,6 @@ final class StringConcatHelper {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
-     * Allocates an uninitialized byte array based on the length and coder
-     * information, then prepends the given suffix string at the end of the
-     * byte array before returning it. The calling code must adjust the
-     * indexCoder so that it's taken the coder of the suffix into account, but
-     * subtracted the length of the suffix.
-     *
-     * @param suffix
-     * @param indexCoder
-     * @return the newly allocated byte array
-     */
-    @ForceInline
-    static byte[] newArrayWithSuffix(String suffix, int index, byte coder) {
-        byte[] buf = newArray((index + suffix.length()) << coder);
-        suffix.getBytes(buf, index, coder);
-        return buf;
-    }
-
-    /**
      * Allocates an uninitialized byte array based on the length and coder information
      * in indexCoder
      * @param indexCoder
@@ -447,6 +261,14 @@ final class StringConcatHelper {
         return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
     }
 
+    static int stringSize(boolean value) {
+        return value ? 4 : 5;
+    }
+
+    static byte stringCoder(char value) {
+        return StringLatin1.canEncode(value) ? String.LATIN1 : String.UTF16;
+    }
+
     static MethodHandle lookupStatic(String name, MethodType methodType) {
         try {
             return MethodHandles.lookup()
@@ -456,4 +278,7 @@ final class StringConcatHelper {
         }
     }
 
+    static MethodHandles.Lookup lookup() {
+        return MethodHandles.lookup();
+    }
 }
