@@ -95,8 +95,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
     private static final Map<String, Class<? extends Annotation>> nameToAnnotation =
         Map.ofEntries(new NameToAnnotationEntry("java.lang.Override", Override.class),
                       new NameToAnnotationEntry("java.lang.annotation.Repeatable", Repeatable.class),
-                      new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
                       new NameToAnnotationEntry("java.lang.annotation.Retention", Target.class),
+                      new NameToAnnotationEntry("java.lang.annotation.Target", Target.class),
                       new NameToAnnotationEntry("BasicAnnoTests.Test", BasicAnnoTests.Test.class),
                       new NameToAnnotationEntry("BasicAnnoTests.Tests",BasicAnnoTests.Tests.class),
                       new NameToAnnotationEntry("BasicAnnoTests.TA",   BasicAnnoTests.TA.class),
