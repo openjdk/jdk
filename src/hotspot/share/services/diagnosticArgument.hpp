@@ -62,7 +62,7 @@ public:
 
 class FileArgument {
   public:
-    char *_name;
+    char* _name;
 };
 
 class GenDCmdArgument : public ResourceObj {

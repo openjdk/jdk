@@ -355,12 +355,19 @@ template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
 
 template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
 
+template <> void DCmdArgument<FileArgument>::destroy_value() {
+  if (_value._name != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _value._name);
+    _value._name = nullptr;
+  }
+}
+
 template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
                                             size_t len, TRAPS) {
   if (str == nullptr) {
-    _value._name = nullptr;
+    destroy_value();
   } else {
-    _value._name = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtInternal);
+    _value._name = REALLOC_C_HEAP_ARRAY(char, _value._name, JVM_MAXPATHLEN, mtInternal);
     if (!Arguments::copy_expand_pid(str, len, _value._name, JVM_MAXPATHLEN)) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
                 err_msg("Invalid file path: %s", str));
@@ -369,16 +376,8 @@ template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
 }
 
 template <> void DCmdArgument<FileArgument>::init_value(TRAPS) {
+  _value._name = nullptr;
   if (has_default() && _default_string != nullptr) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
-  } else {
-    _value._name = nullptr;
-  }
-}
-
-template <> void DCmdArgument<FileArgument>::destroy_value() {
-  if (_value._name != nullptr) {
-    FREE_C_HEAP_ARRAY(char, _value._name);
-    _value._name = nullptr;
   }
 }
