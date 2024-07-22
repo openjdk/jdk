@@ -28,14 +28,12 @@ import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models hash information for a single module in the {@link ModuleHashesAttribute}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ModuleHashInfo
         permits UnboundAttribute.UnboundModuleHashInfo {
 

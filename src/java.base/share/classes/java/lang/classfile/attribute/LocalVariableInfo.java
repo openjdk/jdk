@@ -28,14 +28,12 @@ import java.lang.constant.ClassDesc;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundLocalVariable;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a single local variable in the {@link LocalVariableTableAttribute}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface LocalVariableInfo
         permits UnboundAttribute.UnboundLocalVariableInfo, BoundLocalVariable {
 

@@ -37,7 +37,6 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the value of a key-value pair of an annotation.
@@ -46,9 +45,8 @@ import jdk.internal.javac.PreviewFeature;
  * @see AnnotationElement
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
         permits AnnotationValue.OfAnnotation, AnnotationValue.OfArray,
                 AnnotationValue.OfConstant, AnnotationValue.OfClass,
@@ -57,9 +55,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an annotation-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfAnnotation extends AnnotationValue
             permits AnnotationImpl.OfAnnotationImpl {
         /** {@return the annotation} */
@@ -69,9 +66,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an array-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfArray extends AnnotationValue
             permits AnnotationImpl.OfArrayImpl {
         /** {@return the values} */
@@ -82,9 +78,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
      * Models a constant-valued element
      *
      * @sealedGraph
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfConstant extends AnnotationValue
             permits AnnotationValue.OfString, AnnotationValue.OfDouble,
                     AnnotationValue.OfFloat, AnnotationValue.OfLong,
@@ -100,9 +95,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfString extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfStringImpl {
         /** {@return the constant} */
@@ -112,9 +106,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfDouble extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfDoubleImpl {
         /** {@return the constant} */
@@ -124,9 +117,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfFloat extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfFloatImpl {
         /** {@return the constant} */
@@ -136,9 +128,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfLong extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfLongImpl {
         /** {@return the constant} */
@@ -148,9 +139,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfInteger extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfIntegerImpl {
         /** {@return the constant} */
@@ -160,9 +150,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfShort extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfShortImpl {
         /** {@return the constant} */
@@ -172,9 +161,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfCharacter extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfCharacterImpl {
         /** {@return the constant} */
@@ -184,9 +172,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfByte extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfByteImpl {
         /** {@return the constant} */
@@ -196,9 +183,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a constant-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfBoolean extends AnnotationValue.OfConstant
             permits AnnotationImpl.OfBooleanImpl {
         /** {@return the constant} */
@@ -208,9 +194,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models a class-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfClass extends AnnotationValue
             permits AnnotationImpl.OfClassImpl {
         /** {@return the class name} */
@@ -225,9 +210,8 @@ public sealed interface AnnotationValue extends WritableElement<AnnotationValue>
     /**
      * Models an enum-valued element
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfEnum extends AnnotationValue
             permits AnnotationImpl.OfEnumImpl {
         /** {@return the enum class name} */

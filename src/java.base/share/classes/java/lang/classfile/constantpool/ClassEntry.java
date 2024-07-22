@@ -27,16 +27,14 @@ package java.lang.classfile.constantpool;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code CONSTANT_Class_info} constant in the constant pool of a
  * classfile.
  * @jvms 4.4.1 The CONSTANT_Class_info Structure
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassEntry
         extends LoadableConstantEntry
         permits AbstractPoolEntry.ClassEntryImpl {

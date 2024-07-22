@@ -37,7 +37,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a field access instruction in the {@code code} array of a {@code Code}
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * Opcode.Kind#FIELD_ACCESS}.  Delivered as a {@link CodeElement} when
  * traversing the elements of a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldInstruction extends Instruction
         permits AbstractInstruction.BoundFieldInstruction, AbstractInstruction.UnboundFieldInstruction {
     /**

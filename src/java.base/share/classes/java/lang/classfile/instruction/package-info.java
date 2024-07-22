@@ -28,9 +28,7 @@
  *
  * The {@code java.lang.classfile.attribute} package contains interfaces describing code instructions.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 package java.lang.classfile.instruction;
 
-import jdk.internal.javac.PreviewFeature;

@@ -28,7 +28,6 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.impl.DirectFieldBuilder;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A classfile element that can encode itself as a stream of bytes in the
@@ -37,9 +36,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <T> the type of the entity
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface WritableElement<T> extends ClassFileElement
         permits Annotation, AnnotationElement, AnnotationValue, Attribute,
                 PoolEntry, BootstrapMethodEntry, FieldModel, MethodModel,

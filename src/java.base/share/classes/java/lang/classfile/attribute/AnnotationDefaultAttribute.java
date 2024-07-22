@@ -31,7 +31,6 @@ import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code AnnotationDefault} attribute {@jvms 4.7.22}, which can
@@ -45,9 +44,8 @@ import jdk.internal.javac.PreviewFeature;
  * <p>
  * The attribute was introduced in the Java SE Platform version 5.0.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface AnnotationDefaultAttribute
         extends Attribute<AnnotationDefaultAttribute>, MethodElement
         permits BoundAttribute.BoundAnnotationDefaultAttr,

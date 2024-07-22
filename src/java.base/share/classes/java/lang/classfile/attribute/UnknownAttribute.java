@@ -30,14 +30,12 @@ import java.lang.classfile.ClassElement;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.MethodElement;
 import jdk.internal.classfile.impl.BoundAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an unknown attribute on a class, method, or field.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface UnknownAttribute
         extends Attribute<UnknownAttribute>,
                 ClassElement, MethodElement, FieldElement

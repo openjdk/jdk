@@ -31,16 +31,14 @@ import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models instruction discontinued from the {@code code} array of a {@code Code}
  * attribute. Delivered as a {@link CodeElement} when traversing the elements of
  * a {@link CodeModel}.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface DiscontinuedInstruction extends Instruction {
 
     /**
@@ -50,9 +48,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_JSR}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface JsrInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundJsrInstruction,
                     AbstractInstruction.UnboundJsrInstruction {
@@ -93,9 +90,8 @@ public sealed interface DiscontinuedInstruction extends Instruction {
      * {@link Opcode.Kind#DISCONTINUED_RET}.  Delivered as a {@link CodeElement}
      * when traversing the elements of a {@link CodeModel}.
      *
-     * @since 22
+     * @since 24
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface RetInstruction extends DiscontinuedInstruction
             permits AbstractInstruction.BoundRetInstruction,
                     AbstractInstruction.UnboundRetInstruction {

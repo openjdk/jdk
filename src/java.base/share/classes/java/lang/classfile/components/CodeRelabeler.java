@@ -31,7 +31,6 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeTransform;
 import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.CodeRelabelerImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A code relabeler is a {@link CodeTransform} replacing all occurrences
@@ -43,9 +42,8 @@ import jdk.internal.javac.PreviewFeature;
  * Repeated injection of the same code block must be relabeled, so each instance of
  * {@link java.lang.classfile.Label} is bound in the target bytecode exactly once.
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabelerImpl {
 
     /**

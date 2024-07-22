@@ -48,16 +48,14 @@ import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.classfile.attribute.SourceIDAttribute;
 import java.lang.classfile.attribute.SyntheticAttribute;
 import java.lang.classfile.attribute.UnknownAttribute;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A marker interface for elements that can appear when traversing
  * a {@link ClassModel} or be presented to a {@link ClassBuilder}.
  *
  * @sealedGraph
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ClassElement extends ClassFileElement
         permits AccessFlags, Superclass, Interfaces, ClassFileVersion,
                 FieldModel, MethodModel,

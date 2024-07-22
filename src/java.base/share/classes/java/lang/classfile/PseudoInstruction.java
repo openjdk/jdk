@@ -32,7 +32,6 @@ import java.lang.classfile.instruction.LineNumber;
 import java.lang.classfile.instruction.LocalVariable;
 import java.lang.classfile.instruction.LocalVariableType;
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models metadata about a {@link CodeAttribute}, such as entries in the
@@ -42,9 +41,8 @@ import jdk.internal.javac.PreviewFeature;
  * pseudo-instructions can be disabled by modifying the value of classfile
  * options (e.g., {@link ClassFile.DebugElementsOption}).
  *
- * @since 22
+ * @since 24
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface PseudoInstruction
         extends CodeElement
         permits CharacterRange, ExceptionCatch, LabelTarget, LineNumber, LocalVariable, LocalVariableType, AbstractPseudoInstruction {
