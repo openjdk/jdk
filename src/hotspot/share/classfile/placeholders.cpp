@@ -295,11 +295,11 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
   assert(probe != nullptr, "must find an entry");
   log(name, probe, "find_and_remove", action);
   probe->remove_seen_thread(thread, action);
-  if (probe->superThreadQ() == nullptr) {
+  if (probe->circularityThreadQ() == nullptr) {
     probe->set_next_klass_name(nullptr);
   }
   // If no other threads using this entry, and this thread is not using this entry for other states
-  if ((probe->superThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
+  if ((probe->circularityThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
       && (probe->defineThreadQ() == nullptr) && (probe->definer() == nullptr)) {
     remove_entry(name, loader_data);
   }
@@ -328,8 +328,8 @@ void PlaceholderEntry::print_on(outputStream* st) const {
   st->print("loadInstanceThreadQ threads:");
   SeenThread::print_action_queue(loadInstanceThreadQ(), st);
   st->cr();
-  st->print("superThreadQ threads:");
-  SeenThread::print_action_queue(superThreadQ(), st);
+  st->print("circularityThreadQ threads:");
+  SeenThread::print_action_queue(circularityThreadQ(), st);
   st->cr();
   st->print("defineThreadQ threads:");
   SeenThread::print_action_queue(defineThreadQ(), st);
