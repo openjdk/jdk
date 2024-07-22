@@ -559,8 +559,7 @@ public class DecimalFormat extends NumberFormat {
             case BigDecimal bd -> format(bd, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
             case BigInteger bi -> format(bi, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
             case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            default ->
-                    throw new IllegalArgumentException("Cannot format given Object as a Number");
+            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
         };
     }
 
@@ -579,8 +578,7 @@ public class DecimalFormat extends NumberFormat {
             case BigDecimal bd -> format(bd, toAppendTo, pos);
             case BigInteger bi -> format(bi, toAppendTo, pos);
             case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            default ->
-                    throw new IllegalArgumentException("Cannot format given Object as a Number");
+            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
         };
     }
 
