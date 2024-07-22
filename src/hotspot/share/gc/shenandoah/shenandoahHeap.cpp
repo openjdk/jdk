@@ -1726,9 +1726,10 @@ public:
 
 void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
-  // calibrated stride based on number of regions and number of active workers.
-  size_t calibrated_stride = ShenandoahParallelRegionStride == 1024 ? heap() -> num_regions() / workers() -> active_workers() + 1 : ShenandoahParallelRegionStride;
-  if (num_regions() > calibrated_stride) {
+  if (workers() -> active_workers() > 1) {
+    // calibrated stride based on number of regions and number of active workers.
+    const size_t calibrated_stride = static_cast<size_t>(
+      ceil(static_cast<float>(heap()->num_regions()) / static_cast<float>(workers()->active_workers())));
     ShenandoahParallelHeapRegionTask task(blk, calibrated_stride);
     workers()->run_task(&task);
   } else {
