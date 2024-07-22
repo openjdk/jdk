@@ -8,14 +8,6 @@ public class InputTemplate14 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
         String imports= """
                 """;
 
@@ -27,18 +19,22 @@ public class InputTemplate14 extends InputTemplate {
                     static int sinkI1;
                 """;
 
-        String call = "for (int i = \\{init1}; i < \\{limit1}; i++) {\n" +
-                "            test_\\{uniqueId}();\n" +
-                "        }";
+        String call = """
+                for (int i = \\{init1}; i < \\{limit1}; i++) {
+                    test_\\{uniqueId}();
+                }
+                """;
 
         String method = """
-                 public static void test() {
+                 public static void test_\\{uniqueId}() {
                          int xxx = \\{val2};
                          boolean flag = \\{boole};
                          for (; xxx < \\{limit1}; xxx++) {
                              iFld = xxx; // seems to sometimes show 149, bad
                  
-                             if (flag) {} // required
+                             if (flag) {
+                                \\{template2}
+                             } // required
                  
                              for (int ddd = \\{init1}; ddd > \\{limit2}; ddd--) {
                                  for (int ccc = xxx; ccc < \\{limit3}; ) {
@@ -50,6 +46,7 @@ public class InputTemplate14 extends InputTemplate {
                                      for (int bbb = \\{init4}; bbb < \\{limit6}; ++bbb) {
                                          try {
                                              bbb = (209 / zeros[xxx]);
+                                             \\{template1}
                                          } catch (ArithmeticException a_e) {
                                          }
                                      }
@@ -69,8 +66,11 @@ public class InputTemplate14 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template1();
+        Template template2 = new Template4();
+        String template_nes1= template1.getTemplate("l");
+        String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-
         String init1 = getRandomValueAsString(integerValues);
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
@@ -84,11 +84,8 @@ public class InputTemplate14 extends InputTemplate {
         String limit4 = getRandomValueAsString(integerValues);
         String limit5 = getRandomValueAsString(integerValues);
         String limit6 = getRandomValueAsString(integerValues);
-        //String stride = getRandomValueAsString(integerValuesNonZero);
         String boole = getRandomValue(new String[]{"false", "true"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("init1", init1);
@@ -103,8 +100,8 @@ public class InputTemplate14 extends InputTemplate {
         replacements.put("limit5", limit5);
         replacements.put("limit6", limit6);
         replacements.put("boole", boole);
-        //replacements.put("stride", stride);
-        //replacements.put("thing", thing);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -121,6 +118,6 @@ public class InputTemplate14 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

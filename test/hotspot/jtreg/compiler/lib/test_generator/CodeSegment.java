@@ -29,34 +29,29 @@ public class CodeSegment {
     private  String methods;
     private final String imports;
 
-
-
     public CodeSegment(String statics, String calls, String methods, String imports) {
         this.statics = statics;
         this.calls = calls;
         this.methods = methods;
         this.imports = imports;
-
     }
 
     public String getStatics() {
         return statics;
     }
-   // public String getTemplate_nes(){return template_nes;}
-
 
     public String getCalls() {
         return calls;
     }
-    public void AppendCall(String change) {
-        this.calls +=change;
+    public void appendCall(String call) {
+        this.calls += call;
     }
 
     public String getMethods() {
         return methods;
     }
-    public void AppendMethods(String methods) {
-        this.methods +=methods;
+    public void appendMethods(String method) {
+        this.methods += method;
     }
     public String getImports() {return imports;}
 }

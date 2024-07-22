@@ -8,14 +8,7 @@ public class InputTemplate8 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+
         String imports= """
                 """;
 
@@ -23,15 +16,16 @@ public class InputTemplate8 extends InputTemplate {
                 static boolean flag, flag2;
                 static int iFld;
                 """;
-
-        String call = "for (int i = \\{init1}; i < \\{limit1}; i++) {\n" +
-                "        flag = i % 2 == 0;\n" +
-                "        flag2 = i % 3 == 0;\n" +
-                "        test();\n" +
-                "    }";
+        String call = """
+                for (int i = \\{init1}; i < \\{limit1}; i++) {
+                    flag = i % 2 == 0;
+                    flag2 = i % 3 == 0;
+                    test_\\{uniqueId}();
+                }
+                """;
 
         String method = """
-                 public static void test() {
+                 public static void test_\\{uniqueId}() {
                      int a;
                      int b;
                      for (int i = \\{init2}; i < \\{limit2}; i \\{arithm}= \\{stride}); // Make sure to run with loop opts.
@@ -47,24 +41,29 @@ public class InputTemplate8 extends InputTemplate {
                          b = \\{val1}; // Use b = a to have an additional Bool -> then Split If only clones down CmpI
                      } else {
                          b = \\{val3};
+                         \\{template1}
                      }
                      iFld = b; // iFld = CMoveI -> make sure CMoveI is inside BLOCK
                      // --- BLOCK end ---
                      if (a > \\{val3}) { // If to split -> need to empty BLOCK
                          iFld = \\{val1};
+                         \\{template2}
                      }
                      if (flag2) { // Reuse of Bool(CmpI(flag2)) such that we need to clone CmpI(flag2) down
                          iFld = \\{val2};
                      }
+                 }
                 """;
-
         return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template1();
+        Template template2 = new Template10();
+        String template_nes1= template1.getTemplate("a");
+        String template_nes2= template2.getTemplate("b");
         Map<String, String> replacements = new HashMap<>();
-
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
         String limit1 = getRandomValueAsString(integerValues);
@@ -74,9 +73,7 @@ public class InputTemplate8 extends InputTemplate {
         String val3 = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"*", "/"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("init1", init1);
         replacements.put("init2", init2);
         replacements.put("limit1", limit1);
@@ -86,7 +83,8 @@ public class InputTemplate8 extends InputTemplate {
         replacements.put("val3", val3);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
-        //replacements.put("thing", thing);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -104,6 +102,6 @@ public class InputTemplate8 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

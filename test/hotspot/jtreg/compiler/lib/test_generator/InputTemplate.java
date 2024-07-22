@@ -20,23 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package compiler.lib.test_generator;
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
-
 public abstract class InputTemplate {
-
     private static final Random RAND = new Random();
     public static Integer[] integerValues = {
             -2, -1, 0, 1, 2,
             Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
             Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
     };
+    public static Integer[] positiveIntegerValues = {
+            1, 2,
+            Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
+    };
+
+
     public static Integer[] integerValuesNonZero = {
             -2, -1, 1, 2,
             Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
@@ -70,31 +72,28 @@ public abstract class InputTemplate {
             (short) -32770, (short) -32769, (short) -32768, (short) -32767, (short) -32766,
             (short) 32765, (short) 32766, (short) 32767, (short) 32768, (short) 32769
     };
-
     public InputTemplate() {
     }
     public static <T> T getRandomValue(T[] array) {
         return array[RAND.nextInt(array.length)];
     }
-
     public static <T> String getRandomValueAsString(T[] array) {
         T value = getRandomValue(array);
         return String.valueOf(value);  // Convert any type T to String
     }
-
     public static String getUniqueId() {
         return String.valueOf(System.nanoTime());
     }
     public static Integer[] getIntegerValues(int size) {
-        Random random = new Random();
+
         HashSet<Integer> integers = new HashSet<>(size);
         while (integers.size() < size) {
-            int number = random.nextInt(Integer.MAX_VALUE - 1) + 1;
+            int number = RAND.nextInt(Integer.MAX_VALUE - 1) + 1;
             integers.add(number);
         }
         return integers.toArray(new Integer[0]);
     }
-    public static String getJavaCode(ArrayList <CodeSegment> inputTemplates,  ArrayList<Map<String, String>> inputReplacements, long num) {
+    public static String getJavaCode(CodeSegment inputTemplate,  ArrayList<Map<String, String>> inputReplacements, long num) {
         String template = """
                 import java.util.Objects;
                 \\{imports}
@@ -107,11 +106,11 @@ public abstract class InputTemplate {
                     \\{methods}
                 }
                 """;
-        CodeSegment CodeSegment = fillTemplate(inputTemplates.getFirst(), inputReplacements.getFirst());
-        for (int i =1; i<inputTemplates.size(); i++) {
-            CodeSegment codS = fillTemplate(inputTemplates.get(i), inputReplacements.get(i));
-            CodeSegment.AppendCall(codS.getCalls());
-            CodeSegment.AppendMethods(codS.getMethods());
+        CodeSegment CodeSegment = fillTemplate(inputTemplate, inputReplacements.getFirst());
+        for (int i =1; i<inputReplacements.size(); i++) {
+            CodeSegment codS = fillTemplate(inputTemplate, inputReplacements.get(i));
+            CodeSegment.appendCall(codS.getCalls());
+            CodeSegment.appendMethods(codS.getMethods());
         }
         Map<String, String> replacements = Map.ofEntries(
                 Map.entry("num", String.valueOf(num)),
@@ -120,7 +119,6 @@ public abstract class InputTemplate {
                 Map.entry("methods", CodeSegment.getMethods()),
                 Map.entry("imports", CodeSegment.getImports())
         );
-
         return doReplacements(template, replacements);
     }
     private static CodeSegment fillTemplate(CodeSegment CodeSegment, Map<String, String> replacements) {
@@ -130,7 +128,6 @@ public abstract class InputTemplate {
         String imports = doReplacements(CodeSegment.getImports(), replacements);
         return new CodeSegment(statics, calls, methods,imports);
     }
-
     public static String doReplacements(String template, Map<String, String> replacements) {
         for (Map.Entry<String, String> entry : replacements.entrySet()) {
             String pattern = "\\{%s}".formatted(entry.getKey());
@@ -145,22 +142,15 @@ public abstract class InputTemplate {
                 // Add indentation to all lines of the replacement (except the first one)
                 String indentedReplacement = replacement.lines()
                         .collect(Collectors.joining("\n%s".formatted(indentation)));
-
                 template = template.replace(pattern, indentedReplacement);
             }
         }
         return template;
     }
-
-    public  CodeSegment getTemplate() {
-        return null;
-    }
-
+    public abstract CodeSegment getTemplate();
     public abstract Map<String, String> getRandomReplacements(int numTest);
-
     public abstract String[] getCompileFlags();
     public abstract int getNumberOfTests();
-
     public  int getNumberOfTestMethods() {
         return 0;
     }

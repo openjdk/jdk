@@ -8,9 +8,7 @@ public class InputTemplate16 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            
-            """;
+
             String imports= """
                 """;
 
@@ -31,21 +29,19 @@ public class InputTemplate16 extends InputTemplate {
                      // Create counted loop from i = 0..20 with single loop exit condition (i < 20) after CCP:
                      int i = 0;
                      do {
-                        // Some loop body
+                        \\{template}
                         i++;
                      } while (i < \\{val1} || zero == \\{val}); // i < 20 becomes only loop exit condition after CCP -> creates a counted loop in next loop opts round.
                  }
                 """;
-        Map<String, String> replacements = Map.ofEntries(
-                Map.entry("template",template_nes ));
-        method=doReplacements(method,replacements);
-
 
         return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template4();
+        String template_nes1= template1.getTemplate("j");
         Map<String, String> replacements = new HashMap<>();
 
         String init = getRandomValueAsString(integerValues);
@@ -55,11 +51,7 @@ public class InputTemplate16 extends InputTemplate {
         String limit = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"*", "/"});
-        String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-       String uniqueId = getUniqueId();
-
-        //String template=VALUE_AVAILABLE_AFTER_FIRST_LOOP_OPTS;
-
+       String uniqueId = String.valueOf(numTest);
         replacements.put("init", init);
         replacements.put("val1", val1);
         replacements.put("val", val);
@@ -67,8 +59,7 @@ public class InputTemplate16 extends InputTemplate {
         replacements.put("limit", limit);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
-        replacements.put("thing", thing);
-        //replacements.put("template", template);
+        replacements.put("template", template_nes1);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -81,11 +72,11 @@ public class InputTemplate16 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 0;
+        return 10;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

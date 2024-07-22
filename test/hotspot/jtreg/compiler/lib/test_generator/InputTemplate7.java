@@ -8,14 +8,6 @@ public class InputTemplate7 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
         String imports= """
                 """;
 
@@ -24,16 +16,19 @@ public class InputTemplate7 extends InputTemplate {
                 static boolean flag;
                 """;
 
-        String call = "flag=\\{boole};\n"+
-                "     test_\\{uniqueId}();\n";
+        String call = """
+                flag=\\{boole};
+                test_\\{uniqueId}();
+                """;
 
 
         String method = """
                  // Use non-const values for assignment of 'a' for more interesting cases
-                public static int test() {
+                public static int test_\\{uniqueId}() {
                      int a;
                      if (flag) {
                          a = \\{val1};
+                         \\{template1}
                      } else {
                          a = \\{val2};
                      }
@@ -42,6 +37,7 @@ public class InputTemplate7 extends InputTemplate {
                          x = \\{val1};
                      } else {
                          x = \\{val3};
+                         \\{template2}
                      }
                      return a;
                  }
@@ -52,22 +48,22 @@ public class InputTemplate7 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template2();
+        Template template2 = new Template10();
+        String template_nes1= template1.getTemplate("j");
+        String template_nes2= template2.getTemplate("x");
         Map<String, String> replacements = new HashMap<>();
-
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        //String stride = getRandomValueAsString(integerValuesNonZero);
         String boole = getRandomValue(new String[]{"false", "true"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
         replacements.put("boole", boole);
-        //replacements.put("stride", stride);
-        //replacements.put("thing", thing);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -84,7 +80,7 @@ public class InputTemplate7 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 
 }

@@ -8,14 +8,7 @@ public class InputTemplate9 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+
         String imports= """
                 """;
 
@@ -33,6 +26,7 @@ public class InputTemplate9 extends InputTemplate {
                          // Single iteration loop prevents Parallel IV for outer loop and splitting MulI thru phi
                          for (int j = \\{init2}; j < \\{limit2}; j++) { // (**)
                              y++;
+                             \\{template1}
                          }
                           // MulI "23 * (y - 1)" has 4 uses (1-4) outside of the loop (all uses have get_loop() == _ltree_root)
                           // while its get_ctrl() is inside the loop at the loop exit projection of (**). We can therefore sink
@@ -42,6 +36,7 @@ public class InputTemplate9 extends InputTemplate {
                              // Usage of 'i' prevents Loop Predication
                              x = \\{val1} / (i + iFld);     // (1)
                              x = \\{val1} / (i + 1 + iFld); // (2)
+                             \\{template2}
                          } catch (Exception e) {}
                          x = toSink; // Make sure that MulI is stored in Safepoints of (1) and (2) and has
                      }
@@ -55,8 +50,11 @@ public class InputTemplate9 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template2();
+        Template template2 = new Template10();
+        String template_nes1= template1.getTemplate("j");
+        String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
@@ -64,11 +62,7 @@ public class InputTemplate9 extends InputTemplate {
         String init2 = getRandomValueAsString(integerValues);
         String limit1 = getRandomValueAsString(integerValues);
         String limit2 = getRandomValueAsString(integerValues);
-        //String stride = getRandomValueAsString(integerValuesNonZero);
-        //String arithm = getRandomValue(new String[]{"+", "-"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
@@ -76,13 +70,11 @@ public class InputTemplate9 extends InputTemplate {
         replacements.put("init2", init2);
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
-        //replacements.put("arithm", arithm);
-        //replacements.put("stride", stride);
-        //replacements.put("thing", thing);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
-
     @Override
     public String[] getCompileFlags() {
         return new String[]{"-Xcomp",
@@ -96,6 +88,6 @@ public class InputTemplate9 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

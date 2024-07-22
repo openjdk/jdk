@@ -37,26 +37,21 @@ public class DynamicClassLoader {
         // TODO: does using JavaCompiler interfere with JAVA_HOME for execution?
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         int compilationResult = compiler.run(null, null, null, filePath);
-
         if (compilationResult != 0) {
             throw new RuntimeException("Compilation failed");
         }
-
         DynamicClassLoaderInternal loader = new DynamicClassLoaderInternal();
         return loader.loadClass(className);
     }
-
     private static String computeClassName(String filePath) {
         Path path = Paths.get(filePath);
         String fileName = path.getFileName().toString();
         String className = fileName.substring(0, fileName.lastIndexOf('.'));
         String packageName = "";
-
         Path parent = path.getParent();
         if (parent != null) {
             packageName = parent.toString().replace(File.separator, ".");
         }
-
         if (!packageName.isEmpty()) {
             className = packageName + "." + className;
         }

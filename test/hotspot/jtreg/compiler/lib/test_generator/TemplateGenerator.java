@@ -22,7 +22,6 @@
  */
 
 package compiler.lib.test_generator;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -42,11 +41,11 @@ public class TemplateGenerator {
     };
     static final int TIMEOUT = 60;
     static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
-    //static final int TESTS_PER_TASK = 10;
+
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 2;
 
     static String[] TEMPLATE_FILES = {
-            "InputTemplate1.java"
+            "InputTemplate2.java"
     };
 
     private static long testId = 0L;
@@ -67,44 +66,32 @@ public class TemplateGenerator {
             try {
                 String out=OUTPUT_FOLDER+File.separator+"final3";
                 setOutputFolder(out);
-
                 Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
-                ArrayList<InputTemplate>inputTemplates = new ArrayList<>();
-                InputTemplate inputTemplate1 = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-                inputTemplates.add(inputTemplate1);
-                Integer [] IDS=InputTemplate.getIntegerValues(inputTemplates.getFirst().getNumberOfTestMethods()) ;
-                for (int i = 1; i <inputTemplates.getFirst().getNumberOfTestMethods() ; i++) {
-                    InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-                    inputTemplates.add(inputTemplate);
-                }
-                   // InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-                    runTestGen(inputTemplates, threadPool,IDS);
+                InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
+                    runTestGen(inputTemplate, threadPool);
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         threadPool.shutdown();
     }
-    public static void runTestGen(ArrayList<InputTemplate> inputTemplates, ThreadPoolExecutor threadPool, Integer[] numTests) {
-        for (int i = 0; i < inputTemplates.getFirst().getNumberOfTests(); i++) {
-        ArrayList<CodeSegment> templates = new ArrayList<>(inputTemplates.size());
-        ArrayList<Map<String, String>> replacements = new ArrayList<>(inputTemplates.size());
-        int k=0;
-        for (InputTemplate inputTemplate: inputTemplates) {
-                Map<String, String> replacement = inputTemplate.getRandomReplacements(numTests[k]);
-                CodeSegment template = inputTemplate.getTemplate();
-                templates.add(template);
-                replacements.add(replacement);
-                k++;
+    static int nextUniqueId=0;
+    public static void runTestGen(InputTemplate inputTemplate, ThreadPoolExecutor threadPool) {
+        String[] compileFlags = inputTemplate.getCompileFlags();
+        CodeSegment template = inputTemplate.getTemplate();
+        for (int i = 0; i < inputTemplate.getNumberOfTests(); i++) {
+            ArrayList<Map<String, String>> replacements = new ArrayList<>();
+            for (int j = 0; j < inputTemplate.getNumberOfTestMethods(); j++) {
+                    Map<String, String> replacement = inputTemplate.getRandomReplacements(nextUniqueId);
+                    replacements.add(replacement);
+                    nextUniqueId++;
             }
+            long id = getID();
+            threadPool.submit(() -> doWork(template, replacements, compileFlags, id));
 
-                    //Map<String, String> replacements = inputTemplate.getRandomReplacements();
-                    String[] compileFlags = inputTemplates.getFirst().getCompileFlags();
-                    long id = getID();
-                    threadPool.submit(() -> doWork(templates, replacements, compileFlags, id));
-            }
+        }
     }
-    public static void doWork(ArrayList<CodeSegment> template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long num) {
+    public static void doWork(CodeSegment template, ArrayList<Map<String, String>> replacements, String[] compileFlags, long num) {
         try {
             String javaCode = InputTemplate.getJavaCode(template, replacements, num);
             String fileName = writeJavaCodeToFile(javaCode, num,OUTPUT_FOLDER);

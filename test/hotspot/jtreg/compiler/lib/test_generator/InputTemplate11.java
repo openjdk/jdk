@@ -8,14 +8,7 @@ public class InputTemplate11 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+
         String imports= """
                 """;
 
@@ -37,14 +30,16 @@ public class InputTemplate11 extends InputTemplate {
                      }
                      for (int i = \\{init2}; i < \\{limit2}; i++) {
                          if (flag) { // 1) Triggers Loop Peeling
-                             return;
+                             \\{template1}
                          }
                          int k = iFld + i * zero; // Loop variant before CCP
                          if (k == \\{val}) { // 2) After CCP: Loop invariant -> triggers Loop Unswitching
                              iFld2 = \\{val};
                          } else {
                              iArr[i] = \\{val}; // 3) After Loop Unswitching: Triggers Pre/Main/Post and then 4) Range Check Elimination
+                             \\{template2}
                          }
+                       
                      }
                  }
                 """;
@@ -54,9 +49,13 @@ public class InputTemplate11 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template2();
+        Template template2 = new Template4();
+        String template_nes1= template1.getTemplate("j");
+        String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-
         String val = getRandomValueAsString(integerValues);
+        String size = getRandomValueAsString(positiveIntegerValues);
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
         String limit = getRandomValueAsString(integerValues);
@@ -64,10 +63,9 @@ public class InputTemplate11 extends InputTemplate {
         String limit2 = getRandomValueAsString(integerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
-        String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("val", val);
+        replacements.put("size", size);
         replacements.put("init1", init1);
         replacements.put("init2", init2);
         replacements.put("limit", limit);
@@ -75,7 +73,8 @@ public class InputTemplate11 extends InputTemplate {
         replacements.put("limit2", limit2);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
-        //replacements.put("thing", thing);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -94,6 +93,6 @@ public class InputTemplate11 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

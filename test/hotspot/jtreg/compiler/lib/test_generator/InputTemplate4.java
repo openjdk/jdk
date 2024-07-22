@@ -8,14 +8,7 @@ public class InputTemplate4 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+
         String imports= """
                 """;
 
@@ -23,25 +16,28 @@ public class InputTemplate4 extends InputTemplate {
                 public static int foo = \\{fooVar1};
                 public static int bar = \\{barVar1};
                 """;
-
-        String call = "int[] array = new int[\\{size}];\n" +
-                "        test_\\{uniqueId}(array);";
+        String call = """
+                int[] array_\\{uniqueId} = new int[\\{size}];
+                test_\\{uniqueId}(array_\\{uniqueId});
+                """;
 
         String method = """
-                 public static int test5(int[] array) {
-                         int result = 0;
-                         int[] iArr = new int[\\{size}];
-                         for (int i = \\{init1}; i < array.length; i++) {
-                             for (int j = \\{init2}; j < i; j++) {
-                                 if (foo == \\{fooVar2}) {
-                                     bar = \\{barVar2};
-                                 }
-                                 iArr[j] += array[j];
-                                 result += array[j];
-                             }
+             public static int test_\\{uniqueId}(int[] array) {
+                 int result = 0;
+                 int[] iArr = new int[\\{size}];
+                 for (int i = \\{init1}; i < array.length; i++) {
+                     for (int j = \\{init2}; j < i; j++) {
+                         if (foo == \\{fooVar2}) {
+                             bar = \\{barVar2};
                          }
-                         return result;
+                         \\{template1}
+                         iArr[j] += array[j];
+                         result += array[j];
                      }
+                     \\{template2}
+                 }
+                 return result;
+             }
                 """;
 
         return new CodeSegment(statics, call, method,imports);
@@ -49,29 +45,28 @@ public class InputTemplate4 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template1();
+        Template template2 = new Template4();
+        String template_nes1= template1.getTemplate("i");
+        String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String fooVar1 = getRandomValueAsString(integerValues);
         String fooVar2 = getRandomValueAsString(integerValues);
         String barVar1 = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(integerValues);
+        String size = getRandomValueAsString(positiveIntegerValues);
         String barVar2 = getRandomValueAsString(integerValues);
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
-
-        //String limit = getRandomValueAsString(integerValues);
-       // String stride = getRandomValueAsString(integerValuesNonZero);
-        //String arithm = getRandomValue(new String[]{"+", "-"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);;
         replacements.put("fooVar1", fooVar1);
         replacements.put("fooVar2", fooVar2);
         replacements.put("barVar1", barVar1);
         replacements.put("barVar2", barVar2);
         replacements.put("init1", init1);
         replacements.put("init2", init2);
+        replacements.put("template1", template_nes1);
+        replacements.put("template2", template_nes2);
         replacements.put("size", size);
-        //replacements.put("thing", thing);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -88,7 +83,7 @@ public class InputTemplate4 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 
 }

@@ -21,7 +21,6 @@
  * questions.
  */
 package compiler.lib.test_generator;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,8 +33,8 @@ public abstract class Template {
     public static String reassemble(String dec, String cod) {
         String assembe_template = """
                 \\{declare}
-        \\{code}
-               \s""";
+                \\{code}
+                """;
         Map<String, String> replacement_code = Map.ofEntries(
                 Map.entry("declare", dec),
                 Map.entry("code", cod)
@@ -44,7 +43,7 @@ public abstract class Template {
     }
 
     public static String avoid_conflict(String temp,int num){
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         String regex="\\$(\\w+)";
         Pattern pat = Pattern.compile(regex);
         Matcher mat = pat.matcher(temp);
@@ -56,7 +55,7 @@ public abstract class Template {
         return result.toString();
     }
 
-    public String getTemplate(List<String> values){
+    public String getTemplate(String c){
         return "";
     }
 }

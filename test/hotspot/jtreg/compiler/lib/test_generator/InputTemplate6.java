@@ -8,16 +8,9 @@ public class InputTemplate6 extends InputTemplate {
 
     @Override
     public CodeSegment getTemplate() {
-        String template_nes = """
-            int a1 = 77;
-            int b1 = 0;
-            do {
-                a1--;
-                b1++;
-            } while (a1 > 0);
-            """;
+
         String imports= """
-                java.lang.Math
+                import java.lang.Math;
                 """;
 
         String statics = """
@@ -27,16 +20,18 @@ public class InputTemplate6 extends InputTemplate {
                 private static short[] b = new short[SIZE];
                 """;
 
-        String call = "a[100] = \\{Val2};\n" +
-                "        bar_\\{uniqueId}();\n" +
-                "        System.out.println(b[100]);";
-
+        String call = """
+                a[SIZE] = \\{Val2};
+                bar_\\{uniqueId}();
+                System.out.println(b[SIZE]);
+                """;
         String method = """
                  public static void bar_\\{uniqueId}() {
-                         for (int i = \\{init}; i < SIZE; i++) {
-                             b[i] = (short) Math.min(a[i], val);
-                         }
+                     for (int i = \\{init}; i < SIZE; i++) {
+                         b[i] = (short) Math.min(a[i], val);
+                         \\{template1}
                      }
+                 }
                 """;
 
         return new CodeSegment(statics, call, method,imports);
@@ -44,27 +39,19 @@ public class InputTemplate6 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
+        Template template1 = new Template2();
+        String template_nes1= template1.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-
-        String size = getRandomValueAsString(integerValues);
+        String size = getRandomValueAsString(positiveIntegerValues);
         String Val1 = getRandomValueAsString(integerValues);
         String Val2 = getRandomValueAsString(shortValues);
         String init = getRandomValueAsString(integerValues);
-        //String stride = getRandomValueAsString(integerValuesNonZero);
-       // String arithm = getRandomValue(new String[]{"+", "-"});
-        //String thing = getRandomValue(new String[]{"", "synchronized (new Object()) { }"});
-        String uniqueId = getUniqueId();
-
+        String uniqueId = String.valueOf(numTest);
         replacements.put("size", size);
         replacements.put("Val1", Val1);
         replacements.put("Val2", Val2);
         replacements.put("init", init);
-        /*
-        replacements.put("arithm", arithm);
-        replacements.put("stride", stride);
-        replacements.put("thing", thing);
-
-         */
+        replacements.put("template1", template_nes1);
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
@@ -81,6 +68,6 @@ public class InputTemplate6 extends InputTemplate {
 
     @Override
     public int getNumberOfTestMethods() {
-        return 4;
+        return 100;
     }
 }

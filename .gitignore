@@ -28,3 +28,4 @@ test/hotspot/jtreg/compiler/lib/test_generator/final/GeneratedTest1.java
 test/hotspot/jtreg/compiler/lib/test_generator/final/GeneratedTest0.java
 /test/hotspot/jtreg/compiler/lib/test_generator/final
 /test/hotspot/jtreg/compiler/lib/test_generator/final3
+InputTemplate*.class
