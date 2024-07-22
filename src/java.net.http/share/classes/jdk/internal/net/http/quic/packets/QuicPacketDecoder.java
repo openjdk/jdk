@@ -75,24 +75,10 @@ public class QuicPacketDecoder {
         this.quicVersion = quicVersion;
     }
 
-    public abstract static class IncomingQuicPacket<T extends QuicPacket> implements QuicPacket {
-        private final byte headers;
-        protected IncomingQuicPacket(byte headers) {
-            this.headers = headers;
-        }
-
-        @Override
-        public final byte headerBits() { return headers; }
-
-        public abstract T packet();
-    }
-
-    private abstract static class IncomingHeaderPacket<T extends HeaderPacket>
-            extends IncomingQuicPacket<T> implements HeaderPacket {
-
+    public abstract static class IncomingQuicPacket implements QuicPacket {
         private final QuicConnectionId destinationId;
-        IncomingHeaderPacket(byte headers, QuicConnectionId destinationId) {
-            super(headers);
+
+        protected IncomingQuicPacket(QuicConnectionId destinationId) {
             this.destinationId = destinationId;
         }
 
@@ -100,16 +86,15 @@ public class QuicPacketDecoder {
         public final QuicConnectionId destinationId() { return destinationId; }
     }
 
-    private abstract static class IncomingLongHeaderPacket<T extends LongHeaderPacket>
-            extends IncomingHeaderPacket<T> implements LongHeaderPacket {
+    private abstract static class IncomingLongHeaderPacket
+            extends IncomingQuicPacket implements LongHeaderPacket {
 
         private final QuicConnectionId sourceId;
         private final int version;
-        IncomingLongHeaderPacket(byte headers,
-                                 QuicConnectionId sourceId,
+        IncomingLongHeaderPacket(QuicConnectionId sourceId,
                                  QuicConnectionId destinationId,
                                  int version) {
-            super(headers, destinationId);
+            super(destinationId);
             this.sourceId = sourceId;
             this.version = version;
         }
@@ -121,23 +106,22 @@ public class QuicPacketDecoder {
         public final int version() { return version; }
     }
 
-    private abstract static class IncomingShortHeaderPacket<T extends ShortHeaderPacket>
-            extends IncomingHeaderPacket<T> implements ShortHeaderPacket {
+    private abstract static class IncomingShortHeaderPacket
+            extends IncomingQuicPacket implements ShortHeaderPacket {
 
-        IncomingShortHeaderPacket(byte headers,
-                                 QuicConnectionId destinationId) {
-            super(headers, destinationId);
+        IncomingShortHeaderPacket(QuicConnectionId destinationId) {
+            super(destinationId);
         }
     }
 
     private static final class IncomingRetryPacket
-            extends IncomingLongHeaderPacket<RetryPacket> implements RetryPacket {
+            extends IncomingLongHeaderPacket implements RetryPacket {
         final int size;
         final byte[] retryToken;
 
-        private IncomingRetryPacket(byte headers, QuicConnectionId sourceId, QuicConnectionId destinationId,
+        private IncomingRetryPacket(QuicConnectionId sourceId, QuicConnectionId destinationId,
                                     int version, int size, byte[] retryToken) {
-            super(headers, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.size = size;
             this.retryToken = retryToken;
         }
@@ -145,16 +129,6 @@ public class QuicPacketDecoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public List<ByteBuffer> payload() {
-            return null;
-        }
-
-        @Override
-        public RetryPacket packet() {
-            return this;
         }
 
         @Override
@@ -223,22 +197,22 @@ public class QuicPacketDecoder {
             }
             assert size == reader.bytesRead();
 
-            return new IncomingRetryPacket(headers, sourceID, destinationID, version,
+            return new IncomingRetryPacket(sourceID, destinationID, version,
                     size, retryToken);
         }
     }
 
     private static final class IncomingHandshakePacket
-            extends IncomingLongHeaderPacket<HandshakePacket> implements HandshakePacket {
+            extends IncomingLongHeaderPacket implements HandshakePacket {
 
         final int size;
         final int length;
         final long packetNumber;
         final List<QuicFrame> frames;
 
-        IncomingHandshakePacket(byte headers, QuicConnectionId sourceId, QuicConnectionId destinationId,
+        IncomingHandshakePacket(QuicConnectionId sourceId, QuicConnectionId destinationId,
                                 int version, int length, long packetNumber, List<QuicFrame> frames, int size) {
-            super(headers, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.size = size;
             this.length = length;
             this.packetNumber = packetNumber;
@@ -262,11 +236,6 @@ public class QuicPacketDecoder {
 
         @Override
         public List<QuicFrame> frames() { return frames; }
-
-        @Override
-        public HandshakePacket packet() {
-            return this;
-        }
 
         /**
          * Decode a valid {@code ByteBuffer} into an {@link IncomingHandshakePacket}.
@@ -364,22 +333,22 @@ public class QuicPacketDecoder {
             assert size == reader.position() - reader.offset();
 
             assert packetLength == (int)packetLength;
-            return new IncomingHandshakePacket(headers, sourceID, destinationID,
+            return new IncomingHandshakePacket(sourceID, destinationID,
                     version, (int)packetLength, packetNumber, frames, size);
         }
     }
 
     private static final class IncomingZeroRttPacket
-            extends IncomingLongHeaderPacket<ZeroRttPacket> implements ZeroRttPacket {
+            extends IncomingLongHeaderPacket implements ZeroRttPacket {
 
         final int size;
         final int length;
         final long packetNumber;
         final List<QuicFrame> frames;
 
-        IncomingZeroRttPacket(byte headers, QuicConnectionId sourceId, QuicConnectionId destinationId,
+        IncomingZeroRttPacket(QuicConnectionId sourceId, QuicConnectionId destinationId,
                               int version, int length, long packetNumber, List<QuicFrame> frames, int size) {
-            super(headers, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.size = size;
             this.length = length;
             this.packetNumber = packetNumber;
@@ -403,11 +372,6 @@ public class QuicPacketDecoder {
 
         @Override
         public List<QuicFrame> frames() { return frames; }
-
-        @Override
-        public ZeroRttPacket packet() {
-            return this;
-        }
 
         /**
          * Decode a valid {@code ByteBuffer} into an {@link IncomingZeroRttPacket}.
@@ -504,21 +468,26 @@ public class QuicPacketDecoder {
             var size = reader.bytesRead();
 
             assert length == (int)length;
-            return new IncomingZeroRttPacket(headers, sourceID, destinationID,
+            return new IncomingZeroRttPacket(sourceID, destinationID,
                     version, (int)length, packetNumber, frames, size);
         }
     }
 
     private static final class IncomingOneRttPacket
-            extends IncomingShortHeaderPacket<OneRttPacket> implements OneRttPacket {
+            extends IncomingShortHeaderPacket implements OneRttPacket {
 
         final int size;
         final long packetNumber;
         final List<QuicFrame> frames;
+        final int keyPhase;
+        final int spin;
 
-        IncomingOneRttPacket(byte headers, QuicConnectionId destinationId,
-                             long packetNumber, List<QuicFrame> frames, int size) {
-            super(headers, destinationId);
+        IncomingOneRttPacket(QuicConnectionId destinationId,
+                             long packetNumber, List<QuicFrame> frames,
+                             int spin, int keyPhase, int size) {
+            super(destinationId);
+            this.keyPhase = keyPhase;
+            this.spin = spin;
             this.size = size;
             this.packetNumber = packetNumber;
             this.frames = frames;
@@ -534,12 +503,17 @@ public class QuicPacketDecoder {
         }
 
         @Override
-        public List<QuicFrame> frames() { return frames; }
+        public int keyPhase() {
+            return keyPhase;
+        }
 
         @Override
-        public OneRttPacket packet() {
-            return this;
+        public int spin() {
+            return spin;
         }
+
+        @Override
+        public List<QuicFrame> frames() { return frames; }
 
         /**
          * Decode a valid {@code ByteBuffer} into an {@link IncomingOneRttPacket}.
@@ -605,6 +579,9 @@ public class QuicPacketDecoder {
             final int keyPhase = (headers & 0x04) >> 2;
             // keyphase is a 1 bit structure, so only 0 or 1 are valid values
             assert keyPhase == 0 || keyPhase == 1 : "unexpected key phase: " + keyPhase;
+            final int spin = (headers & 0x20) >> 5;
+            assert spin == 0 || spin == 1 : "unexpected spin bit: " + spin;
+
             ByteBuffer payload = null;
             try {
                 payload = reader.decryptPayload(packetNumber, payloadLen, keyPhase);
@@ -624,12 +601,12 @@ public class QuicPacketDecoder {
             // Finally, get the size (in bytes) of new packet
             var size = reader.bytesRead();
 
-            return new IncomingOneRttPacket(headers, destinationID, packetNumber, frames, size);
+            return new IncomingOneRttPacket(destinationID, packetNumber, frames, spin, keyPhase, size);
         }
     }
 
     private static final class IncomingInitialPacket
-            extends IncomingLongHeaderPacket<InitialPacket> implements InitialPacket {
+            extends IncomingLongHeaderPacket implements InitialPacket {
 
         final int size;
         final int length;
@@ -638,11 +615,11 @@ public class QuicPacketDecoder {
         final byte[] token;
         final List<QuicFrame> frames;
 
-        IncomingInitialPacket(byte headers, QuicConnectionId sourceId,
+        IncomingInitialPacket(QuicConnectionId sourceId,
                               QuicConnectionId destinationId, int version,
                               int tokenLength, byte[] token, int length,
                               long packetNumber, List<QuicFrame> frames, int size) {
-            super(headers, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.size = size;
             this.length = length;
             this.tokenLength = tokenLength;
@@ -668,9 +645,6 @@ public class QuicPacketDecoder {
 
         @Override
         public List<QuicFrame> frames() { return frames; }
-
-        @Override
-        public InitialPacket packet() { return this; }
 
         /**
          * Decode a valid {@code ByteBuffer} into an {@link IncomingInitialPacket}.
@@ -797,24 +771,24 @@ public class QuicPacketDecoder {
 
             assert size == reader.bytesRead() : size - reader.bytesRead();
 
-            return new IncomingInitialPacket(headers, sourceID, destinationID,
+            return new IncomingInitialPacket(sourceID, destinationID,
                     version, tokenLength, token, (int)packetLength, packetNumber, frames, size);
         }
 
     }
 
     private static final class IncomingVersionNegotiationPacket
-            extends IncomingLongHeaderPacket<VersionNegotiationPacket>
+            extends IncomingLongHeaderPacket
             implements VersionNegotiationPacket {
 
         final int size;
         final int[] versions;
 
-        IncomingVersionNegotiationPacket(byte headers, QuicConnectionId sourceId,
+        IncomingVersionNegotiationPacket(QuicConnectionId sourceId,
                                          QuicConnectionId destinationId,
                                          int version, int[] versions,
                                          int size) {
-            super(headers, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.size = size;
             this.versions = Objects.requireNonNull(versions);
         }
@@ -823,16 +797,10 @@ public class QuicPacketDecoder {
         public int size() { return size; }
 
         @Override
-        public List<ByteBuffer> payload() { return null;}
-
-        @Override
         public List<QuicFrame> frames() { return List.of(); }
 
         @Override
         public int payloadSize() { return versions.length << 2; }
-
-        @Override
-        public VersionNegotiationPacket packet() { return this; }
 
         @Override
         public int[] supportedVersions() {
@@ -905,7 +873,7 @@ public class QuicPacketDecoder {
                         .formatted(msg));
             }
 
-            return new IncomingVersionNegotiationPacket(headers, sourceID, destinationID,
+            return new IncomingVersionNegotiationPacket(sourceID, destinationID,
                     version, versions, size);
         }
     }
@@ -943,7 +911,7 @@ public class QuicPacketDecoder {
      * @spec https://www.rfc-editor.org/info/rfc9369
      *      RFC 9369: QUIC Version 2
      */
-    public IncomingQuicPacket<?> decode(ByteBuffer buffer, CodingContext context)
+    public IncomingQuicPacket decode(ByteBuffer buffer, CodingContext context)
             throws IOException, QuicKeyUnavailableException, QuicTransportException {
         Objects.requireNonNull(buffer);
 

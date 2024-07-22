@@ -107,7 +107,7 @@ public interface CodingContext {
      *         enough space to write the packet
      */
     int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException;
+                throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * Reads an encrypted packet from the given byte buffer.

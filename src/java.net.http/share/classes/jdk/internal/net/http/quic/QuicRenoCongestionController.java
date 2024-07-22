@@ -174,7 +174,7 @@ public class QuicRenoCongestionController implements QuicCongestionController {
     }
 
     @Override
-    public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime) {
+    public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) {
         lock.lock();
         try {
             for (QuicPacket packet : lostPackets) {
@@ -183,18 +183,15 @@ public class QuicRenoCongestionController implements QuicCongestionController {
                 }
             }
             onCongestionEvent(sentTime);
-            // TODO persistent congestion
-            //  A sender establishes persistent congestion after the receipt
-            //  of an acknowledgment if two packets that are ack-eliciting are declared lost, and:
-            //   - across all packet number spaces, none of the packets sent
-            //   between the send times of these two packets are acknowledged;
-            //   - the duration between the send times of these two packets
-            //   exceeds the persistent congestion duration (Section 7.6.1); and
-            //   - a prior RTT sample existed when these two packets were sent.
-//            if (inPersistentCongestion) {
-//                congestionWindow = minimumWindow;
-//                congestionRecoveryStartTime = null;
-//            }
+            if (persistent) {
+                congestionWindow = minimumWindow;
+                congestionRecoveryStartTime = null;
+                if (Log.quicCC()) {
+                    Log.logQuic(dbgTag+ " Persistent congestion: ssThresh: " + ssThresh +
+                            ", in flight: " + bytesInFlight +
+                            ", cwnd:" + congestionWindow);
+                }
+            }
         } finally {
             lock.unlock();
         }

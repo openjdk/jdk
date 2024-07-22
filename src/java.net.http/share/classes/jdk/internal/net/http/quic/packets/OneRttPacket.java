@@ -78,14 +78,9 @@ public interface OneRttPacket extends ShortHeaderPacket {
         return PacketType.ONERTT;
     }
 
-    @Override
-    default int packetNumberLength() {
-        byte headerBits = headerBits();
-        return (headerBits & 0x03) + 1;
-    }
-
     /**
-     * {@return the packet's Key Phase Bit: 0 or 1}
+     * Returns the packet's Key Phase Bit: 0 or 1, if known.
+     * Returns -1 for outgoing packets.
      * <a href="https://www.rfc-editor.org/rfc/rfc9000#section-17.3.1">RFC 9000, Section 17.3.1</a>:
      *
      * <blockquote><pre>{@code
@@ -95,16 +90,18 @@ public interface OneRttPacket extends ShortHeaderPacket {
      *     This bit is protected using header protection; see Section 5.4 of [QUIC-TLS].
      * }</pre></blockquote>
      *
+     * @return the packet's Key Phase Bit
+     *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9001">RFC 9001, [QUIC-TLS]</a>
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9001#section-5.4">RFC 9001, Section 5.4, [QUIC-TLS]</a>
      */
     default int keyPhase() {
-        byte headerBits = headerBits();
-        return (headerBits & 0x04) >> 2;
+        return -1;
     }
 
     /**
-     * {@return the packet's Latency Spin Bit: 0 or 1}
+     * Returns the packet's Latency Spin Bit: 0 or 1, if known.
+     * Returns -1 for outgoing packets.
      * <a href="https://www.rfc-editor.org/rfc/rfc9000#section-17.3.1">RFC 9000, Section 17.3.1</a>:
      *
      * <blockquote><pre>{@code
@@ -112,11 +109,12 @@ public interface OneRttPacket extends ShortHeaderPacket {
      *     bit, set as described in Section 17.4.
      * }</pre></blockquote>
      *
+     * @return the packet's Latency Spin Bit
+     *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-17.4">RFC 9000, Section 17.4</a>
      */
     default int spin() {
-        byte headerBits = headerBits();
-        return (headerBits & 0x20) >> 5;
+        return -1;
     }
 
     @Override

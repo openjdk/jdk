@@ -223,7 +223,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     protected final Logger debug = Utils.getDebugLogger(this::dbgTag);
 
-    // TODO we should have one RTT estimator per path, not connection
     final QuicRttEstimator rttEstimator = new QuicRttEstimator();
     final QuicCongestionController congestionController;
     /**
@@ -267,13 +266,18 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     private volatile long peerActiveConnIdsLimit = 2; // default is 2 as per RFC
 
     private volatile int state;
+    // the quic version currently in use
     private volatile QuicVersion quicVersion;
+    // the quic version from the first packet
+    private final QuicVersion originalVersion;
     private volatile QuicPacketDecoder decoder;
     private volatile QuicPacketEncoder encoder;
     // (client-only) if true, we no longer accept VERSIONS packets
     private volatile boolean versionCompatible;
     // if true, we no longer accept version changes
     private volatile boolean versionNegotiated;
+    // true if we changed version in response to VERSIONS packet
+    private volatile boolean processedVersionsPacket;
     // start off with 1200 or whatever is configured through
     // jdk.net.httpclient.quic.defaultPDU system property
     private int maxPeerAdvertisedPayloadSize = DEFAULT_DATAGRAM_SIZE;
@@ -305,7 +309,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         this.logTag = logTag;
         this.dbgTag = dbgTag(quicInstance, logTag);
         this.congestionController = new QuicRenoCongestionController(dbgTag);
-        this.quicVersion = firstFlightVersion == null
+        this.originalVersion = this.quicVersion = firstFlightVersion == null
                 ? QuicVersion.lowestOf(quicInstance.getAvailableVersions())
                 : firstFlightVersion;
         final boolean isClientConn = isClientConnection();
@@ -862,7 +866,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *                         a destination byte buffer, and various offset information.
      */
     void encrypt(final ProtectionRecord protectionRecord)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         // Processes an outgoing unencrypted packet that needs to be
         // encrypted before being packaged in a datagram.
         var datagram = protectionRecord.datagram();
@@ -1136,7 +1140,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return false;
         }
 
-        private boolean sendStreamData0() throws IOException, QuicKeyUnavailableException, QuicTransportException {
+        private boolean sendStreamData0() throws QuicKeyUnavailableException, QuicTransportException {
             // Loop over all sending streams to see if data is available - include
             // as much data as possible in the quic packet before sending it.
             // The QuicConnectionStreams make sure that streams are polled in a fair
@@ -1172,7 +1176,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // only from the sending loop, and this is the only place where we
             // mutate dataProcessed.
             dataProcessed += produced;
-            OutgoingQuicPacket<OneRttPacket> packet = encoder.newOneRttPacket(peerConnectionId,
+            OutgoingQuicPacket packet = encoder.newOneRttPacket(peerConnectionId,
                     packetNumber, largestPeerAckedPN, frames, codingContext);
             QuicConnectionImpl.this.sendStreamData(packet);
             return true;
@@ -1287,8 +1291,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      *
      * @param packet The packet to send.
      */
-    protected void sendStreamData(final OutgoingQuicPacket<OneRttPacket> packet)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+    protected void sendStreamData(final OutgoingQuicPacket packet)
+            throws QuicKeyUnavailableException, QuicTransportException {
         encrypt(ProtectionRecord.single(packet,
                 QuicConnectionImpl.this::allocateDatagramForEncryption));
     }
@@ -1369,7 +1373,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             return QuicConnectionImpl.this.connectionIdLength();
         }
         @Override public int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             int start = buffer.position();
             encoder.encode(packet, buffer, this);
             return buffer.position() - start;
@@ -1408,7 +1412,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             @Override
             public void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                    throws QuicKeyUnavailableException, QuicTransportException {
                 QuicConnectionImpl.this.retransmit(packetSpaceManager, packet, attempts);
             }
 
@@ -1416,7 +1420,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             public long emitAckPacket(PacketSpace packetSpaceManager,
                                       AckFrame frame,
                                       boolean sendPing)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                    throws QuicKeyUnavailableException, QuicTransportException {
                 return QuicConnectionImpl.this.emitAckPacket(packetSpaceManager, frame, sendPing);
             }
 
@@ -1427,7 +1431,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
             @Override
             public boolean sendData(PacketNumberSpace packetNumberSpace)
-                        throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                        throws QuicKeyUnavailableException, QuicTransportException {
                 return QuicConnectionImpl.this.sendData(packetNumberSpace);
             }
 
@@ -2272,8 +2276,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     final QuicPacket makeConnectionClosePacket(final ConnectionCloseFrame frame,
                                                final KeySpace keySpace) {
         final PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.of(keySpace));
-        // TODO: check packetspace closed and other things that were
-        //  done in sendConnectionCloseFrame
         return encoder.newOutgoingPacket(keySpace, packetSpace,
                 localConnectionId(), peerConnectionId(), initialToken(),
                 List.of(frame),
@@ -2608,7 +2610,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
             assert this.quicInstance() instanceof QuicClient : "Not a quic client";
             final QuicClient client = (QuicClient) this.quicInstance();
-            jdk.internal.net.quic.QuicVersion negotiatedVersion = null;
+            QuicVersion negotiatedVersion = null;
             for (final int v : serverSupportedVersions) {
                 final QuicVersion serverVersion = QuicVersion.of(v).orElse(null);
                 if (serverVersion == null) {
@@ -2636,11 +2638,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     continue;
                 }
                 if (debug.on()) {
-                    debug.log("Accepting server supported version %d",
-                            serverVersion.versionNumber());
+                    if (negotiatedVersion == null) {
+                        debug.log("Accepting server supported version %d",
+                                serverVersion.versionNumber());
+                        negotiatedVersion = serverVersion;
+                    } else {
+                        // currently all versions are equal
+                        debug.log("Skipping server supported version %d",
+                                serverVersion.versionNumber());
+                    }
                 }
-                negotiatedVersion = serverVersion;
-                break;
             }
             // at this point if negotiatedVersion is null, then it implies that none of the server
             // supported versions are supported by the client. The spec expects us to abandon the
@@ -2657,8 +2664,15 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // a different version than the current client chosen version has been negotiated,
             // switch the client connection to use this negotiated version
             if (switchVersion(negotiatedVersion)) {
-                handshakeFlow.localInitial.replayData();
+                final ByteBuffer quicInitialParameters = buildInitialParameters();
+                quicTLSEngine.setLocalQuicTransportParameters(quicInitialParameters);
+                quicTLSEngine.restartHandshake();
+                packetSpace(PacketNumberSpace.INITIAL).retry();
+                handshakeFlow.localInitial.reset();
+                continueHandshake();
                 packetSpaces.initial.runTransmitter();
+                this.versionCompatible = true;
+                processedVersionsPacket = true;
             }
         } catch (Throwable t) {
             if (debug.on()) {
@@ -2999,7 +3013,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
         return handshakeFlow;
     }
 
-    // TODO create one secureRandom for all QUIC needs (see QuicClient#RANDOM)
     private static final Random RANDOM = new SecureRandom();
 
     private QuicConnectionId initialServerConnectionId() {
@@ -3161,7 +3174,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     private boolean sendData(PacketNumberSpace packetNumberSpace)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
         if (packetNumberSpace != PacketNumberSpace.APPLICATION) {
             // This method can be called by two packet spaces: INITIAL and HANDSHAKE.
             // We need to lock to make sure that the method is not run concurrently.
@@ -3177,7 +3190,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     private boolean sendHandshakeData0(PacketNumberSpace packetNumberSpace)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (Log.quicCrypto()) {
             Log.logQuic(String.format("%s: Send %s data", logTag(), packetNumberSpace));
         }
@@ -3239,7 +3252,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("building initial packet: source=%s, dest=%s",
                         connectionId, peerConnId);
             }
-            OutgoingQuicPacket<InitialPacket> packet = encoder.newInitialPacket(
+            OutgoingQuicPacket packet = encoder.newInitialPacket(
                     connectionId, peerConnId, token,
                     packetNumber, largestAckedPN, frames, codingContext);
             int size = packet.size();
@@ -3289,7 +3302,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 debug.log("building handshake packet: source=%s, dest=%s",
                         connectionId, peerConnId);
             }
-            OutgoingQuicPacket<HandshakePacket> packet = encoder.newHandshakePacket(
+            OutgoingQuicPacket packet = encoder.newHandshakePacket(
                     connectionId, peerConnId,
                     packetNumber, largestAckedPN, frames, codingContext);
             int size = packet.size();
@@ -3412,16 +3425,33 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                         null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
             }
         }
-        if (params.isPresent(version_information)) {
-            VersionInformation vi =
-                    params.getVersionInformationParameter(version_information);
-            // TODO if chosen version or available version = 0 -> parsing failure
-            // server: if chosen version not in available versions -> parsing failure
-            // TODO if chosen version != packet version -> negotiation error
-            // TODO client: if chosen version was not in available versions -> negotiation error
-            // TODO client: if reacted to versions and available versions empty -> negotiation error
+        VersionInformation vi =
+                params.getVersionInformationParameter(version_information);
+        if (vi != null) {
+            if (vi.chosenVersion() != quicVersion().versionNumber()) {
+                throw new QuicTransportException(
+                        "[version_information] Chosen Version does not match version in use",
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
+            if (processedVersionsPacket) {
+                if (vi.availableVersions().length == 0) {
+                    throw new QuicTransportException(
+                            "[version_information] available versions empty",
+                            null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+                }
+                if (Arrays.stream(vi.availableVersions())
+                        .anyMatch(i -> i == originalVersion.versionNumber())) {
+                    throw new QuicTransportException(
+                            "[version_information] original version was available",
+                            null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+                }
+            }
         } else {
-            // TODO client: if reacted to versions packet and version information absent -> negotiation error
+            if (processedVersionsPacket && quicVersion != QuicVersion.QUIC_V1) {
+                throw new QuicTransportException(
+                        "version_information parameter absent",
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
         }
         handleIncomingPeerTransportParams(params);
 
@@ -3544,7 +3574,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      */
     private long emitAckPacket(final PacketSpace packetSpaceManager, final AckFrame ackFrame,
                                final boolean sendPing)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (ackFrame == null && !sendPing) {
             return -1L;
         }
@@ -3600,7 +3630,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
      * @param packet the unacknowledged packet which should be retransmitted
      */
     private void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+            throws QuicKeyUnavailableException, QuicTransportException {
         if (debug.on()) {
             debug.log("Retransmitting packet [type=%s, pn=%d, attempts:%d]: %s",
                     packet.packetType(), packet.packetNumber(), attempts, packet);

@@ -85,17 +85,6 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     private volatile ReceivingStreamState receivingState;
     private volatile boolean requestedStopSending;
     private volatile long errorCode;
-    // A lower bound of the amount of data that was returned by poll()
-    // This is only weakly consistent, as data may also have been read
-    // from a buffer returned by peek(), but it can help sending
-    // MaxStreamData frame sooner, without having to wait for the
-    // orderedQueue.poll() to return null - which is the only time we
-    // can be confident on the exact amount of data that has been
-    // processed. Note that `delivered` can be updated more often than
-    // `processed` - so though at the end of the day when all data
-    // has been read, delivered <= processed should hold, it might
-    // not hold at all times (it's not an invariant).
-    private long delivered;
 
     private final static long MIN_BUFFER_SIZE = 16L << 10;
     QuicReceiverStreamImpl(QuicConnectionImpl connection, long streamId) {
@@ -485,10 +474,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
         var payload = frame.payload();
         var isLast = frame.isLast();
         if (payload.hasRemaining()) {
-            orderedQueue.offer(payload);
+            orderedQueue.add(payload.slice());
         }
         if (isLast) {
-            orderedQueue.offer(QuicStreamReader.EOF);
+            orderedQueue.add(QuicStreamReader.EOF);
         }
     }
 
@@ -549,6 +538,20 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
     /**
      * Notifies the connection about received data that is no longer buffered.
      */
+    private void increaseProcessedDataBy(int diff) {
+        assert diff >= 0;
+        if (diff <= 0) return;
+        // OK to use synchronized: no method calls
+        synchronized (this) {
+            assert processed + diff <= received;
+            processed += diff;
+        }
+        connection().increaseProcessedData(diff);
+    }
+
+    /**
+     * Notifies the connection about received data that is no longer buffered.
+     */
     private void increaseProcessedData(long newProcessed) {
         long diff;
         // OK to use synchronized: no method calls
@@ -601,13 +604,11 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
                 if (!requestedStopSending && unfulfilled() < desiredBufferSize - desiredBufferSize / 4) {
                     demand(desiredBufferSize);
                 }
-                // TODO processed data should be incremented earlier.
-                // We don't know how much data is consumed by peek, so we only
-                // increase the number of processed bytes when all received bytes
-                // are processed.
-                increaseProcessedData(received);
                 return null;
             }
+
+            increaseProcessedDataBy(buffer.capacity());
+
             if (requestedStopSending) {
                 // check reset again
                 checkReset(true);
@@ -621,15 +622,10 @@ public final class QuicReceiverStreamImpl extends AbstractQuicStream implements 
             }
             // if the amount of data we know to have been already delivered has
             // consumed more than 1/4 of the credit window then send
-            // a MaxStreamData frame. This allows to send MaxStreamData earlier,
-            // without having to wait until orderedQueue::poll returns null, which
-            // might not happen until the whole window is consumed
-            if (!requestedStopSending && maxStreamData - delivered < desiredBufferSize - desiredBufferSize / 4) {
+            // a MaxStreamData frame.
+            if (!requestedStopSending && maxStreamData - processed < desiredBufferSize - desiredBufferSize / 4) {
                 demand(desiredBufferSize);
             }
-            // poll() is not supposed to be called concurrently (to other calls to poll)
-            // in any case, delivered is a lower bound only weakly consistent.
-            delivered += buffer.remaining();
             return buffer;
         }
 

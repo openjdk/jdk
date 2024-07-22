@@ -42,7 +42,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
-import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
@@ -50,7 +49,6 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
-import java.security.AlgorithmConstraints;
 import java.security.GeneralSecurityException;
 import java.util.HashSet;
 import java.util.List;
@@ -768,6 +766,31 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
     @Override
     public void setLocalQuicTransportParameters(ByteBuffer params) {
         this.localQuicTransportParameters = params;
+    }
+
+    @Override
+    public void restartHandshake() throws IOException {
+        if (negotiatedVersion != null) {
+            throw new IllegalStateException("Version already negotiated");
+        }
+        if (sendKeySpace != INITIAL || handshakeState != NEED_RECV_CRYPTO) {
+            throw new IllegalStateException("Unexpected handshake state");
+        }
+        HandshakeContext context = conContext.handshakeContext;
+        ClientHandshakeContext chc = (ClientHandshakeContext)context;
+
+        // Refresh handshake hash
+        chc.handshakeHash.finish();     // reset the handshake hash
+
+        // Update the initial ClientHello handshake message.
+        chc.initialClientHelloMsg.extensions.reproduce(chc,
+                new SSLExtension[] {
+                        SSLExtension.CH_QUIC_TRANSPORT_PARAMETERS
+                });
+
+        // produce handshake message
+        chc.initialClientHelloMsg.write(chc.handshakeOutput);
+        handshakeState = NEED_SEND_CRYPTO;
     }
 
     @Override

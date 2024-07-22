@@ -24,7 +24,6 @@
  */
 package jdk.internal.net.http.quic;
 
-import java.io.IOException;
 import java.util.concurrent.Executor;
 
 import jdk.internal.net.http.common.Deadline;
@@ -70,7 +69,7 @@ public interface PacketEmitter {
      *               A value of 0 indicates the first retransmission.
      */
     void retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException;
+            throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * Emit a non ACK-eliciting packet containing the given ACK frame.
@@ -85,7 +84,7 @@ public interface PacketEmitter {
      * @return the emitted packet number, or -1 if not applicable or not sent.
      */
     long emitAckPacket(PacketSpace packetSpaceManager, AckFrame ackFrame, boolean sendPing)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException;
+            throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * Called when a packet has been acknowledged.
@@ -99,7 +98,7 @@ public interface PacketEmitter {
      * @return true if a packet was sent, false otherwise
      */
     boolean sendData(PacketNumberSpace packetNumberSpace)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException;
+            throws QuicKeyUnavailableException, QuicTransportException;
 
     /**
      * {@return an executor to use when {@linkplain

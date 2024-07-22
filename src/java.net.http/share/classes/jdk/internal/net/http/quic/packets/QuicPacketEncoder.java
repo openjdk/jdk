@@ -24,7 +24,6 @@
  */
 package jdk.internal.net.http.quic.packets;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -77,7 +76,7 @@ public class QuicPacketEncoder {
     }
 
     /**
-     * Reads the headers tag for the given packet type.
+     * Returns the headers tag for the given packet type.
      * Returns 0 if the packet type is NONE or unknown.
      * <p>
      * For version negotiations packet, this method returns 0x80.
@@ -120,43 +119,350 @@ public class QuicPacketEncoder {
         };
     }
 
-    public abstract static class OutgoingQuicPacket<T extends QuicPacket> implements QuicPacket {
-        private final byte headers;
-        protected OutgoingQuicPacket(byte headers) {
-            this.headers = headers;
+    /**
+     * Encode the OneRttPacket into the provided buffer.
+     * This method encrypts the packet into the provided byte buffer as appropriate,
+     * adding packet protection as appropriate.
+     *
+     * @param packet
+     * @param buffer  A buffer to encode the packet into
+     * @param context
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private void encodePacket(OutgoingOneRttPacket packet,
+                                     ByteBuffer buffer,
+                                     CodingContext context)
+                throws QuicKeyUnavailableException, QuicTransportException {
+        QuicConnectionId destination = packet.destinationId();
+
+        if (debug.on()) {
+            debug.log("OneRttPacket::encodePacket(ByteBuffer(%d,%d)," +
+                            " dst=%s, packet=%d, encodedPacket=%s," +
+                            " payload=QuicFrames(frames: %s, bytes: %d)," +
+                            " size=%d",
+                    buffer.position(), buffer.limit(), destination,
+                    packet.packetNumber, Arrays.toString(packet.encodedPacketNumber),
+                    packet.frames, packet.payloadSize, packet.size);
         }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
 
-        @Override
-        public final byte headerBits() { return headers; }
+        int encodedLength = packet.encodedPacketNumber.length;
+        assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
+        int pnprefix = encodedLength - 1;
 
-        /**
-         * Encode this packet in the given buffer.
-         * This method encrypts the packet into the provided byte buffer as appropriate,
-         * adding packet protection as appropriate.
-         *
-         * @param buffer the buffer to encode the packet into
-         * @param context
-         * @throws BufferOverflowException if the buffer is not large enough
-         *
-         * @spec https://www.rfc-editor.org/info/rfc9000
-         *      RFC 9000: QUIC: A UDP-Based Multiplexed and Secure Transport
-         * @spec https://www.rfc-editor.org/info/rfc9001
-         *      RFC 9001: Using TLS to Secure QUIC
-         * @spec https://www.rfc-editor.org/info/rfc9369
-         *      RFC 9369: QUIC Version 2
-         */
-        public abstract void encode(ByteBuffer buffer, CodingContext context)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException;
+        byte headers = OutgoingOneRttPacket.headers(packetHeadersTag(packet.packetType()),
+                packet.encodedPacketNumber.length);
+        assert (headers & 0x03) == pnprefix : "incorrect packet number prefix in headers: " + headers;
 
-        public abstract T packet();
+        final PacketWriter writer = new PacketWriter(buffer, context, PacketType.ONERTT);
+        writer.writeHeaders(headers);
+        writer.writeShortConnectionId(destination);
+        int packetNumberStart = writer.position();
+        writer.writeEncodedPacketNumber(packet.encodedPacketNumber);
+        int payloadStart = writer.position();
+        writer.writePayload(packet.frames);
+        writer.encryptPayload(packet.packetNumber, payloadStart);
+        assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
+        writer.protectShort(packetNumberStart, packet.encodedPacketNumber.length);
     }
 
-    private abstract static class OutgoingHeaderPacket<T extends HeaderPacket>
-            extends OutgoingQuicPacket<T> implements HeaderPacket {
+    /**
+     * Encode the ZeroRttPacket into the provided buffer.
+     * This method encrypts the packet into the provided byte buffer as appropriate,
+     * adding packet protection as appropriate.
+     *
+     * @param packet
+     * @param buffer  A buffer to encode the packet into.
+     * @param context
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private void encodePacket(OutgoingZeroRttPacket packet,
+                                     ByteBuffer buffer,
+                                     CodingContext context)
+                throws QuicKeyUnavailableException, QuicTransportException {
+        int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
+        QuicConnectionId destination = packet.destinationId();
+        QuicConnectionId source = packet.sourceId();
+        if (packet.size > buffer.remaining()) {
+            throw new BufferOverflowException();
+        }
 
+        if (debug.on()) {
+            debug.log("ZeroRttPacket::encodePacket(ByteBuffer(%d,%d)," +
+                            " src=%s, dst=%s, version=%d, packet=%d, " +
+                            "encodedPacket=%s, payload=QuicFrame(frames: %s, bytes: %d), size=%d",
+                    buffer.position(), buffer.limit(), source, destination,
+                    version, packet.packetNumber, Arrays.toString(packet.encodedPacketNumber),
+                    packet.frames, packet.payloadSize, packet.size);
+        }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
+
+        int encodedLength = packet.encodedPacketNumber.length;
+        assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
+        int pnprefix = encodedLength - 1;
+
+        byte headers = OutgoingZeroRttPacket.headers(packetHeadersTag(packet.packetType()),
+                packet.encodedPacketNumber.length);
+        assert (headers & 0x03) == pnprefix : headers;
+
+        PacketWriter writer = new PacketWriter(buffer, context, PacketType.ZERORTT);
+        writer.writeHeaders(headers);
+        writer.writeVersion(version);
+        writer.writeLongConnectionId(destination);
+        writer.writeLongConnectionId(source);
+        writer.writePacketLength(packet.length);
+        int packetNumberStart = writer.position();
+        writer.writeEncodedPacketNumber(packet.encodedPacketNumber);
+        int payloadStart = writer.position();
+        writer.writePayload(packet.frames);
+        writer.encryptPayload(packet.packetNumber, payloadStart);
+        assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
+        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+    }
+
+    /**
+     * Encode the VersionNegotiationPacket into the provided
+     * buffer.
+     *
+     * @param packet
+     * @param buffer A buffer to encode the packet into.
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private static void encodePacket(OutgoingVersionNegotiationPacket packet,
+                                     ByteBuffer buffer) {
+        QuicConnectionId destination = packet.destinationId();
+        QuicConnectionId source = packet.sourceId();
+
+        if (debug.on()) {
+            debug.log("VersionNegotiationPacket::encodePacket(ByteBuffer(%d,%d)," +
+                            " src=%s, dst=%s, versions=%s, size=%d",
+                    buffer.position(), buffer.limit(), source, destination,
+                    Arrays.toString(packet.versions), packet.size);
+        }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
+
+        int offset = buffer.position();
+        int limit = buffer.limit();
+        assert buffer.capacity() >= packet.size;
+        assert limit - offset >= packet.size;
+
+        int typeTag = 0x80;
+        int rand = Encoders.RANDOM.nextInt() & 0x7F;
+        int headers = typeTag | rand;
+        if (debug.on()) {
+            debug.log("VersionNegotiationPacket::encodePacket:" +
+                            " type: 0x%02x, unused: 0x%02x, headers: 0x%02x",
+                    typeTag, rand & ~0x80, headers);
+        }
+        assert (headers & typeTag) == typeTag : headers;
+        assert (headers ^ typeTag) == rand : headers;
+
+        // headers(1 byte), version(4 bytes)
+        buffer.put((byte)headers); // 1
+        putInt32(buffer, 0); // 4
+
+        // DCID: 1 byte for length, + destination id bytes
+        var dcidlen = destination.length();
+        assert dcidlen <= MAX_CONNECTION_ID_LENGTH && dcidlen >= 0 : dcidlen;
+        buffer.put((byte)dcidlen); // 1
+        buffer.put(destination.asReadOnlyBuffer());
+        assert buffer.position() == offset + 6 + dcidlen : buffer.position();
+
+        // SCID: 1 byte for length, + source id bytes
+        var scidlen = source.length();
+        assert scidlen <= MAX_CONNECTION_ID_LENGTH && scidlen >= 0 : scidlen;
+        buffer.put((byte) scidlen);
+        buffer.put(source.asReadOnlyBuffer());
+        assert buffer.position() == offset + 7 + dcidlen + scidlen : buffer.position();
+
+        // Put payload (= supported versions)
+        int versionsStart = buffer.position();
+        for (int i = 0; i < packet.versions.length; i++) {
+            putInt32(buffer, packet.versions[i]);
+        }
+        int versionsEnd = buffer.position();
+        if (debug.on()) {
+            debug.log("VersionNegotiationPacket::encodePacket:" +
+                            " encoded %d bytes", offset - versionsEnd);
+        }
+
+        assert versionsEnd - offset == packet.size;
+        assert versionsEnd - versionsStart == packet.versions.length << 2;
+    }
+
+    /**
+     * Encode the HandshakePacket into the provided buffer.
+     * This method encrypts the packet into the provided byte buffer as appropriate,
+     * adding packet protection as appropriate.
+     *
+     * @param packet
+     * @param buffer  A buffer to encode the packet into.
+     * @param context
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private void encodePacket(OutgoingHandshakePacket packet,
+                                     ByteBuffer buffer,
+                                     CodingContext context)
+                throws QuicKeyUnavailableException, QuicTransportException {
+        int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
+        QuicConnectionId destination = packet.destinationId();
+        QuicConnectionId source = packet.sourceId();
+        if (packet.size > buffer.remaining()) {
+            throw new BufferOverflowException();
+        }
+
+        if (debug.on()) {
+            debug.log("HandshakePacket::encodePacket(ByteBuffer(%d,%d)," +
+                            " src=%s, dst=%s, version=%d, packet=%d, " +
+                            "encodedPacket=%s, payload=QuicFrame(frames: %s, bytes: %d)," +
+                            " size=%d",
+                    buffer.position(), buffer.limit(), source, destination,
+                    version, packet.packetNumber, Arrays.toString(packet.encodedPacketNumber),
+                    packet.frames, packet.payloadSize, packet.size);
+        }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
+
+        int encodedLength = packet.encodedPacketNumber.length;
+        assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
+        int pnprefix = encodedLength - 1;
+
+        byte headers = OutgoingHandshakePacket.headers(packetHeadersTag(packet.packetType()),
+                packet.encodedPacketNumber.length);
+        assert (headers & 0x03) == pnprefix : headers;
+
+        PacketWriter writer = new PacketWriter(buffer, context, PacketType.HANDSHAKE);
+        writer.writeHeaders(headers);
+        writer.writeVersion(version);
+        writer.writeLongConnectionId(destination);
+        writer.writeLongConnectionId(source);
+        writer.writePacketLength(packet.length);
+        int packetNumberStart = writer.position();
+        writer.writeEncodedPacketNumber(packet.encodedPacketNumber);
+        int payloadStart = writer.position();
+        writer.writePayload(packet.frames);
+        writer.encryptPayload(packet.packetNumber, payloadStart);
+        assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
+        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+    }
+
+    /**
+     * Encode the InitialPacket into the provided buffer.
+     * This method encrypts the packet into the provided byte buffer as appropriate,
+     * adding packet protection as appropriate.
+     *
+     * @param packet
+     * @param buffer  A buffer to encode the packet into.
+     * @param context coding context
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private void encodePacket(OutgoingInitialPacket packet,
+                                     ByteBuffer buffer,
+                                     CodingContext context)
+                throws QuicKeyUnavailableException, QuicTransportException {
+        int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
+        QuicConnectionId destination = packet.destinationId();
+        QuicConnectionId source = packet.sourceId();
+        if (packet.size > buffer.remaining()) {
+            throw new BufferOverflowException();
+        }
+
+        if (debug.on()) {
+            debug.log("InitialPacket::encodePacket(ByteBuffer(%d,%d)," +
+                    " src=%s, dst=%s, version=%d, packet=%d, " +
+                    "encodedPacket=%s, token=%s, " +
+                    "payload=QuicFrame(frames: %s, bytes: %d), size=%d",
+                    buffer.position(), buffer.limit(), source, destination,
+                    version, packet.packetNumber, Arrays.toString(packet.encodedPacketNumber),
+                    packet.token == null ? null : "byte[%s]".formatted(packet.token.length),
+                    packet.frames, packet.payloadSize, packet.size);
+        }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
+
+        int encodedLength = packet.encodedPacketNumber.length;
+        assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
+        int pnprefix = encodedLength - 1;
+
+        byte headers = OutgoingInitialPacket.headers(packetHeadersTag(packet.packetType()),
+                packet.encodedPacketNumber.length);
+        assert (headers & 0x03) == pnprefix : headers;
+
+        PacketWriter writer = new PacketWriter(buffer, context, PacketType.INITIAL);
+        writer.writeHeaders(headers);
+        writer.writeVersion(version);
+        writer.writeLongConnectionId(destination);
+        writer.writeLongConnectionId(source);
+        writer.writeToken(packet.token);
+        writer.writePacketLength(packet.length);
+        int packetNumberStart = writer.position();
+        writer.writeEncodedPacketNumber(packet.encodedPacketNumber);
+        int payloadStart = writer.position();
+        writer.writePayload(packet.frames);
+        writer.encryptPayload(packet.packetNumber, payloadStart);
+        assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
+        writer.protectLong(packetNumberStart, packet.encodedPacketNumber.length);
+    }
+
+    /**
+     * Encode the RetryPacket into the provided buffer.
+     *
+     * @param packet
+     * @param buffer  A buffer to encode the packet into.
+     * @param context
+     * @throws BufferOverflowException if the buffer is not large enough
+     */
+    private void encodePacket(OutgoingRetryPacket packet,
+                                     ByteBuffer buffer,
+                                     CodingContext context) {
+        int version = packet.version();
+        if (quicVersion.versionNumber() != version) {
+            throw new IllegalArgumentException("Encoder version %s does not match packet version %s"
+                    .formatted(quicVersion, version));
+        }
+        QuicConnectionId destination = packet.destinationId();
+        QuicConnectionId source = packet.sourceId();
+
+        if (debug.on()) {
+            debug.log("RetryPacket::encodePacket(ByteBuffer(%d,%d)," +
+                            " src=%s, dst=%s, version=%d, retryToken=%d," +
+                            " size=%d",
+                    buffer.position(), buffer.limit(), source, destination,
+                    version, packet.retryToken.length, packet.size);
+        }
+        assert buffer.order() == ByteOrder.BIG_ENDIAN;
+        assert packet.retryToken.length > 0;
+        assert buffer.remaining() >= packet.size;
+
+        PacketWriter writer = new PacketWriter(buffer, context, PacketType.RETRY);
+
+        byte headers = packetHeadersTag(packet.packetType());
+        headers |= (byte)Encoders.RANDOM.nextInt(0x10);
+        writer.writeHeaders(headers);
+        writer.writeVersion(version);
+        writer.writeLongConnectionId(destination);
+        writer.writeLongConnectionId(source);
+        writer.writeRetryToken(packet.retryToken);
+        assert writer.remaining() >= 16; // 128 bits
+        writer.signRetry(version);
+
+        assert writer.bytesWritten() == packet.size : writer.bytesWritten() - packet.size;
+    }
+
+    public abstract static class OutgoingQuicPacket implements QuicPacket {
         private final QuicConnectionId destinationId;
-        OutgoingHeaderPacket(byte headers, QuicConnectionId destinationId) {
-            super(headers);
+
+        protected OutgoingQuicPacket(QuicConnectionId destinationId) {
             this.destinationId = destinationId;
         }
 
@@ -167,29 +473,27 @@ public class QuicPacketEncoder {
         public String toString() {
 
             return this.getClass().getSimpleName() + "[pn=" + this.packetNumber()
-                    + ", frames=" + this.packet().frames() + "]";
+                    + ", frames=" + frames() + "]";
         }
     }
 
-    private abstract static class OutgoingShortHeaderPacket<T extends ShortHeaderPacket>
-            extends OutgoingHeaderPacket<T> implements ShortHeaderPacket {
+    private abstract static class OutgoingShortHeaderPacket
+            extends OutgoingQuicPacket implements ShortHeaderPacket {
 
-        OutgoingShortHeaderPacket(byte headers,
-                                  QuicConnectionId destinationId) {
-            super(headers, destinationId);
+        OutgoingShortHeaderPacket(QuicConnectionId destinationId) {
+            super(destinationId);
         }
     }
 
-    private abstract static class OutgoingLongHeaderPacket<T extends LongHeaderPacket>
-            extends OutgoingHeaderPacket<T> implements LongHeaderPacket {
+    private abstract static class OutgoingLongHeaderPacket
+            extends OutgoingQuicPacket implements LongHeaderPacket {
 
         private final QuicConnectionId sourceId;
         private final int version;
-        OutgoingLongHeaderPacket(byte headers,
-                                 QuicConnectionId sourceId,
+        OutgoingLongHeaderPacket(QuicConnectionId sourceId,
                                  QuicConnectionId destinationId,
                                  int version) {
-            super(headers, destinationId);
+            super(destinationId);
             this.sourceId = sourceId;
             this.version = version;
         }
@@ -203,16 +507,16 @@ public class QuicPacketEncoder {
     }
 
     private static final class OutgoingRetryPacket
-            extends OutgoingLongHeaderPacket<RetryPacket> implements RetryPacket {
+            extends OutgoingLongHeaderPacket implements RetryPacket {
 
         final int size;
         final byte[] retryToken;
 
-        OutgoingRetryPacket(byte packetTypeTag, QuicConnectionId sourceId,
+        OutgoingRetryPacket(QuicConnectionId sourceId,
                             QuicConnectionId destinationId,
                             int version,
                             byte[] retryToken) {
-            super(packetTypeTag, sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.retryToken = retryToken;
             this.size = computeSize(retryToken.length);
         }
@@ -243,74 +547,13 @@ public class QuicPacketEncoder {
         }
 
         @Override
-        public RetryPacket packet() {
-            return this;
-        }
-
-        @Override
-        public List<ByteBuffer> payload() {
-            return null;
-        }
-
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context) {
-            encodePacket(buffer, sourceId(), destinationId(), version(), retryToken, size, context);
-        }
-
-        /**
-         * Encode the RetryPacket into the provided buffer.
-         *
-         * @param buffer A buffer to encode the packet into.
-         * @param source The source connection ID
-         * @param destination The destination connection ID
-         * @param version The quic protocol version
-         * @param retryToken The retry packet token
-         * @param size The retry packet total size
-         * @param context
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId source,
-                QuicConnectionId destination,
-                int version,
-                byte[] retryToken,
-                int size, CodingContext context) {
-
-            if (debug.on()) {
-                debug.log("RetryPacket::encodePacket(ByteBuffer(%d,%d)," +
-                                " src=%s, dst=%s, version=%d, retryToken=%d," +
-                                " size=%d",
-                        buffer.position(), buffer.limit(), source, destination,
-                        version, retryToken.length, size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-            assert retryToken.length > 0;
-            assert buffer.remaining() >= size;
-
-            PacketWriter writer = new PacketWriter(buffer, context, PacketType.RETRY);
-
-            byte headers = headerBits();
-            headers |= (byte)Encoders.RANDOM.nextInt(0x10);
-            writer.writeHeaders(headers);
-            writer.writeVersion(version);
-            writer.writeLongConnectionId(destination);
-            writer.writeLongConnectionId(source);
-            writer.writeRetryToken(retryToken);
-            assert writer.remaining() >= 16; // 128 bits
-            writer.signRetry(version);
-
-            assert writer.bytesWritten() == size : writer.bytesWritten() - size;
-        }
-
-        @Override
         public byte[] retryToken() {
             return retryToken;
         }
     }
 
     private static final class OutgoingHandshakePacket
-            extends OutgoingLongHeaderPacket<HandshakePacket> implements HandshakePacket {
+            extends OutgoingLongHeaderPacket implements HandshakePacket {
 
         final long packetNumber;
         final int length;
@@ -320,13 +563,13 @@ public class QuicPacketEncoder {
         final int payloadSize;
         private int tagSize;
 
-        OutgoingHandshakePacket(byte packetTypeTag, QuicConnectionId sourceId,
+        OutgoingHandshakePacket(QuicConnectionId sourceId,
                                 QuicConnectionId destinationId,
                                 int version,
                                 long packetNumber,
                                 byte[] encodedPacketNumber,
                                 List<? extends QuicFrame> frames, int tagSize) {
-            super(headers(packetTypeTag, encodedPacketNumber.length), sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
@@ -362,15 +605,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -383,11 +617,6 @@ public class QuicPacketEncoder {
         @Override
         public int payloadSize() {
             return payloadSize;
-        }
-
-        @Override
-        public HandshakePacket packet() {
-            return this;
         }
 
         /**
@@ -437,80 +666,10 @@ public class QuicPacketEncoder {
         @Override
         public List<QuicFrame> frames() { return frames; }
 
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            encodePacket(buffer, sourceId(), destinationId(), version(), packetNumber,
-                    encodedPacketNumber, frames, payloadSize, size, context);
-        }
-
-        /**
-         * Encode the HandshakePacket into the provided buffer.
-         * This method encrypts the packet into the provided byte buffer as appropriate,
-         * adding packet protection as appropriate.
-         *
-         * @param buffer A buffer to encode the packet into.
-         * @param source The source connection ID
-         * @param destination The destination connection ID
-         * @param version The quic protocol version
-         * @param packetNumber The packet number
-         * @param frames The handshake packet payload
-         * @param payloadSize The number of bytes needed to encode the packet payload
-         * @param size The handshake packet total size
-         * @param context
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId source,
-                QuicConnectionId destination,
-                int version,
-                long packetNumber,
-                byte[] encodedPacketNumber,
-                List<QuicFrame> frames,
-                int payloadSize,
-                int size, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            if (size > buffer.remaining()) {
-                throw new BufferOverflowException();
-            }
-
-            if (debug.on()) {
-                debug.log("HandshakePacket::encodePacket(ByteBuffer(%d,%d)," +
-                                " src=%s, dst=%s, version=%d, packet=%d, " +
-                                "encodedPacket=%s, payload=QuicFrame(frames: %s, bytes: %d)," +
-                                " size=%d",
-                        buffer.position(), buffer.limit(), source, destination,
-                        version, packetNumber, Arrays.toString(encodedPacketNumber),
-                        frames, payloadSize, size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-
-            int encodedLength = encodedPacketNumber.length;
-            assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
-            int pnprefix = encodedLength - 1;
-
-            byte headers = headerBits();
-            assert (headers & 0x03) == pnprefix : headers;
-
-            PacketWriter writer = new PacketWriter(buffer, context, PacketType.HANDSHAKE);
-            writer.writeHeaders(headers);
-            writer.writeVersion(version);
-            writer.writeLongConnectionId(destination);
-            writer.writeLongConnectionId(source);
-            writer.writePacketLength(length);
-            int packetNumberStart = writer.position();
-            writer.writeEncodedPacketNumber(encodedPacketNumber);
-            int payloadStart = writer.position();
-            writer.writePayload(frames);
-            writer.encryptPayload(packetNumber, payloadStart);
-            assert writer.bytesWritten() == size : writer.bytesWritten() - size;
-            writer.protectLong(packetNumberStart, encodedPacketNumber.length);
-        }
     }
 
     private static final class OutgoingZeroRttPacket
-            extends OutgoingLongHeaderPacket<ZeroRttPacket> implements ZeroRttPacket {
+            extends OutgoingLongHeaderPacket implements ZeroRttPacket {
 
         final long packetNumber;
         final int length;
@@ -520,13 +679,13 @@ public class QuicPacketEncoder {
         private int tagSize;
         final int payloadSize;
 
-        OutgoingZeroRttPacket(byte packetTypeTag, QuicConnectionId sourceId,
+        OutgoingZeroRttPacket(QuicConnectionId sourceId,
                               QuicConnectionId destinationId,
                               int version,
                               long packetNumber,
                               byte[] encodedPacketNumber,
                               List<? extends QuicFrame> frames, int tagSize) {
-            super(headers(packetTypeTag, encodedPacketNumber.length), sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
@@ -562,15 +721,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -578,11 +728,6 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public ZeroRttPacket packet() {
-            return this;
         }
 
         /**
@@ -639,81 +784,10 @@ public class QuicPacketEncoder {
             return payloadSize;
         }
 
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            encodePacket(buffer, sourceId(), destinationId(), version(),
-                    packetNumber, encodedPacketNumber, frames, payloadSize, size, context);
-        }
-
-        /**
-         * Encode the ZeroRttPacket into the provided buffer.
-         * This method encrypts the packet into the provided byte buffer as appropriate,
-         * adding packet protection as appropriate.
-         *
-         * @param buffer A buffer to encode the packet into.
-         * @param source The source connection ID
-         * @param destination The destination connection ID
-         * @param version The quic protocol version
-         * @param packetNumber The packet number
-         * @param encodedPacketNumber The encoded packet number
-         * @param frames The zero RTT packet payload
-         * @param payloadSize The number of bytes needed to encode the packet payload
-         * @param size The zero RTT packet total size
-         * @param context
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId source,
-                QuicConnectionId destination,
-                int version,
-                long packetNumber,
-                byte[] encodedPacketNumber,
-                List<QuicFrame> frames,
-                int payloadSize,
-                int size, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            if (size > buffer.remaining()) {
-                throw new BufferOverflowException();
-            }
-
-            if (debug.on()) {
-                debug.log("ZeroRttPacket::encodePacket(ByteBuffer(%d,%d)," +
-                                " src=%s, dst=%s, version=%d, packet=%d, " +
-                                "encodedPacket=%s, payload=QuicFrame(frames: %s, bytes: %d), size=%d",
-                        buffer.position(), buffer.limit(), source, destination,
-                        version, packetNumber, Arrays.toString(encodedPacketNumber),
-                        frames, payloadSize, size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-
-            int encodedLength = encodedPacketNumber.length;
-            assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
-            int pnprefix = encodedLength - 1;
-
-            byte headers = headerBits();
-            assert (headers & 0x03) == pnprefix : headers;
-
-            PacketWriter writer = new PacketWriter(buffer, context, PacketType.ZERORTT);
-            writer.writeHeaders(headers);
-            writer.writeVersion(version);
-            writer.writeLongConnectionId(destination);
-            writer.writeLongConnectionId(source);
-            writer.writePacketLength(length);
-            int packetNumberStart = writer.position();
-            writer.writeEncodedPacketNumber(encodedPacketNumber);
-            int payloadStart = writer.position();
-            writer.writePayload(frames);
-            writer.encryptPayload(packetNumber, payloadStart);
-            assert writer.bytesWritten() == size : writer.bytesWritten() - size;
-            writer.protectLong(packetNumberStart, encodedPacketNumber.length);
-        }
-
     }
 
     private static final class OutgoingOneRttPacket
-            extends OutgoingShortHeaderPacket<OneRttPacket> implements OneRttPacket {
+            extends OutgoingShortHeaderPacket implements OneRttPacket {
 
         final long packetNumber;
         final int size;
@@ -722,11 +796,11 @@ public class QuicPacketEncoder {
         private int tagSize;
         final int payloadSize;
 
-        OutgoingOneRttPacket(byte packetTypeTag, QuicConnectionId destinationId,
+        OutgoingOneRttPacket(QuicConnectionId destinationId,
                              long packetNumber,
                              byte[] encodedPacketNumber,
                              List<? extends QuicFrame> frames, int tagSize) {
-            super(headers(packetTypeTag, encodedPacketNumber.length), destinationId);
+            super(destinationId);
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
             this.frames = List.copyOf(frames);
@@ -755,15 +829,6 @@ public class QuicPacketEncoder {
             return packetNumber;
         }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
@@ -771,11 +836,6 @@ public class QuicPacketEncoder {
         @Override
         public int size() {
             return size;
-        }
-
-        @Override
-        public OneRttPacket packet() {
-            return this;
         }
 
         /**
@@ -812,71 +872,10 @@ public class QuicPacketEncoder {
             return payloadSize;
         }
 
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            encodePacket(buffer, destinationId(), packetNumber, encodedPacketNumber,
-                    frames, payloadSize, size, context);
-        }
-
-        /**
-         * Encode the OneRttPacket into the provided buffer.
-         * This method encrypts the packet into the provided byte buffer as appropriate,
-         * adding packet protection as appropriate.
-         *
-         * @param buffer A buffer to encode the packet into
-         * @param destination The destination connection ID
-         * @param packetNumber The packet number
-         * @param encodedPacketNumber The encoded packet number
-         * @param frames The one RTT packet payload
-         * @param payloadSize The number of bytes required to encode the payload
-         * @param size The one RTT packet total size
-         * @param context
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId destination,
-                long packetNumber,
-                byte[] encodedPacketNumber,
-                List<QuicFrame> frames,
-                int payloadSize,
-                int size, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-
-            if (debug.on()) {
-                debug.log("OneRttPacket::encodePacket(ByteBuffer(%d,%d)," +
-                                " dst=%s, packet=%d, encodedPacket=%s," +
-                                " payload=QuicFrames(frames: %s, bytes: %d)," +
-                                " size=%d",
-                        buffer.position(), buffer.limit(), destination,
-                        packetNumber, Arrays.toString(encodedPacketNumber),
-                        frames, payloadSize, size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-
-            int encodedLength = encodedPacketNumber.length;
-            assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
-            int pnprefix = encodedLength - 1;
-
-            final byte headers = headerBits();
-            assert (headers & 0x03) == pnprefix : "incorrect packet number prefix in headers: " + headers;
-
-            final PacketWriter writer = new PacketWriter(buffer, context, PacketType.ONERTT);
-            writer.writeHeaders(headers);
-            writer.writeShortConnectionId(destination);
-            int packetNumberStart = writer.position();
-            writer.writeEncodedPacketNumber(encodedPacketNumber);
-            int payloadStart = writer.position();
-            writer.writePayload(frames);
-            writer.encryptPayload(packetNumber, payloadStart);
-            assert writer.bytesWritten() == size : writer.bytesWritten() - size;
-            writer.protectShort(packetNumberStart, encodedPacketNumber.length);
-        }
     }
 
     private static final class OutgoingInitialPacket
-            extends OutgoingLongHeaderPacket<InitialPacket> implements InitialPacket {
+            extends OutgoingLongHeaderPacket implements InitialPacket {
 
         final byte[] token;
         final long packetNumber;
@@ -892,14 +891,14 @@ public class QuicPacketEncoder {
 
         }
 
-        public OutgoingInitialPacket(byte packetTypeTag, QuicConnectionId sourceId,
+        public OutgoingInitialPacket(QuicConnectionId sourceId,
                                      QuicConnectionId destinationId,
                                      int version,
                                      byte[] token,
                                      long packetNumber,
                                      byte[] encodedPacketNumber,
                                      List<QuicFrame> frames, int tagSize) {
-            super(headers(packetTypeTag, encodedPacketNumber.length), sourceId, destinationId, version);
+            super(sourceId, destinationId, version);
             this.token = token;
             this.packetNumber = packetNumber;
             this.encodedPacketNumber = encodedPacketNumber;
@@ -940,24 +939,12 @@ public class QuicPacketEncoder {
         @Override
         public long packetNumber() { return packetNumber; }
 
-        public int packetNumberLength() {
-            if (QuicPacketEncoder.class.desiredAssertionStatus()) {
-                var pnprefix = headerBits() & PACKET_NUMBER_MASK;
-                assert pnprefix >= 0 && pnprefix <= 3 : pnprefix;
-                assert encodedPacketNumber.length == pnprefix + 1;
-            }
-            return encodedPacketNumber.length;
-        }
-
         public byte[] encodedPacketNumber() {
             return encodedPacketNumber.clone();
         }
 
         @Override
         public int size() { return size; }
-
-        @Override
-        public InitialPacket packet() { return this; }
 
         /**
          * Computes the value for the packet length field.
@@ -1022,85 +1009,10 @@ public class QuicPacketEncoder {
             return payloadSize;
         }
 
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            encodePacket(buffer, sourceId(), destinationId(), version(), packetNumber,
-                    encodedPacketNumber(), token, frames, payloadSize, size, context);
-        }
-
-        /**
-         * Encode the InitialPacket into the provided buffer.
-         * This method encrypts the packet into the provided byte buffer as appropriate,
-         * adding packet protection as appropriate.
-         *
-         * @param buffer A buffer to encode the packet into.
-         * @param source The source connection ID
-         * @param destination The destination connection ID
-         * @param version The quic protocol version
-         * @param packetNumber The packet number
-         * @param encodedPacketNumber The encoded packet number
-         * @param token The token field (may be null if no token)
-         * @param frames The packet payload
-         * @param payloadSize The number of bytes required to encode the payload
-         * @param size The initial packet total size
-         * @param context coding context
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId source,
-                QuicConnectionId destination,
-                int version,
-                long packetNumber,
-                byte[] encodedPacketNumber,
-                byte[] token,
-                List<QuicFrame> frames,
-                int payloadSize,
-                int size, CodingContext context)
-                    throws IOException, QuicKeyUnavailableException, QuicTransportException {
-            if (size > buffer.remaining()) {
-                throw new BufferOverflowException();
-            }
-
-            if (debug.on()) {
-                debug.log("InitialPacket::encodePacket(ByteBuffer(%d,%d)," +
-                        " src=%s, dst=%s, version=%d, packet=%d, " +
-                        "encodedPacket=%s, token=%s, " +
-                        "payload=QuicFrame(frames: %s, bytes: %d), size=%d",
-                        buffer.position(), buffer.limit(), source, destination,
-                        version, packetNumber, Arrays.toString(encodedPacketNumber),
-                        token == null ? null : "byte[%s]".formatted(token.length),
-                        frames, payloadSize, size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-
-            int encodedLength = encodedPacketNumber.length;
-            assert encodedLength >= 1 && encodedLength <= 4 : encodedLength;
-            int pnprefix = encodedLength - 1;
-
-            byte headers = headerBits();
-            assert (headers & 0x03) == pnprefix : headers;
-
-            PacketWriter writer = new PacketWriter(buffer, context, PacketType.INITIAL);
-            writer.writeHeaders(headers);
-            writer.writeVersion(version);
-            writer.writeLongConnectionId(destination);
-            writer.writeLongConnectionId(source);
-            writer.writeToken(token);
-            writer.writePacketLength(length);
-            int packetNumberStart = writer.position();
-            writer.writeEncodedPacketNumber(encodedPacketNumber);
-            int payloadStart = writer.position();
-            writer.writePayload(frames);
-            writer.encryptPayload(packetNumber, payloadStart);
-            assert writer.bytesWritten() == size : writer.bytesWritten() - size;
-            writer.protectLong(packetNumberStart, encodedPacketNumber.length);
-        }
     }
 
     private static final class OutgoingVersionNegotiationPacket
-            extends OutgoingLongHeaderPacket<VersionNegotiationPacket>
+            extends OutgoingLongHeaderPacket
             implements VersionNegotiationPacket {
 
         final int[] versions;
@@ -1110,7 +1022,7 @@ public class QuicPacketEncoder {
         public OutgoingVersionNegotiationPacket(QuicConnectionId sourceId,
                                      QuicConnectionId destinationId,
                                      int[] versions) {
-            super((byte)0x80, sourceId, destinationId, 0);
+            super(sourceId, destinationId, 0);
             this.versions = versions.clone();
             this.payloadSize = versions.length << 2;
             this.size = computeSize(payloadSize);
@@ -1126,9 +1038,6 @@ public class QuicPacketEncoder {
 
         @Override
         public int payloadSize() { return payloadSize; }
-
-        @Override
-        public VersionNegotiationPacket packet() { return this; }
 
         /**
          * Compute the total packet size, starting at the headers byte and
@@ -1148,88 +1057,6 @@ public class QuicPacketEncoder {
             return size;
         }
 
-        @Override
-        public List<ByteBuffer> payload() { return null; }
-
-        @Override
-        public void encode(ByteBuffer buffer, CodingContext context) {
-            encodePacket(buffer, sourceId(), destinationId(), versions, size);
-        }
-
-        /**
-         * Encode the VersionNegotiationPacket into the provided
-         * buffer.
-         *
-         * @param buffer A buffer to encode the packet into.
-         * @param source The source connection ID
-         * @param destination The destination connection ID
-         * @param versions The supported quic protocol versions
-         * @param size The version negotiation packet total size
-         * @throws BufferOverflowException if the buffer is not large enough
-         */
-        private void encodePacket(
-                ByteBuffer buffer,
-                QuicConnectionId source,
-                QuicConnectionId destination,
-                int[] versions,
-                int size) {
-
-            if (debug.on()) {
-                debug.log("VersionNegotiationPacket::encodePacket(ByteBuffer(%d,%d)," +
-                                " src=%s, dst=%s, versions=%s, size=%d",
-                        buffer.position(), buffer.limit(), source, destination,
-                        Arrays.toString(versions), size);
-            }
-            assert buffer.order() == ByteOrder.BIG_ENDIAN;
-
-            int offset = buffer.position();
-            int limit = buffer.limit();
-            assert buffer.capacity() >= size;
-            assert limit - offset >= size;
-
-            int typeTag = headerBits() & 0xff;
-            int rand = Encoders.RANDOM.nextInt() & 0x7F;
-            int headers = typeTag | rand;
-            if (debug.on()) {
-                debug.log("VersionNegotiationPacket::encodePacket:" +
-                                " type: 0x%02x, unused: 0x%02x, headers: 0x%02x",
-                        typeTag, rand & ~0x80, headers);
-            }
-            assert (headers & typeTag) == typeTag : headers;
-            assert (headers ^ typeTag) == rand : headers;
-
-            // headers(1 byte), version(4 bytes)
-            buffer.put((byte)headers); // 1
-            putInt32(buffer, 0); // 4
-
-            // DCID: 1 byte for length, + destination id bytes
-            var dcidlen = destination.length();
-            assert dcidlen <= MAX_CONNECTION_ID_LENGTH && dcidlen >= 0 : dcidlen;
-            buffer.put((byte)dcidlen); // 1
-            buffer.put(destination.asReadOnlyBuffer());
-            assert buffer.position() == offset + 6 + dcidlen : buffer.position();
-
-            // SCID: 1 byte for length, + source id bytes
-            var scidlen = source.length();
-            assert scidlen <= MAX_CONNECTION_ID_LENGTH && scidlen >= 0 : scidlen;
-            buffer.put((byte) scidlen);
-            buffer.put(source.asReadOnlyBuffer());
-            assert buffer.position() == offset + 7 + dcidlen + scidlen : buffer.position();
-
-            // Put payload (= supported versions)
-            int versionsStart = buffer.position();
-            for (int i=0; i < versions.length; i++) {
-                putInt32(buffer, versions[i]);
-            }
-            int versionsEnd = buffer.position();
-            if (debug.on()) {
-                debug.log("VersionNegotiationPacket::encodePacket:" +
-                                " encoded %d bytes", offset - versionsEnd);
-            }
-
-            assert versionsEnd - offset == size;
-            assert versionsEnd - versionsStart == versions.length << 2;
-        }
     }
 
     /**
@@ -1246,13 +1073,13 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new initial packet
      */
-    public OutgoingQuicPacket<InitialPacket> newInitialPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              byte[] token,
-                                                              long packetNumber,
-                                                              long ackedPacketNumber,
-                                                              List<QuicFrame> frames,
-                                                              CodingContext codingContext) {
+    public OutgoingQuicPacket newInitialPacket(QuicConnectionId source,
+                                               QuicConnectionId destination,
+                                               byte[] token,
+                                               long packetNumber,
+                                               long ackedPacketNumber,
+                                               List<QuicFrame> frames,
+                                               CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newInitialPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1275,7 +1102,7 @@ public class QuicPacketEncoder {
                 new OutgoingInitialPacket.InitialPacketVariableComponents(originalLength, token,
                         source, destination));
         if (originalPacketSize >= 1200) {
-            return new OutgoingInitialPacket(packetHeadersTag(PacketType.INITIAL), source, destination, this.quicVersion.versionNumber(),
+            return new OutgoingInitialPacket(source, destination, this.quicVersion.versionNumber(),
                     token, packetNumber, encodedPacketNumber, frames, tagSize);
         } else {
             // add padding
@@ -1300,7 +1127,7 @@ public class QuicPacketEncoder {
             }
             // add the padding frame as the first frame
             newFrames.add(0, new PaddingFrame(numPaddingBytesNeeded));
-            return new OutgoingInitialPacket(packetHeadersTag(PacketType.INITIAL),
+            return new OutgoingInitialPacket(
                     source, destination, this.quicVersion.versionNumber(),
                     token, packetNumber, encodedPacketNumber, newFrames, tagSize);
         }
@@ -1315,9 +1142,9 @@ public class QuicPacketEncoder {
      * @param versions     The supported quic versions
      * @return the new initial packet
      */
-    public static OutgoingQuicPacket<VersionNegotiationPacket> newVersionNegotiationPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              int[] versions) {
+    public static OutgoingQuicPacket newVersionNegotiationPacket(QuicConnectionId source,
+                                                                 QuicConnectionId destination,
+                                                                 int[] versions) {
         return new OutgoingVersionNegotiationPacket(source, destination, versions);
     }
 
@@ -1330,10 +1157,10 @@ public class QuicPacketEncoder {
      * @param retryToken            The retry token
      * @return the new retry packet
      */
-    public OutgoingQuicPacket<RetryPacket> newRetryPacket(QuicConnectionId source,
-                                                          QuicConnectionId destination,
-                                                          byte[] retryToken) {
-        return new OutgoingRetryPacket(packetHeadersTag(PacketType.RETRY),
+    public OutgoingQuicPacket newRetryPacket(QuicConnectionId source,
+                                             QuicConnectionId destination,
+                                             byte[] retryToken) {
+        return new OutgoingRetryPacket(
                 source, destination, this.quicVersion.versionNumber(), retryToken);
     }
 
@@ -1349,12 +1176,12 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new zero RTT packet
      */
-    public OutgoingQuicPacket<ZeroRttPacket> newZeroRttPacket(QuicConnectionId source,
-                                                              QuicConnectionId destination,
-                                                              long packetNumber,
-                                                              long ackedPacketNumber,
-                                                              List<? extends QuicFrame> frames,
-                                                              CodingContext codingContext) {
+    public OutgoingQuicPacket newZeroRttPacket(QuicConnectionId source,
+                                               QuicConnectionId destination,
+                                               long packetNumber,
+                                               long ackedPacketNumber,
+                                               List<? extends QuicFrame> frames,
+                                               CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newZeroRttPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1365,7 +1192,7 @@ public class QuicPacketEncoder {
         int protectionSampleSize = tlsEngine.getHeaderProtectionSampleSize(KeySpace.ZERO_RTT);
         int minLength = 4 + protectionSampleSize - encodedPacketNumber.length - tagSize;
 
-        return new OutgoingZeroRttPacket(packetHeadersTag(PacketType.ZERORTT),
+        return new OutgoingZeroRttPacket(
                 source, destination, this.quicVersion.versionNumber(), packetNumber,
                 encodedPacketNumber, padFrames(frames, minLength), tagSize);
     }
@@ -1381,11 +1208,11 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new handshake packet
      */
-    public OutgoingQuicPacket<HandshakePacket> newHandshakePacket(QuicConnectionId source,
-                                                                  QuicConnectionId destination,
-                                                                  long packetNumber,
-                                                                  long largestAckedPN,
-                                                                  List<QuicFrame> frames, CodingContext codingContext) {
+    public OutgoingQuicPacket newHandshakePacket(QuicConnectionId source,
+                                                 QuicConnectionId destination,
+                                                 long packetNumber,
+                                                 long largestAckedPN,
+                                                 List<QuicFrame> frames, CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newHandshakePacket: fullPN=%d ackedPN=%d",
                     packetNumber, largestAckedPN);
@@ -1396,7 +1223,7 @@ public class QuicPacketEncoder {
         int protectionSampleSize = tlsEngine.getHeaderProtectionSampleSize(KeySpace.HANDSHAKE);
         int minLength = 4 + protectionSampleSize - encodedPacketNumber.length - tagSize;
 
-        return new OutgoingHandshakePacket(packetHeadersTag(PacketType.HANDSHAKE),
+        return new OutgoingHandshakePacket(
                 source, destination, this.quicVersion.versionNumber(),
                 packetNumber, encodedPacketNumber, padFrames(frames, minLength), tagSize);
     }
@@ -1412,11 +1239,11 @@ public class QuicPacketEncoder {
      * @param codingContext
      * @return the new one RTT packet
      */
-    public OutgoingQuicPacket<OneRttPacket> newOneRttPacket(QuicConnectionId destination,
-                                                            long packetNumber,
-                                                            long ackedPacketNumber,
-                                                            List<? extends QuicFrame> frames,
-                                                            CodingContext codingContext) {
+    public OutgoingQuicPacket newOneRttPacket(QuicConnectionId destination,
+                                              long packetNumber,
+                                              long ackedPacketNumber,
+                                              List<? extends QuicFrame> frames,
+                                              CodingContext codingContext) {
         if (debug.on()) {
             debug.log("newOneRttPacket: fullPN=%d ackedPN=%d",
                     packetNumber, ackedPacketNumber);
@@ -1426,7 +1253,7 @@ public class QuicPacketEncoder {
         int tagSize = tlsEngine.getAuthTagSize();
         int protectionSampleSize = tlsEngine.getHeaderProtectionSampleSize(KeySpace.ONE_RTT);
         int minLength = 4 + protectionSampleSize - encodedPacketNumber.length - tagSize;
-        return new OutgoingOneRttPacket(packetHeadersTag(PacketType.ONERTT),
+        return new OutgoingOneRttPacket(
                 destination, packetNumber,
                 encodedPacketNumber, padFrames(frames, minLength), tagSize);
     }
@@ -1448,7 +1275,7 @@ public class QuicPacketEncoder {
      * @throws IllegalArgumentException if the packet number space is
      *         not one of INITIAL, HANDSHAKE, or APPLICATION
      */
-    public OutgoingQuicPacket<? extends QuicPacket> newOutgoingPacket(
+    public OutgoingQuicPacket newOutgoingPacket(
             KeySpace keySpace,
             PacketSpace packetSpace,
             QuicConnectionId sourceId,
@@ -1513,15 +1340,26 @@ public class QuicPacketEncoder {
      * Encodes the given QuicPacket.
      *
      * @param packet the packet to encode
+     * @param buffer the byte buffer to write the packet into
      * @param context context for encoding
-     * @throws IllegalArgumentException if the packet is not an OutgoingQuicPacket.
+     * @throws IllegalArgumentException if the packet is not an OutgoingQuicPacket,
+     *          or if the packet version does not match the encoder version
+     * @throws BufferOverflowException if the buffer is not large enough
+     * @throws QuicKeyUnavailableException if the packet could not be encrypted
+     *          because the required encryption key is not available
+     * @throws QuicTransportException if encrypting the packet resulted
+     *          in an error that requires closing the connection
      */
     public void encode(QuicPacket packet, ByteBuffer buffer, CodingContext context)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
-        if (packet instanceof OutgoingQuicPacket<?> outgoing) {
-            outgoing.encode(buffer, context);
-        } else {
-            throw new IllegalArgumentException("packet is not an outgoing packet: "
+            throws QuicKeyUnavailableException, QuicTransportException {
+        switch (packet) {
+            case OutgoingOneRttPacket p -> encodePacket(p, buffer, context);
+            case OutgoingZeroRttPacket p -> encodePacket(p, buffer, context);
+            case OutgoingVersionNegotiationPacket p -> encodePacket(p, buffer);
+            case OutgoingHandshakePacket p -> encodePacket(p, buffer, context);
+            case OutgoingInitialPacket p -> encodePacket(p, buffer, context);
+            case OutgoingRetryPacket p -> encodePacket(p, buffer, context);
+            default -> throw new IllegalArgumentException("packet is not an outgoing packet: "
                     + packet.getClass());
         }
     }
@@ -1811,7 +1649,7 @@ public class QuicPacketEncoder {
         }
 
         public void encryptPayload(final long packetNumber, final int payloadstart)
-                throws IOException, QuicTransportException, QuicKeyUnavailableException {
+                throws QuicTransportException, QuicKeyUnavailableException {
             int payloadend = buffer.position();
             ByteBuffer temp = buffer.asReadOnlyBuffer();
             temp.position(offset);

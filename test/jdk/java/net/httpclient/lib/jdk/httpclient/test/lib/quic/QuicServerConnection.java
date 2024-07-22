@@ -55,7 +55,6 @@ import jdk.internal.net.http.quic.frames.HandshakeDoneFrame;
 import jdk.internal.net.http.quic.frames.NewTokenFrame;
 import jdk.internal.net.http.quic.frames.QuicFrame;
 import jdk.internal.net.http.quic.packets.InitialPacket;
-import jdk.internal.net.http.quic.packets.OneRttPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketNumberSpace;
 import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
@@ -288,8 +287,8 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     }
 
     @Override
-    protected void sendStreamData(OutgoingQuicPacket<OneRttPacket> packet)
-            throws IOException, QuicKeyUnavailableException, QuicTransportException {
+    protected void sendStreamData(OutgoingQuicPacket packet)
+            throws QuicKeyUnavailableException, QuicTransportException {
         boolean closeHandshake = false;
         var handshakeSpace = packetNumberSpaces().handshake();
         if (!handshakeSpace.isClosed()) {
@@ -450,15 +449,27 @@ public final class QuicServerConnection extends QuicConnectionImpl {
             throw new QuicTransportException("Peer connection ID does not match",
                     null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
         }
-        if (params.isPresent(version_information)) {
-            VersionInformation vi =
-                    params.getVersionInformationParameter(version_information);
-            // TODO if chosen version or available version = 0 -> parsing failure
-            // TODO server: if chosen version not in available versions -> parsing failure
-            // TODO if chosen version != packet version -> negotiation error
-            // client: if chosen version was not in available versions -> negotiation error
-            // client: if reacted to versions and available versions empty -> negotiation error
-            // client: if reacted to versions packet and version information absent -> negotiation error
+        VersionInformation vi =
+                params.getVersionInformationParameter(version_information);
+        if (vi != null) {
+            boolean found = false;
+            for (int v: vi.availableVersions()) {
+                if (v == vi.chosenVersion()) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                throw new QuicTransportException(
+                        "[version_information] Chosen Version not in Available Versions",
+                        null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
+            }
+            if (vi.chosenVersion() != quicVersion().versionNumber()) {
+                throw new QuicTransportException(
+                        "[version_information] Chosen Version %s does not match version in use %s"
+                                .formatted(vi.chosenVersion(), quicVersion().versionNumber()),
+                        null, 0, QuicTransportErrors.VERSION_NEGOTIATION_ERROR);
+            }
             assert Arrays.stream(vi.availableVersions()).anyMatch(v -> v == preferredQuicVersion.versionNumber());
             if (preferredQuicVersion != quicVersion()) {
                 if (!switchVersion(preferredQuicVersion)) {

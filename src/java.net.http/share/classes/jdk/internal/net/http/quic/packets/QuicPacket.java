@@ -28,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import jdk.internal.net.http.quic.PeerConnectionId;
 import jdk.internal.net.http.quic.QuicConnectionId;
@@ -51,6 +50,14 @@ public interface QuicPacket {
     //       Maybe it's OK to leave it here as it is unlikely to
     //       change too often.
     int PACKET_NUMBER_MASK = 0x03;
+
+    /**
+     * {@return the packet's Destination Connection ID}
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.2">
+     *     RFC 9000, Section 7.2</a>
+     */
+    QuicConnectionId destinationId();
 
     /**
      * The packet number space.
@@ -221,29 +228,6 @@ public interface QuicPacket {
      */
     default long packetNumber() {
         return -1L;
-    }
-
-    /**
-     * This packet header's bits, without protection. When protection is applied,
-     * this becomes the first byte in the packet.
-     * @return this packet headers bits.
-     */
-    // TODO: This is quic version dependent and differs between v1 and v2
-    byte headerBits();
-
-    /**
-     * {@return this packet's payload. May be null}
-     */
-    default List<ByteBuffer> payload() {
-        List<QuicFrame> frames = frames();
-        if (frames == null || frames.isEmpty()) return null;
-        Function<QuicFrame, ByteBuffer> toBB = (QuicFrame f) -> {
-            var bb = ByteBuffer.allocate(f.size());
-            f.encode(bb);
-            bb.flip();
-            return bb;
-        };
-        return frames.stream().map(toBB).toList();
     }
 
     /**

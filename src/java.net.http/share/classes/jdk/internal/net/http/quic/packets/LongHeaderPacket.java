@@ -54,7 +54,7 @@ import jdk.internal.net.http.quic.QuicConnectionId;
  * @spec https://www.rfc-editor.org/info/rfc9369
  *      RFC 9369: QUIC Version 2
  */
-public interface LongHeaderPacket extends HeaderPacket {
+public interface LongHeaderPacket extends QuicPacket {
     @Override
     default HeadersType headersType() { return HeadersType.LONG; }
 

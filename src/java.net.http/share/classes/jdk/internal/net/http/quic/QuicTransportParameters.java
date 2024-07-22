@@ -929,8 +929,11 @@ public final class QuicTransportParameters {
      * is not a version information, or if the given id does not correspond
      * to a {@linkplain #isSupported(TransportParameterId) supported
      * parameter}
+     * @throws QuicTransportException if the parameter value has incorrect length,
+     *      or if any version is equal to zero
      */
-    public VersionInformation getVersionInformationParameter(TransportParameterId id) {
+    public VersionInformation getVersionInformationParameter(TransportParameterId id)
+            throws QuicTransportException {
         ParameterId pid = mapOrThrow(id);
         if (pid != ParameterId.version_information) {
             throw new IllegalArgumentException(String.valueOf(id));
@@ -939,12 +942,28 @@ public final class QuicTransportParameters {
         if (val == null) {
             return null;
         }
+        if (val.length < 4 || (val.length & 3) != 0) {
+            throw new QuicTransportException(
+                    "Invalid version information length " + val.length,
+                    null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
+        }
         ByteBuffer bbval = ByteBuffer.wrap(val);
         assert bbval.order() == ByteOrder.BIG_ENDIAN;
         int chosen = bbval.getInt();
+        if (chosen == 0) {
+            throw new QuicTransportException(
+                    "[version_information] Chosen Version = 0",
+                    null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
+        }
         int[] available = new int[bbval.remaining() / 4];
         for (int i = 0; i < available.length; i++) {
-            available[i] = bbval.getInt();
+            int version = bbval.getInt();
+            if (version == 0) {
+                throw new QuicTransportException(
+                        "[version_information] Available Version = 0",
+                        null, 0, QuicTransportErrors.TRANSPORT_PARAMETER_ERROR);
+            }
+            available[i] = version;
         }
         return new VersionInformation(chosen, available);
     }

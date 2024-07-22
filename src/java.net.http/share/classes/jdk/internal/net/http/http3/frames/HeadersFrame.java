@@ -58,12 +58,6 @@ public final class HeadersFrame extends PartialFrame<HeadersFrame> {
     }
 
     @Override
-    public long type() {
-        return TYPE;
-    }
-
-
-    @Override
     public long length() {
         return length;
     }

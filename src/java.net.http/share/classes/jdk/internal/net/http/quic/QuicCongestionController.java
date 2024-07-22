@@ -59,10 +59,12 @@ public interface QuicCongestionController {
 
     /**
      * Update CC after packets are declared lost
+     *
      * @param lostPackets collection of lost packets
      * @param sentTime    time when the most recent lost packet was sent
+     * @param persistent  true if persistent congestion detected, false otherwise
      */
-    void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime);
+    void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent);
 
     /**
      * Update CC after packets are discarded

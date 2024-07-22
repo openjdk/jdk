@@ -147,6 +147,12 @@ public class PacketSpaceManagerTest {
         public void setLocalQuicTransportParameters(ByteBuffer params) {
             throw new AssertionError("should not come here!");
         }
+
+        @Override
+        public void restartHandshake() throws IOException {
+            throw new AssertionError("should not come here!");
+        }
+
         @Override
         public void setRemoteQuicTransportParametersConsumer(QuicTransportParametersConsumer consumer) {
             throw new AssertionError("should not come here!");
@@ -286,7 +292,7 @@ public class PacketSpaceManagerTest {
 
         @Override
         public int writePacket(QuicPacket packet, ByteBuffer buffer)
-                throws IOException, QuicKeyUnavailableException, QuicTransportException {
+                throws QuicKeyUnavailableException, QuicTransportException {
             int pos = buffer.position();
             encoder.encode(packet, buffer, this);
             return buffer.position() - pos;
@@ -585,7 +591,7 @@ public class PacketSpaceManagerTest {
                 @Override
                 public void packetAcked(int packetBytes, Deadline sentTime) { }
                 @Override
-                public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime) { }
+                public void packetLost(Collection<QuicPacket> lostPackets, Deadline sentTime, boolean persistent) { }
                 @Override
                 public void packetDiscarded(Collection<QuicPacket> discardedPackets) { }
             };
