@@ -442,7 +442,8 @@ public abstract class Process {
      * terminated and the timeout value is less than, or equal to, zero, then
      * this method returns immediately with the value {@code false}.
      *
-     * <p>The default implementation of this method polls the {@code exitValue}
+     * @implSpec
+     * The default implementation of this method polls the {@code exitValue}
      * to check if the process has terminated. Concrete implementations of this
      * class are strongly encouraged to override this method with a more
      * efficient implementation.
@@ -486,7 +487,8 @@ public abstract class Process {
      * terminated and the duration is not positive, then
      * this method returns immediately with the value {@code false}.
      *
-     * <p>The default implementation of this method polls the {@code exitValue}
+     * @implSpec
+     * The default implementation of this method polls the {@code exitValue}
      * to check if the process has terminated. Concrete implementations of this
      * class are strongly encouraged to override this method with a more
      * efficient implementation.
