@@ -367,7 +367,7 @@ jobs:
         run: |
           # Find and remove all bundle artifacts
           # See: https://docs.github.com/en/rest/actions/artifacts?apiVersion=2022-11-28
-          ALL_ARTIFACT_IDS="$(curl -L \
+          ALL_ARTIFACT_IDS="$(curl -sL \
               -H 'Accept: application/vnd.github+json' \
               -H 'Authorization: Bearer ${{ github.token }}' \
               -H 'X-GitHub-Api-Version: 2022-11-28' \
@@ -375,7 +375,7 @@ jobs:
           BUNDLE_ARTIFACT_IDS="$(echo "$ALL_ARTIFACT_IDS" | jq -r -c '.artifacts | map(select(.name|startswith("bundles-"))) | .[].id')"
           for id in $BUNDLE_ARTIFACT_IDS; do
             echo "Removing $id"
-            curl -L \
+            curl -sL \
                 -X DELETE \
                 -H 'Accept: application/vnd.github+json' \
                 -H 'Authorization: Bearer ${{ github.token }}' \
