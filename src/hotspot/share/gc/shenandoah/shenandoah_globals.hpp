@@ -318,7 +318,7 @@
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
                                                                             \
-  product(uintx, ShenandoahParallelRegionStride, 4096, EXPERIMENTAL,        \
+  product(uintx, ShenandoahParallelRegionStride, 8192, EXPERIMENTAL,        \
           "How many regions to process at once during parallel region "     \
           "iteration. Affects heaps with lots of regions.")                 \
                                                                             \
