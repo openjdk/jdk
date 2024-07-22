@@ -399,12 +399,12 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 //      superclass checks on its own thread to catch class circularity and
 //      to avoid deadlock.
 //
-// resolve_with_circularity_detection_or_fail adds a DETECT_CIRCULARITY placeholder to the placeholder table before calling
+// resolve_with_circularity_detection adds a DETECT_CIRCULARITY placeholder to the placeholder table before calling
 // resolve_instance_class_or_null. ClassCircularityError is detected when a DETECT_CIRCULARITY or LOAD_INSTANCE
 // placeholder for the same thread, class, classloader is found.
 // This can be seen with logging option: -Xlog:class+load+placeholders=debug.
 //
-InstanceKlass* SystemDictionary::resolve_with_circularity_detection_or_fail(Symbol* class_name,
+InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,
                                                        Symbol* next_name,
                                                        Handle class_loader,
                                                        Handle protection_domain,
@@ -503,7 +503,8 @@ static void handle_parallel_super_load(Symbol* name,
                                        Handle protection_domain, TRAPS) {
 
   // superk is not used; resolve_super_or_fail is called for circularity check only.
-  Klass* superk = SystemDictionary::resolve_with_circularity_detection_or_fail(name,
+  assert (!CDSConfig::is_dumping_static_archive(), "should not be parallel loading static archive");
+  Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                           superclassname,
                                                           class_loader,
                                                           protection_domain,
@@ -1052,8 +1053,8 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
     }
   }
 
-  Klass *found = resolve_with_circularity_detection_or_fail(klass->name(), super_type->name(),
-                                       class_loader, protection_domain, is_superclass, CHECK_0);
+  Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
+                                                    class_loader, protection_domain, is_superclass, CHECK_0);
   if (found == super_type) {
     return true;
   } else {

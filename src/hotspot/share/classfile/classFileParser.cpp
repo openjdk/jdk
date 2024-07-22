@@ -836,7 +836,7 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
                            "Bad interface name in class file %s", CHECK);
 
         // Call resolve_super so class circularity is checked
-        interf = SystemDictionary::resolve_with_circularity_detection_or_fail(
+        interf = SystemDictionary::resolve_with_circularity_detection(
                                                   _class_name,
                                                   unresolved_klass,
                                                   Handle(THREAD, _loader_data->class_loader()),
@@ -5936,7 +5936,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       _super_klass = vmClasses::Object_klass();
     } else {
       _super_klass = (const InstanceKlass*)
-                       SystemDictionary::resolve_with_circularity_detection_or_fail(
+                       SystemDictionary::resolve_with_circularity_detection(
                                                                _class_name,
                                                                super_class_name,
                                                                loader,
