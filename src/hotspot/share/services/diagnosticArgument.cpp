@@ -369,8 +369,9 @@ template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
   } else {
     _value._name = REALLOC_C_HEAP_ARRAY(char, _value._name, JVM_MAXPATHLEN, mtInternal);
     if (!Arguments::copy_expand_pid(str, len, _value._name, JVM_MAXPATHLEN)) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                err_msg("Invalid file path: %s", str));
+      stringStream error_msg;
+      error_msg.print("Invalid file path: %s", str);
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
     }
   }
 }
