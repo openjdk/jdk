@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 
+import java.util.Random;
 import java.util.function.Function;
 
 /**
@@ -40,6 +41,15 @@ import java.util.function.Function;
  * @run main compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
  */
 public class TestParallelIvInIntCountedLoop {
+    private static final int stride;
+    private static final int stride2;
+
+    static {
+        // stride2 must be a multiple of stride and must not overflow for the optimization to work
+        stride = new Random().nextInt(1, Integer.MAX_VALUE / 16);
+        stride2 = stride * new Random().nextInt(1, 16);
+    }
+
     public static void main(String[] args) {
         TestFramework.run();
         testCorrectness();
@@ -137,6 +147,18 @@ public class TestParallelIvInIntCountedLoop {
     @Test
     @Arguments(values = {Argument.DEFAULT})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    private static int testIntCountedLoopWithIntIVWithRandomStrides(int stop) {
+        int a = 0;
+        for (int i = 0; i < stop; i += stride) {
+            a += stride2;
+        }
+
+        return a;
+    }
+
+    @Test
+    @Arguments(values = {Argument.DEFAULT})
+    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIV(int stop) {
         long a = 0;
         for (int i = 0; i < stop; i++) {
@@ -218,6 +240,18 @@ public class TestParallelIvInIntCountedLoop {
         return a;
     }
 
+    @Test
+    @Arguments(values = {Argument.DEFAULT})
+    @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
+    private static long testIntCountedLoopWithLongIVWithRandomStrides(int stop) {
+        long a = 0;
+        for (int i = 0; i < stop; i += stride) {
+            a += (long) stride2;
+        }
+
+        return a;
+    }
+
     private static <T extends Number> void test(Function<Integer, T> function, int iteration, T expected) {
         T result = function.apply(iteration);
         if (!result.equals(expected)) {
@@ -245,6 +279,10 @@ public class TestParallelIvInIntCountedLoop {
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVMaxPlusOne, i, (long) i * (Long.MAX_VALUE + 1));
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideTwo, i, Math.ceilDiv(i, (long) 2) * 2);
             test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithStrideMinusOne, i, (long) i);
+
+            // test with random stride and stride2 for good measure
+            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithIntIVWithRandomStrides, i, Math.ceilDiv(i, stride) * stride2);
+            test(TestParallelIvInIntCountedLoop::testIntCountedLoopWithLongIVWithRandomStrides, i, Math.ceilDiv(i, (long) stride) * stride2);
         }
     }
 }
