@@ -213,16 +213,25 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
     @Override
     public MethodType resolveConstantDesc(MethodHandles.Lookup lookup) throws ReflectiveOperationException {
-        @SuppressWarnings("removal")
-        MethodType mtype = AccessController.doPrivileged(new PrivilegedAction<>() {
-            @Override
-            public MethodType run() {
-                return MethodType.fromMethodDescriptorString(descriptorString(),
-                                                             lookup.lookupClass().getClassLoader());
-            }
-        });
+        MethodType mtype;
+        try {
+            @SuppressWarnings("removal")
+            MethodType mt = AccessController.doPrivileged(new PrivilegedAction<>() {
+                @Override
+                public MethodType run() {
+                    return MethodType.fromMethodDescriptorString(descriptorString(),
+                        lookup.lookupClass().getClassLoader());
+                }
+            });
+            mtype = mt;
+        } catch (TypeNotPresentException ex) {
+            throw (ClassNotFoundException) ex.getCause();
+        }
 
-        // let's check that the lookup has access to all the types in the method type
+        // Some method types, like ones containing a package private class not accessible
+        // to the overriding method, can be valid method descriptors and obtained from
+        // MethodType.fromMethodDescriptor, but ldc instruction will fail to resolve such
+        // MethodType constants due to access control (JVMS 5.4.3.1 and 5.4.3.5)
         lookup.accessClass(mtype.returnType());
         for (Class<?> paramType: mtype.parameterArray()) {
             lookup.accessClass(paramType);
