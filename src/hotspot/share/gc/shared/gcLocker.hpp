@@ -29,6 +29,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/timer.hpp"
 
 class JavaThread;
 

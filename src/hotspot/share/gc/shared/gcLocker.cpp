@@ -33,6 +33,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/timer.hpp"
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
@@ -88,7 +89,7 @@ void GCLocker::log_debug_jni(const char* msg) {
   }
 }
 
-void GCLocker::log_debug_jni(const char* msg, elapsedTimer elapsed_timer) {
+void GCLocker::log_debug_jni(const char* msg, const elapsedTimer elapsed_timer) {
   Log(gc, jni) log;
   if (log.is_debug()) {
     ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
