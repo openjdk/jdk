@@ -172,7 +172,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     return (is_integral_type(bt) ? Op_ReverseV : 0);
   case Op_ReverseBytesS:
   case Op_ReverseBytesUS:
-    // Subword operations in superword usually don't have precise info
+    // Subword operations in auto vectorization usually don't have precise info
     // about signedness. But the behavior of reverseBytes for short and
     // char are exactly the same.
     return ((bt == T_SHORT || bt == T_CHAR) ? Op_ReverseBytesV : 0);
@@ -388,7 +388,7 @@ int VectorNode::scalar_opcode(int sopc, BasicType bt) {
 }
 
 // Limits on vector size (number of elements) for auto-vectorization.
-bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
+bool VectorNode::vector_size_supported_auto_vectorization(const BasicType bt, int size) {
   return Matcher::max_vector_size_auto_vectorization(bt) >= size &&
          Matcher::min_vector_size(bt) <= size;
 }
@@ -398,7 +398,7 @@ bool VectorNode::vector_size_supported_superword(const BasicType bt, int size) {
 bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      vector_size_supported_superword(bt, vlen)) {
+      vector_size_supported_auto_vectorization(bt, vlen)) {
     int vopc = VectorNode::opcode(opc, bt);
     // For rotate operation we will do a lazy de-generation into
     // OrV/LShiftV/URShiftV pattern if the target does not support
@@ -412,14 +412,6 @@ bool VectorNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
-}
-
-bool VectorNode::is_type_transition_short_to_int(Node* n) {
-  return n->Opcode() == Op_MulAddS2I;
-}
-
-bool VectorNode::is_type_transition_to_int(Node* n) {
-  return is_type_transition_short_to_int(n);
 }
 
 bool VectorNode::is_muladds2i(const Node* n) {
@@ -515,7 +507,11 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
-bool VectorNode::can_transform_shift_op(Node* n, BasicType bt) {
+// Vector unsigned right shift for signed subword types behaves differently
+// from Java Spec. But when the shift amount is a constant not greater than
+// the number of sign extended bits, the unsigned right shift can be
+// vectorized to a signed right shift.
+bool VectorNode::can_use_RShiftI_instead_of_URShiftI(Node* n, BasicType bt) {
   if (n->Opcode() != Op_URShiftI) {
     return false;
   }
@@ -928,6 +924,50 @@ bool VectorNode::is_vector_bitwise_not_pattern(Node* n) {
   return false;
 }
 
+bool VectorNode::is_scalar_unary_op_with_equal_input_and_output_types(int opc) {
+  switch (opc) {
+    case Op_SqrtF:
+    case Op_SqrtD:
+    case Op_AbsF:
+    case Op_AbsD:
+    case Op_AbsI:
+    case Op_AbsL:
+    case Op_NegF:
+    case Op_NegD:
+    case Op_RoundF:
+    case Op_RoundD:
+    case Op_ReverseBytesI:
+    case Op_ReverseBytesL:
+    case Op_ReverseBytesUS:
+    case Op_ReverseBytesS:
+    case Op_ReverseI:
+    case Op_ReverseL:
+    case Op_PopCountI:
+    case Op_CountLeadingZerosI:
+    case Op_CountTrailingZerosI:
+      return true;
+    default:
+      return false;
+  }
+}
+
+// Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
+// returns int type, but Vector API for them returns long type. To unify
+// the implementation in backend, AutoVectorization splits the vector
+// implementation for Java API into an execution node with long type plus
+// another node converting long to int.
+bool VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(int opc) {
+  switch (opc) {
+    case Op_PopCountL:
+    case Op_CountLeadingZerosL:
+    case Op_CountTrailingZerosL:
+      return true;
+    default:
+      return false;
+  }
+}
+
+
 Node* VectorNode::try_to_gen_masked_vector(PhaseGVN* gvn, Node* node, const TypeVect* vt) {
   int vopc = node->Opcode();
   uint vlen = vt->length();
@@ -1304,7 +1344,8 @@ int ReductionNode::opcode(int opc, BasicType bt) {
 }
 
 // Return the appropriate reduction node.
-ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt) {
+ReductionNode* ReductionNode::make(int opc, Node* ctrl, Node* n1, Node* n2, BasicType bt,
+                                   bool requires_strict_order) {
 
   int vopc = opcode(opc, bt);
 
@@ -1314,17 +1355,17 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
-  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2);
-  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2);
+  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
   case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
   case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
-  case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);
-  case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2);
-  case Op_MinReductionV:  return new MinReductionVNode(ctrl, n1, n2);
-  case Op_MaxReductionV:  return new MaxReductionVNode(ctrl, n1, n2);
-  case Op_AndReductionV:  return new AndReductionVNode(ctrl, n1, n2);
-  case Op_OrReductionV:   return new OrReductionVNode(ctrl, n1, n2);
-  case Op_XorReductionV:  return new XorReductionVNode(ctrl, n1, n2);
+  case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_MinReductionV:  return new MinReductionVNode (ctrl, n1, n2);
+  case Op_MaxReductionV:  return new MaxReductionVNode (ctrl, n1, n2);
+  case Op_AndReductionV:  return new AndReductionVNode (ctrl, n1, n2);
+  case Op_OrReductionV:   return new OrReductionVNode  (ctrl, n1, n2);
+  case Op_XorReductionV:  return new XorReductionVNode (ctrl, n1, n2);
   default:
     assert(false, "unknown node: %s", NodeClassNames[vopc]);
     return nullptr;
@@ -1419,7 +1460,7 @@ bool VectorCastNode::implemented(int opc, uint vlen, BasicType src_type, BasicTy
   if (is_java_primitive(dst_type) &&
       is_java_primitive(src_type) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported_superword(dst_type, vlen)) {
+      VectorNode::vector_size_supported_auto_vectorization(dst_type, vlen)) {
     int vopc = VectorCastNode::opcode(opc, src_type);
     return vopc > 0 && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, dst_type);
   }
@@ -1513,7 +1554,7 @@ Node* ReductionNode::make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType
 bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
   if (is_java_primitive(bt) &&
       (vlen > 1) && is_power_of_2(vlen) &&
-      VectorNode::vector_size_supported_superword(bt, vlen)) {
+      VectorNode::vector_size_supported_auto_vectorization(bt, vlen)) {
     int vopc = ReductionNode::opcode(opc, bt);
     return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }

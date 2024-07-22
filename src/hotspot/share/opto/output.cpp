@@ -1321,7 +1321,7 @@ CodeBuffer* PhaseOutput::init_buffer() {
   int code_req  = _buf_sizes._code;
   int const_req = _buf_sizes._const;
 
-  int pad_req   = NativeCall::instruction_size;
+  int pad_req   = NativeCall::byte_size();
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   stub_req += bs->estimate_stub_size();
@@ -2900,7 +2900,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
     // Now make all USEs live
     for( uint i=1; i<n->req(); i++ ) {
       Node *def = n->in(i);
-      assert(def != 0, "input edge required");
+      assert(def != nullptr, "input edge required");
       OptoReg::Name reg_lo = _regalloc->get_reg_first(def);
       OptoReg::Name reg_hi = _regalloc->get_reg_second(def);
       if( OptoReg::is_valid(reg_lo) ) {
@@ -2923,7 +2923,7 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
 // Conditionally add precedence edges.  Avoid putting edges on Projs.
 static void add_prec_edge_from_to( Node *from, Node *to ) {
   if( from->is_Proj() ) {       // Put precedence edge on Proj's input
-    assert( from->req() == 1 && (from->len() == 1 || from->in(1)==0), "no precedence edges on projections" );
+    assert( from->req() == 1 && (from->len() == 1 || from->in(1) == nullptr), "no precedence edges on projections" );
     from = from->in(0);
   }
   if( from != to &&             // No cycles (for things like LD L0,[L0+4] )
@@ -3388,8 +3388,7 @@ void PhaseOutput::install() {
                  C->entry_bci(),
                  CompileBroker::compiler2(),
                  C->has_unsafe_access(),
-                 SharedRuntime::is_wide_vector(C->max_vector_size()),
-                 C->rtm_state());
+                 SharedRuntime::is_wide_vector(C->max_vector_size()));
   }
 }
 
@@ -3397,8 +3396,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                int               entry_bci,
                                AbstractCompiler* compiler,
                                bool              has_unsafe_access,
-                               bool              has_wide_vectors,
-                               RTMState          rtm_state) {
+                               bool              has_wide_vectors) {
   // Check if we want to skip execution of all compiled code.
   {
 #ifndef PRODUCT
@@ -3436,8 +3434,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                                      has_unsafe_access,
                                      SharedRuntime::is_wide_vector(C->max_vector_size()),
                                      C->has_monitors(),
-                                     0,
-                                     C->rtm_state());
+                                     0);
 
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
