@@ -79,7 +79,7 @@ public final class ChainedClassBuilder
     public ClassBuilder withMethod(Utf8Entry name, Utf8Entry descriptor, int flags,
                                    Consumer<? super MethodBuilder> handler) {
         consumer.accept(new BufferedMethodBuilder(terminal.constantPool, terminal.context,
-                                                         name, descriptor, null)
+                                                         name, descriptor, flags, null)
                                        .run(handler)
                                        .toModel());
         return this;
@@ -88,7 +88,7 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
         BufferedMethodBuilder builder = new BufferedMethodBuilder(terminal.constantPool, terminal.context,
-                                                                  method.methodName(), method.methodType(), method);
+                                                                  method.methodName(), method.methodType(), method.flags().flagsMask(), method);
         builder.transform(method, transform);
         consumer.accept(builder.toModel());
         return this;

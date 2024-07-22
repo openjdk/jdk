@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.constantpool.ConstantPool;
 import java.util.Optional;
 
 import java.lang.classfile.Attribute;
@@ -41,6 +42,10 @@ public class AbstractDirectBuilder<M> {
 
     public SplitConstantPool constantPool() {
         return constantPool;
+    }
+
+    public boolean canWriteDirect(ConstantPool source) {
+        return constantPool().canWriteDirect(source);
     }
 
     public Optional<M> original() {
