@@ -1192,7 +1192,7 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  const char *name = _filename.value()._name;
+  const char* name = _filename.value()._name;
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

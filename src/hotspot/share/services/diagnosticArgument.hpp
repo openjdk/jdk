@@ -110,7 +110,7 @@ public:
   void to_string(NanoTimeArgument n, char* buf, size_t len) const;
   void to_string(MemorySizeArgument f, char* buf, size_t len) const;
   void to_string(StringArrayArgument* s, char* buf, size_t len) const;
-  void to_string(FileArgument f, char *buf, size_t len) const;
+  void to_string(FileArgument f, char* buf, size_t len) const;
 };
 
 template <class ArgType> class DCmdArgument: public GenDCmdArgument {

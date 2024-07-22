@@ -108,7 +108,7 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) c
   }
 }
 
-void GenDCmdArgument::to_string(FileArgument f, char *buf, size_t len) const {
+void GenDCmdArgument::to_string(FileArgument f, char* buf, size_t len) const {
   jio_snprintf(buf, len, "%s", (f._name != nullptr) ? f._name : "");
 }
 
@@ -355,21 +355,21 @@ template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
 
 template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
 
-template <>
-void DCmdArgument<FileArgument>::parse_value(const char *str, size_t len,
-                                                   TRAPS) {
-  if (str == NULL) {
+template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
+                                            size_t len, TRAPS) {
+  if (str == nullptr) {
     _value._name = nullptr;
   } else {
     _value._name = NEW_C_HEAP_ARRAY(char, JVM_MAXPATHLEN, mtInternal);
     if (!Arguments::copy_expand_pid(str, len, _value._name, JVM_MAXPATHLEN)) {
-      fatal("Invalid file path: %s", str);
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
+                err_msg("Invalid file path: %s", str));
     }
   }
 }
 
 template <> void DCmdArgument<FileArgument>::init_value(TRAPS) {
-  if (has_default() && _default_string != NULL) {
+  if (has_default() && _default_string != nullptr) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
   } else {
     _value._name = nullptr;
