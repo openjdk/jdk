@@ -47,6 +47,12 @@
 
 typedef ssize_t idx_t;
 
+
+const uintptr_t OneBitUnsigned = 1;
+#define u_nth_bit(n)      (((n) >= BitsPerWord) ? 0 : (OneBitUnsigned << (n)))
+// unsigned version of right_n_bits to prevent undefined behavior from shifting and overflow
+#define u_right_n_bits(n) ((uintptr_t)u_nth_bit(n) - 1)
+
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_first_consecutive_set_bits() and
 // find_last_consecutive_set_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
