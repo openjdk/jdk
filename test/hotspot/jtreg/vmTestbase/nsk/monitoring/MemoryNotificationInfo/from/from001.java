@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import javax.management.openmbean.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 import nsk.share.*;
 import nsk.share.gc.Algorithms;
 import nsk.share.gc.Memory;
@@ -39,6 +40,7 @@ import nsk.share.test.Stresser;
 public class from001 {
 
     private static boolean testFailed = false;
+    private static final int MAX_TRIES = 6; // limit attempts to receive Notification data
 
     public static void main(String[] args) {
 
@@ -62,8 +64,8 @@ public class from001 {
 
         log.display("null CompositeData check passed.");
 
-        // 2. Check CompositeData that doest not represnt
-        // MemoryNotificationInfo - IllegalArgumentException must be thrown
+        // 2. Check CompositeData that does not represent MemoryNotificationInfo
+        // throws IllegalArgumentException
 
         ObjectName mbeanObjectName = null;
         CompositeData cdata = null;
@@ -85,12 +87,13 @@ public class from001 {
             testFailed = true;
         } catch (IllegalArgumentException e) {
 
-            // Expected: CompositeData doest not represnt MemoryNotificationInfo
+            // Expected: CompositeData does not represent MemoryNotificationInfo
         }
 
-        log.display("check for CompositeData doest not represnt MemoryNotificationInfo passed.");
+        log.display("check that CompositeData does not represent MemoryNotificationInfo passed.");
 
-        // 3. Check correct CompositeData
+        // 3. Check correct CompositeData usage:
+        // First try to provoke a Notification on a MemoryPool.
         Object poolObject = null;
         try {
             mbeanObjectName = new ObjectName(ManagementFactory.MEMORY_MXBEAN_NAME);
@@ -123,7 +126,11 @@ public class from001 {
             throw new TestFailure("TEST FAILED. See log.");
         }
 
-        // eat memory just to emmit notification
+        if (poolObject == null) {
+            throw new TestFailure("No memory pool found to test.");
+        }
+
+        // eat memory just to emit notification
         Stresser stresser = new Stresser(args) {
 
             @Override
@@ -133,41 +140,57 @@ public class from001 {
             }
         };
         stresser.start(0);// we use timeout, not iterations
-        GarbageUtils.eatMemory(stresser);
+        int oomCount = GarbageUtils.eatMemory(stresser);
+        log.display("eatMemory returns OOM count: " + oomCount);
 
-        boolean messageNotRecieved = true;
-        while(messageNotRecieved) {
+        // Check for the message.  Poll on queue to avoid waiting forver on failure.
+        // Notification is known to fail, very rarely, with -Xcomp where the allocations
+        // do not affect the monitored pool. Possibly a timing issue, where the "eatMemory"
+        // is done before Notification/threshold processing happens.
+        // The Notification is quite immediate, other than that problem.
+        boolean messageReceived = false;
+        int tries = 0;
+        while (!messageReceived && ++tries < MAX_TRIES) {
             try {
-                from001Listener.queue.take();
-                messageNotRecieved = false;
+                Object r = from001Listener.queue.poll(10000, TimeUnit.MILLISECONDS);
+                if (r == null) {
+                    log.display("poll for Notification data returns null...");
+                    continue;
+                } else {
+                    messageReceived = true;
+                    break;
+                }
             } catch (InterruptedException e) {
-                messageNotRecieved = true;
+                // ignored, continue
             }
         }
 
+        // If we got a Notification, test that the CompositeData can create a MemoryNotificationInfo
+        if (!messageReceived) {
+            throw new TestFailure("No Notification received.");
+        }
         result = MemoryNotificationInfo.from(from001Listener.data.get());
         try {
-           ObjectName poolObjectName = new ObjectName(monitor.getName(poolObject));
-           ObjectName resultObjectName = new ObjectName(
-                     ManagementFactory.MEMORY_POOL_MXBEAN_DOMAIN_TYPE +
-                     ",name=" + result.getPoolName());
+            ObjectName poolObjectName = new ObjectName(monitor.getName(poolObject));
+            ObjectName resultObjectName = new ObjectName(
+                        ManagementFactory.MEMORY_POOL_MXBEAN_DOMAIN_TYPE +
+                        ",name=" + result.getPoolName());
 
-           log.display("poolObjectName : " + poolObjectName +
-                              " resultObjectName : " + resultObjectName);
+            log.display("poolObjectName : " + poolObjectName +
+                        " resultObjectName : " + resultObjectName);
 
-           if (!poolObjectName.equals(resultObjectName)) {
-              log.complain("FAILURE 3.");
-              log.complain("Wrong pool name : " + resultObjectName +
-                           ", expected : " + poolObjectName);
-              testFailed = true;
-           }
+            if (!poolObjectName.equals(resultObjectName)) {
+                log.complain("FAILURE 3.");
+                log.complain("Wrong pool name : " + resultObjectName +
+                             ", expected : " + poolObjectName);
+                testFailed = true;
+            }
 
         } catch (Exception e) {
             log.complain("Unexpected exception " + e);
             e.printStackTrace(log.getOutStream());
             testFailed = true;
         }
-
         if (testFailed) {
             throw new TestFailure("TEST FAILED. See log.");
         }
@@ -183,9 +206,13 @@ class from001Listener implements NotificationListener {
     static SynchronousQueue<Object> queue = new SynchronousQueue<Object>();
 
     public void handleNotification(Notification notification, Object handback) {
-        if (data.get() != null)
+        if (data.get() != null) {
+            System.out.println("handleNotification: ignoring");
             return;
-        data.set((CompositeData) notification.getUserData());
+        }
+        System.out.println("handleNotification: getting data");
+        CompositeData d = (CompositeData) notification.getUserData();
+        data.set(d);
 
         boolean messageNotSent = true;
         while(messageNotSent){
@@ -193,7 +220,7 @@ class from001Listener implements NotificationListener {
                 queue.put(new Object());
                 messageNotSent = false;
             } catch(InterruptedException e) {
-                messageNotSent = true;
+                // ignore, retry
             }
         }
     }
