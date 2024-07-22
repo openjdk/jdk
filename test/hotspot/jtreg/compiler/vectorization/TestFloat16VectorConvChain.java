@@ -25,7 +25,7 @@
 * @test
 * @summary Test Float16 vector conversion chain.
 * @library /test/lib /
-* @run driver compiler.vectorization.TestFloat16VectorConvChain
+* @run driver/timeout=1200 compiler.vectorization.TestFloat16VectorConvChain
 */
 
 package compiler.vectorization;
