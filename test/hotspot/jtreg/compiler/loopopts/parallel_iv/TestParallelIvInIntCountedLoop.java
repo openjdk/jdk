@@ -38,7 +38,7 @@ import java.util.function.Function;
  * @bug 8328528
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
- * @run main compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
+ * @run driver compiler.loopopts.parallel_iv.TestParallelIvInIntCountedLoop
  */
 public class TestParallelIvInIntCountedLoop {
     private static final int stride;
@@ -59,9 +59,11 @@ public class TestParallelIvInIntCountedLoop {
      * The IR framework can only test against static code, and the transformation relies on strides being constants to
      * perform constant propagation. Therefore, we have no choice but repeating the same test case multiple times with
      * different numbers.
+     *
+     * For good measures, a randomly initialized static final stride and stride2 is also tested.
      */
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIV(int stop) {
         int a = 0;
@@ -73,7 +75,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVZero(int stop) {
         int a = 0;
@@ -85,7 +87,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMax(int stop) {
         int a = 0;
@@ -97,7 +99,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMaxMinusOne(int stop) {
         int a = 0;
@@ -109,7 +111,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVMaxPlusOne(int stop) {
         int a = 0;
@@ -121,7 +123,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithStrideTwo(int stop) {
         int a = 0;
@@ -133,7 +135,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithStrideMinusOne(int stop) {
         int a = 0;
@@ -145,7 +147,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static int testIntCountedLoopWithIntIVWithRandomStrides(int stop) {
         int a = 0;
@@ -157,7 +159,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIV(int stop) {
         long a = 0;
@@ -169,7 +171,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVZero(int stop) {
         long a = 0;
@@ -181,7 +183,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMax(int stop) {
         long a = 0;
@@ -193,7 +195,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMaxMinusOne(int stop) {
         long a = 0;
@@ -205,7 +207,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVMaxPlusOne(int stop) {
         long a = 0;
@@ -217,7 +219,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithStrideTwo(int stop) {
         long a = 0;
@@ -229,7 +231,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithStrideMinusOne(int stop) {
         long a = 0;
@@ -241,7 +243,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @Arguments(values = {Argument.DEFAULT})
+    @Arguments(values = {Argument.RANDOM_ONCE})
     @IR(failOn = {IRNode.LOOP, IRNode.COUNTED_LOOP})
     private static long testIntCountedLoopWithLongIVWithRandomStrides(int stop) {
         long a = 0;
