@@ -73,69 +73,63 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
   bool isarg = WhiteBox::lookup_bool("argument", argument);
   const char*  type = lookup_diagnosticArgumentEnum("type", argument);
 
-   if (strcmp(type, "STRING") == 0) {
-     DCmdArgument<char*>* argument = new DCmdArgument<char*>(
-     name, desc,
-     "STRING", mandatory, default_value);
-     if (isarg) {
+  if (strcmp(type, "STRING") == 0) {
+    DCmdArgument<char*>* argument = new DCmdArgument<char*>(
+      name, desc, "STRING", mandatory, default_value);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "NANOTIME") == 0) {
-     DCmdArgument<NanoTimeArgument>* argument = new DCmdArgument<NanoTimeArgument>(
-     name, desc,
-     "NANOTIME", mandatory, default_value);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "NANOTIME") == 0) {
+    DCmdArgument<NanoTimeArgument>* argument = new DCmdArgument<NanoTimeArgument>(
+      name, desc, "NANOTIME", mandatory, default_value);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "JLONG") == 0) {
-     DCmdArgument<jlong>* argument = new DCmdArgument<jlong>(
-     name, desc,
-     "JLONG", mandatory, default_value);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "JLONG") == 0) {
+    DCmdArgument<jlong>* argument = new DCmdArgument<jlong>(
+      name, desc, "JLONG", mandatory, default_value);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "BOOLEAN") == 0) {
-     DCmdArgument<bool>* argument = new DCmdArgument<bool>(
-     name, desc,
-     "BOOLEAN", mandatory, default_value);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "BOOLEAN") == 0) {
+    DCmdArgument<bool>* argument = new DCmdArgument<bool>(
+      name, desc, "BOOLEAN", mandatory, default_value);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "MEMORYSIZE") == 0) {
-     DCmdArgument<MemorySizeArgument>* argument = new DCmdArgument<MemorySizeArgument>(
-     name, desc,
-     "MEMORY SIZE", mandatory, default_value);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "MEMORYSIZE") == 0) {
+    DCmdArgument<MemorySizeArgument>* argument = new DCmdArgument<MemorySizeArgument>(
+      name, desc, "MEMORY SIZE", mandatory, default_value);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "STRINGARRAY") == 0) {
-     DCmdArgument<StringArrayArgument*>* argument = new DCmdArgument<StringArrayArgument*>(
-     name, desc,
-     "STRING SET", mandatory);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "STRINGARRAY") == 0) {
+    DCmdArgument<StringArrayArgument*>* argument = new DCmdArgument<StringArrayArgument*>(
+      name, desc, "STRING SET", mandatory);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   } else if (strcmp(type, "FILE") == 0) {
-     DCmdArgument<FileArgument> *argument =
-      new DCmdArgument<FileArgument>(name, desc, "FILE", mandatory);
-     if (isarg) {
+    }
+  } else if (strcmp(type, "FILE") == 0) {
+    DCmdArgument<FileArgument>* argument = new DCmdArgument<FileArgument>(
+      name, desc, "FILE", mandatory);
+    if (isarg) {
       parser->add_dcmd_argument(argument);
-     } else {
+    } else {
       parser->add_dcmd_option(argument);
-     }
-   }
+    }
+  }
 }
 
 /*
