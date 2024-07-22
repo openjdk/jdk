@@ -32,6 +32,7 @@ import java.io.*;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
@@ -476,6 +477,35 @@ public abstract class Process {
     }
 
     /**
+     * Causes the current thread to wait, if necessary, until the
+     * process represented by this {@code Process} object has
+     * terminated, or the specified waiting duration elapses.
+     *
+     * <p>If the process has already terminated then this method returns
+     * immediately with the value {@code true}.  If the process has not
+     * terminated and the duration is not positive, then
+     * this method returns immediately with the value {@code false}.
+     *
+     * <p>The default implementation of this method polls the {@code exitValue}
+     * to check if the process has terminated. Concrete implementations of this
+     * class are strongly encouraged to override this method with a more
+     * efficient implementation.
+     *
+     * @param duration the maximum duration to wait; if not positive,
+     *                this method returns immediately.
+     * @return {@code true} if the process has exited and {@code false} if
+     *         the waiting duration elapsed before the process has exited.
+     * @throws InterruptedException if the current thread is interrupted
+     *         while waiting.
+     * @throws NullPointerException if duration is null
+     * @since 24
+     */
+    public boolean waitFor(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration, "duration");
+        return waitFor(TimeUnit.NANOSECONDS.convert(duration), TimeUnit.NANOSECONDS);
+    }
+
+    /**
      * Returns the exit value for the process.
      *
      * @return the exit value of the process represented by this
@@ -577,8 +607,8 @@ public abstract class Process {
 
     /**
      * This is called from the default implementation of
-     * {@code waitFor(long, TimeUnit)}, which is specified to poll
-     * {@code exitValue()}.
+     * {@code waitFor(long, TimeUnit)} and {@code waitFor(Duration)},
+     * which are specified to poll {@code exitValue()}.
      */
     private boolean hasExited() {
         try {
