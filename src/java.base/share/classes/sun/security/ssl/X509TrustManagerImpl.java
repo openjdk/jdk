@@ -479,8 +479,17 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         }
 
         if (!identifiable) {
-            checkIdentity(peerHost,
-                    trustedChain[0], algorithm, chainsToPublicCA);
+            try {
+                checkIdentity(peerHost,
+                        trustedChain[0], algorithm, chainsToPublicCA);
+            } catch(CertificateException ce) {
+                if (checkClientTrusted && "HTTPS".equalsIgnoreCase(algorithm)) {
+                    throw new CertificateException("Endpoint Identification Algorithm " +
+                            "HTTPS is not supported on the server side");
+                } else {
+                    throw ce;
+                }
+            }
         }
     }
 

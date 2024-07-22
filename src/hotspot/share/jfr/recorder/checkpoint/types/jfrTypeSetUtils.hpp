@@ -96,6 +96,8 @@ class ClearArtifact {
     assert(IS_NOT_TRANSIENT(value), "invariant");
     SET_PREVIOUS_EPOCH_CLEARED_BIT(value);
     CLEAR_PREVIOUS_EPOCH_METHOD_AND_CLASS(value);
+    assert(IS_THIS_EPOCH_CLEARED_BIT_SET(value), "invariant");
+    assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(value), "invariant");
     return true;
   }
 };
@@ -111,6 +113,8 @@ class ClearArtifact<const Method*> {
     assert(METHOD_IS_NOT_TRANSIENT(method), "invariant");
     SET_PREVIOUS_EPOCH_METHOD_CLEARED_BIT(method);
     CLEAR_PREVIOUS_EPOCH_METHOD_FLAG(method);
+    assert(IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
+    assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
     return true;
   }
 };

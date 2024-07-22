@@ -3035,15 +3035,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  // This method works by doing an mmap over an existing mmaping and effectively discarding
-  // the existing pages. However it won't work for SHM-based large pages that cannot be
-  // uncommitted at all. We don't do anything in this case to avoid creating a segment with
-  // small pages on top of the SHM segment. This method always works for small pages, so we
-  // allow that in any case.
-  if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
-    commit_memory(addr, bytes, alignment_hint, !ExecMem);
-  }
+// Hints to the OS that the memory is no longer needed and may be reclaimed by the OS when convenient.
+// The memory will be re-acquired on touch without needing explicit recommitting.
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
+   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
