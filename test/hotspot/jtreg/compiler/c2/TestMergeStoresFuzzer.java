@@ -55,19 +55,15 @@ import javax.tools.ToolProvider;
 
 public class TestMergeStoresFuzzer {
 
-    public static String generate() throws IOException {
+    public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
         out.println("import compiler.lib.ir_framework.*;");
         out.println("");
-        out.println("public class HelloWorld {");
+        out.println("public class XYZ {");
         out.println("    public static void main(String args[]) {");
         out.println("        System.out.println(\"This is in another java file\");");
-        out.println("        ");
-        out.println("        ");
-        out.println("        System.out.println(Test.class.getName());");
-        out.println("        System.out.println(Test.class);");
-        out.println("        TestFramework.run(HelloWorld.class);");
+        out.println("        TestFramework.run(XYZ.class);");
         out.println("        System.out.println(\"Done with IR framework.\");");
         out.println("    }");
         out.println("");
@@ -86,7 +82,7 @@ public class TestMergeStoresFuzzer {
 
         String src = generate();
         System.out.println(src);
-        JavaFileObject file = new JavaSourceFromString("HelloWorld", src);
+        JavaFileObject file = new JavaSourceFromString("XYZ", src);
 
         Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
         List<String> optionList = new ArrayList<String>();
@@ -95,10 +91,6 @@ public class TestMergeStoresFuzzer {
         optionList.add("-d");
         optionList.add(System.getProperty("test.classes"));
         CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, compilationUnits);
-
-        System.out.println(Test.class.getName());
-        System.out.println(Test.class);
-        System.out.println("classpath: " + System.getProperty("java.class.path"));
 
         boolean success = task.call();
         for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
@@ -119,7 +111,7 @@ public class TestMergeStoresFuzzer {
                 URL[] urls = new URL[] { new File("").toURI().toURL(),
                                          new File(System.getProperty("test.classes")).toURI().toURL()};
                 URLClassLoader classLoader = URLClassLoader.newInstance(urls, sysLoader);
-                Class.forName("HelloWorld", true, classLoader).getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
+                Class.forName("XYZ", true, classLoader).getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Class not found:", e);
             } catch (NoSuchMethodException e) {
