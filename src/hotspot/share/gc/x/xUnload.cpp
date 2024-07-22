@@ -87,13 +87,13 @@ public:
 class XCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
+    XReentrantLock* const lock = XNMethod::ic_lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
+    XReentrantLock* const lock = XNMethod::ic_lock_for_nmethod(nm);
     lock->unlock();
   }
 
@@ -102,7 +102,7 @@ public:
       return true;
     }
 
-    XReentrantLock* const lock = XNMethod::lock_for_nmethod(nm);
+    XReentrantLock* const lock = XNMethod::ic_lock_for_nmethod(nm);
     return lock->is_owned();
   }
 };

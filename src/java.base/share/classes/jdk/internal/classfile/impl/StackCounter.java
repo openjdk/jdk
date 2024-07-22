@@ -51,7 +51,7 @@ public final class StackCounter {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
+                ((BufWriterImpl) dcb.bytecodesBufWriter).asByteBuffer(),
                 dcb.constantPool,
                 dcb.handlers);
     }
@@ -296,7 +296,7 @@ public final class StackCounter {
                         next();
                     }
                     case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD -> {
-                        var tk = TypeKind.fromDescriptor(((MemberRefEntry)cp.entryByIndex(bcs.getIndexU2())).nameAndType().type().stringValue());
+                        var tk = TypeKind.fromDescriptor(cp.entryByIndex(bcs.getIndexU2(), MemberRefEntry.class).nameAndType().type());
                         switch (bcs.rawCode) {
                             case GETSTATIC ->
                                 addStackSlot(tk.slotSize());
@@ -368,7 +368,7 @@ public final class StackCounter {
             case TAG_DOUBLE, TAG_LONG ->
                 addStackSlot(+2);
             case TAG_CONSTANTDYNAMIC ->
-                addStackSlot(((ConstantDynamicEntry)cp.entryByIndex(index)).typeKind().slotSize());
+                addStackSlot(cp.entryByIndex(index, ConstantDynamicEntry.class).typeKind().slotSize());
             default ->
                 throw error("CP entry #%d %s is not loadable constant".formatted(index, cp.entryByIndex(index).tag()));
         }

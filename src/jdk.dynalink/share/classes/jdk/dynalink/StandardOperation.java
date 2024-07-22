@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,8 @@ public enum StandardOperation implements Operation {
      * <code>(receiver)&rarr;void</code> when used with {@link NamedOperation},
      * with all parameters being of any type (either primitive
      * or reference). This operation must always be used as part of a {@link NamespaceOperation}.
+     *
+     * @since 10
      */
     REMOVE,
     /**

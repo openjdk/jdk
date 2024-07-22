@@ -50,9 +50,6 @@ public abstract class Generation extends VMObject {
   private static long          reservedFieldOffset;
   private static long          virtualSpaceFieldOffset;
   protected static final int  K = 1024;
-  // Fields for class StatRecord
-  private static Field         statRecordField;
-  private static CIntegerField invocationField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -67,18 +64,10 @@ public abstract class Generation extends VMObject {
 
     reservedFieldOffset     = type.getField("_reserved").getOffset();
     virtualSpaceFieldOffset = type.getField("_virtual_space").getOffset();
-    // StatRecord
-    statRecordField         = type.getField("_stat_record");
-    type                    = db.lookupType("Generation::StatRecord");
-    invocationField         = type.getCIntegerField("invocations");
   }
 
   public Generation(Address addr) {
     super(addr);
-  }
-
-  public int invocations() {
-    return getStatRecord().getInvocations();
   }
 
   /** The maximum number of object bytes the generation can currently
@@ -123,19 +112,4 @@ public abstract class Generation extends VMObject {
 
   public void print() { printOn(System.out); }
   public abstract void printOn(PrintStream tty);
-
-  public static class StatRecord extends VMObject {
-    public StatRecord(Address addr) {
-      super(addr);
-    }
-
-    public int getInvocations() {
-      return (int) invocationField.getValue(addr);
-    }
-
-  }
-
-  private StatRecord getStatRecord() {
-    return VMObjectFactory.newObject(StatRecord.class, addr.addOffsetTo(statRecordField.getOffset()));
-  }
 }

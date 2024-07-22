@@ -25,6 +25,7 @@
  * @test
  * @bug 6968351
  * @summary  tcp no delay not required for small payloads
+ * @requires vm.compMode != "Xcomp"
  * @library /test/lib
  * @run main/othervm/timeout=5 -Dsun.net.httpserver.nodelay=false  TcpNoDelayNotRequired
  */

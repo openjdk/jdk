@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,73 +32,96 @@ import com.sun.net.httpserver.*;
 public class UnmodifiableHeaders extends Headers {
 
     private final Headers headers;  // modifiable, but no reference to it escapes
-    private final Map<String, List<String>> map;  // unmodifiable
+    private final Map<String, List<String>> unmodifiableView;  // unmodifiable
 
     public UnmodifiableHeaders(Headers headers) {
         var h = headers;
         var unmodHeaders = new Headers();
         h.forEach((k, v) -> unmodHeaders.put(k, Collections.unmodifiableList(v)));
-        this.map = Collections.unmodifiableMap(unmodHeaders);
+        this.unmodifiableView = Collections.unmodifiableMap(unmodHeaders);
         this.headers = unmodHeaders;
     }
 
+    @Override
     public int size() {return headers.size();}
 
+    @Override
     public boolean isEmpty() {return headers.isEmpty();}
 
+    @Override
     public boolean containsKey(Object key) { return headers.containsKey(key); }
 
+    @Override
     public boolean containsValue(Object value) { return headers.containsValue(value); }
 
+    @Override
     public List<String> get(Object key) { return headers.get(key); }
 
+    @Override
     public String getFirst(String key) { return headers.getFirst(key); }
 
+    @Override
     public List<String> put(String key, List<String> value) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public void add(String key, String value) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public void set(String key, String value) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public List<String> remove(Object key) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public void putAll(Map<? extends String,? extends List<String>> t)  {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public void clear() {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
-    public Set<String> keySet() { return map.keySet(); }
+    @Override
+    public Set<String> keySet() { return unmodifiableView.keySet(); }
 
-    public Collection<List<String>> values() { return map.values(); }
+    @Override
+    public Collection<List<String>> values() { return unmodifiableView.values(); }
 
-    /* TODO check that contents of set are not modifable : security */
+    @Override
+    public Set<Map.Entry<String, List<String>>> entrySet() { return unmodifiableView.entrySet(); }
 
-    public Set<Map.Entry<String, List<String>>> entrySet() { return map.entrySet(); }
-
+    @Override
     public List<String> replace(String key, List<String> value) {
         throw new UnsupportedOperationException("unsupported operation");
     }
 
+    @Override
     public boolean replace(String key, List<String> oldValue, List<String> newValue) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public void replaceAll(BiFunction<? super String, ? super List<String>, ? extends List<String>> function) {
         throw new UnsupportedOperationException ("unsupported operation");
     }
 
+    @Override
     public boolean equals(Object o) {return headers.equals(o);}
 
+    @Override
     public int hashCode() {return headers.hashCode();}
+
+    @Override
+    public String toString() {
+        return headers.toString();
+    }
 }

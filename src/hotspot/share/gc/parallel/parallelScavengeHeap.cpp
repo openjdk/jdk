@@ -441,11 +441,7 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
 }
 
 void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
-  // The do_full_collection() parameter clear_all_soft_refs
-  // is interpreted here as maximum_compaction which will
-  // cause SoftRefs to be cleared.
-  bool maximum_compaction = clear_all_soft_refs;
-  PSParallelCompact::invoke(maximum_compaction);
+  PSParallelCompact::invoke(clear_all_soft_refs);
 }
 
 // Failed allocation policy. Must be called from the VM thread, and
@@ -661,7 +657,7 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
            "addr should be in allocated part of old gen");
     return old_gen()->start_array()->object_start((HeapWord*)addr);
   }
-  return 0;
+  return nullptr;
 }
 
 bool ParallelScavengeHeap::block_is_obj(const HeapWord* addr) const {
@@ -840,24 +836,6 @@ void ParallelScavengeHeap::complete_loaded_archive_space(MemRegion archive_space
          "Archive space not contained in old gen");
   _old_gen->complete_loaded_archive_space(archive_space);
 }
-
-#ifndef PRODUCT
-void ParallelScavengeHeap::record_gen_tops_before_GC() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->record_spaces_top();
-    old_gen()->record_spaces_top();
-  }
-}
-
-void ParallelScavengeHeap::gen_mangle_unused_area() {
-  if (ZapUnusedHeapArea) {
-    young_gen()->eden_space()->mangle_unused_area();
-    young_gen()->to_space()->mangle_unused_area();
-    young_gen()->from_space()->mangle_unused_area();
-    old_gen()->object_space()->mangle_unused_area();
-  }
-}
-#endif
 
 void ParallelScavengeHeap::register_nmethod(nmethod* nm) {
   ScavengableNMethods::register_nmethod(nm);

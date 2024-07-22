@@ -821,6 +821,16 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   return ret_code;
 }
 
+void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
+  if (millis < 0) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
+  }
+  ObjectSynchronizer::inflate(THREAD,
+                              obj(),
+                              inflate_cause_wait)->wait(millis, false, THREAD);
+}
+
+
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 
@@ -1056,7 +1066,9 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       }
       // Fall thru so we only have one place that installs the hash in
       // the ObjectMonitor.
-    } else if (LockingMode == LM_LEGACY && mark.has_locker() && current->is_lock_owned((address)mark.locker())) {
+    } else if (LockingMode == LM_LEGACY && mark.has_locker()
+               && current->is_Java_thread()
+               && JavaThread::cast(current)->is_lock_owned((address)mark.locker())) {
       // This is a stack-lock owned by the calling thread so fetch the
       // displaced markWord from the BasicLock on the stack.
       temp = mark.displaced_mark_helper();

@@ -159,7 +159,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
         return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (MemorySessionImpl)scope, action);
+                (MemorySessionImpl)scope, readOnly, action);
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -357,10 +357,15 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @ForceInline
-    public void checkAccess(long offset, long length, boolean readOnly) {
+    public void checkReadOnly(boolean readOnly) {
         if (!readOnly && this.readOnly) {
             throw new IllegalArgumentException("Attempt to write a read-only segment");
         }
+    }
+
+    @ForceInline
+    public void checkAccess(long offset, long length, boolean readOnly) {
+        checkReadOnly(readOnly);
         checkBounds(offset, length);
     }
 
@@ -823,6 +828,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void set(AddressLayout layout, long offset, MemorySegment value) {
+        Objects.requireNonNull(value);
         layout.varHandle().set((MemorySegment)this, offset, value);
     }
 
@@ -948,6 +954,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     @ForceInline
     @Override
     public void setAtIndex(AddressLayout layout, long index, MemorySegment value) {
+        Objects.requireNonNull(value);
         Utils.checkElementAlignment(layout, "Layout alignment greater than its size");
         layout.varHandle().set((MemorySegment)this, index * layout.byteSize(), value);
     }

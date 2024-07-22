@@ -69,6 +69,7 @@ public:
 class ObjectSynchronizer : AllStatic {
   friend class VMStructs;
   friend class ObjectMonitorDeflationLogging;
+  friend class WhiteBox;
 
  public:
   typedef enum {
@@ -118,6 +119,11 @@ public:
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
   static bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
+
+  // Special internal-use-only method for use by JVM infrastructure
+  // that needs to wait() on a java-level object but that can't risk
+  // throwing unexpected InterruptedExecutionExceptions.
+  static void waitUninterruptibly(Handle obj, jlong Millis, TRAPS);
 
   // Inflate light weight monitor to heavy weight monitor
   static ObjectMonitor* inflate(Thread* current, oop obj, const InflateCause cause);
@@ -225,6 +231,7 @@ class ObjectLocker : public StackObj {
 
   // Monitor behavior
   void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
+  void wait_uninterruptibly(TRAPS)  { ObjectSynchronizer::waitUninterruptibly(_obj, 0, CHECK); } // wait forever
   void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
 };
 

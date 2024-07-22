@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -688,12 +688,9 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesRemoveDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
+class CompilerDirectivesRemoveDCmd : public DCmd {
 public:
-  static int num_arguments() { return 1; }
-  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap);
+  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "Compiler.directives_remove";
   }
@@ -714,9 +711,8 @@ public:
 class CompilerDirectivesAddDCmd : public DCmdWithParser {
 protected:
   DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 1; }
   CompilerDirectivesAddDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.directives_add";
@@ -735,36 +731,9 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-class CompilerDirectivesReplaceDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<char*> _filename;
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
+class CompilerDirectivesClearDCmd : public DCmd {
 public:
-  static int num_arguments() { return 2; }
-  CompilerDirectivesReplaceDCmd(outputStream* output, bool heap);
-  static const char* name() {
-    return "Compiler.directives_replace";
-  }
-  static const char* description() {
-    return "Clear directives stack, and load new compiler directives from file.";
-  }
-  static const char* impact() {
-    return "Low";
-  }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "monitor", NULL};
-    return p;
-  }
-  virtual void execute(DCmdSource source, TRAPS);
-};
-
-class CompilerDirectivesClearDCmd : public DCmdWithParser {
-protected:
-  DCmdArgument<bool> _refresh; // true if update should be forced after directives changes.
-public:
-  static int num_arguments() { return 1; }
-  CompilerDirectivesClearDCmd(outputStream* output, bool heap);
+  CompilerDirectivesClearDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
   static const char* name() {
     return "Compiler.directives_clear";
   }
@@ -1014,16 +983,14 @@ public:
 
 #ifdef LINUX
 
-class SystemMapDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _human_readable;
+class SystemMapDCmd : public DCmd {
 public:
-  static int num_arguments() { return 1; }
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
     return "Prints an annotated process memory map of the VM process (linux only).";
   }
-  static const char* impact() { return "Low"; }
+  static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};
@@ -1033,16 +1000,15 @@ public:
 };
 
 class SystemDumpMapDCmd : public DCmdWithParser {
-  DCmdArgument<bool> _human_readable;
   DCmdArgument<char*> _filename;
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 1; }
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
     return "Dumps an annotated process memory map to an output file (linux only).";
   }
-  static const char* impact() { return "Low"; }
+  static const char* impact() { return "Medium; can be high for very large java heaps."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};

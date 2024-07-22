@@ -486,9 +486,9 @@ public class Socket implements java.io.Closeable {
      *             the specified range of valid port values, which is between
      *             0 and 65535, inclusive.
      * @see        SecurityManager#checkConnect
-     * @deprecated Use DatagramSocket instead for UDP transport.
+     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.1")
     @SuppressWarnings("this-escape")
     public Socket(String host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) :
@@ -529,9 +529,9 @@ public class Socket implements java.io.Closeable {
      *             0 and 65535, inclusive.
      * @throws     NullPointerException if {@code host} is null.
      * @see        SecurityManager#checkConnect
-     * @deprecated Use DatagramSocket instead for UDP transport.
+     * @deprecated Use {@link DatagramSocket} instead for UDP transport.
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "1.1")
     @SuppressWarnings("this-escape")
     public Socket(InetAddress host, int port, boolean stream) throws IOException {
         this(host != null ? new InetSocketAddress(host, port) : null,
