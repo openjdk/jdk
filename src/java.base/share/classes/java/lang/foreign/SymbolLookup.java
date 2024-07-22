@@ -219,7 +219,7 @@ public interface SymbolLookup {
      * were loaded after this method returned.
      * <p>
      * Libraries associated with a class loader are unloaded when the class loader becomes
-     * <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>. The
+     * {@linkplain java.lang.ref##reachability unreachable}. The
      * symbol lookup returned by this method is associated with an automatic
      * {@linkplain MemorySegment.Scope scope} which keeps the caller's class loader
      * reachable. Therefore, libraries associated with the caller's class loader are
