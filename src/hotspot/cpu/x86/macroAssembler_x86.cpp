@@ -5058,10 +5058,6 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   BLOCK_COMMENT("lookup_secondary_supers_table {");
 
-#ifdef DEBUG
-  call_VM_leaf_base((address)&poo, /*number_of_arguments*/0);
-#endif
-
   RegSetIterator<Register> available_regs = (temps - rcx).begin();
 
   // FIXME. Once we are sure that all paths reaching this point really

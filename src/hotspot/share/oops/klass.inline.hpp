@@ -77,6 +77,7 @@ inline ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
+// Hashed search for secondary super k.
 inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   uintx bitmap = _bitmap;
 
