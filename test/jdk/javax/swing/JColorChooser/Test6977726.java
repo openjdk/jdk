@@ -41,7 +41,9 @@ public class Test6977726 {
         String instructions = """
                 Check that there is a panel with "Text Preview Panel" text
                 and with title "Preview" in the JColorChooser.
-                Test passes if the panel is as described, test fails otherwise.""";
+                Test passes if the panel is as described, test fails otherwise.
+
+                Note: "Preview" title is not applicable for GTK Look and Feel.""";
 
         PassFailJFrame.builder()
                 .title("Test6977726")
