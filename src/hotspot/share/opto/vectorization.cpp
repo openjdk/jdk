@@ -943,11 +943,40 @@ bool VPointer::scaled_iv_plus_offset(Node* n) {
     }
   } else if (opc == Op_SubI || opc == Op_SubL) {
     if (offset_plus_k(n->in(2), true) && scaled_iv_plus_offset(n->in(1))) {
+      // (offset1 + invar1 + scale * iv) - (offset2 + invar2)
+      // Subtraction handled via "negate" flag of "offset_plus_k".
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_6(n);)
       return true;
     }
-    if (offset_plus_k(n->in(1)) && scaled_iv_plus_offset(n->in(2))) {
-      _scale *= -1;
+    VPointer tmp(this);
+    if (offset_plus_k(n->in(1)) && tmp.scaled_iv_plus_offset(n->in(2))) {
+      // (offset1 + invar1) - (offset2 + invar2 + scale * iv)
+      // Subtraction handled explicitly below.
+      assert(_scale == 0, "shouldn't be set yet");
+      // _scale = -tmp._scale
+      if (!try_MulI_no_overflow(-1, tmp._scale, _scale)) {
+        return false; // mul overflow.
+      }
+      // _offset -= tmp._offset
+      if (!try_SubI_no_overflow(_offset, tmp._offset, _offset)) {
+        return false; // sub overflow.
+      }
+      // _invar -= tmp._invar
+      if (tmp._invar != nullptr) {
+        maybe_add_to_invar(tmp._invar, true);
+#ifdef ASSERT
+        _debug_invar_scale = tmp._debug_invar_scale;
+        _debug_negate_invar = !tmp._debug_negate_invar;
+#endif
+      }
+
+      // Forward info about the int_index:
+      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
+      _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
+      _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
+      _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
+      _int_index_after_convI2L_scale  = tmp._int_index_after_convI2L_scale;
+
       NOT_PRODUCT(_tracer.scaled_iv_plus_offset_7(n);)
       return true;
     }
@@ -989,7 +1018,9 @@ bool VPointer::scaled_iv(Node* n) {
     }
   } else if (opc == Op_LShiftI) {
     if (n->in(1) == iv() && n->in(2)->is_Con()) {
-      _scale = 1 << n->in(2)->get_int();
+      if (!try_LShiftI_no_overflow(1, n->in(2)->get_int(), _scale)) {
+        return false; // shift overflow.
+      }
       NOT_PRODUCT(_tracer.scaled_iv_6(n, _scale);)
       return true;
     }
@@ -1012,15 +1043,24 @@ bool VPointer::scaled_iv(Node* n) {
     if (tmp.scaled_iv_plus_offset(n->in(1)) && tmp.has_iv()) {
       // We successfully matched an integer index, of the form:
       //   int_index = int_offset + int_invar + int_scale * iv
+      // Forward scale.
+      assert(_scale == 0 && tmp._scale != 0, "iv only found just now");
+      _scale = tmp._scale;
+      // Accumulate offset.
+      if (!try_AddI_no_overflow(_offset, tmp._offset, _offset)) {
+        return false; // add overflow.
+      }
+      // Accumulate invar.
+      if (tmp._invar != nullptr) {
+        maybe_add_to_invar(tmp._invar, false);
+      }
+      // Set info about the int_index:
+      assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
       _has_int_index_after_convI2L = true;
       _int_index_after_convI2L_offset = tmp._offset;
       _int_index_after_convI2L_invar  = tmp._invar;
       _int_index_after_convI2L_scale  = tmp._scale;
-    }
 
-    // Now parse it again for the real VPointer. This makes sure that the int_offset, int_invar,
-    // and int_scale are properly added to the final VPointer's offset, invar, and scale.
-    if (scaled_iv_plus_offset(n->in(1))) {
       NOT_PRODUCT(_tracer.scaled_iv_7(n);)
       return true;
     }
@@ -1039,12 +1079,14 @@ bool VPointer::scaled_iv(Node* n) {
       NOT_PRODUCT(_tracer.scaled_iv_8(n, &tmp);)
 
       if (tmp.scaled_iv_plus_offset(n->in(1))) {
-        int scale = n->in(2)->get_int();
+        int shift = n->in(2)->get_int();
         // Accumulate scale.
-        _scale   = tmp._scale  << scale;
+        if (!try_LShiftI_no_overflow(tmp._scale, shift, _scale)) {
+          return false; // shift overflow.
+        }
         // Accumulate offset.
         int shifted_offset = 0;
-        if (!try_LShiftI_no_overflow(tmp._offset, scale, shifted_offset)) {
+        if (!try_LShiftI_no_overflow(tmp._offset, shift, shifted_offset)) {
           return false; // shift overflow.
         }
         if (!try_AddI_no_overflow(_offset, shifted_offset, _offset)) {
@@ -1061,6 +1103,7 @@ bool VPointer::scaled_iv(Node* n) {
         }
 
         // Forward info about the int_index:
+        assert(!_has_int_index_after_convI2L, "no previous int_index discovered");
         _has_int_index_after_convI2L = tmp._has_int_index_after_convI2L;
         _int_index_after_convI2L_offset = tmp._int_index_after_convI2L_offset;
         _int_index_after_convI2L_invar  = tmp._int_index_after_convI2L_invar;
@@ -1255,8 +1298,21 @@ bool VPointer::try_AddSubI_no_overflow(int offset1, int offset2, bool is_sub, in
 }
 
 bool VPointer::try_LShiftI_no_overflow(int offset, int shift, int& result) {
+  if (shift < 0 || shift > 31) {
+    return false;
+  }
   jlong long_offset = java_shift_left((jlong)(offset), shift);
   jint  int_offset  = java_shift_left(        offset,  shift);
+  if (long_offset != int_offset) {
+    return false;
+  }
+  result = int_offset;
+  return true;
+}
+
+bool VPointer::try_MulI_no_overflow(int offset1, int offset2, int& result) {
+  jlong long_offset = java_multiply((jlong)(offset1), (jlong)(offset2));
+  jint  int_offset  = java_multiply(        offset1,          offset2);
   if (long_offset != int_offset) {
     return false;
   }
