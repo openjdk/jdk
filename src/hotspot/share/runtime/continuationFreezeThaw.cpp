@@ -2451,7 +2451,7 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   assert(is_aligned(sp, frame::frame_alignment), "");
 
   // All the frames have been thawed so we know they don't hold any monitors
-  assert(thread->held_monitor_count() == 0, "Must be");
+  assert(thread->held_monitor_count() - thread->jni_monitor_count() == 0, "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
