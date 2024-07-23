@@ -445,7 +445,7 @@ public abstract class Process {
      * @implSpec
      * The default implementation of this method polls the {@code exitValue}
      * to check if the process has terminated.
-     * @apiNote
+     * @implNote
      * Concrete implementations of this class are strongly encouraged to
      * override this method with a more efficient implementation.
      *
@@ -491,7 +491,7 @@ public abstract class Process {
      * @implSpec
      * The default implementation of this method polls the {@code exitValue}
      * to check if the process has terminated.
-     * @apiNote
+     * @implNote
      * Concrete implementations of this class are strongly encouraged to
      * override this method with a more efficient implementation.
      *
