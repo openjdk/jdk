@@ -39,12 +39,12 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Models an {@code annotation} structure, as defined in {@jvms 4.7.16}.
  * <p>
- * Each {@code annotation} structure denotes an annotation applied to an artifact
- * in Java source code ({@jls 9.7.4}). The structure indicates the interface of
- * the annotation and a set of element-value pairs. This should be compared using
- * the {@link Object#equals(Object) equals} method.
+ * Each {@code annotation} structure denotes an annotation which is applied to a
+ * construct in Java source code ({@jls 9.7.4}). The structure indicates the
+ * interface of the annotation and a set of element-value pairs. This should be
+ * compared using the {@link Object#equals(Object) equals} method.
  * <p>
- * This structure does not indicate the artifact on which the structure is applied.
+ * This structure does not indicate the construct on which the structure is applied.
  * By its location in the class file, this structure may represent:
  * <ul><li>a <i>declaration annotation</i> on a class, method, or field declaration,
  * encoded as an item in a {@link RuntimeVisibleAnnotationsAttribute} or
