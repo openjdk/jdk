@@ -71,11 +71,6 @@ public final class BufferedCodeBuilder
     }
 
     @Override
-    public Optional<CodeModel> original() {
-        return Optional.ofNullable(original);
-    }
-
-    @Override
     public Label newLabel() {
         return new LabelImpl(this, -1);
     }
