@@ -1181,8 +1181,8 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-    shenandoah_assert_correct(nullptr, copy_val);
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
+    shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
