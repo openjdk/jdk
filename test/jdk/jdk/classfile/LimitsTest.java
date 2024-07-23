@@ -28,7 +28,6 @@
  * @run junit LimitsTest
  */
 import java.lang.classfile.Attributes;
-import java.lang.classfile.BufWriter;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -44,6 +43,8 @@ import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
 import java.lang.classfile.instruction.LocalVariable;
 import java.util.List;
+
+import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.DirectMethodBuilder;
 import jdk.internal.classfile.impl.LabelContext;
@@ -130,7 +131,7 @@ class LimitsTest {
                 "lookupSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
                         ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
-                                public void writeBody(BufWriter b) {
+                                public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
                                     b.writeInt(16);
@@ -155,7 +156,7 @@ class LimitsTest {
                 "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
                         ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
-                                public void writeBody(BufWriter b) {
+                                public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
                                     b.writeInt(16);
@@ -173,7 +174,7 @@ class LimitsTest {
                 "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
                         ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
-                                public void writeBody(BufWriter b) {
+                                public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
                                     b.writeInt(20);

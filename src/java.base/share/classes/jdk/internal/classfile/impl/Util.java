@@ -24,6 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.PseudoInstruction;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
@@ -47,7 +50,6 @@ import jdk.internal.access.SharedSecrets;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
@@ -188,6 +190,31 @@ public class Util {
         return ((AbstractPoolEntry.NameAndTypeEntryImpl)nat).methodTypeSymbol();
     }
 
+    @SuppressWarnings("unchecked")
+    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+        if (attr instanceof CustomAttribute<?> ca) {
+            var mapper = (AttributeMapper<T>) ca.attributeMapper();
+            mapper.writeAttribute(writer, (T) ca);
+        } else {
+            assert attr instanceof BoundAttribute || attr instanceof UnboundAttribute;
+            ((Writable) attr).writeTo(writer);
+        }
+    }
+
+    public static void writeAttributes(BufWriterImpl buf, List<? extends Attribute<?>> list) {
+        buf.writeU2(list.size());
+        for (var e : list) {
+            writeAttribute(buf, e);
+        }
+    }
+
+    static void writeList(BufWriterImpl buf, List<Writable> list) {
+        buf.writeU2(list.size());
+        for (var e : list) {
+            e.writeTo(buf);
+        }
+    }
+
     public static int slotSize(ClassDesc desc) {
         return switch (desc.descriptorString().charAt(0)) {
             case 'V' -> 0;
@@ -216,7 +243,7 @@ public class Util {
                     clb.withMethod(methodName, methodDesc, acc, mb ->
                             ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
-                                public void writeBody(BufWriter b) {
+                                public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
                                     b.writeInt(bytecode.limit());
@@ -236,5 +263,29 @@ public class Util {
                 }
             }
         }
+    }
+
+    public static void writeListIndices(BufWriter writer, List<? extends PoolEntry> list) {
+        writer.writeU2(list.size());
+        for (PoolEntry info : list) {
+            writer.writeIndex(info);
+        }
+    }
+
+    public static boolean writeLocalVariable(BufWriterImpl buf, PseudoInstruction lvOrLvt) {
+        return ((WritableLocalVariable) lvOrLvt).writeLocalTo(buf);
+    }
+
+    /**
+     * A generic interface for objects to write to a
+     * buf writer. Do not implement unless necessary,
+     * as this writeTo is public, which can be troublesome.
+     */
+    interface Writable {
+        void writeTo(BufWriterImpl writer);
+    }
+
+    interface WritableLocalVariable {
+        boolean writeLocalTo(BufWriterImpl buf);
     }
 }
