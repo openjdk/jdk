@@ -174,7 +174,7 @@ class LimitsTest {
                 "tableSwitchMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, mb ->
                         ((DirectMethodBuilder)mb).writeAttribute(new UnboundAttribute.AdHocAttribute<CodeAttribute>(Attributes.code()) {
                                 @Override
-                                public void writeBody(BufWriter b) {
+                                public void writeBody(BufWriterImpl b) {
                                     b.writeU2(-1);//max stack
                                     b.writeU2(-1);//max locals
                                     b.writeInt(20);
