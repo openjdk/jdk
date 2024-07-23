@@ -24,8 +24,6 @@
  */
 package java.lang.classfile;
 
-import java.util.List;
-
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.PoolEntry;
@@ -111,13 +109,6 @@ public sealed interface BufWriter
     void writeBytes(byte[] arr);
 
     /**
-     * Write the contents of another {@link BufWriter} to the buffer
-     *
-     * @param other the other {@linkplain BufWriter}
-     */
-    void writeBytes(BufWriter other);
-
-    /**
      * Write a range of a byte array to the buffer
      *
      * @param arr the byte array
@@ -167,37 +158,7 @@ public sealed interface BufWriter
     void writeIndexOrZero(PoolEntry entry);
 
     /**
-     * Write a list of entities to the buffer.  The length of the list is
-     * written as a {@code u2}, followed by the bytes corresponding to each
-     * element in the list.  Writing of the entities is delegated to the entry.
-     *
-     * @param list the entities
-     * @param <T> the type of entity
-     */
-    <T extends WritableElement<?>> void writeList(List<T> list);
-
-    /**
-     * Write a list of constant pool entry indexes to the buffer.  The length
-     * of the list is written as a {@code u2}, followed by a {@code u2} for each
-     * entry in the list.
-     *
-     * @param list the list of entries
-     * @throws IllegalArgumentException if any entry has invalid index
-     */
-    void writeListIndices(List<? extends PoolEntry> list);
-
-    /**
      * {@return the number of bytes that have been written to the buffer}
      */
     int size();
-
-    /**
-     * Copy the contents of the buffer into a byte array.
-     *
-     * @param array the byte array
-     * @param bufferOffset the offset into the array at which to write the
-     *                     contents of the buffer
-     * @throws IndexOutOfBoundsException if copying outside of the array bounds
-     */
-    void copyTo(byte[] array, int bufferOffset);
 }
