@@ -325,7 +325,8 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
     }
 
     /**
-     * Returns true if this method has a {@code Scoped} annotation.
+     * Returns true if this method has a
+     * {@code jdk.internal.misc.ScopedMemoryAccess.Scoped} annotation.
      *
      * @return true if Scoped annotation present, false otherwise
      */
