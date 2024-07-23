@@ -73,6 +73,13 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
+        try {
+            encoder.withEncryption(null);
+        } catch (Exception e) {
+            if (!(e instanceof NullPointerException)) {
+                throw new Exception("Should have been a NullPointerException thrown");
+            }
+        }
 
 //  One can't use EKPI with an encrypted encoder.
 //        System.out.println("Same instance Encoder and withEnc test:");

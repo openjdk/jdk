@@ -81,6 +81,8 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
+        @JEP(number=999, title="PEM API", status="Preview")
+        PEM_API,
         LANGUAGE_MODEL,
         /**
          * A key for testing.

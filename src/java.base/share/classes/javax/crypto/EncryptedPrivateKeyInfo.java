@@ -25,6 +25,8 @@
 
 package javax.crypto;
 
+import jdk.internal.javac.PreviewFeature;
+
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
@@ -73,9 +75,6 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
 
     // the ASN.1 encoded contents of this class
     private final byte[] encoded;
-
-    //
-    private static final String DEFAULT_ALGO = "PBEWithHmacSHA256AndAES_128";
 
     /**
      * Constructs an {@code EncryptedPrivateKeyInfo} from a given Encrypted
@@ -333,6 +332,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @since 24
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
@@ -393,6 +393,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @since 24
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) {
         return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
@@ -423,6 +424,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @since 24
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(char[] password, Provider provider)
         throws InvalidKeyException {
         try {

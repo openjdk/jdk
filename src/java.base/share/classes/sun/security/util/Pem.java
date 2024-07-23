@@ -45,61 +45,61 @@ public class Pem {
      * Public Key PEM header & footer
      */
     public static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
      * Private Key PEM header & footer
      */
     public static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
      * Encrypted Private Key PEM header & footer
      */
     public static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
      * Certificate PEM header & footer
      */
     public static final byte[] CERTHEADER = "-----BEGIN CERTIFICATE-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] CERTFOOTER = "-----END CERTIFICATE-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
      * CRL PEM header & footer
      */
     public static final byte[] CRLHEADER = "-----BEGIN X509 CRL-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] CRLFOOTER = "-----END X509 CRL-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     /**
      * PKCS#1/slleay/OpenSSL RSA PEM header & footer
      */
     public static final byte[] PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
     public static final byte[] PKCS1FOOTER = "-----END RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.UTF_8);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     public static final byte[] LINESEPARATOR = System.lineSeparator()
-        .getBytes(StandardCharsets.UTF_8);
-
-    private static final Pem NULLPEM = new Pem(null, null, null);
+        .getBytes(StandardCharsets.ISO_8859_1);
 
     public enum KeyType {
         UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL, PKCS1
     }
 
-    public static final String DEFAULT_ALGO;
+    private static final char WS = 0x20;  // Whitespace
 
+    // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
+    public static final String DEFAULT_ALGO;
     static {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
     }
@@ -122,14 +122,15 @@ public class Pem {
      */
     public static byte[] decode(String input) {
         byte[] src = input.replaceAll("\\s+", "")
-            .getBytes(StandardCharsets.UTF_8);
+            .getBytes(StandardCharsets.ISO_8859_1);
             return Base64.getDecoder().decode(src);
     }
 
-
-    // Extract the OID from the PBE algorithm.  PBEKS2, which are all AES-based,
-    // has uses one OID for all the standard algorithm, while PBEKS1 uses
-    // individual ones.
+    /**
+     * Extract the OID from the PBE algorithm.  PBEKS2, which are all AES-based,
+     * has uses one OID for all the standard algorithm, while PBEKS1 uses
+     * individual ones.
+     */
     public static ObjectIdentifier getPBEID(String algorithm) {
         try {
             if (algorithm.contains("AES")) {
@@ -155,7 +156,8 @@ public class Pem {
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
-    public static Pem readPEM(InputStream is, boolean shortHeader) throws IOException{
+    public static Pem readPEM(InputStream is, boolean shortHeader)
+        throws IOException{
         Objects.requireNonNull(is);
 
         int hyphen = (shortHeader ? 1 : 0);
@@ -181,8 +183,10 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
-                case '\n', '\r' -> throw new IllegalArgumentException("Incomplete header");
+                case -1 -> throw new IllegalArgumentException(
+                    "Input ended prematurely");
+                case '\n', '\r' -> throw new IllegalArgumentException(
+                    "Incomplete header");
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -191,7 +195,8 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                default -> throw new IllegalArgumentException("Incomplete header");
+                default ->
+                    throw new IllegalArgumentException("Incomplete header");
             }
         } while (hyphen < 5);
 
@@ -207,8 +212,7 @@ public class Pem {
 
         // Determine the line break using the char after the last hyphen
         switch (c = is.read()) {
-            case 32 -> {
-            }
+            case WS -> {} // skip char
             case '\r' -> {
                 c = is.read();
                 if (c == '\n') {
@@ -225,10 +229,10 @@ public class Pem {
         // Read data until we find the first footer hyphen.
         do {
             switch (c = is.read()) {
-                case -1 -> throw new IllegalArgumentException("Incomplete header");
+                case -1 ->
+                    throw new IllegalArgumentException("Incomplete header");
                 case '-' -> hyphen++;
-                case 9, '\n', '\r', 32 -> {
-                } // skip for data reading
+                case 9, '\n', '\r', WS -> {} // skip char
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -239,8 +243,10 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
-                default -> throw new IllegalArgumentException("Incomplete footer");
+                case -1 -> throw new IllegalArgumentException(
+                    "Input ended prematurely");
+                default -> throw new IllegalArgumentException(
+                    "Incomplete footer");
             }
         } while (hyphen < 5);
 
@@ -252,7 +258,8 @@ public class Pem {
         do {
             switch (c = is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
+                case -1 -> throw new IllegalArgumentException(
+                    "Input ended prematurely");
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -261,14 +268,16 @@ public class Pem {
         do {
             switch (is.read()) {
                 case '-' -> hyphen++;
-                case -1 -> throw new IllegalArgumentException("Input ended prematurely");
-                default -> throw new IllegalArgumentException("Incomplete footer");
+                case -1 -> throw new IllegalArgumentException(
+                    "Input ended prematurely");
+                default -> throw new IllegalArgumentException(
+                    "Incomplete footer");
             }
         } while (hyphen < 5);
 
         if (endchar != 0) {
             while ((c = is.read()) != endchar && c != -1 && c != '\r' &&
-                c != 32) {
+                c != WS) {
                 throw new IllegalArgumentException("Invalid PEM format:  " +
                     "No end of line char found in footer:  0x" +
                     HexFormat.of().toHexDigits((byte) c));
@@ -289,9 +298,9 @@ public class Pem {
                 header + " " + footer);
         }
 
-        return new Pem(header.getBytes(StandardCharsets.UTF_8),
-            data.getBytes(StandardCharsets.UTF_8),
-            footer.getBytes(StandardCharsets.UTF_8));
+        return new Pem(header.getBytes(StandardCharsets.ISO_8859_1),
+            data.getBytes(StandardCharsets.ISO_8859_1),
+            footer.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     public byte[] getData() {

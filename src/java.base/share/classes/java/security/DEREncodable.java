@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -45,7 +47,11 @@ import java.security.spec.X509EncodedKeySpec;
  * @see EncryptedPrivateKeyInfo
  * @see X509Certificate
  * @see X509CRL
+ *
+ * @since 24
  */
+
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public sealed interface DEREncodable permits AsymmetricKey, KeyPair, X509CRL,
     X509Certificate, PKCS8EncodedKeySpec, X509EncodedKeySpec,
     EncryptedPrivateKeyInfo {

@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
 import sun.security.util.Pem;
@@ -38,25 +40,20 @@ import java.util.Base64;
 import java.util.Objects;
 
 /**
+ * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
  * PEM is a textual encoding used for storing and transferring security
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRL). Defined in RFC 1421 and RFC 7468, PEM consists of a
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
  * <p>
- * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
- * Decoding will return a {@link DEREncodable} or class that implements
- * {@link DEREncodable} depending on the decode method used.
- * <p>
- * There are four methods to complete the decoding process. They each return
- * a {@link DEREncodable} for which the caller can use instanceof or switch
- * when processing the result. If the developer knows the class type being
- * decoded, the two {@code decode} methods that take a {@code Class<S>}
- * argument, can be used to specify the returned object class. If the class
- * does not match the PEM type, an IOException is thrown.
+ * Decoding methods return a class that matches the data type and implements
+ * {@link DEREncodable}.
+ * If a return class is specified, an IllegalAlgorithmException is thrown if
+ * data is not valid for the class.
  * <p>
  * When passing input data into {@code decode}, the application is responsible
- * for processing input data ahead of the PEM text. All data before the PEM
+ * for processing input data non-PEM text. All data before the PEM
  * header will be ignored.
  * <p>
  * A new immutable PEMDecoder instance is returned by
@@ -68,17 +65,27 @@ import java.util.Objects;
  * methods must be used to retrieve the {@link PrivateKey}.
  * <p>
  * PEMDecoder supports the follow types:
+ * <pre>
  *     PRIVATE KEY, RSA PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and
  *     ENCRYPTED PRIVATE KEY.
+ * </pre>
+ * @apiNote
+ * Here is an example of encoding a PrivateKey object:
+ * <pre>
+ *     PEMDecoder pd = PEMDecoder.of();
+ *     PrivateKey priKey = pd.decode(PriKeyPEM);
+ * </pre>
  *
+ * @since 24
  */
 
-final public class PEMDecoder {
-    final private Provider factory;
-    final private char[] password;
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+public final class PEMDecoder {
+    private final Provider factory;
+    private final char[] password;
 
     // Singleton instance for PEMDecoder
-    final private static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
+    private final static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
 
     /**
      * Creates a immutable instance with a specific KeyFactory and/or password.
@@ -268,7 +275,6 @@ final public class PEMDecoder {
      */
     public <S extends DEREncodable> S decode(String string, Class<S> tClass) {
         Objects.requireNonNull(string);
-
         try {
             return decode(new ByteArrayInputStream(string.getBytes()), tClass);
         } catch (IOException e) {
@@ -282,8 +288,10 @@ final public class PEMDecoder {
      * class must extend {@link DEREncodable} and be an appropriate class for
      * the PEM type.
      *
-     * <p>See {@link PEMDecoder#decode(String, Class)} for details about {@code tClass}.
-     * <br>See {@link PEMDecoder#decode(InputStream)} for details on using an {@code InputStream}.
+     * <p>See {@link PEMDecoder#decode(String, Class)} for details about
+     * {@code tClass}.
+     * <br>See {@link PEMDecoder#decode(InputStream)} for details on using an
+     * {@code InputStream}.
      *
      * @param <S> Class type parameter that extends {@code DEREncodable}
      * @param is an InputStream containing PEM data.
@@ -292,7 +300,7 @@ final public class PEMDecoder {
      * @return  tClass.
      * @throws IOException on IO error with the InputStream.
      * @throws IllegalArgumentException on error in decoding or if the PEM is
-     *      * unsupported.
+     * unsupported.
      */
     public <S extends DEREncodable> S decode(InputStream is, Class<S> tClass)
         throws IOException {
@@ -400,9 +408,10 @@ final public class PEMDecoder {
      *
      * @param password the password to decrypt encrypted PEM data.
      * @return the decoder
+     * @throws NullPointerException if password is null.
      */
     public PEMDecoder withDecryption(char[] password) {
-        Objects.requireNonNull(password);
-        return new PEMDecoder(factory, password);
+        char[] pwd = password.clone();
+        return new PEMDecoder(factory, pwd);
     }
 }

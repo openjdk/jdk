@@ -25,6 +25,8 @@
 
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
@@ -61,26 +63,30 @@ import java.util.Objects;
  * PKCS8 v2.0 allows OneAsymmetric encoding, which is a private and public
  * key in the same PEM.  This is supported by using the {@link KeyPair} class
  * with the encode methods.
- * <br>
+ * <p>
+ * PEMEncoder supports the follow types:
+ * <pre>
+ *     PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
+ * </pre>
+ *
  * @apiNote
  * Here is an example of encoding a PrivateKey object:
- * <pre>{@code
+ * <pre>
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
- * }</pre>
+ * </pre>
  *
- *  PEMEncoder supports the follow types:
- *      PRIVATE KEY, PUBLIC KEY, CERTIFICATE, CRL, and ENCRYPTED PRIVATE KEY.
- *
+ * @since 24
  */
-final public class PEMEncoder {
+@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
+public final class PEMEncoder {
 
     // Singleton instance of PEMEncoder
-    final private static PEMEncoder PEM_ENCODER = new PEMEncoder(null);
+    private static final PEMEncoder PEM_ENCODER = new PEMEncoder(null);
 
     // If non-null, encoder is configured for encryption
     private Cipher cipher = null;
-    private char[] password;
+    private final char[] password;
 
     /**
      * Instantiate a new PEMEncoder for Encrypted Private Keys.
@@ -92,7 +98,7 @@ final public class PEMEncoder {
     }
 
     /**
-     * Returns a instance of PEMEncoder.
+     * Returns an instance of PEMEncoder.
      *
      * @return PEMEncoder instance
      */
@@ -256,10 +262,10 @@ final public class PEMEncoder {
      *
      * @param password the password
      * @return a new PEMEncoder
+     * @throws NullPointerException if password is null.
      */
     public PEMEncoder withEncryption(char[] password) {
         char[] pwd = password.clone();
-        Objects.requireNonNull(pwd);
         return new PEMEncoder(pwd);
     }
 

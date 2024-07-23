@@ -464,8 +464,8 @@ public final class KeyUtil {
 
         is = value.data;
         value = is.getDerValue();
-        // This route is for:  RSAPublic, Encrypted RSAPrivate, EC/EDPublic,
-        // Encrypted EC/EDPrivate,
+        // This route is for:  RSAPublic, Encrypted RSAPrivate, EC Public,
+        // Encrypted EC Private,
         if (value.tag == DerValue.tag_Sequence) {
             return AlgorithmId.parse(value);
         } else if (value.tag == DerValue.tag_Integer) {
