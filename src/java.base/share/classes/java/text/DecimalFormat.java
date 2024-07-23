@@ -1782,11 +1782,14 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Sets the {@code DigitList} used by this {@code DecimalFormat}
+     * Utility method that sets the {@code DigitList} used by this {@code DecimalFormat}
      * instance.
+     *
      * @param number the number to format
      * @param isNegative true, if the number is negative; false otherwise
      * @param maxDigits the max digits
+     * @throws AssertionError if provided a Number subclass that is not supported
+     *         by {@code DigitList}
      */
     void setDigitList(Number number, boolean isNegative, int maxDigits) {
         switch (number) {
@@ -1794,7 +1797,8 @@ public class DecimalFormat extends NumberFormat {
             case BigDecimal bd -> digitList.set(isNegative, bd, maxDigits, true);
             case Long l -> digitList.set(isNegative, l, maxDigits);
             case BigInteger bi -> digitList.set(isNegative, bi, maxDigits);
-            default -> {} // do nothing
+            default -> throw new AssertionError(
+                    String.format("DigitList does not support %s", number.getClass().getName()));
         }
     }
 
