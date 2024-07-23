@@ -256,7 +256,8 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
                                                  classloadAction action,
                                                  Symbol* next_klass_name,
                                                  JavaThread* thread) {
-  assert(action != DETECT_CIRCULARITY || next_klass_name != nullptr, "must have a super class name");
+  assert(action != DETECT_CIRCULARITY || next_klass_name != nullptr,
+         "must have a class name for the next step in the class resolution recursion");
   PlaceholderEntry* probe = get_entry(name, loader_data);
   if (probe == nullptr) {
     // Nothing found, add place holder
