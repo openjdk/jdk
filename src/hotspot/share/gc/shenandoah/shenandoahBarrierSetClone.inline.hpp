@@ -76,7 +76,6 @@ public:
 
 void ShenandoahBarrierSet::clone_marking(oop obj) {
   assert(_heap->is_concurrent_mark_in_progress(), "only during marking");
-  assert(ShenandoahIUBarrier, "only with incremental-update");
   if (!_heap->marking_context()->allocated_after_mark_start(obj)) {
     ShenandoahUpdateRefsForOopClosure</* has_fwd = */ false, /* evac = */ false, /* enqueue */ true> cl;
     obj->oop_iterate(&cl);
@@ -106,6 +105,7 @@ void ShenandoahBarrierSet::clone_barrier(oop obj) {
 
   int gc_state = _heap->gc_state();
   if ((gc_state & ShenandoahHeap::MARKING) != 0) {
+    fatal("This is a vestige of the incremental update mode");
     clone_marking(obj);
   } else if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     clone_evacuation(obj);
