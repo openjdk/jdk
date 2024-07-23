@@ -148,6 +148,18 @@ public class NestedCgroup {
             cgcreate2.add(CONTROLLERS_PATH_INNER);
             pSystem(cgcreate2, "", "", "");
 
+            String provider = Metrics.systemMetrics().getProvider();
+            System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
+            bool isCgroup2;
+            if ("cgroupv1".equals(provider)) {
+              isCgroup2 = false;
+            } else if ("cgroupv2".equals(provider)) {
+              isCgroup2 = true;
+            } else {
+              throw new IllegalArgumentException();
+            }
+            System.err.println("isCgroup2 = " + isCgroup2);
+
             String mountInfo;
             try {
                 mountInfo = Files.readString(Path.of(MOUNTINFO));
@@ -155,14 +167,13 @@ public class NestedCgroup {
                 throw new SkippedException("Cannot open " + MOUNTINFO);
             }
 
-            Matcher matcher = Pattern.compile("^(?:\\S+\\s+){4}(\\S+)\\s.*\\scgroup(?:(2)(?:\\s+\\S+){2}|\\s+\\S+\\s+(?:\\S*,)?memory(?:,\\S*)?)$", Pattern.MULTILINE).matcher(mountInfo);
+            Matcher matcher = Pattern.compile("^(?:\\S+\\s+){4}(\\S+)\\s.*\\scgroup(?:2(?:\\s+\\S+){2}|\\s+\\S+\\s+(?:\\S*,)?memory(?:,\\S*)?)$", Pattern.MULTILINE).matcher(mountInfo);
             if (!matcher.find()) {
                 System.err.println(mountInfo);
                 throw new SkippedException("cgroup/cgroup2 filesystem mount point not found");
             }
             sysFsCgroup = matcher.group(1);
-            isCgroup2 = matcher.group(2) != null;
-            System.err.println("isCgroup2 = " + isCgroup2);
+            System.err.println("sysFsCgroup = " + sysFsCgroup);
 
             System.err.println(LINE_DELIM + " " + (isCgroup2 ? "cgroup2" : "cgroup1") + " mount point: " + sysFsCgroup);
             memory_max_filename = isCgroup2 ? "memory.max" : "memory.limit_in_bytes";
