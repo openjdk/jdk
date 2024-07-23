@@ -89,7 +89,7 @@ public abstract class KDFSpi {
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws NullPointerException
@@ -97,7 +97,7 @@ public abstract class KDFSpi {
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException;
+        throws InvalidAlgorithmParameterException;
 
     /**
      * Obtains raw data from a key derivation function.
@@ -116,7 +116,7 @@ public abstract class KDFSpi {
      *     processed {@code KDFParameterSpec} and containing the output from the
      *     key derivation function
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
@@ -126,6 +126,6 @@ public abstract class KDFSpi {
      */
     protected abstract byte[] engineDeriveData(
         AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException;
+        throws InvalidAlgorithmParameterException;
 
 }

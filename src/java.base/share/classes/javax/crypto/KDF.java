@@ -430,7 +430,7 @@ public final class KDF {
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws NullPointerException
@@ -438,7 +438,8 @@ public final class KDF {
      */
     public SecretKey deriveKey(String alg,
                                AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException {
+        throws InvalidAlgorithmParameterException {
+
         synchronized (lock) {
             if (alg == null || alg.isEmpty()) {
                 throw new NullPointerException(
@@ -449,6 +450,7 @@ public final class KDF {
             if (spi != null) {
                 return spi.engineDeriveKey(alg, kdfParameterSpec);
             }
+
             Exception lastException = null;
             while ((firstService != null) || serviceIterator.hasNext()) {
                 Service s;
@@ -477,14 +479,14 @@ public final class KDF {
                 }
             }
             // no working provider found, fail
-            if (lastException instanceof InvalidParameterSpecException) {
-                throw (InvalidParameterSpecException) lastException;
+            if (lastException instanceof InvalidAlgorithmParameterException) {
+                throw (InvalidAlgorithmParameterException) lastException;
             }
             if (lastException instanceof RuntimeException) {
                 throw (RuntimeException) lastException;
             }
         }
-        throw new InvalidParameterSpecException(
+        throw new InvalidAlgorithmParameterException(
             "No installed provider supports the deriveKey method with "
             + "these parameters");
     }
@@ -505,7 +507,7 @@ public final class KDF {
      * @return a byte array containing a key built from the KDF output and
      *     according to the derivation parameters
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
@@ -514,12 +516,14 @@ public final class KDF {
      *     if {@code kdfParameterSpec} is null
      */
     public byte[] deriveData(AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException {
+        throws InvalidAlgorithmParameterException {
+
         synchronized (lock) {
             Objects.requireNonNull(kdfParameterSpec);
             if (spi != null) {
                 return spi.engineDeriveData(kdfParameterSpec);
             }
+
             Exception lastException = null;
             while ((firstService != null) || serviceIterator.hasNext()) {
                 Service s;
@@ -547,14 +551,14 @@ public final class KDF {
                 }
             }
             // no working provider found, fail
-            if (lastException instanceof InvalidParameterSpecException) {
-                throw (InvalidParameterSpecException) lastException;
+            if (lastException instanceof InvalidAlgorithmParameterException) {
+                throw (InvalidAlgorithmParameterException) lastException;
             }
             if (lastException instanceof RuntimeException) {
                 throw (RuntimeException) lastException;
             }
         }
-        throw new InvalidParameterSpecException(
+        throw new InvalidAlgorithmParameterException(
             "No installed provider supports the deriveData method with"
             + " these parameters");
     }

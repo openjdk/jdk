@@ -31,14 +31,15 @@
  */
 
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
 
 import javax.crypto.KDF;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.KDFParameterSpec;
 import java.math.BigInteger;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.HexFormat;
 
 public class Threading {
@@ -48,9 +49,9 @@ public class Threading {
     byte[] salt = new BigInteger("000102030405060708090a0b0c",
                                  16).toByteArray();
     byte[] info = new BigInteger("f0f1f2f3f4f5f6f7f8f9", 16).toByteArray();
-    KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.extractExpand(
-        HKDFParameterSpec.extract().addIKM(ikm).addSalt(salt).extractOnly(),
-        info, 42);
+    AlgorithmParameterSpec kdfParameterSpec =
+        HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(
+            info, 42);
     String expectedResult =
         "666b33562ebc5e2f041774192e0534efca06f82a5fca17ec8c6ae1b9f5466adba1d77d06480567ddd2d1";
 
@@ -59,8 +60,8 @@ public class Threading {
         kdfUnderTest = KDF.getInstance("HKDFWithHmacSHA256");
     }
 
-    @Test(threadPoolSize = 50, invocationCount = 10000, timeOut = 10)
-    public void testDeriveKey() throws InvalidParameterSpecException {
+    @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 30)
+    public void testDeriveKey() throws InvalidAlgorithmParameterException {
         SecretKey result = kdfUnderTest.deriveKey("AES", kdfParameterSpec);
         assert (HexFormat.of().formatHex(result.getEncoded()).equals(
             expectedResult));

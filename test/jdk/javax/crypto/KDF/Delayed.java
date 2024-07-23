@@ -96,11 +96,11 @@ public class Delayed {
         @Override
         protected byte[] engineDeriveData(
             AlgorithmParameterSpec kdfParameterSpec)
-            throws InvalidParameterSpecException {
+            throws InvalidAlgorithmParameterException {
             if (kdfParameterSpec instanceof MyKDFParameterSpec) {
                 return null;
             } else {
-                throw new InvalidParameterSpecException();
+                throw new InvalidAlgorithmParameterException();
             }
         }
     }
@@ -126,13 +126,13 @@ public class Delayed {
 
         protected SecretKey engineDeriveKey(String alg,
                                             AlgorithmParameterSpec kdfParameterSpec)
-            throws InvalidParameterSpecException {
+            throws InvalidAlgorithmParameterException {
             return null;
         }
 
         protected byte[] engineDeriveData(
             AlgorithmParameterSpec kdfParameterSpec)
-            throws InvalidParameterSpecException {
+            throws InvalidAlgorithmParameterException {
             return new byte[0];
         }
     }

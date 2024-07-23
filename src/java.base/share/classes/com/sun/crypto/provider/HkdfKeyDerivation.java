@@ -82,7 +82,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *
      * @return a derived {@code SecretKey} object of the specified algorithm
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived, or specifies
      *     a type of output that is not a key (e.g. raw data)
@@ -92,7 +92,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     @Override
     protected SecretKey engineDeriveKey(String alg,
                                         AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException {
+        throws InvalidAlgorithmParameterException {
 
         if (alg == null || alg.isEmpty()) {
             throw new IllegalArgumentException(
@@ -109,7 +109,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *
      * @return a derived {@code byte[]}
      *
-     * @throws InvalidParameterSpecException
+     * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
@@ -117,7 +117,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      */
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec kdfParameterSpec)
-        throws InvalidParameterSpecException {
+        throws InvalidAlgorithmParameterException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
         SecretKey inputKeyMaterial;
@@ -141,7 +141,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
-                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
+                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
                     "Issue encountered when combining ikm or salt values into"
                     + " single keys").initCause(ike);
             }
@@ -150,7 +150,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return hkdfExtract(inputKeyMaterial,
                                    (salt == null) ? null : salt.getEncoded());
             } catch (InvalidKeyException ike) {
-                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
+                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
                     "an HKDF Extract could not be initialized with the given "
                     + "key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
@@ -165,7 +165,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.Expand) kdfParameterSpec;
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk()) == null) {
-                throw new InvalidParameterSpecException(
+                throw new InvalidAlgorithmParameterException(
                     "PRK is required for HKDFParameterSpec.Expand");
             }
             // set this value in the "if"
@@ -174,7 +174,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             length = anExpand.length();
             if (length > (hmacLen * 255)) {
-                throw new InvalidParameterSpecException(
+                throw new InvalidAlgorithmParameterException(
                     "Requested length exceeds maximum allowed key stream "
                     + "length");
             }
@@ -183,7 +183,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
+                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
                     "an HKDF Expand could not be initialized with the given "
                     + "key material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
@@ -205,7 +205,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
             } catch (InvalidKeyException ike) {
-                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
+                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
                     "Issue encountered when combining ikm or salt values into"
                     + " single keys").initCause(ike);
             }
@@ -215,7 +215,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             length = anExtractThenExpand.length();
             if (length > (hmacLen * 255)) {
-                throw new InvalidParameterSpecException(
+                throw new InvalidAlgorithmParameterException(
                     "Requested length exceeds maximum allowed key stream "
                     + "length");
             }
@@ -227,7 +227,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw (InvalidParameterSpecException) new InvalidParameterSpecException(
+                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
                     "an HKDF ExtractThenExpand could not be initialized with "
                     + "the given key or salt material").initCause(ike);
             } catch (NoSuchAlgorithmException nsae) {
@@ -238,7 +238,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     nsae);
             }
         }
-        throw new InvalidParameterSpecException(
+        throw new InvalidAlgorithmParameterException(
             "an HKDF could not be initialized with the given KDFParameterSpec");
     }
 
