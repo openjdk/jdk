@@ -958,7 +958,9 @@ final class MemberName implements Member, Cloneable {
                 if (m == null && speculativeResolve) {
                     return null;
                 }
-                m.ensureTypeVisible(m.getDeclaringClass());
+                if (allowedModes != LM_TRUSTED) {
+                    m.ensureTypeVisible(m.getDeclaringClass());
+                }
                 m.resolution = null;
             } catch (ClassNotFoundException | LinkageError ex) {
                 // JVM reports that the "bytecode behavior" would get an error
