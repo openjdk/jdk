@@ -27,7 +27,7 @@ import javax.swing.JLabel;
 
 /*
  * @test
- * @bug 6977726 8335131
+ * @bug 6977726
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Checks if JColorChooser.setPreviewPanel(JLabel) doesn't remove the preview panel but
