@@ -58,9 +58,10 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a {@code type_annotation} structure, as defined in {@jvms 4.7.20}.
- * Note that in the Java Programming Language, a <i>type annotation</i> ({@jls 9.7.4})
- * only includes the {@linkplain #annotation() annotation} without {@link #targetInfo
- * targetInfo} or {@link #targetPath targetPath}.
+ * Each instance of this structure corresponds to a <i>type annotation</i> ({@jls 9.7.4})
+ * in the Java Programming Language; but in addition to the {@linkplain #annotation()
+ * annotation}, this structure also encodes information that locates {@linkplain
+ * #targetInfo the type} and {@linkplain #targetPath the annotated part} of the type.
  *
  * @see Annotation
  * @see RuntimeVisibleTypeAnnotationsAttribute
@@ -170,7 +171,7 @@ public sealed interface TypeAnnotation
 
     /**
      * {@return information describing precisely which type in a declaration or expression
-     * is annotated}
+     * is annotated} This models the {@code target_type} and {@code target_info} items.
      */
     TargetInfo targetInfo();
 
