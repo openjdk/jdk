@@ -30,8 +30,8 @@ import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
 
-import javax.crypto.spec.KDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KDFParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -82,7 +82,7 @@ import java.util.Objects;
  *}
  *
  * @see SecretKey
- * @since 23
+ * @since 24
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
@@ -103,7 +103,7 @@ public final class KDF {
     private final String algorithm;
 
     // Additional KDF configuration parameters
-    private final AlgorithmParameterSpec algorithmParameterSpec;
+    private final KDFParameters kdfParameters;
 
     // next service to try in provider selection
     // null once provider is selected
@@ -124,26 +124,26 @@ public final class KDF {
      *     the provider
      * @param algorithm
      *     the algorithm
-     * @param algParameterSpec
+     * @param kdfParameters
      *     the algorithm parameters
      */
     private KDF(KDFSpi keyDerivSpi, Provider provider, String algorithm,
-                AlgorithmParameterSpec algParameterSpec) {
+                KDFParameters kdfParameters) {
         this.spi = keyDerivSpi;
         this.provider = provider;
         this.algorithm = algorithm;
-        this.algorithmParameterSpec = algParameterSpec;
+        this.kdfParameters = kdfParameters;
         // the lock is not needed, because the Spi will already be set in
         // chooseProvider
         lock = null;
     }
 
     private KDF(Service s, Iterator<Service> t, String algorithm,
-                AlgorithmParameterSpec algParameterSpec) {
+                KDFParameters kdfParameters) {
         firstService = s;
         serviceIterator = t;
         this.algorithm = algorithm;
-        this.algorithmParameterSpec = algParameterSpec;
+        this.kdfParameters = kdfParameters;
         lock = new Object();
     }
 
@@ -183,7 +183,7 @@ public final class KDF {
     public static KDF getInstance(String algorithm)
         throws NoSuchAlgorithmException {
         try {
-            return getInstance(algorithm, (AlgorithmParameterSpec) null);
+            return getInstance(algorithm, (KDFParameters) null);
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
@@ -198,7 +198,8 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation (may not be {@code null})
+     *     the provider to use for this key derivation (may not be
+     *     {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -231,7 +232,8 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation (may not be {@code null})
+     *     the provider to use for this key derivation (may not be
+     *     {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -260,9 +262,9 @@ public final class KDF {
      *
      * @param algorithm
      *     the key derivation algorithm to use
-     * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters are provided
+     * @param kdfParameters
+     *     the {@code KDFParameters} used to configure this KDF's algorithm or
+     *     {@code null} if no additional parameters are provided
      *
      * @return a {@code KDF} object
      *
@@ -275,7 +277,7 @@ public final class KDF {
      *     if the algorithm is {@code null}
      */
     public static KDF getInstance(String algorithm,
-                                  AlgorithmParameterSpec algParameterSpec)
+                                  KDFParameters kdfParameters)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
         // make sure there is at least one service from a signed provider
@@ -285,7 +287,7 @@ public final class KDF {
             if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
-            return new KDF(s, t, algorithm, algParameterSpec);
+            return new KDF(s, t, algorithm, kdfParameters);
         }
         throw new NoSuchAlgorithmException(
             "Algorithm " + algorithm + " not available");
@@ -297,11 +299,12 @@ public final class KDF {
      *
      * @param algorithm
      *     the key derivation algorithm to use
-     * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters are provided
+     * @param kdfParameters
+     *     the {@code KDFParameters} used to configure this KDF's algorithm or
+     *     {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation (may not be {@code null})
+     *     the provider to use for this key derivation (may not be
+     *     {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -318,7 +321,7 @@ public final class KDF {
      *     if the algorithm is {@code null}
      */
     public static KDF getInstance(String algorithm,
-                                  AlgorithmParameterSpec algParameterSpec,
+                                  KDFParameters kdfParameters,
                                   String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException,
                InvalidAlgorithmParameterException {
@@ -327,7 +330,7 @@ public final class KDF {
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
-                                                        algParameterSpec,
+                                                        kdfParameters,
                                                         provider);
             if (!JceSecurity.canUseProvider(instance.provider)) {
                 String msg = "JCE cannot authenticate the provider "
@@ -335,7 +338,7 @@ public final class KDF {
                 throw new NoSuchProviderException(msg);
             }
             return new KDF((KDFSpi) instance.impl, instance.provider, algorithm,
-                           algParameterSpec);
+                           kdfParameters);
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -348,11 +351,12 @@ public final class KDF {
      *
      * @param algorithm
      *     the key derivation algorithm to use
-     * @param algParameterSpec
-     *     the {@code AlgorithmParameterSpec} used to configure this KDF's
-     *     algorithm or {@code null} if no additional parameters are provided
+     * @param kdfParameters
+     *     the {@code KDFParameters} used to configure this KDF's algorithm or
+     *     {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation (may not be {@code null})
+     *     the provider to use for this key derivation (may not be
+     *     {@code null})
      *
      * @return a {@code KDF} object
      *
@@ -366,7 +370,7 @@ public final class KDF {
      *     if the algorithm is {@code null}
      */
     public static KDF getInstance(String algorithm,
-                                  AlgorithmParameterSpec algParameterSpec,
+                                  KDFParameters kdfParameters,
                                   Provider provider)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
         Objects.requireNonNull(algorithm, "null algorithm name");
@@ -374,7 +378,7 @@ public final class KDF {
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
-                                                        algParameterSpec,
+                                                        kdfParameters,
                                                         provider);
             if (!JceSecurity.canUseProvider(instance.provider)) {
                 String msg = "JCE cannot authenticate the provider "
@@ -382,7 +386,7 @@ public final class KDF {
                 throw new SecurityException(msg);
             }
             return new KDF((KDFSpi) instance.impl, instance.provider, algorithm,
-                           algParameterSpec);
+                           kdfParameters);
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -423,7 +427,8 @@ public final class KDF {
      * @throws NullPointerException
      *     if {@code alg} or {@code kdfParameterSpec} is null
      */
-    public SecretKey deriveKey(String alg, KDFParameterSpec kdfParameterSpec)
+    public SecretKey deriveKey(String alg,
+                               AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
         synchronized (lock) {
             if (alg == null || alg.isEmpty()) {
@@ -448,7 +453,7 @@ public final class KDF {
                     continue;
                 }
                 try {
-                    KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
+                    KDFSpi spi = (KDFSpi) s.newInstance(kdfParameters);
                     SecretKey result = spi.engineDeriveKey(alg,
                                                            kdfParameterSpec);
                     provider = s.getProvider();
@@ -499,7 +504,7 @@ public final class KDF {
      * @throws NullPointerException
      *     if {@code kdfParameterSpec} is null
      */
-    public byte[] deriveData(KDFParameterSpec kdfParameterSpec)
+    public byte[] deriveData(AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
         synchronized (lock) {
             Objects.requireNonNull(kdfParameterSpec);
@@ -519,7 +524,7 @@ public final class KDF {
                     continue;
                 }
                 try {
-                    KDFSpi spi = (KDFSpi) s.newInstance(algorithmParameterSpec);
+                    KDFSpi spi = (KDFSpi) s.newInstance(kdfParameters);
                     byte[] result = spi.engineDeriveData(kdfParameterSpec);
                     provider = s.getProvider();
                     this.spi = spi;
@@ -574,7 +579,7 @@ public final class KDF {
                     continue;
                 }
                 try {
-                    Object obj = s.newInstance(algorithmParameterSpec);
+                    Object obj = s.newInstance(kdfParameters);
                     if (!(obj instanceof KDFSpi)) {
                         continue;
                     }

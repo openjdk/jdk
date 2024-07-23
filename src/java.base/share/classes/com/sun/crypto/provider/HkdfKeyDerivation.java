@@ -30,10 +30,10 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.KDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KDFParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.ProviderException;
 import java.security.spec.AlgorithmParameterSpec;
@@ -58,7 +58,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     /**
      * The sole constructor.
      *
-     * @param algParameterSpec
+     * @param kdfParameters
      *     the initialization parameters (may be {@code null})
      *
      * @throws InvalidAlgorithmParameterException
@@ -66,10 +66,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     {@code KDFSpi}
      */
     HkdfKeyDerivation(String hmacAlgName, int hmacLen,
-                      AlgorithmParameterSpec algParameterSpec)
+                      KDFParameters kdfParameters)
         throws InvalidAlgorithmParameterException {
-        super(algParameterSpec);
-        if (algParameterSpec != null) {
+        super(kdfParameters);
+        if (kdfParameters != null) {
             throw new InvalidAlgorithmParameterException(
                 "RFC 5869 has no parameters for its KDF algorithms");
         }
@@ -91,7 +91,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      */
     @Override
     protected SecretKey engineDeriveKey(String alg,
-                                        KDFParameterSpec kdfParameterSpec)
+                                        AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
 
         if (alg == null || alg.isEmpty()) {
@@ -116,7 +116,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the derived key material is not extractable
      */
     @Override
-    protected byte[] engineDeriveData(KDFParameterSpec kdfParameterSpec)
+    protected byte[] engineDeriveData(AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
@@ -372,23 +372,23 @@ abstract class HkdfKeyDerivation extends KDFSpi {
     }
 
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
-        public HkdfSHA256(AlgorithmParameterSpec algParameterSpec)
+        public HkdfSHA256(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA256", 32, algParameterSpec);
+            super("HmacSHA256", 32, kdfParameters);
         }
     }
 
     public static final class HkdfSHA384 extends HkdfKeyDerivation {
-        public HkdfSHA384(AlgorithmParameterSpec algParameterSpec)
+        public HkdfSHA384(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA384", 48, algParameterSpec);
+            super("HmacSHA384", 48, kdfParameters);
         }
     }
 
     public static final class HkdfSHA512 extends HkdfKeyDerivation {
-        public HkdfSHA512(AlgorithmParameterSpec algParameterSpec)
+        public HkdfSHA512(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
-            super("HmacSHA512", 64, algParameterSpec);
+            super("HmacSHA512", 64, kdfParameters);
         }
     }
 

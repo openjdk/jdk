@@ -32,12 +32,12 @@
 import javax.crypto.KDF;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
-import javax.crypto.spec.KDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -165,7 +165,7 @@ public class TestHKDF {
 
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
-        KDFParameterSpec kdfParameterSpecExtract =
+        AlgorithmParameterSpec kdfParameterSpecExtract =
             HKDFParameterSpec.ofExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .extractOnly();
@@ -181,7 +181,7 @@ public class TestHKDF {
         // *** HKDF Expand-Only testing
         // For these tests, we'll use the actualPRK as the input key
         // Create KDFParameterSpec for key output and raw byte output
-        KDFParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expandOnly(
+        AlgorithmParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expandOnly(
             actualPRK, testData.info,
             testData.outLen);
         actualOKM = kdfExpand.deriveKey("RAW", kdfParameterSpecExpand);
@@ -197,7 +197,7 @@ public class TestHKDF {
         // We can reuse the KDFParameterSpec from the Expand-only test
 
         // Use the KDF to make us a key
-        KDFParameterSpec kdfParameterSpecExtractExpand =
+        AlgorithmParameterSpec kdfParameterSpecExtractExpand =
             HKDFParameterSpec.ofExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .thenExpand(testData.info,

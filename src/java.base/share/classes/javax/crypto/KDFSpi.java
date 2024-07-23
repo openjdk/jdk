@@ -27,8 +27,8 @@ package javax.crypto;
 
 import jdk.internal.javac.PreviewFeature;
 
-import javax.crypto.spec.KDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KDFParameters;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
@@ -47,7 +47,7 @@ import java.security.spec.InvalidParameterSpecException;
  *
  * @see KDF
  * @see SecretKey
- * @since 23
+ * @since 24
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public abstract class KDFSpi {
@@ -58,7 +58,7 @@ public abstract class KDFSpi {
      * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms
      * that may require this.
      *
-     * @param algParameterSpec
+     * @param kdfParameters
      *     the initialization parameters for the {@code KDF} algorithm (may be
      *     {@code null})
      *
@@ -66,7 +66,7 @@ public abstract class KDFSpi {
      *     if the initialization parameters are inappropriate for this
      *     {@code KDFSpi}
      */
-    protected KDFSpi(AlgorithmParameterSpec algParameterSpec)
+    protected KDFSpi(KDFParameters kdfParameters)
         throws InvalidAlgorithmParameterException {}
 
 
@@ -96,7 +96,7 @@ public abstract class KDFSpi {
      *     if {@code alg} or {@code kdfParameterSpec} is null
      */
     protected abstract SecretKey engineDeriveKey(String alg,
-                                                 KDFParameterSpec kdfParameterSpec)
+                                                 AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException;
 
     /**
@@ -125,7 +125,7 @@ public abstract class KDFSpi {
      *     if {@code kdfParameterSpec} is null
      */
     protected abstract byte[] engineDeriveData(
-        KDFParameterSpec kdfParameterSpec)
+        AlgorithmParameterSpec kdfParameterSpec)
         throws InvalidParameterSpecException;
 
 }

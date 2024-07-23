@@ -28,6 +28,7 @@ package javax.crypto.spec;
 import jdk.internal.javac.PreviewFeature;
 
 import javax.crypto.SecretKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,7 +52,7 @@ import java.util.List;
  * Examples:
  * {@snippet lang = java:
  *
- * KDFParameterSpec kdfParameterSpec =
+ * AlgorithmParameterSpec kdfParameterSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikmPart1)
  *                              .addIKM(ikmPart2)
@@ -61,23 +62,23 @@ import java.util.List;
  *}
  * {@snippet lang = java:
  *
- * KDFParameterSpec kdfParameterSpec = HKDFParameterSpec.expandOnly(prk,
+ * AlgorithmParameterSpec kdfParameterSpec = HKDFParameterSpec.expandOnly(prk,
  * info, 32);
  *
  *}
  * {@snippet lang = java:
  *
- * KDFParameterSpec kdfParameterSpec =
+ * AlgorithmParameterSpec kdfParameterSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
  *                              .addSalt(salt).thenExpand(info, 42);
  *
  *}
  *
- * @since 23
+ * @since 24
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
-public interface HKDFParameterSpec extends KDFParameterSpec {
+public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
     /**
      * This {@code Builder} builds {@code Extract} and {@code ExtractThenExpand}
