@@ -35,7 +35,7 @@ import java.lang.classfile.CompoundElement;
 
 public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
         extends AbstractElement
-        implements CompoundElement<E>, AttributedElement
+        implements CompoundElement<E>, AttributedElement, Util.Writable
         permits BufferedCodeBuilder.Model, BufferedFieldBuilder.Model, BufferedMethodBuilder.Model {
     private final List<E> elements;
     private List<Attribute<?>> attributes;

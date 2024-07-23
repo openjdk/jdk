@@ -25,12 +25,6 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -40,14 +34,21 @@ import java.lang.classfile.constantpool.LoadableConstantEntry;
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
 import jdk.internal.access.SharedSecrets;
 
 import static java.lang.classfile.Attributes.*;
 
 public abstract sealed class BoundAttribute<T extends Attribute<T>>
         extends AbstractElement
-        implements Attribute<T> {
+        implements Attribute<T>, Util.Writable {
 
     static final int NAME_AND_LENGTH_PREFIX = 6;
     private final AttributeMapper<T> mapper;
@@ -100,7 +101,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (!buf.canWriteDirect(classReader))
             attributeMapper().writeAttribute(buf, (T) this);
         else
@@ -116,13 +117,13 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         return String.format("Attribute[name=%s]", mapper.name());
     }
 
-    <E> List<E> readEntryList(int p) {
+    <E extends PoolEntry> List<E> readEntryList(int p, Class<E> type) {
         int cnt = classReader.readU2(p);
         p += 2;
         var entries = new Object[cnt];
         int end = p + (cnt * 2);
         for (int i = 0; p < end; i++, p += 2) {
-            entries[i] = classReader.readEntry(p);
+            entries[i] = classReader.readEntry(p, type);
         }
         return SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(entries);
     }
@@ -285,7 +286,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundLocalVariableTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTableAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-            codeAttribute = (CodeImpl) enclosing;
+            if (enclosing instanceof CodeImpl ci) {
+                this.codeAttribute = ci;
+            } else {
+                throw new IllegalArgumentException("Invalid LocalVariableTable attribute location");
+            }
         }
 
         @Override
@@ -312,7 +317,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
         public BoundLocalVariableTypeTableAttribute(AttributedElement enclosing, ClassReader cf, AttributeMapper<LocalVariableTypeTableAttribute> mapper, int pos) {
             super(cf, mapper, pos);
-            this.codeAttribute = (CodeImpl) enclosing;
+            if (enclosing instanceof CodeImpl ci) {
+                this.codeAttribute = ci;
+            } else {
+                throw new IllegalArgumentException("Invalid LocalVariableTypeTable attribute location");
+            }
         }
 
         @Override
@@ -549,7 +558,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         @Override
         public List<ClassEntry> exceptions() {
             if (exceptions == null) {
-                exceptions = readEntryList(payloadStart);
+                exceptions = readEntryList(payloadStart, ClassEntry.class);
             }
             return exceptions;
         }
@@ -645,7 +654,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     PackageEntry pe = classReader.readEntry(p, PackageEntry.class);
                     int exportFlags = classReader.readU2(p + 2);
                     p += 4;
-                    List<ModuleEntry> exportsTo = readEntryList(p);
+                    List<ModuleEntry> exportsTo = readEntryList(p, ModuleEntry.class);
                     p += 2 + exportsTo.size() * 2;
                     elements[i] = ModuleExportInfo.of(pe, exportFlags, exportsTo);
                 }
@@ -660,7 +669,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     PackageEntry po = classReader.readEntry(p, PackageEntry.class);
                     int opensFlags = classReader.readU2(p + 2);
                     p += 4;
-                    List<ModuleEntry> opensTo = readEntryList(p);
+                    List<ModuleEntry> opensTo = readEntryList(p, ModuleEntry.class);
                     p += 2 + opensTo.size() * 2;
                     elements[i] = ModuleOpenInfo.of(po, opensFlags, opensTo);
                 }
@@ -668,7 +677,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
             }
 
             {
-                uses = readEntryList(p);
+                uses = readEntryList(p, ClassEntry.class);
                 p += 2 + uses.size() * 2;
                 int cnt = classReader.readU2(p);
                 p += 2;
@@ -677,7 +686,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 for (int i = 0; i < cnt; i++) {
                     ClassEntry c = classReader.readEntry(p, ClassEntry.class);
                     p += 2;
-                    List<ClassEntry> providesWith = readEntryList(p);
+                    List<ClassEntry> providesWith = readEntryList(p, ClassEntry.class);
                     p += 2 + providesWith.size() * 2;
                     elements[i] = ModuleProvideInfo.of(c, providesWith);
                 }
@@ -697,7 +706,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         @Override
         public List<PackageEntry> packages() {
             if (packages == null) {
-                packages = readEntryList(payloadStart);
+                packages = readEntryList(payloadStart, PackageEntry.class);
             }
             return packages;
         }
@@ -715,7 +724,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         @Override
         public List<ClassEntry> nestMembers() {
             if (members == null) {
-                members = readEntryList(payloadStart);
+                members = readEntryList(payloadStart, ClassEntry.class);
             }
             return members;
         }
@@ -744,7 +753,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 int p = payloadStart + 2;
                 for (int i = 0; i < size; ++i) {
                     final var handle = classReader.readEntry(p, AbstractPoolEntry.MethodHandleEntryImpl.class);
-                    final List<LoadableConstantEntry> args = readEntryList(p + 2);
+                    final List<LoadableConstantEntry> args = readEntryList(p + 2, LoadableConstantEntry.class);
                     p += 4 + args.size() * 2;
                     int hash = BootstrapMethodEntryImpl.computeHashCode(handle, args);
                     bs[i] = new BootstrapMethodEntryImpl(classReader, i, hash, handle, args);
@@ -924,7 +933,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         @Override
         public List<ClassEntry> permittedSubclasses() {
             if (permittedSubclasses == null) {
-                permittedSubclasses = readEntryList(payloadStart);
+                permittedSubclasses = readEntryList(payloadStart, ClassEntry.class);
             }
             return permittedSubclasses;
         }

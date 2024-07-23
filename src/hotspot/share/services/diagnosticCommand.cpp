@@ -863,7 +863,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map(_filename.value().get());
+  CodeCache::write_perf_map(_filename.value().get(), output());
 }
 #endif // LINUX
 
