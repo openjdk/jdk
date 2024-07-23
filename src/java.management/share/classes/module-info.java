@@ -60,7 +60,8 @@ module java.management {
     exports sun.management to
         jdk.jconsole,
         jdk.management,
-        jdk.management.agent;
+        jdk.management.agent,
+        jdk.management.rest;
     exports sun.management.counter to
         jdk.management.agent;
     exports sun.management.counter.perf to

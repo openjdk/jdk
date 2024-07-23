@@ -1,5 +1,4 @@
-/*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+/* * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,30 +45,61 @@ import java.util.Set;
 
 import javax.management.*;
 import javax.management.MBeanServerConnection;
+import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 
 import javax.net.ssl.HttpsURLConnection;
 
 import jdk.internal.management.remote.rest.json.JSONElement;
+import jdk.internal.management.remote.rest.json.JSONObject;
+import jdk.internal.management.remote.rest.json.JSONPrimitive;
 import jdk.internal.management.remote.rest.json.parser.JSONParser;
 import jdk.internal.management.remote.rest.mapper.JSONMapper;
 import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
 
+import javax.management.remote.http.JMXServersInfoCompositeData;
+
 public class HttpRestConnection implements MBeanServerConnection {
 
-    protected String host;
-    protected int port;
-    protected Map<String,?> env;
     protected String baseURL;
+    protected Map<String,?> env;
+
+    protected String defaultDomain;
+    protected String[] domains;
 
     private static final String CHARSET = "UTF-8";
     
-    public HttpRestConnection(String host, int port, Map<String,?> env) {
-        this.host = host;
-        this.port = port;
+    public HttpRestConnection(String baseURL, Map<String,?> env) {
         this.env = env;
-        this.baseURL = "http://" + host + ":" + port + "/jmx/servers/platform/";
-        // Or baseURL could be a required parameter, and not assume "platform"...
+        // URL should end /jmx/servers/servername/ e.g. /jmx/servers/platform/
+        this.baseURL = baseURL; // "http://" + host + ":" + port + "/jmx/servers/platform/";
+        System.err.println("HttpRestConnection: baseURL = " + baseURL);
+    }
+
+    public void setup() throws IOException { 
+        // Fetch /jmx/servers/platform and populate basic info.
+        String str = executeHttpGetRequest(url(baseURL, ""));
+        System.err.println("XXX setup: raw = " + str);
+
+        try {
+        JSONParser parser = new JSONParser(str);
+        JSONElement json = parser.parse();
+        JSONObject jo = (JSONObject) json;
+        JSONElement value = jo.get("defaultDomain");
+        // System.err.println("defaultDomain json value = " + value);
+        defaultDomain = (String) ((JSONPrimitive) value).getValue();
+
+        // domains:  "[JMImplementation, java.util.logging, jdk.management.jfr, java.lang, com.sun.management, java.nio]"
+        // populated in MBeanServerResource with Arrays.toString(mbeanServer.getDomains())
+        value = jo.get("domains");
+        System.err.println("domains json value = " + value);
+        String domainsList = (String) ((JSONPrimitive) value).getValue();
+        System.err.println("domains list json value = " + domainsList);
+        // leaves [ and ] so change to a better decoding of arrays!...
+        domains = domainsList.split(",");
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     public ObjectInstance createMBean(String className, ObjectName name)
@@ -120,6 +150,7 @@ public class HttpRestConnection implements MBeanServerConnection {
     public ObjectInstance getObjectInstance(ObjectName name)
             throws InstanceNotFoundException, IOException {
 
+
         return null;
     }
 
@@ -128,6 +159,9 @@ public class HttpRestConnection implements MBeanServerConnection {
 
         // jmx/servers/platform/mbeans/
         // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
+        String str = executeHttpGetRequest(url(baseURL, "mbeans/"));
+        System.err.println("queryMBeans: " + str);
+
         return null;
     }
 
@@ -144,22 +178,43 @@ public class HttpRestConnection implements MBeanServerConnection {
         // /jmx/servers/platform/mbeans/
         // { "mbeanCount": "27", ...
         // RMI uses com/sun/jmx/mbeanserver/Repository.java which holds a count.
-        String str = executeHttpGetRequest("mbeans/");
-        System.err.println("getMBeanCount: " + str);
+        String str = executeHttpGetRequest(url(baseURL, "mbeans/"));
+        // System.err.println("getMBeanCount: raw = " + str);
         JSONParser parser = new JSONParser(str);
         try {
-        JSONElement json = parser.parse();
-        System.err.println("getMBeanCount: " + json);
+            JSONElement json = parser.parse();
+//            System.err.println("getMBeanCount: JSONElement " + json);
+//            System.err.println("json class = " + json.getClass());
+            JSONObject jo = (JSONObject) json;
+//            System.err.println("json Object = " + jo);
 
-        // JSON Mapper - say what we expect to get out:
-        JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(CompositeDataSupport.class);
-        
-        Object result = typeMapper.toJavaObject(json);
-        System.err.println("getMBeanCount: " + result);
+//            jo.keySet().forEach((s) -> { System.out.println("XX = '" + s + "'"); });
+            JSONElement value = jo.get("mbeanCount");
+//            System.err.println("json value = " + value);
+            if (value == null) {
+                throw new IOException("no field");
+            }
+            String v = (String) ((JSONPrimitive) value).getValue();
+            try {
+                return Integer.parseInt(v);
+            } catch (NumberFormatException nfe) {
+                throw new IOException("bad field");
+            }
+            // JSON Mapper - say what we expect to get out:
+//            JMXServersInfo jsi = new JMXServersInfo(1, null);
+/*            Object [] objs = new Object[1];
+            objs[0] = new Object();
+            /* JMXServersInfo */ /*CompositeData cd = JMXServersInfoCompositeData.toCompositeData(1, objs);
+            JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(cd);
+            System.err.println("typeMapper = " + typeMapper);
+            if (typeMapper != null) { 
+                Object result = typeMapper.toJavaObject(json);
+                System.err.println("getMBeanCount: " + result);
+            } */
+
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            throw new IOException(e);
         }
-        return 1;// result;
     }
 
     public Object getAttribute(ObjectName name, String attribute)
@@ -196,16 +251,18 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, MBeanException,
                    ReflectionException, IOException {
 
+        System.err.println("XXX invoke name = " + name + " op = " + operationName
+                           + " params: " + params + " signature: " + signature);
         return null;
     }
 
     public String getDefaultDomain() throws IOException {
-        return null;
+        return defaultDomain;
 
     }
 
     public String[] getDomains() throws IOException {
-        return null;
+        return domains;
 
     }
 
@@ -276,21 +333,20 @@ public class HttpRestConnection implements MBeanServerConnection {
         return true;
     }
 
-    private URL url(String s) {
+    protected static URL url(String baseURL, String s) {
         // Return a URL by adding given String to baseURL.
         URL url = null;
         if (s != null) {
             try {
                 url = new URI(baseURL + s).toURL();
             } catch (URISyntaxException | MalformedURLException e) {
+                // ignored
             }
         }
         return url;
     }
 
-    private String executeHttpGetRequest(String inputURL) throws MalformedURLException, IOException {
-        URL url = url(inputURL);
-        if (url != null) {
+    protected static String executeHttpGetRequest(URL url) throws MalformedURLException, IOException {
             // HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setDoOutput(false);
@@ -325,12 +381,11 @@ public class HttpRestConnection implements MBeanServerConnection {
                 }
             } catch (IOException e) {
             }
-        }
         return null;
     }
 
     private String executeHttpPostRequest(String postBody) throws MalformedURLException, IOException {
-        URL url = url("");
+        URL url = url(baseURL, "");
         if (postBody != null && !postBody.isEmpty()) {
             //HttpsURLConnection connection = (HttpsURLConnection) url.openConnection();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();

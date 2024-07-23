@@ -2,7 +2,8 @@ import jdk.internal.management.remote.rest.RestAdapterProvider;
 
 module jdk.management.rest {
 
-    requires transitive java.management;
+//    requires transitive java.management;
+    requires java.management;
     requires jdk.httpserver;
     requires jdk.management.agent;
 

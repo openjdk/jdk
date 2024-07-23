@@ -26,35 +26,80 @@
 package javax.management.remote.http;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.Map;
 import javax.management.*;
 import javax.management.remote.*;
+import java.net.MalformedURLException;
 
+/**
+ * Compare with
+ * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnector.java
+ * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnection.java
+ * src/java.management.rmi/share/classes/javax/management/remote/rmi/RMIConnectionImpl.java
+ */
 public class HttpRestConnector implements JMXConnector {
 
+    protected boolean connected;
     protected JMXServiceURL url;
     protected Map<String,?> env;
+    protected HttpRestConnection connection;
 
     public HttpRestConnector(JMXServiceURL url, Map<String,?> env) {
         this.url = url;
+        this.env = env;
+        if (env == null) {
+            this.env = new HashMap<String,Object>();
+        }
     }
 
     public void connect() throws IOException {
-
+        connect(env);
     }
 
     public void connect(Map<String,?> env) throws IOException {
-        this.env = env;
+        if (connected) {
+            return;
+        }
+        // Connect and verify available servers
+        // JMXServiceURL e.g. service:jmx:http://hostname:1234
+        // Normalise our baseURL to end with /jmx/servers/ including final /
+        String baseURL = url.toString();
+        if (!baseURL.startsWith("service:jmx:")) {
+            throw new IOException("URL beginning service:jmx: expected");
+        }
+        baseURL = baseURL.substring(12); // or rebuild from host/port/protocol
+        System.err.println("connect: " + baseURL);
+        // Possibly just require URL to end in /jmx/servers/ plus optional mbserver name
+        if (!baseURL.endsWith("/")) {
+            baseURL = baseURL + "/";
+        }
+        if (!baseURL.endsWith("/jmx/servers/")) {
+            baseURL = baseURL + "jmx/servers/"; // stops you giving a mbserver name
+        }
+        // Force to /platform/ MBeanServer.
+        if (!baseURL.endsWith("/platform/")) {
+            baseURL = baseURL + "platform/";
+        }
+        connection = new HttpRestConnection(baseURL, env);
+        connection.setup();
+        connected = true;
     }
 
     public MBeanServerConnection getMBeanServerConnection() throws IOException {
-        MBeanServerConnection mbsc = new HttpRestConnection(url.getHost(), url.getPort(), env);
-        return mbsc;
+        if (!connected) {
+            throw new IOException("Not connected");
+        }
+        return connection;
     }
 
     public void close() throws IOException {
-
+        if (!connected) {
+            throw new IOException("Not connected");
+        }
+        connected = false;
     }
+
     public void addConnectionNotificationListener(NotificationListener listener,
                                           NotificationFilter filter,
                                           Object handback) {
@@ -74,6 +119,9 @@ public class HttpRestConnector implements JMXConnector {
     }
 
     public String getConnectionId() throws IOException {
+        if (!connected) {
+            throw new IOException("Not connected");
+        }
         return null;
     }
 }
