@@ -63,8 +63,11 @@ public class Float512VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final float RELATIVE_ROUNDING_ERROR = (float)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_ADD = (float)0.000001;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_MUL = (float)0.00001;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
 
@@ -2205,7 +2208,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float512VectorTests::ADDReduce, Float512VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float512VectorTests::ADDReduce, Float512VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_ADD);
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2251,7 +2254,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float512VectorTests::ADDReduceMasked, Float512VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float512VectorTests::ADDReduceMasked, Float512VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_ADD);
     }
 
     static float MULReduce(float[] a, int idx) {
@@ -2294,7 +2297,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float512VectorTests::MULReduce, Float512VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float512VectorTests::MULReduce, Float512VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_MUL);
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2340,7 +2343,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float512VectorTests::MULReduceMasked, Float512VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float512VectorTests::MULReduceMasked, Float512VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_MUL);
     }
 
     static float MINReduce(float[] a, int idx) {

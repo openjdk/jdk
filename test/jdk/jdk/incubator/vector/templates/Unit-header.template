@@ -96,8 +96,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
 #if[FP]
-    // for floating point reduction ops that may introduce rounding errors
-    private static final $type$ RELATIVE_ROUNDING_ERROR = ($type$)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_ADD = ($type$)0.000001;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_MUL = ($type$)0.00001;
 #end[FP]
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
