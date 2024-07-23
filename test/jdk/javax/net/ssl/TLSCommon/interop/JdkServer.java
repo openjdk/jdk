@@ -22,6 +22,7 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,8 @@ public class JdkServer extends AbstractServer {
         context = Utilities.createSSLContext(builder.getCertTuple());
         SSLServerSocketFactory serverFactory = context.getServerSocketFactory();
         serverSocket
-                = (SSLServerSocket) serverFactory.createServerSocket(builder.getPort());
+                = (SSLServerSocket) serverFactory.createServerSocket(builder.getPort(),
+                    5, builder.getListenInterface());
         configServerSocket(builder);
     }
 

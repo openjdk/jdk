@@ -22,6 +22,8 @@
  */
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -52,10 +54,20 @@ public abstract class AbstractServer extends AbstractPeer implements Server {
 
     public static abstract class Builder extends AbstractPeer.Builder {
 
+        private InetAddress listenInterface = InetAddress.getLoopbackAddress();
         private int port;
 
         // Indicates if requires client authentication.
         private boolean clientAuth = true;
+
+        public InetAddress getListenInterface() {
+            return listenInterface;
+        }
+
+        public Builder setListenInterface(InetAddress listenInterface) {
+            this.listenInterface = listenInterface;
+            return this;
+        }
 
         public int getPort() {
             return port;
