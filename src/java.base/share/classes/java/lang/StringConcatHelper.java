@@ -411,18 +411,6 @@ final class StringConcatHelper {
 
     /**
      * Allocates an uninitialized byte array based on the length
-     * @param index
-     * @param coder
-     * @return the newly allocated byte array
-     */
-    @ForceInline
-    static byte[] newArray(int index, byte coder) {
-        index = index << coder;
-        return newArray(index);
-    }
-
-    /**
-     * Allocates an uninitialized byte array based on the length
      * @param length
      * @return the newly allocated byte array
      */
