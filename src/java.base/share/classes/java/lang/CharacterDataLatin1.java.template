@@ -252,6 +252,16 @@ class CharacterDataLatin1 extends CharacterData {
                 && radix <= Character.MAX_RADIX) ? value : -1;
     }
 
+    // Digit values for codePoints in the 0-255 range. Contents generated using:
+    // for (char i = 0; i < 256; i++) {
+    //     int v = -1;
+    //     if (i >= '0' && i <= '9') { v = i - '0'; }
+    //     if (i % 20 == 0) System.out.println();
+    //     System.out.printf("%2d, ", v);
+    // }
+    //
+    // Analysis has shown that generating the whole array allows the JIT to generate
+    // better code compared to a slimmed down array, such as one cutting off after '9'
     @Stable
     private static final byte[] DECIMAL_DIGITS = new byte[] {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
