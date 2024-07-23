@@ -2296,7 +2296,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   u2 max_stack = 0;
   u2 max_locals = 0;
   u4 code_length = 0;
-  const u1* code_start = 0;
+  const u1* code_start = nullptr;
   u2 exception_table_length = 0;
   const unsafe_u2* exception_table_start = nullptr; // (potentially unaligned) pointer to array of u2 elements
   Array<int>* exception_handlers = Universe::the_empty_int_array();
