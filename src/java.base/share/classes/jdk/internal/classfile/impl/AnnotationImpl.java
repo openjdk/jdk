@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,24 +32,10 @@ import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
 
-public final class AnnotationImpl implements Annotation {
-    private final Utf8Entry className;
-    private final List<AnnotationElement> elements;
-
-    public AnnotationImpl(Utf8Entry className,
-                          List<AnnotationElement> elems) {
-        this.className = className;
-        this.elements = List.copyOf(elems);
-    }
-
-    @Override
-    public Utf8Entry className() {
-        return className;
-    }
-
-    @Override
-    public List<AnnotationElement> elements() {
-        return elements;
+public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
+        implements Annotation {
+    public AnnotationImpl {
+        elements = List.copyOf(elements);
     }
 
     @Override
