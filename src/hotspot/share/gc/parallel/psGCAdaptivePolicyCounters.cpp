@@ -107,10 +107,6 @@ PSGCAdaptivePolicyCounters::PSGCAdaptivePolicyCounters(const char* name_arg,
     _free_space = PerfDataManager::create_variable(SUN_GC, cname,
       PerfData::U_Bytes, ps_size_policy()->free_space(), CHECK);
 
-    cname = PerfDataManager::counter_name(name_space(), "avgBaseFootprint");
-    _avg_base_footprint = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Bytes, (jlong) ps_size_policy()->avg_base_footprint()->average(), CHECK);
-
     cname = PerfDataManager::counter_name(name_space(), "liveAtLastFullGc");
     _live_at_last_full_gc_counter =
       PerfDataManager::create_variable(SUN_GC, cname,
@@ -157,7 +153,6 @@ void PSGCAdaptivePolicyCounters::update_counters_from_policy() {
     update_decrement_tenuring_threshold_for_survivor_limit();
     update_live_space();
     update_free_space();
-    update_avg_base_footprint();
 
     update_change_old_gen_for_maj_pauses();
     update_change_young_gen_for_maj_pauses();

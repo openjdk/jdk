@@ -145,8 +145,7 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   // Footprint accessors
   size_t live_space() const {
-    return (size_t)(avg_base_footprint()->average() +
-                    avg_young_live()->average() +
+    return (size_t)(avg_young_live()->average() +
                     avg_old_live()->average());
   }
   size_t free_space() const {
