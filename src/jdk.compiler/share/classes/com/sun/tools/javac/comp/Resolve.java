@@ -1221,6 +1221,7 @@ public class Resolve {
                     tDescNoCapture = types.findDescriptorType(t);
                     sDesc = types.findDescriptorType(s);
                 } catch (Types.FunctionDescriptorLookupError ex) {
+                    // don't report, a more meaningful error should be reported upstream
                     return false;
                 }
                 final List<Type> tTypeParams = tDesc.getTypeArguments();
