@@ -707,8 +707,8 @@ public final class StringConcatFactory {
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
-            lookup = JLA.stringConcatLookup();
-            String className = getClassName(lookup.lookupClass());
+            lookup = MethodHandles.Lookup.IMPL_LOOKUP;
+            String className = getClassName(String.class);
 
             byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
                     new Consumer<ClassBuilder>() {
@@ -721,10 +721,9 @@ public final class StringConcatFactory {
                                         generateMethod(constants, args));
                     }});
             try {
-                Lookup hiddenLookup = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
-                                            .defineClassAsLookup(true);
-                Class<?> innerClass = hiddenLookup.lookupClass();
-                return hiddenLookup.findStatic(innerClass, METHOD_NAME, args);
+                var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
+                        .defineClass(true, null);
+                return lookup.findStatic(hiddenClass, METHOD_NAME, args);
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
@@ -827,9 +826,11 @@ public final class StringConcatFactory {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
                         if (!directPrimive(cl)) {
-                            cb.aload(argSlots + paramStrings[i])
-                              .invokevirtual(ConstantDescs.CD_String, "coder", TO_BYTE)
-                              .ior();
+                            if (maybeUTF16(cl)) {
+                                cb.aload(argSlots + paramStrings[i])
+                                  .invokevirtual(ConstantDescs.CD_String, "coder", TO_BYTE)
+                                  .ior();
+                            }
                         } else if (cl == char.class) {
                             cb.loadLocal(kind, paramSlots[i])
                               .invokestatic(STRING_CONCAT_HELPER, "stringCoder", CHAR_TO_BYTE)
@@ -939,6 +940,19 @@ public final class StringConcatFactory {
                             || cl == long.class
                             || cl == boolean.class
                             || cl == char.class;
+                }
+
+                static boolean maybeUTF16(Class<?> cl) {
+                    return cl != byte.class
+                            && cl != short.class
+                            && cl != int.class
+                            && cl != long.class
+                            && cl != boolean.class
+                            && cl != Byte.class
+                            && cl != Short.class
+                            && cl != Integer.class
+                            && cl != Long.class
+                            && cl != Boolean.class;
                 }
             };
         }

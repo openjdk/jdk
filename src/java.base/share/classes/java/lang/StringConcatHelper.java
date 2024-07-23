@@ -277,8 +277,4 @@ final class StringConcatHelper {
             throw new AssertionError(e);
         }
     }
-
-    static MethodHandles.Lookup lookup() {
-        return MethodHandles.lookup();
-    }
 }

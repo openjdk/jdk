@@ -438,8 +438,6 @@ public interface JavaLangAccess {
      */
     byte stringConcatInitialCoder();
 
-    MethodHandles.Lookup stringConcatLookup();
-
     /**
      * Join strings
      */
@@ -451,8 +449,6 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    int stringSize(int i);
 
     int stringSize(long i);
 

@@ -2612,16 +2612,8 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public MethodHandles.Lookup stringConcatLookup() {
-                return StringConcatHelper.lookup();
-            }
-
             public byte stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
-            }
-
-            public int stringSize(int i) {
-                return Integer.stringSize(i);
             }
 
             public int stringSize(long i) {
