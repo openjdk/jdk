@@ -30,7 +30,6 @@ import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.module.ModuleDescriptor;
 import java.lang.reflect.Executable;
@@ -436,12 +435,27 @@ public interface JavaLangAccess {
     /**
      * Get the string concat initial coder
      */
-    byte stringConcatInitialCoder();
+    long stringConcatInitialCoder();
+
+    /**
+     * Update lengthCoder for constant
+     */
+    long stringConcatMix(long lengthCoder, String constant);
+
+    /**
+     * Mix value length and coder into current length and coder.
+     */
+    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Join strings
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
+
+    byte stringInitialCoder();
+
+    byte stringCoder(char ch);
+    byte stringCoder(String str);
 
     /*
      * Get the class data associated with the given class.
@@ -455,9 +469,6 @@ public interface JavaLangAccess {
     int getCharsLatin1(long i, int index, byte[] buf);
 
     int getCharsUTF16(long i, int index, byte[] buf);
-
-    byte stringCoder(char ch);
-    byte stringCoder(String str);
 
     long findNative(ClassLoader loader, String entry);
 

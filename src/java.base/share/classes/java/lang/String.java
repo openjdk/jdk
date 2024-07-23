@@ -3588,9 +3588,9 @@ public final class String
     @ForceInline
     static String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
         int icoder = prefix.coder() | suffix.coder();
-        int len = prefix.length() + suffix.length();
+        long len = (long) prefix.length() + suffix.length();
         if (size > 1) { // when there are more than one element, size - 1 delimiters will be emitted
-            len += (size - 1) * delimiter.length();
+            len += (long) (size - 1) * delimiter.length();
             icoder |= delimiter.coder();
         }
         // assert len > 0L; // max: (long) Integer.MAX_VALUE << 32
@@ -3603,10 +3603,10 @@ public final class String
         }
         byte coder = (byte) icoder;
         // long len overflow check, char -> byte length, int len overflow check
-        if (len < 0L) {
+        if (len < 0L || (len <<= coder) != (int) len) {
             throw new OutOfMemoryError("Requested string length exceeds VM limit");
         }
-        byte[] value = StringConcatHelper.newArray(len << coder);
+        byte[] value = StringConcatHelper.newArray(len);
 
         int off = 0;
         prefix.getBytes(value, off, coder); off += prefix.length();

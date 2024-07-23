@@ -37,7 +37,6 @@ import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.module.ModuleDescriptor;
@@ -2612,8 +2611,16 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public byte stringConcatInitialCoder() {
+            public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
+            }
+
+            public long stringConcatMix(long lengthCoder, String constant) {
+                return StringConcatHelper.mix(lengthCoder, constant);
+            }
+
+            public long stringConcatMix(long lengthCoder, char value) {
+                return StringConcatHelper.mix(lengthCoder, value);
             }
 
             public int stringSize(long i) {
@@ -2630,6 +2637,10 @@ public final class System {
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
+            }
+
+            public byte stringInitialCoder() {
+                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
             }
 
             public byte stringCoder(char value) {
