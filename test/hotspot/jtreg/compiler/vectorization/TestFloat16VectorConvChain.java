@@ -24,8 +24,10 @@
 /**
 * @test
 * @summary Test Float16 vector conversion chain.
+* @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch == "aarch64"
+*           | (os.arch == "riscv64" & vm.cpu.features ~= ".*zfh.*")
 * @library /test/lib /
-* @run driver/timeout=1200 compiler.vectorization.TestFloat16VectorConvChain
+* @run driver compiler.vectorization.TestFloat16VectorConvChain
 */
 
 package compiler.vectorization;
