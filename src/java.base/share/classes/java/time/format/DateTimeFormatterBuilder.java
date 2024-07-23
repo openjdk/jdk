@@ -2965,8 +2965,9 @@ public final class DateTimeFormatterBuilder {
                 }
             }
             char zeroDigit = decimalStyle.getZeroDigit();
-            for (int i = 0; i < minWidth - size; i++) {
-                buf.append(zeroDigit);
+            int zeros = minWidth - size;
+            if (zeros > 0) {
+                buf.repeat(zeroDigit, zeros);
             }
             if (zeroDigit == '0' && value != Long.MIN_VALUE) {
                 buf.append(Math.abs(value));
@@ -3410,17 +3411,16 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < width; i++) {
-                        buf.append(zero);
-                    }
+                    buf.repeat(zero, width);
                 }
             } else {
                 if (decimalPoint) {
                     buf.append(decimalStyle.getDecimalSeparator());
                 }
                 // add leading zeros
-                for (int i = 9 - stringSize; i > 0; i--) {
-                    buf.append(zero);
+                int zeros = 9 - stringSize;
+                if (zeros > 0) {
+                    buf.repeat(zero, zeros);
                 }
                 // truncate unwanted digits
                 if (maxWidth < 9) {
@@ -3594,9 +3594,7 @@ public final class DateTimeFormatterBuilder {
                     if (decimalPoint) {
                         buf.append(decimalStyle.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
-                        buf.append(decimalStyle.getZeroDigit());
-                    }
+                    buf.repeat(decimalStyle.getZeroDigit(), minWidth);
                 }
             } else {
                 int outputScale = Math.clamp(fraction.scale(), minWidth, maxWidth);
