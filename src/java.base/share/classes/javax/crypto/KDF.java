@@ -167,6 +167,15 @@ public final class KDF {
     }
 
     /**
+     * Returns the {@code KDFParameters} used to initialize the object.
+     *
+     * @return the parameters used to initialize the object
+     */
+    public KDFParameters getKDFParameters() {
+        return this.kdfParameters;
+    }
+
+    /**
      * Returns a {@code KDF} object that implements the specified algorithm.
      *
      * @param algorithm
