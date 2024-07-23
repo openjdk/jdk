@@ -2987,9 +2987,6 @@ public final class String
         if (str.isEmpty()) {
             return this;
         }
-        if (isEmpty()) {
-            return str;
-        }
         return StringConcatHelper.doConcat(this, str);
     }
 
