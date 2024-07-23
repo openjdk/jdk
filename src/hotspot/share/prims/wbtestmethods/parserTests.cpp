@@ -128,7 +128,7 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
       parser->add_dcmd_option(argument);
      }
    } else if (strcmp(type, "FILE") == 0) {
-      DCmdArgument<FileArgument> *argument =
+      DCmdArgument<FileArgument>* argument =
           new DCmdArgument<FileArgument>(name, desc, "FILE", mandatory);
       if (isarg) {
         parser->add_dcmd_argument(argument);
