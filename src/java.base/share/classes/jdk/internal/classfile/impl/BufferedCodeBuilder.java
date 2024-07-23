@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -201,7 +200,8 @@ public final class BufferedCodeBuilder
             });
         }
 
-        public void writeTo(BufWriter buf) {
+        @Override
+        public void writeTo(BufWriterImpl buf) {
             DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, context, null).writeTo(buf);
         }
 
