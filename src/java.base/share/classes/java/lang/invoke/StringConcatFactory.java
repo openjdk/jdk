@@ -147,6 +147,11 @@ public final class StringConcatFactory {
     // code for runtime checks. Take care any changes or additions here are
     // reflected there as appropriate.
 
+    @SuppressWarnings("removal")
+    private static boolean isGenerateInlineCopy() {
+        return GENERATE_INLINE_COPY && System.getSecurityManager() == null;
+    }
+
     /**
      * Facilitates the creation of optimized String concatenation methods, that
      * can be used to efficiently concatenate a known number of arguments of
@@ -509,7 +514,7 @@ public final class StringConcatFactory {
             return simpleConcat();
         }
 
-        if (GENERATE_INLINE_COPY) {
+        if (isGenerateInlineCopy()) {
             return null;
         }
 
