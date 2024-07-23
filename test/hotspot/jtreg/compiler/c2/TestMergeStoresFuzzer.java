@@ -77,22 +77,62 @@ public class TestMergeStoresFuzzer {
     }
 
     public static void main(String args[]) throws IOException {
+        String src = generate();
+        JavaSourceFromString file = new JavaSourceFromString("XYZ", src);
+
+        InMemoryCompiler comp = new InMemoryCompiler();
+        comp.add(file);
+
+        comp.compile();
+
+        Class c = comp.getClass("XYZ");
+
+        try {
+            c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("No such method:", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("Invocation target:", e);
+        }
+    }
+}
+
+class InMemoryCompiler {
+    private List<JavaSourceFromString> files = new ArrayList<JavaSourceFromString>();
+    private URLClassLoader classLoader;
+
+    public void add(JavaSourceFromString file) {
+        files.add(file);
+    }
+
+    public void compile() throws IOException {
+        if (classLoader != null) {
+            throw new RuntimeException("Cannot compile twice!");
+        }
+
+        // Get compiler with diagnostics.
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 
-        String src = generate();
-        System.out.println(src);
-        JavaFileObject file = new JavaSourceFromString("XYZ", src);
-
-        Iterable<? extends JavaFileObject> compilationUnits = Arrays.asList(file);
+        // Set classpath and compilation destination for new class files.
         List<String> optionList = new ArrayList<String>();
         optionList.add("-classpath");
         optionList.add(System.getProperty("java.class.path"));
         optionList.add("-d");
         optionList.add(System.getProperty("test.classes"));
-        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, compilationUnits);
 
+        for (JavaSourceFromString f : files) {
+            System.out.println("File: " + f.getName());
+            System.out.println(f.getCharContent(false).toString());
+        }
+
+        // Compile.
+        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, files);
         boolean success = task.call();
+
+        // Print diagnostics.
         for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
             System.out.println(diagnostic.getCode());
             System.out.println(diagnostic.getKind());
@@ -103,29 +143,25 @@ public class TestMergeStoresFuzzer {
             System.out.println(diagnostic.getMessage(null));
         }
 
-        if (success) {
-            System.out.println("Compilation successfull, invoking test...");
-            try {
-                ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
-                // Classpath for all included classes (e.g. IR Framework).
-                URL[] urls = new URL[] { new File("").toURI().toURL(),
-                                         new File(System.getProperty("test.classes")).toURI().toURL()};
-                URLClassLoader classLoader = URLClassLoader.newInstance(urls, sysLoader);
-                Class.forName("XYZ", true, classLoader).getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException("Class not found:", e);
-            } catch (NoSuchMethodException e) {
-                throw new RuntimeException("No such method:", e);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException("Illegal access:", e);
-            } catch (InvocationTargetException e) {
-                throw new RuntimeException("Invocation target:", e);
-            }
-
-            System.out.println("Invocation successful.");
-        } else {
+        if (!success) {
             System.out.println("Compilation failed.");
             throw new RuntimeException("Compilation failed.");
+        }
+
+        System.out.println("Compilation successfull, creating ClassLoader...");
+
+        ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
+        // Classpath for all included classes (e.g. IR Framework).
+        URL[] urls = new URL[] { new File("").toURI().toURL(),
+                                 new File(System.getProperty("test.classes")).toURI().toURL()};
+        classLoader = URLClassLoader.newInstance(urls, sysLoader);
+    }
+
+    public Class getClass(String name) {
+        try {
+            return Class.forName(name, true, classLoader);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("Class not found:", e);
         }
     }
 }
