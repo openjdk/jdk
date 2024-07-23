@@ -91,11 +91,6 @@ public final class BufferedMethodBuilder
     }
 
     @Override
-    public Optional<MethodModel> original() {
-        return Optional.ofNullable(original);
-    }
-
-    @Override
     public Utf8Entry methodName() {
         return name;
     }
@@ -171,7 +166,7 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<ClassModel> parent() {
-            return original().flatMap(MethodModel::parent);
+            return Optional.empty();
         }
 
         @Override
