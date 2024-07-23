@@ -34,7 +34,8 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Models a key-value pair in the {@code element_value_pairs}
  * table in the {@code annotation} structure defined in
- * {@jvms 4.7.16}.
+ * {@jvms 4.7.16}. This should be compared using the
+ * {@link Object#equals(Object) equals} method.
  *
  * @see Annotation
  * @see AnnotationValue

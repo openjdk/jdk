@@ -38,18 +38,26 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models an {@code annotation} structure, as defined in {@jvms 4.7.16}.
- *
- * <p>This structure represents, in the Java Programming Language ({@jls 9.7.4}):
- * <ul><li>a <i>declaration annotation</i>, in
- * {@link RuntimeVisibleAnnotationsAttribute} or {@link
- * RuntimeInvisibleAnnotationsAttribute};
- * <li>a <i>declaration annotation</i> on
- * a method parameter, in {@link RuntimeVisibleParameterAnnotationsAttribute}
- * or {@link RuntimeInvisibleParameterAnnotationsAttribute};
- * <li>a <i>type annotation</i>, as {@linkplain TypeAnnotation#annotation part of}
- * {@link TypeAnnotation};
+ * <p>
+ * Each {@code annotation} structure denotes an annotation applied to an artifact
+ * in Java source code ({@jls 9.7.4}). The structure indicates the interface of
+ * the annotation and a set of element-value pairs. This should be compared using
+ * the {@link Object#equals(Object) equals} method.
+ * <p>
+ * This structure does not indicate the artifact on which the structure is applied.
+ * By its location in the class file, this structure may represent:
+ * <ul><li>a <i>declaration annotation</i> on a class, method, or field declaration,
+ * encoded as an item in a {@link RuntimeVisibleAnnotationsAttribute} or
+ * {@link RuntimeInvisibleAnnotationsAttribute} on a class, field, or method;
+ * <li>a <i>declaration annotation</i> on a method parameter declaration, encoded
+ * as an item in a {@link RuntimeVisibleParameterAnnotationsAttribute} or
+ * {@link RuntimeInvisibleParameterAnnotationsAttribute} on a method;
+ * <li>a <i>type annotation</i>, encoded as {@linkplain TypeAnnotation#annotation
+ * items} in the {@link TypeAnnotation type_annotation} structure that are the
+ * same as those from the {@code annotation} structure.
  * <li>an annotation {@linkplain AnnotationValue.OfAnnotation element value}
- * whose element type is an annotation type. ({@jls 9.7.1})
+ * whose element type is an annotation type ({@jls 9.7.1}), encoded as an
+ * {@code annotation_value} in the {@code element_value} structure ({@jvms 4.7.16.1})
  * </ul>
  *
  * @see AnnotationElement
