@@ -260,6 +260,7 @@ class CharacterDataLatin1 extends CharacterData {
     //     System.out.printf("%2d, ", v);
     // }
     //
+    // Unlike DIGITS, which supports all radixes (2 to 36), DECIMAL_DIGITS is optimized for decimal (radix = 10).
     // Analysis has shown that generating the whole array allows the JIT to generate
     // better code compared to a slimmed down array, such as one cutting off after '9'
     @Stable
