@@ -26,8 +26,7 @@
 #define SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP
 
 #include "gc/serial/tenuredGeneration.hpp"
-
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 
 inline size_t TenuredGeneration::capacity() const {
   return space()->capacity();
@@ -45,22 +44,28 @@ inline bool TenuredGeneration::is_in(const void* p) const {
   return space()->is_in(p);
 }
 
+inline void TenuredGeneration::update_for_block(HeapWord* start, HeapWord* end) {
+  _bts->update_for_block(start, end);
+}
+
 HeapWord* TenuredGeneration::allocate(size_t word_size,
-                                                 bool is_tlab) {
+                                      bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return _the_space->allocate(word_size);
+  HeapWord* res = _the_space->allocate(word_size);
+  if (res != nullptr) {
+    _bts->update_for_block(res, res + word_size);
+  }
+  return res;
 }
 
 HeapWord* TenuredGeneration::par_allocate(size_t word_size,
-                                                     bool is_tlab) {
+                                          bool is_tlab) {
   assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  return _the_space->par_allocate(word_size);
-}
-
-template <typename OopClosureType>
-void TenuredGeneration::oop_since_save_marks_iterate(OopClosureType* blk) {
-  Generation::oop_since_save_marks_iterate_impl(blk, _the_space, _saved_mark_word);
-  set_saved_mark_word();
+  HeapWord* res = _the_space->par_allocate(word_size);
+  if (res != nullptr) {
+    _bts->update_for_block(res, res + word_size);
+  }
+  return res;
 }
 
 #endif // SHARE_GC_SERIAL_TENUREDGENERATION_INLINE_HPP

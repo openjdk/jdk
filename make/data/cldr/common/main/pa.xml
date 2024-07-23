@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1957,9 +1957,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>{0} ਵੇਲਾ</regionFormat>
 			<regionFormat type="daylight">{0} ਪ੍ਰਕਾਸ਼ ਵੇਲਾ</regionFormat>
 			<regionFormat type="standard">{0} ਮਿਆਰੀ ਵੇਲਾ</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ਸੈਂਟਾ ਇਸਾਬੇਲ</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ਕੋਔਰਡੀਨੇਟੇਡ ਵਿਆਪਕ ਵੇਲਾ</standard>
@@ -2081,9 +2078,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ਮੈਲਬੋਰਨ</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ਕਰੀ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ਹੋਬਾਰਟ</exemplarCity>
@@ -2238,9 +2232,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>ਕ੍ਰੈਸਟਨ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ਯੈਲੋਨਾਈਫ</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ਐਡਮੋਂਟਨ</exemplarCity>
 			</zone>
@@ -2259,29 +2250,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ਰੈਜ਼ੋਲਿਊਟ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ਰੇਨੀ ਰਿਵਰ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ਰੈਂਕਿਨ ਇਨਲੈਟ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ਐਟੀਕੋਕਨ</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ਥੰਡਰ ਬੇ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ਨਿਪਿਗੌਨ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ਟੋਰਾਂਟੋ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ਇਕਾਲੁਈਟ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ਪੈਂਗਨਿਰਟੰਗ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ਮੋਂਕਟਨ</exemplarCity>
@@ -3096,17 +3075,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ਦਾਰ ਏਸ ਸਲਾਮ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ਉਜ਼ਗੋਰੋਡ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ਕੀਵ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>ਸਿਮਫਰੋਪੋਲ</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ਜਪੋਰੋਜ਼ਾਏ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ਕੰਪਾਲਾ</exemplarCity>
@@ -3125,9 +3098,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ਹੋਨੋਲੁਲੂ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ਜੋਨਸਟਨ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ਐਂਕਰੇਜ</exemplarCity>
@@ -3810,11 +3780,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ਮਕਾਉ ਗਰਮੀ-ਰੁੱਤ ਸਮਾਂ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ਮੈਕਕਵੇਰੀ ਆਈਲੈਂਡ ਵੇਲਾ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ਮੈਗੇਡਨ ਵੇਲਾ</generic>
@@ -3852,13 +3817,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>ਮੌਸਨ ਵੇਲਾ</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>ਉੱਤਰ ਪੱਛਮੀ ਮੈਕਸੀਕੋ ਵੇਲਾ</generic>
-					<standard>ਉੱਤਰ ਪੱਛਮੀ ਮੈਕਸੀਕੋ ਮਿਆਰੀ ਵੇਲਾ</standard>
-					<daylight>ਉੱਤਰ ਪੱਛਮੀ ਮੈਕਸੀਕੋ ਪ੍ਰਕਾਸ਼ ਵੇਲਾ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

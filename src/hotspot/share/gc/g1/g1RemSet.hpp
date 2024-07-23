@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class CardTableBarrierSet;
 class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1HeapRegionClaimer;
 class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
@@ -49,7 +50,6 @@ class G1Policy;
 class G1RemSetSamplingTask;
 class G1ScanCardClosure;
 class G1ServiceThread;
-class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
@@ -108,7 +108,7 @@ public:
   void exclude_region_from_scan(uint region_idx);
   // Creates a snapshot of the current _top values at the start of collection to
   // filter out card marks that we do not want to scan.
-  void prepare_region_for_scan(HeapRegion* region);
+  void prepare_region_for_scan(G1HeapRegion* region);
 
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.

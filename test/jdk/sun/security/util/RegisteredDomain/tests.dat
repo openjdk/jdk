@@ -161,6 +161,17 @@ site.ai.vn              ai.vn           site.ai.vn
 foo.السعودية            السعودية        foo.السعودية
 w.foo.السعودية          السعودية        foo.السعودية
 
+# newGTLDs
+
+# This is not a GTLD
+www.site.unknown        www.site.unknown    null
+
+# GTLD added in 1cbd6e7
+www.site.wed            wed                 site.wed
+
+# GTLD removed in 1cbd6e7
+www.site.oldnavy        www.site.oldnavy    null
+
 # Microsoft
 1.azurestaticapps.net         1.azurestaticapps.net       null
 app.1.azurestaticapps.net     1.azurestaticapps.net       app.1.azurestaticapps.net

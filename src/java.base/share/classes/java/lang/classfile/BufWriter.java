@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
  * questions.
  */
 package java.lang.classfile;
-
-import java.nio.ByteBuffer;
-import java.util.List;
 
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -112,18 +109,12 @@ public sealed interface BufWriter
     void writeBytes(byte[] arr);
 
     /**
-     * Write the contents of another {@link BufWriter} to the buffer
-     *
-     * @param other the other {@linkplain BufWriter}
-     */
-    void writeBytes(BufWriter other);
-
-    /**
      * Write a range of a byte array to the buffer
      *
      * @param arr the byte array
      * @param start the offset within the byte array of the range
      * @param length the length of the range
+     * @throws IndexOutOfBoundsException if range is outside of the array bounds
      */
     void writeBytes(byte[] arr, int start, int length);
 
@@ -134,6 +125,7 @@ public sealed interface BufWriter
      * @param offset the offset at which to patch
      * @param size the size of the integer value being written, in bytes
      * @param value the integer value
+     * @throws IndexOutOfBoundsException if patched int is outside of bounds
      */
     void patchInt(int offset, int size, int value);
 
@@ -152,7 +144,7 @@ public sealed interface BufWriter
      * to the buffer
      *
      * @param entry the constant pool entry
-     * @throws NullPointerException if the entry is null
+     * @throws IllegalArgumentException if the entry has invalid index
      */
     void writeIndex(PoolEntry entry);
 
@@ -161,44 +153,12 @@ public sealed interface BufWriter
      * to the buffer, or zero if the entry is null
      *
      * @param entry the constant pool entry
+     * @throws IllegalArgumentException if the entry has invalid index
      */
     void writeIndexOrZero(PoolEntry entry);
-
-    /**
-     * Write a list of entities to the buffer.  The length of the list is
-     * written as a {@code u2}, followed by the bytes corresponding to each
-     * element in the list.  Writing of the entities is delegated to the entry.
-     *
-     * @param list the entities
-     * @param <T> the type of entity
-     */
-    <T extends WritableElement<?>> void writeList(List<T> list);
-
-    /**
-     * Write a list of constant pool entry indexes to the buffer.  The length
-     * of the list is written as a {@code u2}, followed by a {@code u2} for each
-     * entry in the list.
-     *
-     * @param list the list of entries
-     */
-    void writeListIndices(List<? extends PoolEntry> list);
 
     /**
      * {@return the number of bytes that have been written to the buffer}
      */
     int size();
-
-    /**
-     * {@return a {@link java.nio.ByteBuffer ByteBuffer} view of the bytes in the buffer}
-     */
-    ByteBuffer asByteBuffer();
-
-    /**
-     * Copy the contents of the buffer into a byte array.
-     *
-     * @param array the byte array
-     * @param bufferOffset the offset into the array at which to write the
-     *                     contents of the buffer
-     */
-    void copyTo(byte[] array, int bufferOffset);
 }

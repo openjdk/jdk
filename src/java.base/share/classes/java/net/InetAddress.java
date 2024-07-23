@@ -142,12 +142,12 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  *
  * <p>
  *
- * For IPv4 address format, please refer to <A
- * HREF="Inet4Address.html#format">Inet4Address#format</A>; For IPv6
- * address format, please refer to <A
- * HREF="Inet6Address.html#format">Inet6Address#format</A>.
+ * For IPv4 address format, please refer to the supported
+ * {@linkplain Inet4Address##format IPv4 address textual representations};
+ * For IPv6 address format, please refer to the supported
+ * {@linkplain Inet6Address##format IPv6 address textual representations}.
  *
- * <p> There is a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
+ * <p> There are a <a href="doc-files/net-properties.html#Ipv4IPv6">couple of
  * System Properties</a> affecting how IPv4 and IPv6 addresses are used.
  *
  * <h2 id="host-name-resolution"> Host Name Resolution </h2>
@@ -1216,11 +1216,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             Objects.requireNonNull(policy);
             validate(host);
             InetAddress[] addrs;
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 addrs = impl.lookupAllHostAddr(host, policy);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
             return Arrays.stream(addrs);
         }
@@ -1230,11 +1230,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if (addr.length != Inet4Address.INADDRSZ && addr.length != Inet6Address.INADDRSZ) {
                 throw new IllegalArgumentException("Invalid address length");
             }
-            long comp = Blocker.begin();
+            boolean attempted = Blocker.begin();
             try {
                 return impl.getHostByAddr(addr);
             } finally {
-                Blocker.end(comp);
+                Blocker.end(attempted);
             }
         }
     }
@@ -1722,6 +1722,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.
      * @see Inet4Address#ofLiteral(String)
      * @see Inet6Address#ofLiteral(String)
+     * @see Inet4Address#ofPosixLiteral(String)
      * @since 22
      */
     public static InetAddress ofLiteral(String ipAddressLiteral) {

@@ -23,16 +23,15 @@
  * questions.
  */
 
+package sun.security.pkcs;
+
+import java.io.IOException;
+
 /**
  * Generic PKCS Parsing exception.
  *
  * @author Benjamin Renaud
  */
-
-package sun.security.pkcs;
-
-import java.io.IOException;
-
 public class ParsingException extends IOException {
 
     @java.io.Serial

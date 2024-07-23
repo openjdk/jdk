@@ -115,10 +115,13 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
+  product(bool, UseZvbb, false, EXPERIMENTAL, "Use Zvbb instructions")           \
   product(bool, UseZvfh, false, EXPERIMENTAL, "Use Zvfh instructions")           \
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
-          "Use RVV instructions for left/right shift of BigInteger")
+          "Use RVV instructions for left/right shift of BigInteger")             \
+  product(bool, UseTrampolines, false, EXPERIMENTAL,                             \
+          "Far calls uses jal to trampoline.")
 
 #endif // CPU_RISCV_GLOBALS_RISCV_HPP

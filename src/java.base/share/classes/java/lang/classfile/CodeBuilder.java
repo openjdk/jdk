@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,8 @@ import java.lang.classfile.instruction.TypeCheckInstruction;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.classfile.impl.BytecodeHelpers.handleDescToHandleInfo;
-import jdk.internal.classfile.impl.TransformingCodeBuilder;
+
+import jdk.internal.classfile.impl.TransformImpl;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -97,6 +98,27 @@ import jdk.internal.javac.PreviewFeature;
  * #with(ClassFileElement)} or concretely by calling the various {@code withXxx}
  * methods.
  *
+ * <h2>Instruction Factories</h2>
+ * {@code CodeBuilder} provides convenience methods to create instructions (See
+ * JVMS {@jvms 6.5} Instructions) by their mnemonic, taking necessary operands.
+ * <ul>
+ * <li>Instructions that encode their operands in their opcode, such as {@code
+ * aload_<n>}, share their factories with their generic version like {@link
+ * #aload aload}. Note that some constant instructions, such as {@link #iconst_1
+ * iconst_1}, do not have generic versions, and thus have their own factories.
+ * <li>Instructions that accept wide operands, such as {@code ldc2_w} or {@code
+ * wide}, share their factories with their regular version like {@link #ldc}. Note
+ * that {@link #goto_w goto_w} has its own factory to avoid {@linkplain
+ * ClassFile.ShortJumpsOption short jumps}.
+ * <li>The {@code goto}, {@code instanceof}, {@code new}, and {@code return}
+ * instructions' factories are named {@link #goto_ goto_}, {@link #instanceOf
+ * instanceOf}, {@link #new_ new_}, and {@link #return_() return_} respectively,
+ * due to clashes with keywords in the Java programming language.
+ * <li>Factories are not provided for instructions {@code jsr}, {@code jsr_w},
+ * {@code ret}, and {@code wide ret}, which cannot appear in class files with
+ * major version {@value ClassFile#JAVA_7_VERSION} or higher. (JVMS {@jvms 4.9.1})
+ * </ul>
+ *
  * @see CodeTransform
  *
  * @since 22
@@ -105,12 +127,6 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface CodeBuilder
         extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
-
-    /**
-     * {@return the {@link CodeModel} representing the method body being transformed,
-     * if this code builder represents the transformation of some {@link CodeModel}}
-     */
-    Optional<CodeModel> original();
 
     /** {@return a fresh unbound label} */
     Label newLabel();
@@ -130,7 +146,7 @@ public sealed interface CodeBuilder
     /**
      * {@return the local variable slot associated with the receiver}.
      *
-     * @throws IllegalStateException if this is not a static method
+     * @throws IllegalStateException if this is a static method
      */
     int receiverSlot();
 
@@ -169,9 +185,9 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder transforming(CodeTransform transform, Consumer<CodeBuilder> handler) {
-        var resolved = transform.resolve(this);
+        var resolved = TransformImpl.resolve(transform, this);
         resolved.startHandler().run();
-        handler.accept(new TransformingCodeBuilder(this, resolved.consumer()));
+        handler.accept(new ChainedCodeBuilder(this, resolved.consumer()));
         resolved.endHandler().run();
         return this;
     }
@@ -212,8 +228,7 @@ public sealed interface CodeBuilder
         child.start();
         handler.accept(child);
         child.end();
-        labelBinding(breakLabel);
-        return this;
+        return labelBinding(breakLabel);
     }
 
     /**
@@ -253,12 +268,11 @@ public sealed interface CodeBuilder
 
         Label breakLabel = newLabel();
         BlockCodeBuilderImpl thenBlock = new BlockCodeBuilderImpl(this, breakLabel);
-        branchInstruction(BytecodeHelpers.reverseBranchOpcode(opcode), thenBlock.endLabel());
+        branch(BytecodeHelpers.reverseBranchOpcode(opcode), thenBlock.endLabel());
         thenBlock.start();
         thenHandler.accept(thenBlock);
         thenBlock.end();
-        labelBinding(breakLabel);
-        return this;
+        return labelBinding(breakLabel);
     }
 
     /**
@@ -305,17 +319,16 @@ public sealed interface CodeBuilder
         Label breakLabel = newLabel();
         BlockCodeBuilderImpl thenBlock = new BlockCodeBuilderImpl(this, breakLabel);
         BlockCodeBuilderImpl elseBlock = new BlockCodeBuilderImpl(this, breakLabel);
-        branchInstruction(BytecodeHelpers.reverseBranchOpcode(opcode), elseBlock.startLabel());
+        branch(BytecodeHelpers.reverseBranchOpcode(opcode), elseBlock.startLabel());
         thenBlock.start();
         thenHandler.accept(thenBlock);
         if (thenBlock.reachable())
-            thenBlock.branchInstruction(Opcode.GOTO, thenBlock.breakLabel());
+            thenBlock.branch(Opcode.GOTO, thenBlock.breakLabel());
         thenBlock.end();
         elseBlock.start();
         elseHandler.accept(elseBlock);
         elseBlock.end();
-        labelBinding(breakLabel);
-        return this;
+        return labelBinding(breakLabel);
     }
 
     /**
@@ -416,10 +429,10 @@ public sealed interface CodeBuilder
      * @param tk the load type
      * @param slot the local variable slot
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder loadInstruction(TypeKind tk, int slot) {
-        with(LoadInstruction.of(tk, slot));
-        return this;
+    default CodeBuilder loadLocal(TypeKind tk, int slot) {
+        return with(LoadInstruction.of(tk, slot));
     }
 
     /**
@@ -427,21 +440,10 @@ public sealed interface CodeBuilder
      * @param tk the store type
      * @param slot the local variable slot
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder storeInstruction(TypeKind tk, int slot) {
-        with(StoreInstruction.of(tk, slot));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to increment a local variable by a constant
-     * @param slot the local variable slot
-     * @param val the increment value
-     * @return this builder
-     */
-    default CodeBuilder incrementInstruction(int slot, int val) {
-        with(IncrementInstruction.of(slot, val));
-        return this;
+    default CodeBuilder storeLocal(TypeKind tk, int slot) {
+        return with(StoreInstruction.of(tk, slot));
     }
 
     /**
@@ -450,53 +452,20 @@ public sealed interface CodeBuilder
      * @param op the branch opcode
      * @param target the branch target
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder branchInstruction(Opcode op, Label target) {
-        with(BranchInstruction.of(op, target));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to access a jump table by key match and jump
-     * @param defaultTarget the default jump target
-     * @param cases the switch cases
-     * @return this builder
-     */
-    default CodeBuilder lookupSwitchInstruction(Label defaultTarget, List<SwitchCase> cases) {
-        with(LookupSwitchInstruction.of(defaultTarget, cases));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to access a jump table by index and jump
-     * @param lowValue the low key value
-     * @param highValue the high key value
-     * @param defaultTarget the default jump target
-     * @param cases the switch cases
-     * @return this builder
-     */
-    default CodeBuilder tableSwitchInstruction(int lowValue, int highValue, Label defaultTarget, List<SwitchCase> cases) {
-        with(TableSwitchInstruction.of(lowValue, highValue, defaultTarget, cases));
-        return this;
+    default CodeBuilder branch(Opcode op, Label target) {
+        return with(BranchInstruction.of(op, target));
     }
 
     /**
      * Generate return instruction
      * @param tk the return type
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder returnInstruction(TypeKind tk) {
-        with(ReturnInstruction.of(tk));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to throw an exception or error
-     * @return this builder
-     */
-    default CodeBuilder throwInstruction() {
-        with(ThrowInstruction.of());
-        return this;
+    default CodeBuilder return_(TypeKind tk) {
+        return with(ReturnInstruction.of(tk));
     }
 
     /**
@@ -505,10 +474,10 @@ public sealed interface CodeBuilder
      * @param opcode the field access opcode
      * @param ref the field reference
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder fieldInstruction(Opcode opcode, FieldRefEntry ref) {
-        with(FieldInstruction.of(opcode, ref));
-        return this;
+    default CodeBuilder fieldAccess(Opcode opcode, FieldRefEntry ref) {
+        return with(FieldInstruction.of(opcode, ref));
     }
 
     /**
@@ -519,9 +488,10 @@ public sealed interface CodeBuilder
      * @param name the field name
      * @param type the field type
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder fieldInstruction(Opcode opcode, ClassDesc owner, String name, ClassDesc type) {
-        return fieldInstruction(opcode, constantPool().fieldRefEntry(owner, name, type));
+    default CodeBuilder fieldAccess(Opcode opcode, ClassDesc owner, String name, ClassDesc type) {
+        return fieldAccess(opcode, constantPool().fieldRefEntry(owner, name, type));
     }
 
     /**
@@ -530,8 +500,9 @@ public sealed interface CodeBuilder
      * @param opcode the invoke opcode
      * @param ref the interface method or method reference
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder invokeInstruction(Opcode opcode, MemberRefEntry ref) {
+    default CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
         return with(InvokeInstruction.of(opcode, ref));
     }
 
@@ -544,191 +515,101 @@ public sealed interface CodeBuilder
      * @param desc the method type
      * @param isInterface the interface method invocation indication
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder invokeInstruction(Opcode opcode, ClassDesc owner, String name, MethodTypeDesc desc, boolean isInterface) {
-        return invokeInstruction(opcode,
+    default CodeBuilder invoke(Opcode opcode, ClassDesc owner, String name, MethodTypeDesc desc, boolean isInterface) {
+        return invoke(opcode,
                 isInterface ? constantPool().interfaceMethodRefEntry(owner, name, desc)
                             : constantPool().methodRefEntry(owner, name, desc));
-    }
-
-    /**
-     * Generate an instruction to invoke a dynamically-computed call site
-     * @param ref the dynamic call site
-     * @return this builder
-     */
-    default CodeBuilder invokeDynamicInstruction(InvokeDynamicEntry ref) {
-        with(InvokeDynamicInstruction.of(ref));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to invoke a dynamically-computed call site
-     * @param desc the dynamic call site
-     * @return this builder
-     */
-    default CodeBuilder invokeDynamicInstruction(DynamicCallSiteDesc desc) {
-        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), (DirectMethodHandleDesc) desc.bootstrapMethod());
-        var cpArgs = desc.bootstrapArgs();
-        List<LoadableConstantEntry> bsArguments = new ArrayList<>(cpArgs.length);
-        for (var constantValue : cpArgs) {
-            bsArguments.add(BytecodeHelpers.constantEntry(constantPool(), constantValue));
-        }
-        BootstrapMethodEntry bm = constantPool().bsmEntry(bsMethod, bsArguments);
-        NameAndTypeEntry nameAndType = constantPool().nameAndTypeEntry(desc.invocationName(), desc.invocationType());
-        invokeDynamicInstruction(constantPool().invokeDynamicEntry(bm, nameAndType));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to create a new object
-     * @param type the object type
-     * @return this builder
-     */
-    default CodeBuilder newObjectInstruction(ClassEntry type) {
-        with(NewObjectInstruction.of(type));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to create a new object
-     * @param type the object type
-     * @return this builder
-     * @throws IllegalArgumentException if {@code type} represents a primitive type
-     */
-    default CodeBuilder newObjectInstruction(ClassDesc type) {
-        return newObjectInstruction(constantPool().classEntry(type));
-    }
-
-    /**
-     * Generate an instruction to create a new array of a primitive type
-     * @param typeKind the primitive component type
-     * @return this builder
-     */
-    default CodeBuilder newPrimitiveArrayInstruction(TypeKind typeKind) {
-        with(NewPrimitiveArrayInstruction.of(typeKind));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to create a new array of reference
-     * @param type the component type
-     * @return this builder
-     */
-    default CodeBuilder newReferenceArrayInstruction(ClassEntry type) {
-        with(NewReferenceArrayInstruction.of(type));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to create a new array of reference
-     * @param type the component type
-     * @return this builder
-     * @throws IllegalArgumentException if {@code type} represents a primitive type
-     */
-    default CodeBuilder newReferenceArrayInstruction(ClassDesc type) {
-        return newReferenceArrayInstruction(constantPool().classEntry(type));
-    }
-
-    /**
-     * Generate an instruction to create a new multidimensional array
-     * @param dimensions the number of dimensions
-     * @param type the array type
-     * @return this builder
-     */
-    default CodeBuilder newMultidimensionalArrayInstruction(int dimensions,
-                                                            ClassEntry type) {
-        with(NewMultiArrayInstruction.of(type, dimensions));
-        return this;
-    }
-
-    /**
-     * Generate an instruction to create a new multidimensional array
-     * @param dimensions the number of dimensions
-     * @param type the array type
-     * @return this builder
-     */
-    default CodeBuilder newMultidimensionalArrayInstruction(int dimensions,
-                                                            ClassDesc type) {
-        return newMultidimensionalArrayInstruction(dimensions, constantPool().classEntry(type));
     }
 
     /**
      * Generate an instruction to load from an array
      * @param tk the array element type
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder arrayLoadInstruction(TypeKind tk) {
+    default CodeBuilder arrayLoad(TypeKind tk) {
         Opcode opcode = BytecodeHelpers.arrayLoadOpcode(tk);
-        with(ArrayLoadInstruction.of(opcode));
-        return this;
+        return with(ArrayLoadInstruction.of(opcode));
     }
 
     /**
      * Generate an instruction to store into an array
      * @param tk the array element type
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder arrayStoreInstruction(TypeKind tk) {
+    default CodeBuilder arrayStore(TypeKind tk) {
         Opcode opcode = BytecodeHelpers.arrayStoreOpcode(tk);
-        with(ArrayStoreInstruction.of(opcode));
-        return this;
+        return with(ArrayStoreInstruction.of(opcode));
     }
 
     /**
-     * Generate a type checking instruction
-     * @see Opcode.Kind#TYPE_CHECK
-     * @param opcode the type check instruction opcode
-     * @param type the type
-     * @return this builder
-     */
-    default CodeBuilder typeCheckInstruction(Opcode opcode,
-                                             ClassEntry type) {
-        with(TypeCheckInstruction.of(opcode, type));
-        return this;
-    }
-
-    /**
-     * Generate a type checking instruction
-     * @see Opcode.Kind#TYPE_CHECK
-     * @param opcode the type check instruction opcode
-     * @param type the type
-     * @return this builder
-     */
-    default CodeBuilder typeCheckInstruction(Opcode opcode, ClassDesc type) {
-        return typeCheckInstruction(opcode, constantPool().classEntry(type));
-    }
-
-    /**
-     * Generate a type converting instruction
+     * Generate instruction(s) to convert {@code fromType} to {@code toType}
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
+     * @throws IllegalArgumentException for conversions of {@code VoidType} or {@code ReferenceType}
+     * @since 23
      */
-    default CodeBuilder convertInstruction(TypeKind fromType, TypeKind toType) {
-        with(ConvertInstruction.of(fromType, toType));
-        return this;
-    }
-
-    /**
-     * Generate a stack manipulating instruction
-     * @param opcode the stack instruction opcode
-     * @see Opcode.Kind#STACK
-     * @return this builder
-     */
-    default CodeBuilder stackInstruction(Opcode opcode) {
-        with(StackInstruction.of(opcode));
-        return this;
-    }
-
-    /**
-     * Generate an operator instruction
-     * @see Opcode.Kind#OPERATOR
-     * @param opcode the operator instruction opcode
-     * @return this builder
-     */
-    default CodeBuilder operatorInstruction(Opcode opcode) {
-        with(OperatorInstruction.of(opcode));
-        return this;
+    default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
+        return switch (fromType) {
+            case IntType, ByteType, CharType, ShortType, BooleanType ->
+                    switch (toType) {
+                        case IntType -> this;
+                        case LongType -> i2l();
+                        case DoubleType -> i2d();
+                        case FloatType -> i2f();
+                        case ByteType -> i2b();
+                        case CharType -> i2c();
+                        case ShortType -> i2s();
+                        case BooleanType -> iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case LongType ->
+                    switch (toType) {
+                        case IntType -> l2i();
+                        case LongType -> this;
+                        case DoubleType -> l2d();
+                        case FloatType -> l2f();
+                        case ByteType -> l2i().i2b();
+                        case CharType -> l2i().i2c();
+                        case ShortType -> l2i().i2s();
+                        case BooleanType -> l2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case DoubleType ->
+                    switch (toType) {
+                        case IntType -> d2i();
+                        case LongType -> d2l();
+                        case DoubleType -> this;
+                        case FloatType -> d2f();
+                        case ByteType -> d2i().i2b();
+                        case CharType -> d2i().i2c();
+                        case ShortType -> d2i().i2s();
+                        case BooleanType -> d2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case FloatType ->
+                    switch (toType) {
+                        case IntType -> f2i();
+                        case LongType -> f2l();
+                        case DoubleType -> f2d();
+                        case FloatType -> this;
+                        case ByteType -> f2i().i2b();
+                        case CharType -> f2i().i2c();
+                        case ShortType -> f2i().i2s();
+                        case BooleanType -> f2i().iconst_1().iand();
+                        case VoidType, ReferenceType ->
+                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+                    };
+            case VoidType, ReferenceType ->
+                throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
+        };
     }
 
     /**
@@ -737,8 +618,9 @@ public sealed interface CodeBuilder
      * @param opcode the constant instruction opcode
      * @param value the constant value
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder constantInstruction(Opcode opcode, ConstantDesc value) {
+    default CodeBuilder loadConstant(Opcode opcode, ConstantDesc value) {
         BytecodeHelpers.validateValue(opcode, value);
         return with(switch (opcode) {
             case SIPUSH, BIPUSH -> ConstantInstruction.ofArgument(opcode, ((Number)value).intValue());
@@ -751,8 +633,9 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder constantInstruction(ConstantDesc value) {
+    default CodeBuilder loadConstant(ConstantDesc value) {
         //avoid switch expressions here
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
@@ -786,31 +669,11 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate a monitor instruction
-     * @see Opcode.Kind#MONITOR
-     * @param opcode the monitor instruction opcode
-     * @return this builder
-     */
-    default CodeBuilder monitorInstruction(Opcode opcode) {
-        with(MonitorInstruction.of(opcode));
-        return null;
-    }
-
-    /**
-     * Generate a do nothing instruction
-     * @return this builder
-     */
-    default CodeBuilder nopInstruction() {
-        with(NopInstruction.of());
-        return this;
-    }
-
-    /**
      * Generate a do nothing instruction
      * @return this builder
      */
     default CodeBuilder nop() {
-        return nopInstruction();
+        return with(NopInstruction.of());
     }
 
     // Base pseudo-instruction builder methods
@@ -831,8 +694,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder labelBinding(Label label) {
-        with((LabelImpl) label);
-        return this;
+        return with((LabelImpl) label);
     }
 
     /**
@@ -841,8 +703,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lineNumber(int line) {
-        with(LineNumber.of(line));
-        return this;
+        return with(LineNumber.of(line));
     }
 
     /**
@@ -854,8 +715,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, ClassEntry catchType) {
-        with(ExceptionCatch.of(handler, start, end, Optional.of(catchType)));
-        return this;
+        return with(ExceptionCatch.of(handler, start, end, Optional.ofNullable(catchType)));
     }
 
     /**
@@ -867,8 +727,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatch(Label start, Label end, Label handler, Optional<ClassEntry> catchType) {
-        with(ExceptionCatch.of(handler, start, end, catchType));
-        return this;
+        return with(ExceptionCatch.of(handler, start, end, catchType));
     }
 
     /**
@@ -892,8 +751,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder exceptionCatchAll(Label start, Label end, Label handler) {
-        with(ExceptionCatch.of(handler, start, end));
-        return this;
+        return with(ExceptionCatch.of(handler, start, end));
     }
 
     /**
@@ -906,8 +764,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder characterRange(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
-        with(CharacterRange.of(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
-        return this;
+        return with(CharacterRange.of(startScope, endScope, characterRangeStart, characterRangeEnd, flags));
     }
 
     /**
@@ -920,8 +777,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder localVariable(int slot, Utf8Entry nameEntry, Utf8Entry descriptorEntry, Label startScope, Label endScope) {
-        with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
-        return this;
+        return with(LocalVariable.of(slot, nameEntry, descriptorEntry, startScope, endScope));
     }
 
     /**
@@ -950,8 +806,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder localVariableType(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
-        with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
-        return this;
+        return with(LocalVariableType.of(slot, nameEntry, signatureEntry, startScope, endScope));
     }
 
     /**
@@ -985,7 +840,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aaload() {
-        return arrayLoadInstruction(TypeKind.ReferenceType);
+        return arrayLoad(TypeKind.ReferenceType);
     }
 
     /**
@@ -993,16 +848,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder aastore() {
-        return arrayStoreInstruction(TypeKind.ReferenceType);
+        return arrayStore(TypeKind.ReferenceType);
     }
 
     /**
      * Generate an instruction to load a reference from a local variable
+     *
+     * <p>This may also generate {@code aload_<N>} and
+     * {@code wide aload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder aload(int slot) {
-        return loadInstruction(TypeKind.ReferenceType, slot);
+        return loadLocal(TypeKind.ReferenceType, slot);
     }
 
     /**
@@ -1011,7 +870,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder anewarray(ClassEntry classEntry) {
-        return newReferenceArrayInstruction(classEntry);
+        return with(NewReferenceArrayInstruction.of(classEntry));
     }
 
     /**
@@ -1021,7 +880,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code className} represents a primitive type
      */
     default CodeBuilder anewarray(ClassDesc className) {
-        return newReferenceArrayInstruction(constantPool().classEntry(className));
+        return anewarray(constantPool().classEntry(className));
     }
 
     /**
@@ -1029,7 +888,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder areturn() {
-        return returnInstruction(TypeKind.ReferenceType);
+        return return_(TypeKind.ReferenceType);
     }
 
     /**
@@ -1037,16 +896,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder arraylength() {
-        return operatorInstruction(Opcode.ARRAYLENGTH);
+        return with(OperatorInstruction.of(Opcode.ARRAYLENGTH));
     }
 
     /**
      * Generate an instruction to store a reference into a local variable
+     *
+     * <p>This may also generate {@code astore_<N>} and
+     * {@code wide astore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder astore(int slot) {
-        return storeInstruction(TypeKind.ReferenceType, slot);
+        return storeLocal(TypeKind.ReferenceType, slot);
     }
 
     /**
@@ -1054,7 +917,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder athrow() {
-        return throwInstruction();
+        return with(ThrowInstruction.of());
     }
 
     /**
@@ -1062,7 +925,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder baload() {
-        return arrayLoadInstruction(TypeKind.ByteType);
+        return arrayLoad(TypeKind.ByteType);
     }
 
     /**
@@ -1070,7 +933,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder bastore() {
-        return arrayStoreInstruction(TypeKind.ByteType);
+        return arrayStore(TypeKind.ByteType);
     }
 
     /**
@@ -1079,7 +942,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder bipush(int b) {
-        return constantInstruction(Opcode.BIPUSH, b);
+        return loadConstant(Opcode.BIPUSH, b);
     }
 
     /**
@@ -1087,7 +950,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder caload() {
-        return arrayLoadInstruction(TypeKind.CharType);
+        return arrayLoad(TypeKind.CharType);
     }
 
     /**
@@ -1095,7 +958,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder castore() {
-        return arrayStoreInstruction(TypeKind.CharType);
+        return arrayStore(TypeKind.CharType);
     }
 
     /**
@@ -1104,7 +967,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder checkcast(ClassEntry type) {
-        return typeCheckInstruction(Opcode.CHECKCAST, type);
+        return with(TypeCheckInstruction.of(Opcode.CHECKCAST, type));
     }
 
     /**
@@ -1114,7 +977,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code type} represents a primitive type
      */
     default CodeBuilder checkcast(ClassDesc type) {
-        return typeCheckInstruction(Opcode.CHECKCAST, type);
+        return checkcast(constantPool().classEntry(type));
     }
 
     /**
@@ -1122,7 +985,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2f() {
-        return convertInstruction(TypeKind.DoubleType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.D2F));
     }
 
     /**
@@ -1130,7 +993,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2i() {
-        return convertInstruction(TypeKind.DoubleType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.D2I));
     }
 
     /**
@@ -1138,7 +1001,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder d2l() {
-        return convertInstruction(TypeKind.DoubleType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.D2L));
     }
 
     /**
@@ -1146,7 +1009,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dadd() {
-        return operatorInstruction(Opcode.DADD);
+        return with(OperatorInstruction.of(Opcode.DADD));
     }
 
     /**
@@ -1154,7 +1017,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder daload() {
-        return arrayLoadInstruction(TypeKind.DoubleType);
+        return arrayLoad(TypeKind.DoubleType);
     }
 
     /**
@@ -1162,7 +1025,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dastore() {
-        return arrayStoreInstruction(TypeKind.DoubleType);
+        return arrayStore(TypeKind.DoubleType);
     }
 
     /**
@@ -1170,7 +1033,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dcmpg() {
-        return operatorInstruction(Opcode.DCMPG);
+        return with(OperatorInstruction.of(Opcode.DCMPG));
     }
 
     /**
@@ -1178,7 +1041,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dcmpl() {
-        return operatorInstruction(Opcode.DCMPL);
+        return with(OperatorInstruction.of(Opcode.DCMPL));
     }
 
     /**
@@ -1202,16 +1065,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ddiv() {
-        return operatorInstruction(Opcode.DDIV);
+        return with(OperatorInstruction.of(Opcode.DDIV));
     }
 
     /**
      * Generate an instruction to load a double from a local variable
+     *
+     * <p>This may also generate {@code dload_<N>} and
+     * {@code wide dload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dload(int slot) {
-        return loadInstruction(TypeKind.DoubleType, slot);
+        return loadLocal(TypeKind.DoubleType, slot);
     }
 
     /**
@@ -1219,7 +1086,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dmul() {
-        return operatorInstruction(Opcode.DMUL);
+        return with(OperatorInstruction.of(Opcode.DMUL));
     }
 
     /**
@@ -1227,7 +1094,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dneg() {
-        return operatorInstruction(Opcode.DNEG);
+        return with(OperatorInstruction.of(Opcode.DNEG));
     }
 
     /**
@@ -1235,7 +1102,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder drem() {
-        return operatorInstruction(Opcode.DREM);
+        return with(OperatorInstruction.of(Opcode.DREM));
     }
 
     /**
@@ -1243,16 +1110,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dreturn() {
-        return returnInstruction(TypeKind.DoubleType);
+        return return_(TypeKind.DoubleType);
     }
 
     /**
      * Generate an instruction to store a double into a local variable
+     *
+     * <p>This may also generate {@code dstore_<N>} and
+     * {@code wide dstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder dstore(int slot) {
-        return storeInstruction(TypeKind.DoubleType, slot);
+        return storeLocal(TypeKind.DoubleType, slot);
     }
 
     /**
@@ -1260,7 +1131,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dsub() {
-        return operatorInstruction(Opcode.DSUB);
+        return with(OperatorInstruction.of(Opcode.DSUB));
     }
 
     /**
@@ -1268,7 +1139,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup() {
-        return stackInstruction(Opcode.DUP);
+        return with(StackInstruction.of(Opcode.DUP));
     }
 
     /**
@@ -1276,7 +1147,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup2() {
-        return stackInstruction(Opcode.DUP2);
+        return with(StackInstruction.of(Opcode.DUP2));
     }
 
     /**
@@ -1285,7 +1156,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup2_x1() {
-        return stackInstruction(Opcode.DUP2_X1);
+        return with(StackInstruction.of(Opcode.DUP2_X1));
     }
 
     /**
@@ -1294,7 +1165,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup2_x2() {
-        return stackInstruction(Opcode.DUP2_X2);
+        return with(StackInstruction.of(Opcode.DUP2_X2));
     }
 
     /**
@@ -1302,7 +1173,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup_x1() {
-        return stackInstruction(Opcode.DUP_X1);
+        return with(StackInstruction.of(Opcode.DUP_X1));
     }
 
     /**
@@ -1310,7 +1181,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder dup_x2() {
-        return stackInstruction(Opcode.DUP_X2);
+        return with(StackInstruction.of(Opcode.DUP_X2));
     }
 
     /**
@@ -1318,7 +1189,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2d() {
-        return convertInstruction(TypeKind.FloatType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.F2D));
     }
 
     /**
@@ -1326,7 +1197,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2i() {
-        return convertInstruction(TypeKind.FloatType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.F2I));
     }
 
     /**
@@ -1334,7 +1205,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder f2l() {
-        return convertInstruction(TypeKind.FloatType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.F2L));
     }
 
     /**
@@ -1342,7 +1213,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fadd() {
-        return operatorInstruction(Opcode.FADD);
+        return with(OperatorInstruction.of(Opcode.FADD));
     }
 
     /**
@@ -1350,7 +1221,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder faload() {
-        return arrayLoadInstruction(TypeKind.FloatType);
+        return arrayLoad(TypeKind.FloatType);
     }
 
     /**
@@ -1358,7 +1229,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fastore() {
-        return arrayStoreInstruction(TypeKind.FloatType);
+        return arrayStore(TypeKind.FloatType);
     }
 
     /**
@@ -1366,7 +1237,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fcmpg() {
-        return operatorInstruction(Opcode.FCMPG);
+        return with(OperatorInstruction.of(Opcode.FCMPG));
     }
 
     /**
@@ -1374,7 +1245,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fcmpl() {
-        return operatorInstruction(Opcode.FCMPL);
+        return with(OperatorInstruction.of(Opcode.FCMPL));
     }
 
     /**
@@ -1406,16 +1277,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fdiv() {
-        return operatorInstruction(Opcode.FDIV);
+        return with(OperatorInstruction.of(Opcode.FDIV));
     }
 
     /**
      * Generate an instruction to load a float from a local variable
+     *
+     * <p>This may also generate {@code fload_<N>} and
+     * {@code wide fload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fload(int slot) {
-        return loadInstruction(TypeKind.FloatType, slot);
+        return loadLocal(TypeKind.FloatType, slot);
     }
 
     /**
@@ -1423,7 +1298,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fmul() {
-        return operatorInstruction(Opcode.FMUL);
+        return with(OperatorInstruction.of(Opcode.FMUL));
     }
 
     /**
@@ -1431,7 +1306,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fneg() {
-        return operatorInstruction(Opcode.FNEG);
+        return with(OperatorInstruction.of(Opcode.FNEG));
     }
 
     /**
@@ -1439,7 +1314,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder frem() {
-        return operatorInstruction(Opcode.FREM);
+        return with(OperatorInstruction.of(Opcode.FREM));
     }
 
     /**
@@ -1447,16 +1322,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder freturn() {
-        return returnInstruction(TypeKind.FloatType);
+        return return_(TypeKind.FloatType);
     }
 
     /**
      * Generate an instruction to store a float into a local variable
+     *
+     * <p>This may also generate {@code fstore_<N>} and
+     * {@code wide fstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder fstore(int slot) {
-        return storeInstruction(TypeKind.FloatType, slot);
+        return storeLocal(TypeKind.FloatType, slot);
     }
 
     /**
@@ -1464,7 +1343,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder fsub() {
-        return operatorInstruction(Opcode.FSUB);
+        return with(OperatorInstruction.of(Opcode.FSUB));
     }
 
     /**
@@ -1473,7 +1352,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder getfield(FieldRefEntry ref) {
-        return fieldInstruction(Opcode.GETFIELD, ref);
+        return fieldAccess(Opcode.GETFIELD, ref);
     }
 
     /**
@@ -1485,7 +1364,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder getfield(ClassDesc owner, String name, ClassDesc type) {
-        return fieldInstruction(Opcode.GETFIELD, owner, name, type);
+        return fieldAccess(Opcode.GETFIELD, owner, name, type);
     }
 
     /**
@@ -1494,7 +1373,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder getstatic(FieldRefEntry ref) {
-        return fieldInstruction(Opcode.GETSTATIC, ref);
+        return fieldAccess(Opcode.GETSTATIC, ref);
     }
 
     /**
@@ -1506,16 +1385,25 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder getstatic(ClassDesc owner, String name, ClassDesc type) {
-        return fieldInstruction(Opcode.GETSTATIC, owner, name, type);
+        return fieldAccess(Opcode.GETSTATIC, owner, name, type);
     }
 
     /**
      * Generate an instruction to branch always
+     *
+     * <p>This may also generate {@code goto_w} instructions if the {@link
+     * ClassFile.ShortJumpsOption#FIX_SHORT_JUMPS FIX_SHORT_JUMPS} option
+     * is set.
+     *
+     * @apiNote The instruction's name is {@code goto}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param target the branch target
      * @return this builder
      */
     default CodeBuilder goto_(Label target) {
-        return branchInstruction(Opcode.GOTO, target);
+        return branch(Opcode.GOTO, target);
     }
 
     /**
@@ -1524,7 +1412,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder goto_w(Label target) {
-        return branchInstruction(Opcode.GOTO_W, target);
+        return branch(Opcode.GOTO_W, target);
     }
 
     /**
@@ -1532,7 +1420,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2b() {
-        return convertInstruction(TypeKind.IntType, TypeKind.ByteType);
+        return with(ConvertInstruction.of(Opcode.I2B));
     }
 
     /**
@@ -1540,7 +1428,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2c() {
-        return convertInstruction(TypeKind.IntType, TypeKind.CharType);
+        return with(ConvertInstruction.of(Opcode.I2C));
     }
 
     /**
@@ -1548,7 +1436,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2d() {
-        return convertInstruction(TypeKind.IntType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.I2D));
     }
 
     /**
@@ -1556,7 +1444,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2f() {
-        return convertInstruction(TypeKind.IntType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.I2F));
     }
 
     /**
@@ -1564,7 +1452,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2l() {
-        return convertInstruction(TypeKind.IntType, TypeKind.LongType);
+        return with(ConvertInstruction.of(Opcode.I2L));
     }
 
     /**
@@ -1572,7 +1460,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder i2s() {
-        return convertInstruction(TypeKind.IntType, TypeKind.ShortType);
+        return with(ConvertInstruction.of(Opcode.I2S));
     }
 
     /**
@@ -1580,7 +1468,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iadd() {
-        return operatorInstruction(Opcode.IADD);
+        return with(OperatorInstruction.of(Opcode.IADD));
     }
 
     /**
@@ -1588,7 +1476,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iaload() {
-        return arrayLoadInstruction(TypeKind.IntType);
+        return arrayLoad(TypeKind.IntType);
     }
 
     /**
@@ -1596,7 +1484,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iand() {
-        return operatorInstruction(Opcode.IAND);
+        return with(OperatorInstruction.of(Opcode.IAND));
     }
 
     /**
@@ -1604,7 +1492,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iastore() {
-        return arrayStoreInstruction(TypeKind.IntType);
+        return arrayStore(TypeKind.IntType);
     }
 
     /**
@@ -1668,7 +1556,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder idiv() {
-        return operatorInstruction(Opcode.IDIV);
+        return with(OperatorInstruction.of(Opcode.IDIV));
     }
 
     /**
@@ -1677,7 +1565,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_acmpeq(Label target) {
-        return branchInstruction(Opcode.IF_ACMPEQ, target);
+        return branch(Opcode.IF_ACMPEQ, target);
     }
 
     /**
@@ -1686,7 +1574,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_acmpne(Label target) {
-        return branchInstruction(Opcode.IF_ACMPNE, target);
+        return branch(Opcode.IF_ACMPNE, target);
     }
 
     /**
@@ -1695,7 +1583,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmpeq(Label target) {
-        return branchInstruction(Opcode.IF_ICMPEQ, target);
+        return branch(Opcode.IF_ICMPEQ, target);
     }
 
     /**
@@ -1704,7 +1592,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmpge(Label target) {
-        return branchInstruction(Opcode.IF_ICMPGE, target);
+        return branch(Opcode.IF_ICMPGE, target);
     }
 
     /**
@@ -1713,7 +1601,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmpgt(Label target) {
-        return branchInstruction(Opcode.IF_ICMPGT, target);
+        return branch(Opcode.IF_ICMPGT, target);
     }
 
     /**
@@ -1722,7 +1610,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmple(Label target) {
-        return branchInstruction(Opcode.IF_ICMPLE, target);
+        return branch(Opcode.IF_ICMPLE, target);
     }
 
     /**
@@ -1731,7 +1619,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmplt(Label target) {
-        return branchInstruction(Opcode.IF_ICMPLT, target);
+        return branch(Opcode.IF_ICMPLT, target);
     }
 
     /**
@@ -1740,7 +1628,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder if_icmpne(Label target) {
-        return branchInstruction(Opcode.IF_ICMPNE, target);
+        return branch(Opcode.IF_ICMPNE, target);
     }
 
     /**
@@ -1748,8 +1636,8 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_nonnull(Label target) {
-        return branchInstruction(Opcode.IFNONNULL, target);
+    default CodeBuilder ifnonnull(Label target) {
+        return branch(Opcode.IFNONNULL, target);
     }
 
     /**
@@ -1757,8 +1645,8 @@ public sealed interface CodeBuilder
      * @param target the branch target
      * @return this builder
      */
-    default CodeBuilder if_null(Label target) {
-        return branchInstruction(Opcode.IFNULL, target);
+    default CodeBuilder ifnull(Label target) {
+        return branch(Opcode.IFNULL, target);
     }
 
     /**
@@ -1767,7 +1655,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ifeq(Label target) {
-        return branchInstruction(Opcode.IFEQ, target);
+        return branch(Opcode.IFEQ, target);
     }
 
     /**
@@ -1776,7 +1664,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ifge(Label target) {
-        return branchInstruction(Opcode.IFGE, target);
+        return branch(Opcode.IFGE, target);
     }
 
     /**
@@ -1785,7 +1673,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ifgt(Label target) {
-        return branchInstruction(Opcode.IFGT, target);
+        return branch(Opcode.IFGT, target);
     }
 
     /**
@@ -1794,7 +1682,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ifle(Label target) {
-        return branchInstruction(Opcode.IFLE, target);
+        return branch(Opcode.IFLE, target);
     }
 
     /**
@@ -1803,7 +1691,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iflt(Label target) {
-        return branchInstruction(Opcode.IFLT, target);
+        return branch(Opcode.IFLT, target);
     }
 
     /**
@@ -1812,7 +1700,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ifne(Label target) {
-        return branchInstruction(Opcode.IFNE, target);
+        return branch(Opcode.IFNE, target);
     }
 
     /**
@@ -1822,16 +1710,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iinc(int slot, int val) {
-        return incrementInstruction(slot, val);
+        return with(IncrementInstruction.of(slot, val));
     }
 
     /**
      * Generate an instruction to load an int from a local variable
+     *
+     * <p>This may also generate {@code iload_<N>} and
+     * {@code wide iload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder iload(int slot) {
-        return loadInstruction(TypeKind.IntType, slot);
+        return loadLocal(TypeKind.IntType, slot);
     }
 
     /**
@@ -1839,7 +1731,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder imul() {
-        return operatorInstruction(Opcode.IMUL);
+        return with(OperatorInstruction.of(Opcode.IMUL));
     }
 
     /**
@@ -1847,26 +1739,38 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ineg() {
-        return operatorInstruction(Opcode.INEG);
+        return with(OperatorInstruction.of(Opcode.INEG));
     }
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
+     * @since 23
      */
-    default CodeBuilder instanceof_(ClassEntry target) {
-        return typeCheckInstruction(Opcode.INSTANCEOF, target);
+    default CodeBuilder instanceOf(ClassEntry target) {
+        return with(TypeCheckInstruction.of(Opcode.INSTANCEOF, target));
     }
 
     /**
      * Generate an instruction to determine if an object is of the given type
+     *
+     * @apiNote The instruction's name is {@code instanceof}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with camel case instead.
+     *
      * @param target the target type
      * @return this builder
      * @throws IllegalArgumentException if {@code target} represents a primitive type
+     * @since 23
      */
-    default CodeBuilder instanceof_(ClassDesc target) {
-        return typeCheckInstruction(Opcode.INSTANCEOF, constantPool().classEntry(target));
+    default CodeBuilder instanceOf(ClassDesc target) {
+        return instanceOf(constantPool().classEntry(target));
     }
 
     /**
@@ -1875,7 +1779,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokedynamic(InvokeDynamicEntry ref) {
-        return invokeDynamicInstruction(ref);
+        return with(InvokeDynamicInstruction.of(ref));
     }
 
     /**
@@ -1884,7 +1788,15 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokedynamic(DynamicCallSiteDesc ref) {
-        return invokeDynamicInstruction(ref);
+        MethodHandleEntry bsMethod = handleDescToHandleInfo(constantPool(), (DirectMethodHandleDesc) ref.bootstrapMethod());
+        var cpArgs = ref.bootstrapArgs();
+        List<LoadableConstantEntry> bsArguments = new ArrayList<>(cpArgs.length);
+        for (var constantValue : cpArgs) {
+            bsArguments.add(BytecodeHelpers.constantEntry(constantPool(), constantValue));
+        }
+        BootstrapMethodEntry bm = constantPool().bsmEntry(bsMethod, bsArguments);
+        NameAndTypeEntry nameAndType = constantPool().nameAndTypeEntry(ref.invocationName(), ref.invocationType());
+        return invokedynamic(constantPool().invokeDynamicEntry(bm, nameAndType));
     }
 
     /**
@@ -1893,7 +1805,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokeinterface(InterfaceMethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKEINTERFACE, ref);
+        return invoke(Opcode.INVOKEINTERFACE, ref);
     }
 
     /**
@@ -1905,7 +1817,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokeinterface(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokeInstruction(Opcode.INVOKEINTERFACE, constantPool().interfaceMethodRefEntry(owner, name, type));
+        return invoke(Opcode.INVOKEINTERFACE, constantPool().interfaceMethodRefEntry(owner, name, type));
     }
 
     /**
@@ -1915,7 +1827,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokespecial(InterfaceMethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKESPECIAL, ref);
+        return invoke(Opcode.INVOKESPECIAL, ref);
     }
 
     /**
@@ -1925,7 +1837,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokespecial(MethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKESPECIAL, ref);
+        return invoke(Opcode.INVOKESPECIAL, ref);
     }
 
     /**
@@ -1938,7 +1850,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, false);
+        return invoke(Opcode.INVOKESPECIAL, owner, name, type, false);
     }
 
     /**
@@ -1952,7 +1864,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokespecial(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
-        return invokeInstruction(Opcode.INVOKESPECIAL, owner, name, type, isInterface);
+        return invoke(Opcode.INVOKESPECIAL, owner, name, type, isInterface);
     }
 
     /**
@@ -1961,7 +1873,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokestatic(InterfaceMethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKESTATIC, ref);
+        return invoke(Opcode.INVOKESTATIC, ref);
     }
 
     /**
@@ -1970,7 +1882,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokestatic(MethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKESTATIC, ref);
+        return invoke(Opcode.INVOKESTATIC, ref);
     }
 
     /**
@@ -1982,7 +1894,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, false);
+        return invoke(Opcode.INVOKESTATIC, owner, name, type, false);
     }
 
     /**
@@ -1995,7 +1907,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokestatic(ClassDesc owner, String name, MethodTypeDesc type, boolean isInterface) {
-        return invokeInstruction(Opcode.INVOKESTATIC, owner, name, type, isInterface);
+        return invoke(Opcode.INVOKESTATIC, owner, name, type, isInterface);
     }
 
     /**
@@ -2004,7 +1916,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder invokevirtual(MethodRefEntry ref) {
-        return invokeInstruction(Opcode.INVOKEVIRTUAL, ref);
+        return invoke(Opcode.INVOKEVIRTUAL, ref);
     }
 
     /**
@@ -2016,7 +1928,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder invokevirtual(ClassDesc owner, String name, MethodTypeDesc type) {
-        return invokeInstruction(Opcode.INVOKEVIRTUAL, owner, name, type, false);
+        return invoke(Opcode.INVOKEVIRTUAL, owner, name, type, false);
     }
 
     /**
@@ -2024,7 +1936,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ior() {
-        return operatorInstruction(Opcode.IOR);
+        return with(OperatorInstruction.of(Opcode.IOR));
     }
 
     /**
@@ -2032,7 +1944,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder irem() {
-        return operatorInstruction(Opcode.IREM);
+        return with(OperatorInstruction.of(Opcode.IREM));
     }
 
     /**
@@ -2040,7 +1952,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ireturn() {
-        return returnInstruction(TypeKind.IntType);
+        return return_(TypeKind.IntType);
     }
 
     /**
@@ -2048,7 +1960,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ishl() {
-        return operatorInstruction(Opcode.ISHL);
+        return with(OperatorInstruction.of(Opcode.ISHL));
     }
 
     /**
@@ -2056,16 +1968,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ishr() {
-        return operatorInstruction(Opcode.ISHR);
+        return with(OperatorInstruction.of(Opcode.ISHR));
     }
 
     /**
      * Generate an instruction to store an int into a local variable
+     *
+     * <p>This may also generate {@code istore_<N>} and
+     * {@code wide istore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder istore(int slot) {
-        return storeInstruction(TypeKind.IntType, slot);
+        return storeLocal(TypeKind.IntType, slot);
     }
 
     /**
@@ -2073,7 +1989,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder isub() {
-        return operatorInstruction(Opcode.ISUB);
+        return with(OperatorInstruction.of(Opcode.ISUB));
     }
 
     /**
@@ -2081,7 +1997,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder iushr() {
-        return operatorInstruction(Opcode.IUSHR);
+        return with(OperatorInstruction.of(Opcode.IUSHR));
     }
 
     /**
@@ -2089,7 +2005,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ixor() {
-        return operatorInstruction(Opcode.IXOR);
+        return with(OperatorInstruction.of(Opcode.IXOR));
     }
 
     /**
@@ -2099,7 +2015,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lookupswitch(Label defaultTarget, List<SwitchCase> cases) {
-        return lookupSwitchInstruction(defaultTarget, cases);
+        return with(LookupSwitchInstruction.of(defaultTarget, cases));
     }
 
     /**
@@ -2107,7 +2023,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2d() {
-        return convertInstruction(TypeKind.LongType, TypeKind.DoubleType);
+        return with(ConvertInstruction.of(Opcode.L2D));
     }
 
     /**
@@ -2115,7 +2031,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2f() {
-        return convertInstruction(TypeKind.LongType, TypeKind.FloatType);
+        return with(ConvertInstruction.of(Opcode.L2F));
     }
 
     /**
@@ -2123,7 +2039,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder l2i() {
-        return convertInstruction(TypeKind.LongType, TypeKind.IntType);
+        return with(ConvertInstruction.of(Opcode.L2I));
     }
 
     /**
@@ -2131,7 +2047,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ladd() {
-        return operatorInstruction(Opcode.LADD);
+        return with(OperatorInstruction.of(Opcode.LADD));
     }
 
     /**
@@ -2139,7 +2055,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder laload() {
-        return arrayLoadInstruction(TypeKind.LongType);
+        return arrayLoad(TypeKind.LongType);
     }
 
     /**
@@ -2147,7 +2063,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder land() {
-        return operatorInstruction(Opcode.LAND);
+        return with(OperatorInstruction.of(Opcode.LAND));
     }
 
     /**
@@ -2155,7 +2071,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lastore() {
-        return arrayStoreInstruction(TypeKind.LongType);
+        return arrayStore(TypeKind.LongType);
     }
 
     /**
@@ -2163,7 +2079,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lcmp() {
-        return operatorInstruction(Opcode.LCMP);
+        return with(OperatorInstruction.of(Opcode.LCMP));
     }
 
     /**
@@ -2184,6 +2100,12 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
+     * @apiNote {@link #loadConstant(ConstantDesc) loadConstant} generates more optimal instructions
+     * and should be used for general constants if an {@code ldc} instruction is not strictly required.
+     *
      * @param value the constant value
      * @return this builder
      */
@@ -2193,6 +2115,9 @@ public sealed interface CodeBuilder
 
     /**
      * Generate an instruction pushing an item from the run-time constant pool onto the operand stack
+     *
+     * <p>This may also generate {@code ldc_w} and {@code ldc2_w} instructions.
+     *
      * @param entry the constant value
      * @return this builder
      */
@@ -2208,16 +2133,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldiv() {
-        return operatorInstruction(Opcode.LDIV);
+        return with(OperatorInstruction.of(Opcode.LDIV));
     }
 
     /**
      * Generate an instruction to load a long from a local variable
+     *
+     * <p>This may also generate {@code lload_<N>} and
+     * {@code wide lload} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lload(int slot) {
-        return loadInstruction(TypeKind.LongType, slot);
+        return loadLocal(TypeKind.LongType, slot);
     }
 
     /**
@@ -2225,7 +2154,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lmul() {
-        return operatorInstruction(Opcode.LMUL);
+        return with(OperatorInstruction.of(Opcode.LMUL));
     }
 
     /**
@@ -2233,7 +2162,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lneg() {
-        return operatorInstruction(Opcode.LNEG);
+        return with(OperatorInstruction.of(Opcode.LNEG));
     }
 
     /**
@@ -2241,7 +2170,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lor() {
-        return operatorInstruction(Opcode.LOR);
+        return with(OperatorInstruction.of(Opcode.LOR));
     }
 
     /**
@@ -2249,7 +2178,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lrem() {
-        return operatorInstruction(Opcode.LREM);
+        return with(OperatorInstruction.of(Opcode.LREM));
     }
 
     /**
@@ -2257,7 +2186,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lreturn() {
-        return returnInstruction(TypeKind.LongType);
+        return return_(TypeKind.LongType);
     }
 
     /**
@@ -2265,7 +2194,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lshl() {
-        return operatorInstruction(Opcode.LSHL);
+        return with(OperatorInstruction.of(Opcode.LSHL));
     }
 
     /**
@@ -2273,16 +2202,20 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lshr() {
-        return operatorInstruction(Opcode.LSHR);
+        return with(OperatorInstruction.of(Opcode.LSHR));
     }
 
     /**
      * Generate an instruction to store a long into a local variable
+     *
+     * <p>This may also generate {@code lstore_<N>} and
+     * {@code wide lstore} instructions.
+     *
      * @param slot the local variable slot
      * @return this builder
      */
     default CodeBuilder lstore(int slot) {
-        return storeInstruction(TypeKind.LongType, slot);
+        return storeLocal(TypeKind.LongType, slot);
     }
 
     /**
@@ -2290,7 +2223,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lsub() {
-        return operatorInstruction(Opcode.LSUB);
+        return with(OperatorInstruction.of(Opcode.LSUB));
     }
 
     /**
@@ -2298,7 +2231,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lushr() {
-        return operatorInstruction(Opcode.LUSHR);
+        return with(OperatorInstruction.of(Opcode.LUSHR));
     }
 
     /**
@@ -2306,7 +2239,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder lxor() {
-        return operatorInstruction(Opcode.LXOR);
+        return with(OperatorInstruction.of(Opcode.LXOR));
     }
 
     /**
@@ -2314,7 +2247,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder monitorenter() {
-        return monitorInstruction(Opcode.MONITORENTER);
+        return with(MonitorInstruction.of(Opcode.MONITORENTER));
     }
 
     /**
@@ -2322,7 +2255,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder monitorexit() {
-        return monitorInstruction(Opcode.MONITOREXIT);
+        return with(MonitorInstruction.of(Opcode.MONITOREXIT));
     }
 
     /**
@@ -2332,7 +2265,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder multianewarray(ClassEntry array, int dims) {
-        return newMultidimensionalArrayInstruction(dims, array);
+        return with(NewMultiArrayInstruction.of(array, dims));
     }
 
     /**
@@ -2343,26 +2276,36 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code array} represents a primitive type
      */
     default CodeBuilder multianewarray(ClassDesc array, int dims) {
-        return newMultidimensionalArrayInstruction(dims, constantPool().classEntry(array));
+        return multianewarray(constantPool().classEntry(array), dims);
     }
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      */
     default CodeBuilder new_(ClassEntry clazz) {
-        return newObjectInstruction(clazz);
+        return with(NewObjectInstruction.of(clazz));
     }
 
     /**
      * Generate an instruction to create a new object
+     *
+     * @apiNote The instruction's name is {@code new}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @param clazz the new class type
      * @return this builder
      * @throws IllegalArgumentException if {@code clazz} represents a primitive type
      */
     default CodeBuilder new_(ClassDesc clazz) {
-        return newObjectInstruction(constantPool().classEntry(clazz));
+        return new_(constantPool().classEntry(clazz));
     }
 
     /**
@@ -2371,7 +2314,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder newarray(TypeKind typeKind) {
-        return newPrimitiveArrayInstruction(typeKind);
+        return with(NewPrimitiveArrayInstruction.of(typeKind));
     }
 
     /**
@@ -2379,7 +2322,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder pop() {
-        return stackInstruction(Opcode.POP);
+        return with(StackInstruction.of(Opcode.POP));
     }
 
     /**
@@ -2387,7 +2330,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder pop2() {
-        return stackInstruction(Opcode.POP2);
+        return with(StackInstruction.of(Opcode.POP2));
     }
 
     /**
@@ -2396,7 +2339,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder putfield(FieldRefEntry ref) {
-        return fieldInstruction(Opcode.PUTFIELD, ref);
+        return fieldAccess(Opcode.PUTFIELD, ref);
     }
 
     /**
@@ -2408,7 +2351,7 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder putfield(ClassDesc owner, String name, ClassDesc type) {
-        return fieldInstruction(Opcode.PUTFIELD, owner, name, type);
+        return fieldAccess(Opcode.PUTFIELD, owner, name, type);
     }
 
     /**
@@ -2417,7 +2360,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder putstatic(FieldRefEntry ref) {
-        return fieldInstruction(Opcode.PUTSTATIC, ref);
+        return fieldAccess(Opcode.PUTSTATIC, ref);
     }
 
     /**
@@ -2429,15 +2372,20 @@ public sealed interface CodeBuilder
      * @throws IllegalArgumentException if {@code owner} represents a primitive type
      */
     default CodeBuilder putstatic(ClassDesc owner, String name, ClassDesc type) {
-        return fieldInstruction(Opcode.PUTSTATIC, owner, name, type);
+        return fieldAccess(Opcode.PUTSTATIC, owner, name, type);
     }
 
     /**
      * Generate an instruction to return void from the method
+     *
+     * @apiNote The instruction's name is {@code return}, which coincides with a
+     * reserved keyword of the Java programming language, thus this method is
+     * named with an extra {@code _} suffix instead.
+     *
      * @return this builder
      */
     default CodeBuilder return_() {
-        return returnInstruction(TypeKind.VoidType);
+        return return_(TypeKind.VoidType);
     }
 
     /**
@@ -2445,7 +2393,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder saload() {
-        return arrayLoadInstruction(TypeKind.ShortType);
+        return arrayLoad(TypeKind.ShortType);
     }
 
     /**
@@ -2453,7 +2401,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder sastore() {
-        return arrayStoreInstruction(TypeKind.ShortType);
+        return arrayStore(TypeKind.ShortType);
     }
 
     /**
@@ -2462,7 +2410,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder sipush(int s) {
-        return constantInstruction(Opcode.SIPUSH, s);
+        return loadConstant(Opcode.SIPUSH, s);
     }
 
     /**
@@ -2470,7 +2418,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder swap() {
-        return stackInstruction(Opcode.SWAP);
+        return with(StackInstruction.of(Opcode.SWAP));
     }
 
     /**
@@ -2482,7 +2430,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder tableswitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
-        return tableSwitchInstruction(low, high, defaultTarget, cases);
+        return with(TableSwitchInstruction.of(low, high, defaultTarget, cases));
     }
 
     /**
@@ -2499,6 +2447,6 @@ public sealed interface CodeBuilder
             if (i < low) low = i;
             if (i > high) high = i;
         }
-        return tableSwitchInstruction(low, high, defaultTarget, cases);
+        return tableswitch(low, high, defaultTarget, cases);
     }
 }

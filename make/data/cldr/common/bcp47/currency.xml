@@ -291,6 +291,7 @@ For terms of use, see http://www.unicode.org/copyright.html
             <type name="xbc" description="European Unit of Account (XBC)" since="1.9"/>
             <type name="xbd" description="European Unit of Account (XBD)" since="1.9"/>
             <type name="xcd" description="East Caribbean Dollar"/>
+            <type name="xcg" description="Caribbean Guilder"/>
             <type name="xdr" description="Special Drawing Rights" since="1.9"/>
             <type name="xeu" description="European Currency Unit" since="1.9"/>
             <type name="xfo" description="French Gold Franc" since="1.9"/>

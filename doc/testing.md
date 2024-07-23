@@ -102,12 +102,12 @@ TEST="tier1"`, but the latter is more tab-completion friendly. For more complex
 test runs, the `test TEST="x"` solution needs to be used.
 
 The test specifications given in `TEST` is parsed into fully qualified test
-descriptors, which clearly and unambigously show which tests will be run. As an
-example, `:tier1` will expand to `jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1
-jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1
-jtreg:$(TOPDIR)/test/nashorn:tier1 jtreg:$(TOPDIR)/test/jaxp:tier1`. You can
-always submit a list of fully qualified test descriptors in the `TEST` variable
-if you want to shortcut the parser.
+descriptors, which clearly and unambiguously show which tests will be run. As
+an example, `:tier1` will expand to include all subcomponent test directories
+that define `tier1`, for example: `jtreg:$(TOPDIR)/test/hotspot/jtreg:tier1
+jtreg:$(TOPDIR)/test/jdk:tier1 jtreg:$(TOPDIR)/test/langtools:tier1 ...`. You
+can always submit a list of fully qualified test descriptors in the `TEST`
+variable if you want to shortcut the parser.
 
 ### Common Test Groups
 
@@ -151,7 +151,7 @@ A brief description of the tiered test groups:
 - `tier2`: This test group covers even more ground. These contain, among other
   things, tests that either run for too long to be at `tier1`, or may require
   special configuration, or tests that are less stable, or cover the broader
-  range of non-core JVM and JDK features/components(for example, XML).
+  range of non-core JVM and JDK features/components (for example, XML).
 
 - `tier3`: This test group includes more stressful tests, the tests for corner
   cases not covered by previous tiers, plus the tests that require GUIs. As
@@ -294,7 +294,7 @@ would just pass unnoticed.
 
 To separate multiple keyword=value pairs, use `;` (semicolon). Since the shell
 normally eats `;`, the recommended usage is to write the assignment inside
-qoutes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
+quotes, e.g. `JTREG="...;..."`. This will also make sure spaces are preserved,
 as in `JTREG="JAVA_OPTIONS=-XshowSettings -Xlog:gc+ref=debug"`.
 
 (Other ways are possible, e.g. using backslash:
@@ -334,13 +334,9 @@ Applies to JTReg, GTest and Micro.
 
 Applies to JTReg, GTest and Micro.
 
-#### AOT_MODULES
-
-Applies to JTReg and GTest.
-
 #### JCOV
 
-This keywords applies globally to the test runner system. If set to `true`, it
+This keyword applies globally to the test runner system. If set to `true`, it
 enables JCov coverage reporting for all tests run. To be useful, the JDK under
 test must be run with a JDK built with JCov instrumentation (`configure
 --with-jcov=<path to directory containing lib/jcov.jar>`, `make jcov-image`).
@@ -480,12 +476,6 @@ your test classes, use `JAVA_OPTIONS`.
 Additional Java options that are sent to the java launcher that starts the
 JTReg harness.
 
-#### AOT_MODULES
-
-Generate AOT modules before testing for the specified module, or set of
-modules. If multiple modules are specified, they should be separated by space
-(or, to help avoid quoting issues, the special value `%20`).
-
 #### RETRY_COUNT
 
 Retry failed tests up to a set number of times, until they pass. This allows to
@@ -516,12 +506,6 @@ problem.
 Additional options to the Gtest test framework.
 
 Use `GTEST="OPTIONS=--help"` to see all available Gtest options.
-
-#### AOT_MODULES
-
-Generate AOT modules before testing for the specified module, or set of
-modules. If multiple modules are specified, they should be separated by space
-(or, to help avoid quoting issues, the special value `%20`).
 
 ### Microbenchmark keywords
 
@@ -587,7 +571,7 @@ $ make test TEST="jtreg:test/hotspot/jtreg/containers/docker" \
 
 If your locale is non-US, some tests are likely to fail. To work around this
 you can set the locale to US. On Unix platforms simply setting `LANG="en_US"`
-in the environment before running tests should work. On Windows or MacOS,
+in the environment before running tests should work. On Windows or macOS,
 setting `JTREG="VM_OPTIONS=-Duser.language=en -Duser.country=US"` helps for
 most, but not all test cases.
 
@@ -635,7 +619,7 @@ select or deselect desired shortcut.
 
 For example,
 test/jdk/javax/swing/TooltipManager/JMenuItemToolTipKeyBindingsTest/JMenuItemToolTipKeyBindingsTest.java
-fails on MacOS because it uses `CTRL + F1` key sequence to show or hide tooltip
+fails on macOS because it uses `CTRL + F1` key sequence to show or hide tooltip
 message but the key combination is reserved by the operating system. To run the
 test correctly the default global key shortcut should be disabled using the
 steps described above, and then deselect "Turn keyboard access on or off"

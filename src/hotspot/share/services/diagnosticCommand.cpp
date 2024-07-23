@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
@@ -144,7 +145,6 @@ void DCmd::register_dcmds(){
 
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesPrintDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesAddDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesReplaceDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesRemoveDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilerDirectivesClearDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompilationMemoryStatisticDCmd>(full_export, true, false));
@@ -865,7 +865,7 @@ void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
   // The check for _filename.is_set() is because we don't want to use
   // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
   // of the default, not the actual default.
-  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
+  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr, output());
 }
 #endif // LINUX
 
@@ -924,81 +924,21 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename", "Name of the directives file", "STRING", true),
-  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
-
+  _filename("filename","Name of the directives file", "STRING",true) {
   _dcmdparser.add_dcmd_argument(&_filename);
-  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output(), true);
-  if (_refresh.value()) {
-    CodeCache::mark_directives_matches(true);
-    CodeCache::recompile_marked_directives_matches();
-  }
-}
-
-CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
-                           DCmdWithParser(output, heap),
-  _filename("filename", "Name of the directives file", "STRING", true),
-  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
-
-  _dcmdparser.add_dcmd_argument(&_filename);
-  _dcmdparser.add_dcmd_option(&_refresh);
-}
-
-void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
-  // Need to mark the methods twice, to account for the method that doesn't match
-  // the directives anymore
-  if (_refresh.value()) {
-    CodeCache::mark_directives_matches();
-
-    DirectivesStack::clear();
-    DirectivesParser::parse_from_file(_filename.value(), output(), true);
-
-    CodeCache::mark_directives_matches();
-    CodeCache::recompile_marked_directives_matches();
-  } else {
-    DirectivesStack::clear();
-    DirectivesParser::parse_from_file(_filename.value(), output(), true);
-  }
-}
-
-CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
-                           DCmdWithParser(output, heap),
-  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
-
-  _dcmdparser.add_dcmd_option(&_refresh);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
-  if (_refresh.value()) {
-    CodeCache::mark_directives_matches(true);
-    DirectivesStack::pop(1);
-    CodeCache::recompile_marked_directives_matches();
-  } else {
-    DirectivesStack::pop(1);
-  }
-}
-
-CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
-                           DCmdWithParser(output, heap),
-  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
-
-  _dcmdparser.add_dcmd_option(&_refresh);
+  DirectivesStack::pop(1);
 }
 
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
-  if (_refresh.value()) {
-    CodeCache::mark_directives_matches();
-    DirectivesStack::clear();
-    CodeCache::recompile_marked_directives_matches();
-  } else {
-    DirectivesStack::clear();
-  }
+  DirectivesStack::clear();
 }
-
 #if INCLUDE_SERVICES
 ClassHierarchyDCmd::ClassHierarchyDCmd(outputStream* output, bool heap) :
                                        DCmdWithParser(output, heap),
@@ -1052,7 +992,7 @@ public:
 };
 
 void ClassesDCmd::execute(DCmdSource source, TRAPS) {
-  VM_PrintClasses vmop(output(), _verbose.is_set());
+  VM_PrintClasses vmop(output(), _verbose.value());
   VMThread::execute(&vmop);
 }
 
@@ -1084,7 +1024,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp(scmd, "dynamic_dump") == 0) {
     is_static = JNI_FALSE;
     output()->print("Dynamic dump: ");
-    if (!UseSharedSpaces) {
+    if (!CDSConfig::is_using_archive()) {
       output()->print_cr("Dynamic dump is unsupported when base CDS archive is not loaded");
       return;
     }
@@ -1240,34 +1180,35 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 #ifdef LINUX
 
-SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_human_readable);
-}
+SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _human_readable.value());
+  MemMapPrinter::print_all_mappings(output());
 }
 
+static constexpr char default_filename[] = "vm_memory_map_<pid>.txt";
+
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _human_readable("-H", "Human readable format", "BOOLEAN", false, "false"),
-  _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
-  _dcmdparser.add_dcmd_option(&_human_readable);
+  DCmdWithParser(output, heap),
+  _filename("-F", "file path", "STRING", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  stringStream default_name;
-  default_name.print("vm_memory_map_%d.txt", os::current_process_id());
-  const char* name = _filename.is_set() ? _filename.value() : default_name.base();
+  stringStream defaultname;
+  const char* name = nullptr;
+  if (_filename.is_set()) {
+    name = _filename.value();
+  } else {
+    defaultname.print("vm_memory_map_%d.txt", os::current_process_id());
+    name = defaultname.base();
+  }
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MemMapPrinter::print_all_mappings(&fs, _human_readable.value());
+    MemMapPrinter::print_all_mappings(&fs);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));

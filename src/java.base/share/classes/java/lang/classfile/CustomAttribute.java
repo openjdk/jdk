@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,6 @@ public abstract non-sealed class CustomAttribute<T extends CustomAttribute<T>>
     @Override
     public final String attributeName() {
         return mapper.name();
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public final void writeTo(BufWriter buf) {
-        mapper.writeAttribute(buf, (T) this);
     }
 
     @Override

@@ -29,59 +29,55 @@
  * @run main ActionEventTest
  */
 
-import java.awt.AWTException;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.List;
 import java.awt.Robot;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-public class ActionEventTest extends Frame {
-    List list;
-    Robot robot;
 
-    public ActionEventTest() {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(100);
-            robot.setAutoWaitForIdle(true);
-        } catch(AWTException e) {
-            throw new RuntimeException(e.getMessage());
-        }
+public class ActionEventTest {
 
+    static List list;
+    static Frame frame;
+    static Robot robot;
+
+    static final CountDownLatch countDownLatch = new CountDownLatch(1);
+    static volatile boolean failed;
+
+    static void initAndShowGui() {
         list = new List(1, false);
         list.add("0");
-        add(list);
-        setSize(400,400);
-        setLayout(new FlowLayout());
-        setLocationRelativeTo(null);
-        pack();
-        setVisible(true);
-    }
 
-    void performTest() {
-        list.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent ae) {
-                int md = ae.getModifiers();
-                int expectedMask = ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK
-                        | ActionEvent.SHIFT_MASK;
+        list.addActionListener(ae -> {
+            int md = ae.getModifiers();
+            int expectedMask = ActionEvent.ALT_MASK | ActionEvent.CTRL_MASK
+                    | ActionEvent.SHIFT_MASK;
 
-                if ((md & expectedMask) != expectedMask) {
-
-                    robot.keyRelease(KeyEvent.VK_CONTROL);
-                    robot.keyRelease(KeyEvent.VK_SHIFT);
-                    robot.keyRelease(KeyEvent.VK_ALT);
-                    dispose();
-                    throw new RuntimeException("Action Event modifiers are not"
-                        + " set correctly.");
-                }
+            if ((md & expectedMask) != expectedMask) {
+                failed = true;
             }
+            countDownLatch.countDown();
         });
 
+        frame = new Frame("ActionEventTest");
+        frame.add(list);
+        frame.setSize(400, 400);
+        frame.setLayout(new FlowLayout());
+        frame.setLocationRelativeTo(null);
+        frame.pack();
+        frame.setVisible(true);
         list.select(0);
+    }
+
+    static void performTest() {
+        robot.waitForIdle();
+        robot.delay(500);
+
         robot.keyPress(KeyEvent.VK_ALT);
         robot.keyPress(KeyEvent.VK_SHIFT);
         robot.keyPress(KeyEvent.VK_CONTROL);
@@ -93,9 +89,29 @@ public class ActionEventTest extends Frame {
         robot.keyRelease(KeyEvent.VK_ALT);
     }
 
-    public static void main(String args[]) {
-       ActionEventTest test = new ActionEventTest();
-       test.performTest();
-       test.dispose();
+    public static void main(String[] args) throws Exception {
+        robot = new Robot();
+        robot.setAutoDelay(100);
+        robot.setAutoWaitForIdle(true);
+
+        try {
+            EventQueue.invokeAndWait(ActionEventTest::initAndShowGui);
+            performTest();
+        } finally {
+            EventQueue.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+
+        if (!countDownLatch.await(10, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Action Listener is not triggered");
+        }
+
+        if (failed) {
+            throw new RuntimeException("Action Event modifiers are not"
+                    + " set correctly.");
+        }
     }
 }

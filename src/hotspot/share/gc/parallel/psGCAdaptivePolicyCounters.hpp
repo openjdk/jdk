@@ -61,9 +61,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   PerfVariable* _minor_pause_old_slope;
   PerfVariable* _major_pause_young_slope;
 
-  PerfVariable* _scavenge_skipped;
-  PerfVariable* _full_follows_scavenge;
-
   // Use this time stamp if the gc time stamp is not available.
   TimeStamp     _counter_time_stamp;
 
@@ -178,14 +175,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   inline void update_live_at_last_full_gc_counter() {
     _live_at_last_full_gc_counter->set_value(
       (jlong)(ps_size_policy()->live_at_last_full_gc()));
-  }
-
-  inline void update_scavenge_skipped(int cause) {
-    _scavenge_skipped->set_value(cause);
-  }
-
-  inline void update_full_follows_scavenge(int event) {
-    _full_follows_scavenge->set_value(event);
   }
 
   // Update all the counters that can be updated from the size policy.

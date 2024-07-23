@@ -195,7 +195,7 @@ class PackageSnippets {
                 builder.with(element);
         };
         var cc = ClassFile.of();
-        byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+        byte[] newBytes = cc.transformClass(cc.parse(bytes), ct);
         // @end
     }
 
@@ -213,7 +213,7 @@ class PackageSnippets {
             if (e instanceof InvokeInstruction i
                     && i.owner().asInternalName().equals("Foo")
                     && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invokeInstruction(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                        b.invoke(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
         };
         // @end
@@ -327,7 +327,7 @@ class PackageSnippets {
                                               for (CodeElement e : xm) {
                                                   if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
-                                                              codeBuilder.invokeInstruction(i.opcode(), CD_Bar,
+                                                              codeBuilder.invoke(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());
                                                   else codeBuilder.with(e);
                                               }});
@@ -346,7 +346,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = ClassFile.of().transform(classModel,
+        byte[] newBytes = ClassFile.of().transformClass(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -360,7 +360,7 @@ class PackageSnippets {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return ClassFile.of().transform(target,
+        return ClassFile.of().transformClass(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

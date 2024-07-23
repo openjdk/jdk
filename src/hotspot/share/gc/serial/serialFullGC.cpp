@@ -39,6 +39,7 @@
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/serialStringDedup.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
@@ -51,7 +52,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
-#include "gc/shared/space.inline.hpp"
+#include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
@@ -72,8 +73,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
 #endif
-
-uint                    SerialFullGC::_total_invocations = 0;
 
 Stack<oop, mtGC>              SerialFullGC::_marking_stack;
 Stack<ObjArrayTask, mtGC>     SerialFullGC::_objarray_stack;
@@ -112,7 +111,7 @@ public:
       // we don't start compacting before there is a significant gain to be made.
       // Occasionally, we want to ensure a full compaction, which is determined
       // by the MarkSweepAlwaysCompactCount parameter.
-      if ((SerialFullGC::total_invocations() % MarkSweepAlwaysCompactCount) != 0) {
+      if ((SerialHeap::heap()->total_full_collections() % MarkSweepAlwaysCompactCount) != 0) {
         _allowed_deadspace_words = (space->capacity() * ratio / 100) / HeapWordSize;
       } else {
         _active = false;
@@ -171,6 +170,9 @@ class Compacter {
 
   uint _index;
 
+  // Used for BOT update
+  TenuredGeneration* _old_gen;
+
   HeapWord* get_compaction_top(uint index) const {
     return _spaces[index]._compaction_top;
   }
@@ -196,7 +198,7 @@ class Compacter {
         _spaces[_index]._compaction_top += words;
         if (_index == 0) {
           // old-gen requires BOT update
-          static_cast<TenuredSpace*>(_spaces[0]._space)->update_for_block(result, result + words);
+          _old_gen->update_for_block(result, result + words);
         }
         return result;
       }
@@ -280,6 +282,7 @@ public:
       _num_spaces = 3;
     }
     _index = 0;
+    _old_gen = heap->old_gen();
   }
 
   void phase2_calculate_new_addr() {
@@ -363,9 +366,10 @@ public:
       }
 
       // Reset top and unused memory
-      space->set_top(get_compaction_top(i));
-      if (ZapUnusedHeapArea) {
-        space->mangle_unused_area();
+      HeapWord* new_top = get_compaction_top(i);
+      space->set_top(new_top);
+      if (ZapUnusedHeapArea && new_top < top) {
+        space->mangle_unused_area(MemRegion(new_top, top));
       }
     }
   }
@@ -681,16 +685,8 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
 
   SerialHeap* gch = SerialHeap::heap();
-#ifdef ASSERT
-  if (gch->soft_ref_policy()->should_clear_all_soft_refs()) {
-    assert(clear_all_softrefs, "Policy should have been checked earlier");
-  }
-#endif
 
   gch->trace_heap_before_gc(_gc_tracer);
-
-  // Increment the invocation count
-  _total_invocations++;
 
   // Capture used regions for old-gen to reestablish old-to-young invariant
   // after full-gc.
@@ -742,10 +738,6 @@ void SerialFullGC::invoke_at_safepoint(bool clear_all_softrefs) {
   }
 
   restore_marks();
-
-  // Set saved marks for allocation profiler (and other things? -- dld)
-  // (Should this be in general part?)
-  gch->save_marks();
 
   deallocate_stacks();
 

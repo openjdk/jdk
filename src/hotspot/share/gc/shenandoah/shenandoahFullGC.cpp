@@ -912,7 +912,6 @@ private:
 
 public:
   ShenandoahPostCompactClosure() : _heap(ShenandoahHeap::heap()), _live(0) {
-    _heap->free_set()->clear();
   }
 
   void heap_region_do(ShenandoahHeapRegion* r) {

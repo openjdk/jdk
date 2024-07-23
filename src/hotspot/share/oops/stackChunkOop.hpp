@@ -101,6 +101,7 @@ public:
   inline void set_cont_access(oop value);
 
   inline int bottom() const;
+  inline void set_bottom(int value);
 
   inline HeapWord* start_of_stack() const;
 

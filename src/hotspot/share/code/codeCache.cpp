@@ -34,7 +34,6 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
-#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -228,6 +227,11 @@ void CodeCache::initialize_heaps() {
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
+    // Further down, just before FLAG_SET_ERGO(), all segment sizes are
+    // aligned down to the next lower multiple of min_size. For large page
+    // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
+    // Therefore, force non_nmethod.size to at least min_size.
+    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
@@ -1330,67 +1334,6 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 
 #endif // INCLUDE_JVMTI
 
-void CodeCache::mark_directives_matches(bool top_only) {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-
-  NMethodIterator iter(NMethodIterator::not_unloading);
-  while(iter.next()) {
-    nmethod* nm = iter.method();
-    methodHandle mh(thread, nm->method());
-    if (DirectivesStack::hasMatchingDirectives(mh, top_only)) {
-      ResourceMark rm;
-      log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
-      mh->set_has_matching_directives();
-    }
-  }
-}
-
-void CodeCache::recompile_marked_directives_matches() {
-  Thread *thread = Thread::current();
-  HandleMark hm(thread);
-
-  // Try the max level and let the directives be applied during the compilation.
-  int comp_level = CompilationPolicy::highest_compile_level();
-  RelaxedNMethodIterator iter(RelaxedNMethodIterator::not_unloading);
-  while(iter.next()) {
-    nmethod* nm = iter.method();
-    methodHandle mh(thread, nm->method());
-    if (mh->has_matching_directives()) {
-      ResourceMark rm;
-      mh->clear_directive_flags();
-      bool deopt = false;
-
-      if (!nm->is_osr_method()) {
-        log_trace(codecache)("Recompile to level %d because of matching directives %s",
-                             comp_level, mh->external_name());
-        nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level,
-                                                          methodHandle(), 0,
-                                                          CompileTask::Reason_DirectivesChanged,
-                                                          (JavaThread*)thread);
-        if (comp_nm == nullptr) {
-          log_trace(codecache)("Recompilation to level %d failed, deoptimize %s",
-                               comp_level, mh->external_name());
-          deopt = true;
-        }
-      } else {
-        log_trace(codecache)("Deoptimize OSR %s", mh->external_name());
-        deopt = true;
-      }
-      // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
-      // Deoptimize the method and let the usual hotspot logic do the rest.
-      if (deopt) {
-        if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
-          nm->make_not_entrant();
-          nm->make_deoptimized();
-        }
-      }
-      gc_on_allocation(); // Flush unused methods from CodeCache if required.
-    }
-  }
-}
-
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1845,7 +1788,7 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
+void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
   // Perf expects to find the map file at /tmp/perf-<pid>.map
@@ -1858,7 +1801,7 @@ void CodeCache::write_perf_map(const char* filename) {
 
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", filename);
+    st->print_cr("Warning: Failed to create %s for perf map", filename);
     return;
   }
 

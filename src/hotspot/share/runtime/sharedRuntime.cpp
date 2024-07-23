@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -55,6 +56,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -63,6 +65,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -176,6 +179,7 @@ uint SharedRuntime::_generic_array_copy_ctr=0;
 uint SharedRuntime::_slow_array_copy_ctr=0;
 uint SharedRuntime::_find_handler_ctr=0;
 uint SharedRuntime::_rethrow_ctr=0;
+uint SharedRuntime::_unsafe_set_memory_ctr=0;
 
 int     SharedRuntime::_ICmiss_index                    = 0;
 int     SharedRuntime::_ICmiss_count[SharedRuntime::maxICmiss_count];
@@ -480,9 +484,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::cont_returnBarrierExc();
   }
 
-  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
-
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   nmethod* nm = (blob != nullptr) ? blob->as_nmethod_or_null() : nullptr;
@@ -541,7 +542,6 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     tty->print_cr("b) other problem");
   }
 #endif // PRODUCT
-
   ShouldNotReachHere();
   return nullptr;
 }
@@ -1336,7 +1336,7 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_init_thread(current),
+           callee_method->method_holder()->is_reentrant_initialization(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call
@@ -1752,7 +1752,8 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
     return;
   }
 
-  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  // write lock needed because we might patch call site by set_to_clean()
+  // and is_unloading() can modify nmethod's state
   MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
@@ -1983,6 +1984,7 @@ void SharedRuntime::print_statistics() {
   if (_slow_array_copy_ctr) tty->print_cr("%5u slow array copies", _slow_array_copy_ctr);
   if (_find_handler_ctr) tty->print_cr("%5u find exception handler", _find_handler_ctr);
   if (_rethrow_ctr) tty->print_cr("%5u rethrow handler", _rethrow_ctr);
+  if (_unsafe_set_memory_ctr) tty->print_cr("%5u unsafe set memorys", _unsafe_set_memory_ctr);
 
   AdapterHandlerLibrary::print_statistics();
 
@@ -2571,6 +2573,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            int total_args_passed,
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
+  if (log_is_enabled(Info, perf, class, link)) {
+    ClassLoader::perf_method_adapters_count()->inc();
+  }
 
   // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
   // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior

@@ -26,6 +26,7 @@
 package jdk.internal.access;
 
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -402,6 +403,11 @@ public interface JavaLangAccess {
     InputStream initialSystemIn();
 
     /**
+     * Returns the initial value of System.err.
+     */
+    PrintStream initialSystemErr();
+
+    /**
      * Encodes ASCII codepoints as possible from the source array into
      * the destination byte array, assuming that the encoding is ASCII
      * compatible
@@ -425,12 +431,6 @@ public interface JavaLangAccess {
      * Get a method handle of string concat helper method
      */
     MethodHandle stringConcatHelper(String name, MethodType methodType);
-
-    /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
 
     /**
      * Get the string concat initial coder

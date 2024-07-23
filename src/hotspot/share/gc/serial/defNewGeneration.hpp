@@ -43,7 +43,6 @@ class CSpaceCounters;
 class OldGenScanClosure;
 class YoungGenScanClosure;
 class DefNewTracer;
-class ScanWeakRefClosure;
 class SerialHeap;
 class STWGCTimer;
 
@@ -119,18 +118,6 @@ class DefNewGeneration: public Generation {
   size_t               _max_eden_size;
   size_t               _max_survivor_size;
 
-  // Allocation support
-  bool _should_allocate_from_space;
-  bool should_allocate_from_space() const {
-    return _should_allocate_from_space;
-  }
-  void clear_should_allocate_from_space() {
-    _should_allocate_from_space = false;
-  }
-  void set_should_allocate_from_space() {
-    _should_allocate_from_space = true;
-  }
-
   // Tenuring
   void adjust_desired_tenuring_threshold();
 
@@ -138,9 +125,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* _eden_space;
   ContiguousSpace* _from_space;
   ContiguousSpace* _to_space;
-
-  // Saved mark word, for to-space
-  HeapWord* _saved_mark_word;
 
   STWGCTimer* _gc_timer;
 
@@ -171,10 +155,6 @@ class DefNewGeneration: public Generation {
   ContiguousSpace* from() const           { return _from_space; }
   ContiguousSpace* to()   const           { return _to_space;   }
 
-  HeapWord* saved_mark_word()   const    { return _saved_mark_word; }
-  void set_saved_mark_word()             { _saved_mark_word = to()->top(); }
-  bool saved_mark_at_top()               { return _saved_mark_word == _to_space->top(); }
-
   // Space enquiries
   size_t capacity() const;
   size_t used() const;
@@ -192,13 +172,10 @@ class DefNewGeneration: public Generation {
   // heuristic resizing decisions.
   size_t unsafe_max_alloc_nogc() const;
 
-  size_t contiguous_available() const;
-
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
   // Thread-local allocation buffers
-  bool supports_tlab_allocation() const { return true; }
   size_t tlab_capacity() const;
   size_t tlab_used() const;
   size_t unsafe_max_tlab_alloc() const;
@@ -215,44 +192,28 @@ class DefNewGeneration: public Generation {
   HeapWord* block_start(const void* p) const;
 
   // Allocation support
-  virtual bool should_allocate(size_t word_size, bool is_tlab) {
+  bool should_allocate(size_t word_size, bool is_tlab) {
     assert(UseTLAB || !is_tlab, "Should not allocate tlab");
+    assert(word_size != 0, "precondition");
 
     size_t overflow_limit    = (size_t)1 << (BitsPerSize_t - LogHeapWordSize);
 
-    const bool non_zero      = word_size > 0;
     const bool overflows     = word_size >= overflow_limit;
     const bool check_too_big = _pretenure_size_threshold_words > 0;
     const bool not_too_big   = word_size < _pretenure_size_threshold_words;
     const bool size_ok       = is_tlab || !check_too_big || not_too_big;
 
     bool result = !overflows &&
-                  non_zero   &&
                   size_ok;
 
     return result;
   }
 
   HeapWord* allocate(size_t word_size, bool is_tlab);
-  HeapWord* allocate_from_space(size_t word_size);
 
   HeapWord* par_allocate(size_t word_size, bool is_tlab);
 
   void gc_epilogue(bool full);
-
-  // Save the tops for eden, from, and to
-  void record_spaces_top();
-
-  // Accessing marks
-  void save_marks();
-
-  bool no_allocs_since_save_marks();
-
-  // Need to declare the full complement of closures, whether we'll
-  // override them or not, or get message from the compiler:
-  //   oop_since_save_marks_iterate_nv hides virtual function...
-  template <typename OopClosureType>
-  void oop_since_save_marks_iterate(OopClosureType* cl);
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
   // contribute the free part of "to-space" as the scratch space.
@@ -264,17 +225,7 @@ class DefNewGeneration: public Generation {
   // GC support
   void compute_new_size();
 
-  // Returns true if the collection is likely to be safely
-  // completed. Even if this method returns true, a collection
-  // may not be guaranteed to succeed, and the system should be
-  // able to safely unwind and recover from that failure, albeit
-  // at some additional cost.
-  bool collection_attempt_is_safe();
-
-  virtual void collect(bool   full,
-                       bool   clear_all_soft_refs,
-                       size_t size,
-                       bool   is_tlab);
+  bool collect(bool clear_all_soft_refs);
 
   HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 

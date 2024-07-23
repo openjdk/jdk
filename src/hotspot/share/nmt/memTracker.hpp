@@ -27,6 +27,7 @@
 
 #include "nmt/mallocTracker.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -164,6 +165,39 @@ class MemTracker : AllStatic {
       ThreadCritical tc;
       VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
     }
+  }
+
+  static inline MemoryFileTracker::MemoryFile* register_file(const char* descriptive_name) {
+    assert_post_init();
+    if (!enabled()) return nullptr;
+    MemoryFileTracker::Instance::Locker lock;
+    return MemoryFileTracker::Instance::make_file(descriptive_name);
+  }
+
+  static inline void remove_file(MemoryFileTracker::MemoryFile* file) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_file(file);
+  }
+
+  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* file, size_t offset, size_t size,
+                                       const NativeCallStack& stack, MEMFLAGS flag) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::allocate_memory(file, offset, size, stack, flag);
+  }
+
+  static inline void free_memory_in(MemoryFileTracker::MemoryFile* file,
+                                        size_t offset, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    assert(file != nullptr, "must be");
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::free_memory(file, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting

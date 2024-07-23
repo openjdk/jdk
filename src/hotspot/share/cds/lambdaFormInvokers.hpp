@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 class ClassFileStream;
 template <class T>
 class Array;
+class SerializeClosure;
 
 class LambdaFormInvokers : public AllStatic {
  private:
@@ -46,5 +47,6 @@ class LambdaFormInvokers : public AllStatic {
   static void regenerate_holder_classes(TRAPS);
   static void serialize(SerializeClosure* soc);
   static void cleanup_regenerated_classes();
+  inline static bool may_be_regenerated_class(Symbol* name);
 };
 #endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP

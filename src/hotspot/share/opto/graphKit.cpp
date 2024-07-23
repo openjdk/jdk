@@ -1209,7 +1209,7 @@ Node* GraphKit::load_array_length(Node* array) {
   Node *alen;
   if (alloc == nullptr) {
     Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
-    alen = _gvn.transform( new LoadRangeNode(0, immutable_memory(), r_adr, TypeInt::POS));
+    alen = _gvn.transform( new LoadRangeNode(nullptr, immutable_memory(), r_adr, TypeInt::POS));
   } else {
     alen = array_ideal_length(alloc, _gvn.type(array)->is_oopptr(), false);
   }
@@ -1468,6 +1468,9 @@ Node* GraphKit::must_be_not_null(Node* value, bool do_replace_in_map) {
   Node* opaq = _gvn.transform(new Opaque4Node(C, tst, intcon(1)));
   IfNode *iff = new IfNode(control(), opaq, PROB_MAX, COUNT_UNKNOWN);
   _gvn.set_type(iff, iff->Value(&_gvn));
+  if (!tst->is_Con()) {
+    record_for_igvn(iff);
+  }
   Node *if_f = _gvn.transform(new IfFalseNode(iff));
   Node *frame = _gvn.transform(new ParmNode(C->start(), TypeFunc::FramePtr));
   Node* halt = _gvn.transform(new HaltNode(if_f, frame, "unexpected null in intrinsic"));
@@ -2382,7 +2385,7 @@ Node* GraphKit::precision_rounding(Node* n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE == 0) {
-      return _gvn.transform(new RoundFloatNode(0, n));
+      return _gvn.transform(new RoundFloatNode(nullptr, n));
     }
 #else
     Unimplemented();
@@ -2396,7 +2399,7 @@ Node* GraphKit::dprecision_rounding(Node *n) {
   if (Matcher::strict_fp_requires_explicit_rounding) {
 #ifdef IA32
     if (UseSSE < 2) {
-      return _gvn.transform(new RoundDoubleNode(0, n));
+      return _gvn.transform(new RoundDoubleNode(nullptr, n));
     }
 #else
     Unimplemented();
@@ -2710,17 +2713,12 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
     // Here, the type of 'fa' is often exact, so the store check
     // of fa[1]=x will fold up, without testing the nullness of x.
     //
-    // Do not skip the static sub type check with StressReflectiveCode during
-    // parsing (i.e. with ExpandSubTypeCheckAtParseTime) because the
-    // associated CheckCastNodePP could already be folded when the type
-    // system can prove it's an impossible type. Therefore, we should also
-    // do the static sub type check here to ensure control is folded as well.
-    // Otherwise, the graph is left in a broken state.
     // At macro expansion, we would have already folded the SubTypeCheckNode
     // being expanded here because we always perform the static sub type
     // check in SubTypeCheckNode::sub() regardless of whether
-    // StressReflectiveCode is set or not.
-    switch (C->static_subtype_check(superk, subk, !ExpandSubTypeCheckAtParseTime)) {
+    // StressReflectiveCode is set or not. We can therefore skip this
+    // static check when StressReflectiveCode is on.
+    switch (C->static_subtype_check(superk, subk)) {
     case Compile::SSC_always_false:
       {
         Node* always_fail = *ctrl;
@@ -2901,8 +2899,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 }
 
 Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
-  bool expand_subtype_check = C->post_loop_opts_phase() ||   // macro node expansion is over
-                              ExpandSubTypeCheckAtParseTime; // forced expansion
+  bool expand_subtype_check = C->post_loop_opts_phase(); // macro node expansion is over
   if (expand_subtype_check) {
     MergeMemNode* mem = merged_memory();
     Node* ctrl = control();
@@ -3492,10 +3489,7 @@ FastLockNode* GraphKit::shared_lock(Node* obj) {
   box = _gvn.transform(box);
   Node* mem = reset_memory();
 
-  FastLockNode * flock = _gvn.transform(new FastLockNode(0, obj, box) )->as_FastLock();
-
-  // Create the rtm counters for this fast lock if needed.
-  flock->create_rtm_lock_counter(sync_jvms()); // sync_jvms used to get current bci
+  FastLockNode * flock = _gvn.transform(new FastLockNode(nullptr, obj, box) )->as_FastLock();
 
   // Add monitor to debug info for the slow path.  If we block inside the
   // slow path and de-opt, we need the monitor hanging around
@@ -4270,4 +4264,15 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
     return makecon(con_type);
   }
   return nullptr;
+}
+
+Node* GraphKit::maybe_narrow_object_type(Node* obj, ciKlass* type) {
+  const TypeOopPtr* obj_type = obj->bottom_type()->isa_oopptr();
+  const TypeOopPtr* sig_type = TypeOopPtr::make_from_klass(type);
+  if (obj_type != nullptr && sig_type->is_loaded() && !obj_type->higher_equal(sig_type)) {
+    const Type* narrow_obj_type = obj_type->filter_speculative(sig_type); // keep speculative part
+    Node* casted_obj = gvn().transform(new CheckCastPPNode(control(), obj, narrow_obj_type));
+    return casted_obj;
+  }
+  return obj;
 }

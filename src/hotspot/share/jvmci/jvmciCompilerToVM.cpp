@@ -31,6 +31,7 @@
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
 #include "interpreter/bytecodeStream.hpp"
@@ -756,6 +757,35 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
       return JVMCIENV->get_jobject(result);
     }
   }
+#ifdef ASSERT
+  // Support for testing an OOME raised in a context where the current thread cannot call Java
+  // 1. Put -Dtest.jvmci.oome_in_lookupConstantInPool=<trace> on the command line to
+  //    discover possible values for step 2.
+  //    Example output:
+  //
+  //      CompilerToVM.lookupConstantInPool: "Overflow: String length out of range"{0x00000007ffeb2960}
+  //      CompilerToVM.lookupConstantInPool: "null"{0x00000007ffebdfe8}
+  //      CompilerToVM.lookupConstantInPool: "Maximum lock count exceeded"{0x00000007ffec4f90}
+  //      CompilerToVM.lookupConstantInPool: "Negative length"{0x00000007ffec4468}
+  //
+  // 2. Choose a value shown in step 1.
+  //    Example: -Dtest.jvmci.oome_in_lookupConstantInPool=Negative
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.oome_in_lookupConstantInPool");
+  if (val != nullptr) {
+    const char* str = obj->print_value_string();
+    if (strstr(val, "<trace>") != nullptr) {
+      tty->print_cr("CompilerToVM.lookupConstantInPool: %s", str);
+    } else if (strstr(str, val) != nullptr) {
+      Handle garbage;
+      while (true) {
+        // Trigger an OutOfMemoryError
+        objArrayOop next = oopFactory::new_objectArray(0x7FFFFFFF, CHECK_NULL);
+        next->obj_at_put(0, garbage());
+        garbage = Handle(THREAD, next);
+      }
+    }
+  }
+#endif
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
@@ -896,7 +926,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
     } else if (tag.is_symbol()) {
       symbol = cp->symbol_at(index);
     } else {
-      assert(cp->tag_at(index).is_unresolved_klass(), "wrong tag");
+      if (!tag.is_unresolved_klass()) {
+        JVMCI_THROW_MSG_NULL(InternalError, err_msg("Expected %d at index %d, got %d", JVM_CONSTANT_UnresolvedClassInError, index, tag.value()));
+      }
       symbol = cp->klass_name_at(index);
     }
   }
@@ -909,9 +941,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
   return JVMCIENV->get_jobject(result);
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which))
+C2V_VMENTRY_NULL(jobject, lookupAppendixInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint which, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, which);
+  oop appendix_oop = ConstantPool::appendix_at_if_loaded(cp, which, Bytecodes::Code(opcode));
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(appendix_oop));
 C2V_END
 
@@ -1207,12 +1239,19 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCINMethodHandle nmethod_handle(THREAD);
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
-  if (nm == nullptr || !nm->is_in_use()) {
-    JVMCI_THROW_NULL(InvalidInstalledCodeException);
+  methodHandle mh;
+  {
+    // Reduce the scope of JVMCINMethodHandle so that it isn't alive across the Java call.  Once the
+    // nmethod has been validated and the method is fetched from the nmethod it's fine for the
+    // nmethod to be reclaimed if necessary.
+    JVMCINMethodHandle nmethod_handle(THREAD);
+    nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
+    if (nm == nullptr || !nm->is_in_use()) {
+      JVMCI_THROW_NULL(InvalidInstalledCodeException);
+    }
+    methodHandle nmh(THREAD, nm->method());
+    mh = nmh;
   }
-  methodHandle mh(THREAD, nm->method());
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
 
@@ -1628,16 +1667,11 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
   return nullptr;
 C2V_END
 
-C2V_VMENTRY_0(int, decodeIndyIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint encoded_indy_index, jboolean resolve))
-  if (!ConstantPool::is_invokedynamic_index(encoded_indy_index)) {
-    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("not an encoded indy index %d", encoded_indy_index));
-  }
-
+C2V_VMENTRY_0(int, decodeIndyIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint indy_index, jboolean resolve))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
-  int indy_index = cp->decode_invokedynamic_index(encoded_indy_index);
   if (resolve) {
-    LinkResolver::resolve_invoke(callInfo, Handle(), cp, encoded_indy_index, Bytecodes::_invokedynamic, CHECK_0);
+    LinkResolver::resolve_invoke(callInfo, Handle(), cp, indy_index, Bytecodes::_invokedynamic, CHECK_0);
     cp->cache()->set_dynamic_call(callInfo, indy_index);
   }
   return cp->resolved_indy_entry_at(indy_index)->constant_pool_index();
@@ -1670,7 +1704,7 @@ C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
   }
 C2V_END
 
-C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, jint opcode))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   ResolvedMethodEntry* entry = cp->cache()->resolved_method_entry_at(index);
   if (entry->is_resolved(Bytecodes::_invokehandle)) {
@@ -1704,8 +1738,8 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
 
     return Bytecodes::_invokevirtual;
   }
-  if (cp->is_invokedynamic_index(index)) {
-    if (cp->resolved_indy_entry_at(cp->decode_invokedynamic_index(index))->is_resolved()) {
+  if ((Bytecodes::Code)opcode == Bytecodes::_invokedynamic) {
+    if (cp->resolved_indy_entry_at(index)->is_resolved()) {
       return Bytecodes::_invokedynamic;
     }
   }
@@ -3227,7 +3261,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupSignatureInPool",                        CC "(" HS_CONSTANT_POOL2 "II)" STRING,                                                FN_PTR(lookupSignatureInPool)},
   {CC "lookupKlassRefIndexInPool",                    CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(lookupKlassRefIndexInPool)},
   {CC "lookupKlassInPool",                            CC "(" HS_CONSTANT_POOL2 "I)Ljava/lang/Object;",                                      FN_PTR(lookupKlassInPool)},
-  {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "I)" OBJECTCONSTANT,                                         FN_PTR(lookupAppendixInPool)},
+  {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "II)" OBJECTCONSTANT,                                        FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
   {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
@@ -3239,7 +3273,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "decodeMethodIndexToCPIndex",                   CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(decodeMethodIndexToCPIndex)},
   {CC "decodeIndyIndexToCPIndex",                     CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(decodeIndyIndexToCPIndex)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL2 "I)V",                                                       FN_PTR(resolveInvokeHandleInPool)},
-  {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(isResolvedInvokeHandleInPool)},
+  {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(isResolvedInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_KLASS2 HS_METHOD2 HS_KLASS2 ")" HS_METHOD,                                  FN_PTR(resolveMethod)},
   {CC "getSignaturePolymorphicHolders",               CC "()[" STRING,                                                                      FN_PTR(getSignaturePolymorphicHolders)},
   {CC "getVtableIndexForInterfaceMethod",             CC "(" HS_KLASS2 HS_METHOD2 ")I",                                                     FN_PTR(getVtableIndexForInterfaceMethod)},

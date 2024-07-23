@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5225,7 +5225,7 @@ void ADLParser::skipws_common(bool do_preproc) {
     if (*_ptr == '\n') {                   // keep proper track of new lines
       if (!do_preproc)  break;             // let caller handle the newline
       next_line();
-      _ptr = _curline; next = _ptr + 1;
+      _ptr = _curline; if (_ptr != nullptr) next = _ptr + 1;
     }
     else if ((*_ptr == '/') && (*next == '/'))      // C++ comment
       do { _ptr++; next++; } while(*_ptr != '\n');  // So go to end of line
