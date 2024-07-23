@@ -240,7 +240,9 @@ void VM_Version::initialize() {
   //       in some situations.
 
   // ChaCha20
-  if (UseRVV) {
+  if (UseRVV && MaxVectorSize >= 32) {
+    // performance tests on hardwares (MaxVectorSize == 16, 32) show that
+    // it brings regression when MaxVectorSize == 16.
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
     }
