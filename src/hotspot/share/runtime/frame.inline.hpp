@@ -83,12 +83,12 @@ inline address frame::get_deopt_original_pc() const {
 
 template <typename RegisterMapT>
 inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_map) const {
-  if (reg->is_reg()) {
+  if (reg_map != nullptr && reg->is_reg()) {
     // If it is passed in a register, it got spilled in the stub frame.
     return reg_map->location(reg, sp());
   } else {
     int sp_offset_in_bytes = reg->reg2stack() * VMRegImpl::stack_slot_size;
-    if (reg_map->in_cont()) {
+    if (reg_map != nullptr && reg_map->in_cont()) {
       return (address)((intptr_t)reg_map->as_RegisterMap()->stack_chunk()->relativize_usp_offset(*this, sp_offset_in_bytes));
     }
     address usp = (address)unextended_sp();
