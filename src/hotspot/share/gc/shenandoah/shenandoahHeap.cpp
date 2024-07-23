@@ -160,6 +160,8 @@ jint ShenandoahHeap::initialize() {
   assert(_num_regions == (max_byte_size / reg_size_bytes),
          "Regions should cover entire heap exactly: " SIZE_FORMAT " != " SIZE_FORMAT "/" SIZE_FORMAT,
          _num_regions, max_byte_size, reg_size_bytes);
+  _region_iteration_parallelism = checked_cast<uint>(
+      ceil(checked_cast<float>(num_regions()) / checked_cast<float>(ShenandoahParallelRegionStride)));
 
   // Now we know the number of regions, initialize the heuristics.
   initialize_heuristics();
@@ -1726,11 +1728,8 @@ public:
 void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
   if (workers() -> active_workers() > 1 && num_regions() > ShenandoahParallelRegionStride) {
-    auto num_workers = checked_cast<uint>(
-      ceil(checked_cast<float>(num_regions()) / checked_cast<float>(ShenandoahParallelRegionStride)));
-    num_workers = MIN2(num_workers, workers() -> active_workers());
     ShenandoahParallelHeapRegionTask task(blk);
-    workers()->run_task(&task, num_workers);
+    workers()->run_task(&task, MIN(_region_iteration_parallelism, workers() -> active_workers()));
   } else {
     heap_region_iterate(blk);
   }

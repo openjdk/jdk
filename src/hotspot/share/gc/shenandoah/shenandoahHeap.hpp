@@ -238,6 +238,7 @@ private:
   MemRegion _heap_region;
   bool      _heap_region_special;
   size_t    _num_regions;
+  uint    _region_iteration_parallelism;
   ShenandoahHeapRegion** _regions;
   ShenandoahRegionIterator _update_refs_iterator;
 
