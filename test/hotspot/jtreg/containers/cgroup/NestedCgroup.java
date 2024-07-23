@@ -134,11 +134,19 @@ public class NestedCgroup {
                 throw e;
             }
 
-            List<String> cgcreate = new ArrayList<>();
-            cgcreate.add("cgcreate");
-            cgcreate.add("-g");
-            cgcreate.add(CONTROLLERS_PATH_INNER);
-            pSystem(cgcreate, "cgcreate: can't create cgroup " + CGROUP_OUTER + "/" + CGROUP_INNER + ": Cgroup, operation not allowed", "Missing root permission", "");
+            // Alpine Linux 3.20.1 needs cgcreate1 otherwise:
+            // cgcreate: can't create cgroup CONTROLLERS_PATH_INNER: No such file or directory
+            List<String> cgcreate1 = new ArrayList<>();
+            cgcreate1.add("cgcreate");
+            cgcreate1.add("-g");
+            cgcreate1.add(CONTROLLERS_PATH_OUTER);
+            pSystem(cgcreate1, "cgcreate: can't create cgroup " + CGROUP_OUTER + "/" + CGROUP_INNER + ": Cgroup, operation not allowed", "Missing root permission", "");
+
+            List<String> cgcreate2 = new ArrayList<>();
+            cgcreate2.add("cgcreate");
+            cgcreate2.add("-g");
+            cgcreate2.add(CONTROLLERS_PATH_INNER);
+            pSystem(cgcreate2, "", "", "");
 
             String mountInfo;
             try {
