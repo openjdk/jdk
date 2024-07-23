@@ -39,6 +39,11 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
+  // TODO this triggers
+  // _nesting.check(_arena);
+  if (i < Max()) {
+    return; // no need to grow
+  }
   assert(i >= Max(), "must be an overflow");
   debug_only(_limit = i+1);
   if( i < _size )  return;

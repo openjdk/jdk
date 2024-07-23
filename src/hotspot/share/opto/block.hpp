@@ -51,6 +51,7 @@ class Block_Array : public ArenaObj {
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
+  ReallocMark _nesting;         // assertion check for reallocations
 protected:
   Block **_blocks;
   void grow( uint i );          // Grow array node to fit
@@ -68,7 +69,7 @@ public:
   Block *operator[] ( uint i ) const // Lookup, or assert for not mapped
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
-  void map( uint i, Block *n ) { if( i>=Max() ) grow(i); _blocks[i] = n; }
+  void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
   uint Max() const { debug_only(return _limit); return _size; }
 };
 

@@ -47,6 +47,8 @@ private:
   uint       _data_size;
   Arena*     _set_arena;
 
+  ReallocMark _nesting;  // assertion check for reallocations
+
   void init(Arena* arena);
   // Grow vector to required word capacity
   void grow(uint new_word_capacity);
@@ -77,10 +79,7 @@ public:
   //
   bool test_set(uint elem) {
     uint32_t word = elem >> word_bits;
-    if (word >= _size) {
-      // Then grow
-      grow(word);
-    }
+    grow(word);
     uint32_t mask = 1U << (elem & bit_mask);
     uint32_t data = _data[word];
     _data[word] = data | mask;
@@ -109,9 +108,7 @@ public:
   // Fast inlined set
   void set(uint elem) {
     uint32_t word = elem >> word_bits;
-    if (word >= _size) {
-      grow(word);
-    }
+    grow(word);
     uint32_t mask = 1U << (elem & bit_mask);
     _data[word] |= mask;
   }
