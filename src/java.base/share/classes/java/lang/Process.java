@@ -444,9 +444,10 @@ public abstract class Process {
      *
      * @implSpec
      * The default implementation of this method polls the {@code exitValue}
-     * to check if the process has terminated. Concrete implementations of this
-     * class are strongly encouraged to override this method with a more
-     * efficient implementation.
+     * to check if the process has terminated.
+     * @apiNote
+     * Concrete implementations of this class are strongly encouraged to
+     * override this method with a more efficient implementation.
      *
      * @param timeout the maximum time to wait
      * @param unit the time unit of the {@code timeout} argument
@@ -489,9 +490,10 @@ public abstract class Process {
      *
      * @implSpec
      * The default implementation of this method polls the {@code exitValue}
-     * to check if the process has terminated. Concrete implementations of this
-     * class are strongly encouraged to override this method with a more
-     * efficient implementation.
+     * to check if the process has terminated.
+     * @apiNote
+     * Concrete implementations of this class are strongly encouraged to
+     * override this method with a more efficient implementation.
      *
      * @param duration the maximum duration to wait; if not positive,
      *                this method returns immediately.
