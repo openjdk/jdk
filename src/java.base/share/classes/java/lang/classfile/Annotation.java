@@ -60,7 +60,6 @@ import jdk.internal.javac.PreviewFeature;
  * @see RuntimeVisibleParameterAnnotationsAttribute
  * @see RuntimeInvisibleParameterAnnotationsAttribute
  *
- * @sealedGraph
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
