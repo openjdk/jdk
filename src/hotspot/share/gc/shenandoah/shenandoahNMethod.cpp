@@ -474,22 +474,30 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   }
 }
 
-ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table) :
-  _table(table), _table_snapshot(nullptr) {
-}
-
-void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  _table_snapshot = _table->snapshot_for_iteration();
+ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table, size_t expected_workers) :
+  _table(table), _table_snapshot(nullptr), _workers_expected(expected_workers), _workers_started(0), _workers_finished(0) {
 }
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
-  assert(_table_snapshot != nullptr, "Must first call nmethod_do_begin()");
-  _table_snapshot->concurrent_nmethods_do(cl);
-}
+  // First worker initializes the iterator. Others have to wait on the lock until
+  // initialization is complete.
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    if (++_workers_started == 1) {
+      _workers_finished = 0;
+      _table_snapshot = _table->snapshot_for_iteration();
+    }
+  }
 
-void ShenandoahConcurrentNMethodIterator::nmethods_do_end() {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  _table->finish_iteration(_table_snapshot);
-  CodeCache_lock->notify_all();
+  _table_snapshot->concurrent_nmethods_do(cl);
+
+  // Last worker shuts down the iterator and notifies the waiters.
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    if (++_workers_finished == _workers_expected) {
+      _workers_started = 0;
+      _table->finish_iteration(_table_snapshot);
+      CodeCache_lock->notify_all();
+    }
+  }
 }

@@ -47,6 +47,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -753,6 +754,7 @@ public:
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
+  size_t                                     _expected_workers;
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
   // Roots related to concurrent class unloading
@@ -764,19 +766,14 @@ private:
 public:
   ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
+    _expected_workers(ShenandoahHeap::heap()->workers()->active_workers()),
     _vm_roots(phase),
-    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
-    _nmethod_itr(ShenandoahCodeRoots::table()),
+    _cld_roots(phase, _expected_workers, false /*heap iteration*/),
+    _nmethod_itr(ShenandoahCodeRoots::table(), _expected_workers),
     _phase(phase) {
-    if (ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_begin();
-    }
   }
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
-    if (ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_end();
-    }
     // Notify runtime data structures of potentially dead oops
     _vm_roots.report_num_dead();
   }
@@ -866,6 +863,7 @@ public:
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
+  size_t                                        _expected_workers;
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/>
@@ -875,19 +873,11 @@ private:
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
+    _expected_workers(ShenandoahHeap::heap()->workers()->active_workers()),
     _phase(phase),
     _vm_roots(phase),
-    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
-    _nmethod_itr(ShenandoahCodeRoots::table()) {
-    if (!ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_begin();
-    }
-  }
-
-  ~ShenandoahConcurrentRootsEvacUpdateTask() {
-    if (!ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_end();
-    }
+    _cld_roots(phase, _expected_workers, false /*heap iteration*/),
+    _nmethod_itr(ShenandoahCodeRoots::table(), _expected_workers) {
   }
 
   void work(uint worker_id) {
@@ -912,6 +902,7 @@ public:
     if (!ShenandoahHeap::heap()->unload_classes()) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
+
       _nmethod_itr.nmethods_do(&cl);
     }
   }
