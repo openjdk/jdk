@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Locale;
 
 public enum HtmlAttr {
-
     ABBR,
     ACCESSKEY(true),
     ALIGN,
@@ -19,7 +18,7 @@ public enum HtmlAttr {
     ARIA_LABELLEDBY(true),
     ARIA_LEVEL(true),
     ARIA_MULTISELECTABLE(true),
-    ARIA_ORIENTATION,
+    ARIA_ORIENTATION(true),
     ARIA_OWNS(true),
     ARIA_POSINSET(true),
     ARIA_READONLY(true),
@@ -95,7 +94,7 @@ public enum HtmlAttr {
     REL,
     REV,
     REVERSED,
-    ROLE,
+    ROLE(true),
     ROWS,
     ROWSPAN,
     RULES,
