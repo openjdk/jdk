@@ -61,7 +61,7 @@ public class SimpleJavaExample {
 
         // Add a java source file.
         String src = generate();
-        SourceFile file = new SourceFile("XYZ", src);
+        SourceFile file = SourceFile.newJavaSourceFile("XYZ", src);
         comp.add(file);
 
         // Compile the source file.

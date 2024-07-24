@@ -23,13 +23,28 @@
 
 package compiler.lib.compile_framework;
 
-// TODO desc, maybe type (java, jasm, jdec)
+/**
+ * This class represents a source file. It has a name, the same as its class.
+ * It carries the code of the source file in a string.
+ */
 public class SourceFile {
+    enum Kind { JAVA, JASM };
+
     public final String name;
     public final String code;
+    public final Kind kind;
 
-    public SourceFile(String name, String code) {
+    public SourceFile(String name, String code, Kind kind) {
         this.name = name;
         this.code = code;
+        this.kind = kind;
+    }
+
+    public static SourceFile newJavaSourceFile(String name, String code) {
+        return new SourceFile(name, code, Kind.JAVA);
+    }
+
+    public static SourceFile newJasmSourceFile(String name, String code) {
+        return new SourceFile(name, code, Kind.JASM);
     }
 }
