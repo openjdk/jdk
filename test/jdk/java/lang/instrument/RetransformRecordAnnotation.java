@@ -29,7 +29,6 @@
  * @library /test/lib
  * @run shell MakeJAR.sh retransformAgent
  * @run main/othervm -javaagent:retransformAgent.jar -Xlog:redefine+class=trace RetransformRecordAnnotation
- * @run main/othervm -javaagent:retransformAgent.jar -XX:+PreserveAllAnnotations -Xlog:redefine+class=trace RetransformRecordAnnotation
  */
 
 import java.io.File;
