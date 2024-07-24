@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,11 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassModel;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
-import java.lang.classfile.WritableElement;
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -61,7 +59,7 @@ import static java.util.Objects.requireNonNull;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface ConstantPoolBuilder
-        extends ConstantPool, WritableElement<ConstantPool>
+        extends ConstantPool
         permits SplitConstantPool, TemporaryConstantPool {
 
     /**
@@ -91,14 +89,6 @@ public sealed interface ConstantPoolBuilder
      * @param constantPool the other constant pool
      */
     boolean canWriteDirect(ConstantPool constantPool);
-
-    /**
-     * Writes associated bootstrap method entries to the specified writer
-     *
-     * @param buf the writer
-     * @return false when no bootstrap method entry has been written
-     */
-    boolean writeBootstrapMethods(BufWriter buf);
 
     /**
      * {@return A {@link Utf8Entry} describing the provided {@linkplain String}}

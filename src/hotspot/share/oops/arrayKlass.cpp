@@ -43,7 +43,7 @@
 #include "runtime/handles.inline.hpp"
 
 ArrayKlass::ArrayKlass() {
-  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for CDS");
+  assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
 
 int ArrayKlass::static_size(int header_size) {

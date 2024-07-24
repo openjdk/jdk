@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,8 @@
 // live-out sets.  This separate compilation is done in the outer loop below.
 PhaseLive::PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena, bool keep_deltas)
   : Phase(LIVE),
-  _live(0),
-  _livein(0),
+  _live(nullptr),
+  _livein(nullptr),
   _cfg(cfg),
   _names(names),
   _arena(arena),

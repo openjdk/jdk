@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,7 +118,7 @@ public class Main {
     private static final Set<CryptoPrimitive> SIG_PRIMITIVE_SET = Collections
             .unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
-    private static boolean extraAttrsDetected;
+    private static boolean externalFileAttributesDetected;
 
     static final String VERSION = "1.0";
 
@@ -820,8 +820,8 @@ public class Main {
                     JarEntry je = e.nextElement();
                     String name = je.getName();
 
-                    if (!extraAttrsDetected && JUZFA.getExtraAttributes(je) != -1) {
-                        extraAttrsDetected = true;
+                    if (!externalFileAttributesDetected && JUZFA.getExternalFileAttributes(je) != -1) {
+                        externalFileAttributesDetected = true;
                     }
                     hasSignature |= signatureRelated(name) && SignatureFileVerifier.isBlockOrSF(name);
 
@@ -1306,8 +1306,8 @@ public class Main {
             }
         }
 
-        if (extraAttrsDetected) {
-            warnings.add(rb.getString("extra.attributes.detected"));
+        if (externalFileAttributesDetected) {
+            warnings.add(rb.getString("external.file.attributes.detected"));
         }
 
         if ((strict) && (!errors.isEmpty())) {
@@ -1940,7 +1940,7 @@ public class Main {
 
         try {
             Event.setReportListener(Event.ReporterCategory.ZIPFILEATTRS,
-                    (t, o) -> extraAttrsDetected = true);
+                    (t, o) -> externalFileAttributesDetected = true);
             builder.build().sign(zipFile, fos);
         } catch (JarSignerException e) {
             failedCause = e.getCause();

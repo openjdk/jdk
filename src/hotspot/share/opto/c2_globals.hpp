@@ -457,9 +457,6 @@
   develop(bool, PrintLockStatistics, false,                                 \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
-          "Print per-lock-site statistics of rtm locking in JVM")           \
-                                                                            \
   develop(bool, PrintEliminateLocks, false,                                 \
           "Print out when locks are eliminated")                            \
                                                                             \
