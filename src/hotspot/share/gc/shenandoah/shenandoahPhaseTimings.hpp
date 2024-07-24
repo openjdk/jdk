@@ -57,6 +57,7 @@ class outputStream;
   f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "  CMR: ", f)                      \
   f(conc_mark,                                      "Concurrent Marking")              \
+  f(conc_mark_satb_flush_rendezvous,                "  SATB Flush Rendezvous") \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \

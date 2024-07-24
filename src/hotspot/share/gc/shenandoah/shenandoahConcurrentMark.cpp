@@ -205,7 +205,9 @@ void ShenandoahConcurrentMark::concurrent_mark() {
 
   ShenandoahSATBMarkQueueSet& qset = ShenandoahBarrierSet::satb_mark_queue_set();
   ShenandoahFlushSATBHandshakeClosure flush_satb(qset);
-  for (uint flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
+  double handshake_total_time = 0;
+  uint flushes;
+  for (flushes = 0; flushes < ShenandoahMaxSATBBufferFlushes; flushes++) {
     TaskTerminator terminator(nworkers, task_queues());
     ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator);
     workers->run_task(&task);
@@ -216,7 +218,9 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
 
     size_t before = qset.completed_buffers_num();
+    double handshake_start_time = os::elapsedTime();
     Handshake::execute(&flush_satb);
+    handshake_total_time += os::elapsedTime() - handshake_start_time;
     size_t after = qset.completed_buffers_num();
 
     if (before == after) {
@@ -224,6 +228,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
   }
+  ShenandoahPhaseTimings* const timings = heap->phase_timings();
+  timings->record_phase_time(ShenandoahPhaseTimings::conc_mark_satb_flush_rendezvous, handshake_total_time);
+
+  log_info(gc, phases) ("Total SATB flush attempts : %d", (flushes + 1));
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
