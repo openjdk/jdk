@@ -42,9 +42,13 @@ import java.util.zip.GZIPOutputStream;
 
 /**
  * Support for translating exceptions between the HotSpot heap and libjvmci heap.
+ *
+ * Successfully translated exceptions are wrapped in a TranslatedException instance.
+ * This allows callers to distiguish between a translated exception and an error
+ * that arose during translation.
  */
 @SuppressWarnings("serial")
-final class TranslatedException extends Exception {
+public final class TranslatedException extends Exception {
 
     /**
      * The value returned by {@link #encodeThrowable(Throwable)} when encoding
@@ -61,13 +65,16 @@ final class TranslatedException extends Exception {
         maybeFailClinit();
         try {
             FALLBACK_ENCODED_THROWABLE_BYTES =
-                encodeThrowable(new TranslatedException("error during encoding",
-                                                        "<unknown>"), false);
+                encodeThrowable(translationFailure("error during encoding"), false);
             FALLBACK_ENCODED_OUTOFMEMORYERROR_BYTES =
-                encodeThrowable(new OutOfMemoryError(), false);
+                encodeThrowable(translationFailure("OutOfMemoryError during encoding"), false);
         } catch (IOException e) {
             throw new InternalError(e);
         }
+    }
+
+    private static InternalError translationFailure(String messageFormat, Object... messageArgs) {
+        return new InternalError(messageFormat.formatted(messageArgs));
     }
 
     /**
@@ -86,14 +93,8 @@ final class TranslatedException extends Exception {
         }
     }
 
-    /**
-     * Class name of exception that could not be instantiated.
-     */
-    private String originalExceptionClassName;
-
-    private TranslatedException(String message, String originalExceptionClassName) {
-        super(message);
-        this.originalExceptionClassName = originalExceptionClassName;
+    TranslatedException(Throwable translated) {
+        super(translated);
     }
 
     /**
@@ -104,18 +105,6 @@ final class TranslatedException extends Exception {
     @Override
     public Throwable fillInStackTrace() {
         return this;
-    }
-
-    @Override
-    public String toString() {
-        String s;
-        if (originalExceptionClassName.equals(TranslatedException.class.getName())) {
-            s = getClass().getName();
-        } else {
-            s = getClass().getName() + "[" + originalExceptionClassName + "]";
-        }
-        String message = getMessage();
-        return (message != null) ? (s + ": " + message) : s;
     }
 
     /**
@@ -163,7 +152,7 @@ final class TranslatedException extends Exception {
             return initCause((Throwable) cons.newInstance(message), cause, debug);
         } catch (Throwable translationFailure) {
             debugPrintStackTrace(translationFailure, debug);
-            return initCause(new TranslatedException(message, className), cause, debug);
+            return initCause(translationFailure("%s [%s]", message, className), cause, debug);
         }
     }
 
@@ -308,11 +297,10 @@ final class TranslatedException extends Exception {
                 throwable.setStackTrace(stackTrace);
                 cause = throwable;
             }
-            return throwable;
+            return new TranslatedException(throwable);
         } catch (Throwable translationFailure) {
             debugPrintStackTrace(translationFailure, debug);
-            return new TranslatedException("Error decoding exception: " + encodedThrowable,
-                                           translationFailure.getClass().getName());
+            return translationFailure("error decoding exception: %s", encodedThrowable);
         }
     }
 }

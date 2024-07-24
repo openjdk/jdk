@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,22 +159,17 @@ public final class HexFormat {
      * The hexadecimal characters are from lowercase alpha digits.
      */
     private static final HexFormat HEX_FORMAT =
-            new HexFormat("", "", "", Case.LOWERCASE);
+            new HexFormat("", "", "", false);
 
     private static final HexFormat HEX_UPPER_FORMAT =
-            new HexFormat("", "", "", Case.UPPERCASE);
+            new HexFormat("", "", "", true);
 
     private static final byte[] EMPTY_BYTES = {};
 
     private final String delimiter;
     private final String prefix;
     private final String suffix;
-    private final Case digitCase;
-
-    private enum Case {
-        LOWERCASE,
-        UPPERCASE
-    }
+    private final boolean ucase;
 
     /**
      * Returns a HexFormat with a delimiter, prefix, suffix, and array of digits.
@@ -181,14 +177,14 @@ public final class HexFormat {
      * @param delimiter a delimiter, non-null
      * @param prefix a prefix, non-null
      * @param suffix a suffix, non-null
-     * @param digitCase enum indicating how to case digits
+     * @param ucase enum indicating how to case digits
      * @throws NullPointerException if any argument is null
      */
-    private HexFormat(String delimiter, String prefix, String suffix, Case digitCase) {
+    private HexFormat(String delimiter, String prefix, String suffix, boolean ucase) {
         this.delimiter = Objects.requireNonNull(delimiter, "delimiter");
         this.prefix = Objects.requireNonNull(prefix, "prefix");
         this.suffix = Objects.requireNonNull(suffix, "suffix");
-        this.digitCase = digitCase;
+        this.ucase = ucase;
     }
 
     /**
@@ -217,7 +213,7 @@ public final class HexFormat {
      * @return a {@link HexFormat} with the delimiter and lowercase characters
      */
     public static HexFormat ofDelimiter(String delimiter) {
-        return new HexFormat(delimiter, "", "", Case.LOWERCASE);
+        return new HexFormat(delimiter, "", "", false);
     }
 
     /**
@@ -226,7 +222,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the delimiter
      */
     public HexFormat withDelimiter(String delimiter) {
-        return new HexFormat(delimiter, this.prefix, this.suffix, this.digitCase);
+        return new HexFormat(delimiter, this.prefix, this.suffix, this.ucase);
     }
 
     /**
@@ -236,7 +232,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the prefix
      */
     public HexFormat withPrefix(String prefix) {
-        return new HexFormat(this.delimiter, prefix, this.suffix, this.digitCase);
+        return new HexFormat(this.delimiter, prefix, this.suffix, this.ucase);
     }
 
     /**
@@ -246,7 +242,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with the suffix
      */
     public HexFormat withSuffix(String suffix) {
-        return new HexFormat(this.delimiter, this.prefix, suffix, this.digitCase);
+        return new HexFormat(this.delimiter, this.prefix, suffix, this.ucase);
     }
 
     /**
@@ -258,7 +254,7 @@ public final class HexFormat {
     public HexFormat withUpperCase() {
         if (this == HEX_FORMAT)
             return HEX_UPPER_FORMAT;
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, Case.UPPERCASE);
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, true);
     }
 
     /**
@@ -268,7 +264,7 @@ public final class HexFormat {
      * @return a copy of this {@code HexFormat} with lowercase hexadecimal characters
      */
     public HexFormat withLowerCase() {
-        return new HexFormat(this.delimiter, this.prefix, this.suffix, Case.LOWERCASE);
+        return new HexFormat(this.delimiter, this.prefix, this.suffix, false);
     }
 
     /**
@@ -306,7 +302,7 @@ public final class HexFormat {
      *          otherwise {@code false}
      */
     public boolean isUpperCase() {
-        return digitCase == Case.UPPERCASE;
+        return ucase;
     }
 
     /**
@@ -436,7 +432,6 @@ public final class HexFormat {
             return null;
         }
 
-        boolean ucase = digitCase == Case.UPPERCASE;
         int length = toIndex - fromIndex;
         if (delimiter.isEmpty()) {
             // Allocate the byte array and fill in the hex pairs for each byte
@@ -637,7 +632,7 @@ public final class HexFormat {
         if (value < 10) {
             return (char)('0' + value);
         }
-        if (digitCase == Case.LOWERCASE) {
+        if (!ucase) {
             return (char)('a' - 10 + value);
         }
         return (char)('A' - 10 + value);
@@ -658,7 +653,7 @@ public final class HexFormat {
         if (value < 10) {
             return (char)('0' + value);
         }
-        if (digitCase == Case.LOWERCASE) {
+        if (!ucase) {
             return (char)('a' - 10 + value);
         }
         return (char)('A' - 10 + value);
@@ -1067,7 +1062,7 @@ public final class HexFormat {
         if (o == null || getClass() != o.getClass())
             return false;
         HexFormat otherHex = (HexFormat) o;
-        return digitCase == otherHex.digitCase &&
+        return ucase == otherHex.ucase &&
                 delimiter.equals(otherHex.delimiter) &&
                 prefix.equals(otherHex.prefix) &&
                 suffix.equals(otherHex.suffix);
@@ -1081,7 +1076,7 @@ public final class HexFormat {
     @Override
     public int hashCode() {
         int result = Objects.hash(delimiter, prefix, suffix);
-        result = 31 * result + Boolean.hashCode(digitCase == Case.UPPERCASE);
+        result = 31 * result + Boolean.hashCode(ucase);
         return result;
     }
 
@@ -1093,7 +1088,7 @@ public final class HexFormat {
      */
     @Override
     public String toString() {
-        return escapeNL("uppercase: " + (digitCase == Case.UPPERCASE) +
+        return escapeNL("uppercase: " + ucase +
                 ", delimiter: \"" + delimiter +
                 "\", prefix: \"" + prefix +
                 "\", suffix: \"" + suffix + "\"");

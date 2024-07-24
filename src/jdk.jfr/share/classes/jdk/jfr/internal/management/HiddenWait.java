@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,32 +22,21 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang.classfile;
-
-import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.impl.DirectFieldBuilder;
-import jdk.internal.classfile.impl.DirectMethodBuilder;
-import jdk.internal.javac.PreviewFeature;
+package jdk.jfr.internal.management;
 
 /**
- * A classfile element that can encode itself as a stream of bytes in the
- * encoding expected by the classfile format.
- *
- * @param <T> the type of the entity
- *
- * @sealedGraph
- * @since 22
+ * The HiddenWait class is used to exclude jdk.JavaMonitorWait events
+ * from being generated when Object.wait() is called on an object of this type.
  */
-@PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-public sealed interface WritableElement<T> extends ClassFileElement
-        permits Annotation, AnnotationElement, AnnotationValue, Attribute,
-                PoolEntry, BootstrapMethodEntry, FieldModel, MethodModel,
-                ConstantPoolBuilder, DirectFieldBuilder, DirectMethodBuilder {
-    /**
-     * Writes the element to the specified writer
-     *
-     * @param buf the writer
-     */
-    void writeTo(BufWriter buf);
+public final class HiddenWait {
+
+    public synchronized boolean takeNap(long timeoutMillis) {
+        try {
+            this.wait(timeoutMillis);
+            return true;
+        } catch (InterruptedException e) {
+            // Ok, ignore
+            return false;
+        }
+    }
 }
