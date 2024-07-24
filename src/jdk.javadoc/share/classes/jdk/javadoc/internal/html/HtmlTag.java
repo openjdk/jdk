@@ -430,6 +430,144 @@ public enum HtmlTag {
         NO_NEST
     }
 
+    public enum Attr {
+        ABBR,
+        ACCESSKEY(true),
+        ALIGN,
+        ALINK,
+        ALT,
+        ARIA_ACTIVEDESCENDANT(true),
+        ARIA_CONTROLS(true),
+        ARIA_DESCRIBEDBY(true),
+        ARIA_EXPANDED(true),
+        ARIA_LABEL(true),
+        ARIA_LABELLEDBY(true),
+        ARIA_LEVEL(true),
+        ARIA_MULTISELECTABLE(true),
+        ARIA_OWNS(true),
+        ARIA_POSINSET(true),
+        ARIA_READONLY(true),
+        ARIA_REQUIRED(true),
+        ARIA_SELECTED(true),
+        ARIA_SETSIZE(true),
+        ARIA_SORT(true),
+        AUTOCAPITALIZE(true),
+        AUTOFOCUS(true),
+        AXIS,
+        BACKGROUND,
+        BGCOLOR,
+        BORDER,
+        CELLPADDING,
+        CELLSPACING,
+        CHAR,
+        CHAROFF,
+        CHARSET,
+        CITE,
+        CLASS(true),
+        CLEAR,
+        COLOR,
+        COLSPAN,
+        COMPACT,
+        CONTENTEDITABLE(true),
+        COORDS,
+        CROSSORIGIN,
+        DATETIME,
+        DIR(true),
+        DRAGGABLE(true),
+        ENTERKEYHINT(true),
+        FACE,
+        FRAME,
+        FRAMEBORDER,
+        HEADERS,
+        HEIGHT,
+        HIDDEN(true),
+        HREF,
+        HSPACE,
+        ID(true),
+        INERT(true),
+        INPUTMODE(true),
+        IS(true),
+        ITEMID(true),
+        ITEMPROP(true),
+        ITEMREF(true),
+        ITEMSCOPE(true),
+        ITEMTYPE(true),
+        LANG(true),
+        LINK,
+        LONGDESC,
+        MARGINHEIGHT,
+        MARGINWIDTH,
+        NAME,
+        NONCE(true),
+        NOSHADE,
+        NOWRAP,
+        POPOVER(true),
+        PROFILE,
+        REV,
+        REVERSED,
+        ROLE(true),
+        ROWSPAN,
+        RULES,
+        SCHEME,
+        SCOPE,
+        SCROLLING,
+        SHAPE,
+        SIZE,
+        SPACE,
+        SPELLCHECK(true),
+        SRC,
+        START,
+        STYLE(true),
+        SUMMARY,
+        TABINDEX(true),
+        TARGET,
+        TEXT,
+        TITLE(true),
+        TRANSLATE(true),
+        TYPE,
+        VALIGN,
+        VALUE,
+        VERSION,
+        VLINK,
+        VSPACE,
+        WIDTH,
+        WRITINGSUGGESTIONS(true);
+
+        private final String name;
+        private final boolean isGlobal;
+
+        Attr() {
+            this(false);
+        }
+
+        Attr(boolean flag) {
+            name = StringUtils.toLowerCase(name().replace("_", "-"));
+            isGlobal = flag;
+        }
+
+        public boolean isGlobal() {
+            return isGlobal;
+        }
+
+        public String getText() {
+            return name;
+        }
+
+        static final Map<String,Attr> index = new HashMap<>();
+        static {
+            for (Attr t: values()) {
+                index.put(t.getText(), t);
+            }
+        }
+    }
+
+    public enum AttrKind {
+        OK,
+        INVALID,
+        OBSOLETE,
+        HTML4
+    }
+
     // This class exists to avoid warnings from using parameterized vararg type
     // Map<Attr,AttrKind> in signature of HtmlTag constructor.
     private static class AttrMap extends EnumMap<HtmlAttr,AttrKind> {
@@ -467,26 +605,6 @@ public enum HtmlTag {
         this.attrs = new EnumMap<>(HtmlAttr.class);
         for (Map<HtmlAttr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
-        attrs.put(HtmlAttr.CLASS, AttrKind.OK);
-        attrs.put(HtmlAttr.ID, AttrKind.OK);
-        attrs.put(HtmlAttr.STYLE, AttrKind.OK);
-        attrs.put(HtmlAttr.ROLE, AttrKind.OK);
-        // for now, assume that all ARIA attributes are allowed on all tags.
-        attrs.put(HtmlAttr.ARIA_ACTIVEDESCENDANT, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_CONTROLS, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_DESCRIBEDBY, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_EXPANDED, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_LABEL, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_LABELLEDBY, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_LEVEL, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_MULTISELECTABLE, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_OWNS, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_POSINSET, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_READONLY, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_REQUIRED, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_SELECTED, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_SETSIZE, AttrKind.OK);
-        attrs.put(HtmlAttr.ARIA_SORT, AttrKind.OK);
     }
 
     public boolean accepts(HtmlTag t) {

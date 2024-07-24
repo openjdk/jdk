@@ -60,7 +60,7 @@ private:
   }
 
 public:
-  NONCOPYABLE(ArrayWithFreeList<E COMMA flag>);
+  NONCOPYABLE(ArrayWithFreeList);
 
   ArrayWithFreeList(int initial_capacity = 8)
     : _backing_storage(initial_capacity),
