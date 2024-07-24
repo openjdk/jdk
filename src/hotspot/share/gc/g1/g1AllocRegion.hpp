@@ -118,7 +118,7 @@ protected:
   virtual G1HeapRegion* allocate_new_region(size_t word_size) = 0;
   virtual void retire_region(G1HeapRegion* alloc_region) = 0;
 
-  G1AllocRegion(const char* name, bool bot_updates, uint node_index);
+  G1AllocRegion(const char* name, uint node_index);
 
 public:
   static void setup(G1CollectedHeap* g1h, G1HeapRegion* dummy_region);
@@ -188,7 +188,7 @@ protected:
   size_t retire(bool fill_up) override;
 public:
   MutatorAllocRegion(uint node_index)
-    : G1AllocRegion("Mutator Alloc Region", false /* bot_updates */, node_index),
+    : G1AllocRegion("Mutator Alloc Region", node_index),
       _wasted_bytes(0),
       _retained_alloc_region(nullptr) { }
 
@@ -228,9 +228,9 @@ protected:
 
   size_t retire(bool fill_up) override;
 
-  G1GCAllocRegion(const char* name, bool bot_updates, G1EvacStats* stats,
+  G1GCAllocRegion(const char* name, G1EvacStats* stats,
                   G1HeapRegionAttr::region_type_t purpose, uint node_index = G1NUMA::AnyNodeIndex)
-    : G1AllocRegion(name, bot_updates, node_index), _used_bytes_before(0), _stats(stats), _purpose(purpose) {
+    : G1AllocRegion(name, node_index), _used_bytes_before(0), _stats(stats), _purpose(purpose) {
     assert(stats != nullptr, "Must pass non-null PLAB statistics");
   }
 public:
@@ -243,13 +243,13 @@ public:
 class SurvivorGCAllocRegion : public G1GCAllocRegion {
 public:
   SurvivorGCAllocRegion(G1EvacStats* stats, uint node_index)
-  : G1GCAllocRegion("Survivor GC Alloc Region", false /* bot_updates */, stats, G1HeapRegionAttr::Young, node_index) { }
+  : G1GCAllocRegion("Survivor GC Alloc Region", stats, G1HeapRegionAttr::Young, node_index) { }
 };
 
 class OldGCAllocRegion : public G1GCAllocRegion {
 public:
   OldGCAllocRegion(G1EvacStats* stats)
-  : G1GCAllocRegion("Old GC Alloc Region", true /* bot_updates */, stats, G1HeapRegionAttr::Old) { }
+  : G1GCAllocRegion("Old GC Alloc Region", stats, G1HeapRegionAttr::Old) { }
 };
 
 #endif // SHARE_GC_G1_G1ALLOCREGION_HPP

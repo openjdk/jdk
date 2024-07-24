@@ -577,6 +577,7 @@ void ShenandoahRegionPartitions::assert_bounds() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
+  _trash_regions(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, max_regions, mtGC)),
   _right_to_left_bias(false),
   _alloc_bias_weight(0)
 {
@@ -899,7 +900,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   return _heap->get_region(beg)->bottom();
 }
 
-void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion *r) {
+void ShenandoahFreeSet::try_recycle_trashed(ShenandoahHeapRegion* r) {
   if (r->is_trash()) {
     _heap->decrease_used(r->used());
     r->recycle();
@@ -910,13 +911,24 @@ void ShenandoahFreeSet::recycle_trash() {
   // lock is not reentrable, check we don't have it
   shenandoah_assert_not_heaplocked();
 
+  size_t count = 0;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_trash()) {
-      ShenandoahHeapLocker locker(_heap->lock());
-      try_recycle_trashed(r);
+      _trash_regions[count++] = r;
     }
-    SpinPause(); // allow allocators to take the lock
+  }
+
+  // Relinquish the lock after this much time passed.
+  static constexpr jlong deadline_ns = 30000; // 30 us
+  size_t idx = 0;
+  while (idx < count) {
+    os::naked_yield(); // Yield to allow allocators to take the lock
+    ShenandoahHeapLocker locker(_heap->lock());
+    const jlong deadline = os::javaTimeNanos() + deadline_ns;
+    while (idx < count && os::javaTimeNanos() < deadline) {
+      try_recycle_trashed(_trash_regions[idx++]);
+    }
   }
 }
 
@@ -1339,7 +1351,6 @@ void ShenandoahFreeSet::print_on(outputStream* out) const {
 double ShenandoahFreeSet::internal_fragmentation() {
   double squared = 0;
   double linear = 0;
-  int count = 0;
 
   idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
   for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
@@ -1349,11 +1360,10 @@ double ShenandoahFreeSet::internal_fragmentation() {
     size_t used = r->used();
     squared += used * used;
     linear += used;
-    count++;
     index = _partitions.find_index_of_next_available_region(ShenandoahFreeSetPartitionId::Mutator, index + 1);
   }
 
-  if (count > 0) {
+  if (linear > 0) {
     double s = squared / (ShenandoahHeapRegion::region_size_bytes() * linear);
     return 1 - s;
   } else {
