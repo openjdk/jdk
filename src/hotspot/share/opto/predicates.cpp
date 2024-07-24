@@ -432,7 +432,7 @@ IfNode* InitializedAssertionPredicate::create_if_node(Node* control,
                                                       OpaqueInitializedAssertionPredicateNode* assertion_expression,
                                                       IdealLoopTree* loop) {
   const int if_opcode = _template_assertion_predicate->Opcode();
-  const AssertionPredicateType assertion_predicate_type = _template_assertion_predicate->assertion_predicate_type();
+  NOT_PRODUCT(const AssertionPredicateType assertion_predicate_type = _template_assertion_predicate->assertion_predicate_type();)
   IfNode* if_node = if_opcode == Op_If ?
       new IfNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type)) :
       new RangeCheckNode(control, assertion_expression, PROB_MAX, COUNT_UNKNOWN NOT_PRODUCT(COMMA assertion_predicate_type));
