@@ -82,8 +82,8 @@ inline address frame::get_deopt_original_pc() const {
   return nullptr;
 }
 
-ATTRIBUTE_NO_UBSAN
 template <typename RegisterMapT>
+ATTRIBUTE_NO_UBSAN
 inline address frame::oopmapreg_to_location(VMReg reg, const RegisterMapT* reg_map) const {
   if (reg->is_reg()) {
     // If it is passed in a register, it got spilled in the stub frame.
