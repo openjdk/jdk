@@ -473,7 +473,7 @@ final class StringConcatHelper {
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
-    static long prepend(int index, byte coder, byte[] buf, boolean value, String prefix) {
+    static int prepend(int index, byte coder, byte[] buf, boolean value, String prefix) {
         if (coder == String.LATIN1) {
             if (value) {
                 index -= 4;
@@ -611,32 +611,8 @@ final class StringConcatHelper {
         return index;
     }
 
-    /**
-     * Prepends the stringly representation of String value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     *
-     * @param index      final char index in the buffer
-     * @param coder      the coder of buf
-     * @param buf        buffer to append to
-     * @param value      String value to encode
-     * @return           updated index (coder value retained)
-     */
-    static int prepend(int index, byte coder, byte[] buf, String value) {
-        index -= value.length();
-        value.getBytes(buf, index, coder);
-        return index;
-    }
-
     static int stringSize(boolean value) {
         return value ? 4 : 5;
-    }
-
-    static int stringSize(int value) {
-        return Integer.stringSize(value);
-    }
-
-    static int stringSize(long value) {
-        return Long.stringSize(value);
     }
 
     static int stringSize(char value) {

@@ -1322,10 +1322,10 @@ public final class StringConcatFactory {
                         suffix = "";
                     }
                     /*
-                     * store init index & allocate buffer :
+                     * Store init index :
                      *
-                     * index = initalIndex + StringConcatHelper.stringSize(args[i]) + ...
-                     * ...
+                     *  index = initalIndex + StringConcatHelper.stringSize(args[i]) + ... - suffix.length()
+                     *  ...
                      *
                      */
                     cb.loadConstant(initalIndex);
@@ -1334,10 +1334,13 @@ public final class StringConcatFactory {
                         TypeKind kind = TypeKind.from(cl);
                         int paramSlot = paramSlots[i];
 
+                        ClassDesc classDesc = CD_StringConcatHelper;
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
+                            classDesc = CD_Integer;
                             methodTypeDesc = INT_TO_INT;
                         } else if (cl == long.class) {
+                            classDesc = CD_Long;
                             methodTypeDesc = LONG_TO_INT;
                         } else if (cl == boolean.class) {
                             methodTypeDesc = BOOLEAN_TO_INT;
@@ -1348,14 +1351,17 @@ public final class StringConcatFactory {
                             kind = TypeKind.from(String.class);
                         }
                         cb.loadLocal(kind, paramSlot)
-                          .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc)
+                          .invokestatic(classDesc, "stringSize", methodTypeDesc)
                           .iadd();
                     }
-                    cb.ldc(suffix.length())
-                      .isub()
-                      .istore(indexSlot);
+                    if (!suffix.isEmpty()) {
+                        cb.ldc(suffix.length())
+                          .isub();
+                    }
+                    cb.istore(indexSlot);
 
                     /*
+                     * Allocate buffer :
                      *  buf = StringConcatHelper.newArray(suffix, index, coder)
                      */
                     cb.ldc(suffix)
