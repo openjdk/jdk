@@ -1737,6 +1737,7 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
             threshold :
             (n_regions + active_workers - 1) / active_workers;
   }
+
   if (n_regions > stride && active_workers > 1) {
     ShenandoahParallelHeapRegionTask task(blk, stride);
     workers()->run_task(&task);
