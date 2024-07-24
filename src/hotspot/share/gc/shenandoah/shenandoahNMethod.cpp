@@ -475,11 +475,9 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   }
 }
 
-ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table,
-                                                                         uint expected_workers) :
+ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table) :
   _table(table),
   _table_snapshot(nullptr),
-  _expected_workers(expected_workers),
   _started_workers(0),
   _finished_workers(0) {}
 
@@ -488,25 +486,32 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
   // with other threads waiting on iteration to be over.
   NoSafepointVerifier nsv;
 
-  // First worker initializes the iterator. Others have to wait on the lock until
-  // initialization is complete.
+  bool do_work;
+
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    uint id = ++_started_workers;
-    assert(id <= _expected_workers, "Unexpected worker ID, reused iterator?");
-    if (id == 1) {
-      _table_snapshot = _table->snapshot_for_iteration();
+
+    if (_finished_workers == 0) {
+      // Still no threads are done. We are still collecting threads here.
+      if (_started_workers++ == 0) {
+        // First thread initializes the snapshot.
+        _table_snapshot = _table->snapshot_for_iteration();
+      }
+      do_work = true;
+    } else {
+      // Some threads are done already. We are now committed, all started
+      // threads should finish, and no new threads should appear.
+      do_work = false;
     }
   }
 
-  _table_snapshot->concurrent_nmethods_do(cl);
+  if (do_work) {
+    _table_snapshot->concurrent_nmethods_do(cl);
 
-  // Last worker shuts down the iterator and notifies the waiters.
-  {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     uint id = ++_finished_workers;
-    assert(id <= _expected_workers, "Unexpected worker ID, reused iterator?");
-    if (id == _expected_workers) {
+    if (id == _started_workers) {
+      // Last worker shuts down the iterator and notifies any waiters.
       _table->finish_iteration(_table_snapshot);
       CodeCache_lock->notify_all();
     }
