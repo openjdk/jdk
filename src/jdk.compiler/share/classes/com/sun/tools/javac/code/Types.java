@@ -646,7 +646,14 @@ public class Types {
         public CompilerInternalException(boolean dumpStackTraceOnError) {
             if (dumpStackTraceOnError) {
                 super.fillInStackTrace();
+            } else {
+                fillInStackTrace();
             }
+        }
+
+        @Override
+        public Throwable fillInStackTrace() {
+            return this;
         }
     }
 
@@ -667,11 +674,6 @@ public class Types {
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
         }
     }
 
@@ -5137,11 +5139,6 @@ public class Types {
 
             public Type type() {
                 return type;
-            }
-
-            @Override
-            public Throwable fillInStackTrace() {
-                return this;
             }
         }
 

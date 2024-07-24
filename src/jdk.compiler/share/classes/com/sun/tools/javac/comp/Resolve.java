@@ -1409,11 +1409,6 @@ public class Resolve {
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
         }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
-        }
     }
 
 /* ***************************************************************************

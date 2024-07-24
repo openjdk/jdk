@@ -1355,11 +1355,6 @@ public class Infer {
                 super(dumpStacktraceOnError);
                 this.graph = graph;
             }
-
-            @Override
-            public Throwable fillInStackTrace() {
-                return this;
-            }
         }
         /**
          * Pick the next node (leaf) to solve in the graph
