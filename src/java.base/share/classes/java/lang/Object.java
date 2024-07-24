@@ -114,9 +114,9 @@ public class Object {
      * As far as is reasonably practical, the {@code hashCode} method defined
      * by class {@code Object} returns distinct integers for distinct objects.
      *
-     * <p>This method should <em>not</em> throw any exceptions during
-     * typical operation. The implementation should not use excessive
-     * memory or time for its computations.
+     * <p>This method should avoid throwing or propagating any
+     * exceptions unless it legitimately <em>cannot</em> adhere to its
+     * contract.
      *
      * The {@code hashCode} method may be called frequently, possibly
      * in the context of {@linkplain java.util##CollectionsFramework
@@ -184,12 +184,15 @@ public class Object {
      * In other words, under the reference equality equivalence
      * relation, each equivalence class only has a single element.
      *
-     * <p>This method should <em>not</em> throw any exceptions during
-     * typical operation. In particular, {@link ClassCastException}
+     * <p>This method should avoid throwing or propagating any
+     * exceptions unless it legitimately <em>cannot</em> adhere to its
+     * contract.
+     * In particular, {@link ClassCastException}
      * should not be thrown if the argument has an incomparable type
      * to this object and {@link NullPointerException} should not be
-     * thrown if the argument is {@code null}.  The implementation
-     * should not use excessive memory or time for its computations.
+     * thrown if the argument is {@code null}; {@code false} should
+     * be returned in those cases. The implementation should not use
+     * excessive memory or time for its computations.
      *
      * @apiNote
      * It is generally necessary to override the {@link #hashCode() hashCode}
@@ -307,8 +310,10 @@ public class Object {
      * the {@code toString} nor {@code hashCode} methods were
      * overridden by the object's class.
      *
-     * <p>This method should <em>not</em> throw any exceptions during
-     * typical operation. The implementation should not use excessive
+     * <p>This method should avoid throwing or propagating any
+     * exceptions unless it legitimately <em>cannot</em> adhere to its
+     * contract.
+     * The implementation should not use excessive
      * memory or time for its computations. In particular, string
      * concatenation patterns that allocate an excessive number of
      * intermediate objects should be avoided. As as a quality of
