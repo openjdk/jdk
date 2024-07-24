@@ -25,28 +25,50 @@
 
 package com.sun.java.swing.plaf.gtk;
 
-import java.awt.*;
-import java.beans.*;
-import java.io.File;
-import java.lang.ref.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Locale;
-import javax.swing.*;
-import javax.swing.colorchooser.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.synth.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JComponent;
+import javax.swing.JTextField;
+import javax.swing.LayoutStyle;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DimensionUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.synth.Region;
+import javax.swing.plaf.synth.SynthConstants;
+import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.plaf.synth.SynthStyleFactory;
 import javax.swing.text.DefaultEditorKit;
 
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.StateType;
-import java.util.HashMap;
-import java.util.Map;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
-import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
+import sun.swing.AltProcessor;
 import sun.swing.DefaultLayoutStyle;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -866,7 +888,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                  "ctrl released ENTER", "release"
             },
 
-
             "ScrollBar.squareButtons", Boolean.FALSE,
             "ScrollBar.thumbHeight", Integer.valueOf(14),
             "ScrollBar.width", Integer.valueOf(16),
@@ -1414,6 +1435,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         return c.getComponentOrientation().isLeftToRight();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void initialize() {
         /*
          * We need to call loadGTK() to ensure that the native GTK
@@ -1456,6 +1481,23 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+
+        // By default mnemonics are hidden for GTK L&F
+        MnemonicHandler.setMnemonicHidden(true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void uninitialize() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(false);
+        super.uninitialize();
     }
 
     static ReferenceQueue<GTKLookAndFeel> queue = new ReferenceQueue<GTKLookAndFeel>();

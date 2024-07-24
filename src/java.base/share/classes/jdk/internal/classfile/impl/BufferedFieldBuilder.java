@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,29 +41,21 @@ public final class BufferedFieldBuilder
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
     private AccessFlags flags;
-    private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
                                 ClassFileImpl context,
                                 Utf8Entry name,
-                                Utf8Entry type,
-                                FieldModel original) {
+                                Utf8Entry type) {
         this.constantPool = constantPool;
         this.context = context;
         this.name = name;
         this.desc = type;
         this.flags = AccessFlags.ofField();
-        this.original = original;
     }
 
     @Override
     public ConstantPoolBuilder constantPool() {
         return constantPool;
-    }
-
-    @Override
-    public Optional<FieldModel> original() {
-        return Optional.ofNullable(original);
     }
 
     @Override
@@ -91,8 +83,7 @@ public final class BufferedFieldBuilder
 
         @Override
         public Optional<ClassModel> parent() {
-            FieldModel fm = original().orElse(null);
-            return fm == null? Optional.empty() : fm.parent();
+            return Optional.empty();
         }
 
         @Override
@@ -121,7 +112,7 @@ public final class BufferedFieldBuilder
         }
 
         @Override
-        public void writeTo(BufWriter buf) {
+        public void writeTo(BufWriterImpl buf) {
             DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
             elements.forEach(fb);
             fb.writeTo(buf);

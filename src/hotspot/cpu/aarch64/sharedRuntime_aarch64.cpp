@@ -1754,11 +1754,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ set_last_Java_frame(sp, noreg, native_return, rscratch1);
 
   Label dtrace_method_entry, dtrace_method_entry_done;
-  {
-    uint64_t offset;
-    __ adrp(rscratch1, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ ldrb(rscratch1, Address(rscratch1, offset));
-    __ cbnzw(rscratch1, dtrace_method_entry);
+  if (DTraceMethodProbes) {
+    __ b(dtrace_method_entry);
     __ bind(dtrace_method_entry_done);
   }
 
@@ -1990,11 +1987,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   Label dtrace_method_exit, dtrace_method_exit_done;
-  {
-    uint64_t offset;
-    __ adrp(rscratch1, ExternalAddress((address)&DTraceMethodProbes), offset);
-    __ ldrb(rscratch1, Address(rscratch1, offset));
-    __ cbnzw(rscratch1, dtrace_method_exit);
+  if (DTraceMethodProbes) {
+    __ b(dtrace_method_exit);
     __ bind(dtrace_method_exit_done);
   }
 
@@ -2138,36 +2132,37 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // SLOW PATH dtrace support
-  {
-    __ block_comment("dtrace entry {");
-    __ bind(dtrace_method_entry);
+  if (DTraceMethodProbes) {
+    {
+      __ block_comment("dtrace entry {");
+      __ bind(dtrace_method_entry);
 
-    // We have all of the arguments setup at this point. We must not touch any register
-    // argument registers at this point (what if we save/restore them there are no oop?
+      // We have all of the arguments setup at this point. We must not touch any register
+      // argument registers at this point (what if we save/restore them there are no oop?
 
-    save_args(masm, total_c_args, c_arg, out_regs);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-      CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
-      rthread, c_rarg1);
-    restore_args(masm, total_c_args, c_arg, out_regs);
-    __ b(dtrace_method_entry_done);
-    __ block_comment("} dtrace entry");
+      save_args(masm, total_c_args, c_arg, out_regs);
+      __ mov_metadata(c_rarg1, method());
+      __ call_VM_leaf(
+        CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+        rthread, c_rarg1);
+      restore_args(masm, total_c_args, c_arg, out_regs);
+      __ b(dtrace_method_entry_done);
+      __ block_comment("} dtrace entry");
+    }
+
+    {
+      __ block_comment("dtrace exit {");
+      __ bind(dtrace_method_exit);
+      save_native_result(masm, ret_type, stack_slots);
+      __ mov_metadata(c_rarg1, method());
+      __ call_VM_leaf(
+        CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
+        rthread, c_rarg1);
+      restore_native_result(masm, ret_type, stack_slots);
+      __ b(dtrace_method_exit_done);
+      __ block_comment("} dtrace exit");
+    }
   }
-
-  {
-    __ block_comment("dtrace exit {");
-    __ bind(dtrace_method_exit);
-    save_native_result(masm, ret_type, stack_slots);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-         CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-         rthread, c_rarg1);
-    restore_native_result(masm, ret_type, stack_slots);
-    __ b(dtrace_method_exit_done);
-    __ block_comment("} dtrace exit");
-  }
-
 
   __ flush();
 

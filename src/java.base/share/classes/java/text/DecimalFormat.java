@@ -556,11 +556,33 @@ public class DecimalFormat extends NumberFormat {
                     ((BigInteger)number).bitLength () < 64)) {
             return format(((Number)number).longValue(), toAppendTo, pos);
         } else if (number instanceof BigDecimal) {
-            return format((BigDecimal)number, toAppendTo, pos);
+            return format((BigDecimal)number, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
         } else if (number instanceof BigInteger) {
-            return format((BigInteger)number, toAppendTo, pos);
+            return format((BigInteger)number, StringBufFactory.of(toAppendTo), pos).asStringBuffer();
         } else if (number instanceof Number) {
             return format(((Number)number).doubleValue(), toAppendTo, pos);
+        } else {
+            throw new IllegalArgumentException("Cannot format given Object as a Number");
+        }
+    }
+
+    @Override
+    final StringBuf format(Object number,
+                           StringBuf toAppendTo,
+                           FieldPosition pos) {
+        if (number instanceof Long || number instanceof Integer ||
+                    number instanceof Short || number instanceof Byte ||
+                    number instanceof AtomicInteger ||
+                    number instanceof AtomicLong ||
+                    (number instanceof BigInteger &&
+                             ((BigInteger) number).bitLength() < 64)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof BigDecimal) {
+            return format((BigDecimal) number, toAppendTo, pos);
+        } else if (number instanceof BigInteger) {
+            return format((BigInteger) number, toAppendTo, pos);
+        } else if (number instanceof Number) {
+            return format(((Number) number).doubleValue(), toAppendTo, pos);
         } else {
             throw new IllegalArgumentException("Cannot format given Object as a Number");
         }
@@ -588,6 +610,12 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf result,
+                     FieldPosition fieldPosition) {
         // If fieldPosition is a DontCareFieldPosition instance we can
         // try to go to fast-path code.
         boolean tryFastPath = false;
@@ -619,8 +647,8 @@ public class DecimalFormat extends NumberFormat {
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    StringBuffer format(double number, StringBuffer result,
-                                FieldDelegate delegate) {
+    StringBuf format(double number, StringBuf result,
+                     FieldDelegate delegate) {
 
         boolean nanOrInfinity = handleNaN(number, result, delegate);
         if (nanOrInfinity) {
@@ -666,7 +694,7 @@ public class DecimalFormat extends NumberFormat {
      * @param delegate notified of locations of sub fields
      * @return true, if number is a NaN; false otherwise
      */
-    boolean handleNaN(double number, StringBuffer result,
+    boolean handleNaN(double number, StringBuf result,
             FieldDelegate delegate) {
         if (Double.isNaN(number)
                 || (Double.isInfinite(number) && multiplier == 0)) {
@@ -691,7 +719,7 @@ public class DecimalFormat extends NumberFormat {
      * @return true, if number is a {@code Double.NEGATIVE_INFINITY} or
      *         {@code Double.POSITIVE_INFINITY}; false otherwise
      */
-    boolean handleInfinity(double number, StringBuffer result,
+    boolean handleInfinity(double number, StringBuf result,
             FieldDelegate delegate, boolean isNegative) {
         if (Double.isInfinite(number)) {
             if (isNegative) {
@@ -720,7 +748,7 @@ public class DecimalFormat extends NumberFormat {
         return false;
     }
 
-    StringBuffer doubleSubformat(double number, StringBuffer result,
+    StringBuf doubleSubformat(double number, StringBuf result,
             FieldDelegate delegate, boolean isNegative) {
         synchronized (digitList) {
             int maxIntDigits = super.getMaximumIntegerDigits();
@@ -761,6 +789,14 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    StringBuf format(long number, StringBuf result,
+                     FieldPosition fieldPosition) {
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
+
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
@@ -774,8 +810,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    StringBuffer format(long number, StringBuffer result,
-                               FieldDelegate delegate) {
+    StringBuf format(long number, StringBuf result,
+                     FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
             number = -number;
@@ -849,8 +885,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    private StringBuffer format(BigDecimal number, StringBuffer result,
-                                FieldPosition fieldPosition) {
+    private StringBuf format(BigDecimal number, StringBuf result,
+                             FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
         return format(number, result, fieldPosition.getFieldDelegate());
@@ -865,8 +901,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      */
-    StringBuffer format(BigDecimal number, StringBuffer result,
-                                FieldDelegate delegate) {
+    StringBuf format(BigDecimal number, StringBuf result,
+                     FieldDelegate delegate) {
         if (multiplier != 1) {
             number = number.multiply(getBigDecimalMultiplier());
         }
@@ -908,8 +944,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    private StringBuffer format(BigInteger number, StringBuffer result,
-                               FieldPosition fieldPosition) {
+    private StringBuf format(BigInteger number, StringBuf result,
+                             FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
 
@@ -926,8 +962,8 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see java.text.FieldPosition
      */
-    StringBuffer format(BigInteger number, StringBuffer result,
-                               FieldDelegate delegate, boolean formatLong) {
+    StringBuf format(BigInteger number, StringBuf result,
+                     FieldDelegate delegate, boolean formatLong) {
         if (multiplier != 1) {
             number = number.multiply(getBigIntegerMultiplier());
         }
@@ -986,7 +1022,7 @@ public class DecimalFormat extends NumberFormat {
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
         CharacterIteratorFieldDelegate delegate =
                          new CharacterIteratorFieldDelegate();
-        StringBuffer sb = new StringBuffer();
+        StringBuf sb = StringBufFactory.of();
 
         if (obj instanceof Double || obj instanceof Float) {
             format(((Number)obj).doubleValue(), sb, delegate);
@@ -1779,7 +1815,7 @@ public class DecimalFormat extends NumberFormat {
      * Complete the formatting of a finite number.  On entry, the digitList must
      * be filled in with the correct digits.
      */
-    private StringBuffer subformat(StringBuffer result, FieldDelegate delegate,
+    private StringBuf subformat(StringBuf result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
             int maxFraDigits, int minFraDigits) {
@@ -1821,7 +1857,7 @@ public class DecimalFormat extends NumberFormat {
      * @param maxFraDigits maximum fraction digits
      * @param minFraDigits minimum fraction digits
      */
-    void subformatNumber(StringBuffer result, FieldDelegate delegate,
+    void subformatNumber(StringBuf result, FieldDelegate delegate,
             boolean isNegative, boolean isInteger,
             int maxIntDigits, int minIntDigits,
             int maxFraDigits, int minFraDigits) {
@@ -2108,7 +2144,7 @@ public class DecimalFormat extends NumberFormat {
      * <p>
      * This is used by {@code subformat} to add the prefix/suffix.
      */
-    private void append(StringBuffer result, String string,
+    private void append(StringBuf result, String string,
                         FieldDelegate delegate,
                         FieldPosition[] positions,
                         Format.Field signAttribute) {
@@ -2379,8 +2415,8 @@ public class DecimalFormat extends NumberFormat {
         NumericPosition pos = subparseNumber(text, position, digits, true, isExponent, status);
         position = pos.fullPos;
 
-        // First character after the prefix was un-parseable, should
-        // fail regardless if lenient or strict.
+        // First character after the prefix was un-parseable or parsing integer
+        // only with no integer portion. Should fail regardless if lenient or strict.
         if (position == -1) {
             parsePosition.index = oldStart;
             parsePosition.errorIndex = oldStart;
@@ -2421,8 +2457,8 @@ public class DecimalFormat extends NumberFormat {
             }
 
             // When parsing integer only, index should be int pos
-            // If intPos is 0, the entire value was integer
-            if (isParseIntegerOnly() && pos.intPos > 0) {
+            // If intPos is -1, the entire value was integer and index should be full pos
+            if (isParseIntegerOnly() && pos.intPos != -1) {
                 parsePosition.index = pos.intPos;
             } else {
                 // increment the index by the suffix
@@ -2474,7 +2510,7 @@ public class DecimalFormat extends NumberFormat {
                                    boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
-        int intIndex = 0;
+        int intIndex = -1;
         if (!isExponent && text.regionMatches(position, symbols.getInfinity(), 0,
                 symbols.getInfinity().length())) {
             position += symbols.getInfinity().length();
@@ -2570,6 +2606,10 @@ public class DecimalFormat extends NumberFormat {
                     // Cancel out backup setting (see grouping handler below)
                     backup = -1;
                 } else if (!isExponent && ch == decimal) {
+                    if (isParseIntegerOnly() && startPos == position) {
+                        // Parsing int only with no integer portion, fail
+                        return new NumericPosition(-1, intIndex);
+                    }
                     // Check grouping size on decimal separator
                     if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
                         return new NumericPosition(

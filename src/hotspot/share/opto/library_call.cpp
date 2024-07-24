@@ -2138,12 +2138,12 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_numberOfTrailingZeros_l:  n = new CountTrailingZerosLNode(arg);  break;
   case vmIntrinsics::_bitCount_i:               n = new PopCountINode(          arg);  break;
   case vmIntrinsics::_bitCount_l:               n = new PopCountLNode(          arg);  break;
-  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
-  case vmIntrinsics::_reverse_i:                n = new ReverseINode(0, arg); break;
-  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(0, arg); break;
+  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(nullptr, arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(nullptr, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
