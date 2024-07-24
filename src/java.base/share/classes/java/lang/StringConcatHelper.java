@@ -438,4 +438,5 @@ final class StringConcatHelper {
             throw new AssertionError(e);
         }
     }
+
 }
