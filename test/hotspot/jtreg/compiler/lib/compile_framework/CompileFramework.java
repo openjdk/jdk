@@ -67,15 +67,20 @@ public class CompileFramework {
         printSourceFiles();
 
         List<JavaSourceFromString> javaFiles = new ArrayList<JavaSourceFromString>();
+        List<SourceFile> jasmFiles = new ArrayList<SourceFile>();
         for (SourceFile sourceFile : sourceFiles) {
             switch (sourceFile.kind) {
                 case SourceFile.Kind.JAVA -> { javaFiles.add(new JavaSourceFromString(sourceFile.name, sourceFile.code)); }
-                case SourceFile.Kind.JASM -> {  }
+                case SourceFile.Kind.JASM -> { jasmFiles.add(sourceFile);  }
             }
         }
 
+        compileJasmFiles(jasmFiles);
         compileJavaFiles(javaFiles);
         setUpClassLoader();
+    }
+
+    private void compileJasmFiles(List<SourceFile> jasmFiles) {
     }
 
     private void compileJavaFiles(List<JavaSourceFromString> javaFiles) {
