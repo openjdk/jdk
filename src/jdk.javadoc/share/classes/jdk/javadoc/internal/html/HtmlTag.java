@@ -432,7 +432,7 @@ public enum HtmlTag {
 
     // This class exists to avoid warnings from using parameterized vararg type
     // Map<Attr,AttrKind> in signature of HtmlTag constructor.
-    private static class AttrMap extends EnumMap<HtmlAttr,AttrKind>  {
+    private static class AttrMap extends EnumMap<HtmlAttr,AttrKind> {
         @Serial
         private static final long serialVersionUID = 0;
         AttrMap() {
