@@ -1787,7 +1787,6 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
 }
 
 void C2_MacroAssembler::unordered_reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src) {
-  int vector_len = Assembler::AVX_128bit;
   switch (opcode) {
     case Op_AddReductionVF: addps(dst, src); break;
     case Op_AddReductionVD: addpd(dst, src); break;
