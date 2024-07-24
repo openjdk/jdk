@@ -27,18 +27,25 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
- * @run driver TestFrameworkJavaExample
+ * @run driver comile_framework.examples.TestFrameworkJavaExample
  */
 
-import compiler.lib.ir_framework.*;
-import compiler.lib.compile_framework.*;
+package comile_framework.examples;
 
+import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * This test shows that the IR verification can be done on code compiled by the Compile Framework.
+ * The "@compile" command for JTREG is required so that the TestFramework is compiled, other javac
+ * might not compile it because it is not present in the class, only in the dynamically compiled
+ * code.
+ */
 public class TestFrameworkJavaExample {
 
+    // Generate a source java file as String
     public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
@@ -50,8 +57,14 @@ public class TestFrameworkJavaExample {
         out.println("    }");
         out.println("");
         out.println("    @Test");
-        out.println("    static void test() {");
-        out.println("        throw new RuntimeException(\"xyz\");");
+        out.println("    @IR(counts = {IRNode.LOAD_VECTOR_F, \"> 0\"},");
+        out.println("        applyIfCPUFeatureOr = {\"sse2\", \"true\", \"asimd\", \"true\"})");
+        out.println("    static float[] test() {");
+        out.println("        float[] a = new float[1024*8];");
+        out.println("        for (int i = 0; i < a.length; i++) {");
+        out.println("            a[i]++;");
+        out.println("        }");
+        out.println("        return a;");
         out.println("    }");
         out.println("}");
         out.close();
@@ -59,16 +72,21 @@ public class TestFrameworkJavaExample {
     }
 
     public static void main(String args[]) {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
         String src = generate();
         SourceFile file = new SourceFile("XYZ", src);
-
-        CompileFramework comp = new CompileFramework();
         comp.add(file);
 
+        // Compile the source file.
         comp.compile();
 
+        // Load the compiled class.
         Class c = comp.getClass("XYZ");
 
+        // Invoke the "XYZ.main" method from the compiled and loaded class.
         try {
             c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
         } catch (NoSuchMethodException e) {

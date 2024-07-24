@@ -24,7 +24,7 @@
 package compiler.lib.compile_framework;
 
 import compiler.lib.compile_framework.SourceFile;
-import compiler.lib.compile_framework.CompleFrameworkException;
+import compiler.lib.compile_framework.CompileFrameworkException;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,7 +112,7 @@ public class CompileFramework {
                                      new File(System.getProperty("test.classes")).toURI().toURL()};
             classLoader = URLClassLoader.newInstance(urls, sysLoader);
         } catch (IOException e) {
-            throw new CompleFrameworkException("IOException while creating java files", e);
+            throw new CompileFrameworkException("IOException while creating java files", e);
         }
     }
 

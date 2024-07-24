@@ -26,17 +26,22 @@
  * @summary Example test to use the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver SimpleJavaExample
+ * @run driver comile_framework.examples.SimpleJavaExample
  */
 
-import compiler.lib.compile_framework.*;
+package comile_framework.examples;
 
+import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
+/**
+ * This test shows a simple compilation of java source code, and its invocation.
+ */
 public class SimpleJavaExample {
 
+    // Generate a source java file as String
     public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
@@ -51,16 +56,21 @@ public class SimpleJavaExample {
     }
 
     public static void main(String args[]) {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
         String src = generate();
         SourceFile file = new SourceFile("XYZ", src);
-
-        CompileFramework comp = new CompileFramework();
         comp.add(file);
 
+        // Compile the source file.
         comp.compile();
 
+        // Load the compiled class.
         Class c = comp.getClass("XYZ");
 
+        // Invoke the "XYZ.test" method from the compiled and loaded class.
         Object ret;
         try {
             ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
@@ -72,6 +82,7 @@ public class SimpleJavaExample {
             throw new RuntimeException("Invocation target:", e);
         }
 
+        // Extract return value of invocation, verify its value.
         int i = (int)ret;
         System.out.println("Result of call: " + i);
         if (i != 10) {

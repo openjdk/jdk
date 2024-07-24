@@ -26,12 +26,12 @@ package compiler.lib.compile_framework;
 /**
  * TODO desc
  */
-public class CompleFrameworkException extends RuntimeException {
-    public CompleFrameworkException(String message) {
+public class CompileFrameworkException extends RuntimeException {
+    public CompileFrameworkException(String message) {
         super("Exception in Compile Framework:" + System.lineSeparator() + message);
     }
 
-    public CompleFrameworkException(String message, Throwable e) {
+    public CompileFrameworkException(String message, Throwable e) {
         super("Exception in Compile Framework:" + System.lineSeparator() + message, e);
     }
 }
