@@ -32,24 +32,10 @@ import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
 
-public final class AnnotationImpl implements Annotation, Util.Writable {
-    private final Utf8Entry className;
-    private final List<AnnotationElement> elements;
-
-    public AnnotationImpl(Utf8Entry className,
-                          List<AnnotationElement> elems) {
-        this.className = className;
-        this.elements = List.copyOf(elems);
-    }
-
-    @Override
-    public Utf8Entry className() {
-        return className;
-    }
-
-    @Override
-    public List<AnnotationElement> elements() {
-        return elements;
+public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
+        implements Annotation, Util.Writable {
+    public AnnotationImpl {
+        elements = List.copyOf(elements);
     }
 
     @Override
