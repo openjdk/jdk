@@ -119,7 +119,6 @@ private:
   template <class T>
   inline void arraycopy_update(T* src, size_t count);
 
-  inline void clone_marking(oop src);
   inline void clone_evacuation(oop src);
   inline void clone_update(oop src);
 

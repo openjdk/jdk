@@ -185,8 +185,6 @@ bool ShenandoahBarrierC2Support::verify_helper(Node* in, Node_Stack& phis, Vecto
         }
       } else if (in->Opcode() == Op_ShenandoahLoadReferenceBarrier) {
         if (t == ShenandoahOopStore) {
-          // TODO: Did this only happen when IU barrier was enabled?
-          ShouldNotReachHere();
           return false;
         }
         barriers_used.push(in);
