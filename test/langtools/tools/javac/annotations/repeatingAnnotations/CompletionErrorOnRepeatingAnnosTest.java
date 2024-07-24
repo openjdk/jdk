@@ -43,14 +43,34 @@ public class CompletionErrorOnRepeatingAnnosTest {
 
     public static void main(String... args) throws Exception {
         CompletionErrorOnRepeatingAnnosTest t = new CompletionErrorOnRepeatingAnnosTest();
-        t.testMissingContainerAnno();
+        //t.testMissingContainerAnno();
+        t.testMissingContainerTypeAnno();
+    }
+
+    void testMissingContainerTypeAnno() throws Exception {
+        doTest(
+                """
+                import java.lang.annotation.*;
+                import static java.lang.annotation.RetentionPolicy.*;
+                import static java.lang.annotation.ElementType.*;
+                @Target({TYPE_USE,FIELD}) @Repeatable( As.class) @interface A { }
+                @Target({TYPE_USE,FIELD}) @interface As { A[] value(); }
+                """,
+                """
+                class T {
+                    @A @A String data = "test";
+                }
+                """,
+                List.of(
+                        "T.java:2:5: compiler.err.cant.access: As, (compiler.misc.class.file.not.found: As)",
+                        "T.java:2:8: compiler.err.invalid.repeatable.annotation.no.value: As",
+                        "2 errors"
+                )
+        );
     }
 
     void testMissingContainerAnno() throws Exception {
-        Path base = Paths.get(".");
-        Path src = base.resolve("src");
-        tb.createDirectories(src);
-        tb.writeJavaFiles(src,
+        doTest(
                 """
                 import java.lang.annotation.Repeatable;
                 @Repeatable(As.class)
@@ -58,7 +78,21 @@ public class CompletionErrorOnRepeatingAnnosTest {
                 @interface As {
                     A[] value();
                 }
-                """);
+                """,
+                "@A @A class T {}",
+                List.of(
+                        "T.java:1:1: compiler.err.cant.access: As, (compiler.misc.class.file.not.found: As)",
+                        "T.java:1:4: compiler.err.invalid.repeatable.annotation.no.value: As",
+                        "2 errors"
+                )
+        );
+    }
+
+    private void doTest(String annosSrc, String annotatedSrc, List<String> expectedOutput) throws Exception {
+        Path base = Paths.get(".");
+        Path src = base.resolve("src");
+        tb.createDirectories(src);
+        tb.writeJavaFiles(src, annosSrc);
         Path out = base.resolve("out");
         tb.createDirectories(out);
         new JavacTask(tb)
@@ -67,7 +101,7 @@ public class CompletionErrorOnRepeatingAnnosTest {
                 .run();
         // let's now compile T.java which uses repeated annotations, we want to load the anno classes from the CP
         tb.deleteFiles(src.resolve("A.java"));
-        tb.writeJavaFiles(src, "@A @A class T {}");
+        tb.writeJavaFiles(src, annotatedSrc);
         new JavacTask(tb)
                 .outdir(out)
                 .classpath(out)
@@ -84,12 +118,7 @@ public class CompletionErrorOnRepeatingAnnosTest {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
 
-        List<String> expectedOut = Arrays.asList(
-                "T.java:1:1: compiler.err.cant.access: As, (compiler.misc.class.file.not.found: As)",
-                "T.java:1:4: compiler.err.invalid.repeatable.annotation.no.value: As",
-                "2 errors"
-        );
-        if (!expectedOut.equals(log))
+        if (!expectedOutput.equals(log))
             throw new Exception("expected output not found: " + log);
     }
 }
