@@ -53,7 +53,7 @@ public class GetOwnedMonitorInfoTest {
     private static native boolean hasEventPosted();
 
     private static void jniMonitorEnterAndLetObjectDie() {
-        // The monitor iterator used by GetOwnedMonitorInfo to
+        // The monitor iterator used by GetOwnedMonitorInfo used to
         // assert when an owned monitor with a dead object was found.
         // Inject this situation into this test that performs other
         // GetOwnedMonitorInfo testing.
