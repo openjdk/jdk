@@ -33,7 +33,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class FieldImpl
         extends AbstractElement
-        implements FieldModel {
+        implements FieldModel, Util.Writable {
 
     private final ClassReader reader;
     private final int startPos, endPos, attributesPos;
@@ -78,7 +78,7 @@ public final class FieldImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(reader)) {
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
@@ -86,7 +86,7 @@ public final class FieldImpl
             buf.writeU2(flags().flagsMask());
             buf.writeIndex(fieldName());
             buf.writeIndex(fieldType());
-            buf.writeList(attributes());
+            Util.writeAttributes(buf, attributes());
         }
     }
 
