@@ -1479,7 +1479,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_c_args);
   VMRegPair* out_regs   = NEW_RESOURCE_ARRAY(VMRegPair, total_c_args);
-  BasicType* in_elem_bt = nullptr;
 
   int argc = 0;
   out_sig_bt[argc++] = T_ADDRESS;
