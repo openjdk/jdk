@@ -853,8 +853,6 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #ifdef LINUX
-#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
-
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
   _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)

@@ -80,6 +80,8 @@ class ShenandoahParallelCodeHeapIterator;
 class NativePostCallNop;
 class DeoptimizationScope;
 
+#define DEFAULT_PERFMAP_FILENAME "/tmp/perf-%p.map"
+
 class CodeCache : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
