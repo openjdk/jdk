@@ -117,6 +117,6 @@ class OptionsTest {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
                 assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassFileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEach(ee -> testNoUnstable(path, (ClassFileElement)ee));
     }
 }
