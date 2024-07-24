@@ -1726,11 +1726,18 @@ public:
 
 void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
-  if (workers() -> active_workers() > 1) {
-    // calibrated stride based on number of regions and number of active workers.
-    const size_t calibrated_stride = static_cast<size_t>(
-      ceil(static_cast<float>(heap()->num_regions()) / static_cast<float>(workers()->active_workers())));
-    ShenandoahParallelHeapRegionTask task(blk, calibrated_stride);
+  const uint active_workers = workers() ->active_workers();
+  const uint n_regions = num_regions();
+  size_t stride = ShenandoahParallelRegionStride;
+  if (stride == 0 && active_workers > 1) {
+    // Automatically derive the stride for ShenandoahParallelHeapRegionTask if ShenandoahParallelRegionStride is 0.
+    // There is overhead to orchastrate the worker threads, when num_regions is less than 4096 set stride to 4096 to
+    // not use worker threads to avoid the overhead; otherwise cacluate the stride by num_regions/active_workers
+    // to make sure every worker thread will have same amount of workload.
+    stride = n_regions <= 4096 ? 4096 : checked_cast<size_t>(ceil(static_cast<float>(n_regions) / static_cast<float>(active_workers)));
+  }
+  if (n_regions > stride && active_workers > 1) {
+    ShenandoahParallelHeapRegionTask task(blk, stride);
     workers()->run_task(&task);
   } else {
     heap_region_iterate(blk);
