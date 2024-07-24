@@ -1296,10 +1296,6 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    String suffix = constants[constants.length - 1];
-                    if (suffix == null) {
-                        suffix = "";
-                    }
                     /*
                      * Store init index :
                      *
@@ -1334,6 +1330,10 @@ public final class StringConcatFactory {
                     }
                     cb.lstore(lengthCoderSloat);
 
+                    String suffix = constants[constants.length - 1];
+                    if (suffix == null) {
+                        suffix = "";
+                    }
                     if (!suffix.isEmpty()) {
                         cb.lload(lengthCoderSloat)
                           .ldc((long) suffix.length())
