@@ -2057,11 +2057,11 @@ class MutableBigInteger {
             return new MutableBigInteger[] { sqrt, new MutableBigInteger(x - s * s) };
         }
 
-        // Recursive step (len >= 3)
+        // Recursive step (len >= 4)
 
         final int halfLen = len >> 1;
         // Recursive invocation
-        MutableBigInteger[] sr = sqrtRemZimmermann((halfLen & 1) == 0 ? halfLen : halfLen + 1, true);
+        MutableBigInteger[] sr = sqrtRemZimmermann(len - halfLen, true);
 
         final int blockLen = halfLen >> 1;
         MutableBigInteger dividend = sr[1];
