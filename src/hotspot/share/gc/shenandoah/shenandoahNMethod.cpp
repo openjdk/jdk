@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {
@@ -474,17 +475,26 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
   }
 }
 
-ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table, size_t expected_workers) :
-  _table(table), _table_snapshot(nullptr), _workers_expected(expected_workers), _workers_started(0), _workers_finished(0) {
-}
+ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table,
+                                                                         uint expected_workers) :
+  _table(table),
+  _table_snapshot(nullptr),
+  _expected_workers(expected_workers),
+  _started_workers(0),
+  _finished_workers(0) {}
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
+  // Cannot safepoint when iteration is running, because this can cause deadlocks
+  // with other threads waiting on iteration to be over.
+  NoSafepointVerifier nsv;
+
   // First worker initializes the iterator. Others have to wait on the lock until
   // initialization is complete.
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    if (++_workers_started == 1) {
-      _workers_finished = 0;
+    uint id = ++_started_workers;
+    assert(id <= _expected_workers, "Unexpected worker ID, reused iterator?");
+    if (id == 1) {
       _table_snapshot = _table->snapshot_for_iteration();
     }
   }
@@ -494,8 +504,9 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
   // Last worker shuts down the iterator and notifies the waiters.
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    if (++_workers_finished == _workers_expected) {
-      _workers_started = 0;
+    uint id = ++_finished_workers;
+    assert(id <= _expected_workers, "Unexpected worker ID, reused iterator?");
+    if (id == _expected_workers) {
       _table->finish_iteration(_table_snapshot);
       CodeCache_lock->notify_all();
     }

@@ -95,15 +95,13 @@ public:
 
 class ShenandoahDisarmNMethodsTask : public WorkerTask {
 private:
-  size_t                              _expected_workers;
   ShenandoahDisarmNMethodClosure      _cl;
   ShenandoahConcurrentNMethodIterator _iterator;
 
 public:
   ShenandoahDisarmNMethodsTask() :
     WorkerTask("Shenandoah Disarm NMethods"),
-    _expected_workers(ShenandoahHeap::heap()->workers()->active_workers()),
-    _iterator(ShenandoahCodeRoots::table(), _expected_workers) {
+    _iterator(ShenandoahCodeRoots::table(), ShenandoahHeap::heap()->workers()->active_workers()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
   }
 

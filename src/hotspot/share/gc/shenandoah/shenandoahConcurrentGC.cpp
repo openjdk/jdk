@@ -47,7 +47,6 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/safepointVerifiers.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -754,7 +753,7 @@ public:
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
-  size_t                                     _expected_workers;
+  uint                                 const _expected_workers;
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
   // Roots related to concurrent class unloading
@@ -863,7 +862,7 @@ public:
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
-  size_t                                        _expected_workers;
+  uint                                    const _expected_workers;
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/>
@@ -902,7 +901,6 @@ public:
     if (!ShenandoahHeap::heap()->unload_classes()) {
       ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
       ShenandoahEvacUpdateCodeCacheClosure cl;
-
       _nmethod_itr.nmethods_do(&cl);
     }
   }
