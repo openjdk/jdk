@@ -1208,20 +1208,27 @@ public final class StringConcatFactory {
          *     String str6 = stringOf(arg6);
          *     String str7 = stringOf(arg7);
          *
-         *     lengthCoder = mix(mix(mix(mix(mix(mix(mix(mix(lengthCoder, arg0), arg1), arg3), arg4), str5), str6), str7)
+         *     lengthCoder = mix(mix(mix(mix(mix(mix(mix(mix(lengthCoder, arg0), arg1), arg3), arg4), str5), str6), str7);
          *
          *     String suffix = constant9;
          *     lengthCoder -= suffix.length();
          *     byte[] buf = newArray(suffix, lengthCoder);
          *
-         *     lengthCoder = prepend(lengthCoder, buf, str7, constant7);
-         *     lengthCoder = prepend(lengthCoder, buf, str6, constant6);
-         *     lengthCoder = prepend(lengthCoder, buf, str5, constant5);
-         *     lengthCoder = prepend(lengthCoder, buf, arg4, constant4);
-         *     lengthCoder = prepend(lengthCoder, buf, arg3, constant3);
-         *     lengthCoder = prepend(lengthCoder, buf, arg2, constant2);
-         *     lengthCoder = prepend(lengthCoder, buf, arg1, constant1);
-         *     lengthCoder = prepend(lengthCoder, buf, arg0, constant0);
+         *     lengthCoder = prepend(
+         *                   prepend(
+         *                   prepend(
+         *                   prepend(
+         *                   prepend(
+         *                   prepend(
+         *                   prepend(
+         *                   prepend(lengthCoder, buf, str7, constant7),
+         *                                        buf, str6, constant6),
+         *                                        buf, str5, constant5),
+         *                                        buf, arg4, constant4),
+         *                                        buf, arg3, constant3),
+         *                                        buf, arg2, constant2),
+         *                                        buf, arg1, constant1),
+         *                                        buf, arg0, constant0);
          *
          *     return newArray(buf, lengthCoder);
          * }
@@ -1350,16 +1357,16 @@ public final class StringConcatFactory {
                       .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", NEW_ARRAY_SUFFIX)
                       .astore(bufSlot);
 
+                    /*
+                     * prepend arguments :
+                     *  lengthCoder = prepend(prepend(prepend(lengthCoder, buf, arg0), buf, arg1), ...)
+                     */
                     cb.lload(lengthCoderSloat);
                     for (int i = paramCount - 1; i >= 0; i--) {
                         int paramSlot = paramSlots[i];
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
 
-                        /*
-                         * prepend arguments :
-                         *  lengthCoder = prepend(prepend(prepend(lengthCoder, buf, arg0), buf, arg1), ...)
-                         */
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
                             methodTypeDesc = PREPEND_int;
@@ -1384,6 +1391,7 @@ public final class StringConcatFactory {
                     }
                     cb.lstore(lengthCoderSloat);
 
+                    // return StringConcatHelper.newString(buf, lengthCoder));
                     cb.aload(bufSlot)
                       .lload(lengthCoderSloat)
                       .invokestatic(CD_StringConcatHelper, "newString", NEW_STRING)
