@@ -1734,7 +1734,7 @@ public class Socket implements java.io.Closeable {
      * <p>
      * Once a socket has been closed, it is not available for further networking
      * use (i.e. can't be reconnected or rebound) and several of the methods defined
-     * by this class will throw an exception when invoked on the closed socket. A new
+     * by this class will throw an exception if invoked on the closed socket. A new
      * socket needs to be created.
      *
      * <p> Closing this socket will also close the socket's
