@@ -1257,8 +1257,8 @@ public final class StringConcatFactory {
                         paramSlotsTotalSize += kind.slotSize();
                     }
 
-                    int lengthCoderSloat = paramSlotsTotalSize;
-                    int bufSlot          = paramSlotsTotalSize + 2;
+                    int lengthCoderSlot = paramSlotsTotalSize;
+                    int bufSlot         = paramSlotsTotalSize + 2;
 
                     /*
                      * store string variants:
@@ -1335,17 +1335,17 @@ public final class StringConcatFactory {
                         cb.loadLocal(kind, paramSlot)
                           .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
                     }
-                    cb.lstore(lengthCoderSloat);
+                    cb.lstore(lengthCoderSlot);
 
                     String suffix = constants[constants.length - 1];
                     if (suffix == null) {
                         suffix = "";
                     }
                     if (!suffix.isEmpty()) {
-                        cb.lload(lengthCoderSloat)
+                        cb.lload(lengthCoderSlot)
                           .ldc((long) suffix.length())
                           .lsub()
-                          .lstore(lengthCoderSloat);
+                          .lstore(lengthCoderSlot);
                     }
 
                     /*
@@ -1353,7 +1353,7 @@ public final class StringConcatFactory {
                      *  buf = StringConcatHelper.newArray(suffix, lengthCoder)
                      */
                     cb.ldc(suffix)
-                      .lload(lengthCoderSloat)
+                      .lload(lengthCoderSlot)
                       .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", NEW_ARRAY_SUFFIX)
                       .astore(bufSlot);
 
@@ -1361,7 +1361,7 @@ public final class StringConcatFactory {
                      * prepend arguments :
                      *  lengthCoder = prepend(prepend(prepend(lengthCoder, buf, arg0), buf, arg1), ...)
                      */
-                    cb.lload(lengthCoderSloat);
+                    cb.lload(lengthCoderSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
                         int paramSlot = paramSlots[i];
                         Class<?> cl = args.parameterType(i);
@@ -1389,11 +1389,11 @@ public final class StringConcatFactory {
                           .ldc(constant)
                           .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
-                    cb.lstore(lengthCoderSloat);
+                    cb.lstore(lengthCoderSlot);
 
                     // return StringConcatHelper.newString(buf, lengthCoder));
                     cb.aload(bufSlot)
-                      .lload(lengthCoderSloat)
+                      .lload(lengthCoderSlot)
                       .invokestatic(CD_StringConcatHelper, "newString", NEW_STRING)
                       .areturn();
                 }
