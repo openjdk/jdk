@@ -1202,7 +1202,7 @@ public class Font implements java.io.Serializable
             if (cause instanceof FontFormatException) {
                 throw (FontFormatException)cause;
             }
-            throw new IOException("Problem reading font data.", t);
+            throw new IOException("Problem reading font data.");
         }
     }
 
