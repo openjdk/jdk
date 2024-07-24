@@ -1101,7 +1101,7 @@ uint Node::size(PhaseRegAlloc *ra_) const { return 0; }
 //------------------------------CFG Construction-------------------------------
 // Nodes that end basic blocks, e.g. IfTrue/IfFalse, JumpProjNode, Root,
 // Goto and Return.
-const Node *Node::is_block_proj() const { return 0; }
+const Node *Node::is_block_proj() const { return nullptr; }
 
 // Minimum guaranteed type
 const Type *Node::bottom_type() const { return Type::BOTTOM; }

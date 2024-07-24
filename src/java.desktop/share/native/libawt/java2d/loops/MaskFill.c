@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -467,7 +467,7 @@ storePgram(EdgeInfo *pLeftEdge, EdgeInfo *pRightEdge,
 #define INSERT_ACCUM(pACCUM, IMIN, IMAX, X0, Y0, X1, Y1, CX1, CX2, MULT) \
     do { \
         jdouble xmid = ((X0) + (X1)) * 0.5; \
-        if (xmid <= (CX2)) { \
+        if (xmid < (CX2)) { \
             jdouble sliceh = ((Y1) - (Y0)); \
             jdouble slicearea; \
             jint i; \
@@ -556,7 +556,7 @@ fillAAPgram(NativePrimitive *pPrim, SurfaceDataRasInfo *pRasInfo,
     jint cy2 = pRasInfo->bounds.y2;
     jint width = cx2 - cx1;
     EdgeInfo edges[4];
-    jfloat localaccum[MASK_BUF_LEN + 1];
+    jfloat localaccum[MASK_BUF_LEN + 2];
     jfloat *pAccum;
 
     if (!storePgram(edges + 0, edges + 2,
@@ -568,12 +568,12 @@ fillAAPgram(NativePrimitive *pPrim, SurfaceDataRasInfo *pRasInfo,
     }
 
     pAccum = ((width > MASK_BUF_LEN)
-              ? malloc((width + 1) * sizeof(jfloat))
+              ? malloc((width + 2) * sizeof(jfloat))
               : localaccum);
     if (pAccum == NULL) {
         return;
     }
-    memset(pAccum, 0, (width+1) * sizeof(jfloat));
+    memset(pAccum, 0, (width + 2) * sizeof(jfloat));
 
     while (cy1 < cy2) {
         jint lmin, lmax, rmin, rmax;
@@ -794,7 +794,7 @@ drawAAPgram(NativePrimitive *pPrim, SurfaceDataRasInfo *pRasInfo,
     jint cy2 = pRasInfo->bounds.y2;
     jint width = cx2 - cx1;
     EdgeInfo edges[8];
-    jfloat localaccum[MASK_BUF_LEN + 1];
+    jfloat localaccum[MASK_BUF_LEN + 2];
     jfloat *pAccum;
 
     if (!storePgram(edges + 0, edges + 6,
@@ -815,12 +815,12 @@ drawAAPgram(NativePrimitive *pPrim, SurfaceDataRasInfo *pRasInfo,
                JNI_TRUE);
 
     pAccum = ((width > MASK_BUF_LEN)
-              ? malloc((width + 1) * sizeof(jfloat))
+              ? malloc((width + 2) * sizeof(jfloat))
               : localaccum);
     if (pAccum == NULL) {
         return;
     }
-    memset(pAccum, 0, (width+1) * sizeof(jfloat));
+    memset(pAccum, 0, (width + 2) * sizeof(jfloat));
 
     while (cy1 < cy2) {
         jint lmin, lmax, rmin, rmax;
