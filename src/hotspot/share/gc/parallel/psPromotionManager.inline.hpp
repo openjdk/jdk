@@ -207,6 +207,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
             _young_gen_is_full = true;
           }
         }
+        if (new_obj == nullptr && !_young_gen_is_full && !_young_gen_has_alloc_failure) {
+          _young_gen_has_alloc_failure = true;
+        }
       }
     }
   }

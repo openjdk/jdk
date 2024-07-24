@@ -181,6 +181,23 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
   return result;
 }
 
+void PSOldGen::try_expand_till_size(size_t live_bytes) {
+  // Leaving room for a minimal delta
+  size_t target_capacity_bytes = live_bytes + SpaceAlignment;
+  if (target_capacity_bytes <= capacity_in_bytes()) {
+    // Current capacity is enough
+    return;
+  }
+
+  if (capacity_in_bytes() == max_gen_size()) {
+    // Already at max size
+    return;
+  }
+
+  size_t to_expand_bytes = target_capacity_bytes - capacity_in_bytes();
+  expand(to_expand_bytes);
+}
+
 bool PSOldGen::expand(size_t bytes) {
 #ifdef ASSERT
   if (!Thread::current()->is_VM_thread()) {
@@ -287,14 +304,10 @@ void PSOldGen::complete_loaded_archive_space(MemRegion archive_space) {
   }
 }
 
-void PSOldGen::resize(size_t desired_free_space) {
+void PSOldGen::resize(size_t desired_capacity) {
   const size_t alignment = virtual_space()->alignment();
   const size_t size_before = virtual_space()->committed_size();
-  size_t new_size = used_in_bytes() + desired_free_space;
-  if (new_size < used_in_bytes()) {
-    // Overflowed the addition.
-    new_size = max_gen_size();
-  }
+  size_t new_size = desired_capacity;
   // Adjust according to our min and max
   new_size = clamp(new_size, min_gen_size(), max_gen_size());
 
@@ -303,10 +316,10 @@ void PSOldGen::resize(size_t desired_free_space) {
   const size_t current_size = capacity_in_bytes();
 
   log_trace(gc, ergo)("AdaptiveSizePolicy::old generation size: "
-    "desired free: %zu used: %zu"
-    " new size: %zu current size %zu"
+    "used: %zu"
+    " capacity %zu -> %zu"
     " gen limits: %zu / %zu",
-    desired_free_space, used_in_bytes(), new_size, current_size,
+    used_in_bytes(), current_size, new_size,
     max_gen_size(), min_gen_size());
 
   if (new_size == current_size) {

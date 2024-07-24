@@ -23,6 +23,7 @@
  */
 
 #include "gc/parallel/psVirtualspace.hpp"
+#include "logging/log.hpp"
 #include "memory/reservedSpace.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -80,6 +81,8 @@ bool PSVirtualSpace::expand_by(size_t bytes) {
          os::commit_memory(base_addr, bytes, alignment(), !ExecMem);
   if (result) {
     _committed_high_addr += bytes;
+  } else {
+    log_warning(gc)("expand_by commit %zu bytes failed", bytes);
   }
 
   return result;
