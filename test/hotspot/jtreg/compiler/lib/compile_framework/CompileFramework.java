@@ -54,7 +54,7 @@ public class CompileFramework {
 
     public void printSourceFiles() {
         for (SourceFile sourceFile : sourceFiles) {
-            System.out.println("SourceFile: " + sourceFile.name);
+            System.out.println("SourceFile: " + sourceFile.name + " " + sourceFile.kind.name().toLowerCase());
             System.out.println(sourceFile.code);
         }
     }
@@ -68,8 +68,22 @@ public class CompileFramework {
 
         List<JavaSourceFromString> javaFiles = new ArrayList<JavaSourceFromString>();
         for (SourceFile sourceFile : sourceFiles) {
-            javaFiles.add(new JavaSourceFromString(sourceFile.name, sourceFile.code));
+            switch (sourceFile.kind) {
+                case SourceFile.Kind.JAVA -> { javaFiles.add(new JavaSourceFromString(sourceFile.name, sourceFile.code)); }
+                case SourceFile.Kind.JASM -> {  }
+            }
         }
+
+        compileJavaFiles(javaFiles);
+        setUpClassLoader();
+    }
+
+    private void compileJavaFiles(List<JavaSourceFromString> javaFiles) {
+        if (javaFiles.size() == 0) {
+            System.out.println("No java files to compute.");
+            return;
+        }
+        System.out.println("Compiling Java files: " + javaFiles.size());
 
         // Get compiler with diagnostics.
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -101,9 +115,10 @@ public class CompileFramework {
             System.out.println("Compilation failed.");
             throw new CompileFrameworkException("Compilation failed.");
         }
+        System.out.println("Java files compiled.");
+    }
 
-        System.out.println("Compilation successfull, creating ClassLoader...");
-
+    private void setUpClassLoader() {
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
 
         try {
