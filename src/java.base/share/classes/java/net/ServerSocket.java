@@ -736,6 +736,9 @@ public class ServerSocket implements java.io.Closeable {
      * <p> If this socket has an associated channel then the channel is closed
      * as well.
      *
+     * <p>Once closed, several of the methods defined by this class will throw
+     * an exception if invoked on the closed socket.
+     *
      * @throws     IOException  if an I/O error occurs when closing the socket.
      */
     public void close() throws IOException {
