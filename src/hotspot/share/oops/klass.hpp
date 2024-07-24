@@ -397,7 +397,7 @@ protected:
 
   bool search_secondary_supers(Klass* k) const;
   bool lookup_secondary_supers_table(Klass *k) const;
-  bool linear_search_secondary_supers(Klass* k) const;
+  bool linear_search_secondary_supers(const Klass* k) const;
   bool fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const;
 
  public:

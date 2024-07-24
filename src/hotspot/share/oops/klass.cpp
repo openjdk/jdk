@@ -163,7 +163,7 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::linear_search_secondary_supers(Klass* k) const {
+bool Klass::linear_search_secondary_supers(const Klass* k) const {
   // Scan the array-of-objects for a match
   // FIXME: We could do something smarter here, maybe a vectorized
   // comparison or a binary search, but is that worth any added
@@ -171,9 +171,6 @@ bool Klass::linear_search_secondary_supers(Klass* k) const {
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      if (UseSecondarySupersCache) {
-        ((Klass*)this)->set_secondary_super_cache(k);
-      }
       return true;
     }
   }
@@ -184,6 +181,10 @@ bool Klass::linear_search_secondary_supers(Klass* k) const {
 // occupancy bitmap rotated such that Bit 1 is the next bit to test,
 // search for k.
 bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
+  if (rotated_bitmap == SECONDARY_SUPERS_BITMAP_FULL) {
+    return linear_search_secondary_supers(k);
+  }
+
   // This is conventional linear probing, but instead of terminating
   // when a null entry is found in the table, we maintain a bitmap
   // in which a 0 indicates missing entries.

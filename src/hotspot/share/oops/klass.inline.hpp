@@ -80,10 +80,6 @@ inline ByteSize Klass::vtable_start_offset() {
 inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   uintx bitmap = _bitmap;
 
-  if (bitmap == SECONDARY_SUPERS_BITMAP_FULL) {
-    return linear_search_secondary_supers(k);
-  }
-
   constexpr int highest_bit_number = SECONDARY_SUPERS_TABLE_SIZE - 1;
   uint8_t slot = k->_hash_slot;
   uintx shifted_bitmap = bitmap << (highest_bit_number - slot);
