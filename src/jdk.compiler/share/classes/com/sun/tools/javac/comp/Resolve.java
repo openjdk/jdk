@@ -31,6 +31,7 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.Types.CompilerInternalException;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
@@ -79,6 +80,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import static com.sun.tools.javac.main.Option.DOE;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.util.Iterators.createCompoundIterator;
 
@@ -112,6 +114,7 @@ public class Resolve {
     private final boolean allowYieldStatement;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
+    final boolean dumpStacktraceOnError;
 
     WriteableScope polymorphicSignatureScope;
 
@@ -149,6 +152,7 @@ public class Resolve {
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         dumpMethodReferenceSearchResults = options.isSet("debug.dumpMethodReferenceSearchResults");
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -584,7 +588,7 @@ public class Resolve {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
                  // not enough args
-                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))));
+                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))), dumpStacktraceOnError);
             // Check type arguments are within bounds
             List<Type> formals = pmt.tvars;
             List<Type> actuals = typeargtypes;
@@ -593,7 +597,7 @@ public class Resolve {
                                                 pmt.tvars, typeargtypes);
                 for (; bounds.nonEmpty(); bounds = bounds.tail) {
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
-                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)));
+                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)), dumpStacktraceOnError);
                     }
                 }
                 formals = formals.tail;
@@ -842,7 +846,7 @@ public class Resolve {
             private static final long serialVersionUID = 0;
 
             SharedInapplicableMethodException() {
-                super(null);
+                super(null, Resolve.this.dumpStacktraceOnError);
             }
 
             SharedInapplicableMethodException setMessage(JCDiagnostic details) {
@@ -1036,7 +1040,7 @@ public class Resolve {
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            throw new InapplicableMethodException(details);
+            throw new InapplicableMethodException(details, Resolve.this.dumpStacktraceOnError);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -1392,12 +1396,13 @@ public class Resolve {
         }
     }
 
-    public static class InapplicableMethodException extends RuntimeException {
+    public static class InapplicableMethodException extends CompilerInternalException {
         private static final long serialVersionUID = 0;
 
         transient JCDiagnostic diagnostic;
 
-        InapplicableMethodException(JCDiagnostic diag) {
+        InapplicableMethodException(JCDiagnostic diag, boolean dumpStackTraceOnError) {
+            super(dumpStackTraceOnError);
             this.diagnostic = diag;
         }
 
@@ -1407,7 +1412,6 @@ public class Resolve {
 
         @Override
         public Throwable fillInStackTrace() {
-            // This is an internal exception; the stack trace is irrelevant.
             return this;
         }
     }

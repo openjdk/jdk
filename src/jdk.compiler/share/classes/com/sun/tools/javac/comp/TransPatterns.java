@@ -79,6 +79,8 @@ import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.VOID;
+import static com.sun.tools.javac.main.Option.DOE;
+
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -109,6 +111,7 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Options;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
@@ -134,6 +137,7 @@ public class TransPatterns extends TreeTranslator {
     private final Preview preview;
     private TreeMaker make;
     private Env<AttrContext> env;
+    private final boolean dumpStacktraceOnError;
 
     BindingContext bindingContext = new BindingContext() {
         @Override
@@ -194,6 +198,8 @@ public class TransPatterns extends TreeTranslator {
         names = Names.instance(context);
         target = Target.instance(context);
         preview = Preview.instance(context);
+        Options options = Options.instance(context);
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     @Override
@@ -786,7 +792,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types);
+            super(types, TransPatterns.this.dumpStacktraceOnError);
         }
 
         @Override

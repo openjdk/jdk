@@ -64,6 +64,7 @@ import static com.sun.tools.javac.comp.LambdaToMethod.LambdaSymbolKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
+import static com.sun.tools.javac.main.Option.DOE;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
 import javax.lang.model.element.ElementKind;
@@ -120,6 +121,9 @@ public class LambdaToMethod extends TreeTranslator {
     /** deduplicate lambda implementation methods */
     private final boolean deduplicateLambdas;
 
+    /** dump stacktrace on error */
+    private final boolean dumpStacktraceOnError;
+
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
 
@@ -166,6 +170,7 @@ public class LambdaToMethod extends TreeTranslator {
         debugLinesOrVars = lineDebugInfo || varDebugInfo;
         verboseDeduplication = options.isSet("debug.dumpLambdaToMethodDeduplication");
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
     // </editor-fold>
 
@@ -1796,7 +1801,7 @@ public class LambdaToMethod extends TreeTranslator {
         boolean allowIllegalSignatures;
 
         L2MSignatureGenerator(boolean allowIllegalSignatures) {
-            super(types);
+            super(types, LambdaToMethod.this.dumpStacktraceOnError);
             this.allowIllegalSignatures = allowIllegalSignatures;
         }
 

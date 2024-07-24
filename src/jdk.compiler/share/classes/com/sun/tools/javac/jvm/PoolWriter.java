@@ -279,7 +279,7 @@ public class PoolWriter {
         ByteBuffer sigbuf = new ByteBuffer();
 
         SharedSignatureGenerator(Types types) {
-            super(types);
+            super(types, PoolWriter.this.types.dumpStacktraceOnError);
         }
 
         /**

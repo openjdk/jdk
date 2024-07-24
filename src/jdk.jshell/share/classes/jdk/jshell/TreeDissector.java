@@ -246,7 +246,7 @@ class TreeDissector {
         StringBuilder sb = new StringBuilder();
 
         TDSignatureGenerator(Types types) {
-            super(types);
+            super(types, types.dumpStacktraceOnError);
         }
 
         @Override

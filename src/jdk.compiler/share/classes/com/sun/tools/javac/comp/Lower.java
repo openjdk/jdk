@@ -62,6 +62,8 @@ import com.sun.tools.javac.tree.JCTree.JCBreak;
 import com.sun.tools.javac.tree.JCTree.JCCase;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
+
+import static com.sun.tools.javac.main.Option.DOE;
 import static com.sun.tools.javac.tree.JCTree.JCOperatorExpression.OperandPos.LEFT;
 import com.sun.tools.javac.tree.JCTree.JCSwitchExpression;
 
@@ -107,6 +109,7 @@ public class Lower extends TreeTranslator {
     private final boolean useMatchException;
     private final HashMap<TypePairs, String> typePairToName;
     private int variableIndex = 0;
+    private final boolean dumpStacktraceOnError;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -139,6 +142,7 @@ public class Lower extends TreeTranslator {
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
         typePairToName = TypePairs.initialize(syms);
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     /** The currently enclosing class.
@@ -2629,7 +2633,7 @@ public class Lower extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         LowerSignatureGenerator() {
-            super(types);
+            super(types, Lower.this.dumpStacktraceOnError);
         }
 
         @Override
