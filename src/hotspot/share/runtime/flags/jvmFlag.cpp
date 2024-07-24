@@ -31,6 +31,7 @@
 #include "runtime/flags/jvmFlagAccess.hpp"
 #include "runtime/flags/jvmFlagLookup.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/stringUtils.hpp"
 

@@ -25,7 +25,6 @@
 #ifndef SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 #define SHARE_RUNTIME_FLAGS_JVMFLAG_HPP
 
-#include "utilities/bitMap.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
