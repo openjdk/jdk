@@ -87,7 +87,7 @@ public class GetOwnedMonitorInfoTest {
                                    + Thread.currentThread().getName());
 
                 // Extra unmount helps to reproduce 8334085.
-                // Two sub-sequential thaws are needed in that sceanrio.
+                // Two sub-sequential thaws are needed in that scenario.
                 Thread.yield();
                 jniMonitorEnterAndLetObjectDie();
             }
