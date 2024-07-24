@@ -128,12 +128,6 @@ public sealed interface CodeBuilder
         extends ClassFileBuilder<CodeElement, CodeBuilder>
         permits CodeBuilder.BlockCodeBuilder, ChainedCodeBuilder, TerminalCodeBuilder, NonterminalCodeBuilder {
 
-    /**
-     * {@return the {@link CodeModel} representing the method body being transformed,
-     * if this code builder represents the transformation of some {@link CodeModel}}
-     */
-    Optional<CodeModel> original();
-
     /** {@return a fresh unbound label} */
     Label newLabel();
 
