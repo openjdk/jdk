@@ -2171,9 +2171,9 @@ void ClassFileParser::copy_method_annotations(ConstMethod* cm,
   }
 
   if (annotation_default_length > 0) {
-	  a = allocate_annotations(annotation_default,
-                               annotation_default_length,
-                               CHECK);
+    a = allocate_annotations(annotation_default,
+                             annotation_default_length,
+                             CHECK);
     cm->set_default_annotations(a);
   }
 
