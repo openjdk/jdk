@@ -2997,7 +2997,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
           if (abs_stride_is_one) {
             // If the main loop becomes empty and the array access for this range check is sunk out of the loop, the index
-            // for the array access with be set to the index value of the final iteration which could be out of loop.
+            // for the array access will be set to the index value of the final iteration which could be out of loop.
             // Add an assert predicate for that corner case. The final iv is computed from LoopLimit which is the
             // LoopNode::limit() only if abs(stride) == 1 otherwise the computation depends on LoopNode::init_trip() as
             // well. When LoopLimit only depends on LoopNode::limit(), there are cases where the zero trip guard for the
