@@ -171,9 +171,6 @@ bool Klass::linear_search_secondary_supers(Klass* k) const {
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      if (UseSecondarySupersCache) {
-        ((Klass*)this)->set_secondary_super_cache(k);
-      }
       return true;
     }
   }
