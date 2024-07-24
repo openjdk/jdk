@@ -41,8 +41,10 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code element_value} structure, or the value of a key-value
- * pair of an annotation, as defined in {@jvms 4.7.16.1}. This should be
- * compared using the {@link Object#equals(Object) equals} method.
+ * pair of an annotation, as defined in {@jvms 4.7.16.1}.
+ * <p>
+ * Two {@code AnnotationValue} objects should be compared using the {@link
+ * Object#equals(Object) equals} method.
  *
  * @see Annotation
  * @see AnnotationElement

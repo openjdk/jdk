@@ -57,11 +57,29 @@ import static java.lang.classfile.ClassFile.TAT_THROWS;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code type_annotation} structure, as defined in {@jvms 4.7.20}.
- * Each instance of this structure corresponds to a <i>{@linkplain #annotation()
- * type annotation}</i> ({@jls 9.7.4}) in Java source code, and additionally
- * encodes information to locate {@linkplain #targetInfo the type} and
- * {@linkplain #targetPath the annotated part} of the type.
+ * Models a {@code type_annotation} structure ({@jvms 4.7.20}).
+ * <p>
+ * Each {@code type_annotation} structure denotes an annotation that applies
+ * to a type in Java source code ({@jls 9.7.4}). The structure indicates the
+ * interface of the annotation and a set of element-value pairs; this
+ * information is exposed by the {@link #annotation() annotation()} method.
+ * <p>
+ * The {@code type_annotation} structure is a superset of the {@code annotation}
+ * structure ({@jvms 4.7.16}),
+ * so a {@code TypeAnnotation} exposes more information about its location than
+ * an {@code Annotation}.
+ * In particular, the {@code type_annotation} structure indicates:
+ * <ul>
+ * <li>which of the <i>n</i> types in a declaration or expression is the specific
+ * type to which the annotation applies. This information is exposed by
+ * {@link #targetInfo() targetInfo()}.
+ * <li>whether the annotation applies to a type or to part of a type (such as a
+ * type argument in a parameterized type). This information is exposed by {@link
+ * #targetPath() targetPath()}.
+ * </ul>
+ * <p>
+ * Two {@code TypeAnnotation} objects should be compared using the {@link
+ * Object#equals(Object) equals} method.
  *
  * @see Annotation
  * @see RuntimeVisibleTypeAnnotationsAttribute
@@ -181,9 +199,10 @@ public sealed interface TypeAnnotation
     List<TypePathComponent> targetPath();
 
     /**
-     * {@return the annotation applied to the part given by {@link #targetPath()}}
-     * This models items in the {@code type_annotation} structure that are same as those
-     * in the {@code annotation} structure.
+     * {@return the annotation applied to the part indicated by {@link #targetPath()}}
+     * This models the interface of the annotation and the set of element-value pairs,
+     * the subset of the {@code type_annotation} structure that is identical to the
+     * {@code annotation} structure.
      */
     Annotation annotation();
 

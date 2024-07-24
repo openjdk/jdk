@@ -24,10 +24,13 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -37,28 +40,44 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an {@code annotation} structure, as defined in {@jvms 4.7.16}.
+ * Models an {@code annotation} structure ({@jvms 4.7.16}) or part of a {@code
+ * type_annotation} structure ({@jvms 4.7.20}).
  * <p>
- * Each {@code annotation} structure denotes an annotation which is applied to a
- * construct in Java source code ({@jls 9.7.4}). The structure indicates the
- * interface of the annotation and a set of element-value pairs. This should be
- * compared using the {@link Object#equals(Object) equals} method.
+ * Each {@code annotation} structure denotes an annotation that applies to a
+ * construct in Java source code ({@jls 9.7.4}).
+ * Similarly, each {@code type_annotation} structure denotes an annotation
+ * that applies to a type in Java source code.
+ * In either case, the structure indicates the interface of the annotation
+ * and a set of element-value pairs.
  * <p>
- * This structure does not indicate the construct on which the structure is applied.
- * By its location in the class file, this structure may represent:
- * <ul><li>a <i>declaration annotation</i> on a class, method, or field declaration,
- * encoded as an item in a {@link RuntimeVisibleAnnotationsAttribute} or
- * {@link RuntimeInvisibleAnnotationsAttribute} on a class, field, or method;
- * <li>a <i>declaration annotation</i> on a method parameter declaration, encoded
- * as an item in a {@link RuntimeVisibleParameterAnnotationsAttribute} or
- * {@link RuntimeInvisibleParameterAnnotationsAttribute} on a method;
- * <li>a <i>type annotation</i>, encoded as {@linkplain TypeAnnotation#annotation
- * items} in the {@link TypeAnnotation type_annotation} structure that are the
- * same as those from the {@code annotation} structure.
- * <li>an annotation {@linkplain AnnotationValue.OfAnnotation element value}
- * whose element type is an annotation type ({@jls 9.7.1}), encoded as an
- * {@code annotation_value} in the {@code element_value} structure ({@jvms 4.7.16.1})
+ * The location in the class file of an {@code annotation} structure or a
+ * {@code type_annotation} structure,
+ * respectively, indicates the source code construct or type, respectively, to
+ * which the annotation applies.
+ * Accordingly, an {@code Annotation} may represent:
+ * <ul>
+ * <li>A <i>declaration annotation</i> on a class, field, method, or record
+ * component declaration, when an {@code annotation} structure appears in the
+ * {@link RuntimeVisibleAnnotationsAttribute} or
+ * {@link RuntimeInvisibleAnnotationsAttribute} of a class, field, method, or
+ * record component.
+ * <li>A <i>declaration annotation</i> on a method parameter declaration, when
+ * an {@code annotation} structure appears in the
+ * {@link RuntimeVisibleParameterAnnotationsAttribute} or
+ * {@link RuntimeInvisibleParameterAnnotationsAttribute} of a method.
+ * <li>The {@linkplain AnnotationValue.OfAnnotation element value} of an
+ * annotation, where the type of the element value is itself an annotation
+ * interface. In this case, the {@code annotation} structure appears as the
+ * {@code annotation_value} item of an {@code element_value} structure
+ * ({@jvms 4.7.16.1}).
+ * <li>A <i>type annotation</i>, when a {@code type_annotation} structure
+ * appears in the {@link RuntimeVisibleTypeAnnotationsAttribute}
+ * or {@link RuntimeInvisibleTypeAnnotationsAttribute} of a class, field,
+ * method, {@link CodeAttribute}, or record component.
  * </ul>
+ * <p>
+ * Two {@code Annotation} objects should be compared using the {@link
+ * Object#equals(Object) equals} method.
  *
  * @see AnnotationElement
  * @see AnnotationValue
