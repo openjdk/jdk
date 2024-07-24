@@ -1701,7 +1701,7 @@ private:
   shenandoah_padding(1);
 
 public:
-  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk, size_t stride = ShenandoahParallelRegionStride) :
+  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk, size_t stride) :
           WorkerTask("Shenandoah Parallel Region Operation"),
           _heap(ShenandoahHeap::heap()), _blk(blk), _stride(stride), _index(0) {}
 
