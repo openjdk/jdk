@@ -23,38 +23,27 @@
 
 /*
  * @test
- * @bug 8318446 8335392
- * @summary Test merging of consecutive stores, and more specifically the MemPointer.
+ * @summary Example test to use the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @compile ../lib/ir_framework/TestFramework.java
- * @run driver TestMergeStoresFuzzer
+ * @run driver SimpleJavaExample
  */
 
-import compiler.lib.ir_framework.*;
 import compiler.lib.compile_framework.*;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
-public class TestMergeStoresFuzzer {
+public class SimpleJavaExample {
 
     public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
-        out.println("import compiler.lib.ir_framework.*;");
-        out.println("");
         out.println("public class XYZ {");
-        out.println("    public static void main(String args[]) {");
-        out.println("        System.out.println(\"This is in another java file\");");
-        out.println("        TestFramework.run(XYZ.class);");
-        out.println("        System.out.println(\"Done with IR framework.\");");
-        out.println("    }");
-        out.println("");
-        out.println("    @Test");
-        out.println("    static void test() {");
-        out.println("        throw new RuntimeException(\"xyz\");");
+        out.println("    public static int test(int i) {");
+        out.println("        System.out.println(\"Hello from XYZ.test: \" + i);");
+        out.println("        return i * 2;");
         out.println("    }");
         out.println("}");
         out.close();
@@ -72,14 +61,21 @@ public class TestMergeStoresFuzzer {
 
         Class c = comp.getClass("XYZ");
 
+        Object ret;
         try {
-            c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
+            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("No such method:", e);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Illegal access:", e);
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Invocation target:", e);
+        }
+
+        int i = (int)ret;
+        System.out.println("Result of call: " + i);
+        if (i != 10) {
+            throw new RuntimeException("wrong value: " + i);
         }
     }
 }

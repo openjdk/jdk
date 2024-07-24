@@ -23,12 +23,11 @@
 
 /*
  * @test
- * @bug 8318446 8335392
- * @summary Test merging of consecutive stores, and more specifically the MemPointer.
+ * @summary Example test to use the Compile Framework together with the TestFramework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @compile ../lib/ir_framework/TestFramework.java
- * @run driver TestMergeStoresFuzzer
+ * @compile ../../../compiler/lib/ir_framework/TestFramework.java
+ * @run driver TestFrameworkJavaExample
  */
 
 import compiler.lib.ir_framework.*;
@@ -38,7 +37,7 @@ import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
-public class TestMergeStoresFuzzer {
+public class TestFrameworkJavaExample {
 
     public static String generate() {
         StringWriter writer = new StringWriter();
@@ -47,9 +46,7 @@ public class TestMergeStoresFuzzer {
         out.println("");
         out.println("public class XYZ {");
         out.println("    public static void main(String args[]) {");
-        out.println("        System.out.println(\"This is in another java file\");");
         out.println("        TestFramework.run(XYZ.class);");
-        out.println("        System.out.println(\"Done with IR framework.\");");
         out.println("    }");
         out.println("");
         out.println("    @Test");

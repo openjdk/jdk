@@ -23,11 +23,13 @@
 
 package compiler.lib.compile_framework;
 
-import compiler.lib.compile_framework.JavaSourceFromString;
+import compiler.lib.compile_framework.SourceFile;
+import compiler.lib.compile_framework.CompleFrameworkException;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.net.URI;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,19 +41,34 @@ import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
+import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
 public class CompileFramework {
-    private List<JavaSourceFromString> files = new ArrayList<JavaSourceFromString>();
+    private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
     private URLClassLoader classLoader;
 
-    public void add(JavaSourceFromString file) {
-        files.add(file);
+    public void add(SourceFile sourceFile) {
+        sourceFiles.add(sourceFile);
     }
 
-    public void compile() throws IOException {
+    public void printSourceFiles() {
+        for (SourceFile sourceFile : sourceFiles) {
+            System.out.println("SourceFile: " + sourceFile.name);
+            System.out.println(sourceFile.code);
+        }
+    }
+
+    public void compile() {
         if (classLoader != null) {
             throw new RuntimeException("Cannot compile twice!");
+        }
+
+        printSourceFiles();
+
+        List<JavaSourceFromString> javaFiles = new ArrayList<JavaSourceFromString>();
+        for (SourceFile sourceFile : sourceFiles) {
+            javaFiles.add(new JavaSourceFromString(sourceFile.name, sourceFile.code));
         }
 
         // Get compiler with diagnostics.
@@ -65,13 +82,8 @@ public class CompileFramework {
         optionList.add("-d");
         optionList.add(System.getProperty("test.classes"));
 
-        for (JavaSourceFromString f : files) {
-            System.out.println("File: " + f.getName());
-            System.out.println(f.getCharContent(false).toString());
-        }
-
         // Compile.
-        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, files);
+        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, javaFiles);
         boolean success = task.call();
 
         // Print diagnostics.
@@ -93,10 +105,15 @@ public class CompileFramework {
         System.out.println("Compilation successfull, creating ClassLoader...");
 
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
-        // Classpath for all included classes (e.g. IR Framework).
-        URL[] urls = new URL[] { new File("").toURI().toURL(),
-                                 new File(System.getProperty("test.classes")).toURI().toURL()};
-        classLoader = URLClassLoader.newInstance(urls, sysLoader);
+
+        try {
+            // Classpath for all included classes (e.g. IR Framework).
+            URL[] urls = new URL[] { new File("").toURI().toURL(),
+                                     new File(System.getProperty("test.classes")).toURI().toURL()};
+            classLoader = URLClassLoader.newInstance(urls, sysLoader);
+        } catch (IOException e) {
+            throw new CompleFrameworkException("IOException while creating java files", e);
+        }
     }
 
     public Class getClass(String name) {
@@ -105,5 +122,19 @@ public class CompileFramework {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("Class not found:", e);
         }
+    }
+}
+
+class JavaSourceFromString extends SimpleJavaFileObject {
+    final String code;
+
+    public JavaSourceFromString(String name, String code) {
+        super(URI.create("string:///" + name.replace('.','/') + Kind.SOURCE.extension), Kind.SOURCE);
+        this.code = code;
+    }
+
+    @Override
+    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
+        return code;
     }
 }

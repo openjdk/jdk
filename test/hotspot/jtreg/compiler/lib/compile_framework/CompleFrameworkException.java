@@ -23,19 +23,15 @@
 
 package compiler.lib.compile_framework;
 
-import javax.tools.SimpleJavaFileObject;
-import java.net.URI;
-
-public class JavaSourceFromString extends SimpleJavaFileObject {
-    final String code;
-
-    public JavaSourceFromString(String name, String code) {
-        super(URI.create("string:///" + name.replace('.','/') + Kind.SOURCE.extension), Kind.SOURCE);
-        this.code = code;
+/**
+ * TODO desc
+ */
+public class CompleFrameworkException extends RuntimeException {
+    public CompleFrameworkException(String message) {
+        super("Exception in Compile Framework:" + System.lineSeparator() + message);
     }
 
-    @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-        return code;
+    public CompleFrameworkException(String message, Throwable e) {
+        super("Exception in Compile Framework:" + System.lineSeparator() + message, e);
     }
 }
