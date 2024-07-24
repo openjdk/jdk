@@ -153,8 +153,6 @@ public:
   // number of flags
   static size_t numFlags;
 
-  static CHeapBitMap iteratorMarkers;
-
 private:
   static JVMFlag* find_flag(const char* name, size_t length, bool allow_locked, bool return_flag);
 
