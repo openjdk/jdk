@@ -2639,18 +2639,6 @@ public final class System {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
 
-            public byte stringInitialCoder() {
-                return String.COMPACT_STRINGS ? String.LATIN1 : String.UTF16;
-            }
-
-            public byte stringCoder(char value) {
-                return StringLatin1.canEncode(value) ? String.LATIN1 : String.UTF16;
-            }
-
-            public byte stringCoder(String str) {
-                return str.coder();
-            }
-
             public Object classData(Class<?> c) {
                 return c.getClassData();
             }

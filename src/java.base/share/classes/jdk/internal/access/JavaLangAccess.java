@@ -452,11 +452,6 @@ public interface JavaLangAccess {
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
 
-    byte stringInitialCoder();
-
-    byte stringCoder(char ch);
-    byte stringCoder(String str);
-
     /*
      * Get the class data associated with the given class.
      * @param c the class
