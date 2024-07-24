@@ -1087,22 +1087,20 @@ public final class StringConcatFactory {
         static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
         static final MethodTypeDesc FLOAT_TO_STRING = MethodTypeDesc.of(CD_String, CD_float);
         static final MethodTypeDesc DOUBLE_TO_STRING = MethodTypeDesc.of(CD_String, CD_double);
-        static final MethodTypeDesc TO_INT = MethodTypeDesc.of(CD_int);
-        static final MethodTypeDesc INT_TO_INT = MethodTypeDesc.of(CD_int, CD_int);
-        static final MethodTypeDesc LONG_TO_INT = MethodTypeDesc.of(CD_int, CD_long);
-        static final MethodTypeDesc BOOLEAN_TO_INT = MethodTypeDesc.of(CD_int, CD_boolean);
-        static final MethodTypeDesc CHAR_TO_INT = MethodTypeDesc.of(CD_int, CD_char);
-        static final MethodTypeDesc STR_TO_INT = MethodTypeDesc.of(CD_int, CD_String);
-        static final MethodTypeDesc TO_BYTE = MethodTypeDesc.of(CD_byte);
-        static final MethodTypeDesc CHAR_TO_BYTE = MethodTypeDesc.of(CD_byte, CD_char);
-        static final MethodTypeDesc NEW_ARRAY = MethodTypeDesc.of(CD_byteArray, CD_String, CD_int, CD_byte);
-        static final MethodTypeDesc NEW_STRING = MethodTypeDesc.of(CD_void, CD_byteArray, CD_byte);
-        static final MethodTypeDesc PREPEND_String = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_String, CD_String);
-        static final MethodTypeDesc PREPEND_int = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_int, CD_String);
-        static final MethodTypeDesc PREPEND_long = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_long, CD_String);
-        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_boolean, CD_String);
-        static final MethodTypeDesc PREPEND_char = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_byteArray, CD_char, CD_String);
-        static final MethodTypeDesc STR_GET_BYTES = MethodTypeDesc.of(CD_void, CD_byteArray, CD_int, CD_byte);
+        static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_byteArray, CD_String, CD_long);
+        static final MethodTypeDesc NEW_STRING = MethodTypeDesc.of(CD_String, CD_byteArray, CD_long);
+
+        static final MethodTypeDesc Mix_int = MethodTypeDesc.of(CD_long, CD_long, CD_int);
+        static final MethodTypeDesc MIX_long = MethodTypeDesc.of(CD_long, CD_long, CD_long);
+        static final MethodTypeDesc Mix_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_boolean);
+        static final MethodTypeDesc Mix_char = MethodTypeDesc.of(CD_long, CD_long, CD_char);
+        static final MethodTypeDesc Mix_String = MethodTypeDesc.of(CD_long, CD_long, CD_String);
+
+        static final MethodTypeDesc PREPEND_int = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_int, CD_String);
+        static final MethodTypeDesc PREPEND_long = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_long, CD_String);
+        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_boolean, CD_String);
+        static final MethodTypeDesc PREPEND_char = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_char, CD_String);
+        static final MethodTypeDesc PREPEND_String = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_String, CD_String);
 
         /**
          * Ensure a capacity in the initial StringBuilder to accommodate all
@@ -1192,40 +1190,39 @@ public final class StringConcatFactory {
          * The following is an example of the generated target code:
          *
          * <blockquote><pre>
-         * import static java.lang.StringConcatHelper.stringOf;
-         * import static java.lang.StringConcatHelper.stringSize;
-         * import static java.lang.StringConcatHelper.newArray;
+         * import static java.lang.StringConcatHelper.mix;
          * import static java.lang.StringConcatHelper.prepend;
+         * import static java.lang.StringConcatHelper.newString;
+         * import static java.lang.StringConcatHelper.newArray;
          *
-         * public static String concat(int arg0, long arg1, boolean arg3, char arg4, String arg5, Object arg6, Object arg7) {
+         * public static String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4, float arg5, double arg6, Object arg7) {
          *     String constant0, constant1, ..., constant8;
-         *     int initCoder = ...;
-         *     int initIndex = ...;
+         *     int lengthCoder = ...;
          *
          *     // String arg
-         *     arg5 = stringOf(arg5);
+         *     arg4 = stringOf(arg4);
          *
          *     // Types other than byte/short/int/long/boolean/String require a local variable to store
-         *     var str0 = stringOf(arg6);
-         *     var str1 = stringOf(arg7);
+         *     String str5 = stringOf(arg5);
+         *     String str6 = stringOf(arg6);
+         *     String str7 = stringOf(arg7);
          *
-         *     int coder = initCoder | stringCoder(arg4) | arg5.coder() | str0.coder() | str1.coder();
-         *     int index = initIndex + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + stringSize(arg3)
-         *                           + stringSize(arg4) + stringSize(arg5) + stringSize(str0) + stringSize(str1);
+         *     lengthCoder = mix(mix(mix(mix(mix(mix(mix(mix(lengthCoder, arg0), arg1), arg3), arg4), str5), str6), str7)
          *
-         *     index -= constant8.length();
-         *     byte[] buf = newArray(constant8, index, coder);
+         *     String suffix = constant9;
+         *     lengthCoder -= suffix.length();
+         *     byte[] buf = newArray(suffix, lengthCoder);
          *
-         *     index = prepend(index, coder, buf, str1, constant7);
-         *     index = prepend(index, coder, buf, str0, constant6);
-         *     index = prepend(index, coder, buf, arg5, constant5);
-         *     index = prepend(index, coder, buf, arg4, constant4);
-         *     index = prepend(index, coder, buf, arg3, constant3);
-         *     index = prepend(index, coder, buf, arg2, constant2);
-         *     index = prepend(index, coder, buf, arg1, constant1);
-         *     index = prepend(index, coder, buf, arg0, constant0);
+         *     lengthCoder = prepend(lengthCoder, buf, str7, constant7);
+         *     lengthCoder = prepend(lengthCoder, buf, str6, constant6);
+         *     lengthCoder = prepend(lengthCoder, buf, str5, constant5);
+         *     lengthCoder = prepend(lengthCoder, buf, arg4, constant4);
+         *     lengthCoder = prepend(lengthCoder, buf, arg3, constant3);
+         *     lengthCoder = prepend(lengthCoder, buf, arg2, constant2);
+         *     lengthCoder = prepend(lengthCoder, buf, arg1, constant1);
+         *     lengthCoder = prepend(lengthCoder, buf, arg0, constant0);
          *
-         *     return new String(buf, (byte) coder);
+         *     return newArray(buf, lengthCoder);
          * }
          * </pre></blockquote>
          */
@@ -1233,30 +1230,27 @@ public final class StringConcatFactory {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    int initalIndex = 0;
-                    int initalCoder = JLA.stringInitialCoder();
+                    long initalLengthCoder = JLA.stringConcatInitialCoder();
                     for (String constant : constants) {
                         if (constant != null) {
-                            initalIndex += constant.length();
-                            initalCoder |= JLA.stringCoder(constant);
+                            initalLengthCoder = JLA.stringConcatMix(initalLengthCoder, constant);
                         }
                     }
 
                     int paramCount = args.parameterCount();
 
                     // Compute parameter and local string variable slots
-                    int argSlots = 0;
+                    int paramterSlotSize = 0;
                     int[] paramSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
-                        paramSlots[i] = argSlots;
-                        argSlots += kind.slotSize();
+                        paramSlots[i] = paramterSlotSize;
+                        paramterSlotSize += kind.slotSize();
                     }
 
-                    int coderSlot = argSlots;
-                    int indexSlot = argSlots + 1;
-                    int bufSlot   = argSlots + 2;
+                    int lengthCoderSloat = paramterSlotSize;
+                    int bufSlot          = paramterSlotSize + 2;
 
                     /*
                      * store string variants:
@@ -1291,7 +1285,7 @@ public final class StringConcatFactory {
                             // Types other than byte/short/int/long/boolean/String require a local variable to store
                             int strLocalSlot = (cl == String.class)
                                     ? paramSlots[i]
-                                    : argSlots + 3 + (strings++);
+                                    : bufSlot + (++strings);
                             cb.loadLocal(kind, paramSlots[i])
                               .invokestatic(classDesc, methodName, methodTypeDesc)
                               .astore(strLocalSlot);
@@ -1301,30 +1295,6 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    /*
-                     * store init coder :
-                     *
-                     * coder = initalCoder;
-                     * coder |= StringConcatHelper.stringCoder((char) args[1]);
-                     * coder |= str0.coder();
-                     *
-                     */
-                    cb.loadConstant(initalCoder);
-                    for (int i = 0; i < paramCount; i++) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
-                        if (cl == char.class) {
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(CD_StringConcatHelper, "stringCoder", CHAR_TO_BYTE)
-                              .ior();
-                        } else if (needStringOf(cl) && maybeUTF16(cl)) {
-                            cb.aload(paramSlots[i])
-                              .invokevirtual(CD_String, "coder", TO_BYTE)
-                              .ior();
-                        }
-                    }
-                    cb.istore(coderSlot);
-
                     String suffix = constants[constants.length - 1];
                     if (suffix == null) {
                         suffix = "";
@@ -1332,11 +1302,11 @@ public final class StringConcatFactory {
                     /*
                      * Store init index :
                      *
-                     *  index = initalIndex + StringConcatHelper.stringSize(args[i]) + ... - suffix.length()
+                     *  lengthCoder = mix(mix(mix(mix(initalIengthCoder, arg0), arg1), arg2), ....);
                      *  ...
                      *
                      */
-                    cb.loadConstant(initalIndex);
+                    cb.loadConstant(initalLengthCoder);
                     for (int i = 0; i < paramCount; i++) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
@@ -1346,38 +1316,40 @@ public final class StringConcatFactory {
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
                             classDesc = CD_Integer;
-                            methodTypeDesc = INT_TO_INT;
+                            methodTypeDesc = Mix_int;
                         } else if (cl == long.class) {
                             classDesc = CD_Long;
-                            methodTypeDesc = LONG_TO_INT;
+                            methodTypeDesc = MIX_long;
                         } else if (cl == boolean.class) {
-                            methodTypeDesc = BOOLEAN_TO_INT;
+                            methodTypeDesc = Mix_boolean;
                         } else if (cl == char.class) {
-                            methodTypeDesc = CHAR_TO_INT;
+                            methodTypeDesc = Mix_char;
                         } else {
-                            methodTypeDesc = STR_TO_INT;
+                            methodTypeDesc = Mix_String;
                             kind = TypeKind.from(String.class);
                         }
                         cb.loadLocal(kind, paramSlot)
-                          .invokestatic(classDesc, "stringSize", methodTypeDesc)
-                          .iadd();
+                          .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
                     }
+                    cb.lstore(lengthCoderSloat);
+
                     if (!suffix.isEmpty()) {
-                        cb.ldc(suffix.length())
-                          .isub();
+                        cb.lload(lengthCoderSloat)
+                          .ldc((long) suffix.length())
+                          .lsub()
+                          .lstore(lengthCoderSloat);
                     }
-                    cb.istore(indexSlot);
 
                     /*
                      * Allocate buffer :
-                     *  buf = StringConcatHelper.newArray(suffix, index, coder)
+                     *  buf = StringConcatHelper.newArray(suffix, lengthCoder)
                      */
                     cb.ldc(suffix)
-                      .iload(indexSlot)
-                      .iload(coderSlot)
-                      .invokestatic(CD_StringConcatHelper, "newArray", NEW_ARRAY)
+                      .lload(lengthCoderSloat)
+                      .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", NEW_ARRAY_SUFFIX)
                       .astore(bufSlot);
 
+                    cb.lload(lengthCoderSloat);
                     for (int i = paramCount - 1; i >= 0; i--) {
                         int paramSlot = paramSlots[i];
                         Class<?> cl = args.parameterType(i);
@@ -1385,7 +1357,7 @@ public final class StringConcatFactory {
 
                         /*
                          * prepend arguments :
-                         * index = StringConcatHelper.prepend(index, coder, buf, args[i])
+                         *  lengthCoder = prepend(prepend(prepend(lengthCoder, buf, arg0), buf, arg1), ...)
                          */
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1404,34 +1376,22 @@ public final class StringConcatFactory {
                         if (constant == null) {
                             constant = "";
                         }
-                        cb.iload(indexSlot)
-                          .iload(coderSlot)
-                          .aload(bufSlot)
+                        cb.aload(bufSlot)
                           .loadLocal(kind, paramSlot)
                           .ldc(constant)
-                          .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc)
-                          .istore(indexSlot);
+                          .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
+                    cb.lstore(lengthCoderSloat);
 
-                    // return new String(buf, coder);
-                    cb.new_(CD_String)
-                      .dup()
-                      .aload(bufSlot)
-                      .iload(coderSlot)
-                      .invokespecial(CD_String, "<init>", NEW_STRING)
+                    cb.aload(bufSlot)
+                      .lload(lengthCoderSloat)
+                      .invokestatic(CD_StringConcatHelper, "newString", NEW_STRING)
                       .areturn();
                 }
 
                 static boolean needStringOf(Class<?> cl) {
                     return cl != byte.class && cl != short.class   && cl != int.class
                         && cl != long.class && cl != boolean.class && cl != char.class;
-                }
-
-                static boolean maybeUTF16(Class<?> cl) {
-                    return cl != byte.class && cl != short.class && cl != int.class
-                        && cl != long.class && cl != boolean.class
-                        && cl != Byte.class && cl != Short.class && cl != Integer.class
-                        && cl != Long.class && cl != Boolean.class;
                 }
             };
         }
