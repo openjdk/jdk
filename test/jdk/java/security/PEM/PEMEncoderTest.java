@@ -25,7 +25,8 @@
 
 /*
  * @test
- * @summary Testing PEM decoding
+ * @bug 8298420
+ * @summary Testing basic PEM API encoding
  *
  * @modules java.base/sun.security.util
  */
@@ -63,9 +64,6 @@ public class PEMEncoderTest {
         System.out.println("New instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
 
-        //System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
-        //keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
-
         keymap = generateObjKeyMap(PEMCerts.encryptedList);
         System.out.println("Same instance Encoder match test:");
         keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encoder));
@@ -80,11 +78,6 @@ public class PEMEncoderTest {
                 throw new Exception("Should have been a NullPointerException thrown");
             }
         }
-
-//  One can't use EKPI with an encrypted encoder.
-//        System.out.println("Same instance Encoder and withEnc test:");
-//        PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
-//        keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encEncoder));
     }
 
     static Map generateObjKeyMap(List<PEMCerts.Entry> list) {

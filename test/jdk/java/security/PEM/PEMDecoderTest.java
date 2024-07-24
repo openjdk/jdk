@@ -25,7 +25,8 @@
 
 /*
  * @test
- * @summary Testing PEM decodings
+ * @bug 8298420
+ * @summary Testing basic PEM API decodings
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -33,9 +34,6 @@ import java.lang.Class;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.*;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateCrtKeySpec;
-import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.Arrays;
@@ -74,7 +72,6 @@ public class PEMDecoderTest {
         testClass(PEMCerts.getEntry("oasrfc8410"), PrivateKey.class, true);
         testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
         System.out.println("Decoder test encEdECkey:");
-        //testEncrypted(PEMCerts.getEntry("encEdECKey"), PrivateKey.class, true);
     }
 
     static void testFailure(PEMCerts.Entry entry) {

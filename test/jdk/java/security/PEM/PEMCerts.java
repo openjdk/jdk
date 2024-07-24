@@ -31,6 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Library class for PEMEncoderTest and PEMDecoderTest
+ */
 class PEMCerts {
     public static final String ecprivpem = """
         -----BEGIN PRIVATE KEY-----\
@@ -110,19 +113,13 @@ class PEMCerts {
             "XCYEHZS1cqd8wokFPwIDAQAB\n" +
             "-----END PUBLIC KEY-----\n";
 
-//    public static final String pubecpem = """
-//        -----BEGIN PUBLIC KEY-----\
-//        MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEi/kRGOL7wCPTN4KJ2ppeSt5UYB6u\
-//        cPjjuKDtFTXbguOIFDdZ65O/8HTUqS/sVzRF+dg7H3/tkQ/36KdtuADbwQ==\
-//        -----END PUBLIC KEY-----\
-//        """;
-
     public static final String pubecpem =
         "-----BEGIN PUBLIC KEY-----\r\n" +
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEi/kRGOL7wCPTN4KJ2ppeSt5UYB6u\r\n" +
             "cPjjuKDtFTXbguOIFDdZ65O/8HTUqS/sVzRF+dg7H3/tkQ/36KdtuADbwQ==\r\n" +
             "-----END PUBLIC KEY-----\r\n";
 
+    // EC key with explicit parameters -- Not currently supported by SunEC
     public static final String pubec_explicit = """
         -----BEGIN PUBLIC KEY-----\
         MIIBSzCCAQMGByqGSM49AgEwgfcCAQEwLAYHKoZIzj0BAQIhAP////8AAAABAAAA\
@@ -134,65 +131,6 @@ class PEMCerts {
         VGAernD447ig7RU124LjiBQ3WeuTv/B01Kkv7Fc0RfnYOx9/7ZEP9+inbbgA28E=\
         -----END PUBLIC KEY-----\
         """;
-
-    public static final String encprivpem = """
-        -----BEGIN ENCRYPTED PRIVATE KEY-----\
-        MIIC3TBXBgkqhkiG9w0BBQ0wSjApBgkqhkiG9w0BBQwwHAQIHjNFO2U/GIICAggA\
-        MAwGCCqGSIb3DQILBQAwHQYJYIZIAWUDBAEqBBCM8PGUSHbDu40eUO/qYYSuBIIC\
-        gPrw1becq4PBdLG/lk2PGpFQGp9uf3Yvn9fT5LBZl6qFuMXaecWxfjrly6kTPrZ4\
-        w+KjWEKKXZfhFeeuPv5uAeW2eS/lBQK8PypAryJZPbZz9F6MIGPL9AFpmZcYLi7x\
-        QhRaIRAgr2rF5PoC+lfuAg29HbM5hXdMuW9LcbDoTe8IQK/tPiT17cCax9YNiVWn\
-        0oxUQbuAsuLHadcL0Q5/6WAk296EIqzMSZrhmMIvYvU4VHSI6h5S8Bmq0GQhChvn\
-        uwrSc2NUrQTT/CwbcYdWDxCkA0XMXF82fF38TWSwV1IindgKY0h/vNLTpjiFqR87\
-        7IfPFtfoyRE3awOCim61nHLj9Y3BRAYi9giyu0rLXti1lfkEod/Z0fE8iNirqxRP\
-        LBrumIpvEcgTpkvjSSlRdwYGX2btfYZRsfHg1ERps5ozgxGyByCZDRJXs6OAduFG\
-        wm2OvsastpHnB8t2G9jYZCodzNX6TLhZDMUOeKixcBNfn3qhyKAaEivwDrenPKUr\
-        yO3I3hL8jiQ8x2f9jL7esU98ukLHKxMseYCpzNXVUGOeUcLRisRnbpHJYWs+D/Nv\
-        8vlBpjdXrFbvf8TCoh41jgM+YnhAf4v4mJIcrwd3RnIwnhgofxND0abe6eMEOsah\
-        CL/RIPDsCMkOukQKR69sQe478ueGBZfqXR4jEL4XvLz5GZcJTVwNPsEQExH6JhVr\
-        dSub0dsy9FWZVJftrf4EMW3evS39IPVm0ld35i7HPTeb09a6Yqwq+bhKqYFhh4ZN\
-        31eg0x2k0OccwCVJk4du510Fzw0T2nx9KdGW7y8UeRdPozGwKs6a9o4wefMG+UZF\
-        XnpbZ9Cfa0c1Z4z37O290LY=\
-        -----END ENCRYPTED PRIVATE KEY-----\
-        """;
-
-    public static final String oastestpem = """
-        -----BEGIN PRIVATE KEY-----\
-        MIIDCQIBATCCAwIGCSqGSIb3DQEBAQSCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZbOdOvmvU3jl7+\
-        cvPFgL5MfqDCM5a8yI0yImg/hzibJJHLk3emUVBSnekgHvCqyGLW3qGR2DuBEaMy0mkg8hfKcSpH\
-        LaYjDYaspO27d2qtb6d1qtsPoPjJFjWFYeW6K463OHG654K5/2FcJgQdlLVyp3zCiQU/AgMBAAEC\
-        gYEAwNkDkTv5rlX8nWLuLJV5kh/TH9a93SRZxw8qy5Bv7bZ7ZNrHP7uUkHbi7iPojKWRhwo43692\
-        SdzR0dCSk7LGgN9qCYvndsYR6gifVGBi0WF+St4+NdtcQ3VlNdsojy2BdIx0oC+r7i3bn+zc968O\
-        /kI+EgdgrMcjjFqyx6tMHpECQQD8TYPKGHyN7Jdy28llCoUX/sL/yZ2vIi5mnDAFE5aeKZQSkNAX\
-        G+8i9Qbs/Wdd5S3oZDqu+6DBn9gib80pYY05AkEA7tY59Oy8ka7nBlGPg6Wo1usF2bKqk8vjko9i\
-        oZQay7f86aB10QFcAjCr+cCUm16Lc9DwzWl02nNggRZaJz8eNwJBAO+1zfLjFOPa14F/JHdlaVKE\
-        8EwKCFDuztsapd0M4Vtf8Zk6ERsDpU63Ml9T2zOwnM9g+whpdjDAZ59ATdJ1JrECQQDReJQ2SxeL\
-        0lGPCiOLu9RcQp7L81aF79G1bgp8WlAyEjlAkloiqEWRKiz7DDuKFR7Lwhognng9S+n87aS+PS57\
-        AkBh75t86onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8ObWqcW\
-        coJqfdLEyBT+gQOBjQAwgYkCgYEA62MycLM/LiMJ5ls506+a9TeOXv5y88WAvkx+oMIzlrzIjTIi\
-        aD+HOJskkcuTd6ZRUFKd6SAe8KrIYtbeoZHYO4ERozLSaSDyF8pxKkctpiMNhqyk7bt3aq1vp3Wq\
-        2w+g+MkWNYVh5borjrc4cbrngrn/YVwmBB2UtXKnfMKJBT8CAwEAAQ==\
-        -----END PRIVATE KEY-----\
-        """;
-
-    public static final String oasminepem = """
-        -----BEGIN PRIVATE KEY-----\
-        MIIDCAIBATANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAOtjMnCzPy4jCeZbOdOvmvU3jl7+\
-        cvPFgL5MfqDCM5a8yI0yImg/hzibJJHLk3emUVBSnekgHvCqyGLW3qGR2DuBEaMy0mkg8hfKcSpH\
-        LaYjDYaspO27d2qtb6d1qtsPoPjJFjWFYeW6K463OHG654K5/2FcJgQdlLVyp3zCiQU/AgMBAAEC\
-        gYEAwNkDkTv5rlX8nWLuLJV5kh/TH9a93SRZxw8qy5Bv7bZ7ZNrHP7uUkHbi7iPojKWRhwo43692\
-        SdzR0dCSk7LGgN9qCYvndsYR6gifVGBi0WF+St4+NdtcQ3VlNdsojy2BdIx0oC+r7i3bn+zc968O\
-        /kI+EgdgrMcjjFqyx6tMHpECQQD8TYPKGHyN7Jdy28llCoUX/sL/yZ2vIi5mnDAFE5aeKZQSkNAX\
-        G+8i9Qbs/Wdd5S3oZDqu+6DBn9gib80pYY05AkEA7tY59Oy8ka7nBlGPg6Wo1usF2bKqk8vjko9i\
-        oZQay7f86aB10QFcAjCr+cCUm16Lc9DwzWl02nNggRZaJz8eNwJBAO+1zfLjFOPa14F/JHdlaVKE\
-        8EwKCFDuztsapd0M4Vtf8Zk6ERsDpU63Ml9T2zOwnM9g+whpdjDAZ59ATdJ1JrECQQDReJQ2SxeL\
-        0lGPCiOLu9RcQp7L81aF79G1bgp8WlAyEjlAkloiqEWRKiz7DDuKFR7Lwhognng9S+n87aS+PS57\
-        AkBh75t86onPAs4hkm+63dfzCojvEkALevO8J3OVX7YS5q9J1r75wDn60Ob0Zh+iiorpx8ObWqcW\
-        coJqfdLEyBT+gYGNADCBiQKBgQDrYzJwsz8uIwnmWznTr5r1N45e/nLzxYC+TH6gwjOWvMiNMiJo\
-        P4c4mySRy5N3plFQUp3pIB7wqshi1t6hkdg7gRGjMtJpIPIXynEqRy2mIw2GrKTtu3dqrW+ndarb\
-        D6D4yRY1hWHluiuOtzhxuueCuf9hXCYEHZS1cqd8wokFPwIDAQAB\
-        -----END PRIVATE KEY-----\
-            """;
 
     public static final String oasbcpem = """
         -----BEGIN PRIVATE KEY-----\n\
@@ -219,38 +157,6 @@ class PEMCerts {
         oB8wHQYKKoZIhvcNAQkJFDEPDA1DdXJkbGUgQ2hhaXJzgSEAGb9ECWmEzf6FQbrB\
         Z9w7lshQhqowtrbLDFw4rXAxZuE=\
         -----END PRIVATE KEY-----\
-        """;
-
-    public static final String certrsa = """
-        -----BEGIN CERTIFICATE-----
-        MIIE4DCCAsgCCQDox/iRlbiCQzANBgkqhkiG9w0BAQsFADAxMQswCQYDVQQGEwJV
-        UzEKMAgGA1UECAwBeDEKMAgGA1UEBwwBeTEKMAgGA1UECgwBejAgFw0yMzAzMjQy
-        MDMxNDVaGA8yMDUwMDgwODIwMzE0NVowMTELMAkGA1UEBhMCVVMxCjAIBgNVBAgM
-        AXgxCjAIBgNVBAcMAXkxCjAIBgNVBAoMAXowggIiMA0GCSqGSIb3DQEBAQUAA4IC
-        DwAwggIKAoICAQDDXFJiH9q/rP4W9cwHmoqcZ/vYO4YMwz7swGDA+z44kE0DH2eD
-        R1ABUtMNK4mNZx8nzCR5dN3ecY+Aj0+T0bVUc49aXhuublUmBPympqGSAfQuyqQh
-        MiBrmH0XwywQr3yhXWqcO0odi7SP5cJ6tW9hv6Eqy0lD40pg8ipuOjOrXYLAI+Zo
-        RT1qHClWdKFbpSPHnDnuXS2tbiOdAAd/RpvIeGXkrucg8w9T//fUDhffJqma1CfV
-        owwmlBm0W4KDs/4zEsHiUT0eAhWrY6SEnGGOMFIp0y3LAnjAPhNlXGOIIHrdcEUp
-        jQSKiNrUOLlqKYfhio3ZoHCS0dRJ8fXgRtoonbP0yAuskAkaU0w8Ex0NAGo7s7f8
-        XDpkBBxMLxSZNS54DLRCZJtWBY0vu10OCE4jMMzNKf2JJ95cfweXpX0D0Axw4Aji
-        4JgFLFTop9rtvaPVtuO3WsmRnzNc92LgBvOhJutXzKXFkj7Q0GjjuWJQlL3FbysH
-        fZyOWS2NBOe6N/bMpraLuAvs9qcORDvl3yUmZ0cyLOoL+T3NWlYUcRp2dFl5BC9u
-        DmrshJszknSRp7NtO9Y8HacE4kZJ/TPoqBZTx/cfE0Nc+QH9MdQWwQz2Ti2MxqWz
-        9WIFUgmMO7hjttK00KLhqF5fUIW4cCWt8VUTVEnTGy6qJabWFSgFw02C7QIDAQAB
-        MA0GCSqGSIb3DQEBCwUAA4ICAQCIErAqKqpD9sescmT8bCUcAf86HYz0oeliRQMj
-        xMr5/TL+uqJ+Jb+tD5SSd0LSCe6RGeyTdkKw8lBu00PlFzman/X0TlayKU3IWpk2
-        ehgSZtGyqoHnf/lq1E5dB4yjIEmrG0BWoyQrhM/NgTQeyZQc9zA8yRP2GjiUOZcM
-        dbGKilCKbDTBMuRv4RS8aE2d8TVFAbp6Fp9AjuYq1GzXyv7L4JzKeHsDacB16ER/
-        yCtA/uXYhay0gmcsQuQGiGNBTht/wZj4ePthw8Vg9MOwgkMNn6N6WCFCA0hlvkjS
-        hGo5wIayECUx0QW71KBB0gZ6prfAtzVhgNSEBUwBMvrAJ+3tgLkigPayF/S0j4/F
-        IsXs8r9Ck5p2BXpyTXTJFKpBVx9ipXaMBuZ+qshIXW8UiIfr5dSLyg6md5xCBc5I
-        onFFaa9UmLZOgpj0DdGp9Fx04ocsL451yaqEIZiRLk4tNm73e4mxWp0BZFUfXUyf
-        eltyg/+LXkDANzXCLi7Azm1LKlTO8DVgEZCDusp5yoEJ8AEwPZpPSw19lUjp/2bo
-        HtciHPf85v2cp/R7g/xUWevxcWmW0godkAZ0+ijamsg+5ITSqKCYUpuAvcO8PgG6
-        bcc4fc8IcmTKZem1wmAxBa+6q7KAcPGAbMaAIy8o6quD9ti/tyH53327E9bZ4SiQ
-        9W2bEw==
-        -----END CERTIFICATE-----
         """;
 
     public static final String rsaOpenSSL = """
@@ -283,16 +189,6 @@ class PEMCerts {
         -----END RSA PRIVATE KEY-----\
         """;
 
-    /*private static final String encEdECKey = """
-        -----BEGIN ENCRYPTED PRIVATE KEY-----
-        MIGbMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAiN0IkLjCkMPgICCAAw
-        DAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEEXsbu8teaHGYhCaRv46T40EQJpL
-        GDZIKPDF0iSQFccQ5HMWIt43Kx+GohkkkzMEOaW84tNxS4K49X3gKe01stq7ubKK
-        HjgUDn0HggFHXCInKMQ=
-        -----END ENCRYPTED PRIVATE KEY-----
-        """;
-
-     */
     private static final String encEdECKey = """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIGqMGYGCSqGSIb3DQEFDTBZMDgGCSqGSIb3DQEFDDArBBRyYnoNyrcqvubzch00
@@ -343,6 +239,7 @@ class PEMCerts {
         -----END CERTIFICATE-----
         """;
 
+    // EC cert with explicit parameters -- Not currently supported by SunEC
     private static final String ecCertEX = """
         -----BEGIN CERTIFICATE-----
         MIICrDCCAjMCCQDKAlI7uc1CVDAKBggqhkjOPQQDAjATMREwDwYDVQQDDAhQRU0g
