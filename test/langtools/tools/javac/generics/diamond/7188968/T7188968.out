@@ -1,7 +1,12 @@
 T7188968.java:20:20: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, T7188968, null)
+T7188968.java:20:9: compiler.warn.unchecked.call.mbr.of.raw.type: T7188968.Foo(java.util.List<X>,java.lang.Object), T7188968.Foo
 T7188968.java:21:20: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, T7188968, null)
 T7188968.java:21:29: compiler.warn.unchecked.call.mbr.of.raw.type: T7188968.Foo(java.util.List<X>,java.lang.Object), T7188968.Foo
 T7188968.java:22:22: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, T7188968, null)
+T7188968.java:22:9: compiler.warn.unchecked.meth.invocation.applied: kindname.constructor, <init>, java.util.List<X>,java.lang.Object, java.util.List,unknown, kindname.class, T7188968.Foo
+T7188968.java:22:19: compiler.warn.prob.found.req: (compiler.misc.unchecked.assign), java.util.List, java.util.List<X>
 T7188968.java:23:24: compiler.err.cant.resolve.location: kindname.variable, unknown, , , (compiler.misc.location: kindname.class, T7188968, null)
+T7188968.java:23:20: compiler.warn.unchecked.meth.invocation.applied: kindname.method, makeFoo, java.util.List<Z>,java.lang.Object, java.util.List,unknown, kindname.class, T7188968.Foo
+T7188968.java:23:21: compiler.warn.prob.found.req: (compiler.misc.unchecked.assign), java.util.List, java.util.List<Z>
 4 errors
-1 warning
+6 warnings
