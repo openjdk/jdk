@@ -328,7 +328,7 @@ public abstract class NumberFormat extends Format  {
             case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
             case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
             case Number n -> format(n.doubleValue(), toAppendTo, pos);
-            case null, default  -> throw new IllegalArgumentException("Cannot format given Object as a Number");
+            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
         };
     }
 
