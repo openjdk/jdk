@@ -2010,7 +2010,7 @@ class MutableBigInteger {
                 }
                 sqrtRem[1].rightShift(shift);
             }
-            sqrtRem[0].rightShift(halfShift);
+            sqrtRem[0].primitiveRightShift(halfShift);
         }
         return sqrtRem;
     }
