@@ -282,7 +282,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
-                               _bitmap(SECONDARY_SUPERS_BITMAP_FULL),
+                               _secondary_supers_bitmap(SECONDARY_SUPERS_BITMAP_EMPTY),
                                _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
@@ -331,7 +331,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
     assert(bitmap == real_bitmap, "must be");
   }
 #endif
-  _bitmap = bitmap;
+  _secondary_supers_bitmap = bitmap;
   _secondary_supers = secondaries;
 
   if (secondaries != nullptr) {
@@ -791,7 +791,7 @@ void Klass::remove_unshareable_info() {
   // FIXME: validation in Klass::hash_secondary_supers() may fail for shared klasses.
   // Even though the bitmaps always match, the canonical order of elements in the table
   // is not guaranteed to stay the same (see tie breaker during Robin Hood hashing in Klass::hash_insert).
-  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _bitmap, "broken table");
+  //assert(compute_secondary_supers_bitmap(secondary_supers()) == _secondary_supers_bitmap, "broken table");
 }
 
 void Klass::remove_java_mirror() {
@@ -1273,11 +1273,12 @@ static void print_negative_lookup_stats(uintx bitmap, outputStream* st) {
 void Klass::print_secondary_supers_on(outputStream* st) const {
   if (secondary_supers() != nullptr) {
     st->print("  - "); st->print("%d elements;", _secondary_supers->length());
-    st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _bitmap);
-    if (_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
-        _bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
-      st->print("  - "); print_positive_lookup_stats(secondary_supers(), _bitmap, st); st->cr();
-      st->print("  - "); print_negative_lookup_stats(_bitmap, st); st->cr();
+    st->print_cr(" bitmap: " UINTX_FORMAT_X_0 ";", _secondary_supers_bitmap);
+    if (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_EMPTY &&
+        _secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      st->print("  - "); print_positive_lookup_stats(secondary_supers(),
+                                                     _secondary_supers_bitmap, st); st->cr();
+      st->print("  - "); print_negative_lookup_stats(_secondary_supers_bitmap, st); st->cr();
     }
   } else {
     st->print("null");

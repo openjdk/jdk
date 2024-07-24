@@ -4778,13 +4778,13 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
                                                    Register temp4_reg,
                                                    Label* L_success,
                                                    Label* L_failure) {
-  if (! UseSecondarySupersTable) {
-    check_klass_subtype_slow_path_linear
-      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
-  } else {
+  if (UseSecondarySupersTable) {
     check_klass_subtype_slow_path_table
       (sub_klass, super_klass, temp_reg, temp2_reg, temp3_reg, temp4_reg,
        L_success, L_failure);
+  } else {
+    check_klass_subtype_slow_path_linear
+      (sub_klass, super_klass, temp_reg, temp2_reg, L_success, L_failure, /*set_cond_codes*/false);
   }
 }
 
@@ -5058,12 +5058,11 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   BLOCK_COMMENT("lookup_secondary_supers_table {");
 
-#ifdef DEBUG
-  call_VM_leaf_base((address)&poo, /*number_of_arguments*/0);
-#endif
-
   RegSetIterator<Register> available_regs = (temps - rcx).begin();
 
+  // FIXME. Once we are sure that all paths reaching this point really
+  // do pass rcx as one of our temps we can get rid of the following
+  // workaround.
   assert(temps.contains(rcx), "fix this code");
 
   // We prefer to have our shift count in rcx. If rcx is one of our

@@ -64,6 +64,7 @@ class PSPromotionManager;
 class vtableEntry;
 
 class Klass : public Metadata {
+
   friend class VMStructs;
   friend class JVMCIVMStructs;
  public:
@@ -160,7 +161,7 @@ class Klass : public Metadata {
   ClassLoaderData* _class_loader_data;
 
   // Bitmap and hash code used by hashed secondary supers.
-  uintx    _bitmap;
+  uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
   static uint8_t compute_hash_slot(Symbol* s);
@@ -411,7 +412,7 @@ protected:
   static uintx   compute_secondary_supers_bitmap(Array<Klass*>* secondary_supers);
   static uint8_t compute_home_slot(Klass* k, uintx bitmap);
 
-  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_bitmap) * 8;
+  static constexpr int SECONDARY_SUPERS_TABLE_SIZE = sizeof(_secondary_supers_bitmap) * 8;
   static constexpr int SECONDARY_SUPERS_TABLE_MASK = SECONDARY_SUPERS_TABLE_SIZE - 1;
 
   static constexpr uintx SECONDARY_SUPERS_BITMAP_EMPTY    = 0;
@@ -432,7 +433,7 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
-  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _secondary_supers_bitmap); }
   static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
 
   // Unpacking layout_helper:
@@ -535,7 +536,8 @@ protected:
   bool is_subclass_of(const Klass* k) const;
   // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
   bool is_subtype_of(Klass* k) const {
-    juint    off = k->super_check_offset();
+    guarantee(secondary_supers() != nullptr, "must be");
+    const juint off = k->super_check_offset();
     const juint secondary_offset = in_bytes(secondary_super_cache_offset());
     if (off == secondary_offset) {
       return search_secondary_supers(k);

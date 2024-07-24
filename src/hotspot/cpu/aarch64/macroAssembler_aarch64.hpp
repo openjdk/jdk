@@ -995,7 +995,7 @@ public:
                                      Label* L_success,
                                      Label* L_failure,
                                      Label* L_slow_path,
-                RegisterOrConstant super_check_offset = RegisterOrConstant(-1));
+                                     Register super_check_offset = noreg);
 
   // The rest of the type check; must be wired to a corresponding fast path.
   // It does not repeat the fast path logic, so don't use it standalone.
@@ -1037,27 +1037,27 @@ public:
                              RegSet &regs_to_push);
 
   // Secondary subtype checking
-  void lookup_secondary_supers_table(Register sub_klass,
-                                     Register r_super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     FloatRegister vtemp,
-                                     Register result,
-                                     Label *L_success);
+  void lookup_secondary_supers_table_var(Register sub_klass,
+                                         Register r_super_klass,
+                                         Register temp1,
+                                         Register temp2,
+                                         Register temp3,
+                                         FloatRegister vtemp,
+                                         Register result,
+                                         Label *L_success);
 
 
   // As above, but with a constant super_klass.
   // The result is in Register result, not the condition codes.
-  bool lookup_secondary_supers_table(Register r_sub_klass,
-                                     Register r_super_klass,
-                                     Register temp1,
-                                     Register temp2,
-                                     Register temp3,
-                                     FloatRegister vtemp,
-                                     Register result,
-                                     u1 super_klass_slot,
-                                     bool stub_is_near = false);
+  bool lookup_secondary_supers_table_const(Register r_sub_klass,
+                                           Register r_super_klass,
+                                           Register temp1,
+                                           Register temp2,
+                                           Register temp3,
+                                           FloatRegister vtemp,
+                                           Register result,
+                                           u1 super_klass_slot,
+                                           bool stub_is_near = false);
 
   void verify_secondary_supers_table(Register r_sub_klass,
                                      Register r_super_klass,

@@ -12175,6 +12175,9 @@ instruct partialSubtypeCheck(rdi_RegP result,
 
   ins_encode %{
     Label miss;
+    // NB: Callers may assume that, when $result is a valid register,
+    // check_klass_subtype_slow_path_linear sets it to a nonzero
+    // value.
     __ check_klass_subtype_slow_path_linear($sub$$Register, $super$$Register,
                                             $rcx$$Register, $result$$Register,
                                             nullptr, &miss,
