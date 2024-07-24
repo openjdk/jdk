@@ -547,7 +547,6 @@ final class StringConcatHelper {
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
-    @ForceInline
     static int prepend(int index, byte coder, byte[] buf, int value, String prefix) {
         if (coder == String.LATIN1) {
             index = StringLatin1.getChars(value, index, buf);
@@ -572,7 +571,6 @@ final class StringConcatHelper {
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
-    @ForceInline
     static int prepend(int index, byte coder, byte[] buf, long value, String prefix) {
         if (coder == String.LATIN1) {
             index = StringLatin1.getChars(value, index, buf);
