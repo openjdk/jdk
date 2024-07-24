@@ -624,12 +624,4 @@ final class StringConcatHelper {
     static byte stringCoder(char value) {
         return StringLatin1.canEncode(value) ? String.LATIN1 : String.UTF16;
     }
-
-    static String stringOf(float value) {
-        return Float.toString(value);
-    }
-
-    static String stringOf(double value) {
-        return Double.toString(value);
-    }
 }

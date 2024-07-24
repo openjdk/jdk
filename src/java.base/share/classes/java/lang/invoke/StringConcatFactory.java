@@ -1261,8 +1261,8 @@ public final class StringConcatFactory {
                     /*
                      * store string variants:
                      *
-                     * str0 = StringConcatHelper.stringOf(args(0));
-                     * str1 = StringConcatHelper.stringOf(args(1));
+                     * str0 = Float.toString(args(0));
+                     * str1 = Double.toString(args(1));
                      * ...
                      * strN = StringConcatHelper.stringOf(args(N));
                      *
@@ -1271,12 +1271,20 @@ public final class StringConcatFactory {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
+                            ClassDesc classDesc;
                             MethodTypeDesc methodTypeDesc;
+                            String methodName;
                             if (cl == float.class) {
+                                classDesc = CD_Float;
+                                methodName = "toString";
                                 methodTypeDesc = FLOAT_TO_STRING;
                             } else if (cl == double.class) {
+                                classDesc = CD_Double;
+                                methodName = "toString";
                                 methodTypeDesc = DOUBLE_TO_STRING;
                             } else {
+                                classDesc = CD_StringConcatHelper;
+                                methodName = "stringOf";
                                 methodTypeDesc = OBJECT_TO_STRING;
                             }
 
@@ -1285,7 +1293,7 @@ public final class StringConcatFactory {
                                     ? paramSlots[i]
                                     : argSlots + 3 + (strings++);
                             cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
+                              .invokestatic(classDesc, methodName, methodTypeDesc)
                               .astore(strLocalSlot);
                             if (cl != String.class) {
                                 paramSlots[i] = strLocalSlot;
