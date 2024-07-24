@@ -372,18 +372,15 @@ public final class StringConcatFactory {
                     MAX_INDY_CONCAT_ARG_SLOTS);
         }
 
-        MethodHandle mh = null;
         try {
             if (concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
-                mh = generateMHInlineCopy(concatType, constantStrings);
-                if (mh != null) {
-                    mh = mh.viewAsType(concatType, true);
-                }
+                return new ConstantCallSite(
+                        generateMHInlineCopy(concatType, constantStrings)
+                                .viewAsType(concatType, true));
+            } else {
+                return new ConstantCallSite(
+                        SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings));
             }
-            if (mh == null) {
-                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
-            }
-            return new ConstantCallSite(mh);
         } catch (Error e) {
             // Pass through any error
             throw e;
