@@ -2883,7 +2883,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   Node* loop_entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(loop_entry->is_Proj() && loop_entry->in(0)->is_If(), "if projection only");
 
-  // if abs(stride) == 1, an assert predicate for the final iv value is added. We don't know the final iv value until
+  // if abs(stride) == 1, an Assertion Predicate for the final iv value is added. We don't know the final iv value until
   // we're done with range check elimination so use a place holder.
   Node* final_iv_placeholder = nullptr;
   if (abs_stride_is_one) {
