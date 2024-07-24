@@ -1048,6 +1048,7 @@ public class TypeEnter implements Completer {
             if ((sym.flags_field & RECORD) != 0) {
                 List<JCVariableDecl> fields = TreeInfo.recordFields(tree);
 
+                int fieldPos = 0;
                 for (JCVariableDecl field : fields) {
                     /** Some notes regarding the code below. Annotations applied to elements of a record header are propagated
                      *  to other elements which, when applicable, not explicitly declared by the user: the canonical constructor,
@@ -1063,24 +1064,24 @@ public class TypeEnter implements Completer {
                      *  copying the original annotations from the record component to the corresponding field, again this applies
                      *  only if APs are present.
                      *
-                     *  First, we find the record component by comparing its name and position with current field,
-                     *  if any, and we mark it. Then we copy the annotations to the field so that annotations applicable only to the record component
+                     *  First, we get the record component matching the field position. Then we copy the annotations
+                     *  to the field so that annotations applicable only to the record component
                      *  can be attributed, as if declared in the field, and then stored in the metadata associated to the record
                      *  component. The invariance we need to keep here is that record components must be scheduled for
                      *  annotation only once during this process.
                      */
-                    RecordComponent rc = sym.findRecordComponentToRemove(field);
+                    RecordComponent rc = getRecordComponentAt(sym, fieldPos);
 
                     if (rc != null && (rc.getOriginalAnnos().length() != field.mods.annotations.length())) {
                         TreeCopier<JCTree> tc = new TreeCopier<>(make.at(field.pos));
-                        List<JCAnnotation> originalAnnos = tc.copy(rc.getOriginalAnnos());
-                        field.mods.annotations = originalAnnos;
+                        field.mods.annotations = tc.copy(rc.getOriginalAnnos());
                     }
 
                     memberEnter.memberEnter(field, env);
 
                     JCVariableDecl rcDecl = new TreeCopier<JCTree>(make.at(field.pos)).copy(field);
                     sym.createRecordComponent(rc, rcDecl, field.sym);
+                    fieldPos++;
                 }
 
                 enterThisAndSuper(sym, env);
@@ -1094,6 +1095,18 @@ public class TypeEnter implements Completer {
             }
         }
     }
+
+    // where
+        private RecordComponent getRecordComponentAt(ClassSymbol sym, int componentPos) {
+            int i = 0;
+            for (RecordComponent rc : sym.getRecordComponents()) {
+                if (i == componentPos) {
+                    return rc;
+                }
+                i++;
+            }
+            return null;
+        }
 
     /** Enter member fields and methods of a class
      */

@@ -31,6 +31,8 @@
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
 import helpers.Transforms;
+import jdk.internal.classfile.impl.BufWriterImpl;
+import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.parallel.Execution;
@@ -85,7 +87,7 @@ class CorpusTest {
             switch (coe) {
                 case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
                         b.writeU2(curPc);
                         b.writeU2(ln.line());
@@ -93,16 +95,16 @@ class CorpusTest {
                 });
                 case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lv.writeTo(b);
+                        Util.writeLocalVariable(b, lv);
                     }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lvt.writeTo(b);
+                        Util.writeLocalVariable(b, lvt);
                     }
                 });
                 default -> cob.with(coe);
