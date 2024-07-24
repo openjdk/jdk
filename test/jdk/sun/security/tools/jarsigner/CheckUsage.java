@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,23 +82,29 @@ public class CheckUsage {
         // Verify with own keystore is perfect.
         SecurityTools.jarsigner("-keystore js.jks -storepass changeit "
                 + "-strict -verify a.jar")
+                .shouldNotContain("not signed by alias in this keystore")
                 .shouldHaveExitValue(0);
-        // Verify with only CA keystore is also mostly OK
+        // Verify with only CA keystore is mostly OK
         SecurityTools.jarsigner("-keystore trust.jks -storepass changeit "
                         + "-strict -verify a.jar")
-                .shouldHaveExitValue(32); //aliasNotInStore(32)
+                .shouldContain("not signed by alias in this keystore")
+                .shouldHaveExitValue(0);
 
         // Test 3: When no keystore is specified, the error is only
         // "chain invalid"
 
         SecurityTools.jarsigner("-strict -verify a.jar")
+                .shouldContainOrderedSequence("Error:", "certificate chain is invalid", "Warning:")
+                .shouldNotContain("not signed by alias in this keystore")
                 .shouldHaveExitValue(4);
 
         // Test 4: When unrelated keystore is specified, the error is
-        // "chain invalid" and "not alias in keystore"
+        // "chain invalid" and the warning is "not alias in keystore"
 
         SecurityTools.jarsigner("-keystore unrelated.jks -storepass changeit "
                 + "-strict -verify a.jar")
-                .shouldHaveExitValue(36);
+                .shouldContainOrderedSequence("Error:", "certificate chain is invalid", "Warning:")
+                .shouldContainOrderedSequence("Warning:", "not signed by alias in this keystore")
+                .shouldHaveExitValue(4);
     }
 }

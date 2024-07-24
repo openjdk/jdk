@@ -338,7 +338,7 @@ public class Main {
             if (hasUnsignedEntry) {
                 exitCode |= 16;
             }
-            if (notSignedByAlias || aliasNotInStore) {
+            if (notSignedByAlias) {
                 exitCode |= 32;
             }
             if (tsaChainNotValidated) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,8 +117,7 @@ public class AliasNotInStoreTest extends Test {
                 "-keypass", PASSWORD,
                 UPDATED_SIGNED_JARFILE);
 
-        int expectedExitCode = ALIAS_NOT_IN_STORE_EXIT_CODE
-                + CHAIN_NOT_VALIDATED_EXIT_CODE;
+        int expectedExitCode = CHAIN_NOT_VALIDATED_EXIT_CODE;
         checkVerifying(analyzer, expectedExitCode,
                 CHAIN_NOT_VALIDATED_VERIFYING_WARNING,
                 ALIAS_NOT_IN_STORE_VERIFYING_WARNING);
