@@ -108,16 +108,10 @@ public class TestFrameworkJavaExample {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
         out.println("import compiler.lib.ir_framework.*;");
-        out.println("import compiler.lib.ir_framework.driver.irmatching.IRViolationException;");
         out.println("");
         out.println("public class X2 {");
         out.println("    public static void main(String args[]) {");
-        out.println("        try {");
-        out.println("            TestFramework.run(X2.class);");
-        out.println("            throw new RuntimeException(\"should fail before this\");");
-        out.println("        } catch (IRViolationException e) {");
-        out.println("            // expected.");
-        out.println("        }");
+        out.println("        TestFramework.run(X2.class);");
         out.println("    }");
         out.println("");
         out.println("    @Test");
@@ -148,13 +142,20 @@ public class TestFrameworkJavaExample {
         // Invoke the "X2.main" method from the compiled and loaded class.
         try {
             c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
+            throw new RuntimeException("IRViolationException expected.");
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("No such method:", e);
         } catch (IllegalAccessException e) {
             throw new RuntimeException("Illegal access:", e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
+            Throwable t = e.getCause();
+            if (t == null) {
+                throw new RuntimeException("IRViolationException expected:", e);
+            }
+            if (!t.getClass().getSimpleName().equals("IRViolationException")) {
+                throw new RuntimeException("IRViolationException expected:", e);
+            }
+            System.out.println("Success, we got a IRViolationException.");
         }
-        System.out.println("Success, there was a failed IR rule.");
     }
 }
