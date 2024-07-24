@@ -995,7 +995,7 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 #if INCLUDE_CDS
-#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid<pid>_<subcmd>.jsa"
+#define DEFAULT_CDS_ARCHIVE_FILENAME "java_pid%p_<subcmd>.jsa"
 
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
