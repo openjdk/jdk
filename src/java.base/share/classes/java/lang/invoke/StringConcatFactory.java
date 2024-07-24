@@ -1241,17 +1241,17 @@ public final class StringConcatFactory {
                     int paramCount = args.parameterCount();
 
                     // Compute parameter and local string variable slots
-                    int paramterSlotSize = 0;
-                    int[] paramSlots = new int[paramCount];
+                    int   paramSlotsTotalSize = 0;
+                    int[] paramSlots          = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
-                        paramSlots[i] = paramterSlotSize;
-                        paramterSlotSize += kind.slotSize();
+                        paramSlots[i] = paramSlotsTotalSize;
+                        paramSlotsTotalSize += kind.slotSize();
                     }
 
-                    int lengthCoderSloat = paramterSlotSize;
-                    int bufSlot          = paramterSlotSize + 2;
+                    int lengthCoderSloat = paramSlotsTotalSize;
+                    int bufSlot          = paramSlotsTotalSize + 2;
 
                     /*
                      * store string variants:
