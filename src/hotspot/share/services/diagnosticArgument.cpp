@@ -362,7 +362,7 @@ template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
   if (str != nullptr) {
     if (!_value.parse_value(str, len)) {
       stringStream error_msg;
-      error_msg.print("Invalid file path: %s", str);
+      error_msg.print("File path invalid or too long: %s", str);
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
     }
   }

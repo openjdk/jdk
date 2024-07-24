@@ -1015,7 +1015,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
   // of the default, not the actual default.
   FileArgument file_arg = _filename.value();
-  const char *file = _filename.is_set() ? file_arg.get() : nullptr;
+  const char* file = _filename.is_set() ? file_arg.get() : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
@@ -1194,7 +1194,7 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
   FileArgument file_arg = _filename.value();
-  const char *name = file_arg.get();
+  const char* name = file_arg.get();
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {
