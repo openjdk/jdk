@@ -111,14 +111,10 @@ import static java.lang.invoke.MethodType.methodType;
 public final class StringConcatFactory {
 
     private static final int HIGH_ARITY_THRESHOLD;
-    private static final boolean GENERATE_INLINE_COPY;
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
         HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 20;
-
-        String generateInlineCopy = VM.getSavedProperty("java.lang.invoke.StringConcat.generateInlineCopy");
-        GENERATE_INLINE_COPY = generateInlineCopy != null ? "true".equalsIgnoreCase(generateInlineCopy) : true;
     }
 
     /**
@@ -147,11 +143,6 @@ public final class StringConcatFactory {
     // methods are invoked with exact type information to avoid generating
     // code for runtime checks. Take care any changes or additions here are
     // reflected there as appropriate.
-
-    @SuppressWarnings("removal")
-    private static boolean isGenerateInlineCopy() {
-        return GENERATE_INLINE_COPY && System.getSecurityManager() == null;
-    }
 
     /**
      * Facilitates the creation of optimized String concatenation methods, that
@@ -513,10 +504,6 @@ public final class StringConcatFactory {
                 && constants[0] == null && constants[1] == null) {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
-        }
-
-        if (isGenerateInlineCopy()) {
-            return null;
         }
 
         // else... fall-through to slow-path
@@ -1069,20 +1056,8 @@ public final class StringConcatFactory {
      */
     private static final class SimpleStringBuilderStrategy {
         static final String METHOD_NAME = "concat";
-        static final ClassDesc STRING_BUILDER = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;");
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
-        static final MethodTypeDesc APPEND_BOOLEAN_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_boolean);
-        static final MethodTypeDesc APPEND_CHAR_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_char);
-        static final MethodTypeDesc APPEND_DOUBLE_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_double);
-        static final MethodTypeDesc APPEND_FLOAT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_float);
-        static final MethodTypeDesc APPEND_INT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_int);
-        static final MethodTypeDesc APPEND_LONG_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_long);
-        static final MethodTypeDesc APPEND_OBJECT_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_Object);
-        static final MethodTypeDesc APPEND_STRING_TYPE = MethodTypeDesc.of(STRING_BUILDER, ConstantDescs.CD_String);
-        static final MethodTypeDesc INT_CONSTRUCTOR_TYPE = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
-        static final MethodTypeDesc TO_STRING_TYPE = MethodTypeDesc.of(ConstantDescs.CD_String);
-
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
         static final ClassDesc CD_byteArray = ClassDesc.ofDescriptor("[B");
         static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
@@ -1119,7 +1094,6 @@ public final class StringConcatFactory {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
 
-            boolean generateInlineCopy = GENERATE_INLINE_COPY && args.parameterCount() <= HIGH_ARITY_THRESHOLD;
             byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
                     new Consumer<ClassBuilder>() {
                         @Override
@@ -1128,9 +1102,7 @@ public final class StringConcatFactory {
                                 .withMethodBody(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(args),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateInlineCopy
-                                                ? generateInlineCopyMethod(constants, args)
-                                                : generateMethod(constants, args));
+                                        generateMethod(constants, args));
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
@@ -1139,50 +1111,6 @@ public final class StringConcatFactory {
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
-        }
-
-        private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
-            return new Consumer<CodeBuilder>() {
-                @Override
-                public void accept(CodeBuilder cb) {
-                    cb.new_(STRING_BUILDER);
-                    cb.dup();
-
-                    int len = 0;
-                    for (String constant : constants) {
-                        if (constant != null) {
-                            len += constant.length();
-                        }
-                    }
-                    len += args.parameterCount() * ARGUMENT_SIZE_FACTOR;
-                    cb.loadConstant(len);
-                    cb.invokespecial(STRING_BUILDER, "<init>", INT_CONSTRUCTOR_TYPE);
-
-                    // At this point, we have a blank StringBuilder on stack, fill it in with .append calls.
-                    {
-                        int off = 0;
-                        for (int c = 0; c < args.parameterCount(); c++) {
-                            if (constants[c] != null) {
-                                cb.ldc(constants[c]);
-                                cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
-                            }
-                            Class<?> cl = args.parameterType(c);
-                            TypeKind kind = TypeKind.from(cl);
-                            cb.loadLocal(kind, off);
-                            off += kind.slotSize();
-                            MethodTypeDesc desc = getSBAppendDesc(cl);
-                            cb.invokevirtual(STRING_BUILDER, "append", desc);
-                        }
-                        if (constants[constants.length - 1] != null) {
-                            cb.ldc(constants[constants.length - 1]);
-                            cb.invokevirtual(STRING_BUILDER, "append", APPEND_STRING_TYPE);
-                        }
-                    }
-
-                    cb.invokevirtual(STRING_BUILDER, "toString", TO_STRING_TYPE);
-                    cb.areturn();
-                }
-            };
         }
 
         /**
@@ -1234,7 +1162,7 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateInlineCopyMethod(String[] constants, MethodType args) {
+        private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
@@ -1414,30 +1342,6 @@ public final class StringConcatFactory {
             String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
                     : hostClass.getName();
             return name + "$$StringConcat";
-        }
-
-        private static MethodTypeDesc getSBAppendDesc(Class<?> cl) {
-            if (cl.isPrimitive()) {
-                if (cl == Integer.TYPE || cl == Byte.TYPE || cl == Short.TYPE) {
-                    return APPEND_INT_TYPE;
-                } else if (cl == Boolean.TYPE) {
-                    return APPEND_BOOLEAN_TYPE;
-                } else if (cl == Character.TYPE) {
-                    return APPEND_CHAR_TYPE;
-                } else if (cl == Double.TYPE) {
-                    return APPEND_DOUBLE_TYPE;
-                } else if (cl == Float.TYPE) {
-                    return APPEND_FLOAT_TYPE;
-                } else if (cl == Long.TYPE) {
-                    return APPEND_LONG_TYPE;
-                } else {
-                    throw new IllegalStateException("Unhandled primitive StringBuilder.append: " + cl);
-                }
-            } else if (cl == String.class) {
-                return APPEND_STRING_TYPE;
-            } else {
-                return APPEND_OBJECT_TYPE;
-            }
         }
     }
 }
