@@ -48,9 +48,9 @@ void VectorSet::init(Arena* arena) {
 
 // Expand the existing set to a bigger size
 void VectorSet::grow(uint new_word_capacity) {
-  _nesting.check(_set_arena);
+  _nesting.check(_set_arena); // Check if a potential reallocation in the arena is safe
   if (new_word_capacity < _size) {
-    return; // no need to grow
+    return; // No need to grow
   }
   assert(new_word_capacity < (1U << 30), "");
   uint x = next_power_of_2(new_word_capacity);

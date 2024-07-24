@@ -39,10 +39,9 @@
 #include "utilities/powerOfTwo.hpp"
 
 void Block_Array::grow( uint i ) {
-  // TODO this triggers
-  // _nesting.check(_arena);
+  _nesting.check(_arena); // Check if a potential reallocation in the arena is safe
   if (i < Max()) {
-    return; // no need to grow
+    return; // No need to grow
   }
   assert(i >= Max(), "must be an overflow");
   debug_only(_limit = i+1);
@@ -379,6 +378,7 @@ void Block::dump(const PhaseCFG* cfg) const {
 PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 : Phase(CFG)
 , _root(root)
+, _blocks(arena)
 , _block_arena(arena)
 , _regalloc(nullptr)
 , _scheduling_for_pressure(false)
@@ -1422,7 +1422,7 @@ UnionFind::UnionFind( uint max ) : _cnt(max), _max(max), _indices(NEW_RESOURCE_A
 }
 
 void UnionFind::extend( uint from_idx, uint to_idx ) {
-  _nesting.check();
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   if( from_idx >= _max ) {
     uint size = 16;
     while( size <= from_idx ) size <<=1;

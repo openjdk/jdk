@@ -2766,9 +2766,9 @@ const RegMask &Node::in_RegMask(uint) const {
 }
 
 void Node_Array::grow(uint i) {
-  _nesting.check(_a);
+  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
   if (i < _max) {
-    return;
+    return; // No need to grow
   }
   assert(_max > 0, "invariant");
   uint old = _max;
@@ -2977,7 +2977,7 @@ void Unique_Node_List::remove_useless_nodes(VectorSet &useful) {
 
 //=============================================================================
 void Node_Stack::grow() {
-  _nesting.check(_a);
+  _nesting.check(_a); // Check if a potential reallocation in the arena is safe
   if (_inode_top < _inode_max) {
     return; // No need to grow
   }

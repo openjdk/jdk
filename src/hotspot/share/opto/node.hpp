@@ -1596,8 +1596,7 @@ protected:
   Arena* _a;                    // Arena to allocate in
   uint   _max;
   Node** _nodes;
-
-  ReallocMark _nesting;  // assertion check for reallocations
+  ReallocMark _nesting;         // Safety checks for arena reallocation
 
   void   grow( uint i );        // Grow array node to fit
 public:
@@ -1847,7 +1846,7 @@ protected:
   INode *_inode_max; // End of _inodes == _inodes + _max
   INode *_inodes;    // Array storage for the stack
   Arena *_a;         // Arena to allocate in
-  ReallocMark _nesting; // assertion check for reallocations
+  ReallocMark _nesting; // Safety checks for arena reallocation
   void grow();
 public:
   Node_Stack(int size) {

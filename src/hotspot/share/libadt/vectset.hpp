@@ -46,8 +46,7 @@ private:
   // Allocated words
   uint       _data_size;
   Arena*     _set_arena;
-
-  ReallocMark _nesting;  // assertion check for reallocations
+  ReallocMark _nesting; // Safety checks for arena reallocation
 
   void init(Arena* arena);
   // Grow vector to required word capacity
