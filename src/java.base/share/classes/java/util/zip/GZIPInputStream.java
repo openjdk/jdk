@@ -132,7 +132,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * <p>
      * With {@link ConcatPolicy#ALLOW}, an invalid GZIP header frame always triggers an {@link IOException},
-     * and any {@link IOException} thrown while trying to read that header frame is propagated to the caller.
+     * and any {@link IOException} thrown while trying to read a GZIP header frame is propagated to the caller.
      * In this scenario, every byte of the underlying input stream must be part of a complete and valid
      * compressed data stream, or else an {@link IOException} is guaranteed to be thrown.
      *
