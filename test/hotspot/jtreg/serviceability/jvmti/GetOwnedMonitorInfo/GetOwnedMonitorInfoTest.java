@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 8185164 8320515
+ * @bug 8185164 8320515 8334085
  * @summary Checks that a contended monitor does not show up in the list of owned monitors.
  *          8320515 piggy-backs on this test and injects an owned monitor with a dead object,
             and checks that that monitor isn't exposed to GetOwnedMonitorInfo.
@@ -53,7 +53,7 @@ public class GetOwnedMonitorInfoTest {
     private static native boolean hasEventPosted();
 
     private static void jniMonitorEnterAndLetObjectDie() {
-        // The monitor iterator used by GetOwnedMonitorInfo used to
+        // The monitor iterator used by GetOwnedMonitorInfo to
         // assert when an owned monitor with a dead object was found.
         // Inject this situation into this test that performs other
         // GetOwnedMonitorInfo testing.
@@ -86,6 +86,8 @@ public class GetOwnedMonitorInfoTest {
                 System.out.println("Thread doing JNI call: "
                                    + Thread.currentThread().getName());
 
+                // Extra unmount helps to reproduce 8334085.
+                // Two sub-sequential thaws are needed in that sceanrio.
                 Thread.yield();
                 jniMonitorEnterAndLetObjectDie();
             }
