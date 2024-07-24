@@ -45,18 +45,23 @@ import java.lang.reflect.InvocationTargetException;
  */
 public class TestFrameworkJavaExample {
 
+    public static void main(String args[]) {
+        test_X1();
+        test_X2();
+    }
+
     // Generate a source java file as String
-    public static String generate() {
+    public static String generate_X1() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
         out.println("import compiler.lib.ir_framework.*;");
         out.println("");
-        out.println("public class XYZ {");
+        out.println("public class X1 {");
         out.println("    public static void main(String args[]) {");
-        out.println("        TestFramework.run(XYZ.class);");
+        out.println("        TestFramework.run(X1.class);");
         out.println("    }");
         out.println("");
-        out.println("    @Test");
+        out.println("    @Test"); // Test with working IR rule testing for vectorization.
         out.println("    @IR(counts = {IRNode.LOAD_VECTOR_F, \"> 0\"},");
         out.println("        applyIfCPUFeatureOr = {\"sse2\", \"true\", \"asimd\", \"true\"})");
         out.println("    static float[] test() {");
@@ -71,22 +76,22 @@ public class TestFrameworkJavaExample {
         return writer.toString();
     }
 
-    public static void main(String args[]) {
+    static void test_X1() {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        String src = generate();
-        SourceFile file = new SourceFile("XYZ", src);
+        String src = generate_X1();
+        SourceFile file = new SourceFile("X1", src);
         comp.add(file);
 
         // Compile the source file.
         comp.compile();
 
         // Load the compiled class.
-        Class c = comp.getClass("XYZ");
+        Class c = comp.getClass("X1");
 
-        // Invoke the "XYZ.main" method from the compiled and loaded class.
+        // Invoke the "X1.main" method from the compiled and loaded class.
         try {
             c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
         } catch (NoSuchMethodException e) {
@@ -96,5 +101,60 @@ public class TestFrameworkJavaExample {
         } catch (InvocationTargetException e) {
             throw new RuntimeException("Invocation target:", e);
         }
+    }
+
+    // Generate a source java file as String
+    public static String generate_X2() {
+        StringWriter writer = new StringWriter();
+        PrintWriter out = new PrintWriter(writer);
+        out.println("import compiler.lib.ir_framework.*;");
+        out.println("import compiler.lib.ir_framework.driver.irmatching.IRViolationException;");
+        out.println("");
+        out.println("public class X2 {");
+        out.println("    public static void main(String args[]) {");
+        out.println("        try {");
+        out.println("            TestFramework.run(X2.class);");
+        out.println("            throw new RuntimeException(\"should fail before this\");");
+        out.println("        } catch (IRViolationException e) {");
+        out.println("            // expected.");
+        out.println("        }");
+        out.println("    }");
+        out.println("");
+        out.println("    @Test");
+        out.println("    @IR(counts = {IRNode.LOAD, \"> 0\"})"); // Conflicting IR rules
+        out.println("    @IR(failOn = IRNode.LOAD)");            //  -> one must fail.
+        out.println("    static void test() {");
+        out.println("    }");
+        out.println("}");
+        out.close();
+        return writer.toString();
+    }
+
+    static void test_X2() {
+        // Create a new CompileFramework instance.
+        CompileFramework comp = new CompileFramework();
+
+        // Add a java source file.
+        String src = generate_X2();
+        SourceFile file = new SourceFile("X2", src);
+        comp.add(file);
+
+        // Compile the source file.
+        comp.compile();
+
+        // Load the compiled class.
+        Class c = comp.getClass("X2");
+
+        // Invoke the "X2.main" method from the compiled and loaded class.
+        try {
+            c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("No such method:", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("Invocation target:", e);
+        }
+        System.out.println("Success, there was a failed IR rule.");
     }
 }
