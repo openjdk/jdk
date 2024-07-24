@@ -287,10 +287,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahPrepareForMarkClosure cl;
-  jlong start = os::javaTimeNanos();
   heap->parallel_heap_region_iterate(&cl);
-  jlong end = os::javaTimeNanos();
-  log_info(gc)("ShenandoahPrepareForMarkClosure Total time %ld ns.", end - start);
 
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
