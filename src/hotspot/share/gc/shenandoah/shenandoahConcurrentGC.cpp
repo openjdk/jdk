@@ -753,7 +753,6 @@ public:
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
-  uint                                 const _expected_workers;
   ShenandoahVMWeakRoots<true /*concurrent*/> _vm_roots;
 
   // Roots related to concurrent class unloading
@@ -765,12 +764,10 @@ private:
 public:
   ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
-    _expected_workers(ShenandoahHeap::heap()->workers()->active_workers()),
     _vm_roots(phase),
-    _cld_roots(phase, _expected_workers, false /*heap iteration*/),
-    _nmethod_itr(ShenandoahCodeRoots::table(), _expected_workers),
-    _phase(phase) {
-  }
+    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
+    _nmethod_itr(ShenandoahCodeRoots::table()),
+    _phase(phase) {}
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
     // Notify runtime data structures of potentially dead oops
@@ -862,7 +859,6 @@ public:
 
 class ShenandoahConcurrentRootsEvacUpdateTask : public WorkerTask {
 private:
-  uint                                    const _expected_workers;
   ShenandoahPhaseTimings::Phase                 _phase;
   ShenandoahVMRoots<true /*concurrent*/>        _vm_roots;
   ShenandoahClassLoaderDataRoots<true /*concurrent*/>
@@ -872,12 +868,10 @@ private:
 public:
   ShenandoahConcurrentRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Strong Roots"),
-    _expected_workers(ShenandoahHeap::heap()->workers()->active_workers()),
     _phase(phase),
     _vm_roots(phase),
-    _cld_roots(phase, _expected_workers, false /*heap iteration*/),
-    _nmethod_itr(ShenandoahCodeRoots::table(), _expected_workers) {
-  }
+    _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
+    _nmethod_itr(ShenandoahCodeRoots::table()) {}
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);

@@ -486,34 +486,30 @@ void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
   // with other threads waiting on iteration to be over.
   NoSafepointVerifier nsv;
 
-  bool do_work;
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-  {
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-    if (_finished_workers == 0) {
-      // Still no threads are done. We are still collecting threads here.
-      if (_started_workers++ == 0) {
-        // First thread initializes the snapshot.
-        _table_snapshot = _table->snapshot_for_iteration();
-      }
-      do_work = true;
-    } else {
-      // Some threads are done already. We are now committed, all started
-      // threads should finish, and no new threads should appear.
-      do_work = false;
-    }
+  if (_finished_workers > 0) {
+    // Some threads have already finished. We are now in rampdown: we are now
+    // waiting for all currently recorded workers to finish. No new workers
+    // should start.
+    return;
   }
 
-  if (do_work) {
-    _table_snapshot->concurrent_nmethods_do(cl);
+  // Record a new worker and initialize the snapshot if it is a first visitor.
+  if (_started_workers++ == 0) {
+    _table_snapshot = _table->snapshot_for_iteration();
+  }
 
-    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    uint id = ++_finished_workers;
-    if (id == _started_workers) {
-      // Last worker shuts down the iterator and notifies any waiters.
-      _table->finish_iteration(_table_snapshot);
-      CodeCache_lock->notify_all();
-    }
+  // All set, relinquish the lock and go concurrent.
+  {
+    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    _table_snapshot->concurrent_nmethods_do(cl);
+  }
+
+  // Record completion. Last worker shuts down the iterator and notifies any waiters.
+  uint count = ++_finished_workers;
+  if (count == _started_workers) {
+    _table->finish_iteration(_table_snapshot);
+    CodeCache_lock->notify_all();
   }
 }

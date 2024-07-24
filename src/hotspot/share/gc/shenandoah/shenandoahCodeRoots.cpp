@@ -101,7 +101,7 @@ private:
 public:
   ShenandoahDisarmNMethodsTask() :
     WorkerTask("Shenandoah Disarm NMethods"),
-    _iterator(ShenandoahCodeRoots::table(), ShenandoahHeap::heap()->workers()->active_workers()) {
+    _iterator(ShenandoahCodeRoots::table()) {
     assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
   }
 
@@ -170,8 +170,7 @@ public:
   ShenandoahUnlinkTask(bool unloading_occurred) :
     WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
-    _iterator(ShenandoahCodeRoots::table(), ShenandoahHeap::heap()->workers()->active_workers()) {
-  }
+    _iterator(ShenandoahCodeRoots::table()) {}
 
   virtual void work(uint worker_id) {
     _iterator.nmethods_do(&_cl);
