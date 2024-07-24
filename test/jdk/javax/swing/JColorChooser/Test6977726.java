@@ -57,6 +57,12 @@ public class Test6977726 {
     }
 
     private static JColorChooser createColorChooser() {
+
+        // In case if this test is run with GTK L&F, the Preview Panel title
+        // is missing due to the "ColorChooser.showPreviewPanelText" property
+        // which is set to "Boolean.FALSE" for GTK L&F. Test instructions are
+        // modified to reflet that "Preview" title is not applicable for GTK L&F.
+
         JColorChooser chooser = new JColorChooser(Color.BLUE);
         chooser.setPreviewPanel(new JLabel("Text Preview Panel"));
         return chooser;
