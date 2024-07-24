@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -131,7 +132,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     }
 
     @Override
-    protected HtmlStyles[] getColumnStyles() {
-        return new HtmlStyles[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 }

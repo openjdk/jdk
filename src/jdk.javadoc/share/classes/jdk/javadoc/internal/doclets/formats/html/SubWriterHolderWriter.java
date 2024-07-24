@@ -40,6 +40,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 
 /**
@@ -262,7 +263,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param target the list of summary sections to which the summary will be added
      * @param source the content representing the summary
      */
-    public void addSummary(HtmlStyles style, HtmlId htmlId, Content target, Content source) {
+    public void addSummary(HtmlStyle style, HtmlId htmlId, Content target, Content source) {
         var htmlTree = HtmlTree.SECTION(style, source)
                 .setId(htmlId);
         target.add(getSummariesListItem(htmlTree));
@@ -294,7 +295,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      * @param source the content used to generate the complete member content
      * @return the member content
      */
-    public Content getMember(HtmlId id, HtmlStyles style, Content source) {
+    public Content getMember(HtmlId id, HtmlStyle style, Content source) {
         return HtmlTree.SECTION(style, source).setId(id);
     }
 }

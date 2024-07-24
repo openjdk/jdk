@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -166,12 +167,12 @@ public class DeprecatedListWriter extends SummaryListWriter<DeprecatedAPIListBui
     }
 
     @Override
-    protected HtmlStyles[] getColumnStyles() {
+    protected HtmlStyle[] getColumnStyles() {
         List<String> releases = builder.releases;
         if (releases.isEmpty()) {
             return super.getColumnStyles();
         }
-        return new HtmlStyles[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 
     @Override

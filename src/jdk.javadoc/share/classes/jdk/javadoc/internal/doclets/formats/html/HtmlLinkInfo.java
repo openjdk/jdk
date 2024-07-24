@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.Text;
 
 
@@ -92,7 +93,7 @@ public class HtmlLinkInfo {
     private Element targetMember;
 
     // Optional style for the link.
-    private HtmlStyles style = null;
+    private HtmlStyle style = null;
 
     // The class we want to link to. Null if we are not linking to a class.
     private TypeElement typeElement;
@@ -251,7 +252,7 @@ public class HtmlLinkInfo {
      * @param style the new style value
      * @return this object
      */
-    public HtmlLinkInfo style(HtmlStyles style) {
+    public HtmlLinkInfo style(HtmlStyle style) {
         this.style = style;
         return this;
     }
@@ -259,7 +260,7 @@ public class HtmlLinkInfo {
     /**
      * {@return the optional style for the link}
      */
-    public HtmlStyles getStyle() {
+    public HtmlStyle getStyle() {
         return style;
     }
 

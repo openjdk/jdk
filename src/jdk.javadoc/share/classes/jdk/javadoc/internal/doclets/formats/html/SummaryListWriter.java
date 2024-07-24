@@ -41,6 +41,7 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
@@ -370,8 +371,8 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      *
      * @return the styles to use for table columns
      */
-    protected HtmlStyles[] getColumnStyles() {
-        return new HtmlStyles[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colLast };
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colLast };
     }
 
     /**

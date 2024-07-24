@@ -52,6 +52,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -636,7 +637,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
         // Create the table header and column styles.
         List<Content> colHeaders = new ArrayList<>();
-        List<HtmlStyles> colStyles = new ArrayList<>();
+        List<HtmlStyle> colStyles = new ArrayList<>();
         colHeaders.add(contents.packageLabel);
         colStyles.add(HtmlStyles.colFirst);
 

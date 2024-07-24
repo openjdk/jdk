@@ -38,6 +38,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -254,7 +255,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        List<HtmlStyles> bodyRowStyles;
+        List<HtmlStyle> bodyRowStyles;
 
         if (foundNonPubConstructor) {
             bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colConstructorName,

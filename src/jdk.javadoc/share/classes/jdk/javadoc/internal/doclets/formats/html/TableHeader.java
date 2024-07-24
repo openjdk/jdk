@@ -34,6 +34,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 
 /**
@@ -53,7 +54,7 @@ public class TableHeader extends Content {
      * The style class names for each of the {@code <th>} cells in the header row.
      * If not set, default style names will be used.
      */
-    private List<HtmlStyles> styles;
+    private List<HtmlStyle> styles;
 
     private boolean[] sortable;
 
@@ -91,7 +92,7 @@ public class TableHeader extends Content {
      * @param styles the style class names
      * @return this object
      */
-    public TableHeader styles(HtmlStyles... styles) {
+    public TableHeader styles(HtmlStyle... styles) {
         if (styles.length != cellContents.size()) {
             throw new IllegalStateException();
         }
@@ -119,7 +120,7 @@ public class TableHeader extends Content {
      * @param styles the style class names
      * @return this object
      */
-    public TableHeader styles(List<HtmlStyles> styles) {
+    public TableHeader styles(List<HtmlStyle> styles) {
         if (styles.size() != cellContents.size()) {
             throw new IllegalStateException();
         }
@@ -152,7 +153,7 @@ public class TableHeader extends Content {
         Content header = new ContentBuilder();
         int i = 0;
         for (Content cellContent : cellContents) {
-            HtmlStyles style = (styles != null) ? styles.get(i)
+            HtmlStyle style = (styles != null) ? styles.get(i)
                     : (i == 0) ? HtmlStyles.colFirst
                     : (i == (cellContents.size() - 1)) ? HtmlStyles.colLast
                     : (i == 1) ? HtmlStyles.colSecond : null;

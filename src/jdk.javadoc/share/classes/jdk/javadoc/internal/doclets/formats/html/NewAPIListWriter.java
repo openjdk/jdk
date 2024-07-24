@@ -37,6 +37,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.NewAPIBuilder;
 import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -147,8 +148,8 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     }
 
     @Override
-    protected HtmlStyles[] getColumnStyles() {
-        return new HtmlStyles[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    protected HtmlStyle[] getColumnStyles() {
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
     }
 
     private static String getHeading(HtmlConfiguration configuration) {

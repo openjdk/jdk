@@ -36,6 +36,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
 
@@ -93,7 +94,7 @@ public class NestedClassWriter extends AbstractMemberWriter {
 
     @Override
     protected Table<Element> createSummaryTable() {
-        List<HtmlStyles> bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colSecond,
+        List<HtmlStyle> bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colSecond,
                 HtmlStyles.colLast);
 
         return new Table<Element>(HtmlStyles.summaryTable)

@@ -120,6 +120,7 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.RawHtml;
@@ -916,7 +917,7 @@ public abstract class HtmlDocletWriter {
      * @return the link
      */
     public Content getCrossClassLink(TypeElement classElement, String refMemName,
-                                     Content label, HtmlStyles style, boolean code) {
+                                     Content label, HtmlStyle style, boolean code) {
         if (classElement != null) {
             String className = utils.getSimpleName(classElement);
             PackageElement packageElement = utils.containingPackage(classElement);
@@ -1004,7 +1005,7 @@ public abstract class HtmlDocletWriter {
      * @param target the content to which the link with be added
      */
     public void addPreQualifiedClassLink(HtmlLinkInfo.Kind context,
-                                         TypeElement typeElement, HtmlStyles style, Content target) {
+                                         TypeElement typeElement, HtmlStyle style, Content target) {
         PackageElement pkg = utils.containingPackage(typeElement);
         if(pkg != null && ! configuration.shouldExcludeQualifier(pkg.getSimpleName().toString())) {
             target.add(getEnclosingPackageName(typeElement));
@@ -1090,7 +1091,7 @@ public abstract class HtmlDocletWriter {
      * @return the link for the given member.
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element element,
-                              CharSequence label, HtmlStyles style) {
+                              CharSequence label, HtmlStyle style) {
         return getDocLink(context, typeElement, element, Text.of(label), style, false);
     }
 
@@ -1124,7 +1125,7 @@ public abstract class HtmlDocletWriter {
      * @return the link for the given member.
      */
     public Content getDocLink(HtmlLinkInfo.Kind context, TypeElement typeElement, Element element,
-                              Content label, HtmlStyles style, boolean isProperty) {
+                              Content label, HtmlStyle style, boolean isProperty) {
         if (!utils.isLinkable(typeElement, element)) {
             return label;
         }
@@ -2415,7 +2416,7 @@ public abstract class HtmlDocletWriter {
         return body;
     }
 
-    public HtmlStyles getBodyStyle() {
+    public HtmlStyle getBodyStyle() {
         String kind = getClass().getSimpleName()
                 .replaceAll("(Writer)?(Impl)?$", "")
                 .replaceAll("AnnotationType", "Class")

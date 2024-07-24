@@ -39,6 +39,7 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
@@ -74,15 +75,15 @@ import jdk.javadoc.internal.html.Text;
  *            for each tab, or {@code Void} when a table does not contain tabs
  */
 public class Table<T> extends Content {
-    private final HtmlStyles tableStyle;
+    private final HtmlStyle tableStyle;
     private Content caption;
     private List<Tab<T>> tabs;
     private Set<Tab<T>> occurringTabs;
     private Content defaultTab;
     private boolean renderTabs = true;
     private TableHeader header;
-    private List<HtmlStyles> columnStyles;
-    private HtmlStyles gridStyle;
+    private List<HtmlStyle> columnStyles;
+    private HtmlStyle gridStyle;
     private final List<Content> bodyRows;
     private HtmlId id;
 
@@ -96,7 +97,7 @@ public class Table<T> extends Content {
      *
      * @param tableStyle the style class for the top-level {@code <div>} element
      */
-    public Table(HtmlStyles tableStyle) {
+    public Table(HtmlStyle tableStyle) {
         this.tableStyle = tableStyle;
         bodyRows = new ArrayList<>();
     }
@@ -186,7 +187,7 @@ public class Table<T> extends Content {
      * @param styles the styles
      * @return this object
      */
-    public Table<T> setColumnStyles(HtmlStyles... styles) {
+    public Table<T> setColumnStyles(HtmlStyle... styles) {
         return setColumnStyles(Arrays.asList(styles));
     }
 
@@ -201,7 +202,7 @@ public class Table<T> extends Content {
      * @param styles the styles
      * @return this object
      */
-    public Table<T> setColumnStyles(List<HtmlStyles> styles) {
+    public Table<T> setColumnStyles(List<HtmlStyle> styles) {
         columnStyles = styles;
         return this;
     }
@@ -214,7 +215,7 @@ public class Table<T> extends Content {
      * @param gridStyle the grid style
      * @return this object
      */
-    public Table<T> setGridStyle(HtmlStyles gridStyle) {
+    public Table<T> setGridStyle(HtmlStyle gridStyle) {
         this.gridStyle = gridStyle;
         return this;
     }
@@ -304,7 +305,7 @@ public class Table<T> extends Content {
         Content row = new ContentBuilder();
 
         int rowIndex = bodyRows.size();
-        HtmlStyles rowStyle = rowIndex % 2 == 0 ? HtmlStyles.evenRowColor : HtmlStyles.oddRowColor;
+        HtmlStyle rowStyle = rowIndex % 2 == 0 ? HtmlStyles.evenRowColor : HtmlStyles.oddRowColor;
 
         List<String> tabClasses = new ArrayList<>();
         if (tabs != null) {
@@ -322,7 +323,7 @@ public class Table<T> extends Content {
         }
         int colIndex = 0;
         for (Content c : contents) {
-            HtmlStyles cellStyle = columnStyles.get(colIndex);
+            HtmlStyle cellStyle = columnStyles.get(colIndex);
             // Always add content to make sure the cell isn't dropped
             var cell = HtmlTree.DIV(cellStyle).addUnchecked(c.isEmpty() ? Text.EMPTY : c);
             cell.addStyle(rowStyle);
@@ -414,7 +415,7 @@ public class Table<T> extends Content {
         return main;
     }
 
-    private HtmlTree createTab(HtmlId tabId, HtmlStyles style, boolean defaultTab, Content tabLabel) {
+    private HtmlTree createTab(HtmlId tabId, HtmlStyle style, boolean defaultTab, Content tabLabel) {
         var tab = new HtmlTree(HtmlTag.BUTTON)
                 .setId(tabId)
                 .put(HtmlAttr.ROLE, "tab")
