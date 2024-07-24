@@ -99,7 +99,7 @@ public class CompileFramework {
 
         if (!success) {
             System.out.println("Compilation failed.");
-            throw new RuntimeException("Compilation failed.");
+            throw new CompileFrameworkException("Compilation failed.");
         }
 
         System.out.println("Compilation successfull, creating ClassLoader...");
