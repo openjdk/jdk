@@ -403,7 +403,7 @@ public sealed interface Binding {
             }
             bindings.add(Binding.vmLoad(storage, loadType));
             if (isSubIntType(type)) {
-                bindings.add(Binding.cast(int.class, type, SIGN_EXTEND));
+                bindings.add(Binding.cast(int.class, type));
             }
             return this;
         }
@@ -476,7 +476,7 @@ public sealed interface Binding {
         // Converts to long if needed then shifts left by the given number of Bytes.
         public Binding.Builder shiftLeft(int shiftAmount, Class<?> type) {
             if (type != long.class) {
-                bindings.add(Binding.cast(type, long.class, SIGN_EXTEND));
+                bindings.add(Binding.cast(type, long.class));
             }
             bindings.add(Binding.shiftLeft(shiftAmount));
             return this;
@@ -859,7 +859,7 @@ public sealed interface Binding {
      *
      */
     enum Cast implements Binding {
-        INT_TO_BOOLEAN(int.class, boolean.class, SIGN_EXTEND) {
+        INT_TO_BOOLEAN(int.class, boolean.class) {
             @Override
             public void interpret(Deque<Object> stack, StoreFunc storeFunc,
                                   LoadFunc loadFunc, SegmentAllocator allocator) {
@@ -869,37 +869,35 @@ public sealed interface Binding {
                 stack.push(result);
             }
         },
-        INT_TO_BYTE(int.class, byte.class, SIGN_EXTEND),
-        INT_TO_CHAR(int.class, char.class, SIGN_EXTEND),
-        INT_TO_SHORT(int.class, short.class, SIGN_EXTEND),
-        INT_TO_LONG(int.class, long.class, SIGN_EXTEND),
+        INT_TO_BYTE(int.class, byte.class),
+        INT_TO_CHAR(int.class, char.class),
+        INT_TO_SHORT(int.class, short.class),
+        INT_TO_LONG(int.class, long.class),
 
-        BOOLEAN_TO_INT(boolean.class, int.class, SIGN_EXTEND),
-        BYTE_TO_INT(byte.class, int.class, SIGN_EXTEND),
-        UBYTE_TO_INT(byte.class, int.class, ZERO_EXTEND),
-        CHAR_TO_INT(char.class, int.class, SIGN_EXTEND),
-        SHORT_TO_INT(short.class, int.class, SIGN_EXTEND),
-        USHORT_TO_INT(short.class, int.class, ZERO_EXTEND),
-        LONG_TO_INT(long.class, int.class, SIGN_EXTEND),
+        BOOLEAN_TO_INT(boolean.class, int.class),
+        BYTE_TO_INT(byte.class, int.class),
+        UBYTE_TO_INT(byte.class, int.class),
+        CHAR_TO_INT(char.class, int.class),
+        SHORT_TO_INT(short.class, int.class),
+        USHORT_TO_INT(short.class, int.class),
+        LONG_TO_INT(long.class, int.class),
 
-        LONG_TO_BYTE(long.class, byte.class, SIGN_EXTEND),
-        LONG_TO_SHORT(long.class, short.class, SIGN_EXTEND),
-        LONG_TO_CHAR(long.class, char.class, SIGN_EXTEND),
+        LONG_TO_BYTE(long.class, byte.class),
+        LONG_TO_SHORT(long.class, short.class),
+        LONG_TO_CHAR(long.class, char.class),
 
-        BYTE_TO_LONG(byte.class, long.class, SIGN_EXTEND),
-        UBYTE_TO_LONG(byte.class, long.class, ZERO_EXTEND),
-        SHORT_TO_LONG(short.class, long.class, SIGN_EXTEND),
-        USHORT_TO_LONG(short.class, long.class, ZERO_EXTEND),
-        CHAR_TO_LONG(char.class, long.class, SIGN_EXTEND);
+        BYTE_TO_LONG(byte.class, long.class),
+        UBYTE_TO_LONG(byte.class, long.class),
+        SHORT_TO_LONG(short.class, long.class),
+        USHORT_TO_LONG(short.class, long.class),
+        CHAR_TO_LONG(char.class, long.class);
 
         private final Class<?> fromType;
         private final Class<?> toType;
-        private final ExtendBehavior extendBehavior; // 1 or 0 extend?
 
-        Cast(Class<?> fromType, Class<?> toType, ExtendBehavior extendBehavior) {
+        Cast(Class<?> fromType, Class<?> toType) {
             this.fromType = fromType;
             this.toType = toType;
-            this.extendBehavior = extendBehavior;
         }
 
         public Class<?> fromType() {

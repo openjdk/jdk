@@ -300,14 +300,14 @@ public final class FallbackLinker extends AbstractLinker {
                     case 2 -> JAVA_CHAR; // prefer JAVA_CHAR
                     default -> FFIType.layoutFor(wchar_size);
                 };
-                if (!LibFallback.wcharSign()) {
+                if (LibFallback.wcharIsUnsigned()) {
                     wchartLayout = asUnsigned(wchartLayout);
                 }
 
                 CANONICAL_LAYOUTS = Map.ofEntries(
                     // specified canonical layouts
                     Map.entry("bool", JAVA_BOOLEAN),
-                    Map.entry("char", LibFallback.charSign() ? JAVA_BYTE : asUnsigned(JAVA_BYTE)),
+                    Map.entry("char", LibFallback.charIsUnsigned() ? asUnsigned(JAVA_BYTE) : JAVA_BYTE),
                     Map.entry("unsigned char", asUnsigned(JAVA_BYTE)),
                     Map.entry("float", JAVA_FLOAT),
                     Map.entry("long long", JAVA_LONG.withByteAlignment(LibFallback.longLongAlign())),

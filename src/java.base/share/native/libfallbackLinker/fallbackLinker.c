@@ -325,11 +325,11 @@ Java_jdk_internal_foreign_abi_fallback_LibFallback_alignof_1double(JNIEnv* env, 
 #define IS_UNSIGNED(T) ((T)0 < (T)-1)
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1signof_1wchar(JNIEnv* env, jclass cls) {
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1wchar_1is_1unsigned(JNIEnv* env, jclass cls) {
   return IS_UNSIGNED(wchar_t);
 }
 
 JNIEXPORT jboolean JNICALL
-Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1signof_1char(JNIEnv* env, jclass cls) {
+Java_jdk_internal_foreign_abi_fallback_LibFallback_ffi_1char_1is_1unsigned(JNIEnv* env, jclass cls) {
   return IS_UNSIGNED(char);
 }

@@ -70,8 +70,8 @@ final class LibFallback {
     static int intSize() { return NativeConstants.SIZEOF_INT; }
     static int longSize() {return NativeConstants.SIZEOF_LONG; }
     static int wcharSize() {return NativeConstants.SIZEOF_WCHAR; }
-    static boolean wcharSign() {return NativeConstants.SIGNOF_WCHAR; }
-    static boolean charSign() {return NativeConstants.SIGNOF_CHAR; }
+    static boolean wcharIsUnsigned() {return NativeConstants.WCHAR_IS_UNSIGNED; }
+    static boolean charIsUnsigned() {return NativeConstants.CHAR_IS_UNSIGNED; }
     static int longLongAlign() { return NativeConstants.ALIGNOF_LONG_LONG; }
     static int doubleAlign() { return NativeConstants.ALIGNOF_DOUBLE; }
 
@@ -243,8 +243,8 @@ final class LibFallback {
     private static native int ffi_sizeof_int();
     private static native int ffi_sizeof_long();
     private static native int ffi_sizeof_wchar();
-    private static native boolean ffi_signof_wchar();
-    private static native boolean ffi_signof_char();
+    private static native boolean ffi_wchar_is_unsigned();
+    private static native boolean ffi_char_is_unsigned();
 
     private static native int alignof_long_long();
     private static native int alignof_double();
@@ -271,8 +271,8 @@ final class LibFallback {
         static final int SIZEOF_INT = ffi_sizeof_int();
         static final int SIZEOF_LONG = ffi_sizeof_long();
         static final int SIZEOF_WCHAR = ffi_sizeof_wchar();
-        static final boolean SIGNOF_WCHAR = ffi_signof_wchar();
-        static final boolean SIGNOF_CHAR = ffi_signof_char();
+        static final boolean WCHAR_IS_UNSIGNED = ffi_wchar_is_unsigned();
+        static final boolean CHAR_IS_UNSIGNED = ffi_char_is_unsigned();
 
         static final int ALIGNOF_LONG_LONG = alignof_long_long();
         static final int ALIGNOF_DOUBLE = alignof_double();

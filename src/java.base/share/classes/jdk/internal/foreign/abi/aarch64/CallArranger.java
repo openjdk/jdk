@@ -448,8 +448,7 @@ public abstract class CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    ValueLayout valueLayout = (ValueLayout) layout;
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, valueLayout);
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
                     bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
