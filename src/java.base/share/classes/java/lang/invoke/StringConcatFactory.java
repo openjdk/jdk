@@ -373,14 +373,18 @@ public final class StringConcatFactory {
         }
 
         try {
-            if (concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
-                return new ConstantCallSite(
-                        generateMHInlineCopy(concatType, constantStrings)
-                                .viewAsType(concatType, true));
-            } else {
-                return new ConstantCallSite(
-                        SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings));
+            MethodHandle mh = simpleConcat(concatType, constantStrings);
+            if (mh == null && concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
+                mh = generateMHInlineCopy(concatType, constantStrings);
             }
+
+            if (mh != null) {
+                mh = mh.viewAsType(concatType, true);
+            } else {
+                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
+            }
+
+            return new ConstantCallSite(mh);
         } catch (Error e) {
             // Pass through any error
             throw e;
@@ -468,14 +472,7 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    /**
-     * <p>This strategy replicates what StringBuilders are doing: it builds the
-     * byte[] array on its own and passes that byte[] array to String
-     * constructor. This strategy requires access to some private APIs in JDK,
-     * most notably, the private String constructor that accepts byte[] arrays
-     * without copying.
-     */
-    private static MethodHandle generateMHInlineCopy(MethodType mt, String[] constants) {
+    private static MethodHandle simpleConcat(MethodType mt, String[] constants) {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
@@ -502,6 +499,21 @@ public final class StringConcatFactory {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
         }
+
+        return null;
+    }
+
+    /**
+     * <p>This strategy replicates what StringBuilders are doing: it builds the
+     * byte[] array on its own and passes that byte[] array to String
+     * constructor. This strategy requires access to some private APIs in JDK,
+     * most notably, the private String constructor that accepts byte[] arrays
+     * without copying.
+     */
+    private static MethodHandle generateMHInlineCopy(MethodType mt, String[] constants) {
+        int paramCount = mt.parameterCount();
+        String suffix = constants[paramCount];
+
 
         // else... fall-through to slow-path
 
