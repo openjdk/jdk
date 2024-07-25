@@ -526,14 +526,15 @@ public class BootClassPathZip64Creator {
             // Verify that new ZIP file is byte-for-byte as-expected.
             zip_bytes = Files.readAllBytes(ZIP_PATH);
             ensureMatch(zip_sha512_digest, zip_bytes, ZIP_PATH.toString());
-            // Delete class file so BootClassPathZip64Test does not find it.
-            Files.deleteIfExists(CLASS_FILE_PATH);
         } catch (Exception e) {
             System.out.println("Dumping inline ZIP file" +
                                "; recreation unsuccessful due to: " +
                                e.getMessage());
             dumpTestZip();
             System.out.println("Successfully dumped inline ZIP file");
+        } finally {
+            // Delete class file so BootClassPathZip64Test does not find it.
+            Files.deleteIfExists(CLASS_FILE_PATH);
         }
     }
 
