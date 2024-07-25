@@ -54,8 +54,7 @@ import java.util.function.Supplier;
  * StableValue is mainly intended to be a member of a holding class and is usually neither
  * exposed directly via accessors nor passed as a method parameter.
  *
- * <a id="Factories"></a>
- * <h2>Factories</h2>
+ * <h2 id="factories">Factories</h2>
  * <p>
  * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
  * factory.
@@ -114,8 +113,7 @@ import java.util.function.Supplier;
  * The constructs above are eligible for similar JVM optimizations as StableValue
  * instances.
  *
- * <a id="MemoryConsistency"></a>
- * <h2>Memory Consistency Properties</h2>
+ * <h2 id="memory-consistency">Memory Consistency Properties</h2>
  * Actions on a presumptive holder value in a thread prior to calling a method that <i>sets</i>
  * the holder value are seen by any other thread that first <i>observes</i> a set holder value.
  *
@@ -123,12 +121,11 @@ import java.util.function.Supplier;
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
  * relation because the stable value set/observe relation is not transitive.
  *
- * <a id="Nullability"></a>
- * <h2>Nullability</h2>
+ * <h2 id="nullability">Nullability</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
  * <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
- * <a id="Identity"></a>
+ * <a id="identity"></a>
  * Implementations of this interface can be
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
  * classes; programmers should treat instances that are
