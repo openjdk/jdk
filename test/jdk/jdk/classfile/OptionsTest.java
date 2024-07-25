@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ class OptionsTest {
     @MethodSource("corpus")
     void testAttributesProcessingOptionOnTransform(Path path) throws Exception {
         testNoUnstable(path, ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transform(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNSTABLE_ATRIBUTES).transformClass(
                             ClassFile.of().parse(path),
                             ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL))));
     }
@@ -108,7 +108,7 @@ class OptionsTest {
 
         //test drop unknown at transform
         assertTrue(ClassFile.of().parse(
-                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transform(
+                ClassFile.of(ClassFile.AttributesProcessingOption.DROP_UNKNOWN_ATTRIBUTES).transformClass(
                         ClassFile.of().parse(classBytes),
                         ClassTransform.ACCEPT_ALL)).attributes().isEmpty());
     }
@@ -117,6 +117,6 @@ class OptionsTest {
         if (e instanceof AttributedElement ae) ae.attributes().forEach(a ->
                 assertTrue(AttributeMapper.AttributeStability.UNSTABLE.ordinal() >= a.attributeMapper().stability().ordinal(),
                            () -> "class " + path + " contains unexpected " + a));
-        if (e instanceof CompoundElement ce) ce.forEachElement(ee -> testNoUnstable(path, (ClassFileElement)ee));
+        if (e instanceof CompoundElement ce) ce.forEach(ee -> testNoUnstable(path, (ClassFileElement)ee));
     }
 }

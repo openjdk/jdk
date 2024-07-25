@@ -164,8 +164,6 @@ class Klass : public Metadata {
   uintx    _secondary_supers_bitmap;
   uint8_t  _hash_slot;
 
-  static uint8_t compute_hash_slot(Symbol* s);
-
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
                                 // Keep it away from the beginning of a Klass to avoid cacheline
@@ -393,6 +391,7 @@ protected:
   void     set_next_sibling(Klass* s);
 
  private:
+  static uint8_t compute_hash_slot(Symbol* s);
   static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
   static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
 

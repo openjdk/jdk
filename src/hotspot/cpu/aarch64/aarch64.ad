@@ -3360,7 +3360,7 @@ encode %{
     }
   %}
 
-  /// mov envcodings
+  // mov encodings
 
   enc_class aarch64_enc_movw_imm(iRegI dst, immI src) %{
     uint32_t con = (uint32_t)$src$$constant;
