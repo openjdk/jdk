@@ -189,9 +189,4 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     public boolean canWriteDirect(ConstantPool constantPool) {
         return false;
     }
-
-    @Override
-    public void writeTo(BufWriter buf) {
-        throw new UnsupportedOperationException();
-    }
 }

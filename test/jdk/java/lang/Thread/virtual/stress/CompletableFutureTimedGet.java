@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,18 @@
  * @test
  * @summary Stress parking with CompletableFuture timed get
  * @requires vm.debug != true & vm.continuations
- * @run main/othervm -Xmx1g TimedGet 100000
+ * @run main/othervm -Xmx1g CompletableFutureTimedGet 100000
  */
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TimedGet {
+public class CompletableFutureTimedGet {
 
     static final String RESULT = "foo";
 
@@ -77,30 +78,27 @@ public class TimedGet {
 
         // wait for all threads to terminate
         long lastTimestamp = System.currentTimeMillis();
-        int i = 0;
-        while (i < threadCount) {
-            Thread t = threads.get(i);
-            boolean terminated;
-            if (t.isAlive()) {
-                terminated = t.join(Duration.ofMillis(500));
-
-                // print trace message so the output tracks progress
-                long currentTime = System.currentTimeMillis();
-                if ((currentTime - lastTimestamp) > 500) {
-                    System.out.println(completed.get());
-                    lastTimestamp = currentTime;
+        boolean done;
+        do {
+            done = true;
+            for (Thread t : threads) {
+                if (!t.join(Duration.ofSeconds(1))) {
+                    done = false;
                 }
-            } else {
-                terminated = true;
             }
-            if (terminated) {
-                i++;
+
+            // print trace message so the output tracks progress
+            long currentTime = System.currentTimeMillis();
+            if (done || ((currentTime - lastTimestamp) > 500)) {
+                System.out.format("%s => completed %d of %d%n",
+                        Instant.now(), completed.get(), threadCount);
+                lastTimestamp = currentTime;
             }
-        }
+
+        } while (!done);
 
         // all tasks should have completed successfully
         int completedCount = completed.get();
-        System.out.println(completedCount);
         if (completedCount != threadCount) {
             throw new RuntimeException("completed = " + completedCount);
         }

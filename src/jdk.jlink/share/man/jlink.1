@@ -44,8 +44,8 @@ into a custom runtime image
 .SH SYNOPSIS
 .PP
 \f[V]jlink\f[R] [\f[I]options\f[R]] \f[V]--module-path\f[R]
-\f[I]modulepath\f[R] \f[V]--add-modules\f[R] \f[I]module\f[R] [,
-\f[I]module\f[R]...]
+\f[I]modulepath\f[R] \f[V]--add-modules\f[R]
+\f[I]module\f[R][,\f[I]module\f[R]...]
 .TP
 \f[I]options\f[R]
 Command-line options separated by spaces.
@@ -69,7 +69,7 @@ transitive dependences, to create a custom runtime image.
 Developers are responsible for updating their custom runtime images.
 .SH JLINK OPTIONS
 .TP
-\f[V]--add-modules\f[R] \f[I]mod\f[R] [\f[V],\f[R] \f[I]mod\f[R]...]
+\f[V]--add-modules\f[R] \f[I]mod\f[R][\f[V],\f[R]\f[I]mod\f[R]...]
 Adds the named modules, \f[I]mod\f[R], to the default set of root
 modules.
 The default set of root modules is empty.
@@ -110,7 +110,7 @@ Specifies the launcher command name for the module or the command name
 for the module and main class (the module and the main class names are
 separated by a slash (\f[V]/\f[R])).
 .TP
-\f[V]--limit-modules\f[R] \f[I]mod\f[R] [\f[V],\f[R] \f[I]mod\f[R]...]
+\f[V]--limit-modules\f[R] \f[I]mod\f[R][\f[V],\f[R]\f[I]mod\f[R]...]
 Limits the universe of observable modules to those in the transitive
 closure of the named modules, \f[V]mod\f[R], plus the main module, if
 any, plus any further modules specified in the \f[V]--add-modules\f[R]

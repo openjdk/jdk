@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,8 @@ public class AnnotationDefaultVerifier {
 
     private abstract class TestElementValue {
         public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
-            attr.defaultValue().writeTo(buf);
+            var buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
+            AnnotationReader.writeAnnotationValue(buf, attr.defaultValue());
             testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), buf.size(),
                     "attribute_length");
         }
