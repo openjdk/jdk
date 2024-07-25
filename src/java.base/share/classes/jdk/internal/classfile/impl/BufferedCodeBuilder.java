@@ -28,13 +28,11 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.instruction.ExceptionCatch;
-import java.lang.classfile.instruction.IncrementInstruction;
-import java.lang.classfile.instruction.LoadInstruction;
-import java.lang.classfile.instruction.StoreInstruction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,7 +45,6 @@ public final class BufferedCodeBuilder
     private final ClassFileImpl context;
     private final List<CodeElement> elements = new ArrayList<>();
     private final LabelImpl startLabel, endLabel;
-    private final CodeModel original;
     private final MethodInfo methodInfo;
     private boolean finished;
     private int maxLocals;
@@ -60,11 +57,10 @@ public final class BufferedCodeBuilder
         this.context = context;
         this.startLabel = new LabelImpl(this, -1);
         this.endLabel = new LabelImpl(this, -1);
-        this.original = original;
         this.methodInfo = methodInfo;
         this.maxLocals = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
-        if (original != null)
-            this.maxLocals = Math.max(this.maxLocals, original.maxLocals());
+        if (original instanceof CodeAttribute ca)
+            this.maxLocals = Math.max(this.maxLocals, ca.maxLocals());
 
         elements.add(startLabel);
     }
@@ -162,27 +158,12 @@ public final class BufferedCodeBuilder
         @Override
         public List<ExceptionCatch> exceptionHandlers() {
             return elements.stream()
-                           .filter(x -> x instanceof ExceptionCatch)
-                           .map(x -> (ExceptionCatch) x)
+                           .<ExceptionCatch>mapMulti((x, sink) -> {
+                               if (x instanceof ExceptionCatch ec) {
+                                   sink.accept(ec);
+                               }
+                           })
                            .toList();
-        }
-
-        @Override
-        public int maxLocals() {
-            for (CodeElement element : elements) {
-                if (element instanceof LoadInstruction i)
-                    maxLocals = Math.max(maxLocals, i.slot() + i.typeKind().slotSize());
-                else if (element instanceof StoreInstruction i)
-                    maxLocals = Math.max(maxLocals, i.slot() + i.typeKind().slotSize());
-                else if (element instanceof IncrementInstruction i)
-                    maxLocals = Math.max(maxLocals, i.slot() + 1);
-            }
-            return maxLocals;
-        }
-
-        @Override
-        public int maxStack() {
-            throw new UnsupportedOperationException("nyi");
         }
 
         @Override
@@ -198,11 +179,6 @@ public final class BufferedCodeBuilder
                     forEach(cb);
                 }
             });
-        }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, context, null).writeTo(buf);
         }
 
         @Override
