@@ -26,7 +26,9 @@ package compiler.lib.compile_framework;
 import compiler.lib.compile_framework.SourceFile;
 import compiler.lib.compile_framework.CompileFrameworkException;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URI;
@@ -43,6 +45,7 @@ import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
+import jdk.test.lib.process.ProcessTools;
 
 public class CompileFramework {
     private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
@@ -81,6 +84,50 @@ public class CompileFramework {
     }
 
     private void compileJasmFiles(List<SourceFile> jasmFiles) {
+        if (jasmFiles.size() == 0) {
+            System.out.println("No jasm files to compute.");
+            return;
+        }
+        System.out.println("Compiling jasm files: " + jasmFiles.size());
+
+        // Create temporary directory for jasm source files
+        final String jasmDirName;
+        try {
+            jasmDirName = "jasm-files-source-dir-" + ProcessTools.getProcessId();
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not get ProcessID", e);
+        }
+        System.out.println("Jasm source files in: " + jasmDirName);
+
+        for (SourceFile sourceFile : jasmFiles) {
+            String fileName = jasmDirName + "/" + sourceFile.name.replace('.','/') + ".jasm";
+            writeCodeToFile(sourceFile.code, fileName);
+        }
+
+        // File jasmDir = new File(jasmDirName);
+        // if (!jasmDir.exists()){
+        //     jasmDir.mkdir();
+        // }
+
+        // // Write jasm source to file.
+        // for (SourceFile sourceFile : jasmFiles) {
+        //     String fileName = jasmDirName + "/" + sourceFile.name + ".jasm";
+        // }
+        // // TODO probably need to makedrs for every file, especially if with package!
+    }
+
+    private static void writeCodeToFile(String code, String fileName) {
+        System.out.println("File: " + fileName);
+        File file = new File(fileName);
+        File dir = file.getAbsoluteFile().getParentFile();
+        if (!dir.exists()){
+            dir.mkdir();
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(code);
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not write file: " + fileName, e);
+        }
     }
 
     private void compileJavaFiles(List<JavaSourceFromString> javaFiles) {
