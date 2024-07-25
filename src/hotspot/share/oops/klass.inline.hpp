@@ -77,6 +77,19 @@ inline ByteSize Klass::vtable_start_offset() {
   return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
+// subtype check: true if is_subclass_of, or if k is interface and receiver implements it
+inline bool Klass::is_subtype_of(Klass* k) const {
+  guarantee(secondary_supers() != nullptr, "must be");
+  const juint off = k->super_check_offset();
+  const juint secondary_offset = in_bytes(secondary_super_cache_offset());
+  if (off == secondary_offset) {
+    return search_secondary_supers(k);
+  } else {
+    Klass* sup = *(Klass**)( (address)this + off );
+    return (sup == k);
+  }
+}
+
 // Hashed search for secondary super k.
 inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   uintx bitmap = _secondary_supers_bitmap;

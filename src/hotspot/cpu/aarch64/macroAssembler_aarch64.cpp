@@ -1604,10 +1604,6 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
                                                          Label* L_success,
                                                          Label* L_failure,
                                                          bool set_cond_codes) {
-  // NB! Callers may assume that, when temp2_reg is a valid register,
-  // this code sets it to a nonzero value.
-  bool temp2_reg_was_valid = temp2_reg->is_valid();
-
   RegSet temps = RegSet::of(temp_reg, temp2_reg, temp3_reg);
 
   assert_different_registers(sub_klass, super_klass, temp_reg, temp2_reg, rscratch1);
@@ -1641,7 +1637,9 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
   // Unspill the temp. registers:
   pop(pushed_regs, sp);
 
-  if (temp2_reg_was_valid) {
+  // NB! Callers may assume that, when set_cond_codes is true, this
+  // code sets temp2_reg to a nonzero value.
+  if (set_cond_codes) {
     mov(temp2_reg, 1);
   }
 
