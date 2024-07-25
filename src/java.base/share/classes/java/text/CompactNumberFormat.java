@@ -582,6 +582,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to {@code RoundingMode.UNNECESSARY}
      * @see              FieldPosition
+     * @since 24
      */
     @Override
     public final StringBuilder format(Object number,
@@ -665,6 +666,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @throws ArithmeticException if rounding is needed with rounding
      *            mode being set to {@code RoundingMode.UNNECESSARY}
      * @see FieldPosition
+     * @since 24
      */
     @Override
     public StringBuilder format(double number, StringBuilder result,
@@ -794,6 +796,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @throws       ArithmeticException if rounding is needed with rounding
      *               mode being set to {@code RoundingMode.UNNECESSARY}
      * @see FieldPosition
+     * @since 24
      */
     @Override
     public StringBuilder format(long number, StringBuilder result,

@@ -212,6 +212,7 @@ public abstract class Format implements Serializable, Cloneable {
      *            object
      * @throws    UnsupportedOperationException if the implementation of this
      *            method does not support this operation
+     * @since 24
      */
     public StringBuilder format(Object obj,
                                 StringBuilder toAppendTo,

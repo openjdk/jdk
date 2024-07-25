@@ -992,6 +992,7 @@ public class SimpleDateFormat extends DateFormat {
      * first occurrence of the timezone pattern character {@code 'z'}.
      * @return the formatted date-time string.
      * @throws    NullPointerException if any of the parameters is {@code null}.
+     * @since 24
      */
     @Override
     public StringBuilder format(Date date, StringBuilder toAppendTo,

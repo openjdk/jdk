@@ -377,6 +377,7 @@ public abstract class DateFormat extends Format {
      * @throws    UnsupportedOperationException if the implementation of this
      *            method does not support this operation
      * @see java.text.Format
+     * @since 24
      */
     @Override
     public final StringBuilder format(Object obj, StringBuilder toAppendTo,
@@ -455,6 +456,7 @@ public abstract class DateFormat extends Format {
      * text appended.
      * @throws    UnsupportedOperationException if the implementation of this
      *            method does not support this operation
+     * @since 24
      */
     public StringBuilder format(Date date, StringBuilder toAppendTo,
                                 FieldPosition fieldPosition) {

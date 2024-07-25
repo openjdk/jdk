@@ -588,6 +588,7 @@ public class DecimalFormat extends NumberFormat {
      * @throws           ArithmeticException if rounding is needed with rounding
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see              java.text.FieldPosition
+     * @since 24
      */
     @Override
     public final StringBuilder format(Object number,
@@ -659,6 +660,7 @@ public class DecimalFormat extends NumberFormat {
      *            mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      * @see java.text.FieldPosition
+     * @since 24
      */
     @Override
     public StringBuilder format(double number, StringBuilder result,
@@ -863,6 +865,7 @@ public class DecimalFormat extends NumberFormat {
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
      * @see java.text.FieldPosition
+     * @since 24
      */
     @Override
     public StringBuilder format(long number, StringBuilder result,

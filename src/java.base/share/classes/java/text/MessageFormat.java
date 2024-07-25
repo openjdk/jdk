@@ -1060,6 +1060,7 @@ public class MessageFormat extends Format {
      *            if the {@code MessageFormat} instance that calls this method
      *            has locale set to null, and the implementation
      *            uses a locale-dependent subformat.
+     * @since 24
      */
     public final StringBuilder format(Object[] arguments, StringBuilder result,
                                      FieldPosition pos)
@@ -1137,6 +1138,7 @@ public class MessageFormat extends Format {
      *            if the {@code MessageFormat} instance that calls this method
      *            has locale set to null, and the implementation
      *            uses a locale-dependent subformat.
+     * @since 24
      */
     @Override
     public final StringBuilder format(Object arguments, StringBuilder result,

@@ -358,6 +358,7 @@ public abstract class NumberFormat extends Format  {
      * @throws           UnsupportedOperationException if the implementation of this
      *                   method does not support this operation
      * @see              java.text.FieldPosition
+     * @since 24
      */
     @Override
     public StringBuilder format(Object number,
@@ -505,6 +506,7 @@ public abstract class NumberFormat extends Format  {
      * @throws           UnsupportedOperationException if the implementation of this
      *                   method does not support this operation
      * @see java.text.Format#format
+     * @since 24
      */
     public StringBuilder format(double number,
                                 StringBuilder toAppendTo,
@@ -564,6 +566,7 @@ public abstract class NumberFormat extends Format  {
      * @throws           UnsupportedOperationException if the implementation of this
      *                   method does not support this operation
      * @see java.text.Format#format
+     * @since 24
      */
     public StringBuilder format(long number,
                                 StringBuilder toAppendTo,

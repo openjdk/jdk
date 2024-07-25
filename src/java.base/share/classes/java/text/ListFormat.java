@@ -399,6 +399,7 @@ public final class ListFormat extends Format {
      * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
      * @throws    IllegalArgumentException if {@code obj} is neither a {@code List}
      *               nor an array of {@code Object}s, or its length is zero.
+     * @since 24
      */
     @Override
     public StringBuilder format(Object obj, StringBuilder toAppendTo, FieldPosition pos) {

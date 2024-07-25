@@ -531,6 +531,7 @@ public class ChoiceFormat extends NumberFormat {
      *            or {@code formats} of this ChoiceFormat are empty
      * @throws    NullPointerException if {@code toAppendTo}
      *            is {@code null}
+     * @since 24
      */
     @Override
     public StringBuilder format(long number,
@@ -572,6 +573,7 @@ public class ChoiceFormat extends NumberFormat {
      *            or {@code formats} of this ChoiceFormat are empty
      * @throws    NullPointerException if {@code toAppendTo}
      *            is {@code null}
+     * @since 24
      */
     @Override
     public StringBuilder format(double number,
