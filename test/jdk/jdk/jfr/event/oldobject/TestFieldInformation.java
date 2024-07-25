@@ -57,6 +57,9 @@ public class TestFieldInformation {
 
             addToTestField();
 
+            // Let GC catch up before we stop the recording and do the old object sample
+            Thread.sleep(5000);
+
             recording.stop();
 
             List<RecordedEvent> events = Events.fromRecording(recording);

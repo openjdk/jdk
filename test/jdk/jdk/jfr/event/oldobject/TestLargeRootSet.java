@@ -85,6 +85,10 @@ public class TestLargeRootSet {
                 node.right.value = new Leak();
                 leaks.put(i, node);
             }
+
+            // Let GC catch up before we stop the recording and do the old object sample
+            Thread.sleep(5000);
+
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
