@@ -459,21 +459,6 @@ public final class Integer extends Number
     }
 
     /**
-     * Returns the string representation size for a given int value.
-     *
-     * @param x int value
-     * @return string size
-     *
-     * @implNote There are other ways to compute this: e.g. binary search,
-     * but values are biased heavily towards zero, and therefore linear search
-     * wins. The iteration results are also routinely inlined in the generated
-     * code after loop unrolling.
-     */
-    static int stringSize(int x) {
-        return DecimalDigits.stringSize(x);
-    }
-
-    /**
      * Parses the string argument as a signed integer in the radix
      * specified by the second argument. The characters in the string
      * must all be digits of the specified radix (as determined by
