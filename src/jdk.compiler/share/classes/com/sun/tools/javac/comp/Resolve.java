@@ -860,7 +860,7 @@ public class Resolve {
             return nilMethodCheck;
         }
 
-        SharedInapplicableMethodException getMethodCheckFailure() {
+        private SharedInapplicableMethodException getMethodCheckFailure() {
             return methodCheckFailure == null ? methodCheckFailure = new SharedInapplicableMethodException() : methodCheckFailure;
         }
     }

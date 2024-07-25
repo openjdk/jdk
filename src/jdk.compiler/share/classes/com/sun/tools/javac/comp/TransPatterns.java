@@ -79,7 +79,6 @@ import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
 import static com.sun.tools.javac.code.TypeTag.VOID;
-import static com.sun.tools.javac.main.Option.DOE;
 
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
@@ -197,7 +196,6 @@ public class TransPatterns extends TreeTranslator {
         names = Names.instance(context);
         target = Target.instance(context);
         preview = Preview.instance(context);
-        Options options = Options.instance(context);
     }
 
     @Override
