@@ -272,6 +272,8 @@ class os: AllStatic {
 
   static bool have_special_privileges();
 
+  static bool request_lock_memory_privilege();
+
   static jlong  javaTimeMillis();
   static jlong  javaTimeNanos();
   static void   javaTimeNanos_info(jvmtiTimerInfo *info_ptr);

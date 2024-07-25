@@ -3123,7 +3123,7 @@ class NUMANodeListHolder {
 
 static size_t _large_page_size = 0;
 
-static bool request_lock_memory_privilege() {
+bool os::request_lock_memory_privilege() {
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE,
                                 os::current_process_id());
 
