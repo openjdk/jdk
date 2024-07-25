@@ -213,14 +213,14 @@ computer resource management.
 The Stable Values & Collections API defines an interface so that client code in libraries and applications can
 
 - Define and use stable (scalar) values:
-    - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html)
+    - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newInstance())
 - Define various _cached_ functions:
-    - [`StableValue.newCachedSupplier()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachedSupplier(Supplier))
-    - [`StableValue.newCachedIntFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachedIntFunction(int,IntFunction))
-    - [`StableValue.newCachedFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachedFunction(Set,Function))
+    - [`StableValue.newCachedSupplier()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingSupplier(java.util.function.Supplier,java.util.concurrent.ThreadFactory))
+    - [`StableValue.newCachedIntFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingIntFunction(int,java.util.function.IntFunction,java.util.concurrent.ThreadFactory))
+    - [`StableValue.newCachedFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingFunction(java.util.Set,java.util.function.Function,java.util.concurrent.ThreadFactory))
 - Define _lazy_ collections:
-    - [`StableValue.lazyList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#ofList(int))
-    - [`StableValue.lazyMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#ofMap(java.util.Set))
+    - [`StableValue.lazyList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#lazyList(int,java.util.function.IntFunction))
+    - [`StableValue.lazyMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#lazyMap(java.util.Set,java.util.function.Function))
 
 The Stable Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/module-summary.html) module.
 
