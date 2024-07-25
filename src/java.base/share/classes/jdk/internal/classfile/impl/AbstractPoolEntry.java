@@ -34,7 +34,6 @@ import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.DoubleEntry;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.FloatEntry;
@@ -122,6 +121,8 @@ public abstract sealed class AbstractPoolEntry {
     public int width() {
         return (tag == ClassFile.TAG_LONG || tag == ClassFile.TAG_DOUBLE) ? 2 : 1;
     }
+
+    abstract void writeTo(BufWriterImpl buf);
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
@@ -407,7 +408,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             if (rawBytes != null) {
                 pool.writeU1(tag);
                 pool.writeU2(rawLen);
@@ -478,7 +479,7 @@ public abstract sealed class AbstractPoolEntry {
             return ref1;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
         }
@@ -508,7 +509,7 @@ public abstract sealed class AbstractPoolEntry {
             return ref2;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
             pool.writeU2(ref2.index());
@@ -814,7 +815,7 @@ public abstract sealed class AbstractPoolEntry {
             return nameAndType;
         }
 
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU2(bsmIndex);
             pool.writeU2(nameAndType.index());
@@ -919,7 +920,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeU1(refKind);
             pool.writeU2(reference.index());
@@ -1069,7 +1070,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeInt(val);
         }
@@ -1102,7 +1103,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeFloat(val);
         }
@@ -1134,7 +1135,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeLong(val);
         }
@@ -1166,7 +1167,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public void writeTo(BufWriter pool) {
+        void writeTo(BufWriterImpl pool) {
             pool.writeU1(tag);
             pool.writeDouble(val);
         }
