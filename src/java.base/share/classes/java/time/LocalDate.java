@@ -2152,6 +2152,13 @@ public final class LocalDate
         return buf.toString();
     }
 
+
+    /**
+     *  Outputs this date into {@code StringBuilder}, such as {@code 2007-12-03}.
+     * <p>
+     * The output will be in the ISO-8601 format {@code uuuu-MM-dd}.
+     * @param buf
+     */
     void formatTo(StringBuilder buf) {
         int yearValue = year;
         int monthValue = month;

@@ -1636,6 +1636,22 @@ public final class LocalTime
         return buf.toString();
     }
 
+    /**
+     * Outputs this time into {@code StringBuilder}, such as {@code 10:15}.
+     * <p>
+     * The output will be one of the following ISO-8601 formats:
+     * <ul>
+     * <li>{@code HH:mm}</li>
+     * <li>{@code HH:mm:ss}</li>
+     * <li>{@code HH:mm:ss.SSS}</li>
+     * <li>{@code HH:mm:ss.SSSSSS}</li>
+     * <li>{@code HH:mm:ss.SSSSSSSSS}</li>
+     * </ul>
+     * The format used will be the shortest that outputs the full value of
+     * the time where the omitted parts are implied to be zero.
+     *
+     * @param buf
+     */
     void formatTo(StringBuilder buf) {
         int hourValue = hour;
         int minuteValue = minute;
