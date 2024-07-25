@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -466,7 +466,7 @@ public class TestDoubleVect {
       errn += verify("test_round: ", 12, l0[12], Long.MAX_VALUE);
       errn += verify("test_round: ", 13, l0[13], Long.MIN_VALUE);
 
-      for (int i=24; i<ARRLEN; i++) {
+      for (int i=14; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
       }
     }
