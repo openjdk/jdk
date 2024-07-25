@@ -744,7 +744,9 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
-
+                                                                                                                  \
+  /* StableValues & Collections */                                                                                \
+  template(java_lang_StableValue,                  "java/lang/StableValue")                                       \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]

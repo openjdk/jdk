@@ -25,7 +25,6 @@
 
 package jdk.internal.lang.stable;
 
-import java.lang.StableValue;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;

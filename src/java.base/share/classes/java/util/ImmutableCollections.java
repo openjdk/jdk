@@ -1526,11 +1526,7 @@ class ImmutableCollections {
 
             @Override
             public int hashCode() {
-                int h = 0;
-                for (Map.Entry<K, V> e : this) {
-                    h += e.hashCode();
-                }
-                return h;
+                return LazyMap.this.hashCode();
             }
 
             @jdk.internal.ValueBased

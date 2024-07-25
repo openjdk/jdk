@@ -69,7 +69,7 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     Supplier<T> cached = StableValue.newCachedSupplier(original, null);
  * }
- * The cached supplier can also be lazily computed by a fresh background thread if a
+ * The cached supplier can also be computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
  * {@snippet lang = java :
  *     Supplier<T> cached = StableValue.newCachedSupplier(original, Thread.ofVirtual().factory());
@@ -368,8 +368,8 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a lazy, immutable, stable List of the provided {@code size} where the
-     * individual elements of the list are lazily computed vio the provided
+     * {@return a lazy, shallowly immutable, stable List of the provided {@code size}
+     * where the individual elements of the list are lazily computed via the provided
      * {@code mapper} whenever an element is first accessed (directly or indirectly),
      * for example via {@linkplain List#get(int) List::get}}
      * <p>
@@ -388,7 +388,7 @@ public sealed interface StableValue<T>
      * The returned List is not {@link Serializable}
      *
      * @param size   the size of the returned list
-     * @param mapper to invoke whenever an element is first accessed
+     * @param mapper to invoke whenever an element is first accessed (may return null)
      * @param <T>    the {@code StableValue}s' element type
      */
     static <T> List<T> lazyList(int size, IntFunction<? extends T> mapper) {
@@ -400,8 +400,8 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a lazy, immutable, stable Map of the provided {@code keys} where the
-     * associated values of the maps are lazily computed vio the provided
+     * {@return a lazy, shallowly immutable, stable Map of the provided {@code keys}
+     * where the associated values of the maps are lazily computed vio the provided
      * {@code mapper} whenever a value is first accessed (directly or indirectly), for
      * example via {@linkplain Map#get(Object) Map::get}}
      * <p>
@@ -421,6 +421,7 @@ public sealed interface StableValue<T>
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
+     *                (may return null)
      * @param <K>    the type of keys maintained by the returned map
      * @param <V>    the type of mapped values
      */
