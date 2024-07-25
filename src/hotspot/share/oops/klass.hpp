@@ -433,7 +433,8 @@ protected:
   static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
-  static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _secondary_supers_bitmap); }
+  static ByteSize secondary_supers_bitmap_offset()
+                                                 { return byte_offset_of(Klass, _secondary_supers_bitmap); }
   static ByteSize hash_slot_offset()             { return byte_offset_of(Klass, _hash_slot); }
 
   // Unpacking layout_helper:

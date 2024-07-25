@@ -4964,7 +4964,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
 
   xorq(result, result); // = 0
 
-  movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movq(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   movq(r_array_index, r_bitmap);
 
   // First check the bitmap to see if super_klass might be present. If
@@ -5080,7 +5080,7 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // The logic above guarantees this property, but we state it here.
   assert_different_registers(r_array_index, r_bitmap, rcx);
 
-  movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movq(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   movq(r_array_index, r_bitmap);
 
   // First check the bitmap to see if super_klass might be present. If

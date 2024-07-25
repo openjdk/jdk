@@ -1713,9 +1713,9 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 
   // We're going to need the bitmap in a vector reg and in a core reg,
   // so load both now.
-  ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  ldr(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   if (bit != 0) {
-    ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
+    ldrd(vtemp, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
   }
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
@@ -1809,7 +1809,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // Make sure that result is nonzero if the test below misses.
   mov(result, 1);
 
-  ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  ldr(r_bitmap, Address(r_sub_klass, Klass::secondary_supers_bitmap_offset()));
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
