@@ -49,7 +49,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.s390.S390Architecture.*;
 import static jdk.internal.foreign.abi.s390.S390Architecture.Regs.*;
 
@@ -220,7 +219,7 @@ public class LinuxS390CallArranger {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
-                            .vmStore(storage, type, ZERO_EXTEND);
+                            .vmStore(storage, type);
                 }
                 case STRUCT_SFA -> {
                     assert carrier == MemorySegment.class;
@@ -252,7 +251,7 @@ public class LinuxS390CallArranger {
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT, carrier == float.class);

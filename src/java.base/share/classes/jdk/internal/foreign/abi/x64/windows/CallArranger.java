@@ -43,7 +43,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.INSTANCE;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
@@ -204,7 +203,7 @@ public class CallArranger {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
                     Class<?> type = SharedUtils.primitiveCarrierForSize(layout.byteSize(), false);
                     bindings.bufferLoad(0, type)
-                            .vmStore(storage, type, ZERO_EXTEND);
+                            .vmStore(storage, type);
                 }
                 case STRUCT_REFERENCE -> {
                     assert carrier == MemorySegment.class;
@@ -228,7 +227,7 @@ public class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);

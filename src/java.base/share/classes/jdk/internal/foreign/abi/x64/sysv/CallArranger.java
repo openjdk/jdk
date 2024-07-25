@@ -30,6 +30,7 @@ import jdk.internal.foreign.Utils;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
+import jdk.internal.foreign.abi.Binding.ExtendBehavior;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
@@ -50,7 +51,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.Binding.vmStore;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.x64.X86_64Architecture.StorageType;
@@ -277,7 +277,7 @@ public class CallArranger {
                         boolean useFloat = storage.type() == StorageType.VECTOR;
                         Class<?> type = SharedUtils.primitiveCarrierForSize(copy, useFloat);
                         bindings.bufferLoad(offset, type, (int) copy)
-                                .vmStore(storage, type, ZERO_EXTEND);
+                                .vmStore(storage, type);
                         offset += copy;
                     }
                 }
@@ -296,7 +296,10 @@ public class CallArranger {
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    // we specify the sign-extension behavior here so that we get zero-extension for
+                    // unsigned types. This is not required by the ABI, but there's a bug in clang
+                    // where callee's might be assuming the upper bits of a register are sign/zero-extended
+                    bindings.vmStore(storage, carrier, ExtendBehavior.forLayout((ValueLayout) layout));
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.VECTOR);

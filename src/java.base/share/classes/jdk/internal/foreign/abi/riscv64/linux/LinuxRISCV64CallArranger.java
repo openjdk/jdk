@@ -34,6 +34,7 @@ import java.lang.foreign.*;
 import jdk.internal.foreign.abi.ABIDescriptor;
 import jdk.internal.foreign.abi.AbstractLinker.UpcallStubFactory;
 import jdk.internal.foreign.abi.Binding;
+import jdk.internal.foreign.abi.Binding.ExtendBehavior;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
@@ -52,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.riscv64.linux.TypeClass.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
@@ -278,7 +278,8 @@ public class LinuxRISCV64CallArranger {
             switch (argumentClass) {
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    // RISC-V ABI mandates zero extension for unsigned char/short, so specify it here based on layout
+                    bindings.vmStore(storage, carrier, ExtendBehavior.forLayout((ValueLayout) layout));
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.getStorage(StorageType.FLOAT);
@@ -316,7 +317,7 @@ public class LinuxRISCV64CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type, (int) copy)
-                                .vmStore(storage, type, ZERO_EXTEND);
+                                .vmStore(storage, type);
                         offset += copy;
                     }
                 }
@@ -357,7 +358,7 @@ public class LinuxRISCV64CallArranger {
                                 bindings.dup();
                             }
                             bindings.bufferLoad(desc.offset(), type)
-                                    .vmStore(storage, type, ZERO_EXTEND);
+                                    .vmStore(storage, type);
                         }
                     } else {
                         return getBindings(carrier, layout, STRUCT_REGISTER_X, isVariadicArg);

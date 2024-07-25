@@ -354,34 +354,34 @@ public class TestSysVCallArranger extends CallArrangerTestBase {
 
     public static Object[][] structs() {
         return new Object[][]{
-//            { MemoryLayout.structLayout(C_LONG), new Binding[]{
-//                    bufferLoad(0, long.class), vmStore(rdi, long.class)
-//                }
-//            },
-//            { MemoryLayout.structLayout(C_LONG, C_LONG), new Binding[]{
-//                    dup(),
-//                    bufferLoad(0, long.class), vmStore(rdi, long.class),
-//                    bufferLoad(8, long.class), vmStore(rsi, long.class)
-//                }
-//            },
-//            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG), new Binding[]{
-//                    dup(),
-//                    bufferLoad(0, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class),
-//                    dup(),
-//                    bufferLoad(8, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 8), long.class),
-//                    bufferLoad(16, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 16), long.class)
-//                }
-//            },
-//            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG, C_LONG), new Binding[]{
-//                    dup(),
-//                    bufferLoad(0, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class),
-//                    dup(),
-//                    bufferLoad(8, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 8), long.class),
-//                    dup(),
-//                    bufferLoad(16, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 16), long.class),
-//                    bufferLoad(24, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 24), long.class)
-//                }
-//            },
+            { MemoryLayout.structLayout(C_LONG), new Binding[]{
+                    bufferLoad(0, long.class), vmStore(rdi, long.class)
+                }
+            },
+            { MemoryLayout.structLayout(C_LONG, C_LONG), new Binding[]{
+                    dup(),
+                    bufferLoad(0, long.class), vmStore(rdi, long.class),
+                    bufferLoad(8, long.class), vmStore(rsi, long.class)
+                }
+            },
+            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG), new Binding[]{
+                    dup(),
+                    bufferLoad(0, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class),
+                    dup(),
+                    bufferLoad(8, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 8), long.class),
+                    bufferLoad(16, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 16), long.class)
+                }
+            },
+            { MemoryLayout.structLayout(C_LONG, C_LONG, C_LONG, C_LONG), new Binding[]{
+                    dup(),
+                    bufferLoad(0, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 0), long.class),
+                    dup(),
+                    bufferLoad(8, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 8), long.class),
+                    dup(),
+                    bufferLoad(16, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 16), long.class),
+                    bufferLoad(24, long.class), vmStore(stackStorage(STACK_SLOT_SIZE, 24), long.class)
+                }
+            },
             { MemoryLayout.structLayout(C_INT, C_INT), new Binding[]{
                     bufferLoad(0, long.class), vmStore(rdi, long.class)
                 }

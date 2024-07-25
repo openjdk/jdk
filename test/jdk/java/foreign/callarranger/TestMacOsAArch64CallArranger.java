@@ -49,10 +49,11 @@ import java.lang.invoke.MethodType;
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static jdk.internal.foreign.abi.Binding.*;
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.SIGN_EXTEND;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 import static platform.PlatformLayouts.AArch64.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -115,8 +116,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
             { vmStore(r7, int.class) },
             { vmStore(stackStorage((short) 4, 0), int.class) },
             { vmStore(stackStorage((short) 4, 4), int.class) },
-            { cast(short.class, int.class, SIGN_EXTEND), vmStore(stackStorage((short) 2, 8), int.class) },
-            { cast(byte.class, int.class, SIGN_EXTEND), vmStore(stackStorage((short) 1, 10), int.class) },
+            { cast(short.class, int.class), vmStore(stackStorage((short) 2, 8), int.class) },
+            { cast(byte.class, int.class), vmStore(stackStorage((short) 1, 10), int.class) },
         });
 
         checkReturnBindings(callingSequence, new Binding[]{});

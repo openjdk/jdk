@@ -51,7 +51,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.StorageType;
 import static jdk.internal.foreign.abi.ppc64.PPC64Architecture.abiFor;
@@ -385,7 +384,7 @@ public abstract class CallArranger {
                             bindings.shiftLeft(shiftAmount, type)
                                     .vmStore(storage, long.class);
                         } else {
-                            bindings.vmStore(storage, type, ZERO_EXTEND);
+                            bindings.vmStore(storage, type);
                         }
                         offset += size;
                     }
@@ -406,7 +405,7 @@ public abstract class CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(offset, type)
-                                .vmStore(storage, type, ZERO_EXTEND);
+                                .vmStore(storage, type);
                         VMStorage storage2 = regs.second()[index];
                         if (storage2 != null) {
                             // We have a second slot to fill (always 64 bit GP reg or stack slot).
@@ -436,7 +435,7 @@ public abstract class CallArranger {
                 case INTEGER -> {
                     // ABI requires all int types to get extended to 64 bit.
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, false);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.FLOAT, carrier == float.class);

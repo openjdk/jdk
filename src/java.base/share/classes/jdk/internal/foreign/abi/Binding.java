@@ -306,12 +306,8 @@ public sealed interface Binding {
         SIGN_EXTEND,
         UNSPECIFIED;
 
-        public <T> T select(T ifZeroExtend, T ifSignExtend) {
-            return switch (this) {
-                case ZERO_EXTEND -> ifZeroExtend;
-                case SIGN_EXTEND -> ifSignExtend;
-                case UNSPECIFIED -> throw new IllegalStateException("Sign extension behavior not specified");
-            };
+        public static ExtendBehavior forLayout(ValueLayout layout) {
+            return ValueLayouts.isSigned(layout) ? SIGN_EXTEND : ZERO_EXTEND;
         }
     }
 
@@ -336,9 +332,13 @@ public sealed interface Binding {
             if (fromType == boolean.class) {
                 return Cast.BOOLEAN_TO_INT;
             } else if (fromType == byte.class) {
-                return extendBehavior.select(Cast.UBYTE_TO_INT, Cast.BYTE_TO_INT);
+                return extendBehavior == ZERO_EXTEND
+                        ? Cast.UBYTE_TO_INT
+                        : Cast.BYTE_TO_INT;
             } else if (fromType == short.class) {
-                return extendBehavior.select(Cast.USHORT_TO_INT, Cast.SHORT_TO_INT);
+                return extendBehavior == ZERO_EXTEND
+                        ? Cast.USHORT_TO_INT
+                        : Cast.SHORT_TO_INT;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_INT;
             } else if (fromType == long.class) {
@@ -354,9 +354,13 @@ public sealed interface Binding {
             }
         } else if (toType == long.class) {
             if (fromType == byte.class) {
-                return extendBehavior.select(Cast.UBYTE_TO_LONG, Cast.BYTE_TO_LONG);
+                return extendBehavior == ZERO_EXTEND
+                        ? Cast.UBYTE_TO_LONG
+                        : Cast.BYTE_TO_LONG;
             } else if (fromType == short.class) {
-                return extendBehavior.select(Cast.USHORT_TO_LONG, Cast.SHORT_TO_LONG);
+                return extendBehavior == ZERO_EXTEND
+                        ? Cast.USHORT_TO_LONG
+                        : Cast.SHORT_TO_LONG;
             } else if (fromType == char.class) {
                 return Cast.CHAR_TO_LONG;
             }
@@ -380,15 +384,7 @@ public sealed interface Binding {
         }
 
         public Binding.Builder vmStore(VMStorage storage, Class<?> type) {
-            if (isSubIntType(type)) {
-                throw new IllegalArgumentException("Use other overload");
-            }
-            return vmStore(storage, type, null);
-        }
-
-        public Binding.Builder vmStore(VMStorage storage, ValueLayout type) {
-            ExtendBehavior extendBehavior = ValueLayouts.isSigned(type) ? SIGN_EXTEND : ExtendBehavior.ZERO_EXTEND;
-            return vmStore(storage, type.carrier(), extendBehavior);
+            return vmStore(storage, type, UNSPECIFIED);
         }
 
         public Binding.Builder vmStore(VMStorage storage, Class<?> type, ExtendBehavior extendBehavior) {

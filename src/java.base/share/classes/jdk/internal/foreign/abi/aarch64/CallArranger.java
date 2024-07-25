@@ -50,7 +50,6 @@ import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.Optional;
 
-import static jdk.internal.foreign.abi.Binding.ExtendBehavior.ZERO_EXTEND;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.StorageType;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.abiFor;
@@ -425,7 +424,7 @@ public abstract class CallArranger {
                             bindings.dup();
                         }
                         bindings.bufferLoad(structStorage.offset(), structStorage.carrier(), structStorage.byteWidth())
-                                .vmStore(structStorage.storage(), structStorage.carrier(), ZERO_EXTEND);
+                                .vmStore(structStorage.storage(), structStorage.carrier());
                     }
                 }
                 case STRUCT_REFERENCE -> {
@@ -449,8 +448,9 @@ public abstract class CallArranger {
                     }
                 }
                 case INTEGER -> {
-                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, (ValueLayout) layout);
-                    bindings.vmStore(storage, (ValueLayout) layout);
+                    ValueLayout valueLayout = (ValueLayout) layout;
+                    VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER, valueLayout);
+                    bindings.vmStore(storage, carrier);
                 }
                 case FLOAT -> {
                     boolean forVariadicFunctionArgs = forArguments && forVariadicFunction;
