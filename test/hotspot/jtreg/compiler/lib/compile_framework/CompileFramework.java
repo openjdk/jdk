@@ -171,7 +171,7 @@ public class CompileFramework {
         File file = new File(fileName);
         File dir = file.getAbsoluteFile().getParentFile();
         if (!dir.exists()){
-            dir.mkdir();
+            dir.mkdirs();
         }
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write(code);
