@@ -473,7 +473,7 @@ void FinalizerInfoDCmd::execute(DCmdSource source, TRAPS) {
 #if INCLUDE_SERVICES // Heap dumping/inspection supported
 HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _filename("filename","Name of the dump file", "STRING",true),
+  _filename("filename","Name of the dump file", "FILE",true),
   _all("-all", "Dump all objects, including unreachable objects",
        "BOOLEAN", false, "false"),
   _gzip("-gz", "If specified, the heap dump is written in gzipped format "
@@ -855,7 +855,7 @@ void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
 #ifdef LINUX
 PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
              DCmdWithParser(output, heap),
-  _filename("filename", "Name of the map file", "STRING", false, DEFAULT_PERFMAP_FILENAME)
+  _filename("filename", "Name of the map file", "FILE", false, DEFAULT_PERFMAP_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_filename);
 }
@@ -998,7 +998,7 @@ void ClassesDCmd::execute(DCmdSource source, TRAPS) {
 DumpSharedArchiveDCmd::DumpSharedArchiveDCmd(outputStream* output, bool heap) :
                                      DCmdWithParser(output, heap),
   _suboption("subcmd", "static_dump | dynamic_dump", "STRING", true),
-  _filename("filename", "Name of shared archive to be dumped", "STRING", false,
+  _filename("filename", "Name of shared archive to be dumped", "FILE", false,
             DEFAULT_CDS_ARCHIVE_FILENAME)
 {
   _dcmdparser.add_dcmd_argument(&_suboption);
@@ -1102,7 +1102,7 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
                                            DCmdWithParser(output, heap),
   _overwrite("-overwrite", "May overwrite existing file", "BOOLEAN", false, "false"),
   _format("-format", "Output format (\"plain\" or \"json\")", "STRING", false, "plain"),
-  _filepath("filepath", "The file path to the output file", "STRING", true) {
+  _filepath("filepath", "The file path to the output file", "FILE", true) {
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_format);
   _dcmdparser.add_dcmd_argument(&_filepath);
@@ -1186,7 +1186,7 @@ static constexpr char default_filename[] = "vm_memory_map_%p.txt";
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _filename("-F", "file path", "STRING", false, default_filename) {
+  _filename("-F", "file path", "FILE", false, default_filename) {
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
