@@ -1792,7 +1792,7 @@ void C2_MacroAssembler::unordered_reduce_operation_128(BasicType typ, int opcode
     case Op_AddReductionVD: addpd(dst, src); break;
     case Op_MulReductionVF: mulps(dst, src); break;
     case Op_MulReductionVD: mulpd(dst, src); break;
-    default:                assert(false, "wrong opcode");
+    default:                assert(false, "%s", NodeClassNames[opcode]);
   }
 }
 
@@ -1852,7 +1852,7 @@ void C2_MacroAssembler::unordered_reduce_operation_256(BasicType typ, int opcode
     case Op_AddReductionVD: vaddpd(dst, src1, src2, vector_len); break;
     case Op_MulReductionVF: vmulps(dst, src1, src2, vector_len); break;
     case Op_MulReductionVD: vmulpd(dst, src1, src2, vector_len); break;
-    default:                assert(false, "wrong opcode");
+    default:                assert(false, "%s", NodeClassNames[opcode]);
   }
 }
 
@@ -1888,7 +1888,7 @@ void C2_MacroAssembler::unordered_reduce_fp(int opcode, int vlen,
       unorderedReduceD(opcode, vlen, dst, src, vtmp1, vtmp2);
       break;
 
-    default: assert(false, "wrong opcode");
+    default: assert(false, "%s", NodeClassNames[opcode]);
   }
 }
 

@@ -67,7 +67,7 @@ public class Double256VectorTests extends AbstractVectorTest {
     private static final double RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (double)10.0;
 
     // for floating point multiplication reduction ops that may introduce rounding errors
-    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (double)100.0;
+    private static final double RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (double)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
