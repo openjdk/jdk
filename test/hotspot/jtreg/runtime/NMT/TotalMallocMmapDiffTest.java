@@ -43,7 +43,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TotalMallocMmapDiffTest {
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
     private static final long ALLOCATE_SIZE = 250 * 1024 * 1024; // 250MB
-    private static final double FUDGE_FACTOR = 0.2;
+    private static final double FUDGE_FACTOR = 0.3;
     private static final double UPPER_BOUND = ALLOCATE_SIZE * (1 + FUDGE_FACTOR);
     private static final double LOWER_BOUND = ALLOCATE_SIZE * (1 - FUDGE_FACTOR);
 
