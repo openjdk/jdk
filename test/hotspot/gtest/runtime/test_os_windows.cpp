@@ -723,6 +723,10 @@ TEST_VM(os_windows, processor_count) {
 }
 
 TEST_VM(os_windows, large_page_init_multiple_sizes) {
+  // Call request_lock_memory_privilege() and check the result
+  if (!os::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
   // Set globals to make sure we hit the correct code path
   AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
   AutoSaveRestore<bool> guardEnableAllLargePageSizesForWindows(EnableAllLargePageSizesForWindows);
@@ -783,6 +787,10 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
 
 TEST_VM(os_windows, large_page_init_decide_size) {
   // Initial setup
+    // Call request_lock_memory_privilege() and check the result
+  if (!os::request_lock_memory_privilege()) {
+    GTEST_SKIP() << "Skipping test because lock memory privilege is not granted.";
+  }
   AutoSaveRestore<bool> guardUseLargePages(UseLargePages);
   AutoSaveRestore<size_t> guardLargePageSizeInBytes(LargePageSizeInBytes);
   FLAG_SET_CMDLINE(UseLargePages, true);
