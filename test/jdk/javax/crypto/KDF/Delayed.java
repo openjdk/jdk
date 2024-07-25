@@ -36,13 +36,11 @@ import jdk.test.lib.Asserts;
 import javax.crypto.KDF;
 import javax.crypto.KDFSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.KDFParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KDFParameters;
 import java.security.Provider;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 import java.util.Objects;
 
 public class Delayed {

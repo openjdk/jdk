@@ -24,6 +24,8 @@
  */
 package java.security;
 
+import jdk.internal.javac.PreviewFeature;
+
 /**
  * A specification of {@code KDF} parameters.
  * <p>
@@ -39,4 +41,5 @@ package java.security;
  * @see javax.crypto.KDF#getInstance(String, KDFParameters)
  * @since 24
  */
+@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
 public interface KDFParameters {}
