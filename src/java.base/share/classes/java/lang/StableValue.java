@@ -56,12 +56,13 @@ import java.util.function.Supplier;
  *
  * <h2 id="factories">Factories</h2>
  * <p>
- * To create a new fresh (unset) StableValue, use the {@linkplain StableValue#newInstance()}
- * factory.
+ * To create a new fresh (unset) StableValue, use the
+ * {@linkplain StableValue#newInstance() StableValue::newInstance} factory.
  * <p>
- * This class contains a number of convenience methods for creating constructs
- * involving StableValue:
- *
+ * This class also contains a number of convenience methods for creating constructs
+ * involving stable values:
+ * <ul>
+ *     <li>
  * A <em>cached</em> (also called "memoized") Supplier, where a given {@code original}
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
  * environment, can be created like this:
@@ -73,7 +74,9 @@ import java.util.function.Supplier;
  * {@snippet lang = java :
  *     Supplier<T> cached = StableValue.newCachedSupplier(original, Thread.ofVirtual().factory());
  * }
- * <p>
+ *     </li>
+ *
+ *     <li>
  * A cached (also called "memoized") IntFunction, for the allowed given {@code size}
  * input values {@code [0, size)} and where the given {@code original} IntFunction is
  * guaranteed to be successfully invoked at most once per inout index even in a
@@ -84,7 +87,9 @@ import java.util.function.Supplier;
  * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
- * <p>
+ *     </li>
+ *
+ *     <li>
  * A cached (also called "memoized") Function, for the given set of allowed {@code inputs}
  * and where the given {@code original} function is guaranteed to be successfully invoked
  * at most once per input value even in a multithreaded environment, can be created like
@@ -95,7 +100,9 @@ import java.util.function.Supplier;
  * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
- * <p>
+ *     </li>
+ *
+ *     <li>
  * A lazy List of stable elements with a given {@code size} and given {@code mapper} can
  * be created the following way:
  * {@snippet lang = java :
@@ -103,12 +110,17 @@ import java.util.function.Supplier;
  * }
  * The list can be used to model stable one-dimensional arrays. If two- or more
  * dimensional arrays are to be modeled, a List of List of ... of E can be used.
- * <p>
- * A Map with a given set of {@code keys} and given (@code mapper) associated with
+ *     </li>
+ *
+ *     <li>
+ * A lazy Map with a given set of {@code keys} and given {@code mapper} associated with
  * stable values can be created like this:
  * {@snippet lang = java :
  *     Map<K, V> lazyMap = StableValue.lazyMap(keys, mapper);
  * }
+ *     </li>
+ *
+ * </ul>
  * <p>
  * The constructs above are eligible for similar JVM optimizations as StableValue
  * instances.
@@ -178,7 +190,7 @@ public sealed interface StableValue<T>
 
     /**
      * Sets the holder value to the provided {@code value}, or, if already set,
-     * throws {@linkplain IllegalStateException}}
+     * throws {@link IllegalStateException}}
      * <p>
      * When this method returns (or throws an Exception), a holder value is always set.
      *
@@ -207,18 +219,18 @@ public sealed interface StableValue<T>
      * {@return a new caching, thread-safe, stable, lazily computed
      * {@linkplain Supplier supplier} that records the value of the provided
      * {@code original} supplier upon being first accessed via
-     * {@linkplain Supplier#get()}, or optionally via a background thread created from
-     * the provided {@code factory} (if non-null)}
+     * {@linkplain Supplier#get() Supplier::get}, or optionally via a background thread
+     * created from the provided {@code factory} (if non-null)}
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
-     * {@linkplain Supplier#get()} method when a value is already under computation
-     * will block until a value is computed or an exception is thrown by the
+     * {@linkplain Supplier#get() Supplier::get} method when a value is already under
+     * computation will block until a value is computed or an exception is thrown by the
      * computing thread.
      * <p>
      * If the {@code original} Supplier invokes the returned Supplier recursively,
      * a StackOverflowError will be thrown when the returned
-     * Supplier's {@linkplain Supplier#get()} method is invoked.
+     * Supplier's {@linkplain Supplier#get() Supplier::get} method is invoked.
      * <p>
      * If the provided {@code original} supplier throws an exception, it is relayed
      * to the initial caller. If the memoized supplier is computed by a background thread,
@@ -254,20 +266,21 @@ public sealed interface StableValue<T>
 
     /**
      * {@return a new caching, thread-safe, stable, lazily computed
-     * {@linkplain IntFunction } that, for each allowed input, records the values of the
+     * {@link IntFunction } that, for each allowed input, records the values of the
      * provided {@code original} IntFunction upon being first accessed via
-     * {@linkplain IntFunction#apply(int)}, or optionally via background threads created
-     * from the provided {@code factory} (if non-null)}
+     * {@linkplain IntFunction#apply(int) IntFunction::apply}, or optionally via background
+     * threads created from the provided {@code factory} (if non-null)}
      * <p>
      * The provided {@code original} IntFunction is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain IntFunction#apply(int)} method when a value is
-     * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread.
+     * threads invoking the {@linkplain IntFunction#apply(int) IntFunction::apply} method
+     * when a value is already under computation will block until a value is computed or
+     * an exception is thrown by the computing thread.
      * <p>
      * If the {@code original} IntFunction invokes the returned IntFunction recursively
      * for a particular input value, a StackOverflowError will be thrown when the returned
-     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply} method is
+     * invoked.
      * <p>
      * If the provided {@code original} IntFunction throws an exception, it is relayed
      * to the initial caller. If the memoized IntFunction is computed by a background
@@ -304,21 +317,21 @@ public sealed interface StableValue<T>
     }
 
     /**
-     * {@return a new caching, thread-safe, stable, lazily computed {@linkplain Function}
+     * {@return a new caching, thread-safe, stable, lazily computed {@link Function}
      * that, for each allowed input in the given set of {@code inputs}, records the
      * values of the provided {@code original} Function upon being first accessed via
-     * {@linkplain Function#apply(Object)}, or optionally via background threads created
-     * from the provided {@code factory} (if non-null)}
+     * {@linkplain Function#apply(Object) Function::apply}, or optionally via background
+     * threads created from the provided {@code factory} (if non-null)}
      * <p>
      * The provided {@code original} Function is guaranteed to be successfully invoked
      * at most once per allowed input, even in a multi-threaded environment. Competing
-     * threads invoking the {@linkplain Function#apply(Object)} method when a value is
-     * already under computation will block until a value is computed or an exception is
-     * thrown by the computing thread.
+     * threads invoking the {@linkplain Function#apply(Object) Function::apply} method
+     * when a value is already under computation will block until a value is computed or
+     * an exception is thrown by the computing thread.
      * <p>
      * If the {@code original} Function invokes the returned Function recursively
      * for a particular input value, a StackOverflowError will be thrown when the returned
-     * IntFunction's {@linkplain IntFunction#apply(int)} method is invoked.
+     * Function's {@linkplain Function#apply(Object) Function::apply} method is invoked.
      * <p>
      * If the provided {@code original} Function throws an exception, it is relayed
      * to the initial caller. If the memoized Function is computed by a background
@@ -358,7 +371,7 @@ public sealed interface StableValue<T>
      * {@return a lazy, immutable, stable List of the provided {@code size} where the
      * individual elements of the list are lazily computed vio the provided
      * {@code mapper} whenever an element is first accessed (directly or indirectly),
-     * for example via {@linkplain List#get(int)}}
+     * for example via {@linkplain List#get(int) List::get}}
      * <p>
      * The provided {@code mapper} IntFunction is guaranteed to be successfully invoked
      * at most once per list index, even in a multi-threaded environment. Competing
@@ -367,12 +380,12 @@ public sealed interface StableValue<T>
      * <p>
      * If the {@code mapper} IntFunction invokes the returned IntFunction recursively
      * for a particular index, a StackOverflowError will be thrown when the returned
-     * List's {@linkplain List#get(int)} method is invoked.
+     * List's {@linkplain List#get(int) List::get} method is invoked.
      * <p>
      * If the provided {@code mapper} IntFunction throws an exception, it is relayed
      * to the initial caller and no element is computed.
      * <p>
-     * The returned List is not {@linkplain Serializable}
+     * The returned List is not {@link Serializable}
      *
      * @param size   the size of the returned list
      * @param mapper to invoke whenever an element is first accessed
@@ -390,7 +403,7 @@ public sealed interface StableValue<T>
      * {@return a lazy, immutable, stable Map of the provided {@code keys} where the
      * associated values of the maps are lazily computed vio the provided
      * {@code mapper} whenever a value is first accessed (directly or indirectly), for
-     * example via {@linkplain Map#get(Object)}}
+     * example via {@linkplain Map#get(Object) Map::get}}
      * <p>
      * The provided {@code mapper} Function is guaranteed to be successfully invoked
      * at most once per key, even in a multi-threaded environment. Competing
@@ -399,12 +412,12 @@ public sealed interface StableValue<T>
      * <p>
      * If the {@code mapper} Function invokes the returned Map recursively
      * for a particular key, a StackOverflowError will be thrown when the returned
-     * Map's {@linkplain Map#get(Object)}} method is invoked.
+     * Map's {@linkplain Map#get(Object) Map::get}} method is invoked.
      * <p>
      * If the provided {@code mapper} Function throws an exception, it is relayed
      * to the initial caller and no value is computed.
      * <p>
-     * The returned Map is not {@linkplain Serializable}
+     * The returned Map is not {@link Serializable}
      *
      * @param keys   the keys in the returned map
      * @param mapper to invoke whenever an associated value is first accessed
