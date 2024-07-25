@@ -273,21 +273,16 @@ public class KeyBoardNavigation {
                 FN+Up Arrow/FN+Down Arrow - Deselect current selection;
                                    scroll up/down one JViewport view;
                                    first visible cell in current column gets focus
-                Control-FN+Up Arrow/FN+Down Arrow - Deselect current selection;
-                                                    move focus and view to
-                                                    first/last cell in current row
-                F2 - Allows editing in a cell containing information without
+                fn - Allows editing in a cell containing information without
                      overwriting the information
                 Esc -  Resets the cell content back to the state it was in
                        before editing started
-                Ctrl+A, Ctrl+/ - Select All
-                Ctrl+\\ - Deselect all
+                Cmd+A - Select All
                 Shift-Up/Down Arrow -  Extend selection up/down one row
                 Shift-Left/Right Arrow - Extend selection left/right one column
-                FN-Shift Up/Down Arrow -  Extend selection to top/bottom of column
-                Shift-PageUp/PageDown - Extend selection up/down one view and scroll
-                                        table
-                                """;
+                Ctrl-Shift Up/Down Arrow -  Extend selection to top/bottom of row
+                Ctrl-Shift Left/Right Arrow -  Extend selection to first/last of column
+                """;
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("mac")) {
             return MAC_SPECIFIC;
