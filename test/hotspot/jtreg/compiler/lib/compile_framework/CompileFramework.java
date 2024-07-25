@@ -73,26 +73,26 @@ public class CompileFramework {
 
         printSourceFiles();
 
-        List<JavaSourceFromString> javaFiles = new ArrayList<JavaSourceFromString>();
-        List<SourceFile> jasmFiles = new ArrayList<SourceFile>();
+        List<JavaSourceFromString> javaSources = new ArrayList<JavaSourceFromString>();
+        List<SourceFile> jasmSources = new ArrayList<SourceFile>();
         for (SourceFile sourceFile : sourceFiles) {
             switch (sourceFile.kind) {
-                case SourceFile.Kind.JAVA -> { javaFiles.add(new JavaSourceFromString(sourceFile.name, sourceFile.code)); }
-                case SourceFile.Kind.JASM -> { jasmFiles.add(sourceFile);  }
+                case SourceFile.Kind.JAVA -> { javaSources.add(new JavaSourceFromString(sourceFile.name, sourceFile.code)); }
+                case SourceFile.Kind.JASM -> { jasmSources.add(sourceFile);  }
             }
         }
 
-        compileJasmFiles(jasmFiles);
-        compileJavaFiles(javaFiles);
+        compileJasmSources(jasmSources);
+        compileJavaSources(javaSources);
         setUpClassLoader();
     }
 
-    private void compileJasmFiles(List<SourceFile> jasmFiles) {
-        if (jasmFiles.size() == 0) {
+    private void compileJasmSources(List<SourceFile> jasmSources) {
+        if (jasmSources.size() == 0) {
             System.out.println("No jasm files to compile.");
             return;
         }
-        System.out.println("Compiling jasm files: " + jasmFiles.size());
+        System.out.println("Compiling jasm files: " + jasmSources.size());
 
         // Create temporary directory for jasm source files
         final String jasmDirName;
@@ -103,15 +103,17 @@ public class CompileFramework {
         }
         System.out.println("Jasm source files in: " + jasmDirName);
 
-        for (SourceFile sourceFile : jasmFiles) {
+        List<String> jasmFileNames = new ArrayList<String>();
+        for (SourceFile sourceFile : jasmSources) {
             String fileName = jasmDirName + "/" + sourceFile.name.replace('.','/') + ".jasm";
             writeCodeToFile(sourceFile.code, fileName);
-            compileJasmFile(fileName);
+            jasmFileNames.add(fileName);
         }
+        compileJasmFiles(jasmFileNames);
         System.out.println("Jasm files compiled.");
     }
 
-    private static void compileJasmFile(String fileName) {
+    private static void compileJasmFiles(List<String> fileNames) {
         // Compile JASM files with asmtools.jar, shipped with jtreg.
         List<String> command = new ArrayList<>();
 
@@ -121,7 +123,9 @@ public class CompileFramework {
         command.add("org.openjdk.asmtools.jasm.Main");
         command.add("-d");
         command.add(System.getProperty("test.classes"));
-        command.add(new File(fileName).getAbsolutePath());
+        for (String fileName : fileNames) {
+            command.add(new File(fileName).getAbsolutePath());
+        }
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(true);
@@ -180,12 +184,12 @@ public class CompileFramework {
         }
     }
 
-    private void compileJavaFiles(List<JavaSourceFromString> javaFiles) {
-        if (javaFiles.size() == 0) {
+    private void compileJavaSources(List<JavaSourceFromString> javaSources) {
+        if (javaSources.size() == 0) {
             System.out.println("No java files to compile.");
             return;
         }
-        System.out.println("Compiling Java files: " + javaFiles.size());
+        System.out.println("Compiling Java files: " + javaSources.size());
 
         // Get compiler with diagnostics.
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -199,7 +203,7 @@ public class CompileFramework {
         optionList.add(System.getProperty("test.classes"));
 
         // Compile.
-        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, javaFiles);
+        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, javaSources);
         boolean success = task.call();
 
         // Print diagnostics.
