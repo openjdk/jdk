@@ -133,9 +133,7 @@ public final class KDF {
         this.provider = provider;
         this.algorithm = algorithm;
         this.kdfParameters = kdfParameters;
-        // the lock is not needed, because the Spi will already be set in
-        // chooseProvider
-        lock = null;
+        lock = new Object();
     }
 
     private KDF(Service s, Iterator<Service> t, String algorithm,

@@ -55,8 +55,8 @@ public abstract class KDFSpi {
     /**
      * The sole constructor.
      * <p>
-     * An {@code AlgorithmParameterSpec} may be specified for KDF algorithms
-     * that may require this.
+     * A {@code KDFParameters} object may be specified for KDF algorithms
+     * that require this.
      *
      * @param kdfParameters
      *     the initialization parameters for the {@code KDF} algorithm (may be
@@ -75,10 +75,6 @@ public abstract class KDFSpi {
      * <p>
      * The {@code deriveKey} method may be called multiple times on a particular
      * {@code KDF} instance.
-     * <p>
-     * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called. Once a
-     * provider is selected, it cannot be changed.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object (may not be
@@ -104,10 +100,6 @@ public abstract class KDFSpi {
      * <p>
      * The {@code deriveData} method may be called multiple times on a
      * particular {@code KDF} instance.
-     * <p>
-     * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called. Once a
-     * provider is selected, it cannot be changed.
      *
      * @param kdfParameterSpec
      *     derivation parameters
