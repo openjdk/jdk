@@ -27,6 +27,7 @@ package sun.security.provider;
 
 import java.io.*;
 
+import java.security.PEMRecord;
 import java.security.cert.*;
 import java.util.*;
 
@@ -557,12 +558,12 @@ public class X509Factory extends CertificateFactorySpi {
             readBERInternal(is, bout, c);
             return bout.toByteArray();
         } else {
-            Pem pem = Pem.readPEM(is, (c == '-' ? true : false));
+            PEMRecord pem = Pem.readPEM(is, (c == '-' ? true : false));
             if (pem == null) {
                 return null;
             }
             try {
-                return Base64.getDecoder().decode(pem.getData());
+                return Base64.getDecoder().decode(pem.pem());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);
             }

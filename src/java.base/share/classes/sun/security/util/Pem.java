@@ -30,6 +30,7 @@ import sun.security.x509.AlgorithmId;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
+import java.security.PEMRecord;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -40,62 +41,6 @@ import java.util.Objects;
  * A utility class for PEM format encoding.
  */
 public class Pem {
-
-    /**
-     * Public Key PEM header & footer
-     */
-    public static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Private Key PEM header & footer
-     */
-    public static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Encrypted Private Key PEM header & footer
-     */
-    public static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Certificate PEM header & footer
-     */
-    public static final byte[] CERTHEADER = "-----BEGIN CERTIFICATE-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] CERTFOOTER = "-----END CERTIFICATE-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * CRL PEM header & footer
-     */
-    public static final byte[] CRLHEADER = "-----BEGIN X509 CRL-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] CRLFOOTER = "-----END X509 CRL-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * PKCS#1/slleay/OpenSSL RSA PEM header & footer
-     */
-    public static final byte[] PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS1FOOTER = "-----END RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    public static final byte[] LINESEPARATOR = System.lineSeparator()
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    public enum KeyType {
-        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL, PKCS1
-    }
-
     private static final char WS = 0x20;  // Whitespace
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
@@ -104,14 +49,6 @@ public class Pem {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
     }
 
-    private byte[] header, footer;
-    private byte[] data;
-
-    private Pem(byte[] header, byte[] data, byte[] footer) {
-        this.header = header;
-        this.data = data;
-        this.footer = footer;
-    }
     /**
      * Decodes a PEM-encoded block.
      *
@@ -143,7 +80,7 @@ public class Pem {
         }
     }
 
-    public static Pem readPEM(InputStream is) throws IOException {
+    public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
@@ -156,22 +93,25 @@ public class Pem {
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
-    public static Pem readPEM(InputStream is, boolean shortHeader)
+    public static PEMRecord readPEM(InputStream is, boolean shortHeader)
         throws IOException{
         Objects.requireNonNull(is);
 
         int hyphen = (shortHeader ? 1 : 0);
         int endchar = 0;
 
+        ByteArrayOutputStream os = new ByteArrayOutputStream(6);
         // Find starting hyphens
         do {
-            switch (is.read()) {
+            int d = is.read();
+            switch (d) {
                 case '-' -> hyphen++;
                 case -1 -> {
                     return null;
                 }
                 default -> hyphen = 0;
             }
+            os.write(d);
         } while (hyphen != 5);
 
         StringBuilder sb = new StringBuilder(64);
@@ -298,24 +238,14 @@ public class Pem {
                 header + " " + footer);
         }
 
-        return new Pem(header.getBytes(StandardCharsets.ISO_8859_1),
-            data.getBytes(StandardCharsets.ISO_8859_1),
-            footer.getBytes(StandardCharsets.ISO_8859_1));
+        // If there was data before finding the 5 dashes of the PEM header,
+        // backup 5 characters and save that data.
+        byte[] preData = null;
+        if (os.size() > 5) {
+            preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
+        }
+
+        return new PEMRecord(header, data, preData);
     }
 
-    public byte[] getData() {
-        return data;
-    }
-
-    public byte[] getHeader() {
-        return header;
-    }
-
-    public byte[] getFooter() {
-        return footer;
-    }
-
-    public void clean() {
-        Arrays.fill(data, (byte)0);
-    }
 }

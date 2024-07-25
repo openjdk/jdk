@@ -26,6 +26,7 @@
 /*
  * @test
  * @summary Testing PEM decodings
+ * @enablePreview
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;

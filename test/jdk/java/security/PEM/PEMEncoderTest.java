@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary Testing PEM decoding
- *
+ * @enablePreview
  * @modules java.base/sun.security.util
  */
 
