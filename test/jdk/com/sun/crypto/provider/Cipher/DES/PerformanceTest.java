@@ -26,7 +26,6 @@
  * @bug 0000000
  * @summary This test checks performance of various ciphers.
  * @author Jan Luehe
- * @run main/manual PerformanceTest
  */
 import java.security.spec.*;
 import javax.crypto.*;
