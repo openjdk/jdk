@@ -26,6 +26,7 @@ package java.lang;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -41,6 +42,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadPinnedEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
@@ -141,6 +143,20 @@ final class VirtualThread extends BaseVirtualThread {
 
     // termination object when joining, created lazily if needed
     private volatile CountDownLatch termination;
+
+    /**
+     * Returns the default scheduler.
+     */
+    static Executor defaultScheduler() {
+        return DEFAULT_SCHEDULER;
+    }
+
+    /**
+     * Returns a stream of the delayed task schedulers used to support timed operations.
+     */
+    static Stream<ScheduledExecutorService> delayedTaskSchedulers() {
+        return Arrays.stream(DELAYED_TASK_SCHEDULERS);
+    }
 
     /**
      * Returns the continuation scope used for virtual threads.

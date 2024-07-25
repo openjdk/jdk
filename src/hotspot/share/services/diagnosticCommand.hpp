@@ -957,6 +957,19 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class VThreadSummaryDCmd : public DCmd {
+public:
+  VThreadSummaryDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() {
+    return "Thread.vthread_summary";
+  }
+  static const char* description() {
+    return "Print virtual thread summary";
+  }
+  static const char* impact() { return "Low"; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
   DCmdArgument<bool> _human_readable;
