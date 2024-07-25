@@ -78,7 +78,6 @@ public class WinChildProcessTest {
             Optional<ProcessHandle> processHandle = ProcessHandle.of(childPid);
             boolean isAlive = processHandle.isPresent()
                     && processHandle.get().isAlive();
-            System.out.println("Is Alive " + isAlive);
             TKit.assertTrue(isAlive, "Check is child process is alive");
         } finally {
             // Kill only a specific child instance

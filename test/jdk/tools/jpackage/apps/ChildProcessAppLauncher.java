@@ -30,7 +30,6 @@ public class ChildProcessAppLauncher {
         if (args.length == 1 && "noexit".equals(args[0])) {
             var lock = new Object();
             synchronized (lock) {
-                System.out.println("Process id=" + ProcessHandle.current().pid() + " is about to block");
                 lock.wait();
             }
         } else {
