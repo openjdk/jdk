@@ -51,6 +51,8 @@ class os::win32 {
   static int    _build_number;
   static int    _build_minor;
 
+  static bool request_lock_memory_privilege();
+
   static void print_windows_version(outputStream* st);
   static void print_uptime_info(outputStream* st);
 
