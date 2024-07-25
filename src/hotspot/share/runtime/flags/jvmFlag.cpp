@@ -693,7 +693,7 @@ void JVMFlag::printFlags(outputStream* out, bool withComments, bool printRanges,
   //       called as part of error reporting, so handle native OOMs gracefully.
 
   // The last entry is the null entry.
-  const size_t length = JVMFlag::numFlags - 1;
+  constexpr size_t length = (sizeof(flagTable) / sizeof(JVMFlag)) - 1;
 
   // Print
   if (!printRanges) {
