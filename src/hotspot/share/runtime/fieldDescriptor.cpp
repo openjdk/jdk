@@ -44,7 +44,7 @@ Symbol* fieldDescriptor::generic_signature() const {
 
 bool fieldDescriptor::is_trusted_final() const {
   InstanceKlass* ik = field_holder();
-  return is_final() && (is_static() || ik->is_hidden() || ik->is_record());
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->name()->equals("java/lang/StableValue") == 0);
 }
 
 AnnotationArray* fieldDescriptor::annotations() const {
