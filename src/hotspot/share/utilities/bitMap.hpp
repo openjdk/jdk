@@ -67,8 +67,8 @@ class BitMap {
  protected:
   // The maximum allowable size of a bitmap, in words or bits.
   // Limit max_size_in_bits so aligning up to a word boundary never overflows.
-  static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
-  static idx_t max_size_in_bits() { return max_size_in_words() * BitsPerWord; }
+  constexpr static idx_t max_size_in_words() { return raw_to_words_align_down(~idx_t(0)); }
+  constexpr static idx_t max_size_in_bits() { return max_size_in_words() * BitsPerWord; }
 
   // Assumes relevant validity checking for bit has already been done.
   constexpr static idx_t raw_to_words_align_up(idx_t bit) {
@@ -257,7 +257,13 @@ class BitMap {
   // Verification.
 
   // Verify size_in_bits does not exceed max_size_in_bits().
-  constexpr static void verify_size(idx_t size_in_bits) NOT_DEBUG_RETURN;
+  constexpr static void verify_size(idx_t size_in_bits) {
+#ifdef ASSERT
+    assert(size_in_bits <= max_size_in_bits(),
+           "out of bounds: " SIZE_FORMAT, size_in_bits);
+#endif
+  }
+
   // Verify bit is less than size().
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
   // Verify bit is not greater than size().
