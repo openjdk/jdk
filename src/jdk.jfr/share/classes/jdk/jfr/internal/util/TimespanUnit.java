@@ -31,7 +31,7 @@ public enum TimespanUnit {
     SECONDS     ("s",                1_000_000_000L,   60),
     MINUTES     ("m",           60 * 1_000_000_000L,   60),
     HOURS       ("h",      60 * 60 * 1_000_000_000L,   24),
-    DAYS        ("d", 24 * 60 * 60 * 1_000_000_000L,  365);
+    DAYS        ("d", 24 * 60 * 60 * 1_000_000_000L,    7);
     public final String text;
     public final long nanos;
     public final int size;

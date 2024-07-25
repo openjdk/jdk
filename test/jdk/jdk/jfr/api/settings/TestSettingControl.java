@@ -56,7 +56,7 @@ public class TestSettingControl {
         }
     }
 
-    // Example values should be listed in precedence order with the lowest first.
+    // Example values should be listed in precedence order with the lowest precedence first.
     static List<SettingTest> SETTING_TESTS = List.of(
         new SettingTest("enabled", "false", "jdk.JavaMonitorWait",List.of("false", "true")),
         new SettingTest("stackTrace", "true", "jdk.JavaMonitorWait", List.of("false", "true")),
@@ -153,7 +153,7 @@ public class TestSettingControl {
         testPrecedence("testPrecedenceWithInvalid");
     }
 
-    // * * * HELPER METHOD * * *
+    // * * * HELPER METHODS * * *
 
     private static void testPrecedence(String testName) throws Exception {
         List<Map<String, String>> settingsList = new ArrayList<>();
