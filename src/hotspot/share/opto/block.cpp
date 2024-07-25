@@ -43,7 +43,6 @@ void Block_Array::grow( uint i ) {
   if (i < Max()) {
     return; // No need to grow
   }
-  assert(i >= Max(), "must be an overflow");
   debug_only(_limit = i+1);
   if( i < _size )  return;
   if( !_size ) {
