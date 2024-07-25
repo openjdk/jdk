@@ -33,11 +33,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URI;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -48,6 +50,8 @@ import javax.tools.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 
 public class CompileFramework {
+    static final int JASM_COMPILE_TIMEOUT = 60;
+
     private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
     private URLClassLoader classLoader;
 
@@ -85,7 +89,7 @@ public class CompileFramework {
 
     private void compileJasmFiles(List<SourceFile> jasmFiles) {
         if (jasmFiles.size() == 0) {
-            System.out.println("No jasm files to compute.");
+            System.out.println("No jasm files to compile.");
             return;
         }
         System.out.println("Compiling jasm files: " + jasmFiles.size());
@@ -102,18 +106,63 @@ public class CompileFramework {
         for (SourceFile sourceFile : jasmFiles) {
             String fileName = jasmDirName + "/" + sourceFile.name.replace('.','/') + ".jasm";
             writeCodeToFile(sourceFile.code, fileName);
+            compileJasmFile(fileName);
+        }
+    }
+
+    private static void compileJasmFile(String fileName) {
+        // Compile JASM files with asmtools.jar, shipped with jtreg.
+        List<String> command = new ArrayList<>();
+
+        command.add("%s/bin/java".formatted(System.getProperty("compile.jdk")));
+        command.add("-classpath");
+        command.add(getAsmToolsPath());
+        command.add("org.openjdk.asmtools.jasm.Main");
+        command.add("-d");
+        command.add(System.getProperty("test.classes"));
+        command.add(new File(fileName).getAbsolutePath());
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(true);
+
+        String output;
+        int exitCode;
+        try {
+            Process process = builder.start();
+            boolean exited = process.waitFor(JASM_COMPILE_TIMEOUT, TimeUnit.SECONDS);
+            if (!exited) {
+                process.destroyForcibly();
+                throw new CompileFrameworkException("Process timeout: jasm compilation took too long.");
+            }
+            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            exitCode = process.exitValue();
+        } catch (IOException e) {
+            throw new CompileFrameworkException("IOException during jasm compilation", e);
+        } catch (InterruptedException e) {
+            throw new CompileFrameworkException("InterruptedException during jasm compilation", e);
         }
 
-        // File jasmDir = new File(jasmDirName);
-        // if (!jasmDir.exists()){
-        //     jasmDir.mkdir();
-        // }
+        if (exitCode != 0 || !output.equals("")) {
+            System.out.println("Jasm compilation failed.");
+            System.out.println("Exit code: " + exitCode);
+            System.out.println("Output: '" + output + "'");
+            throw new CompileFrameworkException("Jasm compilation failed.");
+        }
+    }
 
-        // // Write jasm source to file.
-        // for (SourceFile sourceFile : jasmFiles) {
-        //     String fileName = jasmDirName + "/" + sourceFile.name + ".jasm";
-        // }
-        // // TODO probably need to makedrs for every file, especially if with package!
+    private static String getAsmToolsPath() {
+        for (String path : System.getProperty("java.class.path").split(":")) {
+            if (path.endsWith("jtreg.jar")) {
+                File jtreg = new File(path);
+                File dir = jtreg.getAbsoluteFile().getParentFile();
+                File asmtools = new File(dir, "asmtools.jar");
+                if (!asmtools.exists()) {
+                    throw new CompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
+                }
+                return asmtools.getAbsolutePath();
+            }
+        }
+        throw new CompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
     private static void writeCodeToFile(String code, String fileName) {
@@ -132,7 +181,7 @@ public class CompileFramework {
 
     private void compileJavaFiles(List<JavaSourceFromString> javaFiles) {
         if (javaFiles.size() == 0) {
-            System.out.println("No java files to compute.");
+            System.out.println("No java files to compile.");
             return;
         }
         System.out.println("Compiling Java files: " + javaFiles.size());
