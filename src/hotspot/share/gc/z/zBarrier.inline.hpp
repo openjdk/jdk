@@ -475,6 +475,12 @@ inline zaddress ZBarrier::keep_alive_load_barrier_on_oop_field_preloaded(volatil
   return barrier(is_mark_good_fast_path, keep_alive_slow_path, color_mark_good, p, o);
 }
 
+inline void ZBarrier::load_barrier_on_oop_array(volatile zpointer* p, size_t length) {
+  for (volatile const zpointer* const end = p + length; p < end; p++) {
+    load_barrier_on_oop_field(p);
+  }
+}
+
 //
 // Load barrier on non-strong oop refs
 //

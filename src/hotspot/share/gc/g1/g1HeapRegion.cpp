@@ -547,7 +547,10 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     }
 
     bool failed() const {
-      return !_is_in_heap || this->_g1h->is_obj_dead_cond(this->_obj, _vo);
+      return !_is_in_heap ||
+             // is_obj_dead* assume that obj is not in a Free region.
+             this->_g1h->heap_region_containing(this->_obj)->is_free() ||
+             this->_g1h->is_obj_dead_cond(this->_obj, _vo);
     }
 
     void report_error() {
