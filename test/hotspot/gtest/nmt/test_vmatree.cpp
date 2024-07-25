@@ -168,6 +168,21 @@ public:
     EXPECT_TRUE(exists(found[2]));
     EXPECT_TRUE(exists(found[3]));
   };
+  void copy_flag_test() {
+    Tree tree;
+    VMATree::RegionData rd1{ si[0], mtTest };
+    VMATree::RegionData rd2{ si[1], mtNMT };
+
+    tree.reserve_mapping(0, 100, rd1);
+    tree.commit_mapping(20, 50, rd2, true); // mtTest flag is to be copied to new nodes, even if it is given as mtNMT.
+    tree.reserve_mapping(30, 10, rd2, true);// same here.
+    tree.visit_in_order([&](Node* node) {
+      if ((size_t)node->key() != 100) {
+        EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key();
+      }
+    });
+
+  }
 };
 
 
@@ -193,6 +208,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
   remove_all_leaves_empty_tree(rd);
   commit_middle(rd);
   commit_whole(rd);
+  copy_flag_test();
 
   { // Identical operation but different metadata should not merge
     Tree tree;

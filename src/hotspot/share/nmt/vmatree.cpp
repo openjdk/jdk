@@ -34,7 +34,7 @@ const char* VMATree::statetype_strings[3] = {
 };
 
 VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType state,
-                                               const RegionData& metadata) {
+                                               const RegionData& metadata, bool copy_flag) {
   if (A == B) {
     // A 0-sized mapping isn't worth recording.
     return SummaryDiff();
@@ -62,6 +62,11 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   } else {
     LEQ_A_found = true;
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
+    if (copy_flag) {
+      MEMFLAGS flag = leqA_n->val().out.flag();
+      stA.out.set_flag(flag);
+      stB.in.set_flag(flag);
+    }
     // Unless we know better, let B's outgoing state be the outgoing state of the node at or preceding A.
     // Consider the case where the found node is the start of a region enclosing [A,B)
     stB.out = leqA_n->val().out;

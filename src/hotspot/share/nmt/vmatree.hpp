@@ -112,6 +112,9 @@ private:
       return RegionData{sidx, flag()};
     }
 
+    void set_flag(MEMFLAGS flag) {
+      type_flag[1] = (uint8_t)flag;
+    }
     const NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
@@ -167,14 +170,14 @@ public:
     }
   };
 
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
+  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool copy_flag = false);
 
-  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata);
+  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {
+    return register_mapping(from, from + sz, StateType::Reserved, metadata, copy_flag);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata);
+  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, copy_flag);
   }
 
   SummaryDiff release_mapping(position from, position sz) {
