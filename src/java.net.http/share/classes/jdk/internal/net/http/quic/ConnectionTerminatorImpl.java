@@ -24,7 +24,6 @@
  */
 package jdk.internal.net.http.quic;
 
-import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -36,6 +35,7 @@ import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.quic.QuicConnectionImpl.HandshakeFlow;
 import jdk.internal.net.http.quic.QuicConnectionImpl.ProtectionRecord;
 import jdk.internal.net.http.quic.TerminationCause.AppLayerClose;
+import jdk.internal.net.http.quic.TerminationCause.SilentTermination;
 import jdk.internal.net.http.quic.TerminationCause.TransportError;
 import jdk.internal.net.http.quic.frames.ConnectionCloseFrame;
 import jdk.internal.net.http.quic.packets.QuicPacket;
@@ -46,7 +46,7 @@ import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.
 import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.CLOSING;
 import static jdk.internal.net.http.quic.QuicConnectionImpl.QuicConnectionState.DRAINING;
 import static jdk.internal.net.http.quic.TerminationCause.appLayerClose;
-import static jdk.internal.net.http.quic.TerminationCause.forException;
+import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
 import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
 import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
@@ -90,6 +90,10 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
         final ConnectionCloseFrame frame;
         KeySpace keySpace;
         switch (cause) {
+            case SilentTermination st -> {
+                silentTerminate(st);
+                return;
+            }
             case TransportError te -> {
                 frame = new ConnectionCloseFrame(te.getCloseCode(), te.frameType,
                         te.getPeerVisibleReason()); // 0x1c
@@ -105,9 +109,6 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
                 frame = new ConnectionCloseFrame(alc.getCloseCode(),
                         alc.getPeerVisibleReason()); // 0x1d
                 keySpace = null;
-            }
-            default -> {
-                throw new AssertionError("unexpected termination cause type " + cause.getClass());
             }
         }
         if (keySpace == null) {
@@ -129,34 +130,31 @@ final class ConnectionTerminatorImpl implements ConnectionTerminator {
     }
 
     void incomingStatelessReset() {
-        final TerminationCause cause = forException(new IOException("stateless reset from peer"));
-        // shutdown the idle timeout manager since we no longer bother with idle timeout
-        // management for this connection
-        connection.idleTimeoutManager.shutdown();
-        silentTerminate(cause);
+        final SilentTermination st = forSilentTermination("stateless reset from peer");
+        terminate(st);
     }
 
     /**
-     * To be called only when the connection is expected to be discarded without being required
+     * Called only when the connection is expected to be discarded without being required
      * to inform the peer.
      * Discards all state, no CONNECTION_CLOSE is sent, nor does the connection enter closing
      * or discarding state.
      */
-    void silentTerminate(final TerminationCause terminationCause) {
+    private void silentTerminate(final SilentTermination terminationCause) {
+        // shutdown the idle timeout manager since we no longer bother with idle timeout
+        // management for this connection
+        connection.idleTimeoutManager.shutdown();
         // mark the connection state as closed (we don't enter closing or draining state
         // during silent termination)
         if (!markClosed(terminationCause)) {
             // previously already closed
             return;
         }
-        final String closeCodeHex = (terminationCause.isAppLayer() ? "(app layer) " : "") +
-                "0x" + Long.toHexString(terminationCause.getCloseCode());
         if (Log.quic()) {
-            Log.logQuic("{0} silently terminating connection due to {1} - {2}",
-                    logTag, closeCodeHex, terminationCause.getLogMsg());
+            Log.logQuic("{0} silently terminating connection due to: {1}",
+                    logTag, terminationCause.getLogMsg());
         } else if (debug.on()) {
-            debug.log("silently terminating connection due to " + closeCodeHex + " - "
-                    + terminationCause.getLogMsg());
+            debug.log("silently terminating connection due to: " + terminationCause.getLogMsg());
         }
         if (debug.on() || Log.quic()) {
             String message = connection.loggableState();
