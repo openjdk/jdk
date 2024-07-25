@@ -411,6 +411,7 @@ public class TestFloatVect {
       errn += verify("test_round: ", 11, i0[11], -1);
       errn += verify("test_round: ", 12, i0[12], Integer.MAX_VALUE);
       errn += verify("test_round: ", 13, i0[13], Integer.MIN_VALUE);
+
       for (int i=14; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
       }

@@ -465,7 +465,6 @@ public class TestDoubleVect {
       errn += verify("test_round: ", 11, l0[11], -1L);
       errn += verify("test_round: ", 12, l0[12], Long.MAX_VALUE);
       errn += verify("test_round: ", 13, l0[13], Long.MIN_VALUE);
-
       for (int i=14; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));
       }
