@@ -556,6 +556,40 @@ public final class CompactNumberFormat extends NumberFormat {
         };
     }
 
+    /**
+     * Formats a number to produce a string representing its compact form.
+     * The number can be of any subclass of {@link java.lang.Number}.
+     * @param number     the number to format
+     * @param toAppendTo the {@code StringBuilder} to which the formatted
+     *                   text is to be appended
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 123456789} in the
+     *                         {@link java.util.Locale#US US locale},
+     *                         if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin
+     *                         index and end index of {@code fieldPosition}
+     *                         will be set to 0 and 3, respectively for the
+     *                         output string {@code 123M}. Similarly, positions
+     *                         of the prefix and the suffix fields can be
+     *                         obtained using {@link NumberFormat.Field#PREFIX}
+     *                         and {@link NumberFormat.Field#SUFFIX} respectively.
+     * @return           the {@code StringBuilder} passed in as {@code toAppendTo}
+     * @throws           IllegalArgumentException if {@code number} is
+     *                   {@code null} or not an instance of {@code Number}
+     * @throws           NullPointerException if {@code toAppendTo} or
+     *                   {@code fieldPosition} is {@code null}
+     * @throws           ArithmeticException if rounding is needed with rounding
+     *                   mode being set to {@code RoundingMode.UNNECESSARY}
+     * @see              FieldPosition
+     */
+    @Override
+    public final StringBuilder format(Object number,
+                                     StringBuilder toAppendTo,
+                                     FieldPosition fieldPosition) {
+        return format(number, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuilder();
+    }
+
     @Override
     StringBuf format(Object number,
                      StringBuf toAppendTo,
@@ -607,6 +641,36 @@ public final class CompactNumberFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    /**
+     * Formats a double to produce a string representing its compact form.
+     * @param number    the double number to format
+     * @param result    where the text is to be appended
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, to format
+     *                         a number {@code 1234567.89} in the
+     *                         {@link java.util.Locale#US US locale}
+     *                         if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin
+     *                         index and end index of {@code fieldPosition}
+     *                         will be set to 0 and 1, respectively for the
+     *                         output string {@code 1M}. Similarly, positions
+     *                         of the prefix and the suffix fields can be
+     *                         obtained using {@link NumberFormat.Field#PREFIX}
+     *                         and {@link NumberFormat.Field#SUFFIX} respectively.
+     * @return    the {@code StringBuilder} passed in as {@code result}
+     * @throws NullPointerException if {@code result} or
+     *            {@code fieldPosition} is {@code null}
+     * @throws ArithmeticException if rounding is needed with rounding
+     *            mode being set to {@code RoundingMode.UNNECESSARY}
+     * @see FieldPosition
+     */
+    @Override
+    public StringBuilder format(double number, StringBuilder result,
+                               FieldPosition fieldPosition) {
+
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuilder();
     }
 
     @Override
@@ -706,6 +770,36 @@ public final class CompactNumberFormat extends NumberFormat {
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    /**
+     * Formats a long to produce a string representing its compact form.
+     * @param number    the long number to format
+     * @param result    where the text is to be appended
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, to format
+     *                         a number {@code 123456789} in the
+     *                         {@link java.util.Locale#US US locale},
+     *                         if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin
+     *                         index and end index of {@code fieldPosition}
+     *                         will be set to 0 and 3, respectively for the
+     *                         output string {@code 123M}. Similarly, positions
+     *                         of the prefix and the suffix fields can be
+     *                         obtained using {@link NumberFormat.Field#PREFIX}
+     *                         and {@link NumberFormat.Field#SUFFIX} respectively.
+     * @return       the {@code StringBuilder} passed in as {@code result}
+     * @throws       NullPointerException if {@code result} or
+     *               {@code fieldPosition} is {@code null}
+     * @throws       ArithmeticException if rounding is needed with rounding
+     *               mode being set to {@code RoundingMode.UNNECESSARY}
+     * @see FieldPosition
+     */
+    @Override
+    public StringBuilder format(long number, StringBuilder result,
+                               FieldPosition fieldPosition) {
+
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuilder();
     }
 
     @Override

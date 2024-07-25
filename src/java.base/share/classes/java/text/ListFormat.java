@@ -384,6 +384,27 @@ public final class ListFormat extends Format {
         return format(obj, StringBufFactory.of(toAppendTo)).asStringBuffer();
     }
 
+    /**
+     * Formats an object and appends the resulting text to a given string
+     * builder. The object should either be a List or an array of Objects.
+     *
+     * @apiNote Formatting the string from an excessively long list or array
+     *          may exceed memory or string sizes.
+     * @param obj    The object to format. Must be a List or an array
+     *               of Object.
+     * @param toAppendTo    where the text is to be appended
+     * @param pos    Ignored. Not used in ListFormat. May be null
+     * @return       the string builder passed in as {@code toAppendTo},
+     *               with formatted text appended
+     * @throws    NullPointerException if {@code obj} or {@code toAppendTo} is null
+     * @throws    IllegalArgumentException if {@code obj} is neither a {@code List}
+     *               nor an array of {@code Object}s, or its length is zero.
+     */
+    @Override
+    public StringBuilder format(Object obj, StringBuilder toAppendTo, FieldPosition pos) {
+        return format(obj, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+    }
+
     @Override
     StringBuf format(Object obj, StringBuf toAppendTo, FieldPosition pos) {
         Objects.requireNonNull(obj);

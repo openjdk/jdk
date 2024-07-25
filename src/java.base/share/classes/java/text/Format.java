@@ -190,6 +190,35 @@ public abstract class Format implements Serializable, Cloneable {
                     StringBuffer toAppendTo,
                     FieldPosition pos);
 
+    /**
+     * Formats an object and appends the resulting text to a given string
+     * builder.
+     * If the {@code pos} argument identifies a field used by the format,
+     * then its indices are set to the beginning and end of the first such
+     * field encountered.
+     *
+     * @apiNote Subclasses should override this method to support this operation.
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}.
+     * @param obj    The object to format
+     * @param toAppendTo    where the text is to be appended
+     * @param pos    A {@code FieldPosition} identifying a field
+     *               in the formatted text
+     * @return       the string builder passed in as {@code toAppendTo},
+     *               with formatted text appended
+     * @throws    NullPointerException if {@code toAppendTo} or
+     *            {@code pos} is null
+     * @throws    IllegalArgumentException if the Format cannot format the given
+     *            object
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     */
+    public StringBuilder format(Object obj,
+                                StringBuilder toAppendTo,
+                                FieldPosition pos) {
+        return format(obj, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+    }
+
     StringBuf format(Object obj,
                      StringBuf toAppendTo,
                      FieldPosition pos) {

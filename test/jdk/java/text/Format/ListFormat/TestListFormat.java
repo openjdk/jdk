@@ -285,7 +285,7 @@ public class TestListFormat {
         assertThrows(NullPointerException.class,
                 () -> f.format(null, new StringBuffer(), new FieldPosition(0)));
         assertThrows(NullPointerException.class,
-                () -> f.format(new Object(), null, new FieldPosition(0)));
+                () -> f.format(new Object(), (StringBuffer) null, new FieldPosition(0)));
 
         // Tests IAE
         var ex = assertThrows(IllegalArgumentException.class,

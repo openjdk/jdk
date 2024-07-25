@@ -563,6 +563,40 @@ public class DecimalFormat extends NumberFormat {
         };
     }
 
+    /**
+     * Formats a number and appends the resulting text to the given string
+     * builder.
+     * The number can be of any subclass of {@link java.lang.Number}.
+     *
+     * This implementation uses the maximum precision permitted.
+     * @param number     the number to format
+     * @param toAppendTo the {@code StringBuilder} to which the formatted
+     *                   text is to be appended
+     * @param pos        keeps track on the position of the field within the
+     *                   returned string. For example, for formatting a number
+     *                   {@code 1234567.89} in {@code Locale.US} locale,
+     *                   if the given {@code fieldPosition} is
+     *                   {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                   and end index of {@code fieldPosition} will be set
+     *                   to 0 and 9, respectively for the output string
+     *                   {@code 1,234,567.89}.
+     * @return           the value passed in as {@code toAppendTo}
+     * @throws           IllegalArgumentException if {@code number} is
+     *                   null or not an instance of {@code Number}.
+     * @throws           NullPointerException if {@code toAppendTo} or
+     *                   {@code pos} is null
+     * @throws           ArithmeticException if rounding is needed with rounding
+     *                   mode being set to RoundingMode.UNNECESSARY
+     * @see              java.text.FieldPosition
+     */
+    @Override
+    public final StringBuilder format(Object number,
+                               StringBuilder toAppendTo,
+                               FieldPosition pos) {
+        return format(number, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+    }
+
+
     @Override
     final StringBuf format(Object number,
                            StringBuf toAppendTo,
@@ -605,6 +639,31 @@ public class DecimalFormat extends NumberFormat {
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
         return format(number, StringBufFactory.of(result), fieldPosition).asStringBuffer();
+    }
+
+    /**
+     * Formats a double to produce a string.
+     * @param number    The double to format
+     * @param result    where the text is to be appended
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 1234567.89} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 9, respectively for the output string
+     *                         {@code 1,234,567.89}.
+     * @throws    NullPointerException if {@code result} or
+     *            {@code fieldPosition} is {@code null}
+     * @throws    ArithmeticException if rounding is needed with rounding
+     *            mode being set to RoundingMode.UNNECESSARY
+     * @return The formatted number string
+     * @see java.text.FieldPosition
+     */
+    @Override
+    public StringBuilder format(double number, StringBuilder result,
+                               FieldPosition fieldPosition) {
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuilder();
     }
 
     @Override
@@ -784,6 +843,31 @@ public class DecimalFormat extends NumberFormat {
         fieldPosition.setEndIndex(0);
 
         return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    /**
+     * Format a long to produce a string.
+     * @param number    The long to format
+     * @param result    where the text is to be appended
+     * @param fieldPosition    keeps track on the position of the field within
+     *                         the returned string. For example, for formatting
+     *                         a number {@code 123456789} in {@code Locale.US}
+     *                         locale, if the given {@code fieldPosition} is
+     *                         {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                         and end index of {@code fieldPosition} will be set
+     *                         to 0 and 11, respectively for the output string
+     *                         {@code 123,456,789}.
+     * @throws          NullPointerException if {@code result} or
+     *                  {@code fieldPosition} is {@code null}
+     * @throws          ArithmeticException if rounding is needed with rounding
+     *                  mode being set to RoundingMode.UNNECESSARY
+     * @return The formatted number string
+     * @see java.text.FieldPosition
+     */
+    @Override
+    public StringBuilder format(long number, StringBuilder result,
+                               FieldPosition fieldPosition) {
+        return format(number, StringBufFactory.of(result), fieldPosition).asStringBuilder();
     }
 
     StringBuf format(long number, StringBuf result,

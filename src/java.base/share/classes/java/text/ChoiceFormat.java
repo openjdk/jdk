@@ -517,6 +517,28 @@ public class ChoiceFormat extends NumberFormat {
         return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
     }
 
+    /**
+     * Specialization of format. This method really calls
+     * {@link #format(double, StringBuilder, FieldPosition)}.
+     * Thus, the range of longs that are supported is only equal to
+     * the range that can be stored by double. This will never be
+     * a practical limitation.
+     *
+     * @param number number to be formatted and substituted.
+     * @param toAppendTo where text is appended.
+     * @param status ignore no useful status is returned.
+     * @throws    ArrayIndexOutOfBoundsException if either the {@code limits}
+     *            or {@code formats} of this ChoiceFormat are empty
+     * @throws    NullPointerException if {@code toAppendTo}
+     *            is {@code null}
+     */
+    @Override
+    public StringBuilder format(long number,
+                                StringBuilder toAppendTo,
+                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
+    }
+
     @Override
     StringBuf format(long number, StringBuf toAppendTo,
                      FieldPosition status) {
@@ -538,6 +560,24 @@ public class ChoiceFormat extends NumberFormat {
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
         return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    /**
+     * Returns pattern with formatted double.
+     *
+     * @param number number to be formatted and substituted.
+     * @param toAppendTo where text is appended.
+     * @param status ignore no useful status is returned.
+     * @throws    ArrayIndexOutOfBoundsException if either the {@code limits}
+     *            or {@code formats} of this ChoiceFormat are empty
+     * @throws    NullPointerException if {@code toAppendTo}
+     *            is {@code null}
+     */
+    @Override
+    public StringBuilder format(double number,
+                                StringBuilder toAppendTo,
+                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuilder();
     }
 
     @Override

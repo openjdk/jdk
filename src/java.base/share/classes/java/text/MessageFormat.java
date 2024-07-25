@@ -963,7 +963,7 @@ public class MessageFormat extends Format {
      * argument is <i>unavailable</i> if {@code arguments} is
      * {@code null} or has fewer than argumentIndex+1 elements.
      *
-     * <table class="plain">
+     * <table class="plain" id="text_derivation_table">
      * <caption style="display:none">Examples of subformat, argument, and formatted text</caption>
      * <thead>
      *    <tr>
@@ -1030,6 +1030,44 @@ public class MessageFormat extends Format {
     }
 
     /**
+     * Formats an array of objects and appends the {@code MessageFormat}'s
+     * pattern, with format elements replaced by the formatted objects, to the
+     * provided {@code StringBuilder}.
+     * <p>
+     * The text substituted for the individual format elements is derived from
+     * the current subformat of the format element and the
+     * {@code arguments} element at the format element's argument index
+     * as indicated by the first matching line of the following table. An
+     * argument is <i>unavailable</i> if {@code arguments} is
+     * {@code null} or has fewer than argumentIndex+1 elements.
+     * Refer to the following {@link ##text_derivation_table table} for a more
+     * detailed view of this derivation.
+     * <p>
+     * If {@code pos} is non-null, and refers to
+     * {@code Field.ARGUMENT}, the location of the first formatted
+     * string will be returned.
+     *
+     * @param arguments an array of objects to be formatted and substituted.
+     * @param result where text is appended.
+     * @param pos keeps track on the position of the first replaced argument
+     *            in the output string.
+     * @return the string builder passed in as {@code result}, with formatted
+     * text appended
+     * @throws    IllegalArgumentException if an argument in the
+     *            {@code arguments} array is not of the type
+     *            expected by the format element(s) that use it.
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
+     */
+    public final StringBuilder format(Object[] arguments, StringBuilder result,
+                                     FieldPosition pos)
+    {
+        return subformat(arguments, StringBufFactory.of(result), pos, null).asStringBuilder();
+    }
+
+    /**
      * Creates a MessageFormat with the given pattern and uses it
      * to format the given arguments.
      * This method returns a string that would be equal to the string returned by
@@ -1077,6 +1115,34 @@ public class MessageFormat extends Format {
                                      FieldPosition pos)
     {
         return subformat((Object[]) arguments, StringBufFactory.of(result), pos, null).asStringBuffer();
+    }
+
+    /**
+     * Formats an array of objects and appends the {@code MessageFormat}'s
+     * pattern, with format elements replaced by the formatted objects, to the
+     * provided {@code StringBuilder}.
+     * This is equivalent to
+     * <blockquote>
+     *     <code>{@link #format(java.lang.Object[], java.lang.StringBuilder, java.text.FieldPosition) format}((Object[]) arguments, result, pos)</code>
+     * </blockquote>
+     *
+     * @param arguments an array of objects to be formatted and substituted.
+     * @param result where text is appended.
+     * @param pos keeps track on the position of the first replaced argument
+     *            in the output string.
+     * @throws    IllegalArgumentException if an argument in the
+     *            {@code arguments} array is not of the type
+     *            expected by the format element(s) that use it.
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
+     */
+    @Override
+    public final StringBuilder format(Object arguments, StringBuilder result,
+                                     FieldPosition pos)
+    {
+        return subformat((Object[]) arguments, StringBufFactory.of(result), pos, null).asStringBuilder();
     }
 
     @Override

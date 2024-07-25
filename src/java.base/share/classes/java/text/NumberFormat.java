@@ -315,6 +315,67 @@ public abstract class NumberFormat extends Format  {
         };
     }
 
+    /**
+     * Formats a number and appends the resulting text to the given string
+     * builder.
+     * The number can be of any subclass of {@link java.lang.Number}.
+     *
+     * @apiNote Subclasses should override {@link #format(long,
+     * java.lang.StringBuilder, java.text.FieldPosition)} and {@link #format(double,
+     * java.lang.StringBuilder, java.text.FieldPosition)} to support this operation.
+     * @implSpec This implementation may call {@link #format(long,
+     * java.lang.StringBuilder, java.text.FieldPosition)} or {@link #format(double,
+     * java.lang.StringBuilder, java.text.FieldPosition)}, which by default always
+     * throws {@code UnsupportedOperationException}.
+     * Additionally, this implementation extracts the number's value using
+     * {@link java.lang.Number#longValue()} for all integral type values that
+     * can be converted to {@code long} without loss of information,
+     * including {@code BigInteger} values with a
+     * {@link java.math.BigInteger#bitLength() bit length} of less than 64,
+     * and {@link java.lang.Number#doubleValue()} for all other types. It
+     * then calls {@link #format(long,java.lang.StringBuilder,java.text.FieldPosition)}
+     * or {@link #format(double,java.lang.StringBuilder,java.text.FieldPosition)}.
+     * This may result in loss of magnitude information and precision for
+     * {@code BigInteger} and {@code BigDecimal} values.
+     * @param number     the number to format
+     * @param toAppendTo the {@code StringBuilder} to which the formatted
+     *                   text is to be appended
+     * @param pos        keeps track on the position of the field within the
+     *                   returned string. For example, for formatting a number
+     *                   {@code 1234567.89} in {@code Locale.US} locale,
+     *                   if the given {@code fieldPosition} is
+     *                   {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                   and end index of {@code fieldPosition} will be set
+     *                   to 0 and 9, respectively for the output string
+     *                   {@code 1,234,567.89}.
+     * @return           the value passed in as {@code toAppendTo}
+     * @throws           IllegalArgumentException if {@code number} is
+     *                   null or not an instance of {@code Number}.
+     * @throws           NullPointerException if {@code toAppendTo} or
+     *                   {@code pos} is null
+     * @throws           ArithmeticException if rounding is needed with rounding
+     *                   mode being set to RoundingMode.UNNECESSARY
+     * @throws           UnsupportedOperationException if the implementation of this
+     *                   method does not support this operation
+     * @see              java.text.FieldPosition
+     */
+    @Override
+    public StringBuilder format(Object number,
+                               StringBuilder toAppendTo,
+                               FieldPosition pos) {
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, pos);
+            case Integer i -> format(i.longValue(), toAppendTo, pos);
+            case Short s -> format(s.longValue(), toAppendTo, pos);
+            case Byte b -> format(b.longValue(), toAppendTo, pos);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, pos);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, pos);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, pos);
+            case Number n -> format(n.doubleValue(), toAppendTo, pos);
+            case null, default -> throw new IllegalArgumentException("Cannot format given Object as a Number");
+        };
+    }
+
     @Override
     StringBuf format(Object number,
                      StringBuf toAppendTo,
@@ -421,6 +482,36 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
+    /**
+     * Specialization of format.
+     *
+     * @apiNote Subclasses should override this method to support this operation.
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}.
+     * @param number     the double number to format
+     * @param toAppendTo the StringBuilder to which the formatted text is to be
+     *                   appended
+     * @param pos        keeps track on the position of the field within the
+     *                   returned string. For example, for formatting a number
+     *                   {@code 1234567.89} in {@code Locale.US} locale,
+     *                   if the given {@code fieldPosition} is
+     *                   {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                   and end index of {@code fieldPosition} will be set
+     *                   to 0 and 9, respectively for the output string
+     *                   {@code 1,234,567.89}.
+     * @return           the formatted StringBuilder
+     * @throws           ArithmeticException if rounding is needed with rounding
+     *                   mode being set to RoundingMode.UNNECESSARY
+     * @throws           UnsupportedOperationException if the implementation of this
+     *                   method does not support this operation
+     * @see java.text.Format#format
+     */
+    public StringBuilder format(double number,
+                                StringBuilder toAppendTo,
+                                FieldPosition pos) {
+        return format(number, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+    }
+
     StringBuf format(double number,
                      StringBuf toAppendTo,
                      FieldPosition pos) {
@@ -449,6 +540,36 @@ public abstract class NumberFormat extends Format  {
     public abstract StringBuffer format(long number,
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
+
+    /**
+     * Specialization of format.
+     *
+     * @apiNote Subclasses should override this method to support this operation.
+     * @implSpec The default implementation always throws {@code
+     * UnsupportedOperationException}.
+     * @param number     the long number to format
+     * @param toAppendTo the StringBuilder to which the formatted text is to be
+     *                   appended
+     * @param pos        keeps track on the position of the field within the
+     *                   returned string. For example, for formatting a number
+     *                   {@code 123456789} in {@code Locale.US} locale,
+     *                   if the given {@code fieldPosition} is
+     *                   {@link NumberFormat#INTEGER_FIELD}, the begin index
+     *                   and end index of {@code fieldPosition} will be set
+     *                   to 0 and 11, respectively for the output string
+     *                   {@code 123,456,789}.
+     * @return           the formatted StringBuilder
+     * @throws           ArithmeticException if rounding is needed with rounding
+     *                   mode being set to RoundingMode.UNNECESSARY
+     * @throws           UnsupportedOperationException if the implementation of this
+     *                   method does not support this operation
+     * @see java.text.Format#format
+     */
+    public StringBuilder format(long number,
+                                StringBuilder toAppendTo,
+                                FieldPosition pos) {
+        return format(number, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+    }
 
     StringBuf format(long number,
                      StringBuf toAppendTo,
