@@ -26,7 +26,7 @@
  * @bug 8335393
  * @summary C2: assert(!had_error) failed: bad dominance
  * @requires vm.compiler2.enabled
-* @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-UseLoopPredicate
+ * @run main/othervm -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:-UseLoopPredicate
  *                   -XX:LoopMaxUnroll=0 TestEmptyLoopDeadCast
  */
 
