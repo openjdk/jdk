@@ -2066,14 +2066,16 @@ class MutableBigInteger {
         final int blockLen = halfLen >> 1;
         MutableBigInteger dividend = sr[1];
         dividend.shiftAddDisjoint(getBlockZimmermann(1, len, blockLen), blockLen);
-        MutableBigInteger twiceSqrt = new MutableBigInteger(sr[0]);
-        twiceSqrt.leftShift(1);
-        MutableBigInteger q = new MutableBigInteger();
-        MutableBigInteger u = dividend.divide(twiceSqrt, q);
 
+        // Compute dividend / (2*sqrt)
         MutableBigInteger sqrt = sr[0];
-        sqrt.shiftAdd(q, blockLen);
+        MutableBigInteger q = new MutableBigInteger();
+        MutableBigInteger u = dividend.divide(sqrt, q);
+        if (q.isOdd())
+            u.add(sqrt);
+        q.rightShift(1);
 
+        sqrt.shiftAdd(q, blockLen);
         // Corresponds to ub + a_0 in the paper
         u.shiftAddDisjoint(getBlockZimmermann(0, len, blockLen), blockLen);
         BigInteger qBig = q.toBigInteger(); // Cast to BigInteger to use fast multiplication
@@ -2083,7 +2085,7 @@ class MutableBigInteger {
         if (needRemainder) {
             rem = u;
             if (rem.subtract(qSqr) == -1) {
-                twiceSqrt = new MutableBigInteger(sqrt);
+                MutableBigInteger twiceSqrt = new MutableBigInteger(sqrt);
                 twiceSqrt.leftShift(1);
 
                 rem.add(ONE);
