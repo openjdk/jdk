@@ -501,8 +501,9 @@ static void handle_parallel_super_load(Symbol* name,
                                        Handle class_loader,
                                        Handle protection_domain, TRAPS) {
 
-  // superk is not used; resolve_with_circularity_detection is called for circularity check only.
-  // This passes true to is_superclass even though it might not be the super to perform the optimization anyway.
+  // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
+  // This passes true to is_superclass even though it might not be the super class in order to perform the
+  // optimization anyway.
   // The only thing that takes different action for is_superclass is dumping the static archive, which doesn't
   // reach this path.
   assert (!CDSConfig::is_dumping_static_archive(), "should not be parallel loading static archive");

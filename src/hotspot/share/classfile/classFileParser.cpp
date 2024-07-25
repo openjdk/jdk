@@ -5938,7 +5938,8 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                                super_class_name,
                                                                loader,
                                                                _protection_domain,
-                                                               true, CHECK);
+                                                               true,
+                                                               CHECK);
     }
   }
 
