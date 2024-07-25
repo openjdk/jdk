@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,8 @@ import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.Opcode;
-import java.lang.classfile.TypeKind;
 import helpers.ByteArrayClassLoader;
 import java.lang.classfile.attribute.SourceFileAttribute;
-import jdk.internal.classfile.impl.DirectClassBuilder;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -75,7 +72,7 @@ class LowAdaptTest {
         byte[] clazz = cc.build(ClassDesc.of(test), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of("/some/madeup/TestClass.java"));
-            cl.methods().forEach(m -> ((DirectClassBuilder) cb).withMethod(m));
+            cl.methods().forEach(cb::with);
 
             cb.withMethod("doit", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
