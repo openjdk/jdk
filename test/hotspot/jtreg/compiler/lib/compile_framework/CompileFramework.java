@@ -34,19 +34,10 @@ import java.net.URL;
 import java.net.URI;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import javax.tools.Diagnostic;
-import javax.tools.DiagnosticCollector;
-import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaCompiler;
-import javax.tools.JavaFileObject;
-import javax.tools.SimpleJavaFileObject;
-import javax.tools.ToolProvider;
 import jdk.test.lib.process.ProcessTools;
 
 public class CompileFramework {
@@ -73,42 +64,41 @@ public class CompileFramework {
 
         printSourceCodes();
 
-        List<JavaSourceFromString> javaSources = new ArrayList<JavaSourceFromString>();
+        List<SourceCode> javaSources = new ArrayList<SourceCode>();
         List<SourceCode> jasmSources = new ArrayList<SourceCode>();
         for (SourceCode sourceCode : sourceCodes) {
             switch (sourceCode.kind) {
-                case SourceCode.Kind.JAVA -> { javaSources.add(new JavaSourceFromString(sourceCode.className, sourceCode.code)); }
                 case SourceCode.Kind.JASM -> { jasmSources.add(sourceCode);  }
+                case SourceCode.Kind.JAVA -> { javaSources.add(sourceCode);  }
             }
         }
 
-        compileJasmSources(jasmSources);
-        compileJavaSources(javaSources);
+        String sourceDir = getSourceDirName();
+        compileJasmSources(sourceDir, jasmSources);
+        compileJavaSources(sourceDir, javaSources);
         setUpClassLoader();
     }
 
-    private void compileJasmSources(List<SourceCode> jasmSources) {
+    private static String getSourceDirName() {
+        // Create temporary directory for jasm source files
+        final String sourceDir;
+        try {
+            sourceDir = "compile-framework-sources-" + ProcessTools.getProcessId();
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not get ProcessID", e);
+        }
+        System.out.println("Source directory: " + sourceDir);
+        return sourceDir;
+    }
+
+    private static void compileJasmSources(String sourceDir, List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
             System.out.println("No jasm sources to compile.");
             return;
         }
         System.out.println("Compiling jasm sources: " + jasmSources.size());
 
-        // Create temporary directory for jasm source files
-        final String jasmDirName;
-        try {
-            jasmDirName = "jasm-files-source-dir-" + ProcessTools.getProcessId();
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not get ProcessID", e);
-        }
-        System.out.println("Jasm source files in: " + jasmDirName);
-
-        List<String> jasmFileNames = new ArrayList<String>();
-        for (SourceCode sourceCode : jasmSources) {
-            String fileName = jasmDirName + "/" + sourceCode.className.replace('.','/') + ".jasm";
-            writeCodeToFile(sourceCode.code, fileName);
-            jasmFileNames.add(fileName);
-        }
+        List<String> jasmFileNames = writeSourcesToFile(sourceDir, jasmSources);
         compileJasmFiles(jasmFileNames);
         System.out.println("Jasm sources compiled.");
     }
@@ -127,32 +117,7 @@ public class CompileFramework {
             command.add(new File(fileName).getAbsolutePath());
         }
 
-        ProcessBuilder builder = new ProcessBuilder(command);
-        builder.redirectErrorStream(true);
-
-        String output;
-        int exitCode;
-        try {
-            Process process = builder.start();
-            boolean exited = process.waitFor(JASM_COMPILE_TIMEOUT, TimeUnit.SECONDS);
-            if (!exited) {
-                process.destroyForcibly();
-                throw new CompileFrameworkException("Process timeout: jasm compilation took too long.");
-            }
-            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            exitCode = process.exitValue();
-        } catch (IOException e) {
-            throw new CompileFrameworkException("IOException during jasm compilation", e);
-        } catch (InterruptedException e) {
-            throw new CompileFrameworkException("InterruptedException during jasm compilation", e);
-        }
-
-        if (exitCode != 0 || !output.equals("")) {
-            System.out.println("Jasm compilation failed.");
-            System.out.println("Exit code: " + exitCode);
-            System.out.println("Output: '" + output + "'");
-            throw new CompileFrameworkException("Jasm compilation failed.");
-        }
+        executeCompileCommand(command);
     }
 
     private static String getAsmToolsPath() {
@@ -170,6 +135,17 @@ public class CompileFramework {
         throw new CompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
+    private static List<String> writeSourcesToFile(String sourceDir, List<SourceCode> sources) {
+        List<String> storedFiles = new ArrayList<String>();
+        for (SourceCode sourceCode : sources) {
+            String extension = sourceCode.kind.name().toLowerCase();
+            String fileName = sourceDir + "/" + sourceCode.className.replace('.','/') + "." + extension;
+            writeCodeToFile(sourceCode.code, fileName);
+            storedFiles.add(fileName);
+        }
+        return storedFiles;
+    }
+
     private static void writeCodeToFile(String code, String fileName) {
         System.out.println("File: " + fileName);
         File file = new File(fileName);
@@ -184,44 +160,64 @@ public class CompileFramework {
         }
     }
 
-    private void compileJavaSources(List<JavaSourceFromString> javaSources) {
+    private static void compileJavaSources(String sourceDir, List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
             System.out.println("No java sources to compile.");
             return;
         }
         System.out.println("Compiling Java sources: " + javaSources.size());
 
-        // Get compiler with diagnostics.
-        JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
+        List<String> javaFileNames = writeSourcesToFile(sourceDir, javaSources);
+        compileJavaFiles(javaFileNames);
 
-        // Set classpath and compilation destination for new class files.
-        List<String> optionList = new ArrayList<String>();
-        optionList.add("-classpath");
-        optionList.add(System.getProperty("java.class.path"));
-        optionList.add("-d");
-        optionList.add(System.getProperty("test.classes"));
+        System.out.println("Java sources compiled.");
+    }
 
-        // Compile.
-        CompilationTask task = compiler.getTask(null, null, diagnostics, optionList, null, javaSources);
-        boolean success = task.call();
+    private static void compileJavaFiles(List<String> javaFileNames) {
+        // Compile JAVA files with javac, in the "compile.jdk".
+        List<String> command = new ArrayList<>();
 
-        // Print diagnostics.
-        for (Diagnostic diagnostic : diagnostics.getDiagnostics()) {
-            System.out.println(diagnostic.getCode());
-            System.out.println(diagnostic.getKind());
-            System.out.println(diagnostic.getPosition());
-            System.out.println(diagnostic.getStartPosition());
-            System.out.println(diagnostic.getEndPosition());
-            System.out.println(diagnostic.getSource());
-            System.out.println(diagnostic.getMessage(null));
+        command.add("%s/bin/javac".formatted(System.getProperty("compile.jdk")));
+        command.add("-classpath");
+        command.add(System.getProperty("java.class.path"));
+        command.add("-d");
+        command.add(System.getProperty("test.classes"));
+        for (String fileName : javaFileNames) {
+            command.add(new File(fileName).getAbsolutePath());
         }
 
-        if (!success) {
+        executeCompileCommand(command);
+    }
+
+    private static void executeCompileCommand(List<String> command) {
+        System.out.println("Compile command: " + String.join(" ", command));
+
+        ProcessBuilder builder = new ProcessBuilder(command);
+        builder.redirectErrorStream(true);
+
+        String output;
+        int exitCode;
+        try {
+            Process process = builder.start();
+            boolean exited = process.waitFor(JASM_COMPILE_TIMEOUT, TimeUnit.SECONDS);
+            if (!exited) {
+                process.destroyForcibly();
+                throw new CompileFrameworkException("Process timeout: compilation took too long.");
+            }
+            output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            exitCode = process.exitValue();
+        } catch (IOException e) {
+            throw new CompileFrameworkException("IOException during compilation", e);
+        } catch (InterruptedException e) {
+            throw new CompileFrameworkException("InterruptedException during compilation", e);
+        }
+
+        if (exitCode != 0 || !output.equals("")) {
             System.out.println("Compilation failed.");
+            System.out.println("Exit code: " + exitCode);
+            System.out.println("Output: '" + output + "'");
             throw new CompileFrameworkException("Compilation failed.");
         }
-        System.out.println("Java sources compiled.");
     }
 
     private void setUpClassLoader() {
@@ -245,16 +241,3 @@ public class CompileFramework {
     }
 }
 
-class JavaSourceFromString extends SimpleJavaFileObject {
-    final String code;
-
-    public JavaSourceFromString(String name, String code) {
-        super(URI.create("string:///" + name.replace('.','/') + Kind.SOURCE.extension), Kind.SOURCE);
-        this.code = code;
-    }
-
-    @Override
-    public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-        return code;
-    }
-}
