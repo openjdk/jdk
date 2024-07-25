@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @summary Example test with failing java compilation.
+ * @summary Example test with failing jasm compilation.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver compile_framework.tests.TestBadJavaCompilation
+ * @run driver compile_framework.tests.TestBadJasmCompilation
  */
 
 package compile_framework.tests;
@@ -36,13 +36,13 @@ import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
-public class TestBadJavaCompilation {
+public class TestBadJasmCompilation {
 
-    // Generate a source java file as String
+    // Generate a source jasm file as String
     public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
-        out.println("public class XYZ {");
+        out.println("super public class XYZ {");
         out.println("    asdf"); // some bad code
         out.println("}");
         out.close();
@@ -55,7 +55,7 @@ public class TestBadJavaCompilation {
 
         // Add a java source file.
         String src = generate();
-        SourceFile file = SourceFile.newJavaSourceFile("XYZ", src);
+        SourceFile file = SourceFile.newJasmSourceFile("XYZ", src);
         comp.add(file);
 
         try {
