@@ -110,7 +110,6 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.Options;
 
 /**
  * This pass translates pattern-matching constructs, such as instanceof <pattern>.
