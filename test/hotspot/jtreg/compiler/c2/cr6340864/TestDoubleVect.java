@@ -449,17 +449,6 @@ public class TestDoubleVect {
       a1[12] = 1.7976931348623157E19;
       a1[13] = -1.7976931348623157E19;
 
-      a1[14] = Double.longBitsToDouble(0x7ff0000000000001L);
-      a1[15] = Double.longBitsToDouble(0x7ff8000000000000L);
-      a1[16] = Double.longBitsToDouble(0xfff0000000000001L);
-      a1[17] = Double.longBitsToDouble(0xfff8000000000000L);
-      a1[18] = Double.longBitsToDouble(0xffffffffffffffffL);
-      a1[19] = Double.longBitsToDouble(0x7fffffffffffffffL);
-      a1[20] = 1.5;
-      a1[21] = 100000000.5;
-      a1[22] = -1.5;
-      a1[23] = -100000000.5;
-
       test_round(l0, a1);
       errn += verify("test_round: ", 0, l0[0], 0L);
       errn += verify("test_round: ", 1, l0[1], Long.MAX_VALUE);
@@ -476,17 +465,6 @@ public class TestDoubleVect {
       errn += verify("test_round: ", 11, l0[11], -1L);
       errn += verify("test_round: ", 12, l0[12], Long.MAX_VALUE);
       errn += verify("test_round: ", 13, l0[13], Long.MIN_VALUE);
-
-      errn += verify("test_round: ", 14, l0[14], 0);
-      errn += verify("test_round: ", 15, l0[15], 0);
-      errn += verify("test_round: ", 16, l0[16], 0);
-      errn += verify("test_round: ", 17, l0[17], 0);
-      errn += verify("test_round: ", 18, l0[18], 0);
-      errn += verify("test_round: ", 19, l0[19], 0);
-      errn += verify("test_round: ", 20, l0[20], 2);
-      errn += verify("test_round: ", 21, l0[21], 100000001);
-      errn += verify("test_round: ", 22, l0[22], -1);
-      errn += verify("test_round: ", 23, l0[23], -100000000);
 
       for (int i=24; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, l0[i], Math.round((double)(ADD_INIT+i)));

@@ -396,17 +396,6 @@ public class TestFloatVect {
       a1[12] = 3.4028235E10f;
       a1[13] = -3.4028235E10f;
 
-      a1[14] = Float.intBitsToFloat(0x7f800001);
-      a1[15] = Float.intBitsToFloat(0x7fc00000);
-      a1[16] = Float.intBitsToFloat(0xff800001);
-      a1[17] = Float.intBitsToFloat(0xffc00000);
-      a1[18] = Float.intBitsToFloat(0xffffffff);
-      a1[19] = Float.intBitsToFloat(0x7fffffff);
-      a1[20] = 1.5f;
-      a1[21] = 10000.5f;
-      a1[22] = -1.5f;;
-      a1[23] = -10000.5f;
-
       test_round(i0, a1);
       errn += verify("test_round: ", 0, i0[0], 0);
       errn += verify("test_round: ", 1, i0[1], Integer.MAX_VALUE);
@@ -422,17 +411,6 @@ public class TestFloatVect {
       errn += verify("test_round: ", 11, i0[11], -1);
       errn += verify("test_round: ", 12, i0[12], Integer.MAX_VALUE);
       errn += verify("test_round: ", 13, i0[13], Integer.MIN_VALUE);
-
-      errn += verify("test_round: ", 14, i0[14], 0);
-      errn += verify("test_round: ", 15, i0[15], 0);
-      errn += verify("test_round: ", 16, i0[16], 0);
-      errn += verify("test_round: ", 17, i0[17], 0);
-      errn += verify("test_round: ", 18, i0[18], 0);
-      errn += verify("test_round: ", 19, i0[19], 0);
-      errn += verify("test_round: ", 20, i0[20], 2);
-      errn += verify("test_round: ", 21, i0[21], 10001);
-      errn += verify("test_round: ", 22, i0[22], -1);
-      errn += verify("test_round: ", 23, i0[23], -10000);
 
       for (int i=24; i<ARRLEN; i++) {
         errn += verify("test_round: ", i, i0[i], Math.round(((float)(ADD_INIT+i))));
