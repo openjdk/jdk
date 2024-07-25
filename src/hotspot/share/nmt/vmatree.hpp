@@ -180,6 +180,10 @@ public:
     return register_mapping(from, from + sz, StateType::Committed, metadata, copy_flag);
   }
 
+  SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, true);
+  }
+
   SummaryDiff release_mapping(position from, position sz) {
     return register_mapping(from, from + sz, StateType::Released, VMATree::empty_regiondata);
   }

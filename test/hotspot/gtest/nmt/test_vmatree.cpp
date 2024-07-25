@@ -175,7 +175,7 @@ public:
 
     tree.reserve_mapping(0, 100, rd1);
     tree.commit_mapping(20, 50, rd2, true); // mtTest flag is to be copied to new nodes, even if it is given as mtNMT.
-    tree.reserve_mapping(30, 10, rd2, true);// same here.
+    tree.uncommit_mapping(30, 10, rd2);// same here.
     tree.visit_in_order([&](Node* node) {
       if ((size_t)node->key() != 100) {
         EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key();
