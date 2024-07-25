@@ -28,7 +28,6 @@
   @bug 8156121
   @key headful
   @requires os.family == "linux"
-  @run main/othervm -Djdk.gtk.version=2 DemandGTK
   @run main/othervm -Djdk.gtk.version=3 DemandGTK
 */
 

@@ -32,10 +32,8 @@
 #include "jvm_md.h"
 #include "gtk_interface.h"
 
-GtkApi* gtk2_load(JNIEnv *env, const char* lib_name);
 GtkApi* gtk3_load(JNIEnv *env, const char* lib_name);
 
-gboolean gtk2_check(const char* lib_name, gboolean load);
 gboolean gtk3_check(const char* lib_name, gboolean load);
 
 GtkApi *gtk;
@@ -56,13 +54,6 @@ static GtkLib gtk_libs[] = {
         &gtk3_load,
         &gtk3_check
     },
-    {
-        GTK_2,
-        JNI_LIB_NAME("gtk-x11-2.0"),
-        VERSIONED_JNI_LIB_NAME("gtk-x11-2.0", "0"),
-        &gtk2_load,
-        &gtk2_check
-    }
 };
 
 static GtkLib** get_libs_order(GtkVersion version) {

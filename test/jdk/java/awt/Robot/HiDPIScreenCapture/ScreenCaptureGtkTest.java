@@ -44,7 +44,6 @@ import java.io.IOException;
  * @summary  Verifies Robot screen capture capabilities with different
  *           Gtk backends and presence of UI scaling
  * @requires os.family == "linux"
- * @run main/othervm -Djdk.gtk.version=2 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
  * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest
  */
 
@@ -53,12 +52,6 @@ public class ScreenCaptureGtkTest {
             Color.GREEN, Color.BLUE, Color.ORANGE, Color.RED};
 
     public static void main(String[] args) throws Exception {
-        if ("2".equals(System.getProperty("jdk.gtk.version"))
-                && System.getenv("WAYLAND_DISPLAY") != null) {
-            // screen capture is not supported with gtk2 on Wayland
-            return;
-        }
-
         final int topOffset = 50;
         final int leftOffset = 50;
 

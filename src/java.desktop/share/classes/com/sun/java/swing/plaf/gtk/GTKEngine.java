@@ -61,7 +61,7 @@ class GTKEngine {
     /** Size of the image cache */
     private static final int CACHE_SIZE = 50;
 
-    /** This enum mirrors that in gtk2_interface.h */
+    /** This enum mirrors that in gtk_interface.h */
     static enum WidgetType {
         BUTTON, CHECK_BOX, CHECK_BOX_MENU_ITEM, COLOR_CHOOSER,
         COMBO_BOX, COMBO_BOX_ARROW_BUTTON, COMBO_BOX_TEXT_FIELD,
@@ -628,7 +628,7 @@ class GTKEngine {
         cache.flush();
     }
 
-    /* GtkSettings enum mirrors that in gtk2_interface.h */
+    /* GtkSettings enum mirrors that in gtk_interface.h */
     public Object getSetting(Settings property) {
         synchronized(sun.awt.UNIXToolkit.GTK_LOCK) {
             return native_get_gtk_setting(property.ordinal());

@@ -59,21 +59,21 @@ class GTKIconFactory {
     private static final String DESCENDING_SORT_ICON = "paintDescendingSortIcon";
     private static final String TOOL_BAR_HANDLE_ICON = "paintToolBarHandleIcon";
 
-    private static Map<String, DelegatingIcon> iconsPool =
+    private final static Map<String, DelegatingIcon> iconsPool =
             Collections.synchronizedMap(new HashMap<String, DelegatingIcon>());
 
     private static DelegatingIcon getIcon(String methodName) {
         DelegatingIcon result = iconsPool.get(methodName);
         if (result == null) {
-            if (methodName == TREE_COLLAPSED_ICON ||
-                methodName == TREE_EXPANDED_ICON)
+            if (TREE_COLLAPSED_ICON.equals(methodName) ||
+                    TREE_EXPANDED_ICON.equals(methodName))
             {
                 result = new SynthExpanderIcon(methodName);
 
-            } else if (methodName == TOOL_BAR_HANDLE_ICON) {
+            } else if (TOOL_BAR_HANDLE_ICON.equals(methodName)) {
                 result = new ToolBarHandleIcon();
 
-            } else if (methodName == MENU_ARROW_ICON) {
+            } else if (MENU_ARROW_ICON.equals(methodName)) {
                 result = new MenuArrowIcon();
 
             } else {

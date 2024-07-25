@@ -45,8 +45,6 @@ public class GtkVersionTest {
 
     public static void main(String[] args) throws Exception {
         test(null, "3");
-        test("2", "2");
-        test("2.2", "2");
         test("3", "3");
     }
 

@@ -675,7 +675,6 @@ static gboolean isAllDataReady() {
 
 
 static void *pipewire_libhandle = NULL;
-//glib_version_2_68 false for gtk2, as it comes from gtk3_interface.c
 
 extern gboolean glib_version_2_68;
 

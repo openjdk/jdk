@@ -1454,17 +1454,7 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             throw new InternalError("Unable to load native GTK libraries");
         }
 
-        if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK2) {
-            @SuppressWarnings("removal")
-            String version = AccessController.doPrivileged(
-                    new GetPropertyAction("jdk.gtk.version"));
-            if (version != null) {
-                IS_22 = version.equals("2.2");
-            } else {
-                IS_22 = true;
-            }
-        } else if (UNIXToolkit.getGtkVersion() ==
-                                UNIXToolkit.GtkVersions.GTK3) {
+        if (UNIXToolkit.getGtkVersion() == UNIXToolkit.GtkVersions.GTK3) {
             IS_3 = true;
         }
 
