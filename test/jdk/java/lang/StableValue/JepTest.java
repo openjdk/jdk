@@ -28,13 +28,12 @@
  * @run junit/othervm --enable-preview JepTest
  */
 
-import jdk.internal.lang.StableValue;
+import java.lang.StableValue;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;

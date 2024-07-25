@@ -23,9 +23,10 @@
  * questions.
  */
 
-package jdk.internal.lang;
+package java.lang;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.lang.stable.CachedFunction;
 import jdk.internal.lang.stable.CachedIntFunction;
 import jdk.internal.lang.stable.CachedSupplier;
@@ -115,13 +116,12 @@ import java.util.function.Supplier;
  *
  * <a id="MemoryConsistency"></a>
  * <h2>Memory Consistency Properties</h2>
- * Certain interactions between StableValue operations form
+ * Actions on a presumptive holder value in a thread prior to calling a method that <i>sets</i>
+ * the holder value are seen by any other thread that first <i>observes</i> a set holder value.
+ *
+ * It should be noted that this does <i>not</i> form a proper
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
- * relationships:
- * <ul>
- * <li>Actions in a thread prior to calling a method that <i>sets</i> the holder value
- * <i>happen-before</i> any other thread <i>observes</i> a set holder value.</li>
- * </ul>
+ * relation because the stable value set/observe relation is not transitive.
  *
  * <a id="Nullability"></a>
  * <h2>Nullability</h2>
@@ -141,6 +141,7 @@ import java.util.function.Supplier;
  *
  * @since 24
  */
+@PreviewFeature(feature = PreviewFeature.Feature.STABLE_VALUES)
 public sealed interface StableValue<T>
         permits StableValueImpl {
 
@@ -336,6 +337,7 @@ public sealed interface StableValue<T>
      *                 {@code size} background threads that will attempt to compute the
      *                 memoized values. If the provided factory is {@code null}, no
      *                 background threads will be created.
+     * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
     static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,

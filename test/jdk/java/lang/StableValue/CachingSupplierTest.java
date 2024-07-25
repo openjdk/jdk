@@ -28,7 +28,7 @@
  * @run junit/othervm --enable-preview CachingSupplierTest
  */
 
-import jdk.internal.lang.StableValue;
+import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadFactory;

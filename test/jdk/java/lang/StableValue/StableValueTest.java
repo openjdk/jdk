@@ -29,7 +29,7 @@
  * @run junit/othervm --enable-preview StableValueTest
  */
 
-import jdk.internal.lang.StableValue;
+import java.lang.StableValue;
 import jdk.internal.lang.stable.StableValueImpl;
 import org.junit.jupiter.api.Test;
 
@@ -43,8 +43,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiPredicate;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;

@@ -82,6 +82,8 @@ public @interface PreviewFeature {
         @JEP(number=476, title="Module Import Declarations", status="Preview")
         MODULE_IMPORTS,
         LANGUAGE_MODEL,
+        @JEP(number = 8330465, title = "Stable Values & Collections", status = "Preview")
+        STABLE_VALUES,
         /**
          * A key for testing.
          */

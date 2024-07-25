@@ -26,7 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.lang.StableValue;
+import java.lang.StableValue;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
 import jdk.internal.reflect.Reflection;

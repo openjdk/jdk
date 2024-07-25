@@ -110,7 +110,9 @@ correctness:
 ```
 // Double-checked locking idiom
 class Foo {
+
     private volatile Logger logger;
+
     public Logger logger() {
         Logger v = logger;
         if (v == null) {
@@ -126,7 +128,7 @@ class Foo {
 }
 ```
 The double-checked locking idiom is brittle and easy to get
-subtly wrong (see _Java Concurrency in Practice_, 16.2.4.) For example, a common error
+subtly wrong (see _Java Concurrency in Practice_, 16.2.4, by Brian Goetz) For example, a common error
 is forgetting to declare the field `volatile` resulting in the risk of observing incomplete objects.
 
 While the double-checked locking idiom can be used for both class and instance
@@ -273,8 +275,8 @@ called *only once*. This brings us to the introduction of _cached functions_.
 
 ### Cached functions
 
-So far, we have talked about the fundamental features of StableValue as securely
-wrapped `@Stable` value holders. However, it has become apparent, stable primitives are amenable
+So far, we have talked about the fundamental features of StableValue as s securely
+wrapped `@Stable` value holder. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Cached (or Memoized) functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a
@@ -310,10 +312,10 @@ of this chapter.
 
 In the example above, the original `Supplier` provided is invoked at most once per loading of the containing
 class `Foo` (`Foo`, in turn, can be loaded at most once into any given `ClassLoader`) and it is backed
-by a lazily computed stable value upholding the invoke-at-most-once invariant.
+by a lazily computed stable value.
 
-Similarly to how a `Supplier` can be cached using a backing stable value, a similar pattern
-can be used for an `IntFunction` that will record its cached values in a backing list of
+Analogous to how a `Supplier` can be cached using a backing stable value, a similar pattern
+can be used for an `IntFunction` that will record its cached values in a backing array of
 stable value elements. Here is how the error message example above can be improved using
 a caching `IntFunction`:
 
@@ -347,6 +349,8 @@ class ErrorMessages {
 //   <body>Payment was denied: Insufficient funds.</body>
 // </html>
 ```
+
+Note: Again, the last null parameter signifies an optional thread factory that will be explained at the end of this chapter.
 
 Finally, the most general cached function variant provided is a cached `Function` which, for example,
 can make sure `Logger::getLogger` in one of the first examples above is invoked at most once
@@ -409,7 +413,7 @@ Logger logger = LOGGERS.apply(NAME);
 This can provide a best-of-several-worlds situation where the cached function can be quickly defined (as no
 computation is made by the defining thread), the holder value is computed in background threads (thus neither
 interfering significantly with the critical startup path nor with future accessing threads), and the threads actually
-accessing the holder value can access the holder value with as-if-final performance and without having to compute
+accessing the holder value can directly access the holder value with as-if-final performance and without having to compute
 a holder value. This is true under the assumption, that the background threads can complete computation before accessing
 threads requires a holder value. If this is not the case, at least some reduction of blocking time can be enjoyed as
 the background threads have had a head start compared to the accessing threads.
@@ -503,5 +507,5 @@ will likely suffice to reach the goals of this JEP.
 
 ## Dependencies
 
-The work described here will likely enable subsequent work to provide pre-evaluated computed
-constant fields at compile, condensation, and/or runtime.
+The work described here will likely enable subsequent work to provide pre-evaluated stable value fields at
+compile, condensation, and/or runtime.

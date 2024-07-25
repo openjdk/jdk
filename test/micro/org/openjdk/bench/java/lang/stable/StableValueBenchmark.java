@@ -23,7 +23,7 @@
 
 package org.openjdk.bench.java.lang.stable;
 
-import jdk.internal.lang.StableValue;
+import java.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
