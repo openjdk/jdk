@@ -1642,7 +1642,7 @@ public final class LocalTime
         int secondValue = second;
         int nanoValue = nano;
         buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-                .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
+            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
         if (secondValue > 0 || nanoValue > 0) {
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
