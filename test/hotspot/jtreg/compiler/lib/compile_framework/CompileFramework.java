@@ -108,6 +108,7 @@ public class CompileFramework {
             writeCodeToFile(sourceFile.code, fileName);
             compileJasmFile(fileName);
         }
+        System.out.println("Jasm files compiled.");
     }
 
     private static void compileJasmFile(String fileName) {

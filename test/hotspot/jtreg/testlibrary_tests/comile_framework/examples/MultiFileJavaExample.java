@@ -45,6 +45,8 @@ public class MultiFileJavaExample {
     public static String generate(int i) {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
+        out.println("package p.xyz;");
+        out.println("");
         out.println("public class XYZ" + i + " {");
         if (i > 0) {
             out.println("    public XYZ" + (i - 1) + " xyz = new XYZ" + (i - 1) + "();");
@@ -64,14 +66,14 @@ public class MultiFileJavaExample {
 
         // Generate 10 files.
         for (int i = 0; i < 10; i++) {
-            comp.add(SourceFile.newJavaSourceFile("XYZ" + i, generate(i)));
+            comp.add(SourceFile.newJavaSourceFile("p.xyz.XYZ" + i, generate(i)));
         }
 
         // Compile the source files.
         comp.compile();
 
         // Load the compiled class.
-        Class c = comp.getClass("XYZ9");
+        Class c = comp.getClass("p.xyz.XYZ9");
 
         // Invoke the "XYZ9.test" method from the compiled and loaded class.
         Object ret;
