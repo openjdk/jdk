@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,45 +25,47 @@
 
 package jdk.jfr.internal.settings;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.jfr.Label;
-import jdk.jfr.MetadataDefinition;
-import jdk.jfr.Name;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Type;
 
-@MetadataDefinition
-@Label("Level")
-@Name(Type.SETTINGS_PREFIX + "Level")
-public final class LevelSetting extends JDKSettingControl {
+abstract class BooleanSetting extends JDKSettingControl {
     private final PlatformEventType eventType;
-    private final List<String> levels;
+    private final String defaultValue;
     private String value;
 
-    public LevelSetting(PlatformEventType eventType, String[] levels) {
-        this.value = levels[0];
+    public BooleanSetting(PlatformEventType eventType, String defaultValue) {
         this.eventType = Objects.requireNonNull(eventType);
-        this.levels = Arrays.asList(Objects.requireNonNull(levels));
+        this.defaultValue = defaultValue;
+        this.value = defaultValue;
+        if (parse(defaultValue) == null) {
+            throw new InternalError("Only 'true' or 'false' is allowed with class BooleanSetting");
+        }
     }
+
+    protected abstract void apply(PlatformEventType eventType, boolean value);
 
     @Override
     public String combine(Set<String> values) {
-        int maxIndex = 0; // index 0 contains the default value
+        String text = null;
         for (String value : values) {
-            maxIndex = Math.max(maxIndex, levels.indexOf(value));
+            Boolean b = parse(value);
+            if (b != null) {
+                if (b.booleanValue()) {
+                    return "true";
+                }
+                text = "false";
+            }
         }
-        return levels.get(maxIndex);
+        return Objects.requireNonNullElse(text, defaultValue);
     }
 
     @Override
     public void setValue(String value) {
-        int index = levels.indexOf(value);
-        if (index != -1) {
-            this.eventType.setLevel(index);
+        Boolean b = parse(value);
+        if (b != null) {
+            apply(eventType, b.booleanValue());
             this.value = value;
         }
     }
@@ -71,5 +73,15 @@ public final class LevelSetting extends JDKSettingControl {
     @Override
     public String getValue() {
         return value;
+    }
+
+    private static Boolean parse(String value) {
+        if ("true".equals(value)) {
+            return Boolean.TRUE;
+        }
+        if ("false".equals(value)) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 }
