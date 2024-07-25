@@ -21,39 +21,30 @@
  * questions.
  */
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 /*
  * @test
  * @bug 8334048
  * @summary -Xbootclasspath can not read some ZIP64 ZIP files
  *
- * The BootClassPathZip64Creator driver outputs a minimal reproducer
- * ZIP file which was generated with the following sequence of POSIX
- * shell commands:
- *
- *    $ javac -version
- *    javac 1.8.0_402
- *    $ zip -v | grep "This is"
- *    This is Zip 3.0 (July 5th 2008), by Info-ZIP.
- *    $ echo -n "class T{}" > T.java
- *    $ javac -g:none T.java
- *    $ echo -n | zip -Zstore Zip64 - T.class
- *      adding: - (stored 0%)
- *      adding: T.class (stored 0%)
- *    $ md5sum Zip64.zip
- *    45fe0ab09482d6bce7e2e903c16af9d6  Zip64.zip
- *
- * The class file is included in the ZIP file without compression so
- * that it is easily identifiable in the hexadecimal listing.
- *
  * @run driver BootClassPathZip64Creator
- * @run main/othervm -Xbootclasspath/a:./Zip64.zip BootClassPathZip64Test
+ * @run main/othervm -Xbootclasspath/a:./Z64.zip BootClassPathZip64Test
  */
 
 public class BootClassPathZip64Test {
 
+    static final String CLASS_NAME = "T";
+    static final Path ZIP_PATH = Paths.get(System.getProperty("user.dir"),
+                                           "Z64.zip");
     public static void main(String[] args) throws Exception {
         ClassLoader loader = BootClassPathZip64Test.class.getClassLoader();
-        Class c = loader.loadClass("T");
+        if (!Files.exists(ZIP_PATH)) {
+            throw new RuntimeException(ZIP_PATH + " does not exist");
+        }
+        Class c = loader.loadClass(CLASS_NAME);
     }
 
 }
