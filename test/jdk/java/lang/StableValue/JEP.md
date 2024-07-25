@@ -23,15 +23,15 @@ This might be the subject of a future JEP.
 
 Some internal JDK classes are relying heavily on the annotation `jdk.internal.vm.annotation.@Stable`
 to mark scalar and array fields whose values or elements will change *at most once*, thereby providing
-crucial performance, energy efficiency, and flexibility benefits. 
+crucial performance, energy efficiency, and flexibility benefits.
 
 Unfortunately, the powerful `@Stable` annotation cannot be used directly by client code thereby severely
 restricting its applicability. The Stable Values & Collections API rectifies this imbalance
 between internal and client code by providing safe wrappers around the `@Stable` annotation. Hence, all _the
-important benefits of `@Stable` are now made available to regular Java developers and third-party 
+important benefits of `@Stable` are now made available to regular Java developers and third-party
 library developers_.
 
-One of the benefits with `@Stable` is it makes a marked field eligible for [constant-folding](https://en.wikipedia.org/wiki/Constant_folding). 
+One of the benefits with `@Stable` is it makes a marked field eligible for [constant-folding](https://en.wikipedia.org/wiki/Constant_folding).
 Publicly exposing `@Stable` without a safe API, like the Stable Values & Collections API, would have
 rendered it unsafe as further updating a `@Stable` field after its initial update will result
 in undefined behavior, as the JIT compiler might have *already* constant-folded the (now overwritten)
@@ -195,7 +195,7 @@ Unfortunately, this approach provides a plethora of challenges. First, retrievin
 from a static array is slow, as said values cannot be constant-folded. Even worse, access to the
 array is guarded by synchronization that is not only slow but will block access to the array for
 all elements whenever one of the elements is under computation. Furthermore, the class holder idiom
-(see above) is undoubtedly insufficient in this case, as the number of required holder classes is 
+(see above) is undoubtedly insufficient in this case, as the number of required holder classes is
 *statically unbounded* - it depends on the value of the parameter `SIZE` which may change in future
 variants of the code.
 
@@ -225,7 +225,7 @@ The Stable Values & Collections API resides in the [java.lang](https://cr.openjd
 ### Stable values
 
 A _stable value_ is a thin, atomic, non-blocking, thread-safe, set-at-most-once, stable value holder
-eligible for certain JVM optimizations if set to a value. It is expressed as an object of type 
+eligible for certain JVM optimizations if set to a value. It is expressed as an object of type
 `jdk.lang.StableValue`, which, like `Future`, is a holder for some computation that may or may not have
 occurred yet. Fresh (unset) `StableValue` instances are created via the factory method `StableValue::newInstance`:
 
@@ -258,7 +258,7 @@ Null-averse applications can also use `StableValue<Optional<V>>`.
 When retrieving values, `StableValue` instances holding reference values can be faster
 than reference values managed via double-checked-idiom constructs as stable values rely
 on explicit memory barriers rather than performing volatile access on each retrieval
-operation. 
+operation.
 
 In addition, stable values are eligible for constant folding optimizations by the JVM. In many
 ways, this is similar to the holder-class idiom in the sense it offers the same
@@ -269,7 +269,7 @@ Looking at the basic example above, it becomes evident, several threads may invo
 method simultaneously if they call the `logger()` method at about the same time. Even though
 `StableValue` will guarantee, that only one of these results will ever be exposed to the many
 competing threads, there might be applications where it is a requirement, that a supplying method is
-called *only once*. This brings us to the introduction of _cached functions_.  
+called *only once*. This brings us to the introduction of _cached functions_.
 
 ### Cached functions
 
@@ -281,7 +281,7 @@ to composition with other constructs in order to create more high-level and powe
 particular input value is computed only once and is remembered such that remembered outputs can be
 reused for subsequent calls with recurring input values.
 
-In cases where the invoke-at-most-once property of a `Supplier` is important, the 
+In cases where the invoke-at-most-once property of a `Supplier` is important, the
 Stable Values & Collections API offers a _cached supplier_ which is a caching, thread-safe, stable,
 lazily computed `Supplier` that records the value of an _original_ `Supplier` upon being first
 accessed via its `Supplier::get` method. In a multi-threaded scenario, competing threads will block
@@ -313,7 +313,7 @@ class `Foo` (`Foo`, in turn, can be loaded at most once into any given `ClassLoa
 by a lazily computed stable value upholding the invoke-at-most-once invariant.
 
 Similarly to how a `Supplier` can be cached using a backing stable value, a similar pattern
-can be used for an `IntFunction` that will record its cached values in a backing list of 
+can be used for an `IntFunction` that will record its cached values in a backing list of
 stable value elements. Here is how the error message example above can be improved using
 a caching `IntFunction`:
 
@@ -321,7 +321,7 @@ a caching `IntFunction`:
 class ErrorMessages {
 
     private static final int SIZE = 8;
-    
+
     // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
     private static final IntFunction<String> ERROR_FUNCTION =
             StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile, null);
@@ -335,12 +335,12 @@ class ErrorMessages {
             throw new UncheckedIOException(e);
         }
     }
-    
+
     // 3. Access the cached element with as-declared-final performance
     //    (evaluation made before the first access)
     String msg = ERROR_FUNCTION.apply(2);
 }
-    
+
 // <!DOCTYPE html>
 // <html lang="en">
 //   <head><meta charset="utf-8"></head>
@@ -372,14 +372,14 @@ class Cahced {
 ```
 
 It should be noted that the enumerated set of valid inputs given at creation time constitutes the only valid
-input keys for the cached function. Providing a non-valid input for a cached `Function` (or a cached `IntFunction`) 
-would incur an `IllegalArgumentException`. 
+input keys for the cached function. Providing a non-valid input for a cached `Function` (or a cached `IntFunction`)
+would incur an `IllegalArgumentException`.
 
 An advantage with cached functions, compared to working directly with `StableValue` instances, is that the
 initialization logic can be centralized and maintained in a single place, usually at the same place where
 the cached function is defined.
 
-Additional cached function types, such a cached `Predicate<K>` (backed by a lazily computed 
+Additional cached function types, such a cached `Predicate<K>` (backed by a lazily computed
 `Map<K, StableValue<Boolean>>`) or a cached `BiFunction` can be custom-made. An astute reader will be able
 to write such constructs in a few lines.
 
@@ -395,15 +395,15 @@ private static final Function<String, Logger> LOGGERS =
         StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
         Logger::getLogger,
         // Create cheap virtual threads for background computation
-        Thread.ofVirtual().factory()); 
-        
-... Somewhere else in the code        
+        Thread.ofVirtual().factory());
+
+... Somewhere else in the code
 
 private static final String NAME = "com.company.Foo";
 
 // 2. Access the cached value via the function with as-declared-final
 //    performance (evaluation made before the first access)
-Logger logger = LOGGERS.apply(NAME);        
+Logger logger = LOGGERS.apply(NAME);
 ```
 
 This can provide a best-of-several-worlds situation where the cached function can be quickly defined (as no
@@ -419,14 +419,14 @@ the background threads have had a head start compared to the accessing threads.
 The Stable Values & Collections API also provides factories that allow the creation of new
 collection variants that are lazy, shallowly immutable, and stable:
 
-- `List` of stable elements 
-- `Map` of stable values 
+- `List` of stable elements
+- `Map` of stable values
 
 Lists of lazily computed stable elements are objects of type `List<E>` where each
 element in such a list enjoys the same properties as a `StableValue`.
 
-Like a `StableValue` object, a lazy `List` of stable value elements is created via a factory 
-method while additionally providing the `size` of the desired `List` and a mapper of type 
+Like a `StableValue` object, a lazy `List` of stable value elements is created via a factory
+method while additionally providing the `size` of the desired `List` and a mapper of type
 `IntFunction<? extends E>` to be used when computing the lazy elements on demand:
 
 ```
@@ -437,7 +437,7 @@ Note how there's only one field of type `List<E>` to initialize even though ever
 computation is performed independently of the other element of the list when accessed (i.e. no
 blocking will occur across threads computing distinct elements simultaneously). Also, the
 `IntSupplier` mapper provided at creation is only invoked at most once for each distinct input
-value. The Stable Values & Collections API allows modeling this cleanly, while still preserving 
+value. The Stable Values & Collections API allows modeling this cleanly, while still preserving
 good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
 
 It should be noted that even though a lazily computed list of stable elements might mutate its
@@ -462,7 +462,7 @@ static Logger logger(String name) {
 }
 ```
 
-In the example above, only two input values were used. However, this concept allows declaring a 
+In the example above, only two input values were used. However, this concept allows declaring a
 large number of stable values which can be easily retrieved using arbitrarily, but pre-specified, 
 keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
 may now be easily and reliably realized.
