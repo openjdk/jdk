@@ -135,31 +135,6 @@ public class CompileFramework {
         throw new CompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
-    private static List<String> writeSourcesToFile(String sourceDir, List<SourceCode> sources) {
-        List<String> storedFiles = new ArrayList<String>();
-        for (SourceCode sourceCode : sources) {
-            String extension = sourceCode.kind.name().toLowerCase();
-            String fileName = sourceDir + "/" + sourceCode.className.replace('.','/') + "." + extension;
-            writeCodeToFile(sourceCode.code, fileName);
-            storedFiles.add(fileName);
-        }
-        return storedFiles;
-    }
-
-    private static void writeCodeToFile(String code, String fileName) {
-        System.out.println("File: " + fileName);
-        File file = new File(fileName);
-        File dir = file.getAbsoluteFile().getParentFile();
-        if (!dir.exists()){
-            dir.mkdirs();
-        }
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write(code);
-        } catch (Exception e) {
-            throw new CompileFrameworkException("Could not write file: " + fileName, e);
-        }
-    }
-
     private static void compileJavaSources(String sourceDir, List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
             System.out.println("No java sources to compile.");
@@ -187,6 +162,31 @@ public class CompileFramework {
         }
 
         executeCompileCommand(command);
+    }
+
+    private static List<String> writeSourcesToFile(String sourceDir, List<SourceCode> sources) {
+        List<String> storedFiles = new ArrayList<String>();
+        for (SourceCode sourceCode : sources) {
+            String extension = sourceCode.kind.name().toLowerCase();
+            String fileName = sourceDir + "/" + sourceCode.className.replace('.','/') + "." + extension;
+            writeCodeToFile(sourceCode.code, fileName);
+            storedFiles.add(fileName);
+        }
+        return storedFiles;
+    }
+
+    private static void writeCodeToFile(String code, String fileName) {
+        System.out.println("File: " + fileName);
+        File file = new File(fileName);
+        File dir = file.getAbsoluteFile().getParentFile();
+        if (!dir.exists()){
+            dir.mkdirs();
+        }
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            writer.write(code);
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not write file: " + fileName, e);
+        }
     }
 
     private static void executeCompileCommand(List<String> command) {
