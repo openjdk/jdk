@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8023524 8304846 8335150
+ * @bug 8023524 8304846
  * @requires vm.flagless
  * @library /test/lib/
  * @library /java/nio/file
@@ -48,6 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import static java.nio.file.attribute.PosixFilePermissions.*;
 import static jdk.test.lib.process.ProcessTools.*;
@@ -212,22 +213,12 @@ public class LogGeneratedClassesTest {
         try {
             fs = Files.getFileStore(Paths.get("."));
         } catch (IOException e) {
-            if (e.getMessage().contains("Mount point not found")) {
-                // We would like to skip the test with a cause with
-                //      throw new SkipException("Mount point not found");
-                // but jtreg will report failure so we just pass the test
-                // which we can look at if jtreg changed its behavior
-                System.out.println("Mount point not found. Skipping testDumpDirNotWritable test.");
-                return;
-            } else {
-                throw e;
-            }
+            e.printStackTrace();
+            throw new SkipException("WARNING: IOException occur. Skipping testDumpDirNotWritable test.");
         }
         if (!fs.supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
-            // Same as above, return instead of throw SkipException("Posix not supported")
-            System.out.println("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
-            return;
+            throw new SkipException("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
         }
 
         Path testDir = Path.of("readOnly");
@@ -239,8 +230,7 @@ public class LogGeneratedClassesTest {
             if (isWriteableDirectory(dumpDir)) {
                 // Skipping the test: it's allowed to write into read-only directory
                 // (e.g. current user is super user).
-                System.out.println("WARNING: The dump directory is writeable. Skipping testDumpDirNotWritable test.");
-                return;
+                throw new SkipException("WARNING: The dump directory is writeable. Skipping testDumpDirNotWritable test.");
             }
 
             ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
