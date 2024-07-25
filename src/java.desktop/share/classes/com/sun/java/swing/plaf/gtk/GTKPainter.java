@@ -610,7 +610,7 @@ class GTKPainter extends SynthPainter {
                 x + insets.left, y + insets.top, w - insets.left - insets.right,
                 h - insets.top - insets.bottom);
             BufferedImage img = ENGINE.finishPainting();
-            if(!isHW) {
+            if(!isHW && img != null) {
                 int border = img.getRGB(0, h / 2);
                 if (border == img.getRGB(w / 2, h / 2)) {
                     // fix no menu borders in Adwaita theme
