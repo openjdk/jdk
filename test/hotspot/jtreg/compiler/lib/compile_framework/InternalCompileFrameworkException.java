@@ -24,14 +24,14 @@
 package compiler.lib.compile_framework;
 
 /**
- * Exception thrown in the Compilation Framework. Most likely, the user is responsible for the failure.
+ * Internal exception thrown in Compilation Framework. Most likely, this is due to a bug in the CompileFramework.
  */
-public class CompileFrameworkException extends RuntimeException {
-    public CompileFrameworkException(String message) {
-        super("Exception in Compile Framework:" + System.lineSeparator() + message);
+public class InternalCompileFrameworkException extends RuntimeException {
+    public InternalCompileFrameworkException(String message) {
+        super("Internal exception in Compile Framework, please file a bug:" + System.lineSeparator() + message);
     }
 
-    public CompileFrameworkException(String message, Throwable e) {
-        super("Exception in Compile Framework:" + System.lineSeparator() + message, e);
+    public InternalCompileFrameworkException(String message, Throwable e) {
+        super("Internal exception in Compile Framework, please file a bug:" + System.lineSeparator() + message, e);
     }
 }

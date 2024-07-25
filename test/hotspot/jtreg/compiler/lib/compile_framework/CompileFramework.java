@@ -25,6 +25,7 @@ package compiler.lib.compile_framework;
 
 import compiler.lib.compile_framework.SourceCode;
 import compiler.lib.compile_framework.CompileFrameworkException;
+import compiler.lib.compile_framework.InternalCompileFrameworkException;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -85,7 +86,7 @@ public class CompileFramework {
         try {
             sourceDir = "compile-framework-sources-" + ProcessTools.getProcessId();
         } catch (Exception e) {
-            throw new CompileFrameworkException("Could not get ProcessID", e);
+            throw new InternalCompileFrameworkException("Could not get ProcessID", e);
         }
         System.out.println("Source directory: " + sourceDir);
         return sourceDir;
@@ -127,12 +128,12 @@ public class CompileFramework {
                 File dir = jtreg.getAbsoluteFile().getParentFile();
                 File asmtools = new File(dir, "asmtools.jar");
                 if (!asmtools.exists()) {
-                    throw new CompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
+                    throw new InternalCompileFrameworkException("Found jtreg.jar in classpath, but could not find asmtools.jar");
                 }
                 return asmtools.getAbsolutePath();
             }
         }
-        throw new CompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
+        throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
     private static void compileJavaSources(String sourceDir, List<SourceCode> javaSources) {
@@ -202,12 +203,12 @@ public class CompileFramework {
             boolean exited = process.waitFor(JASM_COMPILE_TIMEOUT, TimeUnit.SECONDS);
             if (!exited) {
                 process.destroyForcibly();
-                throw new CompileFrameworkException("Process timeout: compilation took too long.");
+                throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
             }
             output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             exitCode = process.exitValue();
         } catch (IOException e) {
-            throw new CompileFrameworkException("IOException during compilation", e);
+            throw new InternalCompileFrameworkException("IOException during compilation", e);
         } catch (InterruptedException e) {
             throw new CompileFrameworkException("InterruptedException during compilation", e);
         }
@@ -228,7 +229,7 @@ public class CompileFramework {
             URL[] urls = new URL[] { new File(System.getProperty("test.classes")).toURI().toURL() };
             classLoader = URLClassLoader.newInstance(urls, sysLoader);
         } catch (IOException e) {
-            throw new CompileFrameworkException("IOException while creating java files", e);
+            throw new CompileFrameworkException("IOException while creating ClassLoader", e);
         }
     }
 
