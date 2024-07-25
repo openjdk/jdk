@@ -2098,15 +2098,11 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // For JNI natives the incoming and outgoing registers are offset upwards.
   GrowableArray<int> arg_order(2 * total_in_args);
 
-  VMRegPair tmp_vmreg;
-  tmp_vmreg.set2(rbx->as_VMReg());
-
   for (int i = total_in_args - 1, c_arg = total_c_args - 1; i >= 0; i--, c_arg--) {
     arg_order.push(i);
     arg_order.push(c_arg);
   }
 
-  int temploc = -1;
   for (int ai = 0; ai < arg_order.length(); ai += 2) {
     int i = arg_order.at(ai);
     int c_arg = arg_order.at(ai + 1);
