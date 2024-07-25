@@ -835,14 +835,12 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
         guarantee_property(unresolved_klass->char_at(0) != JVM_SIGNATURE_ARRAY,
                            "Bad interface name in class file %s", CHECK);
 
-        // Call resolve_super so class circularity is checked
-        interf = SystemDictionary::resolve_with_circularity_detection(
-                                                  _class_name,
-                                                  unresolved_klass,
-                                                  Handle(THREAD, _loader_data->class_loader()),
-                                                  _protection_domain,
-                                                  false,
-                                                  CHECK);
+        // Call resolve on the interface class name with class circularity checking
+        interf = SystemDictionary::resolve_super_or_fail(_class_name,
+                                                         unresolved_klass,
+                                                         Handle(THREAD, _loader_data->class_loader()),
+                                                         _protection_domain,
+                                                         false, CHECK);
       }
 
       if (!interf->is_interface()) {
@@ -5936,13 +5934,11 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
       _super_klass = vmClasses::Object_klass();
     } else {
       _super_klass = (const InstanceKlass*)
-                       SystemDictionary::resolve_with_circularity_detection(
-                                                               _class_name,
+                       SystemDictionary::resolve_super_or_fail(_class_name,
                                                                super_class_name,
                                                                loader,
                                                                _protection_domain,
-                                                               true,
-                                                               CHECK);
+                                                               true, CHECK);
     }
   }
 

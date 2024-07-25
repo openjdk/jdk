@@ -102,15 +102,23 @@ class SystemDictionary : AllStatic {
     return resolve_or_null(class_name, Handle(), Handle(), THREAD);
   }
 
-  // Resolve a superclass or superinterface. Called from ClassFileParser,
-  // parse_interfaces, resolve_instance_class_or_null, load_shared_class
-  // "class_name" is the class whose super class or interface is being resolved.
   static InstanceKlass* resolve_with_circularity_detection(Symbol* class_name,
                                                            Symbol* super_name,
                                                            Handle class_loader,
                                                            Handle protection_domain,
                                                            bool is_superclass,
                                                            TRAPS);
+
+  // Resolve a superclass or superinterface. Called from ClassFileParser,
+  // parse_interfaces, resolve_instance_class_or_null, load_shared_class
+  // "class_name" is the class whose super class or interface is being resolved.
+  static InstanceKlass* resolve_super_or_fail(Symbol* class_name, Symbol* super_name,
+                                              Handle class_loader,
+                                              Handle protection_domain, bool is_superclass, TRAPS) {
+    return resolve_with_circularity_detection(class_name, super_name, class_loader, protection_domain,
+                                              is_superclass, THREAD);
+  }
+
  private:
   // Parse the stream to create a hidden class.
   // Used by jvm_lookup_define_class.

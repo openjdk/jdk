@@ -81,13 +81,13 @@ class SeenThread;
 class PlaceholderEntry {
   friend class PlaceholderTable;
  private:
-  SymbolHandle      _next_klass_name; // next step in the recursive process of class loading
-  JavaThread*       _definer;         // owner of define token
-  InstanceKlass*    _instanceKlass;   // InstanceKlass from successful define
+  SymbolHandle      _next_klass_name;     // next step in the recursive process of class loading
+  JavaThread*       _definer;             // owner of define token
+  InstanceKlass*    _instanceKlass;       // InstanceKlass from successful define
   SeenThread*       _circularityThreadQ;  // doubly-linked queue of Threads loading with circularity detection
   SeenThread*       _loadInstanceThreadQ; // loadInstance thread
-                                    // This can't be multiple threads since class loading waits for
-                                    // this token to be removed.
+                                          // This can't be multiple threads since class loading
+                                          // waits for this token to be removed.
 
   SeenThread*       _defineThreadQ; // queue of Threads trying to define this class
                                     // including _definer
@@ -99,7 +99,7 @@ class PlaceholderEntry {
   void add_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
   bool remove_seen_thread(JavaThread* thread, PlaceholderTable::classloadAction action);
 
-  SeenThread*        circularityThreadQ()        const { return _circularityThreadQ; }
+  SeenThread*        circularityThreadQ()  const { return _circularityThreadQ; }
   void               set_circularityThreadQ(SeenThread* SeenThread) { _circularityThreadQ = SeenThread; }
 
   SeenThread*        loadInstanceThreadQ() const { return _loadInstanceThreadQ; }

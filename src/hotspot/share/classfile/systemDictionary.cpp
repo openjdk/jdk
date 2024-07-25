@@ -405,11 +405,11 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 // This can be seen with logging option: -Xlog:class+load+placeholders=debug.
 //
 InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,
-                                                       Symbol* next_name,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       bool is_superclass,
-                                                       TRAPS) {
+                                                                    Symbol* next_name,
+                                                                    Handle class_loader,
+                                                                    Handle protection_domain,
+                                                                    bool is_superclass,
+                                                                    TRAPS) {
 
   assert(next_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(next_name), "invalid superclass name");
@@ -440,12 +440,11 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
     InstanceKlass* quicksuperk;
     // To support parallel loading: if class is done loading, just return the superclass
     // if the next_name matches class->super()->name() and if the class loaders match.
-    // Otherwise, a LinkageError will be thrown later.
     if (klassk != nullptr && is_superclass &&
-        ((quicksuperk = klassk->java_super()) != nullptr) &&
-         ((quicksuperk->name() == next_name) &&
-            (quicksuperk->class_loader() == class_loader()))) {
-           return quicksuperk;
+       ((quicksuperk = klassk->java_super()) != nullptr) &&
+       ((quicksuperk->name() == next_name) &&
+         (quicksuperk->class_loader() == class_loader()))) {
+      return quicksuperk;
     } else {
       // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
@@ -502,14 +501,17 @@ static void handle_parallel_super_load(Symbol* name,
                                        Handle class_loader,
                                        Handle protection_domain, TRAPS) {
 
-  // superk is not used; resolve_super_or_fail is called for circularity check only.
+  // superk is not used; resolve_with_circularity_detection is called for circularity check only.
+  // This passes true to is_superclass even though it might not be the super to perform the optimization anyway.
+  // The only thing that takes different action for is_superclass is dumping the static archive, which doesn't
+  // reach this path.
   assert (!CDSConfig::is_dumping_static_archive(), "should not be parallel loading static archive");
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
-                                                          superclassname,
-                                                          class_loader,
-                                                          protection_domain,
-                                                          false,
-                                                          CHECK);
+                                                                       superclassname,
+                                                                       class_loader,
+                                                                       protection_domain,
+                                                                       true,
+                                                                       CHECK);
 }
 
 // Bootstrap and non-parallel capable class loaders use the LOAD_INSTANCE placeholder to
@@ -576,6 +578,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                                 Handle protection_domain,
                                                                 TRAPS) {
   // name must be in the form of "java/lang/Object" -- cannot be "Ljava/lang/Object;"
+  DEBUG_ONLY(ResourceMark rm(THREAD));
   assert(name != nullptr && !Signature::is_array(name) &&
          !Signature::has_envelope(name), "invalid class name: %s", name == nullptr ? "nullptr" : name->as_C_string());
 
