@@ -1638,7 +1638,7 @@ public final class LocalTime
 
     /**
      * Prints the toString result to the given buf, avoiding extra string allocations.
-     * Requires extra capacity of 10 to avoid StringBuilder reallocation.
+     * Requires extra capacity of 18 to avoid StringBuilder reallocation.
      */
     void formatTo(StringBuilder buf) {
         int hourValue = hour;
