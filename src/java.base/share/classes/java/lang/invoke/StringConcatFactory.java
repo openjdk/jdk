@@ -1133,27 +1133,21 @@ public final class StringConcatFactory {
          *     String str6 = stringOf(arg6);
          *     String str7 = stringOf(arg7);
          *
-         *     lengthCoder = mix(mix(mix(mix(mix(mix(mix(mix(lengthCoder, arg0), arg1), arg3), arg4), str5), str6), str7);
+         *     lengthCoder = mix(mix(mix(mix(
+         *                   mix(mix(mix(mix(engthCoder,
+         *                       str7), str6), str5), arg4),
+         *                       arg3), arg2), arg1), arg0);
          *
          *     String suffix = constant9;
          *     lengthCoder -= suffix.length();
          *     byte[] buf = newArray(suffix, lengthCoder);
          *
-         *     lengthCoder = prepend(
-         *                   prepend(
-         *                   prepend(
-         *                   prepend(
-         *                   prepend(
-         *                   prepend(
-         *                   prepend(
-         *                   prepend(lengthCoder, buf, str7, constant7),
-         *                                        buf, str6, constant6),
-         *                                        buf, str5, constant5),
-         *                                        buf, arg4, constant4),
-         *                                        buf, arg3, constant3),
-         *                                        buf, arg2, constant2),
-         *                                        buf, arg1, constant1),
-         *                                        buf, arg0, constant0);
+         *     lengthCoder = prepend(prepend(prepend(prepend(
+         *                   prepend(prepend(prepend(prepend(lengthCoder,
+         *                        buf, str7, constant7), buf, str6, constant6),
+         *                        buf, str5, constant5), buf, arg4, constant4),
+         *                        buf, arg3, constant3), buf, arg2, constant2),
+         *                        buf, arg1, constant1), buf, arg0, constant0);
          *
          *     return newArray(buf, lengthCoder);
          * }
@@ -1231,12 +1225,12 @@ public final class StringConcatFactory {
                     /*
                      * Store init index :
                      *
-                     *  lengthCoder = mix(mix(mix(mix(initalIengthCoder, arg0), arg1), arg2), ....);
+                     *  lengthCoder = mix(mix(mix(mix(initalIengthCoder, argN), ..., arg2), arg1), 0);
                      *  ...
                      *
                      */
                     cb.loadConstant(initalLengthCoder);
-                    for (int i = 0; i < paramCount; i++) {
+                    for (int i = paramCount - 1; i >= 0; i--) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
                         int paramSlot = paramSlots[i];
