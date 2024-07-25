@@ -927,8 +927,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     /**
      * Gets the {@code jobject} value wrapped by {@code peerObject}. The returned value is
      * a JNI local reference whose lifetime is scoped by the nearest Java caller (from
-     * HotSpot's perspective). The current thread's state must be {@code _thread_in_native}.
-     * A call from the JVMCI shared library (e.g. libgraal) is in such a state.
+     * HotSpot's perspective). You can use {@code PushLocalFrame} and {@code PopLocalFrame} to
+     * shorten the lifetime of the reference. The current thread's state must be
+     * {@code _thread_in_native}. A call from the JVMCI shared library (e.g. libgraal) is in such
+     * a state.
      *
      * @param peerObject a reference to an object in the HotSpot heap
      * @return the {@code jobject} value unpacked from {@code peerObject}
