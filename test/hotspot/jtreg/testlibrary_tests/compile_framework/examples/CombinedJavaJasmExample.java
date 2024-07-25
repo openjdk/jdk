@@ -26,10 +26,10 @@
  * @summary Example test to use the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver comile_framework.examples.CombinedJavaJasmExample
+ * @run driver compile_framework.examples.CombinedJavaJasmExample
  */
 
-package comile_framework.examples;
+package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
@@ -130,6 +130,6 @@ public class CombinedJavaJasmExample {
         if (i != expected) {
             throw new RuntimeException("wrong value: " + i);
         }
- 
+
     }
 }

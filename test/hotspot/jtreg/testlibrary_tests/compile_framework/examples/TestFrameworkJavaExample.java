@@ -27,10 +27,10 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
  * @compile ../../../compiler/lib/ir_framework/TestFramework.java
- * @run driver comile_framework.examples.TestFrameworkJavaExample
+ * @run driver compile_framework.examples.TestFrameworkJavaExample
  */
 
-package comile_framework.examples;
+package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;

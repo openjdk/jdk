@@ -26,10 +26,10 @@
  * @summary Example test to use the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver comile_framework.examples.SimpleJavaExample
+ * @run driver compile_framework.examples.MultiFileJavaExample
  */
 
-package comile_framework.examples;
+package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
@@ -37,18 +37,23 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 /**
- * This test shows a simple compilation of java source code, and its invocation.
+ * This test shows a compilation of multiple java source code files.
  */
-public class SimpleJavaExample {
+public class MultiFileJavaExample {
 
     // Generate a source java file as String
-    public static String generate() {
+    public static String generate(int i) {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
-        out.println("public class XYZ {");
-        out.println("    public static int test(int i) {");
-        out.println("        System.out.println(\"Hello from XYZ.test: \" + i);");
-        out.println("        return i * 2;");
+        out.println("package p.xyz;");
+        out.println("");
+        out.println("public class XYZ" + i + " {");
+        if (i > 0) {
+            out.println("    public XYZ" + (i - 1) + " xyz = new XYZ" + (i - 1) + "();");
+        }
+        out.println("");
+        out.println("    public static Object test() {");
+        out.println("        return new XYZ" + i + "();");
         out.println("    }");
         out.println("}");
         out.close();
@@ -59,21 +64,21 @@ public class SimpleJavaExample {
         // Create a new CompileFramework instance.
         CompileFramework comp = new CompileFramework();
 
-        // Add a java source file.
-        String src = generate();
-        SourceFile file = SourceFile.newJavaSourceFile("XYZ", src);
-        comp.add(file);
+        // Generate 10 files.
+        for (int i = 0; i < 10; i++) {
+            comp.add(SourceFile.newJavaSourceFile("p.xyz.XYZ" + i, generate(i)));
+        }
 
-        // Compile the source file.
+        // Compile the source files.
         comp.compile();
 
         // Load the compiled class.
-        Class c = comp.getClass("XYZ");
+        Class c = comp.getClass("p.xyz.XYZ9");
 
-        // Invoke the "XYZ.test" method from the compiled and loaded class.
+        // Invoke the "XYZ9.test" method from the compiled and loaded class.
         Object ret;
         try {
-            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
+            ret = c.getDeclaredMethod("test", new Class[] {}).invoke(null, new Object[] {});
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("No such method:", e);
         } catch (IllegalAccessException e) {
@@ -82,11 +87,9 @@ public class SimpleJavaExample {
             throw new RuntimeException("Invocation target:", e);
         }
 
-        // Extract return value of invocation, verify its value.
-        int i = (int)ret;
-        System.out.println("Result of call: " + i);
-        if (i != 10) {
-            throw new RuntimeException("wrong value: " + i);
+        if (!ret.getClass().getSimpleName().equals("XYZ9")) {
+            throw new RuntimeException("wrong result:" + ret);
         }
+        System.out.println("Success.");
     }
 }

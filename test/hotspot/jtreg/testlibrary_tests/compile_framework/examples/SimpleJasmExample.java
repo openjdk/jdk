@@ -23,27 +23,37 @@
 
 /*
  * @test
- * @summary Example test with failing compilation.
+ * @summary Example test to use the Compile Framework.
  * @modules java.base/jdk.internal.misc
  * @library /test/lib /
- * @run driver comile_framework.tests.TestBadJavaCompilation
+ * @run driver compile_framework.examples.SimpleJasmExample
  */
 
-package comile_framework.tests;
+package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
-public class TestBadJavaCompilation {
+/**
+ * This test shows a simple compilation of java source code, and its invocation.
+ */
+public class SimpleJasmExample {
 
-    // Generate a source java file as String
+    // Generate a source jasm file as String
     public static String generate() {
         StringWriter writer = new StringWriter();
         PrintWriter out = new PrintWriter(writer);
-        out.println("public class XYZ {");
-        out.println("    asdf"); // some bad code
+        out.println("super public class XYZ {");
+        out.println("    public static Method test:\"(I)I\"");
+        out.println("    stack 20 locals 20");
+        out.println("    {");
+        out.println("        iload_0;");
+        out.println("        iconst_2;");
+        out.println("        imul;");
+        out.println("        ireturn;");
+        out.println("    }");
         out.println("}");
         out.close();
         return writer.toString();
@@ -55,15 +65,33 @@ public class TestBadJavaCompilation {
 
         // Add a java source file.
         String src = generate();
-        SourceFile file = SourceFile.newJavaSourceFile("XYZ", src);
+        SourceFile file = SourceFile.newJasmSourceFile("XYZ", src);
         comp.add(file);
 
+        // Compile the source file.
+        comp.compile();
+
+        // Load the compiled class.
+        Class c = comp.getClass("XYZ");
+
+        // Invoke the "XYZ.test" method from the compiled and loaded class.
+        Object ret;
         try {
-            // Compile the source file.
-            comp.compile();
-            throw new RuntimeException("Expected compilation to fail.");
-        } catch (CompileFrameworkException e) {
-            System.out.println("Success, expected compilation to fail.");
+            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("No such method:", e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new RuntimeException("Invocation target:", e);
         }
+
+        // Extract return value of invocation, verify its value.
+        int i = (int)ret;
+        System.out.println("Result of call: " + i);
+        if (i != 10) {
+            throw new RuntimeException("wrong value: " + i);
+        }
+        System.out.println("Success.");
     }
 }
