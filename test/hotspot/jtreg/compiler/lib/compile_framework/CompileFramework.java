@@ -229,8 +229,7 @@ public class CompileFramework {
 
         try {
             // Classpath for all included classes (e.g. IR Framework).
-            URL[] urls = new URL[] { new File("").toURI().toURL(),
-                                     new File(System.getProperty("test.classes")).toURI().toURL()};
+            URL[] urls = new URL[] { new File(System.getProperty("test.classes")).toURI().toURL() };
             classLoader = URLClassLoader.newInstance(urls, sysLoader);
         } catch (IOException e) {
             throw new CompileFrameworkException("IOException while creating java files", e);
