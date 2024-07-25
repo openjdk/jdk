@@ -1631,13 +1631,18 @@ public final class LocalTime
      */
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder(18);
+        var buf = new StringBuilder(18);
+        formatTo(buf);
+        return buf.toString();
+    }
+
+    void formatTo(StringBuilder buf) {
         int hourValue = hour;
         int minuteValue = minute;
         int secondValue = second;
         int nanoValue = nano;
         buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
+                .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
         if (secondValue > 0 || nanoValue > 0) {
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
@@ -1657,7 +1662,6 @@ public final class LocalTime
                 buf.append(digits);
             }
         }
-        return buf.toString();
     }
 
     //-----------------------------------------------------------------------
