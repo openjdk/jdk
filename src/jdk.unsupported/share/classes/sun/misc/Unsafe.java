@@ -993,6 +993,7 @@ public final class Unsafe {
             throw new UnsupportedOperationException("can't get base address on a record class: " + f);
         }
         Class<?> fieldType = f.getType();
+        // Todo: Change to "java.lang.StableValue.class.isAssignableFrom(fieldType)" after StableValue exist preview
         if (fieldType.getName().equals("java.lang.StableValue")) {
             throw new UnsupportedOperationException("can't get field offset for a field of type " + fieldType.getName() + ": " + f);
         }
