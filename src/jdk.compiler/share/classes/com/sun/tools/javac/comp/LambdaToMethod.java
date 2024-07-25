@@ -121,9 +121,6 @@ public class LambdaToMethod extends TreeTranslator {
     /** deduplicate lambda implementation methods */
     private final boolean deduplicateLambdas;
 
-    /** dump stacktrace on error */
-    private final boolean dumpStacktraceOnError;
-
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
     public static final int FLAG_SERIALIZABLE = 1 << 0;
 
@@ -170,7 +167,6 @@ public class LambdaToMethod extends TreeTranslator {
         debugLinesOrVars = lineDebugInfo || varDebugInfo;
         verboseDeduplication = options.isSet("debug.dumpLambdaToMethodDeduplication");
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
-        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
     // </editor-fold>
 
@@ -1801,7 +1797,7 @@ public class LambdaToMethod extends TreeTranslator {
         boolean allowIllegalSignatures;
 
         L2MSignatureGenerator(boolean allowIllegalSignatures) {
-            super(types, LambdaToMethod.this.dumpStacktraceOnError);
+            types.super();
             this.allowIllegalSignatures = allowIllegalSignatures;
         }
 

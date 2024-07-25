@@ -40,7 +40,6 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
-import com.sun.tools.javac.code.Types.CompilerInternalException;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
@@ -48,6 +47,7 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
+import com.sun.tools.javac.util.CompilerInternalException;
 
 import java.io.IOException;
 import java.io.Writer;

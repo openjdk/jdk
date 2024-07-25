@@ -639,24 +639,6 @@ public class Types {
      * wraps a diagnostic that can be used to generate more details error
      * messages.
      */
-    public static class CompilerInternalException extends RuntimeException {
-        private static final long serialVersionUID = 0;
-
-        @SuppressWarnings("this-escape")
-        public CompilerInternalException(boolean dumpStackTraceOnError) {
-            if (dumpStackTraceOnError) {
-                super.fillInStackTrace();
-            } else {
-                fillInStackTrace();
-            }
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            return this;
-        }
-    }
-
     public static class FunctionDescriptorLookupError extends CompilerInternalException {
         private static final long serialVersionUID = 0;
 
@@ -5125,9 +5107,9 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="Signature Generation">
 
-    public abstract static class SignatureGenerator {
+    public abstract class SignatureGenerator {
 
-        public static class InvalidSignatureException extends CompilerInternalException {
+        public class InvalidSignatureException extends CompilerInternalException {
             private static final long serialVersionUID = 0;
 
             private final transient Type type;
@@ -5142,21 +5124,13 @@ public class Types {
             }
         }
 
-        private final Types types;
-        private final boolean dumpStackTraceOnError;
-
         protected abstract void append(char ch);
         protected abstract void append(byte[] ba);
         protected abstract void append(Name name);
         protected void classReference(ClassSymbol c) { /* by default: no-op */ }
 
-        protected SignatureGenerator(Types types, boolean dumpStackTraceOnError) {
-            this.types = types;
-            this.dumpStackTraceOnError = dumpStackTraceOnError;
-        }
-
         protected void reportIllegalSignature(Type t) {
-            throw new InvalidSignatureException(t, dumpStackTraceOnError);
+            throw new InvalidSignatureException(t, Types.this.dumpStacktraceOnError);
         }
 
         /**
@@ -5272,9 +5246,9 @@ public class Types {
             if (outer.allparams().nonEmpty()) {
                 boolean rawOuter =
                         c.owner.kind == MTH || // either a local class
-                        c.name == types.names.empty; // or anonymous
+                        c.name == Types.this.names.empty; // or anonymous
                 assembleClassSig(rawOuter
-                        ? types.erasure(outer)
+                        ? Types.this.erasure(outer)
                         : outer);
                 append(rawOuter ? '$' : '.');
                 Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
@@ -5296,7 +5270,7 @@ public class Types {
             for (List<Type> ts = typarams; ts.nonEmpty(); ts = ts.tail) {
                 Type.TypeVar tvar = (Type.TypeVar) ts.head;
                 append(tvar.tsym.name);
-                List<Type> bounds = types.getBounds(tvar);
+                List<Type> bounds = Types.this.getBounds(tvar);
                 if ((bounds.head.tsym.flags() & INTERFACE) != 0) {
                     append(':');
                 }

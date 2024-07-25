@@ -137,7 +137,6 @@ public class TransPatterns extends TreeTranslator {
     private final Preview preview;
     private TreeMaker make;
     private Env<AttrContext> env;
-    private final boolean dumpStacktraceOnError;
 
     BindingContext bindingContext = new BindingContext() {
         @Override
@@ -199,7 +198,6 @@ public class TransPatterns extends TreeTranslator {
         target = Target.instance(context);
         preview = Preview.instance(context);
         Options options = Options.instance(context);
-        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     @Override
@@ -792,7 +790,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types, TransPatterns.this.dumpStacktraceOnError);
+            types.super();
         }
 
         @Override

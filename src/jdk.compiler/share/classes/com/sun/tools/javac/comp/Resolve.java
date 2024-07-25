@@ -31,7 +31,6 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
-import com.sun.tools.javac.code.Types.CompilerInternalException;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
@@ -834,7 +833,7 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                methodCheckFailure.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                getMethodCheckFailure().setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
 
         /**
@@ -855,12 +854,15 @@ public class Resolve {
             }
         }
 
-        SharedInapplicableMethodException methodCheckFailure = new SharedInapplicableMethodException();
+        private SharedInapplicableMethodException methodCheckFailure;
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
             return nilMethodCheck;
         }
 
+        SharedInapplicableMethodException getMethodCheckFailure() {
+            return methodCheckFailure == null ? methodCheckFailure = new SharedInapplicableMethodException() : methodCheckFailure;
+        }
     }
 
     /**
