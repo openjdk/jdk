@@ -43,6 +43,7 @@ import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.misc.CDS;
+import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -1548,7 +1549,7 @@ class ImmutableCollections {
                 public Entry<K, V> next() {
                     final Map.Entry<K, StableValueImpl<V>> inner = delegateIterator.next();
                     final K key = inner.getKey();
-                    return new KeyValueHolder<>(key, computeIfUnset(key, inner.getValue()));
+                    return new NullableKeyValueHolder<>(key, computeIfUnset(key, inner.getValue()));
                 }
 
                 @Override
@@ -1558,7 +1559,7 @@ class ImmutableCollections {
                                 @Override
                                 public void accept(Entry<K, StableValueImpl<V>> inner) {
                                     final K key = inner.getKey();
-                                    action.accept(new KeyValueHolder<>(key, LazyMap.this.computeIfUnset(key, inner.getValue())));
+                                    action.accept(new NullableKeyValueHolder<>(key, LazyMap.this.computeIfUnset(key, inner.getValue())));
                                 }
                             };
                     delegateIterator.forEachRemaining(innerAction);
