@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,23 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8288976
- * @library /test/lib
- * @summary Check that the right message is displayed for NoClassDefFoundError exception.
- * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @compile C.java
- * @run driver Bad_NCDFE_Msg
- */
+#include "jni.h"
 
-import java.io.File;
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+JNIEXPORT void JNICALL
+Java_LockedMonitorInNative_runWithSynchronizedNative(JNIEnv *env, jobject obj, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
+    if (mid != NULL) {
+        (*env)->CallVoidMethod(env, obj, mid, task);
+    }
+}
 
-public class Bad_NCDFE_Msg {
-
-    public static void main(String args[]) throws Throwable {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-cp", System.getProperty("test.classes") + File.separator + "pkg", "C");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("java.lang.NoClassDefFoundError: C (wrong name: pkg/C");
-        output.shouldHaveExitValue(1);
+JNIEXPORT void JNICALL
+Java_LockedMonitorInNative_runWithMonitorEnteredInNative(JNIEnv *env, jobject obj, jobject lock, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
+    if (mid != NULL && (*env)->MonitorEnter(env, lock) == 0) {
+        (*env)->CallVoidMethod(env, obj, mid, task);
+        (*env)->MonitorExit(env, lock);  // can be called with pending exception
     }
 }
