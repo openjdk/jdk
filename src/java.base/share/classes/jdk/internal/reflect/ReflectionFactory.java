@@ -344,6 +344,9 @@ public class ReflectionFactory {
         } else {
             acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, constructorToCall);
         }
+        // Unlike other root constructors, this constructor is not copied for mutation
+        // but directly mutated, as it is not cached. To cache this constructor,
+        // setAccessible call must be done on a copy and return that copy instead.
         Constructor<?> ctor = langReflectAccess.newConstructorWithAccessor(constructorToCall, acc);
         ctor.setAccessible(true);
         return ctor;

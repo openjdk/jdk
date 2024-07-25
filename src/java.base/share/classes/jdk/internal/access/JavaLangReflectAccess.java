@@ -40,20 +40,14 @@ public interface JavaLangReflectAccess {
     /** Gets the byte[] that encodes TypeAnnotations on an Executable. */
     public byte[] getExecutableTypeAnnotationBytes(Executable ex);
 
-    //<editor-fold defaultstate="collapsed" desc="Trusted array sharing">
-
     /** Gets the shared array of parameter types of an Executable. */
     public Class<?>[] getExecutableSharedParameterTypes(Executable ex);
 
     /** Gets the shared array of exception types of an Executable. */
     public Class<?>[] getExecutableSharedExceptionTypes(Executable ex);
 
-    //</editor-fold>
-
-    //<editor-fold defaultstate="collapsed" desc="AccessibleObject Copying">
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
-    //
 
     /** Makes a "child" copy of a Method */
     public Method      copyMethod(Method arg);
@@ -63,8 +57,6 @@ public interface JavaLangReflectAccess {
 
     /** Makes a "child" copy of a Constructor */
     public <T> Constructor<T> copyConstructor(Constructor<T> arg);
-
-    //</editor-fold>
 
     /** Gets the root of the given AccessibleObject object; null if arg is the root */
     public <T extends AccessibleObject> T getRoot(T obj);
