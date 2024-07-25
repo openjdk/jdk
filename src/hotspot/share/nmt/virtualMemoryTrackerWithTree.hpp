@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,22 @@
  *
  */
 
-#ifndef SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
-#define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
+#ifndef NMT_VIRTUALMEMORYTRACKERWITHTREE_HPP
+#define NMT_VIRTUALMEMORYTRACKERWITHTREE_HPP
 
-#include "memory/allocation.hpp"
-#include "memory/metaspace.hpp" // For MetadataType
-#include "memory/metaspaceStats.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/regionsTree.hpp"
-#include "nmt/virtualMemoryTrackerCommon.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-#undef VMT_OLD_VERSION
-#define VMT_NEW_VERSION
-
-// Main class called from MemTracker to track virtual memory allocations, commits and releases.
-class VirtualMemoryTracker : AllStatic {
+class VirtualMemoryTrackerWithTree : AllStatic {
   friend class VirtualMemoryTrackerTest;
   friend class CommittedVirtualMemoryTest;
+  friend class ReservedMemoryRegion;
 
  public:
+  using RegionData = VMATree::RegionData;
   static bool initialize(NMT_TrackingLevel level);
 
   static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
@@ -67,11 +62,13 @@ class VirtualMemoryTracker : AllStatic {
 
   // Snapshot current thread stacks
   static void snapshot_thread_stacks();
+  static void apply_summary_diff(VMATree::SummaryDiff diff);
+  static RegionsTree* tree() { return _tree; }
 
  private:
-  static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
+  static RegionsTree* _tree;
+  static NativeCallStackStorage* _ncs_storage;
 
 };
 
-#endif // SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
-
+#endif // NMT_VIRTUALMEMORYTRACKERWITHTREE_HPP

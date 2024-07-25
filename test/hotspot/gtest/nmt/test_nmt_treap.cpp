@@ -73,6 +73,7 @@ public:
 
     treap.visit_in_order([&](TreapCHeap<int, int, Cmp>::TreapNode* node) {
       nums_seen.at(node->key())++;
+      return true;
     });
     for (int i = 0; i < up_to; i++) {
       EXPECT_EQ(1, nums_seen.at(i));
@@ -162,6 +163,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
 
     treap.visit_range_in_order(0, 100, [&](Node* x) {
       EXPECT_TRUE(false) << "Empty treap has no nodes to visit";
+      return true;
     });
 
     // Single-element set
@@ -169,12 +171,14 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     int count = 0;
     treap.visit_range_in_order(0, 100, [&](Node* x) {
       count++;
+      return true;
     });
     EXPECT_EQ(1, count);
 
     count = 0;
     treap.visit_in_order([&](Node* x) {
       count++;
+      return true;
     });
     EXPECT_EQ(1, count);
 
@@ -185,12 +189,14 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     count = 0;
     treap.visit_range_in_order(0, 100, [&](Node* x) {
       count++;
+      return true;
     });
     EXPECT_EQ(1, count);
 
     count = 0;
     treap.visit_in_order([&](Node* x) {
       count++;
+      return true;
     });
     EXPECT_EQ(3, count);
 
@@ -198,6 +204,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     treap.upsert(0, 0); // This node should not be visited.
     treap.visit_range_in_order(0, 0, [&](Node* x) {
       EXPECT_TRUE(false) << "Empty visiting range should not visit any node";
+      return true;
     });
 
     treap.remove_all();
@@ -209,6 +216,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     GrowableArray<int> seen;
     treap.visit_range_in_order(0, 10, [&](Node* x) {
       seen.push(x->key());
+      return true;
     });
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {
@@ -218,6 +226,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     seen.clear();
     treap.visit_in_order([&](Node* x) {
       seen.push(x->key());
+      return true;
     });
     EXPECT_EQ(11, seen.length());
     for (int i = 0; i < 10; i++) {
@@ -227,6 +236,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     seen.clear();
     treap.visit_range_in_order(10, 12, [&](Node* x) {
       seen.push(x->key());
+      return true;
     });
     EXPECT_EQ(1, seen.length());
     EXPECT_EQ(10, seen.at(0));
@@ -242,6 +252,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
     GrowableArray<int> seen;
     treap.visit_range_in_order(9, -1, [&](Node* x) {
       seen.push(x->key());
+      return true;
     });
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {
@@ -251,6 +262,7 @@ TEST_VM_F(NMTTreapTest, TestVisitors) {
 
     treap.visit_in_order([&](Node* x) {
       seen.push(x->key());
+      return true;
     });
     EXPECT_EQ(10, seen.length());
     for (int i = 0; i < 10; i++) {

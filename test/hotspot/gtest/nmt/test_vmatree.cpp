@@ -79,6 +79,7 @@ public:
     int count = 0;
     treap(tree).visit_in_order([&](Node* x) {
       ++count;
+      return true;
     });
     return count;
   }
@@ -135,6 +136,7 @@ public:
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
+      return true;
     });
     EXPECT_EQ(2, count_nodes(tree));
   }
@@ -160,6 +162,7 @@ public:
         found[i] = x->key();
       }
       i++;
+      return true;
     });
 
     ASSERT_EQ(4, i) << "0 - 50 - 75 - 100 nodes expected";
@@ -216,6 +219,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
       if (x->key() == 0) {
         EXPECT_EQ(x->val().out.regiondata().flag, mtTest);
       }
+      return true;
     });
 
     EXPECT_EQ(2, count_nodes(tree));
@@ -254,6 +258,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
       if (x->key() == 100) {
         EXPECT_EQ(mtTest, x->val().in.regiondata().flag);
       }
+      return true;
     });
   }
 
@@ -337,6 +342,18 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
   }
+}
+
+TEST_VM_F(NMTVMATreeTest, SummaryAccounting_dup) {
+  Tree tree;
+  Tree::RegionData rd(NCS::StackIndex(), mtTest);
+  VMATree::SummaryDiff diff1 = tree.reserve_mapping(1200, 100, rd);
+  VMATree::SummaryDiff diff2 = tree.commit_mapping(1210, 50, rd);
+  EXPECT_EQ(100, diff1.flag[NMTUtil::flag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff2.flag[NMTUtil::flag_to_index(mtTest)].commit);
+  VMATree::SummaryDiff diff3 = tree.reserve_mapping(1220, 20, rd);
+  EXPECT_EQ(-20, diff3.flag[NMTUtil::flag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff3.flag[NMTUtil::flag_to_index(mtTest)].reserve);
 }
 
 // Exceedingly simple tracker for page-granular allocations

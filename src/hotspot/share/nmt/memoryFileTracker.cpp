@@ -76,7 +76,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.type() != current->val().in.type()) {
@@ -99,6 +99,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {

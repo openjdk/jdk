@@ -37,8 +37,9 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree {
+class VMATree : public AnyObj {
   friend class NMTVMATreeTest;
+  friend class VMTWithVMATreeTest;
   // A position in memory.
 public:
   using position = size_t;
@@ -53,16 +54,16 @@ public:
     }
   };
 
-  enum class StateType : uint8_t { Reserved, Committed, Released, LAST };
+  enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, COUNT = 3 };
 
 private:
-  static const char* statetype_strings[static_cast<uint8_t>(StateType::LAST)];
+  static const char* statetype_strings[static_cast<uint8_t>(StateType::COUNT)];
 
 public:
   NONCOPYABLE(VMATree);
 
   static const char* statetype_to_string(StateType type) {
-    assert(type != StateType::LAST, "must be");
+    assert(type != StateType::COUNT, "must be");
     return statetype_strings[static_cast<uint8_t>(type)];
   }
 
@@ -115,6 +116,8 @@ private:
     const NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
+
+    void set_flag(MEMFLAGS flag) { type_flag[1] = (uint8_t)flag;}
   };
 
   // An IntervalChange indicates a change in state between two intervals. The incoming state
@@ -186,6 +189,11 @@ public:
   void visit_in_order(F f) const {
     _tree.visit_in_order(f);
   }
+  template<typename F>
+  void visit_range_in_order(const position& from, const position& to, F f) {
+    _tree.visit_range_in_order(from, to, f);
+  }
+
 };
 
 #endif

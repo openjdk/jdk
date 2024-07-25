@@ -283,13 +283,25 @@ void ReservedMemoryRegion::move_committed_regions(address addr, ReservedMemoryRe
 
 size_t ReservedMemoryRegion::committed_size() const {
   size_t committed = 0;
-  LinkedListNode<CommittedMemoryRegion>* head =
-    _committed_regions.head();
-  while (head != nullptr) {
-    committed += head->data()->size();
-    head = head->next();
+  if (MemTracker::is_using_sorted_link_list()) {
+    LinkedListNode<CommittedMemoryRegion>* head =
+      _committed_regions.head();
+    while (head != nullptr) {
+      committed += head->data()->size();
+      head = head->next();
+    }
+    return committed;
   }
-  return committed;
+  if (MemTracker::is_using_tree()) {
+    CommittedMemoryRegion cmr;
+    size_t result = 0;
+    VirtualMemoryTrackerWithTree::_tree->visit_committed_regions(this, &cmr, [&](CommittedMemoryRegion* crgn) {
+      result += crgn->size();
+      return true;
+    });
+    return result;
+  }
+  return 0;
 }
 
 void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
@@ -304,23 +316,44 @@ void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
 }
 
 address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
-  assert(flag() == mtThreadStack, "Only for thread stack");
-  LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
-  address bottom = base();
-  address top = base() + size();
-  while (head != nullptr) {
-    address committed_top = head->data()->base() + head->data()->size();
-    if (committed_top < top) {
-      // committed stack guard pages, skip them
-      bottom = head->data()->base() + head->data()->size();
-      head = head->next();
-    } else {
-      assert(top == committed_top, "Sanity");
-      break;
+  if (MemTracker::is_using_sorted_link_list()) {
+    address bottom = base();
+    address top = base() + size();
+    assert(flag() == mtThreadStack, "Only for thread stack");
+    LinkedListNode<CommittedMemoryRegion>* head = _committed_regions.head();
+    while (head != nullptr) {
+      address committed_top = head->data()->base() + head->data()->size();
+      if (committed_top < top) {
+        // committed stack guard pages, skip them
+        bottom = head->data()->base() + head->data()->size();
+        head = head->next();
+      } else {
+        assert(top == committed_top, "Sanity");
+        break;
+      }
     }
+    return bottom;
   }
+  if (MemTracker::is_using_tree()) {
+    address bottom = base();
+    address top = base() + size();
+    CommittedMemoryRegion cmr;
+    VirtualMemoryTrackerWithTree::_tree->visit_committed_regions(this, &cmr, [&](CommittedMemoryRegion* crgn) {
+      address committed_top = crgn->base() + crgn->size();
+      if (committed_top < top) {
+        // committed stack guard pages, skip them
+        bottom = crgn->base() + crgn->size();
+      } else {
+        assert(top == committed_top, "Sanity");
+        return false;;
+      }
+      return true;
+    });
 
-  return bottom;
+    return bottom;
+
+  }
+  return nullptr;
 }
 
 bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
@@ -328,10 +361,11 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
   if (level >= NMT_summary) {
     _reserved_regions = new (std::nothrow, mtNMT)
       SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>();
-    return (_reserved_regions != nullptr);
+      return (_reserved_regions != nullptr);
   }
   return true;
 }
+
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
     const NativeCallStack& stack, MEMFLAGS flag) {
@@ -340,12 +374,15 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   assert(_reserved_regions != nullptr, "Sanity check");
   ReservedMemoryRegion  rgn(base_addr, size, stack, flag);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
+  ReservedMemoryRegion* new_rgn;
 
   log_debug(nmt)("Add reserved region \'%s\' (" INTPTR_FORMAT ", " SIZE_FORMAT ")",
                 rgn.flag_name(), p2i(rgn.base()), rgn.size());
   if (reserved_rgn == nullptr) {
     VirtualMemorySummary::record_reserved_memory(size, flag);
-    return _reserved_regions->add(rgn) != nullptr;
+    auto node = _reserved_regions->add(rgn);
+    new_rgn = node->data();
+    return new_rgn != nullptr;
   } else {
     // Deal with recursive reservation
     // os::reserve_memory() -> pd_reserve_memory() -> os::reserve_memory()
@@ -467,6 +504,7 @@ bool VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) 
 }
 
 bool VirtualMemoryTracker::remove_released_region(ReservedMemoryRegion* rgn) {
+
   assert(rgn != nullptr, "Sanity check");
   assert(_reserved_regions != nullptr, "Sanity check");
 
@@ -559,7 +597,6 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 //  two. The newly created two mappings will be registered under the call
 //  stack and the memory flags of the original section.
 bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
-
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
   assert(reserved_rgn->same_region(addr, size), "Must be identical region");
@@ -576,7 +613,6 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   // Now, create two new regions.
   add_reserved_region(addr, split, original_stack, flag);
   add_reserved_region(addr + split, size - split, original_stack, split_flag);
-
   return true;
 }
 
@@ -655,6 +691,11 @@ public:
 };
 
 void VirtualMemoryTracker::snapshot_thread_stacks() {
+  SnapshotThreadStackWalker walker;
+  walk_virtual_memory(&walker);
+}
+
+void VirtualMemoryTrackerWithTree::snapshot_thread_stacks() {
   SnapshotThreadStackWalker walker;
   walk_virtual_memory(&walker);
 }
