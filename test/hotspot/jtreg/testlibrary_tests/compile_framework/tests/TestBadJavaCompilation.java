@@ -55,7 +55,7 @@ public class TestBadJavaCompilation {
 
         // Add a java source file.
         String src = generate();
-        SourceFile file = SourceFile.newJavaSourceFile("XYZ", src);
+        SourceCode file = SourceCode.newJavaSourceCode("XYZ", src);
         comp.add(file);
 
         try {

@@ -55,7 +55,7 @@ public class TestBadJasmCompilation {
 
         // Add a java source file.
         String src = generate();
-        SourceFile file = SourceFile.newJasmSourceFile("XYZ", src);
+        SourceCode file = SourceCode.newJasmSourceCode("XYZ", src);
         comp.add(file);
 
         try {

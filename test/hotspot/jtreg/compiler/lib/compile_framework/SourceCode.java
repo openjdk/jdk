@@ -24,27 +24,26 @@
 package compiler.lib.compile_framework;
 
 /**
- * This class represents a source file. It has a name, the same as its class.
- * It carries the code of the source file in a string.
+ * This class represents the source code of a specific class.
  */
-public class SourceFile {
+public class SourceCode {
     enum Kind { JAVA, JASM };
 
-    public final String name;
+    public final String className;
     public final String code;
     public final Kind kind;
 
-    public SourceFile(String name, String code, Kind kind) {
-        this.name = name;
+    public SourceCode(String className, String code, Kind kind) {
+        this.className = className;
         this.code = code;
         this.kind = kind;
     }
 
-    public static SourceFile newJavaSourceFile(String name, String code) {
-        return new SourceFile(name, code, Kind.JAVA);
+    public static SourceCode newJavaSourceCode(String className, String code) {
+        return new SourceCode(className, code, Kind.JAVA);
     }
 
-    public static SourceFile newJasmSourceFile(String name, String code) {
-        return new SourceFile(name, code, Kind.JASM);
+    public static SourceCode newJasmSourceCode(String className, String code) {
+        return new SourceCode(className, code, Kind.JASM);
     }
 }

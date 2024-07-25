@@ -70,7 +70,7 @@ public class MultiFileJasmExample {
 
         // Generate 10 files.
         for (int i = 0; i < 10; i++) {
-            comp.add(SourceFile.newJasmSourceFile("p.xyz.XYZ" + i, generate(i)));
+            comp.add(SourceCode.newJasmSourceCode("p.xyz.XYZ" + i, generate(i)));
         }
 
         // Compile the source files.

@@ -82,7 +82,7 @@ public class TestFrameworkJavaExample {
 
         // Add a java source file.
         String src = generate_X1();
-        SourceFile file = SourceFile.newJavaSourceFile("X1", src);
+        SourceCode file = SourceCode.newJavaSourceCode("X1", src);
         comp.add(file);
 
         // Compile the source file.
@@ -130,7 +130,7 @@ public class TestFrameworkJavaExample {
 
         // Add a java source file.
         String src = generate_X2();
-        SourceFile file = SourceFile.newJavaSourceFile("X2", src);
+        SourceCode file = SourceCode.newJavaSourceCode("X2", src);
         comp.add(file);
 
         // Compile the source file.

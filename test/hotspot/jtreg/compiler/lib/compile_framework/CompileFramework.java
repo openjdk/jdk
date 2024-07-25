@@ -23,7 +23,7 @@
 
 package compiler.lib.compile_framework;
 
-import compiler.lib.compile_framework.SourceFile;
+import compiler.lib.compile_framework.SourceCode;
 import compiler.lib.compile_framework.CompileFrameworkException;
 
 import java.io.BufferedWriter;
@@ -52,17 +52,17 @@ import jdk.test.lib.process.ProcessTools;
 public class CompileFramework {
     static final int JASM_COMPILE_TIMEOUT = 60;
 
-    private List<SourceFile> sourceFiles = new ArrayList<SourceFile>();
+    private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
     private URLClassLoader classLoader;
 
-    public void add(SourceFile sourceFile) {
-        sourceFiles.add(sourceFile);
+    public void add(SourceCode sourceCode) {
+        sourceCodes.add(sourceCode);
     }
 
-    public void printSourceFiles() {
-        for (SourceFile sourceFile : sourceFiles) {
-            System.out.println("SourceFile: " + sourceFile.name + " " + sourceFile.kind.name().toLowerCase());
-            System.out.println(sourceFile.code);
+    public void printSourceCodes() {
+        for (SourceCode sourceCode : sourceCodes) {
+            System.out.println("SourceCode: " + sourceCode.className + " " + sourceCode.kind.name().toLowerCase());
+            System.out.println(sourceCode.code);
         }
     }
 
@@ -71,14 +71,14 @@ public class CompileFramework {
             throw new RuntimeException("Cannot compile twice!");
         }
 
-        printSourceFiles();
+        printSourceCodes();
 
         List<JavaSourceFromString> javaSources = new ArrayList<JavaSourceFromString>();
-        List<SourceFile> jasmSources = new ArrayList<SourceFile>();
-        for (SourceFile sourceFile : sourceFiles) {
-            switch (sourceFile.kind) {
-                case SourceFile.Kind.JAVA -> { javaSources.add(new JavaSourceFromString(sourceFile.name, sourceFile.code)); }
-                case SourceFile.Kind.JASM -> { jasmSources.add(sourceFile);  }
+        List<SourceCode> jasmSources = new ArrayList<SourceCode>();
+        for (SourceCode sourceCode : sourceCodes) {
+            switch (sourceCode.kind) {
+                case SourceCode.Kind.JAVA -> { javaSources.add(new JavaSourceFromString(sourceCode.className, sourceCode.code)); }
+                case SourceCode.Kind.JASM -> { jasmSources.add(sourceCode);  }
             }
         }
 
@@ -87,12 +87,12 @@ public class CompileFramework {
         setUpClassLoader();
     }
 
-    private void compileJasmSources(List<SourceFile> jasmSources) {
+    private void compileJasmSources(List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
-            System.out.println("No jasm files to compile.");
+            System.out.println("No jasm sources to compile.");
             return;
         }
-        System.out.println("Compiling jasm files: " + jasmSources.size());
+        System.out.println("Compiling jasm sources: " + jasmSources.size());
 
         // Create temporary directory for jasm source files
         final String jasmDirName;
@@ -104,13 +104,13 @@ public class CompileFramework {
         System.out.println("Jasm source files in: " + jasmDirName);
 
         List<String> jasmFileNames = new ArrayList<String>();
-        for (SourceFile sourceFile : jasmSources) {
-            String fileName = jasmDirName + "/" + sourceFile.name.replace('.','/') + ".jasm";
-            writeCodeToFile(sourceFile.code, fileName);
+        for (SourceCode sourceCode : jasmSources) {
+            String fileName = jasmDirName + "/" + sourceCode.className.replace('.','/') + ".jasm";
+            writeCodeToFile(sourceCode.code, fileName);
             jasmFileNames.add(fileName);
         }
         compileJasmFiles(jasmFileNames);
-        System.out.println("Jasm files compiled.");
+        System.out.println("Jasm sources compiled.");
     }
 
     private static void compileJasmFiles(List<String> fileNames) {
@@ -186,10 +186,10 @@ public class CompileFramework {
 
     private void compileJavaSources(List<JavaSourceFromString> javaSources) {
         if (javaSources.size() == 0) {
-            System.out.println("No java files to compile.");
+            System.out.println("No java sources to compile.");
             return;
         }
-        System.out.println("Compiling Java files: " + javaSources.size());
+        System.out.println("Compiling Java sources: " + javaSources.size());
 
         // Get compiler with diagnostics.
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
@@ -221,7 +221,7 @@ public class CompileFramework {
             System.out.println("Compilation failed.");
             throw new CompileFrameworkException("Compilation failed.");
         }
-        System.out.println("Java files compiled.");
+        System.out.println("Java sources compiled.");
     }
 
     private void setUpClassLoader() {
