@@ -28,6 +28,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -51,7 +52,7 @@ public final class MethodImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofMethod(reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.METHOD, reader.readU2(startPos));
     }
 
     @Override
