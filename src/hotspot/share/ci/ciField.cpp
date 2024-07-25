@@ -256,10 +256,7 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
 const char* stable_value_klass_name = "java/lang/StableValue";
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
-  if (signature->equals(stable_value_klass_name) == 0) {
-    return true;
-  }
-  return false;
+  return (signature->equals(stable_value_klass_name) == 0);
 }
 
 void ciField::initialize_from(fieldDescriptor* fd) {
