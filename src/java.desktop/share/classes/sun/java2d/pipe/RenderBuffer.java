@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,57 +25,57 @@
 
 package sun.java2d.pipe;
 
-import jdk.internal.misc.Unsafe;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import static java.lang.foreign.ValueLayout.*;
 
 
 /**
- * The RenderBuffer class is a simplified, high-performance, Unsafe wrapper
+ * The RenderBuffer class is a simplified, high-performance class
  * used for buffering rendering operations in a single-threaded rendering
- * environment.  It's functionality is similar to the ByteBuffer and related
+ * environment.  Its functionality is similar to the ByteBuffer and related
  * NIO classes.  However, the methods in this class perform little to no
  * alignment or bounds checks for performance reasons.  Therefore, it is
  * the caller's responsibility to ensure that all put() calls are properly
  * aligned and within bounds:
  *   - int and float values must be aligned on 4-byte boundaries
  *   - long and double values must be aligned on 8-byte boundaries
+ * Failure to do so will result in exceptions from the FFM API, or worse.
  *
  * This class only includes the bare minimum of methods to support
  * single-threaded rendering.  For example, there is no put(double[]) method
  * because we currently have no need for such a method in the STR classes.
  */
-public class RenderBuffer {
+public final class RenderBuffer {
 
     /**
      * These constants represent the size of various data types (in bytes).
      */
-    protected static final long SIZEOF_BYTE   = 1L;
-    protected static final long SIZEOF_SHORT  = 2L;
-    protected static final long SIZEOF_INT    = 4L;
-    protected static final long SIZEOF_FLOAT  = 4L;
-    protected static final long SIZEOF_LONG   = 8L;
-    protected static final long SIZEOF_DOUBLE = 8L;
+    private static final int SIZEOF_BYTE   = 1;
+    private static final int SIZEOF_SHORT  = 2;
+    private static final int SIZEOF_INT    = 4;
+    private static final int SIZEOF_FLOAT  = 4;
+    private static final int SIZEOF_LONG   = 8;
+    private static final int SIZEOF_DOUBLE = 8;
 
     /**
-     * Represents the number of elements at which we have empirically
-     * determined that the average cost of a JNI call exceeds the expense
-     * of an element by element copy.  In other words, if the number of
-     * elements in an array to be copied exceeds this value, then we should
-     * use the copyFromArray() method to complete the bulk put operation.
-     * (This value can be adjusted if the cost of JNI downcalls is reduced
-     * in a future release.)
+     * Measurements show that using the copy API from a segment backed by a heap
+     * array gets reliably faster than individual puts around a length of 10.
+     * However the time is miniscule in the context of what it is used for
+     * and much more than adequate, so no problem expected if this changes over time.
      */
-    private static final int COPY_FROM_ARRAY_THRESHOLD = 6;
+    private static final int COPY_FROM_ARRAY_THRESHOLD = 10;
 
-    protected final Unsafe unsafe;
-    protected final long baseAddress;
-    protected final long endAddress;
-    protected long curAddress;
-    protected final int capacity;
+    MemorySegment segment;
+    private final long baseAddress;
+    private long curOffset;
+    private final int capacity;
 
-    protected RenderBuffer(int numBytes) {
-        unsafe = Unsafe.getUnsafe();
-        curAddress = baseAddress = unsafe.allocateMemory(numBytes);
-        endAddress = baseAddress + numBytes;
+    private RenderBuffer(int numBytes) {
+        segment = Arena.global().allocate(numBytes, SIZEOF_DOUBLE);
+        baseAddress = segment.address();
+        curOffset = 0L;
         capacity = numBytes;
     }
 
@@ -103,23 +103,23 @@ public class RenderBuffer {
     }
 
     public final int remaining() {
-        return (int)(endAddress - curAddress);
+        return (int)(capacity - curOffset);
     }
 
     public final int position() {
-        return (int)(curAddress - baseAddress);
+        return (int)(curOffset);
     }
 
     public final void position(long numBytes) {
-        curAddress = baseAddress + numBytes;
+        curOffset = numBytes;
     }
 
     public final void clear() {
-        curAddress = baseAddress;
+        curOffset = 0L;
     }
 
     public final RenderBuffer skip(long numBytes) {
-        curAddress += numBytes;
+        curOffset += numBytes;
         return this;
     }
 
@@ -128,8 +128,8 @@ public class RenderBuffer {
      */
 
     public final RenderBuffer putByte(byte x) {
-        unsafe.putByte(curAddress, x);
-        curAddress += SIZEOF_BYTE;
+        segment.set(JAVA_BYTE, curOffset, x);
+        curOffset += SIZEOF_BYTE;
         return this;
     }
 
@@ -139,9 +139,9 @@ public class RenderBuffer {
 
     public RenderBuffer put(byte[] x, int offset, int length) {
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_BYTE + Unsafe.ARRAY_BYTE_BASE_OFFSET;
-            long lengthInBytes = length * SIZEOF_BYTE;
-            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
+            int offsetInBytes = offset * SIZEOF_BYTE;
+            int lengthInBytes = length * SIZEOF_BYTE;
+            MemorySegment.copy(x, offsetInBytes, segment, JAVA_BYTE, curOffset, length);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -158,8 +158,8 @@ public class RenderBuffer {
 
     public final RenderBuffer putShort(short x) {
         // assert (position() % SIZEOF_SHORT == 0);
-        unsafe.putShort(curAddress, x);
-        curAddress += SIZEOF_SHORT;
+        segment.set(JAVA_SHORT, curOffset, x);
+        curOffset += SIZEOF_SHORT;
         return this;
     }
 
@@ -170,9 +170,9 @@ public class RenderBuffer {
     public RenderBuffer put(short[] x, int offset, int length) {
         // assert (position() % SIZEOF_SHORT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_SHORT + Unsafe.ARRAY_SHORT_BASE_OFFSET;
-            long lengthInBytes = length * SIZEOF_SHORT;
-            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
+            int offsetInBytes = offset * SIZEOF_SHORT;
+            int lengthInBytes = length * SIZEOF_SHORT;
+            MemorySegment.copy(x, offsetInBytes, segment, JAVA_SHORT, curOffset, length);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -189,14 +189,14 @@ public class RenderBuffer {
 
     public final RenderBuffer putInt(int pos, int x) {
         // assert (baseAddress + pos % SIZEOF_INT == 0);
-        unsafe.putInt(baseAddress + pos, x);
+        segment.set(JAVA_INT, pos, x);
         return this;
     }
 
     public final RenderBuffer putInt(int x) {
         // assert (position() % SIZEOF_INT == 0);
-        unsafe.putInt(curAddress, x);
-        curAddress += SIZEOF_INT;
+        segment.set(JAVA_INT, curOffset, x);
+        curOffset += SIZEOF_INT;
         return this;
     }
 
@@ -207,9 +207,9 @@ public class RenderBuffer {
     public RenderBuffer put(int[] x, int offset, int length) {
         // assert (position() % SIZEOF_INT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_INT + Unsafe.ARRAY_INT_BASE_OFFSET;
-            long lengthInBytes = length * SIZEOF_INT;
-            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
+            int offsetInBytes = offset * SIZEOF_INT;
+            int lengthInBytes = length * SIZEOF_INT;
+            MemorySegment.copy(x, offsetInBytes, segment, JAVA_INT, curOffset, length);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -226,8 +226,8 @@ public class RenderBuffer {
 
     public final RenderBuffer putFloat(float x) {
         // assert (position() % SIZEOF_FLOAT == 0);
-        unsafe.putFloat(curAddress, x);
-        curAddress += SIZEOF_FLOAT;
+        segment.set(JAVA_FLOAT, curOffset, x);
+        curOffset += SIZEOF_FLOAT;
         return this;
     }
 
@@ -238,9 +238,9 @@ public class RenderBuffer {
     public RenderBuffer put(float[] x, int offset, int length) {
         // assert (position() % SIZEOF_FLOAT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_FLOAT + Unsafe.ARRAY_FLOAT_BASE_OFFSET;
-            long lengthInBytes = length * SIZEOF_FLOAT;
-            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
+            int offsetInBytes = offset * SIZEOF_FLOAT;
+            int lengthInBytes = length * SIZEOF_FLOAT;
+            MemorySegment.copy(x, offsetInBytes, segment, JAVA_FLOAT, curOffset, length);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -257,8 +257,8 @@ public class RenderBuffer {
 
     public final RenderBuffer putLong(long x) {
         // assert (position() % SIZEOF_LONG == 0);
-        unsafe.putLong(curAddress, x);
-        curAddress += SIZEOF_LONG;
+        segment.set(JAVA_LONG, curOffset, x);
+        curOffset += SIZEOF_LONG;
         return this;
     }
 
@@ -269,9 +269,9 @@ public class RenderBuffer {
     public RenderBuffer put(long[] x, int offset, int length) {
         // assert (position() % SIZEOF_LONG == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            long offsetInBytes = offset * SIZEOF_LONG + Unsafe.ARRAY_LONG_BASE_OFFSET;
-            long lengthInBytes = length * SIZEOF_LONG;
-            unsafe.copyMemory(x, offsetInBytes, null, curAddress, lengthInBytes);
+            int offsetInBytes = offset * SIZEOF_LONG;
+            int lengthInBytes = length * SIZEOF_LONG;
+            MemorySegment.copy(x, offsetInBytes, segment, JAVA_LONG, curOffset, length);
             position(position() + lengthInBytes);
         } else {
             int end = offset + length;
@@ -288,8 +288,8 @@ public class RenderBuffer {
 
     public final RenderBuffer putDouble(double x) {
         // assert (position() % SIZEOF_DOUBLE == 0);
-        unsafe.putDouble(curAddress, x);
-        curAddress += SIZEOF_DOUBLE;
+        segment.set(JAVA_DOUBLE, curOffset, x);
+        curOffset += SIZEOF_DOUBLE;
         return this;
     }
 }
