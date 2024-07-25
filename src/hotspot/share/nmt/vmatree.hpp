@@ -172,8 +172,8 @@ public:
 
   SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool copy_flag = false);
 
-  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata, copy_flag);
+  SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
+    return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
   }
 
   SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {

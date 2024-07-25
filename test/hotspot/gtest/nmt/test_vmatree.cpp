@@ -169,19 +169,34 @@ public:
     EXPECT_TRUE(exists(found[3]));
   };
   void copy_flag_test() {
-    Tree tree;
-    VMATree::RegionData rd1{ si[0], mtTest };
-    VMATree::RegionData rd2{ si[1], mtNMT };
+    {
+      Tree tree;
+      VMATree::RegionData rd1{ si[0], mtTest };
+      VMATree::RegionData rd2{ si[1], mtNMT };
 
-    tree.reserve_mapping(0, 100, rd1);
-    tree.commit_mapping(20, 50, rd2, true); // mtTest flag is to be copied to new nodes, even if it is given as mtNMT.
-    tree.uncommit_mapping(30, 10, rd2);// same here.
-    tree.visit_in_order([&](Node* node) {
-      if ((size_t)node->key() != 100) {
-        EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key();
-      }
-    });
+      tree.reserve_mapping(0, 100, rd1);
+      tree.commit_mapping(20, 50, rd2, true); // mtTest flag is to be copied to new nodes, even if it is given as mtNMT.
+      tree.uncommit_mapping(30, 10, rd2);// same here.
+      tree.visit_in_order([&](Node* node) {
+        if ((size_t)node->key() != 100) {
+          EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key();
+        }
+      });
+    }
+    {
+      Tree tree;
+      VMATree::RegionData rd1{ si[0], mtTest };
+      VMATree::RegionData rd2{ si[1], mtNMT };
 
+      tree.reserve_mapping(0, 10, rd1);
+      tree.reserve_mapping(10000, 10, rd2);
+      tree.visit_in_order([&](Node* node) {
+        if ((size_t)node->key() == 0    ) { EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10   ) { EXPECT_EQ(node->val().in.flag(), mtTest) << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10000) { EXPECT_EQ(node->val().out.flag(), mtNMT) << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10010) { EXPECT_EQ(node->val().in.flag(), mtNMT) << "failed at: " << node->key(); }
+      });
+    }
   }
 };
 
