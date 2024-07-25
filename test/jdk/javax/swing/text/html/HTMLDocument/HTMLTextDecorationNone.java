@@ -34,10 +34,9 @@ import javax.swing.text.html.CSS;
 
 /*
  * @test
- * @bug 8323801 8326734
- * @summary Tests different combination of 'underline' and 'line-through';
- *          the text should render with both 'underline' and 'line-through'.
- * @run main HTMLTextDecoration
+ * @bug 8335967
+ * @summary Tests 'text-decoration: none' is respected
+ * @run main HTMLTextDecorationNone
  */
 public final class HTMLTextDecorationNone {
     private static final String HTML = """
