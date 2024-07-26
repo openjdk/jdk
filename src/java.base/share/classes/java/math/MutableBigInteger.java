@@ -2118,10 +2118,9 @@ class MutableBigInteger {
         int from;
         for (from = to - blockLen; from < to && value[from] == 0; from++);
 
-        if (from >= to)
-            return new MutableBigInteger();
-
-        return new MutableBigInteger(Arrays.copyOfRange(value, from, to));
+        return from == to
+                ? new MutableBigInteger()
+                : new MutableBigInteger(Arrays.copyOfRange(value, from, to));
     }
 
     /**
