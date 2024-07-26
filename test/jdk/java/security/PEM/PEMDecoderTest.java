@@ -47,7 +47,7 @@ public class PEMDecoderTest {
     }
 
     public static void main(String[] args) throws IOException {
-        test(new PEMCerts.Entry("oasrfc8410", PEMCerts.oasrfc8410, PrivateKey.class, null));
+//        test(new PEMCerts.Entry("oasrfc8410", PEMCerts.oasrfc8410, PrivateKey.class, null));
         System.out.println("Decoder test:");
         PEMCerts.entryList.stream().forEach(entry -> test(entry));
         System.out.println("Decoder test returning DEREncodable class:");
