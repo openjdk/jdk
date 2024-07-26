@@ -564,12 +564,20 @@ public class TestModulePackages extends JavadocTester {
                 + packageName.replace('.', '/') + "/package-summary.html\">"
                 + packageName + "</a></div>\n");
         if (exportedTo != null) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + exportedTo + "</div>\n");
+            if (exportedTo.contains("href")) {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\">" + exportedTo + "</div>\n");
+            } else {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"row\" tabindex=\"0\">" + exportedTo + "</div>\n");
+            }
         }
         if (openedTo != null) {
-            sb.append("<div class=\"col-second " + color + " " + classes + "\">" + openedTo + "</div>\n");
+            if (openedTo.contains("href")) {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\">" + openedTo + "</div>\n");
+            } else {
+                sb.append("<div class=\"col-second " + color + " " + classes + "\" role=\"row\" tabindex=\"0\">" + openedTo + "</div>\n");
+            }
         }
-        sb.append("<div class=\"col-last " + color + " " + classes + "\">" + desc + "</div>");
+        sb.append("<div class=\"col-last " + color + " " + classes + "\" role=\"row\" tabindex=\"0\">" + desc + "</div>");
 
         checkOutput(moduleName + "/module-summary.html", true, sb.toString());
     }
