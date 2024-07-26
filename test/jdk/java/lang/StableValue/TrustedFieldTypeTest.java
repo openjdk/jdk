@@ -24,19 +24,16 @@
 /* @test
  * @summary Basic tests for TrustedFieldType implementations
  * @modules jdk.unsupported/sun.misc
- * @modules java.base/jdk.internal.lang
  * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} TrustedFieldTypeTest.java
  * @run junit/othervm --enable-preview TrustedFieldTypeTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
-import java.lang.reflect.InaccessibleObjectException;
 
 import static org.junit.jupiter.api.Assertions.*;
 

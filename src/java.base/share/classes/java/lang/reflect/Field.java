@@ -174,9 +174,7 @@ class Field extends AccessibleObject implements Member {
     @CallerSensitive
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
-        if (flag) {
-            checkCanSetAccessible(Reflection.getCallerClass());
-        }
+        if (flag) checkCanSetAccessible(Reflection.getCallerClass());
         setAccessible0(flag);
     }
 

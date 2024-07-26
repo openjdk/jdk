@@ -23,13 +23,11 @@
 
 /* @test
  * @summary Basic tests for StableValue implementations
- * @modules java.base/jdk.internal.lang
  * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} StableValueTest.java
  * @run junit/othervm --enable-preview StableValueTest
  */
 
-import java.lang.StableValue;
 import jdk.internal.lang.stable.StableValueImpl;
 import org.junit.jupiter.api.Test;
 

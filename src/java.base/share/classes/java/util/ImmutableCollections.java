@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -779,9 +779,7 @@ class ImmutableCollections {
             this.backing = StableValueImpl.ofList(size);
         }
 
-        @Override public boolean  isEmpty() {
-            return backing.isEmpty();
-        }
+        @Override public boolean  isEmpty() { return backing.isEmpty();}
         @Override public int      size() { return backing.size(); }
         @Override public Object[] toArray() { return copyInto(new Object[size()]); }
 
@@ -1523,11 +1521,7 @@ class ImmutableCollections {
 
             @Override public Iterator<Map.Entry<K, V>> iterator() { return new LazyMapIterator(); }
             @Override public int                       size() { return delegateEntrySet.size(); }
-
-            @Override
-            public int hashCode() {
-                return LazyMap.this.hashCode();
-            }
+            @Override public int                       hashCode() { return LazyMap.this.hashCode(); }
 
             @jdk.internal.ValueBased
             final class LazyMapIterator implements Iterator<Map.Entry<K, V>> {

@@ -23,12 +23,10 @@
 
 /* @test
  * @summary Basic tests for CachingFunction methods
- * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} CachingFunctionTest.java
  * @run junit/othervm --enable-preview CachingFunctionTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.Set;

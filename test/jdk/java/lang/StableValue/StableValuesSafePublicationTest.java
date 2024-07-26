@@ -23,13 +23,11 @@
 
 /* @test
  * @summary Basic tests for making sure StableValue publishes values safely
- * @modules java.base/jdk.internal.lang
  * @modules java.base/jdk.internal.misc
  * @compile --enable-preview -source ${jdk.version} StableValuesSafePublicationTest.java
  * @run junit/othervm --enable-preview StableValuesSafePublicationTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

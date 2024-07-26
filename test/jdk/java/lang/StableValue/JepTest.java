@@ -23,12 +23,9 @@
 
 /* @test
  * @summary Basic tests for JepTest implementations
- * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} JepTest.java
  * @run junit/othervm --enable-preview JepTest
  */
-
-import java.lang.StableValue;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

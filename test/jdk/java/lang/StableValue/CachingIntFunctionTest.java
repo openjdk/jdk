@@ -23,12 +23,10 @@
 
 /* @test
  * @summary Basic tests for CachingIntFunction methods
- * @modules java.base/jdk.internal.lang
- * @compile --enable-preview -source ${jdk.version} CachingIntFunctionTest.java
+  * @compile --enable-preview -source ${jdk.version} CachingIntFunctionTest.java
  * @run junit/othervm --enable-preview CachingIntFunctionTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadFactory;

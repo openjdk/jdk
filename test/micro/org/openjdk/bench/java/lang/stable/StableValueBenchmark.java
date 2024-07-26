@@ -23,7 +23,6 @@
 
 package org.openjdk.bench.java.lang.stable;
 
-import java.lang.StableValue;
 import org.openjdk.jmh.annotations.*;
 
 import java.util.concurrent.TimeUnit;
@@ -39,7 +38,6 @@ import java.util.function.Supplier;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {
-        "--add-exports=java.base/jdk.internal.lang=ALL-UNNAMED",
         "--enable-preview",
         // Prevent the use of uncommon traps
         "-XX:PerMethodTrapLimit=0"})

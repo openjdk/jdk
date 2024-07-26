@@ -23,12 +23,10 @@
 
 /* @test
  * @summary Basic tests for CachingSupplier methods
- * @modules java.base/jdk.internal.lang
  * @compile --enable-preview -source ${jdk.version} CachingSupplierTest.java
  * @run junit/othervm --enable-preview CachingSupplierTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadFactory;

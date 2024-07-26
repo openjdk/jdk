@@ -23,12 +23,10 @@
 
 /* @test
  * @summary Basic tests for LazyMap methods
- * @modules java.base/jdk.internal.lang
- * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
+  * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
  * @run junit/othervm --enable-preview LazyMapTest
  */
 
-import java.lang.StableValue;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
