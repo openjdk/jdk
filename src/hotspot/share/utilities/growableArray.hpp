@@ -31,6 +31,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include <limits>
 
 // A growable array.
 
@@ -517,6 +518,7 @@ public:
 
 template <typename E, typename Derived, typename Index>
 void GrowableArrayWithAllocator<E, Derived, Index>::expand_to(Index new_capacity) {
+  assert(new_capacity <= std::numeric_limits<Index>::max(), "must be");
   Index old_capacity = this->_capacity;
   assert(new_capacity > old_capacity,
          "expected growth but %d <= %d", new_capacity, old_capacity);
