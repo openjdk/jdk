@@ -1423,7 +1423,12 @@ public class Lower extends TreeTranslator {
                 proxyName = proxyName(v.name, index++);
             } while (!proxyNames.add(proxyName));
             VarSymbol proxy = new VarSymbol(
-                flags, proxyName, v.erasure(types), owner);
+                flags, proxyName, v.erasure(types), owner) {
+                @Override
+                public Symbol baseSymbol() {
+                    return v;
+                }
+            };
             proxies.put(v, proxy);
             JCVariableDecl vd = make.at(pos).VarDef(proxy, null);
             vd.vartype = access(vd.vartype);

@@ -1216,7 +1216,9 @@ public class LambdaToMethod extends TreeTranslator {
             VarSymbol ret;
             switch (skind) {
                 case CAPTURED_VAR:
-                    ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
+                    Name name = (sym.flags() & LOCAL_CAPTURE_FIELD) != 0 ?
+                            sym.baseSymbol().name : sym.name;
+                    ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym);
                     break;
                 case LOCAL_VAR:
                     ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
