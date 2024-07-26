@@ -170,7 +170,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      * @return flags of this method
      */
     private int getFlags() {
-        return UNSAFE.getShort(getMethodPointer() + config().methodFlagsOffset);
+        return UNSAFE.getInt(getMethodPointer() + config().methodFlagsOffset);
     }
 
     /**
@@ -179,7 +179,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      * @return flags of this method's ConstMethod
      */
     private int getConstMethodFlags() {
-        return UNSAFE.getChar(getConstMethod() + config().constMethodFlagsOffset);
+        return UNSAFE.getInt(getConstMethod() + config().constMethodFlagsOffset);
     }
 
     @Override
