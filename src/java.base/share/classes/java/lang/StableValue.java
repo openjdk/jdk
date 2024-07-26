@@ -31,6 +31,7 @@ import jdk.internal.lang.stable.CachedFunction;
 import jdk.internal.lang.stable.CachedIntFunction;
 import jdk.internal.lang.stable.CachedSupplier;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueUtil;
 
 import java.io.Serializable;
 import java.util.List;
@@ -249,19 +250,7 @@ public sealed interface StableValue<T>
                                               ThreadFactory factory) {
         Objects.requireNonNull(original);
         // `factory` is nullable
-
-        final Supplier<T> memoized = CachedSupplier.of(original);
-
-        if (factory != null) {
-            final Thread thread = factory.newThread(new Runnable() {
-                @Override
-                public void run() {
-                    memoized.get();
-                }
-            });
-            thread.start();
-        }
-        return memoized;
+        return StableValueUtil.newCachingSupplier(original, factory);
     }
 
     /**
@@ -301,19 +290,12 @@ public sealed interface StableValue<T>
     static <R> IntFunction<R> newCachingIntFunction(int size,
                                                     IntFunction<? extends R> original,
                                                     ThreadFactory factory) {
-
-        final IntFunction<R> memoized = CachedIntFunction.of(size, original);
-
-        if (factory != null) {
-            for (int i = 0; i < size; i++) {
-                final int input = i;
-                final Thread thread = factory.newThread(new Runnable() {
-                    @Override public void run() { memoized.apply(input); }
-                });
-                thread.start();
-            }
+        if (size < 0) {
+            throw new IllegalStateException();
         }
-        return memoized;
+        Objects.requireNonNull(original);
+        // `factory` is nullable
+        return StableValueUtil.newCachingIntFunction(size, original, factory);
     }
 
     /**
@@ -353,18 +335,10 @@ public sealed interface StableValue<T>
     static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,
                                                     Function<? super T, ? extends R> original,
                                                     ThreadFactory factory) {
-
-        final Function<T, R> memoized = CachedFunction.of(inputs, original);
-
-        if (factory != null) {
-            for (final T t : inputs) {
-                final Thread thread = factory.newThread(new Runnable() {
-                    @Override public void run() { memoized.apply(t); }
-                });
-                thread.start();
-            }
-        }
-        return memoized;
+        Objects.requireNonNull(inputs);
+        Objects.requireNonNull(original);
+        // `factory` is nullable
+        return StableValueUtil.newCachingFunction(inputs, original, factory);
     }
 
     /**

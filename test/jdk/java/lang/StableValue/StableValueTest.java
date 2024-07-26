@@ -29,6 +29,7 @@
  */
 
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueUtil;
 import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
@@ -108,7 +109,7 @@ final class StableValueTest {
 
     @Test
     void ofList() {
-        List<StableValueImpl<Integer>> list = StableValueImpl.ofList(13);
+        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(13);
         assertEquals(13, list.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
@@ -118,7 +119,7 @@ final class StableValueTest {
 
     @Test
     void ofMap() {
-        Map<Integer, StableValueImpl<Integer>> map = StableValueImpl.ofMap(Set.of(1, 2, 3));
+        Map<Integer, StableValueImpl<Integer>> map = StableValueUtil.ofMap(Set.of(1, 2, 3));
         assertEquals(3, map.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();

@@ -60,7 +60,7 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
 
     public static <T, R> CachedFunction<T, R> of(Set<T> inputs,
                                                  Function<? super T, ? extends R> original) {
-        return new CachedFunction<>(StableValueImpl.ofMap(inputs), original);
+        return new CachedFunction<>(StableValueUtil.ofMap(inputs), original);
     }
 
 }

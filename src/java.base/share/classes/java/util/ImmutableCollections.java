@@ -777,7 +777,7 @@ class ImmutableCollections {
 
         LazyList(int size, IntFunction<? extends E> mapper) {
             this.mapper = mapper;
-            this.backing = StableValueImpl.ofList(size);
+            this.backing = StableValueUtil.ofList(size);
         }
 
         @Override public boolean  isEmpty() { return backing.isEmpty();}
@@ -1474,7 +1474,7 @@ class ImmutableCollections {
 
         LazyMap(Set<K> keys, Function<? super K, ? extends V> mapper) {
             this.mapper = mapper;
-            this.delegate = StableValueImpl.ofMap(keys);
+            this.delegate = StableValueUtil.ofMap(keys);
         }
 
         @Override public boolean              containsKey(Object o) { return delegate.containsKey(o); }

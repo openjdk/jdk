@@ -28,15 +28,12 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Set;
 
 public final class StableValueImpl<T> implements StableValue<T> {
 
-    // Unsafe offsets for direct object access
+    // Unsafe offsets for direct field access
     private static final long VALUE_OFFSET =
             StableValueUtil.UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
@@ -125,33 +122,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return value;
     }
 
-    // Factories
+    // Factory
 
     public static <T> StableValueImpl<T> newInstance() {
         return new StableValueImpl<>();
-    }
-
-    public static <T> List<StableValueImpl<T>> ofList(int size) {
-        if (size < 0) {
-            throw new IllegalArgumentException();
-        }
-        @SuppressWarnings("unchecked")
-        final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
-        for (int i = 0; i < size; i++) {
-            stableValues[i] = newInstance();
-        }
-        return List.of(stableValues);
-    }
-
-    public static <K, T> Map<K, StableValueImpl<T>> ofMap(Set<K> keys) {
-        Objects.requireNonNull(keys);
-        @SuppressWarnings("unchecked")
-        final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
-        int i = 0;
-        for (K key : keys) {
-            entries[i++] = Map.entry(key, newInstance());
-        }
-        return Map.ofEntries(entries);
     }
 
 }

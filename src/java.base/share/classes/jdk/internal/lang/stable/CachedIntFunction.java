@@ -61,7 +61,7 @@ public record CachedIntFunction<R>(List<StableValueImpl<R>> stables,
     }
 
     public static <R> CachedIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new CachedIntFunction<>(StableValueImpl.ofList(size), original);
+        return new CachedIntFunction<>(StableValueUtil.ofList(size), original);
     }
 
 }

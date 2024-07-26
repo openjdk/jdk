@@ -3,6 +3,15 @@ package jdk.internal.lang.stable;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ThreadFactory;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+
 public final class StableValueUtil {
 
     private StableValueUtil() {}
@@ -52,6 +61,83 @@ public final class StableValueUtil {
 
         // This upholds the invariant, a `@Stable` field is written to at most once.
         return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
+    }
+
+    // Factories
+
+    public static <T> List<StableValueImpl<T>> ofList(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        @SuppressWarnings("unchecked")
+        final var stableValues = (StableValueImpl<T>[]) new StableValueImpl<?>[size];
+        for (int i = 0; i < size; i++) {
+            stableValues[i] = StableValueImpl.newInstance();
+        }
+        return List.of(stableValues);
+    }
+
+    public static <K, T> Map<K, StableValueImpl<T>> ofMap(Set<K> keys) {
+        Objects.requireNonNull(keys);
+        @SuppressWarnings("unchecked")
+        final var entries = (Map.Entry<K, StableValueImpl<T>>[]) new Map.Entry<?, ?>[keys.size()];
+        int i = 0;
+        for (K key : keys) {
+            entries[i++] = Map.entry(key, StableValueImpl.newInstance());
+        }
+        return Map.ofEntries(entries);
+    }
+
+    public static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
+                                                     ThreadFactory factory) {
+
+        final Supplier<T> memoized = CachedSupplier.of(original);
+
+        if (factory != null) {
+            final Thread thread = factory.newThread(new Runnable() {
+                @Override
+                public void run() {
+                    memoized.get();
+                }
+            });
+            thread.start();
+        }
+        return memoized;
+    }
+
+    public static <R> IntFunction<R> newCachingIntFunction(int size,
+                                                           IntFunction<? extends R> original,
+                                                           ThreadFactory factory) {
+
+        final IntFunction<R> memoized = CachedIntFunction.of(size, original);
+
+        if (factory != null) {
+            for (int i = 0; i < size; i++) {
+                final int input = i;
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(input); }
+                });
+                thread.start();
+            }
+        }
+        return memoized;
+    }
+
+    public static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,
+                                                    Function<? super T, ? extends R> original,
+                                                    ThreadFactory factory) {
+
+        final Function<T, R> memoized = CachedFunction.of(inputs, original);
+
+        if (factory != null) {
+            for (final T t : inputs) {
+                final Thread thread = factory.newThread(new Runnable() {
+                    @Override public void run() { memoized.apply(t); }
+                });
+                thread.start();
+            }
+        }
+        return memoized;
     }
 
 }
