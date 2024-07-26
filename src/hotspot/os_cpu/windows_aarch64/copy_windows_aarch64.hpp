@@ -103,7 +103,19 @@ static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      *to++ = *from++;
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      *to-- = *from--;
+    }
+  }
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
