@@ -30,12 +30,8 @@
 #include "runtime/objectMonitor.hpp"
 #include "runtime/synchronizer.hpp"
 
-class ObjectMonitorWorld;
-
 class LightweightSynchronizer : AllStatic {
 private:
-  static ObjectMonitorWorld* _omworld;
-
   static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause);
 

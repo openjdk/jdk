@@ -57,27 +57,27 @@
 //
 
 // ConcurrentHashTable storing links from objects to ObjectMonitors
-class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
+class ObjectMonitorTable : public AllStatic {
   struct Config {
     using Value = ObjectMonitor*;
     static uintx get_hash(Value const& value, bool* is_dead) {
       return (uintx)value->hash();
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->inc_items_count();
+      inc_items_count();
       return AllocateHeap(size, MEMFLAGS::mtObjectMonitor);
     };
     static void free_node(void* context, void* memory, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->dec_items_count();
+      dec_items_count();
       FreeHeap(memory);
     }
   };
   using ConcurrentTable = ConcurrentHashTable<Config, MEMFLAGS::mtObjectMonitor>;
 
-  ConcurrentTable* _table;
-  volatile size_t _items_count;
-  size_t _table_size;
-  volatile bool _resize;
+  static ConcurrentTable* _table;
+  static volatile size_t _items_count;
+  static size_t _table_size;
+  static volatile bool _resize;
 
   class Lookup : public StackObj {
     oop _obj;
@@ -123,19 +123,19 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     }
   };
 
-  void inc_items_count() {
+  static void inc_items_count() {
     Atomic::inc(&_items_count);
   }
 
-  void dec_items_count() {
+  static void dec_items_count() {
     Atomic::inc(&_items_count);
   }
 
-  double get_load_factor() {
+  static double get_load_factor() {
     return (double)_items_count/(double)_table_size;
   }
 
-  size_t table_size(Thread* current = Thread::current()) {
+  static size_t table_size(Thread* current = Thread::current()) {
     return ((size_t)1) << _table->get_size_log2(current);
   }
 
@@ -172,18 +172,16 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   }
 
 public:
-  ObjectMonitorWorld()
-  : _table(new ConcurrentTable(initial_log_size(),
-                               max_log_size(),
-                               grow_hint(),
-                               ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
-                               ConcurrentTable::DEFAULT_MUTEX_RANK,
-                               this)),
-    _items_count(0),
-    _table_size(table_size()),
-    _resize(false) {}
+  static void create_table() {
+    _table_size = table_size();
+    _table = new ConcurrentTable(initial_log_size(),
+                                 max_log_size(),
+                                 grow_hint(),
+                                 ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
+                                 ConcurrentTable::DEFAULT_MUTEX_RANK);
+  }
 
-  void verify_monitor_get_result(oop obj, ObjectMonitor* monitor) {
+  static void verify_get_monitor_result(oop obj, ObjectMonitor* monitor) {
 #ifdef ASSERT
     if (SafepointSynchronize::is_at_safepoint()) {
       bool has_monitor = obj->mark().has_monitor();
@@ -194,7 +192,7 @@ public:
 #endif
   }
 
-  ObjectMonitor* monitor_get(Thread* current, oop obj) {
+  static ObjectMonitor* get_monitor_entry(Thread* current, oop obj) {
     ObjectMonitor* result = nullptr;
     Lookup lookup_f(obj);
     auto found_f = [&](ObjectMonitor** found) {
@@ -202,11 +200,11 @@ public:
       result = *found;
     };
     _table->get(current, lookup_f, found_f);
-    verify_monitor_get_result(obj, result);
+    verify_get_monitor_result(obj, result);
     return result;
   }
 
-  void try_notify_grow() {
+  static void try_notify_grow() {
     if (!_table->is_max_size_reached() && !Atomic::load(&_resize)) {
       Atomic::store(&_resize, true);
       if (Service_lock->try_lock()) {
@@ -216,23 +214,23 @@ public:
     }
   }
 
-  bool should_shrink() {
+  static bool should_shrink() {
     // No implemented;
     return false;
   }
 
   static constexpr double GROW_LOAD_FACTOR = 0.75;
 
-  bool should_grow() {
+  static bool should_grow() {
     return get_load_factor() > GROW_LOAD_FACTOR && !_table->is_max_size_reached();
   }
 
-  bool should_resize() {
+  static bool should_resize() {
     return should_grow() || should_shrink() || Atomic::load(&_resize);
   }
 
   template<typename Task, typename... Args>
-  bool run_task(JavaThread* current, Task& task, const char* task_name, Args&... args) {
+  static bool run_task(JavaThread* current, Task& task, const char* task_name, Args&... args) {
     if (task.prepare(current)) {
       log_trace(monitortable)("Started to %s", task_name);
       TraceTime timer(task_name, TRACETIME_LOG(Debug, monitortable, perf));
@@ -249,7 +247,7 @@ public:
     return false;
   }
 
-  bool grow(JavaThread* current) {
+  static bool grow(JavaThread* current) {
     ConcurrentTable::GrowTask grow_task(_table);
     if (run_task(current, grow_task, "Grow")) {
       _table_size = table_size(current);
@@ -259,17 +257,17 @@ public:
     return false;
   }
 
-  bool clean(JavaThread* current) {
+  static bool clean(JavaThread* current) {
     ConcurrentTable::BulkDeleteTask clean_task(_table);
     auto is_dead = [&](ObjectMonitor** monitor) {
       return (*monitor)->object_is_dead();
     };
     auto do_nothing = [&](ObjectMonitor** monitor) {};
-    NativeHeapTrimmer::SuspendMark sm("omworld");
+    NativeHeapTrimmer::SuspendMark sm("monitortable");
     return run_task(current, clean_task, "Clean", is_dead, do_nothing);
   }
 
-  bool resize(JavaThread* current) {
+  static bool resize(JavaThread* current) {
     LogTarget(Info, monitortable) lt;
     bool success = false;
 
@@ -289,7 +287,7 @@ public:
     return success;
   }
 
-  ObjectMonitor* monitor_put_get(Thread* current, ObjectMonitor* monitor, oop obj) {
+  static ObjectMonitor* add_monitor_entry(Thread* current, ObjectMonitor* monitor, oop obj) {
     // Enter the monitor into the concurrent hashtable.
     ObjectMonitor* result = monitor;
     Lookup lookup_f(obj);
@@ -299,19 +297,19 @@ public:
     };
     bool grow;
     _table->insert_get(current, lookup_f, monitor, found_f, &grow);
-    verify_monitor_get_result(obj, result);
+    verify_get_monitor_result(obj, result);
     if (grow) {
       try_notify_grow();
     }
     return result;
   }
 
-  bool remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
+  static bool remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
     LookupMonitor lookup_f(monitor);
     return _table->remove(current, lookup_f);
   }
 
-  bool contains_monitor(Thread* current, ObjectMonitor* monitor) {
+  static bool contains_monitor(Thread* current, ObjectMonitor* monitor) {
     LookupMonitor lookup_f(monitor);
     bool result = false;
     auto found_f = [&](ObjectMonitor** found) {
@@ -321,7 +319,7 @@ public:
     return result;
   }
 
-  void print_on(outputStream* st) {
+  static void print_on(outputStream* st) {
     auto printer = [&] (ObjectMonitor** entry) {
        ObjectMonitor* om = *entry;
        oop obj = om->object_peek();
@@ -339,7 +337,71 @@ public:
   }
 };
 
-ObjectMonitorWorld* LightweightSynchronizer::_omworld = nullptr;
+ObjectMonitorTable::ConcurrentTable* ObjectMonitorTable::_table = nullptr;
+volatile size_t ObjectMonitorTable::_items_count = 0;
+size_t ObjectMonitorTable::_table_size = 0;
+volatile bool ObjectMonitorTable::_resize = false;
+
+// Add the hashcode to the monitor to match the object and put it in the hashtable.
+ObjectMonitor* LightweightSynchronizer::add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj) {
+  assert(UseObjectMonitorTable, "must be");
+  assert(obj == monitor->object(), "must be");
+
+  intptr_t hash = obj->mark().hash();
+  assert(hash != 0, "must be set when claiming the object monitor");
+  monitor->set_hash(hash);
+
+  return ObjectMonitorTable::add_monitor_entry(current, monitor, obj);
+}
+
+bool LightweightSynchronizer::remove_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
+  assert(UseObjectMonitorTable, "must be");
+  assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
+
+  return ObjectMonitorTable::remove_monitor_entry(current, monitor);
+}
+
+void LightweightSynchronizer::deflate_mark_word(oop obj) {
+  assert(UseObjectMonitorTable, "must be");
+
+  markWord mark = obj->mark_acquire();
+  assert(!mark.has_no_hash(), "obj with inflated monitor must have had a hash");
+
+  while (mark.has_monitor()) {
+    const markWord new_mark = mark.clear_lock_bits().set_unlocked();
+    mark = obj->cas_set_mark(new_mark, mark);
+  }
+}
+
+void LightweightSynchronizer::initialize() {
+  if (UseObjectMonitorTable) {
+    ObjectMonitorTable::create_table();
+  }
+}
+
+bool LightweightSynchronizer::needs_resize() {
+  if (!UseObjectMonitorTable) {
+    return false;
+  }
+  return ObjectMonitorTable::should_resize();
+}
+
+bool LightweightSynchronizer::resize_table(JavaThread* current) {
+  if (!UseObjectMonitorTable) {
+    return true;
+  }
+  return ObjectMonitorTable::resize(current);
+}
+
+ObjectMonitor* LightweightSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
+  assert(UseObjectMonitorTable, "must be");
+  return ObjectMonitorTable::get_monitor_entry(current, obj);
+}
+
+bool LightweightSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
+  assert(UseObjectMonitorTable, "must be");
+  return ObjectMonitorTable::contains_monitor(current, monitor);
+}
 
 ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
@@ -407,58 +469,6 @@ ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaTh
   }
 
   return monitor;
-}
-
-// Add the hashcode to the monitor to match the object and put it in the hashtable.
-ObjectMonitor* LightweightSynchronizer::add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj) {
-  assert(UseObjectMonitorTable, "must be");
-  assert(obj == monitor->object(), "must be");
-
-  intptr_t hash = obj->mark().hash();
-  assert(hash != 0, "must be set when claiming the object monitor");
-  monitor->set_hash(hash);
-
-  return _omworld->monitor_put_get(current, monitor, obj);
-}
-
-bool LightweightSynchronizer::remove_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
-
-  return _omworld->remove_monitor_entry(current, monitor);
-}
-
-void LightweightSynchronizer::deflate_mark_word(oop obj) {
-  assert(UseObjectMonitorTable, "must be");
-
-  markWord mark = obj->mark_acquire();
-  assert(!mark.has_no_hash(), "obj with inflated monitor must have had a hash");
-
-  while (mark.has_monitor()) {
-    const markWord new_mark = mark.clear_lock_bits().set_unlocked();
-    mark = obj->cas_set_mark(new_mark, mark);
-  }
-}
-
-void LightweightSynchronizer::initialize() {
-  if (!UseObjectMonitorTable) {
-    return;
-  }
-  _omworld = new ObjectMonitorWorld();
-}
-
-bool LightweightSynchronizer::needs_resize() {
-  if (!UseObjectMonitorTable) {
-    return false;
-  }
-  return _omworld->should_resize();
-}
-
-bool LightweightSynchronizer::resize_table(JavaThread* current) {
-  if (!UseObjectMonitorTable) {
-    return true;
-  }
-  return _omworld->resize(current);
 }
 
 class LightweightSynchronizer::LockStackInflateContendedLocks : private OopClosure {
@@ -1168,16 +1178,6 @@ void LightweightSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMo
   if (obj != nullptr) {
     assert(removed, "Should have removed the entry if obj was alive");
   }
-}
-
-ObjectMonitor* LightweightSynchronizer::get_monitor_from_table(Thread* current, oop obj) {
-  assert(UseObjectMonitorTable, "must be");
-  return _omworld->monitor_get(current, obj);
-}
-
-bool LightweightSynchronizer::contains_monitor(Thread* current, ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
-  return _omworld->contains_monitor(current, monitor);
 }
 
 bool LightweightSynchronizer::quick_enter(oop obj, JavaThread* current, BasicLock* lock) {
