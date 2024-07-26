@@ -33,6 +33,8 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
+import jdk.test.lib.Utils;
+import jdk.test.lib.Platform;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
@@ -142,7 +144,13 @@ public class TestFrameworkJavaExample {
         // Invoke the "X2.main" method from the compiled and loaded class.
         try {
             c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
-            throw new RuntimeException("IRViolationException expected.");
+
+            // Check if IR framework is expected to execute the IR rules.
+            if (Utils.getTestJavaOpts().length == 0 && Platform.isDebugBuild() && !Platform.isInt() && !Platform.isComp()) {
+                throw new RuntimeException("IRViolationException expected.");
+            } else {
+                System.out.println("Got no IRViolationException, but was also not expected.");
+            }
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("No such method:", e);
         } catch (IllegalAccessException e) {
