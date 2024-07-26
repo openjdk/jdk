@@ -165,7 +165,7 @@ public class DisableFrameFromScrollBar {
     public static class Enabler implements Runnable {
         private JFrame m_frame;
 
-        Enabler(JFrame p_frame) { 
+        Enabler(JFrame p_frame) {
             m_frame = p_frame;
         }
 
