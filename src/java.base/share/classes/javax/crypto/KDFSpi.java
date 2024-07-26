@@ -39,11 +39,6 @@ import java.security.spec.InvalidParameterSpecException;
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation of a
  * particular key derivation algorithm.
- * <p>
- * A KDFSpi implementation must be immutable. The {@code deriveKey} and
- * {@code deriveData} methods of {@code KDFSpi} implementations must be
- * thread-safe. That is, multiple threads may concurrently invoke these methods
- * on a single {@code KDFSpi} implementations with no ill effects.
  *
  * @see KDF
  * @see SecretKey

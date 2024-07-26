@@ -34,12 +34,13 @@ import jdk.internal.javac.PreviewFeature;
  * specifications must implement this interface.
  * <p>
  * Typically, a {@code KDFParameters} object is passed as a parameter to one of
- * the {@link javax.crypto.KDF#getInstance(String, KDFParameters) KDF.getInstance} methods. The {@code getInstance}
- * method returns a {@code KDF}. The {@code KDF} that is returned is initialized
- * with the specified parameters.
+ * the
+ * {@link javax.crypto.KDF#getInstance(String, KDFParameters) KDF.getInstance}
+ * methods. The {@code getInstance} method returns a {@code KDF}. The
+ * {@code KDF} that is returned is initialized with the specified parameters.
  *
  * @see javax.crypto.KDF#getInstance(String, KDFParameters)
  * @since 24
  */
-@PreviewFeature(feature=PreviewFeature.Feature.KEY_DERIVATION)
+@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public interface KDFParameters {}

@@ -65,10 +65,6 @@ import java.util.Objects;
  * to call {@code getProviderName} until after a key derivation operation. Once
  * a provider is selected, it cannot be changed.
  * <p>
- * The {@code deriveKey} and {@code deriveData} methods of {@code KDF} objects
- * must be thread-safe. That is, multiple threads may concurrently invoke these
- * methods on a single {@code KDF} object with no ill effects.
- * <p>
  * API Usage Example:
  * {@snippet lang = java:
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
