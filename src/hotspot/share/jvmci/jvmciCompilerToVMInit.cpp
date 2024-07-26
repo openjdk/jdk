@@ -114,6 +114,10 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+#ifdef X86
+int CompilerToVM::Data::L1_line_size;
+#endif
+
 size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
@@ -239,6 +243,10 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_start_address = 0;
     cardtable_shift = 0;
   }
+
+#ifdef X86
+  L1_line_size = VM_Version::L1_line_size();
+#endif
 
   vm_page_size = os::vm_page_size();
 
