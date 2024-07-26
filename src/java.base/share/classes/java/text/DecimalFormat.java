@@ -475,7 +475,6 @@ public class DecimalFormat extends NumberFormat {
      * @see NumberFormat#getNumberInstance(Locale)
      * @see NumberFormat#getCurrencyInstance(Locale)
      * @see NumberFormat#getPercentInstance(Locale)
-     * @see NumberFormat#getPercentInstance(Locale)
      */
     @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
