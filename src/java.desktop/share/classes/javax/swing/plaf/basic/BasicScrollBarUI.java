@@ -1608,6 +1608,15 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
+            // Stop the timer if handledEvent is still set indicating
+            // mouseReleased is not called after mousePressed when
+            // this AcionEvent is being processed
+            if (buttonListener.handledEvent) {
+                scrollTimer.stop();
+                buttonListener.handledEvent = false;
+                scrollbar.setValueIsAdjusting(false);
+                return;
+            }
             if(useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse
