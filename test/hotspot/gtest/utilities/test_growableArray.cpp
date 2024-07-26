@@ -690,3 +690,11 @@ TEST(GrowableArrayCHeap, returning_references_works_as_expected) {
   EXPECT_EQ(5, first);
   EXPECT_EQ(5, last);
 }
+
+TEST_VM_F(GrowableArrayTest, using_indices_of_different_sizes_leads_to_differently_sized_GrowableArrays) {
+  ResourceMark rm;
+  GrowableArray<int, uint8_t> a;
+  GrowableArray<int, int> b;
+  EXPECT_LT(sizeof(a), sizeof(b));
+}
+
