@@ -26,9 +26,11 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,21 +44,23 @@ import static com.sun.tools.javac.code.Kinds.Kind.VAR;
 public class CaptureScanner extends TreeScanner {
 
     /**
-     * the owner tree
+     * The tree under analysis.
      */
-    final JCTree ownerTree;
+    private final JCTree tree;
 
-    final Set<Symbol.VarSymbol> seenVars = new HashSet<>();
+    /**
+     * The set of local variable declarations encountered in the tree under analysis.
+     */
+    private final Set<Symbol.VarSymbol> seenVars = new HashSet<>();
 
     /**
      * The list of owner's variables accessed from within the local class,
      * without any duplicates.
      */
-    List<Symbol.VarSymbol> fvs = List.nil();
+    private final ListBuffer<VarSymbol> fvs = new ListBuffer<>();
 
-
-    CaptureScanner(JCTree ownerTree) {
-        this.ownerTree = ownerTree;
+    public CaptureScanner(JCTree ownerTree) {
+        this.tree = ownerTree;
     }
 
     @Override
@@ -73,10 +77,10 @@ public class CaptureScanner extends TreeScanner {
     /**
      * Add free variable to fvs list unless it is already there.
      */
-    void addFreeVar(Symbol.VarSymbol v) {
-        for (List<Symbol.VarSymbol> l = fvs; l.nonEmpty(); l = l.tail)
-            if (l.head == v) return;
-        fvs = fvs.prepend(v);
+    protected void addFreeVar(Symbol.VarSymbol v) {
+        if (!fvs.contains(v)) {
+            fvs.prepend(v);
+        }
     }
 
     @Override
@@ -87,8 +91,11 @@ public class CaptureScanner extends TreeScanner {
         super.visitVarDef(tree);
     }
 
+    /**
+     * Obtains the list of captured local variables in the tree under analysis.
+     */
     List<Symbol.VarSymbol> analyzeCaptures() {
-        scan(ownerTree);
-        return fvs;
+        scan(tree);
+        return fvs.toList();
     }
 }
