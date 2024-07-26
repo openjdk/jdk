@@ -875,11 +875,6 @@ HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size);
-}
-
 size_t DefNewGeneration::tlab_capacity() const {
   return eden()->capacity();
 }

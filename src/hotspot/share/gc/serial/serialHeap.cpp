@@ -296,7 +296,8 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   }
   if (result == nullptr) {
     if (_young_gen->should_allocate(size, is_tlab)) {
-      result = _young_gen->expand_and_allocate(size);
+      // Young-gen is not expanded.
+      result = _young_gen->allocate(size);
     }
   }
   assert(result == nullptr || is_in_reserved(result), "result not in heap");

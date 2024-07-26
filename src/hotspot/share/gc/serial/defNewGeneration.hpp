@@ -213,9 +213,6 @@ class DefNewGeneration: public Generation {
   HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
 
-  // Expand young-gen and invoke allocate above.
-  HeapWord* expand_and_allocate(size_t size);
-
   void gc_epilogue(bool full);
 
   // For Old collection (part of running Full GC), the DefNewGeneration can
