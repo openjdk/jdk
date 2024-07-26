@@ -121,8 +121,14 @@ public class CompileFramework {
         executeCompileCommand(command);
     }
 
+    private static String[] getClassPaths() {
+        String separator = File.pathSeparator;
+        return System.getProperty("java.class.path").split(separator);
+    }
+
     private static String getAsmToolsPath() {
-        for (String path : System.getProperty("java.class.path").split(":")) {
+        for (String path : getClassPaths()) {
+            System.out.println("jtreg.jar?: " + path);
             if (path.endsWith("jtreg.jar")) {
                 File jtreg = new File(path);
                 File dir = jtreg.getAbsoluteFile().getParentFile();
@@ -226,8 +232,12 @@ public class CompileFramework {
 
         try {
             // Classpath for all included classes (e.g. IR Framework).
-            URL[] urls = new URL[] { new File(System.getProperty("test.classes")).toURI().toURL() };
-            classLoader = URLClassLoader.newInstance(urls, sysLoader);
+            // Get all class paths, convert to urls.
+            List<URL> urls = new ArrayList<URL>();
+            for (String path : getClassPaths()) {
+                urls.add(new File(path).toURI().toURL());
+            }
+            classLoader = URLClassLoader.newInstance(urls.toArray(URL[]::new), sysLoader);
         } catch (IOException e) {
             throw new CompileFrameworkException("IOException while creating ClassLoader", e);
         }
