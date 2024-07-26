@@ -213,8 +213,7 @@ public class LogGeneratedClassesTest {
         try {
             fs = Files.getFileStore(Paths.get("."));
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new SkipException("WARNING: IOException occur. Skipping testDumpDirNotWritable test.");
+            throw new SkipException("WARNING: IOException occurred: " + e + ", Skipping testDumpDirNotWritable test.");
         }
         if (!fs.supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
