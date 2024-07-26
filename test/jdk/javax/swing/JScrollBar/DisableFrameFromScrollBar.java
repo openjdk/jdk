@@ -69,62 +69,61 @@ public class DisableFrameFromScrollBar {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
-        robot = new Robot();
-        robot.setAutoDelay(100);
-        try {
-	    SwingUtilities.invokeAndWait(() -> {
-                setLookAndFeel(laf);
-                frame = new JFrame(DisableFrameFromScrollBar.class.getName());
-                bar = new JScrollBar();
+            robot = new Robot();
+            robot.setAutoDelay(100);
+            try {
+	        SwingUtilities.invokeAndWait(() -> {
+                    setLookAndFeel(laf);
+                    frame = new JFrame(DisableFrameFromScrollBar.class.getName());
+                    bar = new JScrollBar();
         
-                bar.getModel().addChangeListener(new DisableChangeListener(frame));
-                frame.getContentPane().setLayout(new FlowLayout());
-                frame.getContentPane().add(bar);
+                    bar.getModel().addChangeListener(new DisableChangeListener(frame));
+                    frame.getContentPane().setLayout(new FlowLayout());
+                    frame.getContentPane().add(bar);
         
-                frame.pack();
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setSize(150, 150);
-                frame.setLocationRelativeTo(null); 
-                frame.setVisible(true);
-	    });
-            robot.waitForIdle();
-            robot.delay(1000);
-            Point point = getClickPoint();
-            robot.mouseMove(point.x, point.y);
-            robot.waitForIdle();
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            SwingUtilities.invokeAndWait(() -> {
-                oldValue = bar.getValue();
-                bar.addAdjustmentListener(new AdjustmentListener() {
-                    public void adjustmentValueChanged(AdjustmentEvent e) {
-                        int curValue = e.getValue();
-                        int extent = bar.getMaximum() - bar.getVisibleAmount();
-                        if (curValue < extent && curValue != oldValue) {
-                            oldValue = curValue;
-                            isAdjusting = true;
-                        } else {
-                            System.out.println("doCheck true");
-                            doCheck = true;
-                            isAdjusting = false;
-                        }
-                    }
-                });
-            });
-            do {
-                Thread.sleep(200);
-            } while(isAdjusting && !doCheck);
+                    frame.pack();
+                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    frame.setSize(150, 150);
+                    frame.setLocationRelativeTo(null); 
+                    frame.setVisible(true);
+	        });
+                robot.waitForIdle();
+                robot.delay(1000);
+                Point point = getClickPoint();
+                robot.mouseMove(point.x, point.y);
+                robot.waitForIdle();
+                robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+                robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
-            if (bar.getValue() == (bar.getMaximum() - bar.getVisibleAmount())) {
-                throw new RuntimeException("Bar touched max point");
-            }
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                   frame.dispose();
+                SwingUtilities.invokeAndWait(() -> {
+                    oldValue = bar.getValue();
+                    bar.addAdjustmentListener(new AdjustmentListener() {
+                        public void adjustmentValueChanged(AdjustmentEvent e) {
+                            int curValue = e.getValue();
+                            int extent = bar.getMaximum() - bar.getVisibleAmount();
+                            if (curValue < extent && curValue != oldValue) {
+                                oldValue = curValue;
+                                isAdjusting = true;
+                            } else {
+                                doCheck = true;
+                                isAdjusting = false;
+                            }
+                        }
+                    });
+                });
+                do {
+                    Thread.sleep(200);
+                } while(isAdjusting && !doCheck);
+                if (bar.getValue() == (bar.getMaximum() - bar.getVisibleAmount())) {
+                    throw new RuntimeException("ScrollBar did't disable timer");
                 }
-            });
-        }
+            } finally {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (frame != null) {
+                       frame.dispose();
+                    }
+               });
+            }
         }
     }
 
