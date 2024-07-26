@@ -113,8 +113,8 @@ uint8_t Klass::compute_hash_slot(Symbol* n) {
     if (StressSecondarySupers) {
       // Generate many hash collisions in order to stress-test the
       // linear search fallback.
-      hash_code = hash_code % 3;
-      hash_code = hash_code * (SECONDARY_SUPERS_TABLE_SIZE / 3);
+      int codes[3] = { 0, SECONDARY_SUPERS_TABLE_SIZE / 2, SECONDARY_SUPERS_TABLE_SIZE - 1};
+      hash_code = codes[hash_code % 3];
     }
   }
 
@@ -367,11 +367,10 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  // For performance reasons we don't use a hashed table unless there
-  // are at least two empty slots in it. If there were only one empty
-  // slot it'd take a long time to create the table and the resulting
-  // search would be no faster than linear probing.
-  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+  // Don't attempt to hash a table that's completely full, because in
+  // the case of an absent interface linear probing would not
+  // terminate.
+  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 
