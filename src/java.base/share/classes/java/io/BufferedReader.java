@@ -61,7 +61,7 @@ import jdk.internal.misc.InternalLock;
  *
  * <p> In general, different BufferedReaders should not be used to read from
  * the same Reader. There is no way for a BufferedReader to know what another
- * BufferedReader has read from the underlying Reader, nor dues it have access
+ * BufferedReader has read from the underlying Reader, nor does it have access
  * to the other BufferedReader's internal buffer.
  *
  * @see FileReader

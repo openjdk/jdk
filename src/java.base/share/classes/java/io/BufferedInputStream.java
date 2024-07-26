@@ -53,7 +53,7 @@ import jdk.internal.util.ArraysSupport;
  * <p> In general, different {@code BufferedInputStream}s should not be used
  * to read from the same {@code InputStream}. There is no way for a
  * {@code BufferedInputStream} to know what another {@code BufferedInputStream}
- * has read from the underlying {@code InputStream}, nor dues it have access
+ * has read from the underlying {@code InputStream}, nor does it have access
  * to the other {@code BufferedInputStream}'s internal buffer.
  *
  * @author  Arthur van Hoff
