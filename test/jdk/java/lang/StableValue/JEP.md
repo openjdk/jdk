@@ -467,7 +467,7 @@ static Logger logger(String name) {
 ```
 
 In the example above, only two input values were used. However, this concept allows declaring a
-large number of stable values which can be easily retrieved using arbitrarily, but pre-specified, 
+large number of stable values which can be easily retrieved using arbitrarily, but pre-specified,
 keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
 may now be easily and reliably realized.
 
@@ -477,7 +477,7 @@ even though used from several threads.
 
 Even though a cached `IntFunction` may sometimes replace a lazy `List` and a cached `Function` may be
 used in place of a lazy `Map`, a lazy `List` or `Map` oftentimes provides better interoperability with
-existing libraries. For example, if provided as a method parameter. 
+existing libraries. For example, if provided as a method parameter.
 
 ### Preview feature
 
