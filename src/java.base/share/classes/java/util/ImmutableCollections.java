@@ -42,6 +42,7 @@ import java.util.function.UnaryOperator;
 import jdk.internal.access.JavaUtilCollectionAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueUtil;
 import jdk.internal.misc.CDS;
 import jdk.internal.util.NullableKeyValueHolder;
 import jdk.internal.vm.annotation.ForceInline;
@@ -789,12 +790,12 @@ class ImmutableCollections {
             final StableValueImpl<E> stable = backing.get(i);
             E e = stable.value();
             if (e != null) {
-                return StableValueImpl.unwrap(e);
+                return StableValueUtil.unwrap(e);
             }
             synchronized (stable) {
                 e = stable.value();
                 if (e != null) {
-                    return StableValueImpl.unwrap(e);
+                    return StableValueUtil.unwrap(e);
                 }
                 e = mapper.apply(i);
                 stable.setOrThrow(e);
@@ -1496,12 +1497,12 @@ class ImmutableCollections {
         V computeIfUnset(K key, StableValueImpl<V> stable) {
             V v = stable.value();
             if (v != null) {
-                return StableValueImpl.unwrap(v);
+                return StableValueUtil.unwrap(v);
             }
             synchronized (stable) {
                 v = stable.value();
                 if (v != null) {
-                    return StableValueImpl.unwrap(v);
+                    return StableValueUtil.unwrap(v);
                 }
                 v = mapper.apply(key);
                 stable.setOrThrow(v);

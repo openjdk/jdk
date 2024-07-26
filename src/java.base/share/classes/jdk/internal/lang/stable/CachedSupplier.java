@@ -36,12 +36,12 @@ public record CachedSupplier<T>(StableValueImpl<T> stable,
     public T get() {
         T t = stable.value();
         if (t != null) {
-            return StableValueImpl.unwrap(t);
+            return StableValueUtil.unwrap(t);
         }
         synchronized (stable) {
             t = stable.value();
             if (t != null) {
-                return StableValueImpl.unwrap(t);
+                return StableValueUtil.unwrap(t);
             }
             t = original.get();
             stable.setOrThrow(t);

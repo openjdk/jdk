@@ -25,7 +25,6 @@
 
 package jdk.internal.lang.stable;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
@@ -37,16 +36,9 @@ import java.util.Set;
 
 public final class StableValueImpl<T> implements StableValue<T> {
 
-    // Unsafe allows StableValue to be used early in the boot sequence
-    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
-
-    // Used to indicate a holder value is `null` (see field `value` below)
-    // A wrapper method `nullSentinel()` is used for generic type conversion.
-    private static final Object NULL_SENTINEL = new Object();
-
     // Unsafe offsets for direct object access
     private static final long VALUE_OFFSET =
-            UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
+            StableValueUtil.UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -71,7 +63,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (value() != null) {
             return false;
         }
-        return safelyPublish(this, VALUE_OFFSET, value);
+        return StableValueUtil.safelyPublish(this, VALUE_OFFSET, value);
     }
 
     @ForceInline
@@ -79,7 +71,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElseThrow() {
         final T t = value();
         if (t != null) {
-            return unwrap(t);
+            return StableValueUtil.unwrap(t);
         }
         throw new NoSuchElementException("No value set");
     }
@@ -89,7 +81,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     public T orElse(T other) {
         final T t = value();
         if (t != null) {
-            return unwrap(t);
+            return StableValueUtil.unwrap(t);
         }
         return other;
     }
@@ -115,7 +107,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        return "StableValue" + render(value());
+        return "StableValue" + StableValueUtil.render(value());
     }
 
     @SuppressWarnings("unchecked")
@@ -124,53 +116,13 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // If not set, fall back to `volatile` memory semantics.
     public T value() {
         final T t = valuePlain();
-        return t != null ? t : (T) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+        return t != null ? t : (T) StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
 
     @ForceInline
     private T valuePlain() {
         // Appears to be faster than `(T) UNSAFE.getReference(this, VALUE_OFFSET)`
         return value;
-    }
-
-    // Wraps `null` values into a sentinel value
-    @ForceInline
-    private static <T> T wrap(T t) {
-        return (t == null) ? nullSentinel() : t;
-    }
-
-    // Unwraps null sentinel values into `null`
-    @ForceInline
-    public static <T> T unwrap(T t) {
-        return t != nullSentinel() ? t : null;
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    private static <T> T nullSentinel() {
-        return (T) NULL_SENTINEL;
-    }
-
-    private static <T> String render(T t) {
-        return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
-    }
-
-    @ForceInline
-    private static boolean safelyPublish(Object o, long offset, Object value) {
-
-        // Prevents reordering of store operations with other store operations.
-        // This means any stores made to a field prior to this point cannot be
-        // reordered with the following CAS operation of the reference to the field.
-
-        // In other words, if a loader (using plain memory semantics) can first observe
-        // a holder reference, any field updates in the holder reference made prior to
-        // this fence are guaranteed to be seen.
-        // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
-        // Doug Lea, 2018
-        UNSAFE.storeStoreFence();
-
-        // This upholds the invariant, a `@Stable` field is written to at most once.
-        return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
     }
 
     // Factories

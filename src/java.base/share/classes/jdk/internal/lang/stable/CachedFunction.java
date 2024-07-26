@@ -45,12 +45,12 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
         }
         R r = stable.value();
         if (r != null) {
-            return StableValueImpl.unwrap(r);
+            return StableValueUtil.unwrap(r);
         }
         synchronized (stable) {
             r = stable.value();
             if (r != null) {
-                return StableValueImpl.unwrap(r);
+                return StableValueUtil.unwrap(r);
             }
             r = original.apply(value);
             stable.setOrThrow(r);
