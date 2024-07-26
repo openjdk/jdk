@@ -173,12 +173,12 @@ class ObjectMonitorTable : public AllStatic {
 
 public:
   static void create_table() {
-    _table_size = table_size();
     _table = new ConcurrentTable(initial_log_size(),
                                  max_log_size(),
                                  grow_hint(),
                                  ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
                                  ConcurrentTable::DEFAULT_MUTEX_RANK);
+    _table_size = table_size();
   }
 
   static void verify_get_monitor_result(oop obj, ObjectMonitor* monitor) {
