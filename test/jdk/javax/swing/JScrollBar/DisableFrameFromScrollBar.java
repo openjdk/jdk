@@ -54,7 +54,6 @@ public class DisableFrameFromScrollBar {
     private static volatile boolean doCheck;
     private static volatile boolean isAdjusting;
 
-    
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
@@ -72,21 +71,21 @@ public class DisableFrameFromScrollBar {
             robot = new Robot();
             robot.setAutoDelay(100);
             try {
-	        SwingUtilities.invokeAndWait(() -> {
+                SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(laf);
+
                     frame = new JFrame(DisableFrameFromScrollBar.class.getName());
                     bar = new JScrollBar();
-        
                     bar.getModel().addChangeListener(new DisableChangeListener(frame));
                     frame.getContentPane().setLayout(new FlowLayout());
                     frame.getContentPane().add(bar);
-        
+
                     frame.pack();
                     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     frame.setSize(150, 150);
-                    frame.setLocationRelativeTo(null); 
+                    frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
-	        });
+                });
                 robot.waitForIdle();
                 robot.delay(1000);
                 Point point = getClickPoint();
@@ -148,7 +147,7 @@ public class DisableFrameFromScrollBar {
     public static class DisableChangeListener implements ChangeListener {
         private final JFrame m_frame;
         private boolean m_done = false;
-        
+
         public DisableChangeListener(JFrame p_frame) {
             m_frame = p_frame;
         }
@@ -167,8 +166,8 @@ public class DisableFrameFromScrollBar {
         private JFrame m_frame;
 
         Enabler(JFrame p_frame) { 
-	    m_frame = p_frame; 
-	}
+            m_frame = p_frame;
+        }
 
         public void run() {
             try {
