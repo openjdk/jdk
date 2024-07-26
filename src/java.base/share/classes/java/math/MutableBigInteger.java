@@ -2073,7 +2073,7 @@ class MutableBigInteger {
         MutableBigInteger u = dividend.divide(sqrt, q);
         if (q.isOdd())
             u.add(sqrt);
-        q.rightShift(1);
+        q.safeRightShift(1);
 
         sqrt.shiftAdd(q, blockLen);
         // Corresponds to ub + a_0 in the paper
