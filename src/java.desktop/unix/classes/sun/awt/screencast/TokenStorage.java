@@ -107,12 +107,12 @@ final class TokenStorage {
             return null;
         }
 
-        Path primaryPath = Path.of(userHome, REL_NAME);
+        Path path = Path.of(userHome, REL_NAME);
         Path secondaryPath = Path.of(userHome, REL_NAME_SECONDARY);
 
-        Path path = Files.isWritable(secondaryPath) && !Files.isWritable(primaryPath)
-                ? secondaryPath
-                : primaryPath;
+        boolean copyFromSecondary = !Files.isWritable(path)
+                && Files.isWritable(secondaryPath);
+
         Path workdir = path.getParent();
 
         if (!Files.isWritable(path)) {
@@ -150,7 +150,17 @@ final class TokenStorage {
             }
         }
 
-        if (Files.exists(path)) {
+        if (copyFromSecondary) {
+            if (SCREENCAST_DEBUG) {
+                System.out.println("Token storage: copying from the secondary location "
+                                        + secondaryPath);
+            }
+            synchronized (PROPS) {
+                if (readTokens(secondaryPath)) {
+                    store(path, "copy from the secondary location");
+                }
+            }
+        } else if (Files.exists(path)) {
             if (!setFilePermission(path)) {
                 return null;
             }
@@ -307,7 +317,7 @@ final class TokenStorage {
             }
 
             if (changed) {
-                doPrivilegedRunnable(() -> store("save tokens"));
+                doPrivilegedRunnable(() -> store(PROPS_PATH, "save tokens"));
             }
         }
     }
@@ -320,7 +330,7 @@ final class TokenStorage {
                 PROPS.clear();
                 PROPS.load(reader);
             }
-        } catch (IOException e) {
+        } catch (IOException | IllegalArgumentException e) {
             if (SCREENCAST_DEBUG) {
                 System.err.printf("""
                         Token storage: failed to load property file %s
@@ -415,7 +425,7 @@ final class TokenStorage {
     }
 
     private static void removeMalformedRecords(Set<String> malformedRecords) {
-        if (!isWritable()
+        if (!isWritable(PROPS_PATH)
             || malformedRecords == null
             || malformedRecords.isEmpty()) {
             return;
@@ -429,17 +439,17 @@ final class TokenStorage {
                 }
             }
 
-            store("remove malformed records");
+            store(PROPS_PATH, "remove malformed records");
         }
     }
 
-    private static void store(String failMsg) {
-        if (!isWritable()) {
+    private static void store(Path path, String failMsg) {
+        if (!isWritable(path)) {
             return;
         }
 
         synchronized (PROPS) {
-            try (BufferedWriter writer = Files.newBufferedWriter(PROPS_PATH)) {
+            try (BufferedWriter writer = Files.newBufferedWriter(path)) {
                 PROPS.store(writer, null);
             } catch (IOException e) {
                 if (SCREENCAST_DEBUG) {
@@ -450,13 +460,13 @@ final class TokenStorage {
         }
     }
 
-    private static boolean isWritable() {
-        if (PROPS_PATH == null
-            || (Files.exists(PROPS_PATH) && !Files.isWritable(PROPS_PATH))) {
+    private static boolean isWritable(Path path) {
+        if (path == null
+            || (Files.exists(path) && !Files.isWritable(path))) {
 
             if (SCREENCAST_DEBUG) {
                 System.err.printf(
-                        "Token storage: %s is not writable\n", PROPS_PATH);
+                        "Token storage: %s is not writable\n", path);
             }
             return false;
         } else {
