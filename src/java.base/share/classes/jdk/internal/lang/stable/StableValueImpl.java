@@ -71,21 +71,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (value() != null) {
             return false;
         }
-
-        // Prevents reordering of store operations with other store operations.
-        // This means any stores made to fields in the `value` object prior to this
-        // point cannot be reordered with the CAS operation of the reference to the
-        // `value` field.
-        // In other words, if a loader (using plain memory semantics) can observe a
-        // `value` reference, any field updates made prior to this fence are
-        // guaranteed to be seen.
-        // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
-        // Doug Lea, 2018
-        UNSAFE.storeStoreFence();
-
-        // This upholds the invariant, the `@Stable value` field is written to
-        // at most once.
-        return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, wrap(value));
+        return safelyPublish(this, VALUE_OFFSET, value);
     }
 
     @ForceInline
@@ -148,6 +134,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     // Wraps `null` values into a sentinel value
+    @ForceInline
     private static <T> T wrap(T t) {
         return (t == null) ? nullSentinel() : t;
     }
@@ -159,12 +146,31 @@ public final class StableValueImpl<T> implements StableValue<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @ForceInline
     private static <T> T nullSentinel() {
         return (T) NULL_SENTINEL;
     }
 
     private static <T> String render(T t) {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
+    }
+
+    @ForceInline
+    private static boolean safelyPublish(Object o, long offset, Object value) {
+
+        // Prevents reordering of store operations with other store operations.
+        // This means any stores made to a field prior to this point cannot be
+        // reordered with the following CAS operation of the reference to the field.
+
+        // In other words, if a loader (using plain memory semantics) can first observe
+        // a holder reference, any field updates in the holder reference made prior to
+        // this fence are guaranteed to be seen.
+        // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
+        // Doug Lea, 2018
+        UNSAFE.storeStoreFence();
+
+        // This upholds the invariant, a `@Stable` field is written to at most once.
+        return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
     }
 
     // Factories
