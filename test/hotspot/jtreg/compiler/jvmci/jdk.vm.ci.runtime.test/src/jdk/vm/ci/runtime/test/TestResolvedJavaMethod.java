@@ -475,6 +475,19 @@ public class TestResolvedJavaMethod extends MethodUniverse {
         }
     }
 
+    @Test
+    public void isScopedTest() throws NoSuchMethodException, ClassNotFoundException {
+        // Must use reflection as ScopedMemoryAccess$Scoped is package-private
+        Class<? extends Annotation> scopedAnnotationClass = Class.forName("jdk.internal.misc.ScopedMemoryAccess$Scoped").asSubclass(Annotation.class);
+        for (Map.Entry<Method, ResolvedJavaMethod> e : methods.entrySet()) {
+            ResolvedJavaMethod m = e.getValue();
+            Method key = e.getKey();
+            boolean expect = key.isAnnotationPresent(scopedAnnotationClass);
+            boolean actual = m.isScoped();
+            assertEquals(m.toString(), expect, actual);
+        }
+    }
+
     abstract static class UnlinkedType {
         abstract void abstractMethod();
 
