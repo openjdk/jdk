@@ -38,6 +38,7 @@ import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.internal.test.WhiteBox;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -74,6 +75,21 @@ public class TestLargeRootSet {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         WhiteBox.setSkipBFS(true);
+
+        // OldObjectSample is emitted at the end of the recording, and we need
+        // to let GC catch up before we do the event. There is no reason to wait
+        // for a long time if GC can manage it quickly. Try a few backoff intervals,
+        // but try to complete as fast as possible.
+        for (int power = 0; power < 13; power++) {
+            if (tryWith(1 << power)) {
+                return;
+            }
+        }
+
+        Asserts.fail("No events");
+    }
+
+    public static boolean tryWith(int backoff) throws Exception {
         HashMap<Object, Node> leaks = new HashMap<>();
         try (Recording r = new Recording()) {
             r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
@@ -86,18 +102,18 @@ public class TestLargeRootSet {
                 leaks.put(i, node);
             }
 
-            // Let GC catch up before we stop the recording and do the old object sample
-            Thread.sleep(5000);
+            Thread.sleep(backoff);
 
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
-            Events.hasEvents(events);
             for (RecordedEvent e : events) {
                 RecordedClass type = e.getValue("object.type");
                 if (type.getName().equals(Leak.class.getName())) {
-                    return;
+                    return true;
                 }
             }
         }
+
+        return false;
     }
 }
