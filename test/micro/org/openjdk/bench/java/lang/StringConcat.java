@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,20 +49,27 @@ public class StringConcat {
 
     @Param("4711")
     public int intValue;
-
+    public Integer integerValue = intValue + 1;
+    public float floatValue = 156456.36435637F + intValue;
     public String stringValue = String.valueOf(intValue);
-
     public Object objectValue = Long.valueOf(intValue);
-
     public boolean boolValue = true;
-
     public byte byteValue = (byte)-128;
-
     public String emptyString = "";
 
     @Benchmark
     public String concatConstInt() {
         return "string" + intValue;
+    }
+
+    @Benchmark
+    public String concatConstInteger() {
+        return "string" + integerValue;
+    }
+
+    @Benchmark
+    public String concatConstFloat() {
+        return "string" + floatValue;
     }
 
     @Benchmark
@@ -95,6 +103,26 @@ public class StringConcat {
     }
 
     @Benchmark
+    public String concatConstIntString() {
+        return "string" + intValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstIntegerString() {
+        return "string" + integerValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstFloatString() {
+        return "string" + floatValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstBooleanString() {
+        return "string" + boolValue + stringValue;
+    }
+
+    @Benchmark
     public String concatConstIntConstInt() {
         return "string" + intValue + "string" + intValue;
     }
@@ -112,6 +140,21 @@ public class StringConcat {
         String s3 = stringValue + stringValue + "string" + stringValue + "string" + stringValue + "string";
         String s4 = "string" + stringValue + "string" + stringValue + "string" + stringValue + "string" + stringValue + "string";
         return s1 + s2 + s3 + s4;
+    }
+
+    @Benchmark
+    public String concat3String() {
+        return stringValue + stringValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringIntString() {
+        return stringValue + intValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringIntegerString() {
+        return stringValue + integerValue + stringValue;
     }
 
     @Benchmark

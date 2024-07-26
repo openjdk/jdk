@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Arrays;
 
 /**
  * Helper for string concatenation. These methods are mostly looked up with private lookups
@@ -339,6 +341,205 @@ final class StringConcatHelper {
         byte[] buf = newArray(newLength);
         s1.getBytes(buf, 0, coder);
         s2.getBytes(buf, s1.length(), coder);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object     to encode before value
+     * @param value        Integer value to encode
+     * @param suffix       an object     to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, Integer value, Object suffix) {
+        if (value == null) {
+            return simpleConcat(prefix, "null", suffix);
+        }
+        return simpleConcat(prefix, value.intValue(), suffix);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object to encode before value
+     * @param value        int value to encode
+     * @param suffix       an object to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, int value, Object suffix) {
+        String s1 = stringOf(prefix);
+        String s2 = stringOf(suffix);
+        byte coder = (byte) (s1.coder() | s2.coder());
+        int index = s1.length() + DecimalDigits.stringSize(value) + s2.length();
+        byte[] buf = newArray(index << coder);
+        index -= s2.length();
+        s2.getBytes(buf, index, coder);
+        if (coder == String.LATIN1) {
+            StringLatin1.getChars(value, index, buf);
+        } else {
+            StringUTF16.getChars(value, index, buf);
+        }
+        s1.getBytes(buf, 0, coder);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object  to encode before value
+     * @param value        long value to encode
+     * @param suffix       an object  to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, Long value, Object suffix) {
+        if (value == null) {
+            return simpleConcat(prefix, "null", suffix);
+        }
+        return simpleConcat(prefix, value.longValue(), suffix);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object  to encode before value
+     * @param value        long value to encode
+     * @param suffix       an object  to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, long value, Object suffix) {
+        String s1 = stringOf(prefix);
+        String s2 = stringOf(suffix);
+        byte coder = (byte) (s1.coder() | s2.coder());
+        int index = s1.length() + DecimalDigits.stringSize(value) + s2.length();
+        byte[] buf = newArray(index << coder);
+        index -= s2.length();
+        s2.getBytes(buf, index, coder);
+        if (coder == String.LATIN1) {
+            StringLatin1.getChars(value, index, buf);
+        } else {
+            StringUTF16.getChars(value, index, buf);
+        }
+        s1.getBytes(buf, 0, coder);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object     to encode before value
+     * @param value        boolean value to encode
+     * @param suffix       an object     to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, boolean value, Object suffix) {
+        String s1 = stringOf(prefix);
+        String s2 = stringOf(suffix);
+        byte coder = (byte) (s1.coder() | s2.coder());
+        int length = s1.length() + s2.length() + (value ? 4 : 5);
+        byte[] buf = newArray(length << coder);
+        s1.getBytes(buf, 0, coder);
+        int index = s1.length();
+        if (coder == String.LATIN1) {
+            if (value) {
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
+            } else {
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
+            }
+        } else {
+            if (value) {
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
+            } else {
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
+            }
+        }
+        index += value ? 4 : 5;
+        s2.getBytes(buf, index, coder);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object  to encode before value
+     * @param value        char value to encode
+     * @param suffix       an object  to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, char value, Object suffix) {
+        String s1 = stringOf(prefix);
+        String s2 = stringOf(suffix);
+        byte coder = (byte) (s1.coder() | (StringLatin1.canEncode(value) ? String.LATIN1 : String.UTF16) | s2.coder());
+        int length = s1.length() + s2.length() + 1;
+        byte[] buf = newArray(length << coder);
+        s1.getBytes(buf, 0, coder);
+        int index = s1.length();
+        if (coder == String.LATIN1) {
+            buf[index] = (byte) (value & 0xFF);
+        } else {
+            StringUTF16.putChar(buf, index, value);
+        }
+        s2.getBytes(buf, index + 1, coder);
+        return new String(buf, coder);
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object  to encode before value
+     * @param value        float value to encode
+     * @param suffix       an object  to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, float value, Object suffix) {
+        return simpleConcat(stringOf(prefix), Float.toString(value), stringOf(suffix));
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object  to encode before value
+     * @param value        double value to encode
+     * @param suffix       an object  to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, double value, Object suffix) {
+        return simpleConcat(stringOf(prefix), Double.toString(value), stringOf(suffix));
+    }
+
+    /**
+     * Perform a simple concatenation string and int. Added for startup performance
+     *
+     * @param prefix       an object       to encode before value
+     * @param value        an Object value to encode
+     * @param suffix       an object       to encode after value
+     * @return String      resulting string
+     */
+    static String simpleConcat(Object prefix, Object value, Object suffix) {
+        return simpleConcat(stringOf(prefix), String.valueOf(value), stringOf(suffix));
+    }
+
+    private static String simpleConcat(String s1, String s2, String s3) {
+        byte coder = (byte) (s1.coder() | s2.coder() | s3.coder());
+        int length = s1.length() + s2.length() + s3.length();
+        byte[] buf = newArray(length << coder);
+        s1.getBytes(buf, 0, coder);
+        s2.getBytes(buf, s1.length(), coder);
+        s3.getBytes(buf, s1.length() + s2.length(), coder);
         return new String(buf, coder);
     }
 
