@@ -244,8 +244,22 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
   }
 
-  // ChaCha20
+  // Adler32
   if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 intrinsic requires RVV instructions (not available on this CPU).");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
+
+  // ChaCha20
+  if (UseRVV && MaxVectorSize >= 32) {
+    // performance tests on hardwares (MaxVectorSize == 16, 32) show that
+    // it brings regression when MaxVectorSize == 16.
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
     }
