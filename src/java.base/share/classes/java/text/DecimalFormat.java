@@ -435,10 +435,10 @@ public class DecimalFormat extends NumberFormat {
      * {@code NumberFormat} factory methods such as {@link
      * NumberFormat#getNumberInstance(Locale)}. These factories will return the most
      * appropriate subclass of NumberFormat for a given locale.
-     * @see NumberFormat#getInstance()
-     * @see NumberFormat#getNumberInstance()
-     * @see NumberFormat#getCurrencyInstance()
-     * @see NumberFormat#getPercentInstance()
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      */
     @SuppressWarnings("this-escape")
     public DecimalFormat() {
@@ -471,10 +471,11 @@ public class DecimalFormat extends NumberFormat {
      * @param pattern a non-localized pattern string.
      * @throws    NullPointerException if {@code pattern} is null
      * @throws    IllegalArgumentException if the given pattern is invalid.
-     * @see NumberFormat#getInstance()
-     * @see NumberFormat#getNumberInstance()
-     * @see NumberFormat#getCurrencyInstance()
-     * @see NumberFormat#getPercentInstance()
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      */
     @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
@@ -500,10 +501,10 @@ public class DecimalFormat extends NumberFormat {
      * @param symbols the set of symbols to be used
      * @throws    NullPointerException if any of the given arguments is null
      * @throws    IllegalArgumentException if the given pattern is invalid
-     * @see NumberFormat#getInstance()
-     * @see NumberFormat#getNumberInstance()
-     * @see NumberFormat#getCurrencyInstance()
-     * @see NumberFormat#getPercentInstance()
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      * @see java.text.DecimalFormatSymbols
      */
     @SuppressWarnings("this-escape")
