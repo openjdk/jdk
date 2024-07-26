@@ -3808,7 +3808,7 @@ public final class DateTimeFormatterBuilder {
                 return false;
             }
             int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
-            // format mostly using LocalDateTime.toString
+            // use LocalDateTime.toString, If fractionalDigits < 0, printNano is implemented in LocalDateTime
             LocalDateTime ldt = LocalDateTime.ofEpochSecond(inSecs, fractionalDigits >= 0 ? 0 : inNano, ZoneOffset.UTC);
             buf.append(ldt);
             if (ldt.getSecond() == 0 && ldt.getNano() == 0) {
