@@ -387,14 +387,14 @@ class GrowableArrayWithAllocator : public GrowableArrayView<E, Index> {
 
 protected:
   GrowableArrayWithAllocator(E* data, Index capacity) :
-      GrowableArrayView<E>(data, capacity, 0) {
+      GrowableArrayView<E, Index>(data, capacity, 0) {
     for (Index i = 0; i < capacity; i++) {
       ::new ((void*)&data[i]) E();
     }
   }
 
   GrowableArrayWithAllocator(E* data, Index capacity, Index initial_len, const E& filler) :
-      GrowableArrayView<E>(data, capacity, initial_len) {
+      GrowableArrayView<E, Index>(data, capacity, initial_len) {
     Index i = 0;
     for (; i < initial_len; i++) {
       ::new ((void*)&data[i]) E(filler);
@@ -674,7 +674,22 @@ public:
     return *this;
   }
 
-  void init_checks(const GrowableArrayBase<>* array) const;
+  template<typename Index>
+  void init_checks(const GrowableArrayBase<Index>* array) const {
+  // Stack allocated arrays support all three element allocation locations
+  if (array->allocated_on_stack_or_embedded()) {
+    return;
+  }
+
+  // Otherwise there's a strict one-to-one mapping
+  assert(on_C_heap() == array->allocated_on_C_heap(),
+         "growable array must be C heap allocated if elements are");
+  assert(on_resource_area() == array->allocated_on_res_area(),
+         "growable array must be resource allocated if elements are");
+  assert(on_arena() == array->allocated_on_arena(),
+         "growable array must be arena allocated if elements are");
+  }
+
   void on_resource_area_alloc_check() const;
 #endif // ASSERT
 
@@ -753,7 +768,7 @@ public:
   GrowableArray() : GrowableArray(2 /* initial_capacity */) {}
 
   explicit GrowableArray(Index initial_capacity) :
-      GrowableArrayWithAllocator<E, GrowableArray>(
+      GrowableArrayWithAllocator<E, GrowableArray, Index>(
           allocate(initial_capacity),
           initial_capacity),
       _metadata() {
@@ -761,7 +776,7 @@ public:
   }
 
   GrowableArray(Index initial_capacity, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray>(
+      GrowableArrayWithAllocator<E, GrowableArray, Index>(
           allocate(initial_capacity, memflags),
           initial_capacity),
       _metadata(memflags) {
@@ -769,7 +784,7 @@ public:
   }
 
   GrowableArray(Index initial_capacity, Index initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArray>(
+      GrowableArrayWithAllocator<E, GrowableArray, Index>(
           allocate(initial_capacity),
           initial_capacity, initial_len, filler),
       _metadata() {
@@ -777,7 +792,7 @@ public:
   }
 
   GrowableArray(Index initial_capacity, Index initial_len, const E& filler, MEMFLAGS memflags) :
-      GrowableArrayWithAllocator<E, GrowableArray>(
+      GrowableArrayWithAllocator<E, GrowableArray, Index>(
           allocate(initial_capacity, memflags),
           initial_capacity, initial_len, filler),
       _metadata(memflags) {
@@ -785,7 +800,7 @@ public:
   }
 
   GrowableArray(Arena* arena, Index initial_capacity, Index initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArray>(
+      GrowableArrayWithAllocator<E, GrowableArray, Index>(
           allocate(initial_capacity, arena),
           initial_capacity, initial_len, filler),
       _metadata(arena) {
@@ -801,7 +816,7 @@ public:
 
 // Leaner GrowableArray for CHeap backed data arrays, with compile-time decided MEMFLAGS.
 template <typename E, MEMFLAGS F, typename Index = int>
-class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F, Index>, Index > {
+class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F, Index>, Index> {
   friend class GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F, Index>, Index>;
 
   STATIC_ASSERT(F != mtNone);
@@ -826,12 +841,12 @@ class GrowableArrayCHeap : public GrowableArrayWithAllocator<E, GrowableArrayCHe
 
 public:
   GrowableArrayCHeap(Index initial_capacity = 0) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F>, Index>(
           allocate(initial_capacity, F),
           initial_capacity) {}
 
   GrowableArrayCHeap(Index initial_capacity, Index initial_len, const E& filler) :
-      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F> >(
+      GrowableArrayWithAllocator<E, GrowableArrayCHeap<E, F>, Index>(
           allocate(initial_capacity, F),
           initial_capacity, initial_len, filler) {}
 

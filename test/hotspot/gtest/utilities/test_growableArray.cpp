@@ -695,6 +695,6 @@ TEST_VM_F(GrowableArrayTest, using_indices_of_different_sizes_leads_to_different
   ResourceMark rm;
   GrowableArray<int, uint8_t> a;
   GrowableArray<int, int> b;
-  EXPECT_LT(sizeof(a), sizeof(b));
+  EXPECT_LT(sizeof(a), sizeof(b)) << "Size of uint8_t: %d" << sizeof(a) << " Size of int: %d" << sizeof(b);
 }
 
