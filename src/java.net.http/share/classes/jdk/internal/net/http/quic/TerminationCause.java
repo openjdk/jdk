@@ -26,7 +26,6 @@ package jdk.internal.net.http.quic;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 import java.util.Objects;
 
 import javax.net.ssl.SSLHandshakeException;
@@ -120,10 +119,9 @@ public abstract sealed class TerminationCause {
     private static IOException toReportedCause(final Throwable original,
                                                final String fallbackExceptionMsg) {
         if (original == null) {
-            if (fallbackExceptionMsg != null) {
-                return new IOException(fallbackExceptionMsg);
-            }
-            return new ClosedChannelException();
+            return fallbackExceptionMsg == null
+                    ? new IOException("connection terminated")
+                    : new IOException(fallbackExceptionMsg);
         } else if (original instanceof QuicTransportException qte) {
             return new IOException(qte.getMessage());
         } else if (original instanceof SSLHandshakeException) {
