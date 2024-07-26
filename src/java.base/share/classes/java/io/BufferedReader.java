@@ -59,10 +59,10 @@ import jdk.internal.misc.InternalLock;
  * <p> Programs that use DataInputStreams for textual input can be localized by
  * replacing each DataInputStream with an appropriate BufferedReader.
  *
- * <p> In general, different BufferedReaders should not be used to read from
- * the same Reader. There is no way for a BufferedReader to know what another
- * BufferedReader has read from the underlying Reader, nor does it have access
- * to the other BufferedReader's internal buffer.
+ * <p> More than one instance of BufferedReader should not be used with the
+ * same underlying Reader instance.  Doing so can cause the BufferedReader
+ * instances to return an incorrect result since each instance of
+ * BufferedReader maintains its own state.
  *
  * @see FileReader
  * @see InputStreamReader
