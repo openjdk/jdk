@@ -67,16 +67,12 @@ public final class RenderBuffer {
      */
     private static final int COPY_FROM_ARRAY_THRESHOLD = 10;
 
-    MemorySegment segment;
-    private final long baseAddress;
-    private long curOffset;
-    private final int capacity;
+    private final MemorySegment segment;
+    private int curOffset;
 
     private RenderBuffer(int numBytes) {
         segment = Arena.global().allocate(numBytes, SIZEOF_DOUBLE);
-        baseAddress = segment.address();
-        curOffset = 0L;
-        capacity = numBytes;
+        curOffset = 0;
     }
 
     /**
@@ -90,7 +86,7 @@ public final class RenderBuffer {
      * Returns the base address of the underlying memory buffer.
      */
     public final long getAddress() {
-        return baseAddress;
+        return segment.address();
     }
 
     /**
@@ -99,26 +95,26 @@ public final class RenderBuffer {
      */
 
     public final int capacity() {
-        return capacity;
+        return (int)segment.byteSize();
     }
 
     public final int remaining() {
-        return (int)(capacity - curOffset);
+        return (capacity() - curOffset);
     }
 
     public final int position() {
-        return (int)(curOffset);
+        return curOffset;
     }
 
-    public final void position(long numBytes) {
-        curOffset = numBytes;
+    public final void position(int bytePos) {
+        curOffset = bytePos;
     }
 
     public final void clear() {
-        curOffset = 0L;
+        curOffset = 0;
     }
 
-    public final RenderBuffer skip(long numBytes) {
+    public final RenderBuffer skip(int numBytes) {
         curOffset += numBytes;
         return this;
     }
@@ -139,10 +135,8 @@ public final class RenderBuffer {
 
     public RenderBuffer put(byte[] x, int offset, int length) {
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            int offsetInBytes = offset * SIZEOF_BYTE;
-            int lengthInBytes = length * SIZEOF_BYTE;
-            MemorySegment.copy(x, offsetInBytes, segment, JAVA_BYTE, curOffset, length);
-            position(position() + lengthInBytes);
+            MemorySegment.copy(x, offset, segment, JAVA_BYTE, curOffset, length);
+            position(position() + length * SIZEOF_BYTE);
         } else {
             int end = offset + length;
             for (int i = offset; i < end; i++) {
@@ -170,10 +164,8 @@ public final class RenderBuffer {
     public RenderBuffer put(short[] x, int offset, int length) {
         // assert (position() % SIZEOF_SHORT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            int offsetInBytes = offset * SIZEOF_SHORT;
-            int lengthInBytes = length * SIZEOF_SHORT;
-            MemorySegment.copy(x, offsetInBytes, segment, JAVA_SHORT, curOffset, length);
-            position(position() + lengthInBytes);
+            MemorySegment.copy(x, offset, segment, JAVA_SHORT, curOffset, length);
+            position(position() + length * SIZEOF_SHORT);
         } else {
             int end = offset + length;
             for (int i = offset; i < end; i++) {
@@ -188,7 +180,7 @@ public final class RenderBuffer {
      */
 
     public final RenderBuffer putInt(int pos, int x) {
-        // assert (baseAddress + pos % SIZEOF_INT == 0);
+        // assert (getAddress() + pos % SIZEOF_INT == 0);
         segment.set(JAVA_INT, pos, x);
         return this;
     }
@@ -207,10 +199,8 @@ public final class RenderBuffer {
     public RenderBuffer put(int[] x, int offset, int length) {
         // assert (position() % SIZEOF_INT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            int offsetInBytes = offset * SIZEOF_INT;
-            int lengthInBytes = length * SIZEOF_INT;
-            MemorySegment.copy(x, offsetInBytes, segment, JAVA_INT, curOffset, length);
-            position(position() + lengthInBytes);
+            MemorySegment.copy(x, offset, segment, JAVA_INT, curOffset, length);
+            position(position() + length * SIZEOF_INT);
         } else {
             int end = offset + length;
             for (int i = offset; i < end; i++) {
@@ -238,10 +228,8 @@ public final class RenderBuffer {
     public RenderBuffer put(float[] x, int offset, int length) {
         // assert (position() % SIZEOF_FLOAT == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            int offsetInBytes = offset * SIZEOF_FLOAT;
-            int lengthInBytes = length * SIZEOF_FLOAT;
-            MemorySegment.copy(x, offsetInBytes, segment, JAVA_FLOAT, curOffset, length);
-            position(position() + lengthInBytes);
+            MemorySegment.copy(x, offset, segment, JAVA_FLOAT, curOffset, length);
+            position(position() + length * SIZEOF_FLOAT);
         } else {
             int end = offset + length;
             for (int i = offset; i < end; i++) {
@@ -269,10 +257,8 @@ public final class RenderBuffer {
     public RenderBuffer put(long[] x, int offset, int length) {
         // assert (position() % SIZEOF_LONG == 0);
         if (length > COPY_FROM_ARRAY_THRESHOLD) {
-            int offsetInBytes = offset * SIZEOF_LONG;
-            int lengthInBytes = length * SIZEOF_LONG;
-            MemorySegment.copy(x, offsetInBytes, segment, JAVA_LONG, curOffset, length);
-            position(position() + lengthInBytes);
+            MemorySegment.copy(x, offset, segment, JAVA_LONG, curOffset, length);
+            position(position() + length * SIZEOF_LONG);
         } else {
             int end = offset + length;
             for (int i = offset; i < end; i++) {
