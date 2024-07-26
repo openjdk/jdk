@@ -392,6 +392,63 @@ bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
   return true;
 }
 
+// Return true if `b` could be the starting byte of an encoded 2,3 or 6
+// byte sequence.
+static bool is_starting_byte(unsigned char b) {
+  return b >= 0xC0 && b <= 0xEF;;
+}
+
+// Takes an incoming buffer that was valid UTF-8, but which has been truncated such that
+// the last encoding may be partial, and return the same buffer with a NUL-terminator
+// inserted such that any partial encoding has gone.
+// Note: if the incoming buffer is already valid then we may still drop the last encoding.
+// To avoid that the caller can choose to check for validity first.
+// The incoming buffer is still expected to be NUL-terminated.
+void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
+  assert(length > 0, "invalid length");
+  assert(buffer[length - 1] == '\0', "Buffer should be NUL-terminated");
+
+  if (buffer[length - 2] < 128) {  // valid "ascii" - common case
+    return;
+  }
+
+  // Modified UTF-8 encodes characters in sequences of 1, 2, 3 or 6 bytes.
+  // The last byte is invalid if it is:
+  // - the 1st byte of a 2, 3 or 6 byte sequence
+  //     0b110xxxxx
+  //     0b1110xxxx
+  //     0b11101101
+  // - the 2nd byte of a 3 or 6 byte sequence
+  //     0b10xxxxxx
+  //     0b1010xxxx
+  // - the 3rd, 4th or 5th byte of a 6 byte sequence
+  //     0b10xxxxxx
+  //     0b11101101
+  //     0b1011xxxx
+  //
+  // Rather than checking all possible situations we simplify things noting that as we have already
+  // got a truncated string, then dropping one more character is not significant. So we work from the
+  // end of the buffer looking for the first byte that can be the starting byte of a UTF-8 encoded sequence,
+  // then we insert NUL at that location to terminate the buffer. There is an added complexity with 6 byte
+  // encodings as the first and fourth bytes are the same.
+
+  for (int index = length - 2; index > 0; index--) {
+    if (is_starting_byte(buffer[index])) {
+      if (buffer[index] == 0xED) {
+        // Could be first or fourth byte. If fourth
+        // then 2 bytes before will have second byte pattern (0b1010xxxx)
+        if ((index - 3) >= 0 && ((buffer[index - 2] & 0xA0) == 0xA0)) {
+          // it was fourth byte so truncate 3 bytes earlier
+          assert(buffer[index - 3] == 0xED, "malformed sequence");
+          index -= 3;
+        }
+      }
+      buffer[index] = '\0';
+      break;
+    }
+  }
+}
+
 //-------------------------------------------------------------------------------------
 
 bool UNICODE::is_latin1(jchar c) {
