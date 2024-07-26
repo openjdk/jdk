@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,29 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-package gc.stress.systemgc;
 
 /*
- * @test id=default
- * @key stress
- * @library /
- * @requires vm.gc.Shenandoah
- * @summary Stress the Shenandoah GC full GC by allocating objects of different lifetimes concurrently with System.gc().
- *
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC
- *      -XX:+ShenandoahVerify
- *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
- *
- * @run main/othervm/timeout=300 -Xlog:gc*=info -Xmx512m -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC
- *      gc.stress.systemgc.TestSystemGCWithShenandoah 270
+ * @test
+ * @bug 8336667
+ * @summary Ensure the unused bytes are calculated correctly when converting
+ *          indefinite length BER to DER
+ * @modules java.base/sun.security.util
+ * @library /test/lib
  */
-public class TestSystemGCWithShenandoah {
+import jdk.test.lib.Asserts;
+import sun.security.util.DerInputStream;
+
+import java.util.HexFormat;
+
+public class PoC {
     public static void main(String[] args) throws Exception {
-        TestSystemGC.main(args);
+        // A BER indefinite encoding with some unused bytes at the end
+        var data = HexFormat.of().parseHex("""
+                2480 0401AA 0401BB 0000 -- 2 byte string
+                010100 -- boolean false
+                12345678 -- 4 unused bytes"""
+                .replaceAll("(\\s|--.*)", ""));
+        var dis = new DerInputStream(data, 0, data.length - 4, true);
+        Asserts.assertEQ(dis.getDerValue().getOctetString().length, 2);
+        Asserts.assertFalse(dis.getDerValue().getBoolean());
+        dis.atEnd();
     }
 }

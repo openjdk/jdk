@@ -3028,7 +3028,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           max_value = new AddINode(opaque_init, max_value);
           register_new_node(max_value, loop_entry);
           // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-          max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+          max_value = new CastIINode(loop_entry, max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
           register_new_node(max_value, loop_entry);
           loop_entry = add_range_check_elimination_assertion_predicate(
               loop, loop_entry, scale_con, int_offset, int_limit, stride_con, max_value, true
