@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.*;
 final class TrustedFieldTypeTest {
 
     @Test
-    void reflection() throws NoSuchFieldException {
+    void reflection() throws NoSuchFieldException, IllegalAccessException {
         final class Holder {
             private final StableValue<Integer> value = StableValue.newInstance();
         }
@@ -52,11 +52,21 @@ final class TrustedFieldTypeTest {
         }
 
         Field valueField = Holder.class.getDeclaredField("value");
-        assertThrows(InaccessibleObjectException.class, () ->
-                valueField.setAccessible(true)
+        valueField.setAccessible(true);
+        Holder holder = new Holder();
+        // We should be able to read the StableValue field
+        Object read = valueField.get(holder);
+        // We should NOT be able to write to the StableValue field
+        assertThrows(IllegalAccessException.class, () ->
+                valueField.set(holder, StableValue.newInstance())
         );
+
         Field valueNonFinal = HolderNonFinal.class.getDeclaredField("value");
-        assertDoesNotThrow(() -> valueNonFinal.setAccessible(true));
+        valueNonFinal.setAccessible(true);
+        HolderNonFinal holderNonFinal = new HolderNonFinal();
+        // As the field is not final, both read and write should be ok (not trusted)
+        Object readNonFinal = valueNonFinal.get(holderNonFinal);
+        valueNonFinal.set(holderNonFinal, StableValue.newInstance());
     }
 
     @SuppressWarnings("removal")

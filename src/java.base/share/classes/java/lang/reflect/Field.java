@@ -182,10 +182,6 @@ class Field extends AccessibleObject implements Member {
 
     @Override
     void checkCanSetAccessible(Class<?> caller) {
-        if (isTrustedFinal()) {
-            throw newInaccessibleObjectException("Unable to make field " + this + " accessible " +
-                    "because it is a trusted final field");
-        }
         checkCanSetAccessible(caller, clazz);
     }
 
