@@ -253,10 +253,8 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
   return TrustFinalNonStaticFields;
 }
 
-const char* stable_value_klass_name = "java/lang/StableValue";
-
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
-  return (signature->equals(stable_value_klass_name) == 0);
+  return (signature == vmSymbols::java_lang_StableValue_signature());
 }
 
 void ciField::initialize_from(fieldDescriptor* fd) {
