@@ -433,7 +433,7 @@ public class DecimalFormat extends NumberFormat {
      *
      * @apiNote To obtain standard formats for a given locale, use the
      * {@code NumberFormat} factory methods such as {@link
-     * NumberFormat#getNumberInstance()}. These factories will return the most
+     * NumberFormat#getNumberInstance(Locale)}. These factories will return the most
      * appropriate subclass of NumberFormat for a given locale.
      * @see NumberFormat#getInstance()
      * @see NumberFormat#getNumberInstance()
@@ -466,7 +466,7 @@ public class DecimalFormat extends NumberFormat {
      *
      * @apiNote To obtain standard formats for a given locale, use the
      * {@code NumberFormat} factory methods such as {@link
-     * NumberFormat#getNumberInstance()}. These factories will return the most
+     * NumberFormat#getNumberInstance(Locale)}. These factories will return the most
      * appropriate subclass of NumberFormat for a given locale.
      * @param pattern a non-localized pattern string.
      * @throws    NullPointerException if {@code pattern} is null
@@ -493,7 +493,7 @@ public class DecimalFormat extends NumberFormat {
      *
      * @apiNote To obtain standard formats for a given locale, use the
      * {@code NumberFormat} factory methods such as {@link
-     * NumberFormat#getInstance()} or {@link NumberFormat#getCurrencyInstance()}.
+     * NumberFormat#getInstance(Locale)} or {@link NumberFormat#getCurrencyInstance(Locale)}.
      * If you need only minor adjustments to a standard format, you can modify
      * the format returned by a NumberFormat factory method.
      * @param pattern a non-localized pattern string
