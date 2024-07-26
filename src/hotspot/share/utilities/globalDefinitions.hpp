@@ -224,7 +224,7 @@ const int LogBytesPerInt     = 2;
 #ifdef _LP64
 constexpr int LogBytesPerWord    = 3;
 #else
-const int LogBytesPerWord    = 2;
+constexpr int LogBytesPerWord    = 2;
 #endif
 const int LogBytesPerLong    = 3;
 
