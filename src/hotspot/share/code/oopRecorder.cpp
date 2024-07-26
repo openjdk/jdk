@@ -69,10 +69,10 @@ template <class T> void ValueRecorder<T>::maybe_initialize() {
   if (_handles == nullptr) {
     if (_arena != nullptr) {
       _handles  = new(_arena) GrowableArray<T>(_arena, 10, 0, T{});
-      _no_finds = new(_arena) GrowableArray<int>(    _arena, 10, 0, 0);
+      _no_finds = new(_arena) GrowableArray<int>(_arena, 10, 0, 0);
     } else {
       _handles  = new GrowableArray<T>(10, 0, T{});
-      _no_finds = new GrowableArray<int>(    10, 0, 0);
+      _no_finds = new GrowableArray<int>(10, 0, 0);
     }
   }
 }
