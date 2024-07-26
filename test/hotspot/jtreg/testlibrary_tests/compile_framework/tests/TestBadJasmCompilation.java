@@ -32,21 +32,17 @@
 package compile_framework.tests;
 
 import compiler.lib.compile_framework.*;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestBadJasmCompilation {
 
     // Generate a source jasm file as String
     public static String generate() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("super public class XYZ {");
-        out.println("    asdf"); // some bad code
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               super public class XYZ {
+                   some bad code
+               }
+               """;
     }
 
     public static void main(String args[]) {

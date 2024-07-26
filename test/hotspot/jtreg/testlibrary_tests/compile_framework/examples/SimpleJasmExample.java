@@ -32,8 +32,6 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -43,20 +41,18 @@ public class SimpleJasmExample {
 
     // Generate a source jasm file as String
     public static String generate() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("super public class XYZ {");
-        out.println("    public static Method test:\"(I)I\"");
-        out.println("    stack 20 locals 20");
-        out.println("    {");
-        out.println("        iload_0;");
-        out.println("        iconst_2;");
-        out.println("        imul;");
-        out.println("        ireturn;");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               super public class XYZ {
+                   public static Method test:"(I)I"
+                   stack 20 locals 20
+                   {
+                       iload_0;
+                       iconst_2;
+                       imul;
+                       ireturn;
+                   }
+               }
+        """;
     }
 
     public static void main(String args[]) {

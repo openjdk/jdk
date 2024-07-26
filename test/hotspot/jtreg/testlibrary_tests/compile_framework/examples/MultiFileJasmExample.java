@@ -60,7 +60,6 @@ public class MultiFileJasmExample {
         out.println("        ireturn;");
         out.println("    }");
         out.println("}");
-        out.close();
         return writer.toString();
     }
 

@@ -32,8 +32,6 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -43,16 +41,14 @@ public class SimpleJavaExample {
 
     // Generate a source java file as String
     public static String generate() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("public class XYZ {");
-        out.println("    public static int test(int i) {");
-        out.println("        System.out.println(\"Hello from XYZ.test: \" + i);");
-        out.println("        return i * 2;");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               public class XYZ {
+                   public static int test(int i) {
+                       System.out.println("Hello from XYZ.test: " + i);
+                       return i * 2;
+                   }
+               }
+               """;
     }
 
     public static void main(String args[]) {

@@ -35,8 +35,6 @@ package compile_framework.examples;
 import compiler.lib.compile_framework.*;
 import jdk.test.lib.Utils;
 import jdk.test.lib.Platform;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -54,28 +52,26 @@ public class TestFrameworkJavaExample {
 
     // Generate a source java file as String
     public static String generate_X1() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("import compiler.lib.ir_framework.*;");
-        out.println("");
-        out.println("public class X1 {");
-        out.println("    public static void main(String args[]) {");
-        out.println("        TestFramework.run(X1.class);");
-        out.println("    }");
-        out.println("");
-        out.println("    @Test"); // Test with working IR rule testing for vectorization.
-        out.println("    @IR(counts = {IRNode.LOAD_VECTOR_F, \"> 0\"},");
-        out.println("        applyIfCPUFeatureOr = {\"sse2\", \"true\", \"asimd\", \"true\"})");
-        out.println("    static float[] test() {");
-        out.println("        float[] a = new float[1024*8];");
-        out.println("        for (int i = 0; i < a.length; i++) {");
-        out.println("            a[i]++;");
-        out.println("        }");
-        out.println("        return a;");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               import compiler.lib.ir_framework.*;
+
+               public class X1 {
+                   public static void main(String args[]) {
+                       TestFramework.run(X1.class);
+                   }
+
+                   @Test
+                   @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0"},
+                       applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+                   static float[] test() {
+                       float[] a = new float[1024*8];
+                       for (int i = 0; i < a.length; i++) {
+                           a[i]++;
+                       }
+                       return a;
+                   }
+               }
+               """;
     }
 
     static void test_X1() {
@@ -107,23 +103,22 @@ public class TestFrameworkJavaExample {
 
     // Generate a source java file as String
     public static String generate_X2() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("import compiler.lib.ir_framework.*;");
-        out.println("");
-        out.println("public class X2 {");
-        out.println("    public static void main(String args[]) {");
-        out.println("        TestFramework.run(X2.class);");
-        out.println("    }");
-        out.println("");
-        out.println("    @Test");
-        out.println("    @IR(counts = {IRNode.LOAD, \"> 0\"})"); // Conflicting IR rules
-        out.println("    @IR(failOn = IRNode.LOAD)");            //  -> one must fail.
-        out.println("    static void test() {");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        // Example with conflicting "@IR" rules -> expect a IRViolationException.
+        return """
+               import compiler.lib.ir_framework.*;
+
+               public class X2 {
+                   public static void main(String args[]) {
+                       TestFramework.run(X2.class);
+                   }
+
+                   @Test
+                   @IR(counts = {IRNode.LOAD, "> 0"})
+                   @IR(failOn = IRNode.LOAD)
+                   static void test() {
+                   }
+               }
+               """;
     }
 
     static void test_X2() {

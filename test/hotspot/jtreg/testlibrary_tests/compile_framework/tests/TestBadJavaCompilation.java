@@ -32,21 +32,17 @@
 package compile_framework.tests;
 
 import compiler.lib.compile_framework.*;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestBadJavaCompilation {
 
     // Generate a source java file as String
     public static String generate() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("public class XYZ {");
-        out.println("    asdf"); // some bad code
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               public class XYZ {
+                   some bad code
+               }
+               """;
     }
 
     public static void main(String args[]) {

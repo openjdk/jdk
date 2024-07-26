@@ -32,8 +32,6 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import java.io.StringWriter;
-import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -44,51 +42,47 @@ public class CombinedJavaJasmExample {
 
     // Generate a source jasm file as String
     public static String generateJasm() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("package p/xyz;");
-        out.println("");
-        out.println("super public class XYZJasm {");
-        out.println("    public static Method test:\"(I)I\"");
-        out.println("    stack 20 locals 20");
-        out.println("    {");
-        out.println("        iload_0;");
-        out.println("        iconst_2;");
-        out.println("        imul;");
-        out.println("        invokestatic Method p/xyz/XYZJava.\"mul3\":\"(I)I\";"); // reference java class
-        out.println("        ireturn;");
-        out.println("    }");
-        out.println("");
-        out.println("    public static Method mul5:\"(I)I\"");
-        out.println("    stack 20 locals 20");
-        out.println("    {");
-        out.println("        iload_0;");
-        out.println("        ldc 5;");
-        out.println("        imul;");
-        out.println("        ireturn;");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               package p/xyz;
+
+               super public class XYZJasm {
+                   public static Method test:"(I)I"
+                   stack 20 locals 20
+                   {
+                       iload_0;
+                       iconst_2;
+                       imul;
+                       invokestatic Method p/xyz/XYZJava."mul3":"(I)I";
+                       ireturn;
+                   }
+
+                   public static Method mul5:"(I)I"
+                   stack 20 locals 20
+                   {
+                       iload_0;
+                       ldc 5;
+                       imul;
+                       ireturn;
+                   }
+               }
+               """;
     }
 
     // Generate a source java file as String
     public static String generateJava() {
-        StringWriter writer = new StringWriter();
-        PrintWriter out = new PrintWriter(writer);
-        out.println("package p.xyz;");
-        out.println("");
-        out.println("public class XYZJava {");
-        out.println("    public static int test(int i) {");
-        out.println("        return p.xyz.XYZJasm.mul5(i * 7);"); // reference jasm class
-        out.println("    }");
-        out.println("");
-        out.println("    public static int mul3(int i) {");
-        out.println("        return i * 3;");
-        out.println("    }");
-        out.println("}");
-        out.close();
-        return writer.toString();
+        return """
+               package p.xyz;
+
+               public class XYZJava {
+                   public static int test(int i) {
+                       return p.xyz.XYZJasm.mul5(i * 7);
+                   }
+
+                   public static int mul3(int i) {
+                       return i * 3;
+                   }
+               }
+               """;
     }
 
     public static void main(String args[]) {

@@ -56,7 +56,6 @@ public class MultiFileJavaExample {
         out.println("        return new XYZ" + i + "();");
         out.println("    }");
         out.println("}");
-        out.close();
         return writer.toString();
     }
 
