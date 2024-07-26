@@ -31,7 +31,6 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Objects;
@@ -40,62 +39,6 @@ import java.util.Objects;
  * A utility class for PEM format encoding.
  */
 public class Pem {
-
-    /**
-     * Public Key PEM header & footer
-     */
-    public static final byte[] PUBHEADER = "-----BEGIN PUBLIC KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PUBFOOTER = "-----END PUBLIC KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Private Key PEM header & footer
-     */
-    public static final byte[] PKCS8HEADER = "-----BEGIN PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS8FOOTER = "-----END PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Encrypted Private Key PEM header & footer
-     */
-    public static final byte[] PKCS8ENCHEADER = "-----BEGIN ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS8ENCFOOTER = "-----END ENCRYPTED PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * Certificate PEM header & footer
-     */
-    public static final byte[] CERTHEADER = "-----BEGIN CERTIFICATE-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] CERTFOOTER = "-----END CERTIFICATE-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * CRL PEM header & footer
-     */
-    public static final byte[] CRLHEADER = "-----BEGIN X509 CRL-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] CRLFOOTER = "-----END X509 CRL-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    /**
-     * PKCS#1/slleay/OpenSSL RSA PEM header & footer
-     */
-    public static final byte[] PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-    public static final byte[] PKCS1FOOTER = "-----END RSA PRIVATE KEY-----"
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    public static final byte[] LINESEPARATOR = System.lineSeparator()
-        .getBytes(StandardCharsets.ISO_8859_1);
-
-    public enum KeyType {
-        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL, PKCS1
-    }
-
     private static final char WS = 0x20;  // Whitespace
 
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
@@ -104,14 +47,6 @@ public class Pem {
         DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
     }
 
-    private byte[] header, footer;
-    private byte[] data;
-
-    private Pem(byte[] header, byte[] data, byte[] footer) {
-        this.header = header;
-        this.data = data;
-        this.footer = footer;
-    }
     /**
      * Decodes a PEM-encoded block.
      *
@@ -121,8 +56,8 @@ public class Pem {
      * @throws java.io.IOException if input is invalid
      */
     public static byte[] decode(String input) {
-        byte[] src = input.replaceAll("\\s+", "")
-            .getBytes(StandardCharsets.ISO_8859_1);
+        byte[] src = input.replaceAll("\\s+", "").
+            getBytes(StandardCharsets.ISO_8859_1);
             return Base64.getDecoder().decode(src);
     }
 
@@ -143,7 +78,7 @@ public class Pem {
         }
     }
 
-    public static Pem readPEM(InputStream is) throws IOException {
+    public static PEMRecord readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
@@ -156,7 +91,7 @@ public class Pem {
      * @return A new Pem object containing the three components
      * @throws IOException on read errors
      */
-    public static Pem readPEM(InputStream is, boolean shortHeader)
+    public static PEMRecord readPEM(InputStream is, boolean shortHeader)
         throws IOException{
         Objects.requireNonNull(is);
 
@@ -298,24 +233,6 @@ public class Pem {
                 header + " " + footer);
         }
 
-        return new Pem(header.getBytes(StandardCharsets.ISO_8859_1),
-            data.getBytes(StandardCharsets.ISO_8859_1),
-            footer.getBytes(StandardCharsets.ISO_8859_1));
-    }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public byte[] getHeader() {
-        return header;
-    }
-
-    public byte[] getFooter() {
-        return footer;
-    }
-
-    public void clean() {
-        Arrays.fill(data, (byte)0);
+        return new PEMRecord(header, data);
     }
 }

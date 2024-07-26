@@ -29,13 +29,13 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
+import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
 import java.security.cert.*;
 import java.security.spec.*;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -114,34 +114,11 @@ public final class PEMDecoder {
      * header and footer and proceed with decoding the base64 for the
      * appropriate type.
      */
-    private DEREncodable decode(byte[] data, byte[] header, byte[] footer)
+    private DEREncodable decode(PEMRecord pem)
         throws IOException {
-        Pem.KeyType keyType;
-
-        if (Arrays.mismatch(header, Pem.PUBHEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.PUBFOOTER) == -1) {
-            keyType = Pem.KeyType.PUBLIC;
-        } else if (Arrays.mismatch(header, Pem.PKCS8HEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.PKCS8FOOTER) == -1) {
-            keyType = Pem.KeyType.PRIVATE;
-        } else if (Arrays.mismatch(header, Pem.PKCS8ENCHEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.PKCS8ENCFOOTER) == -1) {
-            keyType = Pem.KeyType.ENCRYPTED_PRIVATE;
-        } else if (Arrays.mismatch(header, Pem.CERTHEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.CERTFOOTER) == -1) {
-            keyType = Pem.KeyType.CERTIFICATE;
-        } else if (Arrays.mismatch(header, Pem.CRLHEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.CRLFOOTER) == -1) {
-            keyType = Pem.KeyType.CRL;
-        } else if (Arrays.mismatch(header, Pem.PKCS1HEADER) == -1 &&
-            Arrays.mismatch(footer, Pem.PKCS1FOOTER) == -1) {
-            keyType = Pem.KeyType.PKCS1;
-        } else {
-            throw new IllegalArgumentException("Unsupported PEM header/footer");
-        }
 
         if (password != null) {
-            if (keyType != Pem.KeyType.ENCRYPTED_PRIVATE) {
+            if (!PEMRecord.ENCRYPTED_PRIVATE_KEY.equalsIgnoreCase(pem.id())) {
                 throw new IllegalArgumentException("Decoder configured only " +
                     "for encrypted PEM.");
             }
@@ -150,19 +127,18 @@ public final class PEMDecoder {
         Base64.Decoder decoder = Base64.getMimeDecoder();
 
         try {
-            return switch (keyType) {
-                case PUBLIC -> {
+            return switch (pem.id()) {
+                case PEMRecord.PUBLIC_KEY -> {
                     X509EncodedKeySpec spec =
-                        new X509EncodedKeySpec(decoder.decode(data));
-                    yield ((KeyFactory) getFactory(keyType,
-                        spec.getAlgorithm())).generatePublic(spec);
+                        new X509EncodedKeySpec(decoder.decode(pem.pem()));
+                    yield (getKeyFactory(spec.getAlgorithm())).
+                        generatePublic(spec);
 
                 }
-                case PRIVATE -> {
-                    PKCS8Key p8key = new PKCS8Key(decoder.decode(data));
+                case PEMRecord.PRIVATE_KEY -> {
+                    PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.pem()));
                     PrivateKey priKey;
-                    KeyFactory kf = (KeyFactory)
-                        getFactory(keyType, p8key.getAlgorithm());
+                    KeyFactory kf = getKeyFactory(p8key.getAlgorithm());
                     priKey = kf.generatePrivate(
                         new PKCS8EncodedKeySpec(p8key.getEncoded(),
                             p8key.getAlgorithm()));
@@ -170,36 +146,33 @@ public final class PEMDecoder {
                     if (p8key.getPubKeyEncoded() != null) {
                         X509EncodedKeySpec spec = new X509EncodedKeySpec(
                             p8key.getPubKeyEncoded(), p8key.getAlgorithm());
-                        yield new KeyPair(((KeyFactory)
-                            getFactory(keyType, p8key.getAlgorithm()))
-                            .generatePublic(spec),
-                            priKey);
+                        yield new KeyPair(getKeyFactory(p8key.getAlgorithm()).
+                            generatePublic(spec), priKey);
                     }
                     yield priKey;
                 }
-                case ENCRYPTED_PRIVATE -> {
+                case PEMRecord.ENCRYPTED_PRIVATE_KEY -> {
                     if (password == null) {
-                        yield new EncryptedPrivateKeyInfo(decoder.decode(data));
+                        yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem()));
                     }
-                    yield new EncryptedPrivateKeyInfo(decoder.decode(data)).
+                    yield new EncryptedPrivateKeyInfo(decoder.decode(pem.pem())).
                         getKey(password);
                 }
-                case CERTIFICATE -> {
-                    CertificateFactory cf =
-                        (CertificateFactory) getFactory(keyType, "X509");
+                case PEMRecord.CERTIFICATE,
+                    PEMRecord.X509_CERTIFICATE -> {
+                    CertificateFactory cf = getCertFactory("X509");
                     yield (X509Certificate) cf.generateCertificate(
-                        new ByteArrayInputStream(decoder.decode(data)));
+                        new ByteArrayInputStream(decoder.decode(pem.pem())));
                 }
-                case CRL -> {
-                    CertificateFactory cf =
-                        (CertificateFactory) getFactory(keyType, "X509");
+                case PEMRecord.X509_CRL -> {
+                    CertificateFactory cf = getCertFactory("X509");
                     yield (X509CRL) cf.generateCRL(
-                        new ByteArrayInputStream(decoder.decode(data)));
+                        new ByteArrayInputStream(decoder.decode(pem.pem())));
                 }
-                case PKCS1 -> {
-                    KeyFactory kf = (KeyFactory) getFactory(keyType, "RSA");
+                case PEMRecord.RSA_PRIVATE_KEY -> {
+                    KeyFactory kf = getKeyFactory("RSA");
                     yield kf.generatePrivate(
-                        RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(data)));
+                        RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(pem.pem())));
                 }
                 default ->
                     throw new IllegalArgumentException("Unsupported type or " +
@@ -243,11 +216,11 @@ public final class PEMDecoder {
      */
     public DEREncodable decode(InputStream is) throws IOException {
         Objects.requireNonNull(is);
-        Pem pem = Pem.readPEM(is);
+        PEMRecord pem = Pem.readPEM(is);
         if (pem == null) {
             throw new IllegalArgumentException("No PEM data found.");
         }
-        return decode(pem.getData(), pem.getHeader(), pem.getFooter());
+        return decode(pem);
     }
 
     /**
@@ -306,13 +279,16 @@ public final class PEMDecoder {
         throws IOException {
         Objects.requireNonNull(is);
         Objects.requireNonNull(tClass);
-        Pem pem = Pem.readPEM(is);
+        PEMRecord pem = Pem.readPEM(is);
         if (pem == null) {
             throw new IllegalArgumentException("No PEM data found.");
         }
 
-        DEREncodable so =
-            decode(pem.getData(), pem.getHeader(), pem.getFooter());
+        if (tClass.isAssignableFrom(PEMRecord.class)) {
+            return tClass.cast(pem);
+        }
+
+        DEREncodable so = decode(pem);
 
         /*
          * If the object is a KeyPair, check if the tClass is set to class
@@ -345,12 +321,10 @@ public final class PEMDecoder {
                 // unchecked suppressed as we know tClass comes from KeySpec
                 // KeyType not relevant here.  We just want KeyFactory
                 if ((PKCS8EncodedKeySpec.class).isAssignableFrom(tClass)) {
-                    ((KeyFactory) getFactory(Pem.KeyType.PRIVATE,
-                        key.getAlgorithm())).getKeySpec(key,
-                        PKCS8EncodedKeySpec.class);
+                    getKeyFactory(key.getAlgorithm()).
+                        getKeySpec(key, PKCS8EncodedKeySpec.class);
                 } else if ((X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
-                    ((KeyFactory) getFactory(Pem.KeyType.PUBLIC,
-                        key.getAlgorithm()))
+                    getKeyFactory(key.getAlgorithm())
                         .getKeySpec(key, X509EncodedKeySpec.class);
                 } else {
                     throw new IllegalArgumentException("Invalid KeySpec.");
@@ -365,26 +339,25 @@ public final class PEMDecoder {
         return tClass.cast(so);
     }
 
-    // Convenience method to avoid provider getInstance checks clutter
-    private Object getFactory(Pem.KeyType type, String algorithm) {
+
+    private KeyFactory getKeyFactory(String algorithm) {
         try {
             if (factory == null) {
-                return switch (type) {
-                    case PUBLIC, PRIVATE, PKCS1 ->
-                        KeyFactory.getInstance(algorithm);
-                    case CERTIFICATE, CRL ->
-                        CertificateFactory.getInstance(algorithm);
-                    default -> null;  // no possible
-                };
-            } else {
-                return switch (type) {
-                    case PUBLIC, PRIVATE, PKCS1 ->
-                        KeyFactory.getInstance(algorithm, factory);
-                    case CERTIFICATE, CRL ->
-                        CertificateFactory.getInstance(algorithm, factory);
-                    default -> null;  // no possible
-                };
+                return KeyFactory.getInstance(algorithm);
             }
+            return KeyFactory.getInstance(algorithm, factory);
+        } catch(GeneralSecurityException e){
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    // Convenience method to avoid provider getInstance checks clutter
+    private CertificateFactory getCertFactory(String algorithm) {
+        try {
+            if (factory == null) {
+                return CertificateFactory.getInstance(algorithm);
+            }
+            return CertificateFactory.getInstance(algorithm, factory);
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException(e);
         }

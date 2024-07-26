@@ -27,7 +27,7 @@
  * @test
  * @bug 8298420
  * @summary Testing basic PEM API encoding
- *
+ * @enablePreview
  * @modules java.base/sun.security.util
  */
 
