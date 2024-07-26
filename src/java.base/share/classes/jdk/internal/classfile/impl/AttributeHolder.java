@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.util.List;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
-import java.lang.classfile.BufWriter;
 
 public class AttributeHolder {
     private final List<Attribute<?>> attributes = new ArrayList<>();
@@ -50,10 +49,8 @@ public class AttributeHolder {
         return attributes.size();
     }
 
-    public void writeTo(BufWriter buf) {
-        buf.writeU2(attributes.size());
-        for (Attribute<?> a : attributes)
-            a.writeTo(buf);
+    public void writeTo(BufWriterImpl buf) {
+        Util.writeAttributes(buf, attributes);
     }
 
     boolean isPresent(AttributeMapper<?> am) {

@@ -1351,7 +1351,6 @@ void ShenandoahFreeSet::print_on(outputStream* out) const {
 double ShenandoahFreeSet::internal_fragmentation() {
   double squared = 0;
   double linear = 0;
-  int count = 0;
 
   idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
   for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
@@ -1361,11 +1360,10 @@ double ShenandoahFreeSet::internal_fragmentation() {
     size_t used = r->used();
     squared += used * used;
     linear += used;
-    count++;
     index = _partitions.find_index_of_next_available_region(ShenandoahFreeSetPartitionId::Mutator, index + 1);
   }
 
-  if (count > 0) {
+  if (linear > 0) {
     double s = squared / (ShenandoahHeapRegion::region_size_bytes() * linear);
     return 1 - s;
   } else {
