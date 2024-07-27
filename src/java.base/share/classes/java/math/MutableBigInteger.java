@@ -547,7 +547,7 @@ class MutableBigInteger {
      * Like {@link #rightShift(int)} but {@code n} can be greater than the length of the number.
      */
     void safeRightShift(int n) {
-        if (n/32 >= intLen) {
+        if (n >= bitLength()) {
             reset();
         } else {
             rightShift(n);
