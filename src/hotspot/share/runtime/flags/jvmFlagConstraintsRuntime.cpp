@@ -32,6 +32,21 @@
 #include "runtime/task.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
+  if (strcmp(value, "off") != 0 && 
+      strcmp(value, "record") != 0 && 
+      strcmp(value, "create") != 0 && 
+      strcmp(value, "auto") != 0 && 
+      strcmp(value, "on")) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized value %s for AOTMode. Must be one of the following: "
+                        "off, record, create, auto, on\n",
+                        value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+
+  return JVMFlag::SUCCESS;
+}
 JVMFlag::Error ObjectAlignmentInBytesConstraintFunc(int value, bool verbose) {
   if (!is_power_of_2(value)) {
     JVMFlag::printError(verbose,
