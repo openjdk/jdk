@@ -2214,8 +2214,8 @@ public final class ZonedDateTime
      */
     @Override  // override for Javadoc
     public String toString() {
-        String offsetStr = offset.toString();
-        String zoneStr = null;
+        var offsetStr = offset.toString();
+        var zoneStr = (String) null;
         int length = 29 + offsetStr.length();
         if (offset != zone) {
             zoneStr = zone.toString();

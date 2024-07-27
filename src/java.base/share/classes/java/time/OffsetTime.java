@@ -1398,7 +1398,7 @@ public final class OffsetTime
      */
     @Override
     public String toString() {
-        String offsetStr = offset.toString();
+        var offsetStr = offset.toString();
         var buf = new StringBuilder(18 + offsetStr.length());
         time.formatTo(buf);
         return buf.append(offsetStr).toString();
