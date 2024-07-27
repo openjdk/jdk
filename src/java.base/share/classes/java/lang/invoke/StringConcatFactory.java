@@ -373,7 +373,7 @@ public final class StringConcatFactory {
         }
 
         try {
-            MethodHandle mh = simpleConcat(concatType, constantStrings);
+            MethodHandle mh = makeSimpleConcat(concatType, constantStrings);
             if (mh == null && concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
                 mh = generateMHInlineCopy(concatType, constantStrings);
             }
@@ -472,7 +472,7 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    private static MethodHandle simpleConcat(MethodType mt, String[] constants) {
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
