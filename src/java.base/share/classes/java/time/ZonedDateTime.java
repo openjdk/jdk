@@ -2219,7 +2219,7 @@ public final class ZonedDateTime
         int length = 29 + offsetStr.length();
         if (offset != zone) {
             zoneStr = zone.toString();
-            length += zoneStr.length();
+            length += zoneStr.length() + 2;
         }
         var buf = new StringBuilder(length);
         dateTime.formatTo(buf);
