@@ -1961,8 +1961,6 @@ class MutableBigInteger {
      * The value of {@code this} is assumed to be non-negative.
      *
      * @return the integer square root of {@code this} and the remainder if needed
-     * @throws ArithmeticException if the value returned by {@code bitLength()}
-     * overflows the range of {@code int}.
      */
     MutableBigInteger[] sqrtRem(boolean needRemainder) {
         // Special cases.
@@ -1975,10 +1973,6 @@ class MutableBigInteger {
                     needRemainder ? new MutableBigInteger(x - s * s) : null
             };
         }
-
-        long bitLength = this.bitLength();
-        if (bitLength != (int) bitLength)
-            throw new ArithmeticException("bitLength() integer overflow");
 
         // Normalize
         MutableBigInteger x = this;
