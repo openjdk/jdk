@@ -373,7 +373,7 @@ public final class StringConcatFactory {
 
         try {
             // Fast-path trivial concatenations
-            MethodHandle mh = simpleConcat(concatType, constantStrings);
+            MethodHandle mh = makeSimpleConcat(concatType, constantStrings);
 
             if (mh == null && concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
                 mh = generateMHInlineCopy(concatType, constantStrings);
@@ -473,7 +473,7 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    private static MethodHandle simpleConcat(MethodType mt, String[] constants) {
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
         if (suffix == null) {
@@ -511,24 +511,29 @@ public final class StringConcatFactory {
             mh = simpleConcat3(paramType0);
             mh = MethodHandles.insertArguments(mh, 2, suffix);
             return MethodHandles.insertArguments(mh, 0, prefix);
-        } else if (paramCount == 2 && constants[1] == null) {
+        } else if (paramCount == 2) {
             var paramType1 = mt.parameterType(1);
-            // Two reference arguments, no surrounding constants
-            if (!mt.hasPrimitives() && suffix.isEmpty() && prefix.isEmpty()) {
-                return simpleConcat();
-            }
+            if (constants[1] == null) {
+                // Two reference arguments, no surrounding constants
+                if (!mt.hasPrimitives() && suffix.isEmpty() && prefix.isEmpty()) {
+                    return simpleConcat();
+                }
 
-            if (suffix.isEmpty() && !paramType1.isPrimitive()) {
-                // "prefix" + i + s
-                mh = simpleConcat3(paramType0);
-                return MethodHandles.insertArguments(mh, 0, prefix);
-            }
+                if (suffix.isEmpty() && !paramType1.isPrimitive()) {
+                    // "prefix" + param0 + param1
+                    mh = simpleConcat3(paramType0);
+                    return MethodHandles.insertArguments(mh, 0, prefix);
+                }
 
-            if (prefix.isEmpty() && !paramType0.isPrimitive()) {
-                // s + i + "suffix"
-                mh = simpleConcat3(paramType1);
-                return MethodHandles.insertArguments(mh, 2, suffix);
+                if (prefix.isEmpty() && !paramType0.isPrimitive()) {
+                    // param0 + param1 + "suffix"
+                    mh = simpleConcat3(paramType1);
+                    return MethodHandles.insertArguments(mh, 2, suffix);
+                }
             }
+        } else if (paramCount == 3 && !paramType0.isPrimitive() && !mt.parameterType(2).isPrimitive()
+                && prefix.isEmpty() && constants[1] == null && constants[2] == null && suffix.isEmpty()) {
+            mh = simpleConcat3(mt.parameterType(1));
         }
 
         return null;
