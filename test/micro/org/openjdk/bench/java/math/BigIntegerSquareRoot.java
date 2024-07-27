@@ -54,7 +54,6 @@ public class BigIntegerSquareRoot {
     @Setup
     public void setup() {
         Random r = new Random(1123);
-        int numbits = r.nextInt(16384);
 
         hugeArray = new BigInteger[TESTSIZE]; /*
          * Huge numbers larger than
@@ -71,12 +70,12 @@ public class BigIntegerSquareRoot {
          */
 
         for (int i = 0; i < TESTSIZE; i++) {
-            int value = Math.abs(r.nextInt());
+            long value = Math.abs((long) r.nextInt());
 
-            hugeArray[i] = new BigInteger("" + ((long) value + (long) Integer.MAX_VALUE)
-                    + ((long) value + (long) Integer.MAX_VALUE));
-            largeArray[i] = new BigInteger("" + ((long) value + (long) Integer.MAX_VALUE));
-            smallArray[i] = new BigInteger("" + ((long) value / 1000));
+            hugeArray[i] = new BigInteger("" + (value + (long) Integer.MAX_VALUE)
+                    + (value + (long) Integer.MAX_VALUE));
+            largeArray[i] = new BigInteger("" + (value + (long) Integer.MAX_VALUE));
+            smallArray[i] = new BigInteger("" + (value / 1000));
         }
     }
 
