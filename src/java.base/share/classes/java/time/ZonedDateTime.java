@@ -2214,11 +2214,20 @@ public final class ZonedDateTime
      */
     @Override  // override for Javadoc
     public String toString() {
-        String str = dateTime.toString() + offset.toString();
+        String offsetStr = offset.toString();
+        String zoneStr = null;
+        int length = 29 + offsetStr.length();
         if (offset != zone) {
-            str += '[' + zone.toString() + ']';
+            zoneStr = zone.toString();
+            length += zoneStr.length();
         }
-        return str;
+        var buf = new StringBuilder(length);
+        dateTime.formatTo(buf);
+        buf.append(offsetStr);
+        if (zoneStr != null) {
+            buf.append('[').append(zoneStr).append(']');
+        }
+        return buf.toString();
     }
 
     //-----------------------------------------------------------------------

@@ -1923,7 +1923,10 @@ public final class OffsetDateTime
      */
     @Override
     public String toString() {
-        return dateTime.toString() + offset.toString();
+        String offsetStr = offset.toString();
+        var buf = new StringBuilder(29 + offsetStr.length());
+        dateTime.formatTo(buf);
+        return buf.append(offsetStr).toString();
     }
 
     //-----------------------------------------------------------------------
