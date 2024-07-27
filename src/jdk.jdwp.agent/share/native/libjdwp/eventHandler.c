@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1330,6 +1330,16 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
     LOG_MISC(("END cbVMDeath"));
 }
 
+/* Event callback for JVMTI_EVENT_DATA_DUMP_REQUEST */
+static void JNICALL
+cbDataDump(jvmtiEnv *jvmti_env)
+{
+    tty_message("Debug Agent Data Dump");
+    tty_message("=====================");
+    threadControl_dumpAllThreads();
+    eventHandler_dumpAllHandlers(JNI_TRUE);
+}
+
 /**
  * Delete this handler (do not delete permanent handlers):
  * Deinsert handler from active list,
@@ -1518,6 +1528,19 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
+
+    /*
+     * DATA_DUMP_REQUEST is special since it is not tied to any handlers or an EI,
+     * so it cannot be setup using threadControl_setEventMode(). Use JVMTI API directly.
+     */
+    if (gdata->jvmti_data_dump) {
+        error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+                (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable data dump request events");
+        }
+    }
+
     /*
      * Only enable vthread START and END events if we want to remember
      * vthreads when no debugger is connected.
@@ -1580,6 +1603,8 @@ eventHandler_initialize(jbyte sessionID)
     gdata->callbacks.VirtualThreadStart         = &cbVThreadStart;
     /* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_END */
     gdata->callbacks.VirtualThreadEnd           = &cbVThreadEnd;
+    /* Event callback for JVMTI_EVENT_DATA_DUMP_REQUEST */
+    gdata->callbacks.DataDumpRequest = &cbDataDump;
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventCallbacks)
                 (gdata->jvmti, &(gdata->callbacks), sizeof(gdata->callbacks));
@@ -1839,9 +1864,7 @@ eventHandler_installExternal(HandlerNode *node)
                           JNI_TRUE);
 }
 
-/***** debugging *****/
-
-#ifdef DEBUG
+/***** APIs for debugging the debug agent *****/
 
 void
 eventHandler_dumpAllHandlers(jboolean dumpPermanent)
@@ -1880,5 +1903,3 @@ eventHandler_dumpHandler(HandlerNode *node)
     tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
     eventFilter_dumpHandlerFilters(node);
 }
-
-#endif /* DEBUG */
