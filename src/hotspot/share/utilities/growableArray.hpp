@@ -873,7 +873,7 @@ class GrowableArrayIterator : public StackObj {
   friend class GrowableArrayView<E, Index>;
 
  private:
-  const GrowableArrayView<E>* _array; // GrowableArray we iterate over
+  const GrowableArrayView<E, Index>* _array; // GrowableArray we iterate over
   Index _position;                      // The current position in the GrowableArray
 
   // Private constructor used in GrowableArray::begin() and GrowableArray::end()
