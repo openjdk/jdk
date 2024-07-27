@@ -79,6 +79,7 @@ import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.comp.Resolve.MethodResolutionPhase.*;
+import static com.sun.tools.javac.main.Option.DOE;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import static com.sun.tools.javac.util.Iterators.createCompoundIterator;
 
@@ -112,6 +113,7 @@ public class Resolve {
     private final boolean allowYieldStatement;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
     final boolean dumpMethodReferenceSearchResults;
+    final boolean dumpStacktraceOnError;
 
     WriteableScope polymorphicSignatureScope;
 
@@ -149,6 +151,7 @@ public class Resolve {
         allowModules = Feature.MODULES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         dumpMethodReferenceSearchResults = options.isSet("debug.dumpMethodReferenceSearchResults");
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
 
     /** error symbols, which are returned when resolution fails
@@ -584,7 +587,7 @@ public class Resolve {
             ForAll pmt = (ForAll) mt;
             if (typeargtypes.length() != pmt.tvars.length())
                  // not enough args
-                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))));
+                throw new InapplicableMethodException(diags.fragment(Fragments.WrongNumberTypeArgs(Integer.toString(pmt.tvars.length()))), dumpStacktraceOnError);
             // Check type arguments are within bounds
             List<Type> formals = pmt.tvars;
             List<Type> actuals = typeargtypes;
@@ -593,7 +596,7 @@ public class Resolve {
                                                 pmt.tvars, typeargtypes);
                 for (; bounds.nonEmpty(); bounds = bounds.tail) {
                     if (!types.isSubtypeUnchecked(actuals.head, bounds.head, warn)) {
-                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)));
+                        throw new InapplicableMethodException(diags.fragment(Fragments.ExplicitParamDoNotConformToBounds(actuals.head, bounds)), dumpStacktraceOnError);
                     }
                 }
                 formals = formals.tail;
@@ -830,7 +833,7 @@ public class Resolve {
             String key = inferDiag ? diag.inferKey : diag.basicKey;
             throw inferDiag ?
                 infer.error(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args)) :
-                methodCheckFailure.setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
+                getMethodCheckFailure().setMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(), pos, key, args));
         }
 
         /**
@@ -842,7 +845,7 @@ public class Resolve {
             private static final long serialVersionUID = 0;
 
             SharedInapplicableMethodException() {
-                super(null);
+                super(null, Resolve.this.dumpStacktraceOnError);
             }
 
             SharedInapplicableMethodException setMessage(JCDiagnostic details) {
@@ -851,12 +854,15 @@ public class Resolve {
             }
         }
 
-        SharedInapplicableMethodException methodCheckFailure = new SharedInapplicableMethodException();
+        private SharedInapplicableMethodException methodCheckFailure;
 
         public MethodCheck mostSpecificCheck(List<Type> actuals) {
             return nilMethodCheck;
         }
 
+        private SharedInapplicableMethodException getMethodCheckFailure() {
+            return methodCheckFailure == null ? methodCheckFailure = new SharedInapplicableMethodException() : methodCheckFailure;
+        }
     }
 
     /**
@@ -1036,7 +1042,7 @@ public class Resolve {
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
-            throw new InapplicableMethodException(details);
+            throw new InapplicableMethodException(details, Resolve.this.dumpStacktraceOnError);
         }
 
         public Warner checkWarner(DiagnosticPosition pos, Type found, Type req) {
@@ -1392,23 +1398,18 @@ public class Resolve {
         }
     }
 
-    public static class InapplicableMethodException extends RuntimeException {
+    public static class InapplicableMethodException extends CompilerInternalException {
         private static final long serialVersionUID = 0;
 
         transient JCDiagnostic diagnostic;
 
-        InapplicableMethodException(JCDiagnostic diag) {
+        InapplicableMethodException(JCDiagnostic diag, boolean dumpStackTraceOnError) {
+            super(dumpStackTraceOnError);
             this.diagnostic = diag;
         }
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            // This is an internal exception; the stack trace is irrelevant.
-            return this;
         }
     }
 
@@ -2423,7 +2424,14 @@ public class Resolve {
      *                   (a subset of VAL, TYP, PCK).
      */
     Symbol findIdent(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInternal(pos, env, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
     Symbol findIdentInternal(DiagnosticPosition pos, Env<AttrContext> env, Name name, KindSelector kind) {
@@ -2495,7 +2503,14 @@ public class Resolve {
     Symbol findIdentInType(DiagnosticPosition pos,
                            Env<AttrContext> env, Type site,
                            Name name, KindSelector kind) {
-        return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        try {
+            return checkNonExistentType(checkRestrictedType(pos, findIdentInTypeInternal(env, site, name, kind), name));
+        } catch (ClassFinder.BadClassFile err) {
+            return new BadClassFileError(err);
+        } catch (CompletionFailure cf) {
+            chk.completionError(pos, cf);
+            return typeNotFound;
+        }
     }
 
     private Symbol checkNonExistentType(Symbol symbol) {
