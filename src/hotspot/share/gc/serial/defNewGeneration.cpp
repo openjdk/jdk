@@ -533,11 +533,6 @@ size_t DefNewGeneration::capacity_before_gc() const {
   return eden()->capacity();
 }
 
-size_t DefNewGeneration::contiguous_available() const {
-  return eden()->free();
-}
-
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);

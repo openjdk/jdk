@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,23 @@
  */
 package com.sun.crypto.provider;
 
-import sun.security.jca.JCAUtil;
-import sun.security.ssl.HKDF;
-import sun.security.util.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
-import java.security.interfaces.*;
+import java.security.interfaces.ECKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.XECKey;
+import java.security.interfaces.XECPublicKey;
 import java.security.spec.*;
 import java.util.Arrays;
 import java.util.Objects;
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
+
+import sun.security.jca.JCAUtil;
+import sun.security.ssl.HKDF;
+import sun.security.util.*;
 
 // Implementing DHKEM defined inside https://www.rfc-editor.org/rfc/rfc9180.html,
 // without the AuthEncap and AuthDecap functions

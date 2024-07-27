@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,12 @@
 
 package com.sun.crypto.provider;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.IllegalBlockSizeException;
+
 import static com.sun.crypto.provider.KWUtil.*;
 
 /**
@@ -49,7 +49,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
 
     private static final byte[] PAD_BLK = new byte[SEMI_BLKSIZE - 1];
 
-    // set the first semiblock of dest with iv and inLen
+    // set the first semi-block of dest with iv and inLen
     private static void setIvAndLen(byte[] dest, byte[] iv, int inLen) {
         assert(dest.length >= SEMI_BLKSIZE) : "buffer needs at least 8 bytes";
 
@@ -60,7 +60,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
         dest[7] = (byte) (inLen & 0xFF);
     }
 
-    // validate the recovered internal ivAndLen semiblock against iv and
+    // validate the recovered internal ivAndLen semi-block against iv and
     // return the recovered input length
     private static int validateIV(byte[] ivAndLen, byte[] iv)
             throws IllegalBlockSizeException {
@@ -103,7 +103,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
     @Override
     void save() {
         throw new UnsupportedOperationException("save not supported");
-    };
+    }
 
     /**
      * Restores the content of this cipher to the previous saved one.
@@ -111,7 +111,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
     @Override
     void restore() {
         throw new UnsupportedOperationException("restore not supported");
-    };
+    }
 
     /**
      * Initializes the cipher in the specified mode with the given key
@@ -151,19 +151,19 @@ class AESKeyWrapPadded extends FeedbackCipher {
     @Override
     void reset() {
         throw new UnsupportedOperationException("reset not supported");
-    };
+    }
 
-    // no support for multi-part encryption
+    // no support for multipart encryption
     @Override
     int encrypt(byte[] pt, int ptOfs, int ptLen, byte[] ct, int ctOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
-    };
+        throw new UnsupportedOperationException("multipart not supported");
+    }
 
-    // no support for multi-part decryption
+    // no support for multipart decryption
     @Override
     int decrypt(byte[] ct, int ctOfs, int ctLen, byte[] pt, int ptOfs) {
-        throw new UnsupportedOperationException("multi-part not supported");
-    };
+        throw new UnsupportedOperationException("multipart not supported");
+    }
 
     /**
      * Performs single-part encryption operation.
@@ -199,7 +199,7 @@ class AESKeyWrapPadded extends FeedbackCipher {
         }
 
         if (ptLen <= BLKSIZE) {
-            // overwrite the first semiblock with iv and input length
+            // overwrite the first semi-block with iv and input length
             setIvAndLen(pt, iv, actualLen);
             embeddedCipher.encryptBlock(pt, 0, pt, 0);
         } else {

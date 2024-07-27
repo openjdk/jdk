@@ -96,10 +96,6 @@ class Generation: public CHeapObj<mtGC> {
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
-  // The largest number of contiguous free bytes in the generation,
-  // including expansion  (Assumes called at a safepoint.)
-  virtual size_t contiguous_available() const = 0;
-
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */

@@ -1579,6 +1579,11 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
     verify_continuation(cont.continuation());
     freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
+    // Avoid Thread.yield() loops without safepoint polls.
+    if (SafepointMechanism::should_process(current)) {
+      cont.done(); // allow safepoint
+      ThreadInVMfromJava tivmfj(current);
+    }
     return res;
   }
 
@@ -2445,8 +2450,8 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   intptr_t* const sp = thw.thaw(kind);
   assert(is_aligned(sp, frame::frame_alignment), "");
 
-  // All the frames have been thawed so we know they don't hold any monitors
-  assert(thread->held_monitor_count() == 0, "Must be");
+  // All or part of the frames have been thawed so we know they don't hold any monitors except JNI monitors.
+  assert(thread->held_monitor_count() == thread->jni_monitor_count(), "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;
