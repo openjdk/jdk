@@ -395,7 +395,7 @@ bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
 // Return true if `b` could be the starting byte of an encoded 2,3 or 6
 // byte sequence.
 static bool is_starting_byte(unsigned char b) {
-  return b >= 0xC0 && b <= 0xEF;;
+  return b >= 0xC0 && b <= 0xEF;
 }
 
 // Takes an incoming buffer that was valid UTF-8, but which has been truncated such that
@@ -438,7 +438,7 @@ void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
       if (buffer[index] == 0xED) {
         // Could be first or fourth byte. If fourth
         // then 2 bytes before will have second byte pattern (0b1010xxxx)
-        if ((index - 3) >= 0 && ((buffer[index - 2] & 0xA0) == 0xA0)) {
+        if ((index - 3) >= 0 && ((buffer[index - 2] & 0xF0) == 0xA0)) {
           // it was fourth byte so truncate 3 bytes earlier
           assert(buffer[index - 3] == 0xED, "malformed sequence");
           index -= 3;
