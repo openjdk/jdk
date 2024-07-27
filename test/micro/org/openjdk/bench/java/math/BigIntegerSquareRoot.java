@@ -88,7 +88,7 @@ public class BigIntegerSquareRoot {
     /** Test BigInteger.sqrtAndRemainder() with huge numbers long at most 16k bits  */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testBigSqrtAndRemainder(Blackhole bh) {
+    public void testHugeSqrtAndRemainder(Blackhole bh) {
         for (BigInteger s : hugeArray) {
             bh.consume(s.sqrtAndRemainder());
         }
