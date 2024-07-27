@@ -27,7 +27,6 @@
  * @run junit GZIPInputStreamConcat
  */
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -36,23 +35,21 @@ import java.util.*;
 import java.util.stream.*;
 import java.util.zip.*;
 
-import static java.util.zip.GZIPInputStream.ConcatPolicy;
-
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GZIPInputStreamConcat {
 
     private int bufsize;
-    private ConcatPolicy policy;
+    private boolean allowConcatenation;
 
     public static Stream<Object[]> testScenarios() throws IOException {
 
         // Test concat vs. non-concat, garbage vs. no-garbage, and various buffer sizes on random data
         Random random = new Random();
         final ArrayList<List<Object>> scenarios = new ArrayList<>();
-        for (ConcatPolicy policy : ConcatPolicy.values()) {
+        for (boolean allowConcatenation : new boolean[] { false, true }) {
             for (int size = 1; size < 1024; size += random.nextInt(32) + 1) {
-                scenarios.add(List.of(randomData(0, 100), size, policy));
+                scenarios.add(List.of(randomData(0, 100), size, allowConcatenation));
             }
         }
         return scenarios.stream().map(List::toArray);
@@ -60,9 +57,9 @@ public class GZIPInputStreamConcat {
 
     @ParameterizedTest
     @MethodSource("testScenarios")
-    public void testScenario(byte[] uncompressed, int size, ConcatPolicy policy) throws IOException {
+    public void testScenario(byte[] uncompressed, int size, boolean allowConcatenation) throws IOException {
         this.bufsize = size;
-        this.policy = policy;
+        this.allowConcatenation = allowConcatenation;
         testScenario(uncompressed);
     }
 
@@ -89,33 +86,33 @@ public class GZIPInputStreamConcat {
         for (int extra = 0; extra < 0x100; extra++) {
             input = oneByteLong(compressed, extra);
             output = uncompressed;
-            testDecomp(input, output, !policy.isLenient() ? IOException.class : null);
+            testDecomp(input, output, IOException.class);
         }
 
         // Decompress a single stream followed by a truncated GZIP header
         input = concat(compressed, oneByteShort(gzipHeader()));
         output = uncompressed;
-        testDecomp(input, output, !policy.isLenient() ? IOException.class : null);
+        testDecomp(input, output, IOException.class);
 
         // Decompress a single stream followed by another stream that is one byte short
         input = concat(compressed, oneByteShort(compressed));
         output = uncompressed;
-        testDecomp(input, output, policy.isAllowsConcatenation() || !policy.isLenient() ? IOException.class : null);
+        testDecomp(input, output, IOException.class);
 
         // Decompress two streams concatenated
         input = concat(compressed, compressed);
-        output = policy.isAllowsConcatenation() ? concat(uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !policy.isAllowsConcatenation() && !policy.isLenient() ? ZipException.class : null);
+        output = allowConcatenation ? concat(uncompressed, uncompressed) : uncompressed;
+        testDecomp(input, output, !allowConcatenation ? ZipException.class : null);
 
         // Decompress three streams concatenated
         input = concat(compressed, compressed, compressed);
-        output = policy.isAllowsConcatenation() ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !policy.isAllowsConcatenation() && !policy.isLenient() ? ZipException.class : null);
+        output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
+        testDecomp(input, output, !allowConcatenation ? ZipException.class : null);
 
         // Decompress three streams concatenated followed by a truncated GZIP header
         input = concat(compressed, compressed, compressed, oneByteShort(gzipHeader()));
-        output = policy.isAllowsConcatenation() ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !policy.isLenient() ? IOException.class : null);
+        output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
+        testDecomp(input, output, IOException.class);
     }
 
     // Do decompression and check result
@@ -181,6 +178,6 @@ public class GZIPInputStreamConcat {
 
     // GZIP decompress data
     public byte[] inflate(InputStream in) throws IOException {
-        return new GZIPInputStream(in, bufsize, policy).readAllBytes();
+        return new GZIPInputStream(in, bufsize, allowConcatenation).readAllBytes();
     }
 }

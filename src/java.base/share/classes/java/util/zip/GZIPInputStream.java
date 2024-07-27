@@ -60,7 +60,7 @@ public class GZIPInputStream extends InflaterInputStream {
      */
     protected boolean eos;
 
-    private final ConcatPolicy policy;
+    private final boolean allowConcatenation;
 
     private boolean closed = false;
 
@@ -74,8 +74,8 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Creates a new input stream with the specified buffer size that will decode
-     * concatenated GZIP streams according to {@link ConcatPolicy#ALLOW_LENIENT}.
+     * Creates a new input stream with the specified buffer size that supports decoding
+     * concatenated GZIP streams.
      *
      * @param in the input stream
      * @param size the input buffer size
@@ -87,12 +87,12 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        this(in, size, ConcatPolicy.ALLOW_LENIENT);
+        this(in, size, true);
     }
 
     /**
-     * Creates a new input stream with the default buffer size that will decode
-     * concatenated GZIP streams according to {@link ConcatPolicy#ALLOW_LENIENT}.
+     * Creates a new input stream with the default buffer size that supports decoding
+     * concatenated GZIP streams.
      *
      * @param in the input stream
      *
@@ -102,58 +102,54 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public GZIPInputStream(InputStream in) throws IOException {
-        this(in, 512, ConcatPolicy.ALLOW_LENIENT);
+        this(in, 512, true);
     }
 
     /**
-     * Creates a new input stream with the specified buffer size that will decode
-     * concatenated GZIP streams according to the specified {@link ConcatPolicy}.
+     * Creates a new input stream with the specified buffer size that optionally
+     * supports decoding concatenated GZIP streams.
      *
      * <p>
-     * When configured with {@link ConcatPolicy#DISALLOW}, decompression stops after the end of
-     * the first compressed data stream (i.e., after encountering a GZIP trailer frame), and any
-     * additional bytes in the input stream will cause an {@link IOException} to be thrown.
+     * When {@code allowConcatenation} is false, decompression stops after the end of
+     * the first compressed data stream (i.e., after encountering a GZIP trailer frame),
+     * and the presence of any additional bytes in the input stream will cause an
+     * {@link IOException} to be thrown.
      *
      * <p>
-     * When configured with {@link ConcatPolicy#ALLOW} or {@link ConcatPolicy#ALLOW_LENIENT},
-     * this class will attempt to decode any data that follows a GZIP trailer frame as the GZIP
-     * header frame of a new compressed data stream and proceed to decompress it. As a result,
-     * arbitrarily many consecutive compressed data streams in the underlying input will be read
-     * back as a single uncompressed stream.
+     * When {@code allowConcatenation} is true, this class will attempt to decode any data that
+     * follows a GZIP trailer frame as the GZIP header frame of a new compressed data stream and,
+     * if successful, proceed to decompress it. As a result, arbitrarily many consecutive compressed
+     * data streams in the underlying input will be read back as a single uncompressed stream.
+     * If data following a GZIP trailer frame is not a valid GZIP header frame, an {@link IOException}
+     * is thrown.
      *
      * <p>
-     * The choice between {@link ConcatPolicy#ALLOW} and {@link ConcatPolicy#ALLOW_LENIENT}
-     * affects how an invalid GZIP header frame following a GZIP trailer frame is handled.
-     * With {@link ConcatPolicy#ALLOW_LENIENT}, if the GZIP header frame is invalid, or reading it
-     * generates an {@link IOException}, then the additional bytes read are discarded and EOF is returned.
-     * In this scenario, it is indeterminate (a) how many additional bytes (if any) were read beyond the
-     * GZIP trailer frame, and (b) whether reading stopped due to EOF, invalid data, or an underlying
-     * {@link IOException}.
+     * In either scenario, every byte of the underlying input stream must be part of a complete and valid
+     * compressed data stream or else an {@link IOException} is guaranteed to be thrown; extraneous
+     * trailing data is not allowed.
      *
-     * <p>
-     * With {@link ConcatPolicy#ALLOW}, an invalid GZIP header frame always triggers an {@link IOException},
-     * and any {@link IOException} thrown while trying to read a GZIP header frame is propagated to the caller.
-     * In this scenario, every byte of the underlying input stream must be part of a complete and valid
-     * compressed data stream, or else an {@link IOException} is guaranteed to be thrown.
-     *
-     * @apiNote The original behavior of this class is replicated by {@link ConcatPolicy#ALLOW_LENIENT}.
-     * However, use of {@link ConcatPolicy#ALLOW_LENIENT} is discouraged because of its imprecision in how
-     * many additional bytes are read and the possibility that {@link IOException}s and/or data corruption
-     * in the underlying input stream can go undetected.
+     * @apiNote The original behavior of this class was to always allow concatenation, but leniently:
+     * if a GZIP header frame following a GZIP trailer frame was invalid, or reading it generated an
+     * {@link IOException}, then the extra bytes read were simply discarded and EOF was declared.
+     * This meant it was indeterminate how many additional bytes of the underlying input stream (if any)
+     * were read beyond the GZIP trailer frame, and whether reading them was stopped due to EOF, an
+     * invalid GZIP header frame, or an {@link IOException} from the underlying input stream. As a result,
+     * {@link IOException}s and/or data corruption in the underlying input stream could go undetected,
+     * leading to incorrect results such as truncated data.
      *
      * @param in the input stream
      * @param size the input buffer size
-     * @param policy policy regarding concatenated GZIP streams
+     * @param allowConcatenation true to support decoding concatenated GZIP streams
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
-     * @throws    NullPointerException if {@code in} or {@code policy} is null
+     * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
      * @since     24
      */
-    public GZIPInputStream(InputStream in, int size, ConcatPolicy policy) throws IOException {
+    public GZIPInputStream(InputStream in, int size, boolean allowConcatenation) throws IOException {
         super(in, createInflater(in, size), size);
-        this.policy = Objects.requireNonNull(policy, "policy");
+        this.allowConcatenation = allowConcatenation;
         usesDefaultInflater = true;
         try {
             readHeader(in, -1);
@@ -330,29 +326,17 @@ public class GZIPInputStream extends InflaterInputStream {
         // Keep track of how many bytes of buffered data we may have read
         int m = 8;                                          // this.trailer
 
-        // Handle concatenation and/or extra bytes
-        if (policy.equals(ConcatPolicy.ALLOW_LENIENT)) {    // i.e., the legacy behavior
-            try {
-                m += readHeader(in, -1);                    // next.header
-            } catch (IOException ze) {
-                return true;  // ignore any malformed, do nothing
-            }
-        } else {
+        // If there is no more data, the input has terminated at a proper GZIP boundary
+        int nextByte = in.read();
+        if (nextByte == -1)
+            return true;
 
-            // If there is no more data, the input has terminated at a proper GZIP boundary
-            int nextByte = in.read();
-            if (nextByte == -1)
-                return true;
+        // There is more data; verify that we are allowing concatenation
+        if (!allowConcatenation)
+            throw new ZipException("Extra bytes after GZIP trailer");
 
-            // There is more data; verify that we are allowing concatenation
-            if (!policy.isAllowsConcatenation()) {
-                assert !policy.isLenient();
-                throw new ZipException("Extra bytes after GZIP trailer");
-            }
-
-            // Read in the next header
-            m += readHeader(in, nextByte);                  // next.header
-        }
+        // Read in the next header
+        m += readHeader(in, nextByte);                  // next.header
 
         // Pass along any remaining buffered data to the new inflater
         inf.reset();
@@ -406,74 +390,6 @@ public class GZIPInputStream extends InflaterInputStream {
                 throw new EOFException();
             }
             n -= len;
-        }
-    }
-
-    /**
-     * Policy relating to the handling of an input stream containing multiple concatenated GZIP streams.
-     *
-     * @since 24
-     */
-    public enum ConcatPolicy {
-
-        /**
-         * Disallow concatenated GZIP streams.
-         *
-         * <p>
-         * If any bytes follow the GZIP trailer frame, an {@link IOException} is thrown.
-         */
-        DISALLOW(false, false),
-
-        /**
-         * Allow concatenated GZIP streams.
-         *
-         * <p>
-         * Any data that follows a GZIP trailer frame must constitute the valid GZIP header frame
-         * of a new GZIP compressed stream.
-         */
-        ALLOW(true, false),
-
-        /**
-         * Allow concatenated GZIP streams with leniency for extra trailing data.
-         *
-         * <p>
-         * Any data that follows a GZIP trailer frame but does not constitute a valid GZIP header
-         * frame, or triggers an {@link IOException}, is discarded and ignored.
-         */
-        ALLOW_LENIENT(true, true);
-
-        private final boolean allowsConcatenation;
-        private final boolean lenient;
-
-        /**
-         * Determine whether this policy permits the decoding of multiple concatenated GZIP streams
-         * as a single output stream.
-         *
-         * <p>
-         * Returns true for {@link #ALLOW} and {@link #ALLOW_LENIENT}.
-         *
-         * @return true if multiple concatenated GZIP streams are allowed
-         */
-        public boolean isAllowsConcatenation() {
-            return this.allowsConcatenation;
-        }
-
-        /**
-         * Determine whether this policy permits extra bytes following a GZIP trailer frame that do not
-         * constitute a proper GZIP header frame.
-         *
-         * <p>
-         * Returns true for {@link #ALLOW_LENIENT}.
-         *
-         * @return true if this policy is lenient towards extra bytes
-         */
-        public boolean isLenient() {
-            return this.lenient;
-        }
-
-        private ConcatPolicy(boolean allowsConcatenation, boolean lenient) {
-            this.allowsConcatenation = allowsConcatenation;
-            this.lenient = lenient;
         }
     }
 }
