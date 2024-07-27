@@ -8,14 +8,11 @@ public class InputTemplate2 extends InputTemplate {
     public CodeSegment getTemplate() {
         String imports= """
                 """;
-
         String statics = """
                 static int count = 0;
                 static int acc = 1;
                 """;
-
         String call = "count_\\{uniqueId}();\n";
-
         String method = """
                  private static void count_\\{uniqueId}() {
                          boolean cond = false;
@@ -71,18 +68,16 @@ public class InputTemplate2 extends InputTemplate {
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
-
     @Override
     public String[] getCompileFlags() {
         return new String[0];
     }
     @Override
     public int getNumberOfTests(){
-        return 10;
+        return 5;
     }
-
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

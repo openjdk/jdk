@@ -30,18 +30,17 @@ import static compiler.lib.test_generator.InputTemplate.doReplacements;
 public abstract class Template {
     public Template() {}
 
-    public static String reassemble(String dec, String cod) {
+    public static String reassemble(String statics, String methode) {
         String assembe_template = """
-                \\{declare}
-                \\{code}
+                \\{statics}
+                \\{method}
                 """;
         Map<String, String> replacement_code = Map.ofEntries(
-                Map.entry("declare", dec),
-                Map.entry("code", cod)
+                Map.entry("statics", statics),
+                Map.entry("method", methode)
         );
         return doReplacements(assembe_template, replacement_code);
     }
-
     public static String avoid_conflict(String temp,int num){
         StringBuilder result = new StringBuilder();
         String regex="\\$(\\w+)";

@@ -22,18 +22,14 @@
  */
 
 package compiler.lib.test_generator;
-
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
-
 public class DynamicClassLoader {
-
     public static Class<?> compileAndLoadClass(String filePath) throws Exception {
         String className = computeClassName(filePath);
-
         // TODO: does using JavaCompiler interfere with JAVA_HOME for execution?
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         int compilationResult = compiler.run(null, null, null, filePath);
@@ -57,7 +53,6 @@ public class DynamicClassLoader {
         }
         return className;
     }
-
     private static class DynamicClassLoaderInternal extends ClassLoader {
         @Override
         public Class<?> findClass(String name) throws ClassNotFoundException {

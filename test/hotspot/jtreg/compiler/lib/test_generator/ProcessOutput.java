@@ -39,11 +39,11 @@ public class ProcessOutput {
      * - What kind of error is it? error in Template and cannot parse with javac
      * - or runtime crash in Java (e.g. Null-pointer Exception) nor JVM (compiler bug?)
      **/
-    public void checkExecutionOutput() {
+    public void checkExecutionOutput(long n) {
         if (exitCode == 0 && Objects.requireNonNull(output).contains("Passed")) {
-            System.out.println("Test passed successfully.");
+            System.out.printf("Test passed successfully %d%n", n );
         } else {
-            System.err.println("Test failed:");
+            System.err.println("Test failed with exit code :");
             System.err.println(output);
         }
     }

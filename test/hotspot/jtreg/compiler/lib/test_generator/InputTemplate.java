@@ -35,7 +35,7 @@ public abstract class InputTemplate {
     };
     public static Integer[] positiveIntegerValues = {
             1, 2,
-            Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Integer.MAX_VALUE + 1, Integer.MAX_VALUE + 2
+            Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE
     };
 
 
@@ -151,7 +151,5 @@ public abstract class InputTemplate {
     public abstract Map<String, String> getRandomReplacements(int numTest);
     public abstract String[] getCompileFlags();
     public abstract int getNumberOfTests();
-    public  int getNumberOfTestMethods() {
-        return 0;
-    }
+    public abstract int getNumberOfTestMethods();
 }

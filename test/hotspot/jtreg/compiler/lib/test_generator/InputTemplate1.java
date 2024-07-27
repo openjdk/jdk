@@ -56,9 +56,9 @@ public class InputTemplate1 extends InputTemplate {
                     for (long j = \\{init2}; j < limit; j\\{arithm2}=\\{stride2}) {
                         a.i += \\{val1}; // NullCheck with trap on false path -> reason to peel
                         \\{thing}
-                        \\{template1}
+                      
                         if (j > 0) { // After peeling: j > 0 always true -> loop folded away
-                            \\{template2}
+                           
                             break;
                         }
                     }
@@ -71,10 +71,10 @@ public class InputTemplate1 extends InputTemplate {
     }
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
-        Template template1 = new Template1();
-        Template template2 = new Template4();
-        String template_nes1= template1.getTemplate("j");
-        String template_nes2= template2.getTemplate("i");
+        //Template template1 = new Template1();
+       // Template template2 = new Template4();
+        //String template_nes1= template1.getTemplate("j");
+       // String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
@@ -96,9 +96,8 @@ public class InputTemplate1 extends InputTemplate {
         replacements.put("stride2", stride2);
         replacements.put("thing", thing);
         replacements.put("uniqueId", uniqueId);
-        replacements.put("template1", template_nes1);
-        replacements.put("template2", template_nes2);
-
+       // replacements.put("template1", template_nes1);
+       // replacements.put("template2", template_nes2);
         return replacements;
     }
     @Override
@@ -110,10 +109,10 @@ public class InputTemplate1 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 10;
+        return 20;
     }
     @Override
     public int getNumberOfTestMethods() {
-        return 110;
+        return 1;
     }
 }
