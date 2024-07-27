@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class BigIntegerSquareRoot {
 
-    private BigInteger[] hugeArray, largeArray, smallArray;
+    private BigInteger[] hugeArray, bigArray, largeArray, smallArray;
     private static final int TESTSIZE = 1000;
 
     @Setup
@@ -56,7 +56,11 @@ public class BigIntegerSquareRoot {
         Random r = new Random(1123);
 
         hugeArray = new BigInteger[TESTSIZE]; /*
-         * Huge numbers larger than
+         * Each array entry is atmost 16k bits
+         * in size
+         */
+        bigArray = new BigInteger[TESTSIZE]; /*
+         * Big numbers larger than
          * MAX_LONG
          */
         largeArray = new BigInteger[TESTSIZE]; /*
@@ -70,20 +74,31 @@ public class BigIntegerSquareRoot {
          */
 
         for (int i = 0; i < TESTSIZE; i++) {
-            long value = Math.abs((long) r.nextInt());
+            int nBits = r.nextInt(32);
+            long hi = r.nextLong(1L << nBits);
+            long value = r.nextLong(1L << 31);
 
-            hugeArray[i] = new BigInteger("" + (value + (long) Integer.MAX_VALUE)
-                    + (value + (long) Integer.MAX_VALUE));
-            largeArray[i] = new BigInteger("" + (value + (long) Integer.MAX_VALUE));
-            smallArray[i] = new BigInteger("" + (value / 1000));
+            hugeArray[i] = new BigInteger(r.nextInt(16384), r);
+            bigArray[i] = new BigInteger("" + hi + (value + Integer.MAX_VALUE));
+            largeArray[i] = new BigInteger("" + (value / 1000));
+            smallArray[i] = new BigInteger("" + hi);
         }
     }
 
-    /** Test BigInteger.sqrtAndRemainder() with huge numbers larger than MAX_LONG */
+    /** Test BigInteger.sqrtAndRemainder() with huge numbers long at most 16k bits  */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testHugeSqrtAndRemainder(Blackhole bh) {
+    public void testBigSqrtAndRemainder(Blackhole bh) {
         for (BigInteger s : hugeArray) {
+            bh.consume(s.sqrtAndRemainder());
+        }
+    }
+
+    /** Test BigInteger.sqrtAndRemainder() with big numbers larger than MAX_LONG */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testBigSqrtAndRemainder(Blackhole bh) {
+        for (BigInteger s : bigArray) {
             bh.consume(s.sqrtAndRemainder());
         }
     }
