@@ -399,13 +399,14 @@ static bool is_starting_byte(unsigned char b) {
 }
 
 // Takes an incoming buffer that was valid UTF-8, but which has been truncated such that
-// the last encoding may be partial, and return the same buffer with a NUL-terminator
+// the last encoding may be partial, and returns the same buffer with a NUL-terminator
 // inserted such that any partial encoding has gone.
 // Note: if the incoming buffer is already valid then we may still drop the last encoding.
 // To avoid that the caller can choose to check for validity first.
 // The incoming buffer is still expected to be NUL-terminated.
+// The incoming buffer is expected to be a realistic size - we assert if it is too small.
 void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
-  assert(length > 0, "invalid length");
+  assert(length > 5, "invalid length");
   assert(buffer[length - 1] == '\0', "Buffer should be NUL-terminated");
 
   if (buffer[length - 2] < 128) {  // valid "ascii" - common case
