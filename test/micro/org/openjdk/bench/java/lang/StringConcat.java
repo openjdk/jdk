@@ -327,6 +327,15 @@ public class StringConcat {
                 """;
     }
 
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @State(Scope.Thread)
+    @Warmup(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+    @Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+    @Fork(value = 3, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
+    public static class Generate extends StringConcat {
+    }
+
     public static void main(String... args) {
         StringConcat concat = new StringConcat();
         concat.concat4String();
@@ -336,6 +345,4 @@ public class StringConcat {
         concat.concat23String();
         concat.concatConstInt();
     }
-
-
 }
