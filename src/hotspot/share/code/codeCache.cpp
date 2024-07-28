@@ -165,8 +165,8 @@ class CodeBlob_sizes {
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != nullptr; cb = next_blob(heap, cb))
 
-address CodeCache::_low_bound = 0;
-address CodeCache::_high_bound = 0;
+address CodeCache::_low_bound = nullptr;
+address CodeCache::_high_bound = nullptr;
 volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
