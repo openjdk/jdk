@@ -31,7 +31,6 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
-import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -39,7 +38,6 @@ import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.TypeKind;
-import java.util.concurrent.ConcurrentHashMap;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
@@ -383,7 +381,7 @@ public final class StringConcatFactory {
             if (mh != null) {
                 mh = mh.viewAsType(concatType, true);
             } else {
-                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, recipe, constantStrings);
+                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
             }
 
             return new ConstantCallSite(mh);
@@ -1098,21 +1096,11 @@ public final class StringConcatFactory {
 
         static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
 
-        static record CacheKey(MethodType args, String recipe) {}
-
-        static final ReferencedKeyMap<CacheKey, MethodHandle> METHOD_HANDLE_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
-
         private SimpleStringBuilderStrategy() {
             // no instantiation
         }
 
-        private static MethodHandle generate(Lookup lookup, MethodType args, String recipe, String[] constants) throws Exception {
-            CacheKey cacheKey = new CacheKey(args, recipe);
-            var mh = METHOD_HANDLE_CACHE.get(cacheKey);
-            if (mh != null) {
-                return mh;
-            }
-
+        private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
 
@@ -1129,12 +1117,7 @@ public final class StringConcatFactory {
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
                         .defineClass(true, null);
-                mh = lookup.findStatic(hiddenClass, METHOD_NAME, args);
-                var origin = METHOD_HANDLE_CACHE.putIfAbsent(cacheKey, mh);
-                if (origin != null) {
-                    mh = origin;
-                }
-                return mh;
+                return lookup.findStatic(hiddenClass, METHOD_NAME, args);
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
