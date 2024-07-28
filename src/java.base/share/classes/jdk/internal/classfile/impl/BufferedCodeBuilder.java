@@ -28,7 +28,6 @@ import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
@@ -58,10 +57,7 @@ public final class BufferedCodeBuilder
         this.startLabel = new LabelImpl(this, -1);
         this.endLabel = new LabelImpl(this, -1);
         this.methodInfo = methodInfo;
-        this.maxLocals = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
-        if (original instanceof CodeAttribute ca)
-            this.maxLocals = Math.max(this.maxLocals, ca.maxLocals());
-
+        this.maxLocals = TerminalCodeBuilder.setupTopLocal(methodInfo, original);
         elements.add(startLabel);
     }
 
@@ -164,6 +160,10 @@ public final class BufferedCodeBuilder
                                }
                            })
                            .toList();
+        }
+
+        int curTopLocal() {
+            return BufferedCodeBuilder.this.curTopLocal();
         }
 
         @Override

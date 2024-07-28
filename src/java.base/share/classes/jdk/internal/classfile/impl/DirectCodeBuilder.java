@@ -126,16 +126,11 @@ public final class DirectCodeBuilder
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
         this.transformBackJumps = context.shortJumpsOption() == ClassFile.ShortJumpsOption.FIX_SHORT_JUMPS;
+        bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
+                : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
-        var topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
-        if (original instanceof CodeAttribute cai) {
-            this.topLocal = Math.max(topLocal, cai.maxLocals());
-            this.bytecodesBufWriter = new BufWriterImpl(constantPool, context, cai.codeLength());
-        } else {
-            this.topLocal = topLocal;
-            this.bytecodesBufWriter = new BufWriterImpl(constantPool, context);
-        }
+        this.topLocal = TerminalCodeBuilder.setupTopLocal(methodInfo, original);
     }
 
     @Override
