@@ -119,7 +119,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, Integer value) {
-        return checkOverflow(lengthCoder + Integer.stringSize(value));
+        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
     }
 
     /**
@@ -141,7 +141,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, Long value) {
-        return checkOverflow(lengthCoder + (value == null ? 4: Long.stringSize(value.longValue())));
+        return checkOverflow(lengthCoder + (value == null ? 4: DecimalDigits.stringSize(value.longValue())));
     }
 
     /**
