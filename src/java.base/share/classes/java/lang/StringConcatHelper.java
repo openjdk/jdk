@@ -106,8 +106,41 @@ final class StringConcatHelper {
      * @param value       value to mix in
      * @return            new length and coder
      */
+    static long mix(long lengthCoder, Boolean value) {
+        return checkOverflow(lengthCoder + ((value == null || value.booleanValue()) ? 4 : 5));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     */
+    static long mix(long lengthCoder, Integer value) {
+        return checkOverflow(lengthCoder + Integer.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     */
     static long mix(long lengthCoder, long value) {
         return checkOverflow(lengthCoder + Long.stringSize(value));
+    }
+
+    /**
+     * Mix value length and coder into current length and coder.
+     * @param lengthCoder String length with coder packed into higher bits
+     *                    the upper word.
+     * @param value       value to mix in
+     * @return            new length and coder
+     */
+    static long mix(long lengthCoder, Long value) {
+        return checkOverflow(lengthCoder + (value == null ? 4: Long.stringSize(value.longValue())));
     }
 
     /**
@@ -278,6 +311,96 @@ final class StringConcatHelper {
             index -= prefix.length();
             prefix.getBytes(buf, index, String.UTF16);
             return index | UTF16;
+        }
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      boolean value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prependNull(long indexCoder, byte[] buf, String prefix) {
+        int index = (int)indexCoder;
+        index -= 4;
+        if (indexCoder < UTF16) {
+            buf[index] = 'n';
+            buf[index + 1] = 'u';
+            buf[index + 2] = 'l';
+            buf[index + 3] = 'l';
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+            return index;
+        } else {
+            StringUTF16.putChar(buf, index, 'n');
+            StringUTF16.putChar(buf, index + 1, 'u');
+            StringUTF16.putChar(buf, index + 2, 'l');
+            StringUTF16.putChar(buf, index + 3, 'l');
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+            return index | UTF16;
+        }
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Boolean value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Boolean value, String prefix) {
+        if (value == null) {
+            return prependNull(indexCoder, buf, prefix);
+        } else {
+            return prepend(indexCoder, buf, value.booleanValue(), prefix);
+        }
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Integer value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Integer value, String prefix) {
+        if (value == null) {
+            return prependNull(indexCoder, buf, prefix);
+        } else {
+            return prepend(indexCoder, buf, value.intValue(), prefix);
+        }
+    }
+
+    /**
+     * Prepends constant and the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param indexCoder final char index in the buffer, along with coder packed
+     *                   into higher bits.
+     * @param buf        buffer to append to
+     * @param value      Long value to encode
+     * @param prefix     a constant to prepend before value
+     * @return           updated index (coder value retained)
+     */
+    static long prepend(long indexCoder, byte[] buf, Long value, String prefix) {
+        if (value == null) {
+            return prependNull(indexCoder, buf, prefix);
+        } else {
+            return prepend(indexCoder, buf, value.longValue(), prefix);
         }
     }
 

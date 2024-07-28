@@ -32,7 +32,6 @@ import jdk.internal.constant.ConstantUtils;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.Stable;
-import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
@@ -503,6 +502,18 @@ public final class StringConcatFactory {
         return null;
     }
 
+    private static Class<?>[] eraseParameterArray(MethodType mt) {
+        Class<?>[] ptypes = mt.parameterArray();
+        for (int i = 0; i < ptypes.length; i++) {
+            Class<?> ptype = ptypes[i];
+            if (ptype.isPrimitive() || ptype == Boolean.class || ptype == Integer.class || ptype == Long.class) {
+                continue;
+            }
+            ptypes[i] = Object.class;
+        }
+        return ptypes;
+    }
+
     /**
      * <p>This strategy replicates what StringBuilders are doing: it builds the
      * byte[] array on its own and passes that byte[] array to String
@@ -521,7 +532,7 @@ public final class StringConcatFactory {
         // to convert the incoming arguments into the arguments we can process (e.g. Objects -> Strings).
         // The filtered argument type list is used all over in the combinators below.
 
-        Class<?>[] ptypes = mt.erase().parameterArray();
+        Class<?>[] ptypes = eraseParameterArray(mt);
         MethodHandle[] objFilters = null;
         MethodHandle[] floatFilters = null;
         MethodHandle[] doubleFilters = null;
@@ -535,7 +546,7 @@ public final class StringConcatFactory {
             // into a (non-null) String as a first step after invocation.
             // Set up to use String as the logical type for such arguments
             // internally.
-            if (cl == Object.class) {
+            if (cl == Object.class && cl != Boolean.class && cl != Integer.class && cl != Long.class) {
                 if (objFilters == null) {
                     objFilters = new MethodHandle[ptypes.length];
                 }
@@ -743,8 +754,7 @@ public final class StringConcatFactory {
         MethodHandle prepend = PREPENDERS[idx];
         if (prepend == null) {
             PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
-                    methodType(long.class, long.class, byte[].class,
-                            Wrapper.asPrimitiveType(cl), String.class)).rebind();
+                    methodType(long.class, long.class, byte[].class, cl, String.class)).rebind();
         }
         return prepend;
     }
@@ -758,18 +768,24 @@ public final class StringConcatFactory {
         return prepend;
     }
 
-    private static final int INT_IDX = 0,
-            CHAR_IDX = 1,
-            LONG_IDX = 2,
-            BOOLEAN_IDX = 3,
-            STRING_IDX = 4,
-            TYPE_COUNT = 5;
+    private static final int INT_PRIMITIVE_IDX  = 0,
+                             CHAR_PRIMITIVE_IDX = 1,
+                             LONG_PRIMITIVE_IDX = 2,
+                             BOOL_PRIMITIVE_IDX = 3,
+                             STRING_IDX         = 4,
+                             BOOLEAN_IDX        = 5,
+                             INTEGER_IDX        = 6,
+                             LONG_IDX           = 7,
+                             TYPE_COUNT         = 8;
     private static int classIndex(Class<?> cl) {
         if (cl == String.class)                          return STRING_IDX;
-        if (cl == int.class)                             return INT_IDX;
-        if (cl == boolean.class)                         return BOOLEAN_IDX;
-        if (cl == char.class)                            return CHAR_IDX;
-        if (cl == long.class)                            return LONG_IDX;
+        if (cl == int.class)                             return INT_PRIMITIVE_IDX;
+        if (cl == boolean.class)                         return BOOL_PRIMITIVE_IDX;
+        if (cl == char.class)                            return CHAR_PRIMITIVE_IDX;
+        if (cl == long.class)                            return LONG_PRIMITIVE_IDX;
+        if (cl == Boolean.class)                         return BOOLEAN_IDX;
+        if (cl == Integer.class)                         return INTEGER_IDX;
+        if (cl == Long.class)                            return LONG_IDX;
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
@@ -849,7 +865,7 @@ public final class StringConcatFactory {
         MethodHandle mix = MIXERS[index];
         if (mix == null) {
             MIXERS[index] = mix = JLA.stringConcatHelper("mix",
-                    methodType(long.class, long.class, Wrapper.asPrimitiveType(cl))).rebind();
+                    methodType(long.class, long.class, cl)).rebind();
         }
         return mix;
     }
@@ -1034,7 +1050,7 @@ public final class StringConcatFactory {
      * @return stringifier; null, if not available
      */
     private static MethodHandle stringifierFor(Class<?> t) {
-        if (t == Object.class) {
+        if (t == Object.class && t != Boolean.class && t != Integer.class && t != Long.class) {
             return objectStringifier();
         } else if (t == float.class) {
             return floatStringifier();
@@ -1080,12 +1096,18 @@ public final class StringConcatFactory {
         static final MethodTypeDesc Mix_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_boolean);
         static final MethodTypeDesc Mix_char = MethodTypeDesc.of(CD_long, CD_long, CD_char);
         static final MethodTypeDesc Mix_String = MethodTypeDesc.of(CD_long, CD_long, CD_String);
+        static final MethodTypeDesc Mix_Boolean = MethodTypeDesc.of(CD_long, CD_long, CD_Boolean);
+        static final MethodTypeDesc Mix_Integer = MethodTypeDesc.of(CD_long, CD_long, CD_Integer);
+        static final MethodTypeDesc Mix_Long = MethodTypeDesc.of(CD_long, CD_long, CD_Long);
 
         static final MethodTypeDesc PREPEND_int = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_int, CD_String);
         static final MethodTypeDesc PREPEND_long = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_long, CD_String);
         static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_boolean, CD_String);
         static final MethodTypeDesc PREPEND_char = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_String, CD_String);
+        static final MethodTypeDesc PREPEND_Boolean = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_Boolean, CD_String);
+        static final MethodTypeDesc PREPEND_Integer = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_Integer, CD_String);
+        static final MethodTypeDesc PREPEND_Long = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_Long, CD_String);
 
         /**
          * Ensure a capacity in the initial StringBuilder to accommodate all
@@ -1259,6 +1281,12 @@ public final class StringConcatFactory {
                             methodTypeDesc = Mix_boolean;
                         } else if (cl == char.class) {
                             methodTypeDesc = Mix_char;
+                        } else if (cl == Boolean.class) {
+                            methodTypeDesc = Mix_Boolean;
+                        } else if (cl == Integer.class) {
+                            methodTypeDesc = Mix_Integer;
+                        } else if (cl == Long.class) {
+                            methodTypeDesc = Mix_Long;
                         } else {
                             methodTypeDesc = Mix_String;
                             kind = TypeKind.from(String.class);
@@ -1307,6 +1335,12 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_boolean;
                         } else if (cl == char.class) {
                             methodTypeDesc = PREPEND_char;
+                        } else if (cl == Boolean.class) {
+                            methodTypeDesc = PREPEND_Boolean;
+                        } else if (cl == Integer.class) {
+                            methodTypeDesc = PREPEND_Integer;
+                        } else if (cl == Long.class) {
+                            methodTypeDesc = PREPEND_Long;
                         } else {
                             methodTypeDesc = PREPEND_String;
                             kind = TypeKind.from(String.class);
@@ -1330,8 +1364,9 @@ public final class StringConcatFactory {
                 }
 
                 static boolean needStringOf(Class<?> cl) {
-                    return cl != byte.class && cl != short.class   && cl != int.class
-                        && cl != long.class && cl != boolean.class && cl != char.class;
+                    return cl != byte.class    && cl != short.class   && cl != int.class
+                        && cl != long.class    && cl != boolean.class && cl != char.class
+                        && cl != Boolean.class && cl != Integer.class && cl != Long.class;
                 }
             };
         }
