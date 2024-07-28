@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
@@ -96,7 +97,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, int value) {
-        return checkOverflow(lengthCoder + Integer.stringSize(value));
+        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
     }
 
     /**
@@ -129,7 +130,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, long value) {
-        return checkOverflow(lengthCoder + Long.stringSize(value));
+        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
     }
 
     /**
@@ -217,7 +218,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      char value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
@@ -243,7 +244,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      int value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
@@ -269,7 +270,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      long value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
