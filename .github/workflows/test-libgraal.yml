@@ -1,0 +1,194 @@
+#
+# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build and test libgraal'
+
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      bootjdk-platform:
+        required: true
+        type: string
+      runs-on:
+        required: true
+        type: string
+
+jobs:
+  # This job builds and tests libgraal using a JDK bundle built by a PR.
+  # Due to use of continue-on-error, the job always has a success status.
+  # If any of the libgraal-related build and test steps fail, a comment
+  # is posted (to head commit of the pull request) that will notify the
+  # Graal team of the failure.
+  test-libgraal:
+    runs-on: ${{ inputs.runs-on }}
+    defaults:
+      run:
+        shell: bash
+
+    strategy:
+      fail-fast: false
+
+    env:
+      JAVA_HOME: ${{ github.workspace }}/jdk
+      MX_PATH: ${{ github.workspace }}/mx
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@v4
+
+      - name: 'Clone Graal'
+        id: clone-graal
+        continue-on-error: true
+        uses: ./.github/actions/get-graal
+
+      - name: 'Get bundles'
+        id: get-bundles
+        continue-on-error: true
+        uses: ./.github/actions/get-bundles
+        with:
+          platform: ${{ inputs.platform }}
+          include-static-libs: true
+
+      - name: Get mx and python version
+        id: get-versions
+        continue-on-error: true
+        run: |
+          mx_python=$(grep MX_PYTHON ${{ steps.clone-graal.outputs.path }}/ci/common.jsonnet | sed 's:.*"\(python.*\)".*:\1:g')
+          echo "MX_PYTHON=${mx_python}" >> ${GITHUB_ENV}
+          echo "mx_version=$(jq -r '.mx_version' ${{ steps.clone-graal.outputs.path }}/common.json)" >> $GITHUB_OUTPUT
+          echo "python_version=${mx_python/python/}" >> $GITHUB_OUTPUT
+
+      - name: Checkout graalvm/mx
+        id: checkout-mx
+        continue-on-error: true
+        uses: actions/checkout@v4
+        with:
+          repository: graalvm/mx.git
+          ref: ${{ steps.get-versions.outputs.mx_version }}
+          fetch-depth: 1
+          path: ${{ env.MX_PATH }}
+
+      - name: Set up Python
+        id: setup-python
+        continue-on-error: true
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ steps.get-versions.outputs.python_version }}
+
+      - name: Update mx cache
+        id: update-mx-cache
+        continue-on-error: true
+        uses: actions/cache@v4
+        with:
+          path: ~/.mx
+          key: ${{ runner.os }}-mx-${{ hashFiles('**/suite.py') }}
+          restore-keys: ${{ runner.os }}-mx-
+
+      - name: Build libgraal
+        id: build-libgraal
+        continue-on-error: true
+        run: |
+          ${MX_PATH}/mx \
+            --primary-suite-path ${{ steps.clone-graal.outputs.path }}/vm \
+            --java-home=${{ steps.get-bundles.outputs.jdk-path }} \
+            --env libgraal build
+
+      - name: Libgraal gate
+        id: libgraal-gate
+        continue-on-error: true
+        run: |
+          ${MX_PATH}/mx \
+            --primary-suite-path ${{ steps.clone-graal.outputs.path }}/vm \
+            --java-home=${{ steps.get-bundles.outputs.jdk-path }} \
+            --env libgraal gate --task 'LibGraal Compiler'
+
+      - name: Libgraal notify failure
+        continue-on-error: true
+        # Only need to test the libgraal-gate step for failure
+        # as it will also fail if an earlier step fails.
+        if: steps.libgraal-gate.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEPS_CONTEXT: ${{ toJson(steps) }}
+        run: |
+          headers=(-H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          commit="/repos/${{ github.repository }}/commits/${{ github.sha }}"
+
+          # Get info for first associated pull request
+          pr_url=$(gh api "${headers[@]}" ${commit}/pulls | jq -r '.[0].html_url')
+
+          # Get job URL. Need to use pagination as there can be a lot of jobs.
+          # Initialize job URL to run URL in case a job URL is not found
+          job_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          page=1
+          while true; do
+            jobs=$(gh api "${headers[@]}" "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100&page=${page}" | jq -r '.jobs[]')
+            if [[ "${jobs}" == "" ]]; then
+              break
+            fi            
+            url=$(gh api "${headers[@]}" "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs?per_page=100&page=${page}" | jq -r '.jobs | .[] | select(.name | endswith("test-libgraal")) | .html_url')
+            if [[ "${url}" != "null" ]]; then
+              job_url="${url}"
+              break
+            fi
+            page=$((page + 1))
+          done
+
+          # Get the failed steps
+          failed_steps=$(echo "${STEPS_CONTEXT}" | jq -r 'with_entries(select(.value | .outcome == "failure")) | keys | join(", ")')
+
+          if [[ "$pr_url" != "null" ]]; then
+            # The @graalvm/compiler mention in the comment will notify
+            # the members of https://github.com/orgs/graalvm/teams/compiler
+            body="A [PR containing this commit](${pr_url}) or the JDK version on which the PR is based appears to include a change that breaks the Graal compiler integration.
+            
+          CC'ing @graalvm/compiler to notify the Graal team. No further action is needed.
+            
+          Relevant CI job: ${job_url}
+          Failed steps: ${failed_steps}"
+            
+            # Search for existing comment to avoid posting it more than once
+            readarray -t bodies < <(gh api "${headers[@]}" ${commit}/comments | jq '.[] | .body')
+            for b in "${bodies[@]}"; do
+              if [[ "$b" == "\"$body\"" ]]; then
+                body=""
+                break
+              fi
+            done
+            if [[ "$body" != "" ]]; then
+              # Post comment to commit
+              gh api "${headers[@]}" --method POST ${commit}/comments -f "body=${body}" | tee response
+              comment_url=$(jq -r '.html_url' <response)
+              echo
+              echo "Posted comment: ${comment_url}"
+            else
+              echo "Commit ${{ github.sha }} already has this comment: ${body}"
+            fi
+          else
+            echo "No PR found for commit ${{ github.sha }}"
+          fi
