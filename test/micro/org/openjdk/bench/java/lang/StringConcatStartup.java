@@ -66,34 +66,14 @@ public class StringConcatStartup {
                     new StringSingle().constIntString();
                     new StringSingle().constFloatString();
                     new StringSingle().constBooleanString();
-
-                    new StringSingleGenerate().constInt();
-                    new StringSingleGenerate().constFloat();
-                    new StringSingleGenerate().constString();
-                    new StringSingleGenerate().const2String();
-                    new StringSingleGenerate().constIntString();
-                    new StringSingleGenerate().constFloatString();
-                    new StringSingleGenerate().constBooleanString();
                 }
                 case "StringThree" -> {
                     new StringThree().stringIntString();
                     new StringThree().stringIntegerString();
-
-                    new StringThreeGenerate().stringIntString();
-                    new StringThreeGenerate().stringIntegerString();
                 }
-                case "MixedSmall" -> {
-                    new MixedSmall().run();
-                    new MixedSmallGenerate().run();
-                }
-                case "StringLarge" -> {
-                    new StringLarge().run();
-                    new StringLargeGenerate().run();
-                }
-                case "MixedLarge" -> {
-                    new MixedLarge().run();
-                    new MixedLargeGenerate().run();
-                }
+                case "MixedSmall" -> new MixedSmall().run();
+                case "StringLarge" -> new StringLarge().run();
+                case "MixedLarge" -> new MixedLarge().run();
             }
         }
     }
@@ -175,13 +155,6 @@ public class StringConcatStartup {
     @BenchmarkMode(Mode.SingleShotTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @State(Scope.Thread)
-    @Fork(value = 40, warmups = 2, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
-    public static class StringSingleGenerate extends StringSingle {
-    }
-
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
     @Fork(value = 40, warmups = 2)
     public static class StringThree {
 
@@ -199,13 +172,6 @@ public class StringConcatStartup {
         public String stringIntegerString() {
             return stringValue + integerValue + stringValue;
         }
-    }
-
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
-    @Fork(value = 40, warmups = 2, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
-    public static class StringThreeGenerate extends StringThree {
     }
 
     @BenchmarkMode(Mode.SingleShotTime)
@@ -229,13 +195,6 @@ public class StringConcatStartup {
             concat = s + "bar" + i + s + "bur" + c + "dub" + s + "foo";
             return concat;
         }
-    }
-
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
-    @Fork(value = 20, warmups = 2, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
-    public static class MixedSmallGenerate extends MixedSmall {
     }
 
     @BenchmarkMode(Mode.SingleShotTime)
@@ -369,13 +328,6 @@ public class StringConcatStartup {
     @BenchmarkMode(Mode.SingleShotTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     @State(Scope.Thread)
-    @Fork(value = 10, warmups = 2, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
-    public static class StringLargeGenerate extends StringLarge {
-    }
-
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
     @Fork(value = 10, warmups = 2)
     public static class MixedLarge {
 
@@ -499,12 +451,5 @@ public class StringConcatStartup {
             concat = "" + c + z + S + S + b + i + c;
             concat = "" + S + s + S + c;
         }
-    }
-
-    @BenchmarkMode(Mode.SingleShotTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
-    @Fork(value = 10, warmups = 2, jvmArgsAppend = "-Djava.lang.invoke.StringConcat.highArityThreshold=0")
-    public static class MixedLargeGenerate extends MixedLarge {
     }
 }
