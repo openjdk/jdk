@@ -2339,7 +2339,7 @@ JvmtiModuleClosure::get_all_modules(JvmtiEnv* env, jint* module_count_ptr, jobje
   }
 
   // Iterate over all the modules loaded to the system.
-  ClassLoaderDataGraph::modules_do(&do_module);
+  ClassLoaderDataGraph::modules_do_keepalive(&do_module);
 
   jint len = _tbl->length();
   guarantee(len > 0, "at least one module must be present");

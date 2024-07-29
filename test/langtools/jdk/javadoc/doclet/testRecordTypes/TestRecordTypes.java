@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,8 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record class are compared with '=='.""",
+                    equal. All components in this record class are compared with the <code>compare</\
+                    code> method from their corresponding wrapper classes.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -300,7 +301,8 @@ public class TestRecordTypes extends JavadocTester {
                 """
                     Indicates whether some other object is "equal to" this one. The objects are equa\
                     l if the other object is of the same class and if all the record components are \
-                    equal. All components in this record class are compared with '=='.""",
+                    equal. All components in this record class are compared with the <code>compare</\
+                    code> method from their corresponding wrapper classes.""",
                 """
                     <span class="element-name">r1</span>""",
                 """
@@ -311,7 +313,8 @@ public class TestRecordTypes extends JavadocTester {
     @Test
     public void testGeneratedEqualsPrimitive(Path base) throws IOException {
         testGeneratedEquals(base, "int a, int b",
-             "All components in this record class are compared with '=='.");
+             "All components in this record class are compared with the <code>compare</code> method " +
+                     "from their corresponding wrapper classes.");
     }
 
     @Test
@@ -324,7 +327,8 @@ public class TestRecordTypes extends JavadocTester {
     public void testGeneratedEqualsMixed(Path base) throws IOException {
         testGeneratedEquals(base, "int a, Object b",
              "Reference components are compared with <code>Objects::equals(Object,Object)</code>; "
-             + "primitive components are compared with '=='.");
+             + "primitive components are compared with the <code>compare</code> method from their "
+             + "corresponding wrapper classes.");
     }
 
     private void testGeneratedEquals(Path base, String comps, String expect) throws IOException {

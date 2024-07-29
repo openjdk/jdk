@@ -101,7 +101,8 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred, 
 // is an IfTrue projection. This code is also used to clone predicates to cloned loops.
 IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj,
                                                         Node* new_entry, const Deoptimization::DeoptReason reason,
-                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs) {
+                                                        const int opcode, const bool rewire_uncommon_proj_phi_inputs
+                                                        NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type)) {
   assert(parse_predicate_success_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   ParsePredicateNode* parse_predicate = parse_predicate_success_proj->in(0)->as_ParsePredicate();
   ParsePredicateUncommonProj* uncommon_proj = parse_predicate->uncommon_proj();
@@ -143,10 +144,12 @@ IfTrueNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
   IfNode* new_iff = nullptr;
   switch (opcode) {
     case Op_If:
-      new_iff = new IfNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt);
+      new_iff = new IfNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt
+                           NOT_PRODUCT(COMMA assertion_predicate_type));
       break;
     case Op_RangeCheck:
-      new_iff = new RangeCheckNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt);
+      new_iff = new RangeCheckNode(entry, parse_predicate->in(1), parse_predicate->_prob, parse_predicate->_fcnt
+                                   NOT_PRODUCT(COMMA assertion_predicate_type));
       break;
     case Op_ParsePredicate:
       new_iff = new ParsePredicateNode(entry, reason, &_igvn);
@@ -1152,7 +1155,6 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
                                                   ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl,
                                                   ConNode* zero, Invariance& invar, Deoptimization::DeoptReason reason) {
   // Following are changed to nonnull when a predicate can be hoisted
-  IfProjNode* new_predicate_proj = nullptr;
   IfNode*   iff  = if_success_proj->in(0)->as_If();
   Node*     test = iff->in(1);
   if (!test->is_Bool()) { //Conv2B, ...
@@ -1163,10 +1165,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   if (invar.is_invariant(bol)) {
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_IC, 4, iff);
     // Invariant test
-    new_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr,
-                                                     reason,
-                                                     iff->Opcode());
-    Node* ctrl = new_predicate_proj->in(0)->as_If()->in(0);
+    IfProjNode* hoisted_check_predicate_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
+                                                                           iff->Opcode());
+    Node* ctrl = hoisted_check_predicate_proj->in(0)->as_If()->in(0);
     BoolNode* hoisted_check_predicate_bool = invar.clone(bol, ctrl)->as_Bool();
 
     // Negate test if necessary (Parse Predicates always have IfTrue as success projection and IfFalse as uncommon trap)
@@ -1177,11 +1178,16 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
       register_new_node(hoisted_check_predicate_bool, ctrl);
       negated = true;
     }
-    IfNode* new_predicate_iff = new_predicate_proj->in(0)->as_If();
+    IfNode* new_predicate_iff = hoisted_check_predicate_proj->in(0)->as_If();
     _igvn.hash_delete(new_predicate_iff);
     new_predicate_iff->set_req(1, hoisted_check_predicate_bool);
 
-    C->print_method(PHASE_AFTER_LOOP_PREDICATION_IC, 4, new_predicate_proj->in(0));
+    invar.map_ctrl(if_success_proj, hoisted_check_predicate_proj); // Mark hoisted check as invariant
+
+    // Eliminate the old If in the loop body.
+    dominated_by(hoisted_check_predicate_proj, iff, negated);
+
+    C->print_method(PHASE_AFTER_LOOP_PREDICATION_IC, 4, hoisted_check_predicate_proj->in(0));
 
 #ifndef PRODUCT
     if (TraceLoopPredicate) {
@@ -1193,10 +1199,10 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     }
 #endif
   } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
-    range_check_predicate = true;
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_RC, 4, iff);
     // Range check for counted loops
     assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
+    IfTrueNode* hoisted_check_proj = if_success_proj->as_IfTrue();
     const Node*    cmp    = bol->in(1)->as_Cmp();
     Node*          idx    = cmp->in(1);
     assert(!invar.is_invariant(idx), "index is variant");
@@ -1265,10 +1271,18 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
-    new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj, upper_bound_proj, scale,
-                                                          offset, init, limit, stride, rng, overflow, reason);
+    IfTrueNode* template_assertion_predicate_proj =
+        add_template_assertion_predicate(iff, loop, hoisted_check_proj, parse_predicate_proj, upper_bound_proj, scale,
+                                         offset, init, limit, stride, rng, overflow, reason);
 
-    C->print_method(PHASE_AFTER_LOOP_PREDICATION_RC, 4, new_predicate_proj->in(0));
+    // Eliminate the old range check in the loop body.
+    // When a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
+    // Hoisted Check Predicates (one for the start of the loop, one for the end) but we can only keep track of one control
+    // dependency: pin the data dependent nodes.
+    eliminate_hoisted_range_check(hoisted_check_proj, template_assertion_predicate_proj);
+    invar.map_ctrl(hoisted_check_proj, template_assertion_predicate_proj); // Mark hoisted check as invariant
+
+    C->print_method(PHASE_AFTER_LOOP_PREDICATION_RC, 4, template_assertion_predicate_proj->in(0));
 
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {
@@ -1281,24 +1295,21 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // with uncommon trap.
     return false;
   }
-  assert(new_predicate_proj != nullptr, "sanity");
-  // Success - attach condition (new_predicate_bol) to predicate if
-  invar.map_ctrl(if_success_proj, new_predicate_proj); // so that invariance test can be appropriate
-
-  // Eliminate the old If in the loop body
-  // If a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
-  // Hoisted Check Predicates (one for the start of the loop, one for the end) but we can only keep track of one control
-  // dependency: pin the data dependent nodes.
-  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con, range_check_predicate);
 
   C->set_major_progress();
   return true;
 }
 
+void PhaseIdealLoop::eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj,
+                                                   IfTrueNode* template_assertion_predicate_proj) {
+  _igvn.replace_input_of(hoisted_check_proj->in(0), 1, _igvn.intcon(1));
+  rewire_safe_outputs_to_dominator(hoisted_check_proj, template_assertion_predicate_proj, true);
+}
+
 // Each newly created Hoisted Check Predicate is accompanied by two Template Assertion Predicates. Later, we initialize
 // them by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub
 // loops are removed properly.
-IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                              ParsePredicateSuccessProj* parse_predicate_proj,
                                                              IfProjNode* upper_bound_proj, const int scale, Node* offset,
                                                              Node* init, Node* limit, const jint stride,
@@ -1312,7 +1323,8 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
-  IfProjNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
+  IfTrueNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
+                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(opaque_init->outcnt() > 0, "should be used");
 
@@ -1329,15 +1341,16 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
   const Type* type_iv = loop->_head->as_CountedLoop()->phi()->bottom_type();
   assert(!type_iv->is_int()->is_con(), "constant indicates one loop iteration for which we bailed out earlier");
-  max_value = new CastIINode(max_value, type_iv);
-  register_new_node(max_value, parse_predicate_proj);
+  max_value = new CastIINode(new_proj, max_value, type_iv);
+  register_new_node(max_value, new_proj);
 
   bol = rc_predicate(new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
                      overflow);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
-  new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
+  new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
+                                         false NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
   assert(assertion_predicate_has_loop_opaque_node(new_proj->in(0)->as_If()), "unexpected");

@@ -46,7 +46,6 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
-import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;

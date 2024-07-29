@@ -72,13 +72,7 @@ class SerialHeap : public CollectedHeap {
   friend class HeapInspection;
   friend class GCCauseSetter;
   friend class VMStructs;
-public:
   friend class VM_PopulateDumpSharedSpace;
-
-  enum GenerationType {
-    YoungGen,
-    OldGen
-  };
 
 private:
   DefNewGeneration* _young_gen;
@@ -90,11 +84,6 @@ private:
   CardTableRS* _rem_set;
 
   GCPolicyCounters* _gc_policy_counters;
-
-  // Indicates that the most recent previous incremental collection failed.
-  // The flag is cleared when an action is taken that might clear the
-  // condition that caused that incremental collection to fail.
-  bool _incremental_collection_failed;
 
   bool do_young_collection(bool clear_soft_refs);
 
@@ -129,7 +118,6 @@ public:
   // Does operations required after initialization has been done.
   void post_initialize() override;
 
-  bool is_young_gen(const Generation* gen) const { return gen == _young_gen; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
   // Performance Counter support
@@ -255,29 +243,6 @@ public:
   // in other generations, it should call this method.
   void save_marks();
 
-  // Returns true if an incremental collection is likely to fail.
-  // We optionally consult the young gen, if asked to do so;
-  // otherwise we base our answer on whether the previous incremental
-  // collection attempt failed with no corrective action as of yet.
-  bool incremental_collection_will_fail(bool consult_young) {
-    // The first disjunct remembers if an incremental collection failed, even
-    // when we thought (second disjunct) that it would not.
-    return incremental_collection_failed() ||
-           (consult_young && !_young_gen->collection_attempt_is_safe());
-  }
-
-  // If a generation bails out of an incremental collection,
-  // it sets this flag.
-  bool incremental_collection_failed() const {
-    return _incremental_collection_failed;
-  }
-  void set_incremental_collection_failed() {
-    _incremental_collection_failed = true;
-  }
-  void clear_incremental_collection_failed() {
-    _incremental_collection_failed = false;
-  }
-
 private:
   // Return true if an allocation should be attempted in the older generation
   // if it fails in the younger generation.  Return false, otherwise.
@@ -289,7 +254,6 @@ private:
   HeapWord* mem_allocate_work(size_t size,
                               bool is_tlab);
 
-private:
   MemoryPool* _eden_pool;
   MemoryPool* _survivor_pool;
   MemoryPool* _old_pool;

@@ -69,6 +69,8 @@ compiler/startup/StartupOutput.java 8326615 generic-x64
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
+compiler/interpreter/Test6833129.java 8335266 generic-i586
+
 #############################################################################
 
 # :hotspot_gc
@@ -108,11 +110,9 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
-runtime/ClassInitErrors/TestStackOverflowDuringInit.java 8334545 generic-all
 
 applications/jcstress/copy.java 8229852 linux-all
 
-containers/cgroup/PlainRead.java 8333967,8261242 linux-all
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-all
 containers/docker/TestJFREvents.java 8327723 linux-x64
@@ -130,13 +130,13 @@ serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generi
 serviceability/jvmti/vthread/CarrierThreadEventNotification/CarrierThreadEventNotification.java 8333681 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 generic-all
 
-serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java              8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core    8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbPmap.java#core            8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/ClhsdbPstack.java#core          8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/TestJmapCore.java               8267433,8318754 macosx-x64,macosx-aarch64
+serviceability/sa/TestJmapCoreMetaspace.java      8267433,8318754 macosx-x64,macosx-aarch64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 

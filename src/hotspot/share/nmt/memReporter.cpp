@@ -337,7 +337,7 @@ int MemDetailReporter::report_malloc_sites() {
       continue;
     }
     const NativeCallStack* stack = malloc_site->call_stack();
-    stack->print_on(out);
+    _stackprinter.print_stack(stack);
     MEMFLAGS flag = malloc_site->flag();
     assert(NMTUtil::flag_is_valid(flag) && flag != mtNone,
       "Must have a valid memory type");
@@ -374,7 +374,7 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
       continue;
     }
     const NativeCallStack* stack = virtual_memory_site->call_stack();
-    stack->print_on(out);
+    _stackprinter.print_stack(stack);
     INDENT_BY(29,
       out->print("(");
       print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
@@ -428,7 +428,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     out->cr();
   } else {
     out->print_cr(" from");
-    INDENT_BY(4, stack->print_on(out);)
+    INDENT_BY(4, _stackprinter.print_stack(stack);)
   }
 
   if (all_committed) {
@@ -487,7 +487,35 @@ void MemSummaryDiffReporter::report_diff() {
   print_virtual_memory_diff(_current_baseline.total_reserved_memory(),
     _current_baseline.total_committed_memory(), _early_baseline.total_reserved_memory(),
     _early_baseline.total_committed_memory());
+  out->cr();
+  out->cr();
 
+  // malloc diff
+  const size_t early_malloced_bytes =
+    _early_baseline.malloc_memory_snapshot()->total();
+  const size_t early_count =
+    _early_baseline.malloc_memory_snapshot()->total_count();
+  const size_t current_malloced_bytes =
+    _current_baseline.malloc_memory_snapshot()->total();
+  const size_t current_count =
+    _current_baseline.malloc_memory_snapshot()->total_count();
+  print_malloc_diff(current_malloced_bytes, current_count, early_malloced_bytes,
+                    early_count, mtNone);
+  out->cr();
+  out->cr();
+
+  // mmap diff
+  out->print("mmap: ");
+  const size_t early_reserved =
+    _early_baseline.virtual_memory_snapshot()->total_reserved();
+  const size_t early_committed =
+    _early_baseline.virtual_memory_snapshot()->total_committed();
+  const size_t current_reserved =
+    _current_baseline.virtual_memory_snapshot()->total_reserved();
+  const size_t current_committed =
+    _current_baseline.virtual_memory_snapshot()->total_committed();
+  print_virtual_memory_diff(current_reserved, current_committed, early_reserved,
+                            early_committed);
   out->cr();
   out->cr();
 
@@ -869,7 +897,7 @@ void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_
       return;
   }
 
-  stack->print_on(out);
+  _stackprinter.print_stack(stack);
   INDENT_BY(28,
     out->print("(");
     print_malloc_diff(current_size, current_count, early_size, early_count, flags);
@@ -904,7 +932,7 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
     return;
   }
 
-  stack->print_on(out);
+  _stackprinter.print_stack(stack);
   INDENT_BY(28,
     out->print("(mmap: ");
     print_virtual_memory_diff(current_reserved, current_committed, early_reserved, early_committed);
