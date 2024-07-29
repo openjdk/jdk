@@ -28,7 +28,6 @@
  * @run junit BuilderBlockTest
  */
 import java.io.IOException;
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
@@ -53,6 +52,8 @@ import helpers.ByteArrayClassLoader;
 import jdk.internal.classfile.impl.LabelImpl;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 
