@@ -350,7 +350,7 @@ class BuilderBlockTest {
     // CodeBuilder.transform(CodeModel, CodeTransform) is
     // not managed for now
     @Test
-    void testAllocateLocalTransformingCodeAttribute() throws IOException  {
+    void testAllocateLocalTransformingCodeAttribute() throws IOException {
         var cf = ClassFile.of();
         var code = cf.parse(testClassPath)
                 .methods()
