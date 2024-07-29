@@ -44,8 +44,10 @@ class NativeCallStackStorage : public CHeapObjBase {
 public:
   using StackIndex = int;
 
+private:
   constexpr static const StackIndex invalid = std::numeric_limits<StackIndex>::max() - 1;
 
+public:
   static bool equals(const StackIndex a, const StackIndex b) {
     return a == b;
   }
