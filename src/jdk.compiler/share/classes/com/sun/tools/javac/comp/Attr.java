@@ -3530,40 +3530,22 @@ public class Attr extends JCTree.Visitor {
          * expression.
          *
          * The owner of this environment is a method symbol. If the current owner
-         * is not a method, for example if the lambda is used to initialize
-         * a field, then if the field is:
-         *
-         * - an instance field, we use the first constructor.
-         * - a static field, we create a fake clinit method.
+         * is not a method (e.g. if the lambda occurs in a field initializer), then
+         * a synthetic method symbol owner is created.
          */
         public Env<AttrContext> lambdaEnv(JCLambda that, Env<AttrContext> env) {
             Env<AttrContext> lambdaEnv;
             Symbol owner = env.info.scope.owner;
             if (owner.kind == VAR && owner.owner.kind == TYP) {
-                //field initializer
+                // If the lambda is nested in a field initializer, we need to create a fake init method.
+                // Uniqueness of this symbol is not important (as e.g. annotations will be added on the
+                // init symbol's owner).
                 ClassSymbol enclClass = owner.enclClass();
-                Symbol newScopeOwner = env.info.scope.owner;
-                /* if the field isn't static, then we can get the first constructor
-                 * and use it as the owner of the environment. This is what
-                 * LTM code is doing to look for type annotations so we are fine.
-                 */
-                if ((owner.flags() & STATIC) == 0) {
-                    for (Symbol s : enclClass.members_field.getSymbolsByName(names.init)) {
-                        newScopeOwner = s;
-                        break;
-                    }
-                } else {
-                    // If the field is static then we need to create a fake clinit method.
-                    // Uniqueness of this symbol is not important (as e.g. annotations will be added on the
-                    // init symbol's owner).
-                    Type clinitType = new MethodType(List.nil(),
-                            syms.voidType, List.nil(), syms.methodClass);
-                    MethodSymbol clinit = new MethodSymbol(BLOCK | STATIC | SYNTHETIC | PRIVATE,
-                            names.clinit, clinitType, enclClass);
-                    clinit.params = List.nil();
-                    newScopeOwner = clinit;
-                }
-                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(newScopeOwner)));
+                Name initName = owner.isStatic() ? names.clinit : names.init;
+                MethodSymbol initSym = new MethodSymbol(BLOCK | (owner.isStatic() ? STATIC : 0) | SYNTHETIC | PRIVATE,
+                        initName, initBlockType, enclClass);
+                initSym.params = List.nil();
+                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(initSym)));
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }

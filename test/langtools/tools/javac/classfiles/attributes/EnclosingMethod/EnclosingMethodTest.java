@@ -245,7 +245,6 @@ public class EnclosingMethodTest extends TestResult {
         // anonymous and local classes in lambda
         @ExpectedEnclosingMethod(
                 info = "EnclosingLambda in EnclosingMethodTest",
-                enclosingMethod = "<init>",
                 enclosingClazz = EnclosingMethodTest.class
         )
         class EnclosingLambda {
@@ -325,7 +324,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing01",
-                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing01.class
             )
             class EnclosingLambda {
@@ -459,7 +457,6 @@ public class EnclosingMethodTest extends TestResult {
             // anonymous and local classes in lambda
             @ExpectedEnclosingMethod(
                     info = "EnclosingLambda in notEnclosing03",
-                    enclosingMethod = "<init>",
                     enclosingClazz = notEnclosing03.class
             )
             class EnclosingLambda {
