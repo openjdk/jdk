@@ -156,7 +156,7 @@ public final class BufferedMethodBuilder
             extends AbstractUnboundModel<MethodElement>
             implements MethodModel, MethodInfo {
         public Model() {
-            super(elements);
+            super(BufferedMethodBuilder.this.elements);
         }
 
         @Override
