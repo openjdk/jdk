@@ -124,8 +124,6 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
   }
 }
 
-template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
-
 template <> void DCmdArgument<jlong>::init_value(TRAPS) {
   if (has_default()) {
     this->parse_value(_default_string, strlen(_default_string), THREAD);
@@ -359,3 +357,5 @@ template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
     _value._multiplier = ' ';
   }
 }
+
+template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
