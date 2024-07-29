@@ -52,12 +52,12 @@ public final class RenderBuffer {
     /**
      * These constants represent the size of various data types (in bytes).
      */
-    private static final int SIZEOF_BYTE   = 1;
-    private static final int SIZEOF_SHORT  = 2;
-    private static final int SIZEOF_INT    = 4;
-    private static final int SIZEOF_FLOAT  = 4;
-    private static final int SIZEOF_LONG   = 8;
-    private static final int SIZEOF_DOUBLE = 8;
+    private static final int SIZEOF_BYTE   = Byte.BYTES;
+    private static final int SIZEOF_SHORT  = Short.BYTES;
+    private static final int SIZEOF_INT    = Integer.BYTES;
+    private static final int SIZEOF_FLOAT  = Float.BYTES;
+    private static final int SIZEOF_LONG   = Long.BYTES;
+    private static final int SIZEOF_DOUBLE = Double.BYTES;
 
     /**
      * Measurements show that using the copy API from a segment backed by a heap
