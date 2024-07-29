@@ -581,16 +581,6 @@ public class LambdaToMethod extends TreeTranslator {
         }
     }
 
-//    @Override
-//    public void visitBlock(JCBlock tree) {
-//        VarSymbol prevPendingVar = pendingVar;
-//        try {
-//            super.visitBlock(tree);
-//        } finally {
-//            pendingVar = prevPendingVar;
-//        }
-//    }
-
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Translation helper methods">
