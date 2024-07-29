@@ -447,6 +447,39 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   return q;
 }
 
+template<typename IntegerType>
+static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
+  typedef typename IntegerType::NativeType NativeType;
+  assert(i2->_lo != 0 && i2->_hi != 0, "Zero can't be a type for divisor");
+
+  // special case: divisor type contains zero
+  if (i2->_lo < 0 && i2->_hi > 0) {
+    // Handle negative part of the divisor range
+    const IntegerType* neg_part = compute_generic_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
+    // Handle positive part of the divisor range
+    const IntegerType* pos_part = compute_generic_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
+    // Merge results
+    int new_lo = MIN2(neg_part->_lo, pos_part->_lo);
+    int new_hi = MAX2(neg_part->_hi, pos_part->_hi);
+    return IntegerType::make(new_lo, new_hi, widen);
+  }
+
+  NativeType new_lo = max_jint;
+  NativeType new_hi = min_jint;
+
+  // Consider all combinations of bounds
+  NativeType candidates[] = {
+          i1->_lo / i2->_lo, i1->_lo / i2->_hi,
+          i1->_hi / i2->_lo, i1->_hi / i2->_hi
+  };
+
+  for (NativeType c : candidates) {
+    new_lo = MIN2(new_lo, c);
+    new_hi = MAX2(new_hi, c);
+  }
+  return IntegerType::make(new_lo, new_hi, widen);
+}
+
 //=============================================================================
 //------------------------------Identity---------------------------------------
 // If the divisor is 1, we are an identity on the dividend.
@@ -534,22 +567,16 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return TypeInt::make(lo, hi, widen);
   }
 
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    int32_t d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jint ) {
-        //  (-min_jint) == min_jint == (min_jint / -1)
-        return TypeInt::make(min_jint, max_jint/2 + 1, widen);
-      } else {
-        return TypeInt::make(d, -d, widen);
-      }
+  if (i1->_lo == min_jint) {
+    // give up
+    if (i1->is_con()) {
+      //  (-min_jint) == min_jint == (min_jint / -1)
+      return TypeInt::make(min_jint, max_jint/2 + 1, widen);
     }
-    return TypeInt::make(-d, d, widen);
+    return TypeInt::INT;
   }
 
-  // Otherwise we give up all hope
-  return TypeInt::INT;
+  return compute_generic_div_type(i1, i2, widen);
 }
 
 
@@ -640,22 +667,16 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::make(lo, hi, widen);
   }
 
-  // If the dividend is a constant
-  if( i1->is_con() ) {
-    jlong d = i1->get_con();
-    if( d < 0 ) {
-      if( d == min_jlong ) {
-        //  (-min_jlong) == min_jlong == (min_jlong / -1)
-        return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
-      } else {
-        return TypeLong::make(d, -d, widen);
-      }
+  if (i1->_lo == min_jlong) {
+    if (i1->is_con()) {
+      //  (-min_jlong) == min_jlong == (min_jlong / -1)
+      return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
     }
-    return TypeLong::make(-d, d, widen);
+    // give up
+    return TypeLong::LONG;
   }
 
-  // Otherwise we give up all hope
-  return TypeLong::LONG;
+  return compute_generic_div_type(i1, i2, widen);
 }
 
 
