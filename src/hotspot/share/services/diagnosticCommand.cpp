@@ -865,7 +865,7 @@ void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
   // The check for _filename.is_set() is because we don't want to use
   // DEFAULT_PERFMAP_FILENAME, since it is meant as a description
   // of the default, not the actual default.
-  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr);
+  CodeCache::write_perf_map(_filename.is_set() ? _filename.value() : nullptr, output());
 }
 #endif // LINUX
 
