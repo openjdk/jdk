@@ -42,11 +42,12 @@ final class CachingIntFunctionTest {
     void basic() {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(i -> i);
         var cached = StableValue.newCachingIntFunction(SIZE, cif, null);
+        assertEquals("CachedIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
         assertEquals(1, cached.apply(1));
         assertEquals(1, cif.cnt());
         assertEquals(1, cached.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals("CachedIntFunction[stables=[StableValue.unset, StableValue[1]], original=" + cif + "]", cached.toString());
+        assertEquals("CachedIntFunction[values=[.unset, [1]], original=" + cif + "]", cached.toString());
         assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE + 1));
     }
 
@@ -80,7 +81,7 @@ final class CachingIntFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(1));
         assertEquals(2, cif.cnt());
-        assertEquals("CachedIntFunction[stables=[StableValue.unset, StableValue.unset], original=" + cif + "]", cached.toString());
+        assertEquals("CachedIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
     }
 
 }

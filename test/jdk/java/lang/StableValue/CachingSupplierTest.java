@@ -40,11 +40,12 @@ final class CachingSupplierTest {
     void basic() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
         var cached = StableValue.newCachingSupplier(cs, null);
+        assertEquals("CachedSupplier[value=.unset, original=" + cs + "]", cached.toString());
         assertEquals(42, cached.get());
         assertEquals(1, cs.cnt());
         assertEquals(42, cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals("CachedSupplier[stable=StableValue[42], original=" + cs + "]", cached.toString());
+        assertEquals("CachedSupplier[value=[42], original=" + cs + "]", cached.toString());
     }
 
     @Test
@@ -76,7 +77,7 @@ final class CachingSupplierTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(2, cs.cnt());
-        assertEquals("CachedSupplier[stable=StableValue.unset, original=" + cs + "]", cached.toString());
+        assertEquals("CachedSupplier[value=.unset, original=" + cs + "]", cached.toString());
     }
 
 }

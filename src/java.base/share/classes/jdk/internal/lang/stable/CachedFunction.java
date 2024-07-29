@@ -58,6 +58,16 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
         return r;
     }
 
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
+    }
+
     public static <T, R> CachedFunction<T, R> of(Set<T> inputs,
                                                  Function<? super T, ? extends R> original) {
         return new CachedFunction<>(StableValueUtil.ofMap(inputs), original);

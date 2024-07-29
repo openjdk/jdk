@@ -26,42 +26,75 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
+import java.util.Arrays;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 
 // Note: It would be possible to just use `LazyList::get` instead of this
 // class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
-public record CachedIntFunction<R>(List<StableValueImpl<R>> stables,
-                                   IntFunction<? extends R> original) implements IntFunction<R> {
+public final class CachedIntFunction<R> implements IntFunction<R> {
+
+    private static final long VALUES_OFFSET =
+            StableValueUtil.UNSAFE.objectFieldOffset(CachedIntFunction.class, "values");
+
+    private final IntFunction<? extends R> original;
+    private final Object[] mutexes;
+    @Stable
+    private final Object[] values;
+
+    public CachedIntFunction(int size,
+                             IntFunction<? extends R> original) {
+        this.original = original;
+        this.mutexes = new Object[size];
+        for (int i = 0; i < size; i++) {
+            mutexes[i] = new Object();
+        }
+        this.values = new Object[size];
+    }
+
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public R apply(int value) {
-        final StableValueImpl<R> stable;
+        R r;
         try {
             // Todo: Will the exception handling here impair performance?
-            stable = stables.get(value);
+            r = (R) values[value];
         } catch (IndexOutOfBoundsException e) {
             throw new IllegalArgumentException(e);
         }
-        R r = stable.value();
         if (r != null) {
             return StableValueUtil.unwrap(r);
         }
-        synchronized (stable) {
-            r = stable.value();
+        synchronized (mutexes[value]) {
+            r = (R) values[value];
             if (r != null) {
                 return StableValueUtil.unwrap(r);
             }
             r = original.apply(value);
-            stable.setOrThrow(r);
+            StableValueUtil.safelyPublish(values, StableValueUtil.arrayOffset(value), r);
         }
         return r;
     }
 
     public static <R> CachedIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new CachedIntFunction<>(StableValueUtil.ofList(size), original);
+        return new CachedIntFunction<>(size, original);
+    }
+
+    @Override
+    public String toString() {
+        return "CachedIntFunction[values=" +
+                "[" + valuesAsString() + "]"
+                + ", original=" + original + ']';
+    }
+
+    private String valuesAsString() {
+        return Arrays.stream(values, 0, values.length)
+                .map(StableValueUtil::render)
+                .collect(Collectors.joining(", "));
     }
 
 }

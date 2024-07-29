@@ -63,6 +63,11 @@ public final class StableValueUtil {
         return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
     }
 
+    @ForceInline
+    static long arrayOffset(int index) {
+        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + (long) index * Unsafe.ARRAY_OBJECT_INDEX_SCALE;
+    }
+
     // Factories
 
     public static <T> List<StableValueImpl<T>> ofList(int size) {

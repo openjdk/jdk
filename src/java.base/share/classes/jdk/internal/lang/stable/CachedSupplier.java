@@ -26,31 +26,59 @@
 package jdk.internal.lang.stable;
 
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
-public record CachedSupplier<T>(StableValueImpl<T> stable,
-                                Supplier<? extends T> original) implements Supplier<T> {
+/**
+ * Implementation of a cached supplier.
+ * <p>
+ * For performance reasons (~10%), we are not delegating to a StableValue but are using
+ * the more primitive functions in StableValueUtil that are shared with StableValueImpl.
+ *
+ * @param <T>
+ */
+public final class CachedSupplier<T> implements Supplier<T> {
+
+    private static final long VALUE_OFFSET =
+            StableValueUtil.UNSAFE.objectFieldOffset(CachedSupplier.class, "value");
+
+    private final Supplier<? extends T> original;
+    private final Object mutex = new Object();
+    @Stable
+    private T value;
+
+    public CachedSupplier(Supplier<? extends T> original) {
+        this.original = original;
+    }
+
+    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T get() {
-        T t = stable.value();
-        if (t != null) {
+        T t = value;
+        if (value != null) {
             return StableValueUtil.unwrap(t);
         }
-        synchronized (stable) {
-            t = stable.value();
+        synchronized (mutex) {
+            t = value;
             if (t != null) {
                 return StableValueUtil.unwrap(t);
             }
             t = original.get();
-            stable.setOrThrow(t);
+            StableValueUtil.safelyPublish(this, VALUE_OFFSET, t);
         }
         return t;
     }
 
     public static <T> CachedSupplier<T> of(Supplier<? extends T> original) {
-        return new CachedSupplier<>(StableValueImpl.newInstance(), original);
+        return new CachedSupplier<>(original);
+    }
+
+    @Override
+    public String toString() {
+        return "CachedSupplier[value=" + StableValueUtil.render(StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET)) + ", original=" + original + "]";
     }
 
 }

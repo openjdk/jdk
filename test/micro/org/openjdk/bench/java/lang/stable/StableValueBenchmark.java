@@ -48,6 +48,13 @@ public class StableValueBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
+    private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
+    private static final StableValue<Integer> DCL = init(StableValue.newInstance(), VALUE);
+    private static final StableValue<Integer> DCL2 = init(StableValue.newInstance(), VALUE2);
+    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
+    private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
+
     private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
     private final StableValue<Integer> stableNull = StableValue.newInstance();
@@ -58,13 +65,6 @@ public class StableValueBenchmark {
     private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
     private final Supplier<Integer> supplier2 = () -> VALUE2;
-
-    private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
-    private static final StableValue<Integer> DCL = init(StableValue.newInstance(), VALUE);
-    private static final StableValue<Integer> DCL2 = init(StableValue.newInstance(), VALUE2);
-    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
-    private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
 
 
     @Setup
