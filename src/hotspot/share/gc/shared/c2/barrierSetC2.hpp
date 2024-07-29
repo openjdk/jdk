@@ -112,7 +112,7 @@ protected:
 
 public:
   C2Access(DecoratorSet decorators,
-           Node* base, C2AccessValuePtr& addr, BasicType type) :
+           BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
     _base(base),
     _addr(addr),
@@ -153,7 +153,7 @@ protected:
 public:
   C2ParseAccess(GraphKit* kit, DecoratorSet decorators,
                 BasicType type, Node* base, C2AccessValuePtr& addr) :
-    C2Access(decorators, base, addr, type),
+    C2Access(decorators, type, base, addr),
     _kit(kit) {
     fixup_decorators();
   }
