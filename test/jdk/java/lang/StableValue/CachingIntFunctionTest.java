@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Basic tests for CachingIntFunction methods
-  * @compile --enable-preview -source ${jdk.version} CachingIntFunctionTest.java
+ * @compile --enable-preview -source ${jdk.version} CachingIntFunctionTest.java
  * @run junit/othervm --enable-preview CachingIntFunctionTest
  */
 

@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Basic tests for LazyMap methods
-  * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
+ * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
  * @run junit/othervm --enable-preview LazyMapTest
  */
 
