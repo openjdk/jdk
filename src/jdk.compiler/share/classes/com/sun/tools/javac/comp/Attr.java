@@ -1419,9 +1419,10 @@ public class Attr extends JCTree.Visitor {
             // Block is a static or instance initializer;
             // let the owner of the environment be a freshly
             // created BLOCK-method.
+            Type fakeOwnerType = new MethodType(List.nil(), syms.voidType, List.nil(), syms.methodClass);
             Symbol fakeOwner =
                 new MethodSymbol(tree.flags | BLOCK |
-                    env.info.scope.owner.flags() & STRICTFP, names.empty, null,
+                    env.info.scope.owner.flags() & STRICTFP, names.empty, fakeOwnerType,
                     env.info.scope.owner);
             final Env<AttrContext> localEnv =
                 env.dup(tree, env.info.dup(env.info.scope.dupUnshared(fakeOwner)));
@@ -3572,7 +3573,7 @@ public class Attr extends JCTree.Visitor {
                     if (clinit == null) {
                         Type clinitType = new MethodType(List.nil(),
                                 syms.voidType, List.nil(), syms.methodClass);
-                        clinit = new MethodSymbol(STATIC | SYNTHETIC | PRIVATE,
+                        clinit = new MethodSymbol(BLOCK | STATIC | SYNTHETIC | PRIVATE,
                                 names.clinit, clinitType, enclClass);
                         clinit.params = List.nil();
                         clinits.put(enclClass, clinit);
@@ -3936,6 +3937,7 @@ public class Attr extends JCTree.Visitor {
                     inferenceContext -> setFunctionalInfo(env, fExpr, pt, inferenceContext.asInstType(descriptorType),
                     inferenceContext.asInstType(primaryTarget), checkContext));
         } else {
+            fExpr.owner = env.info.scope.owner;
             if (pt.hasTag(CLASS)) {
                 fExpr.target = primaryTarget;
             }

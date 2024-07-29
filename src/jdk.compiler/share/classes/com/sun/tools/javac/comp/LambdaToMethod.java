@@ -26,6 +26,7 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.code.Attribute;
+import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
@@ -88,6 +89,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.sun.tools.javac.code.Flags.ABSTRACT;
+import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Flags.DEFAULT;
 import static com.sun.tools.javac.code.Flags.FINAL;
 import static com.sun.tools.javac.code.Flags.INTERFACE;
@@ -133,8 +135,8 @@ public class LambdaToMethod extends TreeTranslator {
     /** translation context of the current lambda expression */
     private LambdaTranslationContext lambdaContext;
 
-    /** the lambda expression owner */
-    private CaptureSiteInfo captureSiteInfo;
+    /** the variable whose initializer is pending */
+    private VarSymbol pendingVar;
 
     /** dump statistics about lambda code generation */
     private final boolean dumpLambdaToMethodStats;
@@ -198,45 +200,6 @@ public class LambdaToMethod extends TreeTranslator {
         deduplicateLambdas = options.getBoolean("deduplicateLambdas", true);
     }
     // </editor-fold>
-
-    /**
-     * This record is used to store information on where a functional expression is captured.
-     * This is useful both to forward type annotations to the synthetic lambda method,
-     * and to compute the name of the synthetic lambda method (which depends
-     * on _where_ the lambda capture occurs).
-     */
-    record CaptureSiteInfo(Symbol owner, boolean inStaticInit, VarSymbol pendingVar) {
-
-        static CaptureSiteInfo ofClass(JCClassDecl tree) {
-            return new CaptureSiteInfo(tree.sym, false, null);
-        }
-
-        CaptureSiteInfo withMethod(JCMethodDecl tree) {
-            return new CaptureSiteInfo(tree.sym, false, null);
-        }
-
-        CaptureSiteInfo withVar(JCVariableDecl tree) {
-            return (tree.sym.owner.kind == TYP) ?
-                    new CaptureSiteInfo(tree.sym, tree.sym.isStatic(), tree.sym) :
-                    new CaptureSiteInfo(owner, inStaticInit, tree.sym);
-        }
-
-        CaptureSiteInfo withBlock(JCBlock tree) {
-            return new CaptureSiteInfo(owner, inStaticInit || tree.isStatic(), null);
-        }
-
-        /**
-         * @return Name of the enclosing method to be folded into synthetic
-         * method name
-         */
-        String enclosingMethodName() {
-            return switch (owner.kind) {
-                case MTH -> owner.isConstructor() ? "new" : owner.name.toString();
-                case VAR, TYP -> inStaticInit ? "static" : "new";
-                default -> throw new IllegalStateException("Unexpected owner: " + owner.kind);
-            };
-        }
-    }
 
     class DedupedLambda {
         private final MethodSymbol symbol;
@@ -338,12 +301,12 @@ public class LambdaToMethod extends TreeTranslator {
         KlassInfo prevKlassInfo = kInfo;
         DiagnosticSource prevSource = log.currentSource();
         LambdaTranslationContext prevLambdaContext = lambdaContext;
-        CaptureSiteInfo prevCaptureSiteInfo = captureSiteInfo;
+        VarSymbol prevPendingVar = pendingVar;
         try {
             kInfo = new KlassInfo(tree);
             log.useSource(tree.sym.sourcefile);
             lambdaContext = null;
-            captureSiteInfo = CaptureSiteInfo.ofClass(tree);
+            pendingVar = null;
             super.visitClassDef(tree);
             if (prevLambdaContext != null) {
                 tree.sym.owner = prevLambdaContext.owner;
@@ -368,7 +331,7 @@ public class LambdaToMethod extends TreeTranslator {
             kInfo = prevKlassInfo;
             log.useSource(prevSource.getFile());
             lambdaContext = prevLambdaContext;
-            captureSiteInfo = prevCaptureSiteInfo;
+            pendingVar = prevPendingVar;
         }
     }
 
@@ -401,15 +364,22 @@ public class LambdaToMethod extends TreeTranslator {
                     owner::setTypeAttributes,
                     sym::setTypeAttributes);
 
-            apportionTypeAnnotations(tree,
-                    owner::getInitTypeAttributes,
-                    owner::setInitTypeAttributes,
-                    sym::appendUniqueTypeAttributes);
+            final long ownerFlags = owner.flags();
+            if ((ownerFlags & Flags.BLOCK) != 0) {
+                ClassSymbol cs = (ClassSymbol) owner.owner;
+                boolean isStaticInit = (ownerFlags & Flags.STATIC) != 0;
+                apportionTypeAnnotations(tree,
+                        isStaticInit ? cs::getClassInitTypeAttributes : cs::getInitTypeAttributes,
+                        isStaticInit ? cs::setClassInitTypeAttributes : cs::setInitTypeAttributes,
+                        sym::appendUniqueTypeAttributes);
+            }
 
-            apportionTypeAnnotations(tree,
-                    owner::getClassInitTypeAttributes,
-                    owner::setClassInitTypeAttributes,
-                    sym::appendUniqueTypeAttributes);
+            if (pendingVar != null && pendingVar.getKind() == ElementKind.FIELD) {
+                apportionTypeAnnotations(tree,
+                        pendingVar::getRawTypeAttributes,
+                        pendingVar::setTypeAttributes,
+                        sym::appendUniqueTypeAttributes);
+            }
         }
 
         //create the method declaration hoisting the lambda body
@@ -596,9 +566,9 @@ public class LambdaToMethod extends TreeTranslator {
 
     @Override
     public void visitVarDef(JCVariableDecl tree) {
-        CaptureSiteInfo prevCaptureSiteInfo = captureSiteInfo;
+        VarSymbol prevPendingVar = pendingVar;
         try {
-            captureSiteInfo = prevCaptureSiteInfo.withVar(tree);
+            pendingVar = tree.sym;
             if (lambdaContext != null) {
                 tree.sym = lambdaContext.addSymbol(tree.sym, LambdaSymbolKind.LOCAL_VAR);
                 tree.init = translate(tree.init);
@@ -607,31 +577,19 @@ public class LambdaToMethod extends TreeTranslator {
                 super.visitVarDef(tree);
             }
         } finally {
-            captureSiteInfo = prevCaptureSiteInfo;
+            pendingVar = prevPendingVar;
         }
     }
 
-    @Override
-    public void visitMethodDef(JCMethodDecl tree) {
-        CaptureSiteInfo prevCaptureSiteInfo = captureSiteInfo;
-        try {
-            captureSiteInfo = prevCaptureSiteInfo.withMethod(tree);
-            super.visitMethodDef(tree);
-        } finally {
-            captureSiteInfo = prevCaptureSiteInfo;
-        }
-    }
-
-    @Override
-    public void visitBlock(JCBlock tree) {
-        CaptureSiteInfo prevCaptureSiteInfo = captureSiteInfo;
-        try {
-            captureSiteInfo = prevCaptureSiteInfo.withBlock(tree);
-            super.visitBlock(tree);
-        } finally {
-            captureSiteInfo = prevCaptureSiteInfo;
-        }
-    }
+//    @Override
+//    public void visitBlock(JCBlock tree) {
+//        VarSymbol prevPendingVar = pendingVar;
+//        try {
+//            super.visitBlock(tree);
+//        } finally {
+//            pendingVar = prevPendingVar;
+//        }
+//    }
 
     // </editor-fold>
 
@@ -1021,7 +979,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         TranslationContext(T tree) {
             this.tree = tree;
-            this.owner = captureSiteInfo.owner;
+            this.owner = tree.owner;
             ClassSymbol csym =
                     types.makeFunctionalInterfaceClass(attrEnv, names.empty, tree.target, ABSTRACT | INTERFACE);
             this.bridges = types.functionalInterfaceBridges(csym);
@@ -1152,8 +1110,8 @@ public class LambdaToMethod extends TreeTranslator {
             buf.append(" ");
 
             // Add variable assigned to
-            if (captureSiteInfo.pendingVar != null) {
-                buf.append(captureSiteInfo.pendingVar.flatName());
+            if (pendingVar != null) {
+                buf.append(pendingVar.flatName());
                 buf.append("=");
             }
             //add captured locals info: type, name, order
@@ -1177,10 +1135,26 @@ public class LambdaToMethod extends TreeTranslator {
         private Name lambdaName() {
             StringBuilder buf = new StringBuilder();
             buf.append(names.lambda);
-            buf.append(captureSiteInfo.enclosingMethodName());
+            buf.append(syntheticMethodNameComponent(owner));
             buf.append("$");
             buf.append(kInfo.syntheticNameIndex(buf, 0));
             return names.fromString(buf.toString());
+        }
+
+        /**
+         * @return Method name in a form that can be folded into a
+         * component of a synthetic method name
+         */
+        String syntheticMethodNameComponent(Symbol owner) {
+            long ownerFlags = owner.flags();
+            if ((ownerFlags & BLOCK) != 0) {
+                return (ownerFlags & STATIC) != 0 ?
+                        "static" : "new";
+            } else if (owner.isConstructor()) {
+                return "new";
+            } else {
+                return owner.name.toString();
+            }
         }
 
         /**
@@ -1193,7 +1167,7 @@ public class LambdaToMethod extends TreeTranslator {
             StringBuilder buf = new StringBuilder();
             buf.append(names.lambda);
             // Append the name of the method enclosing the lambda.
-            buf.append(captureSiteInfo.enclosingMethodName());
+            buf.append(syntheticMethodNameComponent(owner));
             buf.append('$');
             // Append a hash of the disambiguating string : enclosing method
             // signature, etc.

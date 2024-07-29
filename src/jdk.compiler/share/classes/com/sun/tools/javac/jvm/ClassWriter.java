@@ -329,7 +329,7 @@ public class ClassWriter extends ClassFile {
         int alenIdx = writeAttr(attributeName);
         ClassSymbol enclClass = c.owner.enclClass();
         MethodSymbol enclMethod =
-            (c.owner.type == null // local to init block
+            ((c.owner.flags() & BLOCK) != 0 // local to init block
              || c.owner.kind != MTH) // or member init
             ? null
             : ((MethodSymbol)c.owner).originalEnclosingMethod();
