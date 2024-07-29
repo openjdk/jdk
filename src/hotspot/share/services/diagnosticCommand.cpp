@@ -520,7 +520,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value().get(), output(), (int)level, _overwrite.value(),
+  dumper.dump(_filename.value(), output(), (int)level, _overwrite.value(),
               (uint)parallel);
 }
 
@@ -861,7 +861,7 @@ PerfMapDCmd::PerfMapDCmd(outputStream* output, bool heap) :
 }
 
 void PerfMapDCmd::execute(DCmdSource source, TRAPS) {
-  CodeCache::write_perf_map(_filename.value().get(), output());
+  CodeCache::write_perf_map(_filename.value(), output());
 }
 #endif // LINUX
 
@@ -1012,8 +1012,7 @@ void DumpSharedArchiveDCmd::execute(DCmdSource source, TRAPS) {
   // The check for _filename.is_set() is because we don't want to use
   // DEFAULT_CDS_ARCHIVE_FILENAME, since it is meant as a description
   // of the default, not the actual default.
-  FileArgument file_arg = _filename.value();
-  const char* file = _filename.is_set() ? file_arg.get() : nullptr;
+  const char* file = _filename.is_set() ? _filename.value() : nullptr;
 
   if (strcmp(scmd, "static_dump") == 0) {
     is_static = JNI_TRUE;
@@ -1110,9 +1109,10 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {
   bool json = (_format.value() != nullptr) && (strcmp(_format.value(), "json") == 0);
+  char* path = _filepath.value();
   bool overwrite = _overwrite.value();
   Symbol* name = (json) ? vmSymbols::dumpThreadsToJson_name() : vmSymbols::dumpThreads_name();
-  dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), _filepath.value().get(), overwrite, CHECK);
+  dumpToFile(name, vmSymbols::string_bool_byte_array_signature(), path, overwrite, CHECK);
 }
 
 void ThreadDumpToFileDCmd::dumpToFile(Symbol* name, Symbol* signature, const char* path, bool overwrite, TRAPS) {
@@ -1191,8 +1191,7 @@ SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
 }
 
 void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
-  FileArgument file_arg = _filename.value();
-  const char* name = file_arg.get();
+  const char* name = _filename.value();
   fileStream fs(name);
   if (fs.is_open()) {
     if (!MemTracker::enabled()) {

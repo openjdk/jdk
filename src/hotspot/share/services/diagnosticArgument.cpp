@@ -108,10 +108,6 @@ void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) c
   }
 }
 
-void GenDCmdArgument::to_string(FileArgument f, char* buf, size_t len) const {
-  jio_snprintf(buf, len, "%s", (f.get() != nullptr) ? f.get() : "");
-}
-
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
   int scanned = -1;
@@ -127,6 +123,8 @@ template <> void DCmdArgument<jlong>::parse_value(const char* str,
       (len > maxprint ? "..." : ""));
   }
 }
+
+template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
 
 template <> void DCmdArgument<jlong>::init_value(TRAPS) {
   if (has_default()) {
@@ -193,9 +191,18 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
     destroy_value();
   } else {
     // Use realloc as we may have a default set.
-    _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
-    int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
-    assert((size_t)n <= len, "Unexpected number of characters in string");
+    if (strcmp(type(), "FILE") == 0) {
+      _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
+      if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
+        stringStream error_msg;
+        error_msg.print("File path invalid or too long: %s", str);
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
+      }
+    } else {
+      _value = REALLOC_C_HEAP_ARRAY(char, _value, len + 1, mtInternal);
+      int n = os::snprintf(_value, len + 1, "%.*s", (int)len, str);
+      assert((size_t)n <= len, "Unexpected number of characters in string");
+    }
   }
 }
 
@@ -350,26 +357,5 @@ template <> void DCmdArgument<MemorySizeArgument>::init_value(TRAPS) {
     _value._size = 0;
     _value._val = 0;
     _value._multiplier = ' ';
-  }
-}
-
-template <> void DCmdArgument<MemorySizeArgument>::destroy_value() { }
-
-template <> void DCmdArgument<FileArgument>::destroy_value() {}
-
-template <> void DCmdArgument<FileArgument>::parse_value(const char *str,
-                                            size_t len, TRAPS) {
-  if (str != nullptr) {
-    if (!_value.parse_value(str, len)) {
-      stringStream error_msg;
-      error_msg.print("File path invalid or too long: %s", str);
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());
-    }
-  }
-}
-
-template <> void DCmdArgument<FileArgument>::init_value(TRAPS) {
-  if (has_default() && _default_string != nullptr) {
-    this->parse_value(_default_string, strlen(_default_string), THREAD);
   }
 }

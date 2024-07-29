@@ -60,19 +60,6 @@ public:
   char _multiplier;
 };
 
-class FileArgument {
-  private:
-    char _name[1024];
-
-  public:
-    const char* get() const { return _name; }
-
-    // returns true if parsing succeeded, false if not.
-    bool parse_value(const char* s, size_t len) {
-      return Arguments::copy_expand_pid(s, len, _name, sizeof(_name));
-    }
-};
-
 class GenDCmdArgument : public ResourceObj {
 protected:
   GenDCmdArgument* _next;
@@ -118,7 +105,6 @@ public:
   void to_string(NanoTimeArgument n, char* buf, size_t len) const;
   void to_string(MemorySizeArgument f, char* buf, size_t len) const;
   void to_string(StringArrayArgument* s, char* buf, size_t len) const;
-  void to_string(FileArgument f, char* buf, size_t len) const;
 };
 
 template <class ArgType> class DCmdArgument: public GenDCmdArgument {
