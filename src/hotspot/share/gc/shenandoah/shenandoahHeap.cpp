@@ -1292,14 +1292,12 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
   _evac_tracker->begin_evacuation(thread, size * HeapWordSize);
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
-  oop copy_val = cast_to_oop(copy);
-
   // Try to install the new forwarding pointer.
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
+  oop copy_val = cast_to_oop(copy);
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
     _evac_tracker->end_evacuation(thread, size * HeapWordSize);
     shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;

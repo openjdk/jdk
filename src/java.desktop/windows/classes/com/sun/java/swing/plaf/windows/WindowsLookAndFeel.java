@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,7 @@ import sun.font.FontUtilities;
 import sun.security.action.GetPropertyAction;
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
+import sun.swing.MnemonicHandler;
 import sun.swing.StringUIClientPropertyKey;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
@@ -196,6 +197,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
         KeyboardFocusManager.getCurrentKeyboardFocusManager().
             addKeyEventPostProcessor(WindowsRootPaneUI.altProcessor);
+        MnemonicHandler.setMnemonicHidden(true);
 
     }
 
@@ -1908,47 +1910,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         WindowsDesktopProperty.flushUnreferencedProperties();
     }
 
-
-    // Toggle flag for drawing the mnemonic state
-    private static boolean isMnemonicHidden = true;
-
     // Flag which indicates that the Win98/Win2k/WinME features
     // should be disabled.
     private static boolean isClassicWindows = false;
-
-    /**
-     * Sets the state of the hide mnemonic flag. This flag is used by the
-     * component UI delegates to determine if the mnemonic should be rendered.
-     * This method is a non operation if the underlying operating system
-     * does not support the mnemonic hiding feature.
-     *
-     * @param hide true if mnemonics should be hidden
-     * @since 1.4
-     */
-    public static void setMnemonicHidden(boolean hide) {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
-            // Do not hide mnemonics if the UI defaults do not support this
-            isMnemonicHidden = false;
-        } else {
-            isMnemonicHidden = hide;
-        }
-    }
-
-    /**
-     * Gets the state of the hide mnemonic flag. This only has meaning
-     * if this feature is supported by the underlying OS.
-     *
-     * @return true if mnemonics are hidden, otherwise, false
-     * @see #setMnemonicHidden
-     * @since 1.4
-     */
-    public static boolean isMnemonicHidden() {
-        if (UIManager.getBoolean("Button.showMnemonics") == true) {
-            // Do not hide mnemonics if the UI defaults do not support this
-            isMnemonicHidden = false;
-        }
-        return isMnemonicHidden;
-    }
 
     /**
      * Gets the state of the flag which indicates if the old Windows

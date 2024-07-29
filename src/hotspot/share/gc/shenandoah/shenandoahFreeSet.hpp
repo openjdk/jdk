@@ -287,6 +287,7 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+  ShenandoahHeapRegion** _trash_regions;
   size_t _retired_old_regions;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);

@@ -222,7 +222,7 @@ final class EventInstrumentation {
     // Only supports String, String[] and Boolean values
     private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
+        for (ClassElement ce : classModel) {
             if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                 for (Annotation a : rvaa.annotations()) {
                     if (a.className().equalsString(typeDescriptor)) {
@@ -260,7 +260,7 @@ final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingDesc> settingDescs = new ArrayList<>();
         for (MethodModel m : classModel.methods()) {
-            for (var me : m.elements()) {
+            for (var me : m) {
                 if (me instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                     for (Annotation a : rvaa.annotations()) {
                         // We can't really validate the method at this
