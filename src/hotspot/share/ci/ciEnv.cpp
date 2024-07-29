@@ -1032,8 +1032,8 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             bool has_monitors,
-                            int immediate_oops_patched,
-                            RTMState  rtm_state) {
+                            bool has_scoped_access,
+                            int immediate_oops_patched) {
   VM_ENTRY_MARK;
   nmethod* nm = nullptr;
   {
@@ -1090,14 +1090,6 @@ void ciEnv::register_method(ciMethod* target,
       // Check for {class loads, evolution, breakpoints, ...} during compilation
       validate_compile_task_dependencies(target);
     }
-#if INCLUDE_RTM_OPT
-    if (!failing() && (rtm_state != NoRTM) &&
-        (method()->method_data() != nullptr) &&
-        (method()->method_data()->rtm_state() != rtm_state)) {
-      // Preemptive decompile if rtm state was changed.
-      record_failure("RTM state change invalidated rtm code");
-    }
-#endif
 
     if (failing()) {
       // While not a true deoptimization, it is a preemptive decompile.
@@ -1133,21 +1125,21 @@ void ciEnv::register_method(ciMethod* target,
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
       nm->set_has_monitors(has_monitors);
+      nm->set_has_scoped_access(has_scoped_access);
       assert(!method->is_synchronized() || nm->has_monitors(), "");
-#if INCLUDE_RTM_OPT
-      nm->set_rtm_state(rtm_state);
-#endif
 
       if (entry_bci == InvocationEntryBci) {
-        // If there is an old version we're done with it
-        nmethod* old = method->code();
-        if (TraceMethodReplacement && old != nullptr) {
-          ResourceMark rm;
-          char *method_name = method->name_and_sig_as_C_string();
-          tty->print_cr("Replacing method %s", method_name);
-        }
-        if (old != nullptr) {
-          old->make_not_used();
+        if (TieredCompilation) {
+          // If there is an old version we're done with it
+          nmethod* old = method->code();
+          if (TraceMethodReplacement && old != nullptr) {
+            ResourceMark rm;
+            char *method_name = method->name_and_sig_as_C_string();
+            tty->print_cr("Replacing method %s", method_name);
+          }
+          if (old != nullptr) {
+            old->make_not_used();
+          }
         }
 
         LogTarget(Info, nmethod, install) lt;

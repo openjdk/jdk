@@ -262,6 +262,9 @@ public abstract sealed class AbstractInstruction
 
             this.afterPad = pos + 1 + ((4 - ((pos + 1 - code.codeStart) & 3)) & 3);
             this.npairs = code.classReader.readInt(afterPad + 4);
+            if (npairs < 0 || npairs > code.codeLength >> 3) {
+                throw new IllegalArgumentException("Invalid lookupswitch npairs value: " + npairs);
+            }
         }
 
         static int size(CodeImpl code, int codeStart, int pos) {
@@ -314,6 +317,9 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
+            if (high < low || (long)high - low > code.codeLength >> 2) {
+                throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
+            }
             int cnt = high - low + 1;
             return 1 + pad + 12 + cnt * 4;
         }
@@ -523,7 +529,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry className() {
             if (classEntry == null)
-                classEntry = code.classReader.readClassEntry(pos + 1);
+                classEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return classEntry;
         }
 
@@ -551,7 +557,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public TypeKind typeKind() {
-            return TypeKind.fromNewArrayCode(code.classReader.readU1(pos + 1));
+            return TypeKind.fromNewarrayCode(code.classReader.readU1(pos + 1));
         }
 
         @Override
@@ -570,7 +576,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry componentType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -601,7 +607,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry arrayType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -630,7 +636,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry type() {
             if (typeEntry == null)
-                typeEntry = code.classReader.readClassEntry(pos + 1);
+                typeEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return typeEntry;
         }
 
@@ -681,10 +687,10 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public LoadableConstantEntry constantEntry() {
-            return (LoadableConstantEntry)
-                    code.classReader.entryByIndex(op == Opcode.LDC
+            return code.classReader.entryByIndex(op == Opcode.LDC
                                                   ? code.classReader.readU1(pos + 1)
-                                                  : code.classReader.readU2(pos + 1));
+                                                  : code.classReader.readU2(pos + 1),
+                            LoadableConstantEntry.class);
         }
 
         @Override
@@ -1143,7 +1149,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public void writeTo(DirectCodeBuilder writer) {
-            writer.writeNewPrimitiveArray(typeKind.newarraycode());
+            writer.writeNewPrimitiveArray(typeKind.newarrayCode());
         }
 
         @Override

@@ -446,8 +446,10 @@ public:
   address signature_handler() const              { return *(signature_handler_addr()); }
   void set_signature_handler(address handler);
 
-  // Interpreter oopmap support
+  // Interpreter oopmap support.
+  // If handle is already available, call with it for better performance.
   void mask_for(int bci, InterpreterOopMap* mask);
+  void mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
   void print_invocation_count(outputStream* st);
@@ -809,14 +811,6 @@ public:
       build_method_counters(current, this);
     }
     return _method_counters;
-  }
-
-  // Clear the flags related to compiler directives that were set by the compilerBroker,
-  // because the directives can be updated.
-  void clear_directive_flags() {
-    set_has_matching_directives(false);
-    clear_is_not_c1_compilable();
-    clear_is_not_c2_compilable();
   }
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }

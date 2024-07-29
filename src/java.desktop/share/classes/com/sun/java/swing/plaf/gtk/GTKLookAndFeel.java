@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,50 @@
 
 package com.sun.java.swing.plaf.gtk;
 
-import java.awt.*;
-import java.beans.*;
-import java.io.File;
-import java.lang.ref.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.Locale;
-import javax.swing.*;
-import javax.swing.colorchooser.*;
-import javax.swing.plaf.*;
-import javax.swing.plaf.synth.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.JComponent;
+import javax.swing.JTextField;
+import javax.swing.LayoutStyle;
+import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.UIDefaults;
+import javax.swing.UIManager;
+import javax.swing.colorchooser.AbstractColorChooserPanel;
+import javax.swing.plaf.BorderUIResource;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.DimensionUIResource;
+import javax.swing.plaf.InsetsUIResource;
+import javax.swing.plaf.synth.Region;
+import javax.swing.plaf.synth.SynthConstants;
+import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.plaf.synth.SynthStyleFactory;
 import javax.swing.text.DefaultEditorKit;
 
 import com.sun.java.swing.plaf.gtk.GTKConstants.PositionType;
 import com.sun.java.swing.plaf.gtk.GTKConstants.StateType;
-import java.util.HashMap;
-import java.util.Map;
 import sun.awt.SunToolkit;
 import sun.awt.UNIXToolkit;
-import sun.awt.OSInfo;
 import sun.security.action.GetPropertyAction;
+import sun.swing.AltProcessor;
 import sun.swing.DefaultLayoutStyle;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingAccessor;
 import sun.swing.SwingUtilities2;
 
@@ -348,6 +370,8 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         Double defaultCaretAspectRatio = Double.valueOf(0.025);
         Color caretColor = table.getColor("caretColor");
         Color controlText = table.getColor("controlText");
+        Color tabbedPaneBg = new ColorUIResource(238, 238, 238);
+        Color unselectedTabColor = new ColorUIResource(255, 255, 255);
 
         Object fieldInputMap = new UIDefaults.LazyInputMap(new Object[] {
                        "ctrl C", DefaultEditorKit.copyAction,
@@ -864,7 +888,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
                  "ctrl released ENTER", "release"
             },
 
-
             "ScrollBar.squareButtons", Boolean.FALSE,
             "ScrollBar.thumbHeight", Integer.valueOf(14),
             "ScrollBar.width", Integer.valueOf(16),
@@ -1020,6 +1043,11 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
             "TabbedPane.selectedLabelShift", 3,
             "TabbedPane.font", new FontLazyValue(Region.TABBED_PANE),
             "TabbedPane.selectedTabPadInsets", new InsetsUIResource(2, 2, 0, 1),
+            "TabbedPane.selected", tabbedPaneBg,
+            "TabbedPane.contentOpaque", Boolean.TRUE,
+            "TabbedPane.tabsOpaque", Boolean.TRUE,
+            "TabbedPane.contentAreaColor", tabbedPaneBg,
+            "TabbedPane.unselectedBackground", unselectedTabColor,
 
             "Table.scrollPaneBorder", zeroBorder,
             "Table.background", tableBg,
@@ -1407,6 +1435,10 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         return c.getComponentOrientation().isLeftToRight();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void initialize() {
         /*
          * We need to call loadGTK() to ensure that the native GTK
@@ -1449,6 +1481,23 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
         gtkAAFontSettingsCond = SwingUtilities2.isLocalDisplay();
         aaTextInfo = new HashMap<>(2);
         SwingUtilities2.putAATextInfo(gtkAAFontSettingsCond, aaTextInfo);
+
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .addKeyEventPostProcessor(AltProcessor.getInstance());
+
+        // By default mnemonics are hidden for GTK L&F
+        MnemonicHandler.setMnemonicHidden(true);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void uninitialize() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                .removeKeyEventPostProcessor(AltProcessor.getInstance());
+        MnemonicHandler.setMnemonicHidden(false);
+        super.uninitialize();
     }
 
     static ReferenceQueue<GTKLookAndFeel> queue = new ReferenceQueue<GTKLookAndFeel>();

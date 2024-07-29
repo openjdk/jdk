@@ -93,8 +93,8 @@ static DebugRawMonitor* callbackBlock;
  *   not blocking might mean that a return would continue execution of
  *   some java thread in the middle of VM_DEATH, this seems troubled.
  *
- *   WARNING: No not 'return' or 'goto' out of the BEGIN_CALLBACK/END_CALLBACK
- *            block, this will mess up the count.
+ *   WARNING: Do not 'return' or 'goto' out of the BEGIN_CALLBACK/END_CALLBACK
+ *            block. This will mess up the active_callbacks count.
  */
 
 #define BEGIN_CALLBACK()                                                \
@@ -1706,6 +1706,18 @@ void
 eventHandler_unlock(void)
 {
     debugMonitorExit(handlerLock);
+}
+
+void
+callback_lock(void)
+{
+    debugMonitorEnter(callbackLock);
+}
+
+void
+callback_unlock(void)
+{
+    debugMonitorExit(callbackLock);
 }
 
 /***** handler creation *****/

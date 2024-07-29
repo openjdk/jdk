@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ class DiscontinuedInstructionsTest {
                 .withVersion(JAVA_5_VERSION, 0)
                 .withMethodBody(testMethod, MethodTypeDesc.of(CD_void, cd_list), ACC_PUBLIC | ACC_STATIC, cob -> cob
                         .block(bb -> {
-                            bb.constantInstruction("Hello")
+                            bb.loadConstant("Hello")
                               .with(DiscontinuedInstruction.JsrInstruction.of(bb.breakLabel()));
-                            bb.constantInstruction("World")
+                            bb.loadConstant("World")
                               .with(DiscontinuedInstruction.JsrInstruction.of(Opcode.JSR_W, bb.breakLabel()))
                               .return_();
                         })
@@ -74,7 +74,7 @@ class DiscontinuedInstructionsTest {
                 .invoke(null, list);
         assertEquals(list, List.of("Hello", "World"));
 
-        bytes = cc.transform(cc.parse(bytes), ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
+        bytes = cc.transformClass(cc.parse(bytes), ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
 
         new ByteArrayClassLoader(DiscontinuedInstructionsTest.class.getClassLoader(), testClass, bytes)
                 .getMethod(testClass, testMethod)
@@ -84,17 +84,17 @@ class DiscontinuedInstructionsTest {
         var clm = cc.parse(bytes);
 
         //test failover stack map generation
-        cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+        cc.transformClass(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                  .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_6_VERSION, 0))));
 
         //test failure of stack map generation for Java 7
         assertThrows(IllegalArgumentException.class, () ->
-                cc.transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
+                cc.transformClass(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                          .andThen(ClassTransform.endHandler(clb -> clb.withVersion(JAVA_7_VERSION, 0)))));
 
         //test failure of stack map generation when enforced to generate
         assertThrows(IllegalArgumentException.class, () ->
                 ClassFile.of(ClassFile.StackMapsOption.GENERATE_STACK_MAPS)
-                         .transform(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
+                         .transformClass(clm, ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)));
     }
 }

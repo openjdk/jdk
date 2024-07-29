@@ -222,7 +222,7 @@ final class EventInstrumentation {
     // Only supports String, String[] and Boolean values
     private static <T> T annotationValue(ClassModel classModel, ClassDesc classDesc, Class<T> type) {
         String typeDescriptor = classDesc.descriptorString();
-        for (ClassElement ce : classModel.elements()) {
+        for (ClassElement ce : classModel) {
             if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                 for (Annotation a : rvaa.annotations()) {
                     if (a.className().equalsString(typeDescriptor)) {
@@ -260,7 +260,7 @@ final class EventInstrumentation {
         Set<String> methodSet = new HashSet<>();
         List<SettingDesc> settingDescs = new ArrayList<>();
         for (MethodModel m : classModel.methods()) {
-            for (var me : m.elements()) {
+            for (var me : m) {
                 if (me instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
                     for (Annotation a : rvaa.annotations()) {
                         // We can't really validate the method at this
@@ -461,7 +461,7 @@ final class EventInstrumentation {
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
                     Label rethrow = catchAllHandler.newLabel();
-                    catchAllHandler.if_null(rethrow);
+                    catchAllHandler.ifnull(rethrow);
                     // stack: [ex] [EW]
                     catchAllHandler.dup();
                     // stack: [ex] [EW] [EW]
@@ -470,7 +470,7 @@ final class EventInstrumentation {
                     // stack:[ex] [EW]
                     catchAllHandler.pop();
                     // stack:[ex]
-                    catchAllHandler.throwInstruction();
+                    catchAllHandler.athrow();
                 });
             });
             codeBuilder.labelBinding(excluded);
@@ -486,7 +486,7 @@ final class EventInstrumentation {
             Label fail = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.if_null(fail);
+                codeBuilder.ifnull(fail);
             }
             // if (!eventConfiguration.shouldCommit(duration) goto fail;
             getEventConfiguration(codeBuilder);
@@ -525,7 +525,7 @@ final class EventInstrumentation {
                 if (guardEventConfiguration) {
                     // if (eventConfiguration == null) goto fail;
                     getEventConfiguration(codeBuilder);
-                    codeBuilder.if_null(fail);
+                    codeBuilder.ifnull(fail);
                 }
                 // return eventConfiguration.shouldCommit(duration);
                 getEventConfiguration(codeBuilder);
@@ -562,7 +562,7 @@ final class EventInstrumentation {
         // write begin event
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW], [EW], [EventConfiguration]
-        blockCodeBuilder.constantInstruction(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
         // stack: [EW], [EW], [EventConfiguration] [long]
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW], [integer]
@@ -572,7 +572,7 @@ final class EventInstrumentation {
         blockCodeBuilder.dup();
         // stack: [EW], [EW]
         tk = TypeKind.from(argumentTypes[argIndex++]);
-        blockCodeBuilder.loadInstruction(tk, slotIndex);
+        blockCodeBuilder.loadLocal(tk, slotIndex);
         // stack: [EW], [EW], [long]
         slotIndex += tk.slotSize();
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
@@ -583,7 +583,7 @@ final class EventInstrumentation {
             blockCodeBuilder.dup();
             // stack: [EW], [EW]
             tk = TypeKind.from(argumentTypes[argIndex++]);
-            blockCodeBuilder.loadInstruction(tk, slotIndex);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
             // stack: [EW], [EW], [long]
             slotIndex += tk.slotSize();
             invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
@@ -609,7 +609,7 @@ final class EventInstrumentation {
             blockCodeBuilder.dup();
             // stack: [EW], [EW]
             tk = TypeKind.from(argumentTypes[argIndex++]);
-            blockCodeBuilder.loadInstruction(tk, slotIndex);
+            blockCodeBuilder.loadLocal(tk, slotIndex);
             // stack:[EW], [EW], [field]
             slotIndex += tk.slotSize();
             FieldDesc field = fieldDescs.get(fieldIndex);
@@ -676,7 +676,7 @@ final class EventInstrumentation {
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);
         // stack: [EW] [EW] [EC]
-        blockCodeBuilder.constantInstruction(Opcode.LDC2_W, eventTypeId);
+        blockCodeBuilder.loadConstant(Opcode.LDC2_W, eventTypeId);
         invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
         // stack: [EW] [int]
         blockCodeBuilder.ifeq(excluded);
@@ -738,7 +738,7 @@ final class EventInstrumentation {
             Label nullLabel = codeBuilder.newLabel();
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
-                codeBuilder.branchInstruction(Opcode.IFNULL, nullLabel);
+                codeBuilder.ifnull(nullLabel);
             }
             getEventConfiguration(codeBuilder);
             invokevirtual(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_IS_ENABLED);

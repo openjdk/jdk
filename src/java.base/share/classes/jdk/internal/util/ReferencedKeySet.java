@@ -76,6 +76,15 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
     final ReferencedKeyMap<T, ReferenceKey<T>> map;
 
     /**
+     * @return a supplier to create a {@code ConcurrentHashMap} appropriate for use in the
+     *         create methods.
+     * @param <E> the type of elements maintained by this set
+     */
+    public static <E> Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> concurrentHashMapSupplier() {
+        return ReferencedKeyMap.concurrentHashMapSupplier();
+    }
+
+    /**
      * Private constructor.
      *
      * @param map     backing map

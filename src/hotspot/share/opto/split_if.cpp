@@ -322,7 +322,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
           assert( bol->is_Bool(), "" );
           if (bol->outcnt() == 1) {
             Node* use = bol->unique_out();
-            if (use->Opcode() == Op_Opaque4) {
+            if (use->is_Opaque4() || use->is_OpaqueInitializedAssertionPredicate()) {
               if (use->outcnt() == 1) {
                 Node* iff = use->unique_out();
                 assert(iff->is_If(), "unexpected node type");
@@ -351,8 +351,8 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
 #endif
             for (DUIterator j = bol->outs(); bol->has_out(j); j++) {
               Node* u = bol->out(j);
-              // Uses are either IfNodes, CMoves or Opaque4
-              if (u->Opcode() == Op_Opaque4) {
+              // Uses are either IfNodes, CMoves, Opaque4, or OpaqueInitializedAssertionPredicates
+              if (u->is_Opaque4() || u->is_OpaqueInitializedAssertionPredicate()) {
                 assert(u->in(1) == bol, "bad input");
                 for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
                   Node* iff = u->last_out(k);

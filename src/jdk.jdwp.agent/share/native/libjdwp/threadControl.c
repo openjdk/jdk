@@ -645,7 +645,10 @@ getLocks(void)
      *
      * stepControl_beginStep() grabs the eventHandler lock and stepControl lock
      * before eventually ending up here, so we need to maintain that order here.
+     * Similarly, invoker_completeInvokeRequest() grabs the eventHandler lock
+     * and invoker lock.
      */
+    callback_lock();
     eventHandler_lock();
     stepControl_lock();
     invoker_lock();
@@ -669,6 +672,7 @@ releaseLocks(void)
     invoker_unlock();
     stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 }
 
 void

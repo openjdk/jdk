@@ -137,16 +137,16 @@ public class StripJavaDebugAttributesPluginTest {
         ClassModel classFile = ClassFile.of().parse(strippedClassFile);
         for (MethodModel method : classFile.methods()) {
             String methodName = method.methodName().stringValue();
-            CodeAttribute code = method.findAttribute(Attributes.CODE).orElseThrow();
-            if (code.findAttribute(Attributes.LINE_NUMBER_TABLE).orElse(null) != null) {
+            CodeAttribute code = method.findAttribute(Attributes.code()).orElseThrow();
+            if (code.findAttribute(Attributes.lineNumberTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LINE_NUMBER_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }
-            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TABLE).orElse(null) != null) {
+            if (code.findAttribute(Attributes.localVariableTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }
-            if (code.findAttribute(Attributes.LOCAL_VARIABLE_TYPE_TABLE).orElse(null) != null) {
+            if (code.findAttribute(Attributes.localVariableTypeTable()).orElse(null) != null) {
                 throw new AssertionError("Debug attribute was not removed: " + "LOCAL_VARIABLE_TYPE_TABLE" +
                         " from method " + classFile.thisClass().asInternalName() + "#" + methodName);
             }

@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/shared/pretouchTask.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
@@ -36,7 +35,6 @@
 #include "utilities/macros.hpp"
 
 MutableSpace::MutableSpace(size_t alignment) :
-  _mangler(nullptr),
   _last_setup_region(),
   _alignment(alignment),
   _bottom(nullptr),
@@ -45,11 +43,6 @@ MutableSpace::MutableSpace(size_t alignment) :
 {
   assert(MutableSpace::alignment() % os::vm_page_size() == 0,
          "Space should be aligned");
-  _mangler = new MutableSpaceMangler(this);
-}
-
-MutableSpace::~MutableSpace() {
-  delete _mangler;
 }
 
 void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_space) {
@@ -60,7 +53,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_s
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {
         // Prefer page reallocation to migration.
-        os::free_memory((char*)start, size, page_size);
+        os::disclaim_memory((char*)start, size);
       }
       os::numa_make_global((char*)start, size);
     }
@@ -152,36 +145,15 @@ void MutableSpace::clear(bool mangle_space) {
 }
 
 #ifndef PRODUCT
-void MutableSpace::check_mangled_unused_area(HeapWord* limit) {
-  mangler()->check_mangled_unused_area(limit);
-}
 
-void MutableSpace::check_mangled_unused_area_complete() {
-  mangler()->check_mangled_unused_area_complete();
-}
-
-// Mangle only the unused space that has not previously
-// been mangled and that has not been allocated since being
-// mangled.
 void MutableSpace::mangle_unused_area() {
-  mangler()->mangle_unused_area();
-}
-
-void MutableSpace::mangle_unused_area_complete() {
-  mangler()->mangle_unused_area_complete();
+  mangle_region(MemRegion(_top, _end));
 }
 
 void MutableSpace::mangle_region(MemRegion mr) {
   SpaceMangler::mangle_region(mr);
 }
 
-void MutableSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
-
-void MutableSpace::set_top_for_allocations() {
-  mangler()->set_top_for_allocations(top());
-}
 #endif
 
 HeapWord* MutableSpace::cas_allocate(size_t size) {
@@ -217,7 +189,12 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
 
 // Only used by oldgen allocation.
 bool MutableSpace::needs_expand(size_t word_size) const {
-  assert_lock_strong(PSOldGenExpand_lock);
+#ifdef ASSERT
+  // If called by VM thread, locking is not needed.
+  if (!Thread::current()->is_VM_thread()) {
+    assert_lock_strong(PSOldGenExpand_lock);
+  }
+#endif
   // Holding the lock means end is stable.  So while top may be advancing
   // via concurrent allocations, there is no need to order the reads of top
   // and end here, unlike in cas_allocate.

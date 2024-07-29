@@ -79,25 +79,11 @@ void MutableNUMASpace::mangle_unused_area() {
   // This method should do nothing.
   // It can be called on a numa space during a full compaction.
 }
-void MutableNUMASpace::mangle_unused_area_complete() {
-  // This method should do nothing.
-  // It can be called on a numa space during a full compaction.
-}
+
 void MutableNUMASpace::mangle_region(MemRegion mr) {
   // This method should do nothing because numa spaces are not mangled.
 }
-void MutableNUMASpace::set_top_for_allocations(HeapWord* v) {
-  assert(false, "Do not mangle MutableNUMASpace's");
-}
-void MutableNUMASpace::set_top_for_allocations() {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area(HeapWord* limit) {
-  // This method should do nothing.
-}
-void MutableNUMASpace::check_mangled_unused_area_complete() {
-  // This method should do nothing.
-}
+
 #endif  // NOT_PRODUCT
 
 // There may be unallocated holes in the middle chunks
@@ -227,7 +213,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
     // Then we uncommit the pages in the range.
     // The alignment_hint argument must be less than or equal to the small page
     // size if not using large pages or else this function does nothing.
-    os::free_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
+    os::disclaim_memory((char*)aligned_region.start(), aligned_region.byte_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));
   }

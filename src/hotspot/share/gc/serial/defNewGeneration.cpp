@@ -43,7 +43,7 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
+#include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
@@ -226,9 +226,9 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
                                    size_t max_size,
                                    const char* policy)
   : Generation(rs, initial_size),
+    _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false),
     _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
@@ -329,21 +329,6 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   // is being used and that affects the initialization of any
   // newly formed eden.
   bool live_in_eden = minimum_eden_size > 0;
-
-  // If not clearing the spaces, do some checking to verify that
-  // the space are already mangled.
-  if (!clear_space) {
-    // Must check mangling before the spaces are reshaped.  Otherwise,
-    // the bottom or end of one space may have moved into another
-    // a failure of the check may not correctly indicate which space
-    // is not properly mangled.
-    if (ZapUnusedHeapArea) {
-      HeapWord* limit = (HeapWord*) _virtual_space.high();
-      eden()->check_mangled_unused_area(limit);
-      from()->check_mangled_unused_area(limit);
-        to()->check_mangled_unused_area(limit);
-    }
-  }
 
   // Reset the spaces for their new regions.
   eden()->initialize(edenMR,
@@ -548,11 +533,6 @@ size_t DefNewGeneration::capacity_before_gc() const {
   return eden()->capacity();
 }
 
-size_t DefNewGeneration::contiguous_available() const {
-  return eden()->free();
-}
-
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);
@@ -592,33 +572,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   return block_start_const(to(), p);
 }
 
-// The last collection bailed out, we are running out of heap space,
-// so we try to allocate the from-space, too.
-HeapWord* DefNewGeneration::allocate_from_space(size_t size) {
-  bool should_try_alloc = should_allocate_from_space() || GCLocker::is_active_and_needs_gc();
-
-  // If the Heap_lock is not locked by this thread, this will be called
-  // again later with the Heap_lock held.
-  bool do_alloc = should_try_alloc && (Heap_lock->owned_by_self() || (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()));
-
-  HeapWord* result = nullptr;
-  if (do_alloc) {
-    result = from()->allocate(size);
-  }
-
-  log_trace(gc, alloc)("DefNewGeneration::allocate_from_space(" SIZE_FORMAT "):  will_fail: %s  heap_lock: %s  free: " SIZE_FORMAT "%s%s returns %s",
-                        size,
-                        SerialHeap::heap()->incremental_collection_will_fail(false /* don't consult_young */) ?
-                          "true" : "false",
-                        Heap_lock->is_locked() ? "locked" : "unlocked",
-                        from()->free(),
-                        should_try_alloc ? "" : "  should_allocate_from_space: NOT",
-                        do_alloc ? "  Heap_lock is not owned by self" : "",
-                        result == nullptr ? "null" : "object");
-
-  return result;
-}
-
 HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
   // We don't attempt to expand the young generation (but perhaps we should.)
   return allocate(size, is_tlab);
@@ -640,22 +593,9 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
   age_table()->print_age_table();
 }
 
-void DefNewGeneration::collect(bool   full,
-                               bool   clear_all_soft_refs,
-                               size_t size,
-                               bool   is_tlab) {
-  assert(full || size > 0, "otherwise we don't want to collect");
-
+bool DefNewGeneration::collect(bool clear_all_soft_refs) {
   SerialHeap* heap = SerialHeap::heap();
 
-  // If the next generation is too full to accommodate promotion
-  // from this generation, pass on collection; let the next generation
-  // do it.
-  if (!collection_attempt_is_safe()) {
-    log_trace(gc)(":: Collection attempt not safe ::");
-    heap->set_incremental_collection_failed(); // Slight lie: we did not even attempt one
-    return;
-  }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
   _gc_timer->register_gc_start();
   _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
@@ -729,36 +669,17 @@ void DefNewGeneration::collect(bool   full,
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
     from()->clear(SpaceDecorator::Mangle);
-    if (ZapUnusedHeapArea) {
-      // This is now done here because of the piece-meal mangling which
-      // can check for valid mangling at intermediate points in the
-      // collection(s).  When a young collection fails to collect
-      // sufficient space resizing of the young generation can occur
-      // an redistribute the spaces in the young generation.  Mangle
-      // here so that unzapped regions don't get distributed to
-      // other spaces.
-      to()->mangle_unused_area();
-    }
     swap_spaces();
 
     assert(to()->is_empty(), "to space should be empty now");
 
     adjust_desired_tenuring_threshold();
-
-    assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
     _promo_failure_scan_stack.clear(true); // Clear cached segments.
 
     remove_forwarding_pointers();
     log_info(gc, promotion)("Promotion failed");
-    // Add to-space to the list of space to compact
-    // when a promotion failure has occurred.  In that
-    // case there can be live objects in to-space
-    // as a result of a partial evacuation of eden
-    // and from-space.
-    swap_spaces();   // For uniformity wrt ParNewGeneration.
-    heap->set_incremental_collection_failed();
 
     _gc_tracer->report_promotion_failed(_promotion_failed_info);
 
@@ -773,6 +694,8 @@ void DefNewGeneration::collect(bool   full,
   _gc_timer->register_gc_end();
 
   _gc_tracer->report_gc_end(_gc_timer->gc_end(), _gc_timer->time_partitions());
+
+  return !_promotion_failed;
 }
 
 void DefNewGeneration::init_assuming_no_promotion_failure() {
@@ -839,25 +762,25 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == nullptr) {
-    obj = _old_gen->promote(old, s);
+    obj = _old_gen->allocate_for_promotion(old, s);
     if (obj == nullptr) {
       handle_promotion_failure(old);
       return old;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
-
     new_obj_is_tenured = true;
-  } else {
-    // Prefetch beyond obj
-    const intx interval = PrefetchCopyIntervalInBytes;
-    Prefetch::write(obj, interval);
+  }
 
-    // Copy obj
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+  // Prefetch beyond obj
+  const intx interval = PrefetchCopyIntervalInBytes;
+  Prefetch::write(obj, interval);
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+  // Copy obj
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
 
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (!new_obj_is_tenured) {
     // Increment age if obj still in new generation
     obj->incr_age();
     age_table()->add(obj, s);
@@ -902,80 +825,15 @@ void DefNewGeneration::reset_scratch() {
   // to_space if ZapUnusedHeapArea.  This is needed because
   // top is not maintained while using to-space as scratch.
   if (ZapUnusedHeapArea) {
-    to()->mangle_unused_area_complete();
+    to()->mangle_unused_area();
   }
-}
-
-bool DefNewGeneration::collection_attempt_is_safe() {
-  if (!to()->is_empty()) {
-    log_trace(gc)(":: to is not empty ::");
-    return false;
-  }
-  if (_old_gen == nullptr) {
-    _old_gen = SerialHeap::heap()->old_gen();
-  }
-  return _old_gen->promotion_attempt_is_safe(used());
 }
 
 void DefNewGeneration::gc_epilogue(bool full) {
-  DEBUG_ONLY(static bool seen_incremental_collection_failed = false;)
-
   assert(!GCLocker::is_active(), "We should not be executing here");
-  // Check if the heap is approaching full after a collection has
-  // been done.  Generally the young generation is empty at
-  // a minimum at the end of a collection.  If it is not, then
-  // the heap is approaching full.
-  SerialHeap* gch = SerialHeap::heap();
-  if (full) {
-    DEBUG_ONLY(seen_incremental_collection_failed = false;)
-    if (!collection_attempt_is_safe() && !_eden_space->is_empty()) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), full, not safe, set_failed, set_alloc_from, clear_seen",
-                            GCCause::to_string(gch->gc_cause()));
-      gch->set_incremental_collection_failed(); // Slight lie: a full gc left us in that state
-      set_should_allocate_from_space(); // we seem to be running out of space
-    } else {
-      log_trace(gc)("DefNewEpilogue: cause(%s), full, safe, clear_failed, clear_alloc_from, clear_seen",
-                            GCCause::to_string(gch->gc_cause()));
-      gch->clear_incremental_collection_failed(); // We just did a full collection
-      clear_should_allocate_from_space(); // if set
-    }
-  } else {
-#ifdef ASSERT
-    // It is possible that incremental_collection_failed() == true
-    // here, because an attempted scavenge did not succeed. The policy
-    // is normally expected to cause a full collection which should
-    // clear that condition, so we should not be here twice in a row
-    // with incremental_collection_failed() == true without having done
-    // a full collection in between.
-    if (!seen_incremental_collection_failed &&
-        gch->incremental_collection_failed()) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), not full, not_seen_failed, failed, set_seen_failed",
-                            GCCause::to_string(gch->gc_cause()));
-      seen_incremental_collection_failed = true;
-    } else if (seen_incremental_collection_failed) {
-      log_trace(gc)("DefNewEpilogue: cause(%s), not full, seen_failed, will_clear_seen_failed",
-                            GCCause::to_string(gch->gc_cause()));
-      seen_incremental_collection_failed = false;
-    }
-#endif // ASSERT
-  }
-
-  if (ZapUnusedHeapArea) {
-    eden()->check_mangled_unused_area_complete();
-    from()->check_mangled_unused_area_complete();
-    to()->check_mangled_unused_area_complete();
-  }
-
   // update the generation and space performance counters
   update_counters();
-  gch->counters()->update_counters();
-}
-
-void DefNewGeneration::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  eden()->set_top_for_allocations();
-  to()->set_top_for_allocations();
-  from()->set_top_for_allocations();
+  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
@@ -1015,13 +873,6 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   // Note that since DefNewGeneration supports lock-free allocation, we
   // have to use it here, as well.
   HeapWord* result = eden()->par_allocate(word_size);
-  if (result == nullptr) {
-    // If the eden is full and the last collection bailed out, we are running
-    // out of heap space, and we try to allocate the from-space, too.
-    // allocate_from_space can't be inlined because that would introduce a
-    // circular dependency at compile time.
-    result = allocate_from_space(word_size);
-  }
   return result;
 }
 

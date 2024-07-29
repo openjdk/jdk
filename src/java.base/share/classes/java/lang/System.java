@@ -65,7 +65,6 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -191,8 +190,9 @@ public final class System {
      */
     public static final PrintStream err = null;
 
-    // Holder for the initial value of `in`, set within `initPhase1()`.
-    private static InputStream initialIn;
+    // Initial values of System.in and System.err, set in initPhase1().
+    private static @Stable InputStream initialIn;
+    private static @Stable PrintStream initialErr;
 
     // indicates if a security manager is possible
     private static final int NEVER = 1;
@@ -355,9 +355,6 @@ public final class System {
             = Collections.synchronizedMap(new WeakHashMap<>());
     }
 
-    // Remember initial System.err. setSecurityManager() warning goes here
-    private static volatile @Stable PrintStream initialErrStream;
-
     private static URL codeSource(Class<?> clazz) {
         PrivilegedAction<ProtectionDomain> pa = clazz::getProtectionDomain;
         @SuppressWarnings("removal")
@@ -417,7 +414,7 @@ public final class System {
                 } else {
                     source = callerClass.getName() + " (" + url + ")";
                 }
-                initialErrStream.printf("""
+                initialErr.printf("""
                         WARNING: A terminally deprecated method in java.lang.System has been called
                         WARNING: System::setSecurityManager has been called by %s
                         WARNING: Please consider reporting this to the maintainers of %s
@@ -2200,7 +2197,8 @@ public final class System {
         // thus they are equivalent to Console.charset(), otherwise the encodings
         // of those properties default to native.encoding
         setOut0(newPrintStream(fdOut, props.getProperty("stdout.encoding")));
-        setErr0(newPrintStream(fdErr, props.getProperty("stderr.encoding")));
+        initialErr = newPrintStream(fdErr, props.getProperty("stderr.encoding"));
+        setErr0(initialErr);
 
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
@@ -2265,6 +2263,7 @@ public final class System {
             super(fd);
         }
 
+        @Override
         public void write(int b) throws IOException {
             boolean attempted = Blocker.begin();
             try {
@@ -2405,8 +2404,6 @@ public final class System {
                     " file system is not supported: " +
                     notSupportedJnuEncoding);
         }
-
-        initialErrStream = System.err;
 
         // initializing the system class loader
         VM.initLevel(3);
@@ -2598,6 +2595,10 @@ public final class System {
                 return initialIn;
             }
 
+            public PrintStream initialSystemErr() {
+                return initialErr;
+            }
+
             public void setCause(Throwable t, Throwable cause) {
                 t.setCause(cause);
             }
@@ -2610,10 +2611,6 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
-                return StringConcatHelper.prepend(indexCoder, buf, value);
-            }
-
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
@@ -2624,10 +2621,6 @@ public final class System {
 
             public long stringConcatMix(long lengthCoder, char value) {
                 return StringConcatHelper.mix(lengthCoder, value);
-            }
-
-            public int stringSize(long i) {
-                return Long.stringSize(i);
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {
@@ -2678,14 +2671,6 @@ public final class System {
 
             public Thread currentCarrierThread() {
                 return Thread.currentCarrierThread();
-            }
-
-            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                if (Thread.currentThread() instanceof VirtualThread vthread) {
-                    return vthread.executeOnCarrierThread(task);
-                } else {
-                    return task.call();
-                }
             }
 
             public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {

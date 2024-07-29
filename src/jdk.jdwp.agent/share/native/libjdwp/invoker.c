@@ -719,7 +719,8 @@ invoker_completeInvokeRequest(jthread thread)
     exc = NULL;
     id  = 0;
 
-    eventHandler_lock(); /* for proper lock order */
+    callback_lock();     /* for proper lock order in threadControl getLocks() */
+    eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
     stepControl_lock();  /* for proper lock order in threadControl getLocks() */
     debugMonitorEnter(invokerLock);
 
@@ -773,7 +774,7 @@ invoker_completeInvokeRequest(jthread thread)
      * We cannot delete saved exception or return value references
      * since otherwise a deleted handle would escape when writing
      * the response to the stream. Instead, we clean those refs up
-     * after writing the respone.
+     * after writing the response.
      */
     deleteGlobalArgumentRefs(env, request);
 
@@ -793,6 +794,7 @@ invoker_completeInvokeRequest(jthread thread)
     debugMonitorExit(invokerLock);
     stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 
     if (!detached) {
         outStream_initReply(&out, id);

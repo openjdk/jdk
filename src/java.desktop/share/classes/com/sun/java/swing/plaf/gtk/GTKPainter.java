@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -610,10 +610,10 @@ class GTKPainter extends SynthPainter {
                 x + insets.left, y + insets.top, w - insets.left - insets.right,
                 h - insets.top - insets.bottom);
             BufferedImage img = ENGINE.finishPainting();
-            if(!isHW) {
+            if (!isHW && img != null) {
                 int border = img.getRGB(0, h / 2);
-                if (img != null && border == img.getRGB(w / 2, h / 2)) {
-                    // fix no menu borders in Adwaita theme
+                if (border == img.getRGB(w / 2, h / 2)) {
+                    // fix no menu borders
                     Graphics g2 = img.getGraphics();
                     Color c = new Color(border);
                     g2.setColor(new Color(Math.max((int) (c.getRed() * 0.8), 0),
@@ -971,6 +971,9 @@ class GTKPainter extends SynthPainter {
             SynthConstants.ENABLED : SynthConstants.PRESSED);
         JTabbedPane pane = (JTabbedPane)context.getComponent();
         int placement = pane.getTabPlacement();
+
+        // Fill the tab rect area
+        g.fillRect(x, y, w, h);
 
         synchronized (UNIXToolkit.GTK_LOCK) {
             if (! ENGINE.paintCachedImage(g, x, y, w, h,

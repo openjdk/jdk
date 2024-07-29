@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,7 +514,7 @@ inline jlong BaseCountedLoopNode::stride_con() const {
 class LoopLimitNode : public Node {
   enum { Init=1, Limit=2, Stride=3 };
  public:
-  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(0,init,limit,stride) {
+  LoopLimitNode( Compile* C, Node *init, Node *limit, Node *stride ) : Node(nullptr,init,limit,stride) {
     // Put it on the Macro nodes list to optimize during macro nodes expansion.
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -607,10 +607,11 @@ public:
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
-    : _parent(0), _next(0), _child(0),
+    : _parent(nullptr), _next(nullptr), _child(nullptr),
       _head(head), _tail(tail),
       _phase(phase),
       _local_loop_unroll_limit(0), _local_loop_unroll_factor(0),
+      _body(Compile::current()->comp_arena()),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0),
       _has_range_checks(0), _has_range_checks_computed(0),
       _safepts(nullptr),
@@ -840,6 +841,8 @@ class PhaseIdealLoop : public PhaseTransform {
   uint *_preorders;
   uint _max_preorder;
 
+  ReallocMark _nesting; // Safety checks for arena reallocation
+
   const PhaseIdealLoop* _verify_me;
   bool _verify_only;
 
@@ -852,6 +855,7 @@ class PhaseIdealLoop : public PhaseTransform {
 
   // Allocate _preorders[] array
   void reallocate_preorders() {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, C->unique());
       _max_preorder = C->unique();
@@ -862,6 +866,7 @@ class PhaseIdealLoop : public PhaseTransform {
   // Check to grow _preorders[] array for the case when build_loop_tree_impl()
   // adds new nodes.
   void check_grow_preorders( ) {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       uint newsize = _max_preorder<<1;  // double size of array
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, newsize);
@@ -1011,8 +1016,10 @@ public:
     assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
     return n;
   }
-  // true if CFG node d dominates CFG node n
-  bool is_dominator(Node *d, Node *n);
+
+  bool is_dominator(Node* dominator, Node* n);
+  bool is_strict_dominator(Node* dominator, Node* n);
+
   // return get_ctrl for a data node and self(n) for a CFG node
   Node* ctrl_or_self(Node* n) {
     if (has_ctrl(n))
@@ -1337,9 +1344,10 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
-                                          Deoptimization::DeoptReason reason, int opcode,
-                                          bool rewire_uncommon_proj_phi_inputs = false);
+  IfTrueNode* create_new_if_for_predicate(
+      ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry, Deoptimization::DeoptReason reason, int opcode,
+      bool rewire_uncommon_proj_phi_inputs = false
+      NOT_PRODUCT (COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
  private:
   // Helper functions for create_new_if_for_predicate()
@@ -1360,7 +1368,7 @@ public:
   }
 
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
+  BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
                          jint stride, Node* range, bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
@@ -1375,12 +1383,14 @@ public:
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
+  IfTrueNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                ParsePredicateSuccessProj* parse_predicate_proj,
                                                IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
                                                jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
-  Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
-                                                        Node* offset, Node* limit, jint stride_con, Node* value);
+  void eliminate_hoisted_range_check(IfTrueNode* hoisted_check_proj, IfTrueNode* template_assertion_predicate_proj);
+  Node* add_range_check_elimination_assertion_predicate(
+      IdealLoopTree* loop, Node* predicate_proj, int scale_con, Node* offset, Node* limit, int stride_con, Node* value,
+      bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type = AssertionPredicateType::None));
 
   // Helper function to collect predicate for eliminating the useless ones
   void eliminate_useless_predicates();
@@ -1459,7 +1469,7 @@ public:
   };
   AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
-  // Move UnorderedReduction out of loop if possible
+  // Move an unordered Reduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
 
   // Create a scheduled list of nodes control dependent on ctrl set.
@@ -1532,6 +1542,7 @@ public:
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
   void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
+  void rewire_safe_outputs_to_dominator(Node* source, Node* dominator, bool pin_array_access_nodes);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);

@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "asm/assembler.inline.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
-#include "nativeInst_riscv.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -42,6 +41,7 @@
 class MacroAssembler: public Assembler {
 
  public:
+
   MacroAssembler(CodeBuffer* code) : Assembler(code) {}
 
   void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod);
@@ -49,7 +49,7 @@ class MacroAssembler: public Assembler {
   // Alignment
   int align(int modulus, int extra_offset = 0);
 
-  static inline void assert_alignment(address pc, int alignment = NativeInstruction::instruction_size) {
+  static inline void assert_alignment(address pc, int alignment = MacroAssembler::instruction_size) {
     assert(is_aligned(pc, alignment), "bad alignment");
   }
 
@@ -206,6 +206,8 @@ class MacroAssembler: public Assembler {
   void decode_heap_oop_not_null(Register dst, Register src);
   void decode_heap_oop(Register d, Register s);
   void decode_heap_oop(Register r) { decode_heap_oop(r, r); }
+  void encode_heap_oop_not_null(Register r);
+  void encode_heap_oop_not_null(Register dst, Register src);
   void encode_heap_oop(Register d, Register s);
   void encode_heap_oop(Register r) { encode_heap_oop(r, r); };
   void load_heap_oop(Register dst, Address src, Register tmp1,
@@ -322,6 +324,34 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void population_count(Register dst, Register src, Register tmp1, Register tmp2);
+
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  bool lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3,
+                                     Register tmp4,
+                                     u1 super_klass_slot,
+                                     bool stub_is_near = false);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register result,
+                                     Register tmp1,
+                                     Register tmp2,
+                                     Register tmp3);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register result,
+                                               Register tmp1);
+
   void check_klass_subtype(Register sub_klass,
                            Register super_klass,
                            Register tmp_reg,
@@ -436,8 +466,10 @@ class MacroAssembler: public Assembler {
     return false;
   }
 
+  address emit_address_stub(int insts_call_instruction_offset, address target);
   address emit_trampoline_stub(int insts_call_instruction_offset, address target);
-  static int max_trampoline_stub_size();
+  static int max_reloc_call_stub_size();
+
   void emit_static_call_stub();
   static int static_call_stub_size();
 
@@ -592,14 +624,40 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
-  void j(Label &l, Register temp = t0);
+ private:
+  void load_link_jump(const address source, Register temp = t0);
+  void jump_link(const address dest, Register temp);
+ public:
+  // We try to follow risc-v asm menomics.
+  // But as we don't layout a reachable GOT,
+  // we often need to resort to movptr, li <48imm>.
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+
+  // jump: jal x0, offset
+  // For long reach uses temp register for:
+  // la + jr
   void j(const address dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
-  void jal(Label &l, Register temp = t0);
-  void jal(const address dest, Register temp = t0);
-  void jal(const Address &adr, Register temp = t0);
-  void jal(Register Rd, Label &L, Register temp = t0);
-  void jal(Register Rd, const address dest, Register temp = t0);
+  void j(Label &l, Register temp = t0);
+
+  // jump register: jalr x0, offset(rs)
+  void jr(Register Rd, int32_t offset = 0);
+
+  // call: la + jalr x1
+  void call(const address dest, Register temp = t0);
+
+  // jalr: jalr x1, offset(rs)
+  void jalr(Register Rs, int32_t offset = 0);
+
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
+  // Uses call() for intra code cache, else movptr + jalr.
+  void rt_call(address dest, Register tmp = t0);
+
+  // ret: jalr x0, 0(x1)
+  inline void ret() {
+    Assembler::jalr(x0, x1, 0);
+  }
 
   //label
   void beqz(Register Rs, Label &l, bool is_far = false);
@@ -689,6 +747,14 @@ private:
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
+  // Ensure that the auipc can reach the destination at x from anywhere within
+  // the code cache so that if it is relocated we know it will still reach.
+  bool is_32bit_offset_from_codecache(int64_t x) {
+    int64_t low  = (int64_t)CodeCache::low_bound();
+    int64_t high = (int64_t)CodeCache::high_bound();
+    return is_valid_32bit_offset(x - low) && is_valid_32bit_offset(x - high);
+  }
+
 public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
@@ -733,14 +799,13 @@ public:
   typedef void (MacroAssembler::* compare_and_branch_insn)(Register Rs1, Register Rs2, const address dest);
   typedef void (MacroAssembler::* compare_and_branch_label_insn)(Register Rs1, Register Rs2, Label &L, bool is_far);
   typedef void (MacroAssembler::* jal_jalr_insn)(Register Rt, address dest);
-  typedef void (MacroAssembler::* load_insn_by_temp)(Register Rt, address dest, Register temp);
 
-  void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
   void wrap_label(Register r1, Register r2, Label &L,
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
+  // la will use movptr instead of GOT when not in reach for auipc.
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
   void la(Register Rd, const address addr, int32_t &offset);
@@ -763,13 +828,6 @@ public:
   template<typename T, ENABLE_IF(std::is_integral<T>::value)>
   inline void mv(Register Rd, T o)                    { li(Rd, (int64_t)o); }
 
-  void mv(Register Rd, Address dest) {
-    assert(dest.getMode() == Address::literal, "Address mode should be Address::literal");
-    relocate(dest.rspec(), [&] {
-      movptr(Rd, dest.target());
-    });
-  }
-
   void mv(Register Rd, RegisterOrConstant src) {
     if (src.is_register()) {
       mv(Rd, src.as_register());
@@ -778,17 +836,16 @@ public:
     }
   }
 
-  void movptr(Register Rd, address addr, int32_t &offset);
-
-  void movptr(Register Rd, address addr) {
-    int offset = 0;
-    movptr(Rd, addr, offset);
-    addi(Rd, Rd, offset);
-  }
-
-  inline void movptr(Register Rd, uintptr_t imm64) {
-    movptr(Rd, (address)imm64);
-  }
+  // Generates a load of a 48-bit constant which can be
+  // patched to any 48-bit constant, i.e. address.
+  // If common case supply additional temp register
+  // to shorten the instruction sequence.
+  void movptr(Register Rd, address addr, Register tmp = noreg);
+  void movptr(Register Rd, address addr, int32_t &offset, Register tmp = noreg);
+ private:
+  void movptr1(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
+ public:
 
   // arith
   void add (Register Rd, Register Rn, int64_t increment, Register temp = t0);
@@ -1150,7 +1207,27 @@ public:
   //     be used instead.
   //     All instructions are embedded at a call site.
   //
-  //   - trampoline call:
+  //   - indirect call: movptr + jalr
+  //     This too can reach anywhere in the address space, but it cannot be
+  //     patched while code is running, so it must only be modified at a safepoint.
+  //     This form of call is most suitable for targets at fixed addresses, which
+  //     will never be patched.
+  //
+  //   - reloc call:
+  //     This is only available in C1/C2-generated code (nmethod).
+  //
+  //     [Main code section]
+  //       auipc
+  //       ld <address_from_stub_section>
+  //       jalr
+  //     [Stub section]
+  //     trampoline:
+  //       <64-bit destination address>
+  //
+  //    To change the destination we simply atomically store the new
+  //    address in the stub section.
+  //
+  // - trampoline call (old reloc call / -XX:+UseTrampolines):
   //     This is only available in C1/C2-generated code (nmethod). It is a combination
   //     of a direct call, which is used if the destination of a call is in range,
   //     and a register-indirect call. It has the advantages of reaching anywhere in
@@ -1169,17 +1246,10 @@ public:
   //     cache, 'jal trampoline' is replaced with 'jal destination' and the trampoline
   //     is not used.
   //     The optimization does not remove the trampoline from the stub section.
-
+  //
   //     This is necessary because the trampoline may well be redirected later when
   //     code is patched, and the new destination may not be reachable by a simple JAL
   //     instruction.
-  //
-  //   - indirect call: movptr + jalr
-  //     This too can reach anywhere in the address space, but it cannot be
-  //     patched while code is running, so it must only be modified at a safepoint.
-  //     This form of call is most suitable for targets at fixed addresses, which
-  //     will never be patched.
-  //
   //
   // To patch a trampoline call when the JAL can't reach, we first modify
   // the 64-bit destination address in the trampoline, then modify the
@@ -1193,9 +1263,10 @@ public:
   // invalidated, so there will be a trap at its start.
   // For this to work, the destination address in the trampoline is
   // always updated, even if we're not using the trampoline.
+  // --
 
   // Emit a direct call if the entry address will always be in range,
-  // otherwise a trampoline call.
+  // otherwise a reloc call.
   // Supported entry.rspec():
   // - relocInfo::runtime_call_type
   // - relocInfo::opt_virtual_call_type
@@ -1203,11 +1274,17 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
+  address reloc_call(Address entry) {
+    return UseTrampolines ? trampoline_call(entry) : load_and_call(entry);
+  }
+ private:
   address trampoline_call(Address entry);
+  address load_and_call(Address entry);
+ public:
 
   address ic_call(address entry, jint method_index = 0);
   static int ic_check_size();
-  int ic_check(int end_alignment = NativeInstruction::instruction_size);
+  int ic_check(int end_alignment = MacroAssembler::instruction_size);
 
   // Support for memory inc/dec
   // n.b. increment/decrement calls with an Address destination will
@@ -1235,6 +1312,15 @@ public:
   void compute_match_mask(Register src, Register pattern, Register match_mask,
                           Register mask1, Register mask2);
 
+  // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
+  void kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
+        Register table0, Register table1, Register table2, Register table3,
+        bool upper);
+  void update_byte_crc32(Register crc, Register val, Register table);
+
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
@@ -1261,9 +1347,10 @@ public:
                                Register tmp, Register tmp3, Register tmp4,
                                Register tmp6, Register product_hi);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                       Register z, Register zlen,
+                       Register z, Register tmp0,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                        Register tmp5, Register tmp6, Register product_hi);
+
 #endif
 
   void inflate_lo32(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);
@@ -1476,21 +1563,6 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-  // Emit a runtime call. Only invalidates the tmp register which
-  // is used to keep the entry address for jalr/movptr.
-  void rt_call(address dest, Register tmp = t0);
-
-  void call(const address dest, Register temp = t0) {
-    assert_cond(dest != nullptr);
-    assert(temp != noreg, "expecting a register");
-    int32_t offset = 0;
-    mv(temp, dest, offset);
-    jalr(x1, temp, offset);
-  }
-
-  inline void ret() {
-    jalr(x0, x1, 0);
-  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline
@@ -1532,6 +1604,194 @@ private:
 public:
   void lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
   void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+
+public:
+  enum {
+    // movptr
+    movptr1_instruction_size = 6 * instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
+    movptr2_instruction_size = 5 * instruction_size, // lui, lui, slli, add, addi.  See movptr2().
+    load_pc_relative_instruction_size = 2 * instruction_size // auipc, ld
+  };
+
+  enum NativeShortCall {
+    trampoline_size        = 3 * instruction_size + wordSize,
+    trampoline_data_offset = 3 * instruction_size
+  };
+
+  static bool is_load_pc_relative_at(address branch);
+  static bool is_li16u_at(address instr);
+
+  static bool is_jal_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1101111; }
+  static bool is_jalr_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100111 && extract_funct3(instr) == 0b000; }
+  static bool is_branch_at(address instr)     { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b1100011; }
+  static bool is_ld_at(address instr)         { assert_cond(instr != nullptr); return is_load_at(instr) && extract_funct3(instr) == 0b011; }
+  static bool is_load_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000011; }
+  static bool is_float_load_at(address instr) { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0000111; }
+  static bool is_auipc_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010111; }
+  static bool is_jump_at(address instr)       { assert_cond(instr != nullptr); return is_branch_at(instr) || is_jal_at(instr) || is_jalr_at(instr); }
+  static bool is_add_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110011 && extract_funct3(instr) == 0b000; }
+  static bool is_addi_at(address instr)       { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0010011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_at(address instr)      { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0011011 && extract_funct3(instr) == 0b000; }
+  static bool is_addiw_to_zr_at(address instr){ assert_cond(instr != nullptr); return is_addiw_at(instr) && extract_rd(instr) == zr; }
+  static bool is_lui_at(address instr)        { assert_cond(instr != nullptr); return extract_opcode(instr) == 0b0110111; }
+  static bool is_lui_to_zr_at(address instr)  { assert_cond(instr != nullptr); return is_lui_at(instr) && extract_rd(instr) == zr; }
+
+  static bool is_srli_at(address instr) {
+    assert_cond(instr != nullptr);
+    return extract_opcode(instr) == 0b0010011 &&
+           extract_funct3(instr) == 0b101 &&
+           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+  }
+
+  static bool is_slli_shift_at(address instr, uint32_t shift) {
+    assert_cond(instr != nullptr);
+    return (extract_opcode(instr) == 0b0010011 && // opcode field
+            extract_funct3(instr) == 0b001 &&     // funct3 field, select the type of operation
+            Assembler::extract(Assembler::ld_instr(instr), 25, 20) == shift);    // shamt field
+  }
+
+  static bool is_movptr1_at(address instr);
+  static bool is_movptr2_at(address instr);
+
+  static bool is_lwu_to_zr(address instr);
+
+  static Register extract_rs1(address instr);
+  static Register extract_rs2(address instr);
+  static Register extract_rd(address instr);
+  static uint32_t extract_opcode(address instr);
+  static uint32_t extract_funct3(address instr);
+
+  // the instruction sequence of movptr is as below:
+  //     lui
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi/jalr/load
+  static bool check_movptr1_data_dependency(address instr) {
+    address lui = instr;
+    address addi1 = lui + instruction_size;
+    address slli1 = addi1 + instruction_size;
+    address addi2 = slli1 + instruction_size;
+    address slli2 = addi2 + instruction_size;
+    address last_instr = slli2 + instruction_size;
+    return extract_rs1(addi1) == extract_rd(lui) &&
+           extract_rs1(addi1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(slli2) &&
+           extract_rs1(last_instr) == extract_rd(slli2);
+  }
+
+  // the instruction sequence of movptr2 is as below:
+  //     lui
+  //     lui
+  //     slli
+  //     add
+  //     addi/jalr/load
+  static bool check_movptr2_data_dependency(address instr) {
+    address lui1 = instr;
+    address lui2 = lui1 + instruction_size;
+    address slli = lui2 + instruction_size;
+    address add  = slli + instruction_size;
+    address last_instr = add + instruction_size;
+    return extract_rd(add) == extract_rd(lui2) &&
+           extract_rs1(add) == extract_rd(lui2) &&
+           extract_rs2(add) == extract_rd(slli) &&
+           extract_rs1(slli) == extract_rd(lui1) &&
+           extract_rd(slli) == extract_rd(lui1) &&
+           extract_rs1(last_instr) == extract_rd(add);
+  }
+
+  // the instruction sequence of li64 is as below:
+  //     lui
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi
+  //     slli
+  //     addi
+  static bool check_li64_data_dependency(address instr) {
+    address lui = instr;
+    address addi1 = lui + instruction_size;
+    address slli1 = addi1 + instruction_size;
+    address addi2 = slli1 + instruction_size;
+    address slli2 = addi2 + instruction_size;
+    address addi3 = slli2 + instruction_size;
+    address slli3 = addi3 + instruction_size;
+    address addi4 = slli3 + instruction_size;
+    return extract_rs1(addi1) == extract_rd(lui) &&
+           extract_rs1(addi1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(addi1) &&
+           extract_rs1(slli1) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(slli1) &&
+           extract_rs1(addi2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(addi2) &&
+           extract_rs1(slli2) == extract_rd(slli2) &&
+           extract_rs1(addi3) == extract_rd(slli2) &&
+           extract_rs1(addi3) == extract_rd(addi3) &&
+           extract_rs1(slli3) == extract_rd(addi3) &&
+           extract_rs1(slli3) == extract_rd(slli3) &&
+           extract_rs1(addi4) == extract_rd(slli3) &&
+           extract_rs1(addi4) == extract_rd(addi4);
+  }
+
+  // the instruction sequence of li16u is as below:
+  //     lui
+  //     srli
+  static bool check_li16u_data_dependency(address instr) {
+    address lui = instr;
+    address srli = lui + instruction_size;
+
+    return extract_rs1(srli) == extract_rd(lui) &&
+           extract_rs1(srli) == extract_rd(srli);
+  }
+
+  // the instruction sequence of li32 is as below:
+  //     lui
+  //     addiw
+  static bool check_li32_data_dependency(address instr) {
+    address lui = instr;
+    address addiw = lui + instruction_size;
+
+    return extract_rs1(addiw) == extract_rd(lui) &&
+           extract_rs1(addiw) == extract_rd(addiw);
+  }
+
+  // the instruction sequence of pc-relative is as below:
+  //     auipc
+  //     jalr/addi/load/float_load
+  static bool check_pc_relative_data_dependency(address instr) {
+    address auipc = instr;
+    address last_instr = auipc + instruction_size;
+
+    return extract_rs1(last_instr) == extract_rd(auipc);
+  }
+
+  // the instruction sequence of load_label is as below:
+  //     auipc
+  //     load
+  static bool check_load_pc_relative_data_dependency(address instr) {
+    address auipc = instr;
+    address load = auipc + instruction_size;
+
+    return extract_rd(load) == extract_rd(auipc) &&
+           extract_rs1(load) == extract_rd(load);
+  }
+
+  static bool is_li32_at(address instr);
+  static bool is_li64_at(address instr);
+  static bool is_pc_relative_at(address branch);
+
+  static bool is_membar(address addr) {
+    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+  }
+  static uint32_t get_membar_kind(address addr);
+  static void set_membar_kind(address addr, uint32_t order_kind);
 };
 
 #ifdef ASSERT

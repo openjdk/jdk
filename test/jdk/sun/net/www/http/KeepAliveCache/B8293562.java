@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,11 @@
 /*
  * @test
  * @bug 8293562
+ * @summary Http keep-alive thread should close sockets without holding a lock
  * @library /test/lib
  * @run main/othervm -Dhttp.keepAlive.time.server=1 B8293562
- * @summary Http keep-alive thread should close sockets without holding a lock
  */
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
-import javax.net.ssl.HandshakeCompletedListener;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -52,6 +43,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.HandshakeCompletedListener;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import jdk.test.lib.net.URIBuilder;
 
 public class B8293562 {
     static HttpServer server;
@@ -73,12 +76,13 @@ public class B8293562 {
 
     public static void clientHttpCalls() throws Exception {
         try {
-            System.out.println("http server listen on: " + server.getAddress().getPort());
-            String hostAddr = InetAddress.getLoopbackAddress().getHostAddress();
-            if (hostAddr.indexOf(':') > -1) hostAddr = "[" + hostAddr + "]";
-            String baseURLStr = "https://" + hostAddr + ":" + server.getAddress().getPort() + "/";
+            System.out.println("http server listens on: " + server.getAddress().getPort());
 
-            URL testUrl = new URL (baseURLStr);
+            URL testUrl = URIBuilder.newBuilder()
+                    .scheme("https")
+                    .loopback()
+                    .port(server.getAddress().getPort())
+                    .toURL();
 
             // SlowCloseSocketFactory is not a real SSLSocketFactory;
             // it produces regular non-SSL sockets. Effectively, the request
@@ -244,6 +248,7 @@ public class B8293562 {
         public void handle(HttpExchange t) throws IOException {
             t.sendResponseHeaders(404, 3);
             t.getResponseBody().write("abc".getBytes(StandardCharsets.UTF_8));
+            t.getResponseBody().close();
         }
     }
 }

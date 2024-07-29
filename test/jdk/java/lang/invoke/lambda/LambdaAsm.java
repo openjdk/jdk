@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ public class LambdaAsm {
 
     static void checkMethod(String cname, String mname, ConstantPool cp,
             CodeAttribute code) throws IllegalArgumentException {
-        for (var inst : code.elements()) {
+        for (var inst : code) {
             if (inst instanceof InvokeInstruction inv && (inv.opcode() == Opcode.INVOKESPECIAL
                     || inv.opcode() == Opcode.INVOKEINTERFACE)) {
                 var ref = inv.method();
@@ -125,7 +125,7 @@ public class LambdaAsm {
         for (var m : cf.methods()) {
             String mname = m.methodName().stringValue();
             if (mname.equals(mthd)) {
-                for (var a : m.findAttributes(Attributes.CODE)) {
+                for (var a : m.findAttributes(Attributes.code())) {
                     count++;
                     checkMethod(cf.thisClass().asInternalName(), mname,
                             cf.constantPool(), a);

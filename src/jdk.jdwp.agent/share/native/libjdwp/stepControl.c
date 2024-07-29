@@ -805,7 +805,8 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
     LOG_STEP(("stepControl_beginStep: thread=%p,size=%d,depth=%d",
               thread, size, depth));
 
-    eventHandler_lock(); /* for proper lock order */
+    callback_lock();     /* for proper lock order in threadControl getLocks() */
+    eventHandler_lock(); /* for proper lock order in threadControl getLocks() */
     stepControl_lock();
 
     step = threadControl_getStepRequest(thread);
@@ -852,6 +853,7 @@ stepControl_beginStep(JNIEnv *env, jthread thread, jint size, jint depth,
 
     stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 
     return error;
 }
