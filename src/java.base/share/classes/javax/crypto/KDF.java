@@ -51,7 +51,7 @@ import java.util.Objects;
  * methods. KDF algorithm names follow a naming convention of
  * <em>Algorithm</em>With<em>PRF</em>. For instance, a KDF implementation of
  * HKDF using HMAC-SHA256 has an algorithm name of "HKDFWithHmacSHA256". In some
- * cases the PRF portion of the algorithm field may be omitted if the KDF
+ * cases the WithPRF portion of the algorithm field may be omitted if the KDF
  * algorithm has a fixed or default PRF.
  * <p>
  * If a provider is not specified in the {@code getInstance} method when
@@ -190,7 +190,7 @@ public final class KDF {
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
-                + "algorithm require an AlgorithmParameterSpec?", e);
+                + "algorithm require KDFParameters?", e);
         }
     }
 
@@ -201,20 +201,18 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation (may not be
-     *     {@code null})
+     *     the provider to use for this key derivation
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider
-     *     that supports a KDF implementation of the specified algorithm
+     *     if the specified provider does not support the specified KDF
+     *     algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
      * @throws NullPointerException
-     *     if the algorithm is {@code null}
+     *     if the algorithm or provider is {@code null}
      */
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
@@ -224,7 +222,7 @@ public final class KDF {
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
-                + "algorithm require an AlgorithmParameterSpec?", e);
+                + "algorithm require KDFParameters?", e);
         }
     }
 
@@ -235,17 +233,15 @@ public final class KDF {
      * @param algorithm
      *     the key derivation algorithm to use
      * @param provider
-     *     the provider to use for this key derivation (may not be
-     *     {@code null})
+     *     the provider to use for this key derivation
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider
-     *     that supports a KDF implementation of the specified algorithm
+     *     if the specified provider does not support the specified KDF
+     *     algorithm
      * @throws NullPointerException
-     *     if the algorithm is {@code null}
+     *     if the algorithm or provider is {@code null}
      */
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
@@ -255,7 +251,7 @@ public final class KDF {
         } catch (InvalidAlgorithmParameterException e) {
             throw new NoSuchAlgorithmException(
                 "Received an InvalidAlgorithmParameterException. Does this "
-                + "algorithm require an AlgorithmParameterSpec?", e);
+                + "algorithm require KDFParameters?", e);
         }
     }
 
@@ -275,7 +271,7 @@ public final class KDF {
      *     if no {@code Provider} supports a {@code KDFSpi} implementation for
      *     the specified algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code AlgorithmParameterSpec} is an invalid value
+     *     if the {@code KDFParameters} is an invalid value
      * @throws NullPointerException
      *     if the algorithm is {@code null}
      */
@@ -306,22 +302,20 @@ public final class KDF {
      *     the {@code KDFParameters} used to configure this KDF's algorithm or
      *     {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation (may not be
-     *     {@code null})
+     *     the provider to use for this key derivation
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider
-     *     that supports a KDF implementation of the specified algorithm
+     *     if the specified provider does not support the specified KDF
+     *     algorithm
      * @throws NoSuchProviderException
      *     if the specified provider is not registered in the security provider
      *     list
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code AlgorithmParameterSpec} is an invalid value
+     *     if the {@code KDFParameters} is an invalid value
      * @throws NullPointerException
-     *     if the algorithm is {@code null}
+     *     if the algorithm or provider is {@code null}
      */
     public static KDF getInstance(String algorithm,
                                   KDFParameters kdfParameters,
@@ -358,19 +352,17 @@ public final class KDF {
      *     the {@code KDFParameters} used to configure this KDF's algorithm or
      *     {@code null} if no additional parameters are provided
      * @param provider
-     *     the provider to use for this key derivation (may not be
-     *     {@code null})
+     *     the provider to use for this key derivation
      *
      * @return a {@code KDF} object
      *
      * @throws NoSuchAlgorithmException
-     *     if a provider is specified and it does not support the specified KDF
-     *     algorithm, or if provider is {@code null} and there is no provider
-     *     that supports a KDF implementation of the specified algorithm
+     *     if the specified provider does not support the specified KDF
+     *     algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code AlgorithmParameterSpec} is an invalid value
+     *     if the {@code KDFParameters} is an invalid value
      * @throws NullPointerException
-     *     if the algorithm is {@code null}
+     *     if the algorithm or provider is {@code null}
      */
     public static KDF getInstance(String algorithm,
                                   KDFParameters kdfParameters,
@@ -408,16 +400,11 @@ public final class KDF {
     /**
      * Derives a key, returned as a {@code SecretKey}.
      * <p>
-     * The {@code deriveKey} method may be called multiple times at the same
-     * time on a particular {@code KDF} instance.
-     * <p>
-     * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called. Once a
-     * provider is selected, it cannot be changed.
+     * The {@code deriveKey} method may be called multiple times on a particular
+     * {@code KDF} instance.
      *
      * @param alg
-     *     the algorithm of the resultant {@code SecretKey} object (may not be
-     *     {@code null})
+     *     the algorithm of the resultant {@code SecretKey} object
      * @param kdfParameterSpec
      *     derivation parameters
      *
@@ -488,12 +475,8 @@ public final class KDF {
     /**
      * Obtains raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times at the same
-     * time on a particular {@code KDF} instance.
-     * <p>
-     * Delayed provider selection is also supported such that the provider
-     * performing the derive is not selected until the method is called. Once a
-     * provider is selected, it cannot be changed.
+     * The {@code deriveData} method may be called multiple times on a
+     * particular {@code KDF} instance.
      *
      * @param kdfParameterSpec
      *     derivation parameters

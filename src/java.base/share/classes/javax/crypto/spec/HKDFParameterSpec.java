@@ -195,7 +195,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          */
         public Builder addIKM(byte[] ikm) {
             if (ikm == null) {
-                throw new NullPointerException("ikm must not be null or empty");
+                throw new NullPointerException("ikm must not be null");
             }
             if (ikm.length != 0) {
                 return addIKM(new SecretKeySpec(ikm, "Generic"));
@@ -259,7 +259,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         public Builder addSalt(byte[] salt) {
             if (salt == null) {
                 throw new NullPointerException(
-                    "salt must not be null or empty");
+                    "salt must not be null");
             }
             if (salt.length != 0) {
                 return addSalt(new SecretKeySpec(salt, "Generic"));

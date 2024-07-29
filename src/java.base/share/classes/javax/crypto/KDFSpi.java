@@ -51,7 +51,7 @@ public abstract class KDFSpi {
      * The sole constructor.
      * <p>
      * A {@code KDFParameters} object may be specified for KDF algorithms
-     * that require this.
+     * that support initialization parameters.
      *
      * @param kdfParameters
      *     the initialization parameters for the {@code KDF} algorithm (may be
@@ -68,12 +68,11 @@ public abstract class KDFSpi {
     /**
      * Derives a key, returned as a {@code SecretKey}.
      * <p>
-     * The {@code deriveKey} method may be called multiple times on a particular
-     * {@code KDF} instance.
+     * The {@code engineDeriveKey} method may be called multiple times on a particular
+     * {@code KDFSpi} instance.
      *
      * @param alg
-     *     the algorithm of the resultant {@code SecretKey} object (may not be
-     *     {@code null})
+     *     the algorithm of the resultant {@code SecretKey} object
      * @param kdfParameterSpec
      *     derivation parameters
      *
@@ -93,8 +92,8 @@ public abstract class KDFSpi {
     /**
      * Obtains raw data from a key derivation function.
      * <p>
-     * The {@code deriveData} method may be called multiple times on a
-     * particular {@code KDF} instance.
+     * The {@code engineDeriveData} method may be called multiple times on a
+     * particular {@code KDFSpi} instance.
      *
      * @param kdfParameterSpec
      *     derivation parameters

@@ -52,17 +52,20 @@ public class Functions {
         var okm2 = kdf.deriveKey("OKM", extractAndExpand);
 
         if (!Arrays.equals(prk.getEncoded(), expectedPrk)) {
-            throw new Exception();
+            throw new Exception("the PRK does not match the expected value");
         }
         if (!Arrays.equals(okm1.getEncoded(), expectedOkm)) {
-            throw new Exception();
+            throw new Exception("the OKM does not match the expected value (expand)");
         }
         if (!Arrays.equals(okm2.getEncoded(), expectedOkm)) {
-            throw new Exception();
+            throw new Exception("the OKM does not match the expected value (extract expand)");
         }
 
+        // test empty extract
         test(HKDFParameterSpec.ofExtract().extractOnly());
+        // test expand with empty info
         test(HKDFParameterSpec.ofExtract().thenExpand(new byte[0], 32));
+        // test extract with zero-length salt
         test(HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(new byte[0]).extractOnly());
     }
 
