@@ -1873,7 +1873,7 @@ void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHan
   // the interpreter or runtime performs a serialized check of
   // the relevant ResolvedIndyEntry::method field.  This is done by the caller
   // of this method, via CPC::set_dynamic_call, which uses
-  // an ObjectLocker to do the final serialization of updates
+  // a lock to do the final serialization of updates
   // to ResolvedIndyEntry state, including method.
 
   // Log dynamic info to CDS classlist.

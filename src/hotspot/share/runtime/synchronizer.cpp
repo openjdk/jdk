@@ -768,21 +768,6 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   return ret_code;
 }
 
-void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
-  if (millis < 0) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "timeout value is negative");
-  }
-
-  ObjectMonitor* monitor;
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    monitor = LightweightSynchronizer::inflate_locked_or_imse(obj(), inflate_cause_wait, CHECK);
-  } else {
-    monitor = inflate(THREAD, obj(), inflate_cause_wait);
-  }
-  monitor->wait(millis, false, THREAD);
-}
-
-
 void ObjectSynchronizer::notify(Handle obj, TRAPS) {
   JavaThread* current = THREAD;
 

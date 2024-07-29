@@ -60,7 +60,8 @@ public class TestThreadDumpClassInitMonitor {
      */
     final static String TEST_THREAD = "TestThread";
     final static String TEST_THREAD_ENTRY = "\"" + TEST_THREAD;
-    final static String IN_OBJECT_WAIT = "in Object.wait()";
+    // final static String IN_OBJECT_WAIT = "in Object.wait()";
+    final static String IN_CONVAR_WAIT = "waiting on condition";
     final static String THREAD_STATE = "java.lang.Thread.State: RUNNABLE";
     final static String THREAD_INFO = "Thread:"; // the details are not important
     final static String JAVATHREAD_STATE = "JavaThread state: _thread_blocked";
@@ -139,7 +140,7 @@ public class TestThreadDumpClassInitMonitor {
                         continue;
                     }
                     foundLines++;
-                    if (!line.contains(IN_OBJECT_WAIT)) {
+                    if (!line.contains(IN_CONVAR_WAIT)) {
                         throw new Error("Unexpected initial stack line: " + line);
                     }
                     continue;

@@ -89,7 +89,6 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/finalizerService.hpp"
@@ -512,7 +511,6 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-
 InstanceKlass::InstanceKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
@@ -529,6 +527,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   _nest_host_index(0),
   _init_state(allocated),
   _reference_type(reference_type),
+  _init_lock(new RecursiveMutex()),
   _init_thread(nullptr)
 {
   set_vtable_length(parser.vtable_size());
@@ -768,28 +767,6 @@ objArrayOop InstanceKlass::signers() const {
   return java_lang_Class::signers(java_mirror());
 }
 
-oop InstanceKlass::init_lock() const {
-  // return the init lock from the mirror
-  oop lock = java_lang_Class::init_lock(java_mirror());
-  // Prevent reordering with any access of initialization state
-  OrderAccess::loadload();
-  assert(lock != nullptr || !is_not_initialized(), // initialized or in_error state
-         "only fully initialized state can have a null lock");
-  return lock;
-}
-
-// Set the initialization lock to null so the object can be GC'ed.  Any racing
-// threads to get this lock will see a null lock and will not lock.
-// That's okay because they all check for initialized state after getting
-// the lock and return.
-void InstanceKlass::fence_and_clear_init_lock() {
-  // make sure previous stores are all done, notably the init_state.
-  OrderAccess::storestore();
-  java_lang_Class::clear_init_lock(java_mirror());
-  assert(!is_not_initialized(), "class must be initialized now");
-}
-
-
 // See "The Virtual Machine Specification" section 2.16.5 for a detailed explanation of the class initialization
 // process. The step comments refers to the procedure described in that section.
 // Note: implementation moved to static method to expose the this pointer.
@@ -959,9 +936,8 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // verification & rewriting
   {
-    HandleMark hm(THREAD);
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
+    RecursiveLocker rl(_init_lock, THREAD);
+
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
     // don't verify or rewrite if already rewritten
@@ -1027,6 +1003,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
           MutexLocker ml(THREAD, Compile_lock);
 
           set_init_state(linked);
+
           CodeCache::mark_dependents_on(&deopt_scope, this);
         }
         // Perform the deopt handshake outside Compile_lock.
@@ -1155,6 +1132,12 @@ void InstanceKlass::clean_initialization_error_table() {
   }
 }
 
+// We can safely access the name as long as we hold the _init_lock.
+const char* InstanceKlass::init_thread_name() {
+  assert(_init_lock->holds_lock(JavaThread::current()), "must hold lock");
+  return init_thread()->name_raw();
+}
+
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);
 
@@ -1165,35 +1148,26 @@ void InstanceKlass::initialize_impl(TRAPS) {
   DTRACE_CLASSINIT_PROBE(required, -1);
 
   bool wait = false;
+  bool throw_error = false;
 
   JavaThread* jt = THREAD;
 
   bool debug_logging_enabled = log_is_enabled(Debug, class, init);
 
+  // Lock the whole initialization sequence with a recursive lock.  No other
+  // thread can pass this state.
+  // Step 2 (second thread waits here)
+  jt->set_class_to_be_initialized(this);
+  RecursiveLocker rl(_init_lock, THREAD);
+  jt->set_class_to_be_initialized(nullptr);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    Handle h_init_lock(THREAD, init_lock());
-    ObjectLocker ol(h_init_lock, jt);
-
-    // Step 2
-    // If we were to use wait() instead of waitInterruptibly() then
-    // we might end up throwing IE from link/symbol resolution sites
-    // that aren't expected to throw.  This would wreak havoc.  See 6320309.
-    while (is_being_initialized() && !is_reentrant_initialization(jt)) {
-      if (debug_logging_enabled) {
-        ResourceMark rm(jt);
-        log_debug(class, init)("Thread \"%s\" waiting for initialization of %s by thread \"%s\"",
-                               jt->name(), external_name(), init_thread_name());
-      }
-      wait = true;
-      jt->set_class_to_be_initialized(this);
-      ol.wait_uninterruptibly(jt);
-      jt->set_class_to_be_initialized(nullptr);
-    }
 
     // Step 3
-    if (is_being_initialized() && is_reentrant_initialization(jt)) {
+    if (is_being_initialized()) {
+      assert(is_init_thread(jt), "only current thread can recursively call initialize");
       if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread \"%s\" recursively initializing %s",
@@ -1221,19 +1195,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
         log_debug(class, init)("Thread \"%s\" found %s is in error state",
                                jt->name(), external_name());
       }
-
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
-      ResourceMark rm(THREAD);
-      Handle cause(THREAD, get_initialization_error(THREAD));
-
-      stringStream ss;
-      ss.print("Could not initialize class %s", external_name());
-      if (cause.is_null()) {
-        THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
-      } else {
-        THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
-                        ss.as_string(), cause);
-      }
+      throw_error = true;
     } else {
 
       // Step 6
@@ -1244,6 +1206,21 @@ void InstanceKlass::initialize_impl(TRAPS) {
         log_debug(class, init)("Thread \"%s\" is initializing %s",
                                jt->name(), external_name());
       }
+    }
+  }
+
+  if (throw_error) {
+    DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
+    ResourceMark rm(THREAD);
+    Handle cause(THREAD, get_initialization_error(THREAD));
+
+    stringStream ss;
+    ss.print("Could not initialize class %s", external_name());
+    if (cause.is_null()) {
+      THROW_MSG(vmSymbols::java_lang_NoClassDefFoundError(), ss.as_string());
+    } else {
+      THROW_MSG_CAUSE(vmSymbols::java_lang_NoClassDefFoundError(),
+                      ss.as_string(), cause);
     }
   }
 
@@ -1271,7 +1248,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
         EXCEPTION_MARK;
         add_initialization_error(THREAD, e);
         // Locks object, set state, and notify all waiting threads
-        set_initialization_state_and_notify(initialization_error, THREAD);
+        set_initialization_thread_and_state(initialization_error, THREAD);
         CLEAR_PENDING_EXCEPTION;
       }
       DTRACE_CLASSINIT_PROBE_WAIT(super__failed, -1, wait);
@@ -1304,7 +1281,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
-    set_initialization_state_and_notify(fully_initialized, CHECK);
+    set_initialization_thread_and_state(fully_initialized, THREAD);
     debug_only(vtable().verify(tty, true);)
   }
   else {
@@ -1317,7 +1294,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     {
       EXCEPTION_MARK;
       add_initialization_error(THREAD, e);
-      set_initialization_state_and_notify(initialization_error, THREAD);
+      set_initialization_thread_and_state(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
@@ -1334,22 +1311,14 @@ void InstanceKlass::initialize_impl(TRAPS) {
     }
   }
   DTRACE_CLASSINIT_PROBE_WAIT(end, -1, wait);
+  // Unlocking RecursiveLocker signals waiting threads.
 }
 
 
-void InstanceKlass::set_initialization_state_and_notify(ClassState state, TRAPS) {
-  Handle h_init_lock(THREAD, init_lock());
-  if (h_init_lock() != nullptr) {
-    ObjectLocker ol(h_init_lock, THREAD);
-    set_init_thread(nullptr); // reset _init_thread before changing _init_state
-    set_init_state(state);
-    fence_and_clear_init_lock();
-    ol.notify_all(CHECK);
-  } else {
-    assert(h_init_lock() != nullptr, "The initialization state should never be set twice");
-    set_init_thread(nullptr); // reset _init_thread before changing _init_state
-    set_init_state(state);
-  }
+void InstanceKlass::set_initialization_thread_and_state(ClassState state, JavaThread* current) {
+  assert(state != linked, "already done above");
+  set_init_thread(nullptr); // reset _init_thread before changing _init_state
+  set_init_state(state);
 }
 
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
@@ -1378,8 +1347,8 @@ void InstanceKlass::add_to_hierarchy(JavaThread* current) {
   }
   // Perform the deopt handshake outside Compile_lock.
   deopt_scope.deoptimize_marked();
-}
 
+}
 
 InstanceKlass* InstanceKlass::implementor() const {
   InstanceKlass* volatile* ik = adr_implementor();
@@ -2690,6 +2659,7 @@ void InstanceKlass::remove_unshareable_info() {
   }
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
+  _init_lock = nullptr;
 
   remove_unshareable_flags();
 }
@@ -2798,6 +2768,9 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   if (DiagnoseSyncOnValueBasedClasses && has_value_based_class_annotation() && !is_value_based()) {
     set_is_value_based();
   }
+
+  // restore the monitor
+  _init_lock = new RecursiveMutex(); // "InstanceKlassInitMonitorRestored_lock");
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2896,6 +2869,9 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   if (release_sub_metadata) {
     methods_do(method_release_C_heap_structures);
   }
+
+  // Destroy the init_lock
+  delete _init_lock;
 
   // Deallocate oop map cache
   if (_oop_map_cache != nullptr) {
@@ -3593,7 +3569,7 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 #define BULLET  " - "
 
 static const char* state_names[] = {
-  "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
+  "allocated", "loaded", "being_linked", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };
 
 static void print_vtable(intptr_t* start, int len, outputStream* st) {
@@ -4228,10 +4204,14 @@ void JNIid::verify(Klass* holder) {
 }
 
 void InstanceKlass::set_init_state(ClassState state) {
+  if (state > loaded) {
+    assert(_init_lock->holds_lock(JavaThread::current()), "must hold lock");
+  }
 #ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
-  assert(good_state || state == allocated, "illegal state transition");
+  bool link_failed = _init_state == being_linked && state == loaded;
+  assert(good_state || state == allocated || link_failed, "illegal state transition");
 #endif
   assert(_init_thread == nullptr, "should be cleared before state change");
   Atomic::release_store(&_init_state, state);

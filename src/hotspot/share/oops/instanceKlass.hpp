@@ -45,6 +45,7 @@
 class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
+class RecursiveMutex;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -153,6 +154,7 @@ class InstanceKlass: public Klass {
   enum ClassState : u1 {
     allocated,                          // allocated (but not yet linked)
     loaded,                             // loaded and inserted in class hierarchy (but not linked yet)
+    being_linked,                       // currently running verifier and rewriter
     linked,                             // successfully linked/verified (but not initialized yet)
     being_initialized,                  // currently running class initializer
     fully_initialized,                  // initialized (successful final state)
@@ -231,11 +233,12 @@ class InstanceKlass: public Klass {
   // _idnum_allocated_count.
   volatile ClassState _init_state;          // state of class
 
-  u1              _reference_type;                // reference type
+  u1              _reference_type;          // reference type
 
   // State is set either at parse time or while executing, atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
+  RecursiveMutex*      _init_lock;          // mutual exclusion to _init_state and _init_thread.
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
@@ -504,9 +507,7 @@ public:
                                        TRAPS);
 
   JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
-  const char* init_thread_name() {
-    return init_thread()->name_raw();
-  }
+  const char* init_thread_name();
 
  public:
   // initialization state
@@ -821,7 +822,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, TRAPS);
+  void set_initialization_thread_and_state(ClassState state, JavaThread* current);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -1048,7 +1049,7 @@ public:
  public:
   u2 idnum_allocated_count() const      { return _idnum_allocated_count; }
 
-private:
+ private:
   // initialization state
   void set_init_state(ClassState state);
   void set_rewritten()                  { _misc_flags.set_rewritten(true); }
@@ -1065,12 +1066,6 @@ private:
   jmethodID update_jmethod_id(jmethodID* jmeths, Method* method, int idnum);
 
 public:
-  // Lock for (1) initialization; (2) access to the ConstantPool of this class.
-  // Must be one per class and it has to be a VM internal object so java code
-  // cannot lock it (like the mirror).
-  // It has to be an object not a Mutex because it's held through java calls.
-  oop init_lock() const;
-
   // Returns the array class for the n'th dimension
   virtual ArrayKlass* array_klass(int n, TRAPS);
   virtual ArrayKlass* array_klass_or_null(int n);
@@ -1080,9 +1075,10 @@ public:
   virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
-private:
-  void fence_and_clear_init_lock();
 
+  RecursiveMutex* init_lock() const { return _init_lock; }
+private:
+  void check_link_state_and_wait(JavaThread* current);
   bool link_class_impl                           (TRAPS);
   bool verify_code                               (TRAPS);
   void initialize_impl                           (TRAPS);
