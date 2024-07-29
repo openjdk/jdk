@@ -25,7 +25,7 @@
 
 JNIEXPORT jint JNICALL
 Java_TestPinCaseWithTrace_nativeFuncPin(JNIEnv* env, jclass klass, jint x) {
-    jmethodID nativeBaz = (*env)->GetStaticMethodID(env, klass, "native2Java", "(I)I");
-    jint r = (*env)->CallStaticIntMethod(env, klass, nativeBaz, x+1);
+    jmethodID m = (*env)->GetStaticMethodID(env, klass, "native2Java", "(I)I");
+    jint r = (*env)->CallStaticIntMethod(env, klass, m, x+1);
     return r + 1;
 }
