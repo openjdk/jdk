@@ -3190,15 +3190,19 @@ void MacroAssembler::increment_counter_eq(address counter_address, Register tmp1
   bind(l);
 }
 
+// "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2) {
+
+  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
+  assert_different_registers(oop, box, temp1, temp2);
+
   Register displacedHeader = temp1;
-  Register currentHeader = temp1;
-  Register temp = temp2;
+  Register currentHeader   = temp1;
+  Register temp            = temp2;
+
   NearLabel done, object_has_monitor;
 
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
-  assert_different_registers(temp1, temp2, oop, box);
 
   BLOCK_COMMENT("compiler_fast_lock_object {");
 
@@ -3207,8 +3211,10 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp, oop);
-    testbit(Address(temp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
-    z_btrue(done);
+    z_l(temp, Address(temp, Klass::access_flags_offset()));
+    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_brne(done);
   }
 
   // Handle existing monitor.
@@ -3222,7 +3228,8 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     // From loading the markWord, we know that oop != nullptr
     z_ltgr(oop, oop);
     z_bru(done);
-  } else if (LockingMode == LM_LEGACY) {
+  } else {
+    assert(LockingMode == LM_LEGACY, "must be");
     // Set mark to markWord | markWord::unlocked_value.
     z_oill(displacedHeader, markWord::unlocked_value);
 
@@ -3252,10 +3259,6 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     z_stg(currentHeader/*==0 or not 0*/, BasicLock::displaced_header_offset_in_bytes(), box);
 
     z_bru(done);
-  } else {
-    assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-    lightweight_lock(oop, displacedHeader, temp, done);
-    z_bru(done);
   }
 
   bind(object_has_monitor);
@@ -3270,10 +3273,9 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   // Otherwise, register zero is filled with the current owner.
   z_lghi(zero, 0);
   z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor_tagged);
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    // Store a non-null value into the box.
-    z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
-  }
+
+  // Store a non-null value into the box.
+  z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
 
   z_bre(done); // acquired the lock for the first time.
 
@@ -3295,13 +3297,15 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 }
 
 void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2) {
+
+  assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
+  assert_different_registers(oop, box, temp1, temp2);
+
   Register displacedHeader = temp1;
-  Register currentHeader = temp2;
-  Register temp = temp1;
+  Register currentHeader   = temp2;
+  Register temp            = temp1;
 
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-
-  assert_different_registers(temp1, temp2, oop, box);
 
   Label done, object_has_monitor, not_recursive;
 
@@ -3326,18 +3330,14 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
     // Set NE to indicate 'failure' -> take slow-path
     z_ltgr(oop, oop);
     z_bru(done);
-  } else if (LockingMode == LM_LEGACY) {
+  } else {
+    assert(LockingMode == LM_LEGACY, "must be");
     // Check if it is still a lightweight lock, this is true if we see
     // the stack address of the basicLock in the markWord of the object
     // copy box to currentHeader such that csg does not kill it.
     z_lgr(currentHeader, box);
     z_csg(currentHeader, displacedHeader, hdr_offset, oop);
     z_bru(done); // csg sets CR as desired.
-  } else {
-    assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-
-    lightweight_unlock(oop, currentHeader, displacedHeader, done);
-    z_bru(done);
   }
 
   // In case of LM_LIGHTWEIGHT, we may reach here with (temp & ObjectMonitor::ANONYMOUS_OWNER) != 0.
@@ -5705,103 +5705,426 @@ SkipIfEqual::~SkipIfEqual() {
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object.
-// Falls through upon success.
-//
 //  - obj: the object to be locked, contents preserved.
-//  - hdr: the header, already loaded from obj, contents destroyed.
+//  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register temp, Label& slow_case) {
+void MacroAssembler::lightweight_lock(Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, temp);
+  assert_different_registers(obj, temp1, temp2);
+
+  Label push;
+  const Register top           = temp1;
+  const Register mark          = temp2;
+  const int mark_offset        = oopDesc::mark_offset_in_bytes();
+  const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
+
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  z_lg(mark, Address(obj, mark_offset));
+
 
   // First we need to check if the lock-stack has room for pushing the object reference.
-  z_lgf(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
+  z_lgf(top, Address(Z_thread, ls_top_offset));
 
-  compareU32_and_branch(temp, (unsigned)LockStack::end_offset()-1, bcondHigh, slow_case);
+  compareU32_and_branch(top, (unsigned)LockStack::end_offset(), bcondNotLow, slow);
 
-  // attempting a lightweight_lock
-  // Load (object->mark() | 1) into hdr
-  z_oill(hdr, markWord::unlocked_value);
+  // The underflow check is elided. The recursive check will always fail
+  // when the lock stack is empty because of the _bad_oop_sentinel field.
 
-  z_lgr(temp, hdr);
+  // Check for recursion:
+  z_aghi(top, -oopSize);
+  z_cg(obj, Address(Z_thread, top));
+  z_bre(push);
 
-  // Clear lock-bits from hdr (locked state)
-  z_xilf(temp, markWord::unlocked_value);
+  // Check header for monitor (0b10).
+  z_tmll(mark, markWord::monitor_value);
+  branch_optimized(bcondNotAllZero, slow);
 
-  z_csg(hdr, temp, oopDesc::mark_offset_in_bytes(), obj);
-  branch_optimized(Assembler::bcondNotEqual, slow_case);
+  { // Try to lock. Transition lock bits 0b01 => 0b00
+    const Register locked_obj = top;
+    z_oill(mark, markWord::unlocked_value);
+    z_lgr(locked_obj, mark);
+    // Clear lock-bits from locked_obj (locked state)
+    z_xilf(locked_obj, markWord::unlocked_value);
+    z_csg(mark, locked_obj, mark_offset, obj);
+    branch_optimized(Assembler::bcondNotEqual, slow);
+  }
+
+  bind(push);
 
   // After successful lock, push object on lock-stack
-  z_lgf(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-  z_stg(obj, Address(Z_thread, temp));
-  z_ahi(temp, oopSize);
-  z_st(temp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-
-  // as locking was successful, set CC to EQ
-  z_cr(temp, temp);
+  z_lgf(top, Address(Z_thread, ls_top_offset));
+  z_stg(obj, Address(Z_thread, top));
+  z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
 }
 
 // Implements lightweight-unlocking.
-// Branches to slow upon failure.
-// Falls through upon success.
-//
 // - obj: the object to be unlocked
-// - hdr: the (pre-loaded) header of the object, will be destroyed
+// - temp1, temp2: temporary registers, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp);
+  assert_different_registers(obj, temp1, temp2);
+
+  Label unlocked, push_and_slow;
+  const Register mark          = temp1;
+  const Register top           = temp2;
+  const int mark_offset        = oopDesc::mark_offset_in_bytes();
+  const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
 
 #ifdef ASSERT
-  {
-    // Check that hdr is lightweight-locked.
-    Label hdr_ok;
-    z_lgr(tmp, hdr);
-    z_nill(tmp, markWord::lock_mask_in_place);
-    z_bre(hdr_ok);
-    stop("Header is not lightweight-locked");
-    bind(hdr_ok);
-  }
   {
     // The following checks rely on the fact that LockStack is only ever modified by
     // its owning thread, even if the lock got inflated concurrently; removal of LockStack
     // entries after inflation will happen delayed in that case.
 
     // Check for lock-stack underflow.
-    Label stack_ok;
-    z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-    compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondHigh, stack_ok);
+    NearLabel stack_ok;
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+    compareU32_and_branch(top, (unsigned)LockStack::start_offset(), bcondNotLow, stack_ok);
     stop("Lock-stack underflow");
     bind(stack_ok);
   }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    z_aghi(tmp, -oopSize);
-    z_lg(tmp, Address(Z_thread, tmp));
-    compare64_and_branch(tmp, obj, Assembler::bcondEqual, tos_ok);
-    stop("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
-  }
 #endif // ASSERT
 
-  z_lgr(tmp, hdr);
-  z_oill(tmp, markWord::unlocked_value);
-  z_csg(hdr, tmp, oopDesc::mark_offset_in_bytes(), obj);
-  branch_optimized(Assembler::bcondNotEqual, slow);
+  // Check if obj is top of lock-stack.
+  z_lgf(top, Address(Z_thread, ls_top_offset));
+  z_aghi(top, -oopSize);
+  z_cg(obj, Address(Z_thread, top));
+  branch_optimized(bcondNotEqual, slow);
 
-  // After successful unlock, pop object from lock-stack
+  // pop object from lock-stack
 #ifdef ASSERT
-  z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-  z_aghi(tmp, -oopSize);
-  z_agr(tmp, Z_thread);
-  z_xc(0, oopSize-1, tmp, 0, tmp);  // wipe out lock-stack entry
+  const Register temp_top = temp1; // mark is not yet loaded, but be careful
+  z_agrk(temp_top, top, Z_thread);
+  z_xc(0, oopSize-1, temp_top, 0, temp_top);  // wipe out lock-stack entry
+#endif // ASSERT
+  z_alsi(in_bytes(ls_top_offset), Z_thread, -oopSize);  // pop object
+
+  // The underflow check is elided. The recursive check will always fail
+  // when the lock stack is empty because of the _bad_oop_sentinel field.
+
+  // Check if recursive. (this is a check for the 2nd object on the stack)
+  z_aghi(top, -oopSize);
+  z_cg(obj, Address(Z_thread, top));
+  branch_optimized(bcondEqual, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  z_lg(mark, Address(obj, mark_offset));
+  z_tmll(mark, markWord::monitor_value);
+  z_brnaz(push_and_slow);
+
+#ifdef ASSERT
+  // Check header not unlocked (0b01).
+  NearLabel not_unlocked;
+  z_tmll(mark, markWord::unlocked_value);
+  z_braz(not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
+#endif // ASSERT
+
+  { // Try to unlock. Transition lock bits 0b00 => 0b01
+    Register unlocked_obj = top;
+    z_lgr(unlocked_obj, mark);
+    z_oill(unlocked_obj, markWord::unlocked_value);
+    z_csg(mark, unlocked_obj, mark_offset, obj);
+    branch_optimized(Assembler::bcondEqual, unlocked);
+  }
+
+  bind(push_and_slow);
+
+  // Restore lock-stack and handle the unlock in runtime.
+  z_lgf(top, Address(Z_thread, ls_top_offset));
+  DEBUG_ONLY(z_stg(obj, Address(Z_thread, top));)
+  z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
+  // set CC to NE
+  z_ltgr(obj, obj); // object shouldn't be null at this point
+  branch_optimized(bcondAlways, slow);
+
+  bind(unlocked);
+}
+
+void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, tmp1, tmp2);
+
+  // Handle inflated monitor.
+  NearLabel inflated;
+  // Finish fast lock successfully. MUST reach to with flag == NE
+  NearLabel locked;
+  // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
+  NearLabel slow_path;
+
+  if (DiagnoseSyncOnValueBasedClasses != 0) {
+    load_klass(tmp1, obj);
+    z_l(tmp1, Address(tmp1, Klass::access_flags_offset()));
+    assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
+    z_nilh(tmp1, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_brne(slow_path);
+  }
+
+  const Register mark          = tmp1;
+  const int mark_offset        = oopDesc::mark_offset_in_bytes();
+  const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
+
+  BLOCK_COMMENT("compiler_fast_lightweight_locking {");
+  { // lightweight locking
+
+    // Push lock to the lock stack and finish successfully. MUST reach to with flag == EQ
+    NearLabel push;
+
+    const Register top = tmp2;
+
+    // Check if lock-stack is full.
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+    compareU32_and_branch(top, (unsigned) LockStack::end_offset() - 1, bcondHigh, slow_path);
+
+    // The underflow check is elided. The recursive check will always fail
+    // when the lock stack is empty because of the _bad_oop_sentinel field.
+
+    // Check if recursive.
+    z_aghi(top, -oopSize);
+    z_cg(obj, Address(Z_thread, top));
+    z_bre(push);
+
+    // Check for monitor (0b10)
+    z_lg(mark, Address(obj, mark_offset));
+    z_tmll(mark, markWord::monitor_value);
+    z_brnaz(inflated);
+
+    // not inflated
+
+    { // Try to lock. Transition lock bits 0b01 => 0b00
+      assert(mark_offset == 0, "required to avoid a lea");
+      const Register locked_obj = top;
+      z_oill(mark, markWord::unlocked_value);
+      z_lgr(locked_obj, mark);
+      // Clear lock-bits from locked_obj (locked state)
+      z_xilf(locked_obj, markWord::unlocked_value);
+      z_csg(mark, locked_obj, mark_offset, obj);
+      branch_optimized(Assembler::bcondNotEqual, slow_path);
+    }
+
+    bind(push);
+
+    // After successful lock, push object on lock-stack.
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+    z_stg(obj, Address(Z_thread, top));
+    z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
+
+    z_cgr(obj, obj); // set the CC to EQ, as it could be changed by alsi
+    z_bru(locked);
+  }
+  BLOCK_COMMENT("} compiler_fast_lightweight_locking");
+
+  BLOCK_COMMENT("handle_inflated_monitor_lightweight_locking {");
+  { // Handle inflated monitor.
+    bind(inflated);
+
+    // mark contains the tagged ObjectMonitor*.
+    const Register tagged_monitor = mark;
+    const Register zero           = tmp2;
+
+    // Try to CAS m->owner from null to current thread.
+    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+    // Otherwise, register zero is filled with the current owner.
+    z_lghi(zero, 0);
+    z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), tagged_monitor);
+    z_bre(locked);
+
+    // Check if recursive.
+    z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
+    z_brne(slow_path);
+
+    // Recursive
+    z_agsi(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
+    z_cgr(zero, zero);
+    // z_bru(locked);
+    // Uncomment above line in the future, for now jump address is right next to us.
+  }
+  BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
+
+  bind(locked);
+
+#ifdef ASSERT
+  // Check that locked label is reached with flag == EQ.
+  NearLabel flag_correct;
+  z_bre(flag_correct);
+  stop("CC is not set to EQ, it should be - lock");
+#endif // ASSERT
+
+  bind(slow_path);
+
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  z_brne(flag_correct);
+  stop("CC is not set to NE, it should be - lock");
+  bind(flag_correct);
+#endif // ASSERT
+
+  // C2 uses the value of flag (NE vs EQ) to determine the continuation.
+}
+
+void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2) {
+  assert_different_registers(obj, tmp1, tmp2);
+
+  // Handle inflated monitor.
+  NearLabel inflated, inflated_load_monitor;
+  // Finish fast unlock successfully. MUST reach to with flag == EQ.
+  NearLabel unlocked;
+  // Finish fast unlock unsuccessfully. MUST branch to with flag == NE.
+  NearLabel slow_path;
+
+  const Register mark          = tmp1;
+  const Register top           = tmp2;
+  const int mark_offset        = oopDesc::mark_offset_in_bytes();
+  const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
+
+  BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
+  { // Lightweight Unlock
+
+    // Check if obj is top of lock-stack.
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+
+    z_aghi(top, -oopSize);
+    z_cg(obj, Address(Z_thread, top));
+    branch_optimized(bcondNotEqual, inflated_load_monitor);
+
+    // Pop lock-stack.
+#ifdef ASSERT
+    const Register temp_top = tmp1; // let's not kill top here, we can use for recursive check
+    z_agrk(temp_top, top, Z_thread);
+    z_xc(0, oopSize-1, temp_top, 0, temp_top);  // wipe out lock-stack entry
 #endif
-  z_alsi(in_bytes(JavaThread::lock_stack_top_offset()), Z_thread, -oopSize);  // pop object
-  z_cr(tmp, tmp); // set CC to EQ
+    z_alsi(in_bytes(ls_top_offset), Z_thread, -oopSize);  // pop object
+
+    // The underflow check is elided. The recursive check will always fail
+    // when the lock stack is empty because of the _bad_oop_sentinel field.
+
+    // Check if recursive.
+    z_aghi(top, -oopSize);
+    z_cg(obj, Address(Z_thread, top));
+    z_bre(unlocked);
+
+    // Not recursive
+
+    // Check for monitor (0b10).
+    z_lg(mark, Address(obj, mark_offset));
+    z_tmll(mark, markWord::monitor_value);
+    z_brnaz(inflated);
+
+#ifdef ASSERT
+    // Check header not unlocked (0b01).
+    NearLabel not_unlocked;
+    z_tmll(mark, markWord::unlocked_value);
+    z_braz(not_unlocked);
+    stop("lightweight_unlock already unlocked");
+    bind(not_unlocked);
+#endif // ASSERT
+
+    { // Try to unlock. Transition lock bits 0b00 => 0b01
+      Register unlocked_obj = top;
+      z_lgr(unlocked_obj, mark);
+      z_oill(unlocked_obj, markWord::unlocked_value);
+      z_csg(mark, unlocked_obj, mark_offset, obj);
+      branch_optimized(Assembler::bcondEqual, unlocked);
+    }
+
+    // Restore lock-stack and handle the unlock in runtime.
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+    DEBUG_ONLY(z_stg(obj, Address(Z_thread, top));)
+    z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
+    // set CC to NE
+    z_ltgr(obj, obj); // object is not null here
+    z_bru(slow_path);
+  }
+  BLOCK_COMMENT("} compiler_fast_lightweight_unlock");
+
+  { // Handle inflated monitor.
+
+    bind(inflated_load_monitor);
+
+    z_lg(mark, Address(obj, mark_offset));
+
+#ifdef ASSERT
+    z_tmll(mark, markWord::monitor_value);
+    z_brnaz(inflated);
+    stop("Fast Unlock not monitor");
+#endif // ASSERT
+
+    bind(inflated);
+
+#ifdef ASSERT
+    NearLabel check_done, loop;
+    z_lgf(top, Address(Z_thread, ls_top_offset));
+    bind(loop);
+    z_aghi(top, -oopSize);
+    compareU32_and_branch(top, in_bytes(JavaThread::lock_stack_base_offset()),
+                          bcondLow, check_done);
+    z_cg(obj, Address(Z_thread, top));
+    z_brne(loop);
+    stop("Fast Unlock lock on stack");
+    bind(check_done);
+#endif // ASSERT
+
+    // mark contains the tagged ObjectMonitor*.
+    const Register monitor = mark;
+
+    NearLabel not_recursive;
+    const Register recursions = tmp2;
+
+    // Check if recursive.
+    load_and_test_long(recursions, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+    z_bre(not_recursive); // if 0 then jump, it's not recursive locking
+
+    // Recursive unlock
+    z_agsi(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
+    z_cgr(monitor, monitor); // set the CC to EQUAL
+    z_bru(unlocked);
+
+    bind(not_recursive);
+
+    NearLabel not_ok;
+    // Check if the entry lists are empty.
+    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+    z_brne(not_ok);
+    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+    z_brne(not_ok);
+
+    z_release();
+    z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+
+    z_bru(unlocked); // CC = EQ here
+
+    bind(not_ok);
+
+    // The owner may be anonymous, and we removed the last obj entry in
+    // the lock-stack. This loses the information about the owner.
+    // Write the thread to the owner field so the runtime knows the owner.
+    z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+    z_bru(slow_path); // CC = NE here
+  }
+
+  bind(unlocked);
+
+#ifdef ASSERT
+  // Check that unlocked label is reached with flag == EQ.
+  NearLabel flag_correct;
+  z_bre(flag_correct);
+  stop("CC is not set to EQ, it should be - unlock");
+#endif // ASSERT
+
+  bind(slow_path);
+
+#ifdef ASSERT
+  // Check that slow_path label is reached with flag == NE.
+  z_brne(flag_correct);
+  stop("CC is not set to NE, it should be - unlock");
+  bind(flag_correct);
+#endif // ASSERT
+
+  // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
 void MacroAssembler::pop_count_int(Register r_dst, Register r_src, Register r_tmp) {

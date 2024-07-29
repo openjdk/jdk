@@ -358,7 +358,7 @@ public class SwitchBootstraps {
         private final MethodHandles.Lookup lookup;
         private final EnumDesc<?>[] enumDescs;
         @Stable
-        private Object[] resolvedEnum;
+        private final Object[] resolvedEnum;
 
         public ResolvedEnumLabels(MethodHandles.Lookup lookup, EnumDesc<?>[] enumDescs) {
             this.lookup = lookup;
@@ -422,7 +422,7 @@ public class SwitchBootstraps {
             cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
-            cb.if_nonnull(nonNullLabel);
+            cb.ifnonnull(nonNullLabel);
             cb.iconst_m1();
             cb.ireturn();
             cb.labelBinding(nonNullLabel);

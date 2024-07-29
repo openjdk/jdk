@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
@@ -43,7 +42,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 public final class BufferedCodeBuilder
-        implements TerminalCodeBuilder, LabelContext {
+        implements TerminalCodeBuilder {
     private final SplitConstantPool constantPool;
     private final ClassFileImpl context;
     private final List<CodeElement> elements = new ArrayList<>();
@@ -68,11 +67,6 @@ public final class BufferedCodeBuilder
             this.maxLocals = Math.max(this.maxLocals, original.maxLocals());
 
         elements.add(startLabel);
-    }
-
-    @Override
-    public Optional<CodeModel> original() {
-        return Optional.ofNullable(original);
     }
 
     @Override
@@ -201,12 +195,13 @@ public final class BufferedCodeBuilder
             builder.withCode(new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    forEachElement(cb);
+                    forEach(cb);
                 }
             });
         }
 
-        public void writeTo(BufWriter buf) {
+        @Override
+        public void writeTo(BufWriterImpl buf) {
             DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, context, null).writeTo(buf);
         }
 

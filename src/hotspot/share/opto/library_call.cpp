@@ -2138,12 +2138,12 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_numberOfTrailingZeros_l:  n = new CountTrailingZerosLNode(arg);  break;
   case vmIntrinsics::_bitCount_i:               n = new PopCountINode(          arg);  break;
   case vmIntrinsics::_bitCount_l:               n = new PopCountLNode(          arg);  break;
-  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
-  case vmIntrinsics::_reverse_i:                n = new ReverseINode(0, arg); break;
-  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(0, arg); break;
+  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(nullptr, arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(nullptr, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -5489,42 +5489,72 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }
 
+// Common checks for array sorting intrinsics arguments.
+// Returns `true` if checks passed.
+bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt) {
+  // check address of the class
+  if (elementType == nullptr || elementType->is_top()) {
+    return false;  // dead path
+  }
+  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
+  if (elem_klass == nullptr) {
+    return false;  // dead path
+  }
+  // java_mirror_type() returns non-null for compile-time Class constants only
+  ciType* elem_type = elem_klass->java_mirror_type();
+  if (elem_type == nullptr) {
+    return false;
+  }
+  bt = elem_type->basic_type();
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
+  // check address of the array
+  if (obj == nullptr || obj->is_top()) {
+    return false;  // dead path
+  }
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM) {
+    return false; // failed input validation
+  }
+  return true;
+}
+
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
+  address stubAddr = StubRoutines::select_array_partition_function();
+  if (stubAddr == nullptr) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  assert(callee()->signature()->size() == 9, "arrayPartition has 8 parameters (one long)");
 
-  Node* elementType     = null_check(argument(0));
+  // no receiver because it is a static method
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
-  Node* offset          = argument(2);
+  Node* offset          = argument(2); // long
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
   Node* indexPivot1     = argument(6);
   Node* indexPivot2     = argument(7);
+  // PartitionOperation:  argument(8) is ignored
 
   Node* pivotIndices = nullptr;
+  BasicType bt = T_ILLEGAL;
 
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
+    return false;
+  }
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped()) {
+    return true;
+  }
   // Set the original stack and the reexecute bit for the interpreter to reexecute
   // the bytecode that invokes DualPivotQuicksort.partition() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-    ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-    BasicType bt = elem_type->basic_type();
-    // Disable the intrinsic if the CPU does not support SIMD sort
-    if (!Matcher::supports_simd_sort(bt)) {
-      return false;
-    }
-    address stubAddr = nullptr;
-    stubAddr = StubRoutines::select_array_partition_function();
-    // stub not loaded
-    if (stubAddr == nullptr) {
-      return false;
-    }
-    // get the address of the array
-    const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-    if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-      return false; // failed input validation
-    }
     Node* obj_adr = make_unsafe_address(obj, offset);
 
     // create the pivotIndices array of type int and size = 2
@@ -5557,31 +5587,29 @@ bool LibraryCallKit::inline_array_partition() {
 
 //------------------------------inline_array_sort-----------------------
 bool LibraryCallKit::inline_array_sort() {
+  address stubAddr = StubRoutines::select_arraysort_function();
+  if (stubAddr == nullptr) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  assert(callee()->signature()->size() == 7, "arraySort has 6 parameters (one long)");
 
-  Node* elementType     = null_check(argument(0));
+  // no receiver because it is a static method
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
-  Node* offset          = argument(2);
+  Node* offset          = argument(2); // long
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
+  // SortOperation:       argument(6) is ignored
 
-  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  BasicType bt = elem_type->basic_type();
-  // Disable the intrinsic if the CPU does not support SIMD sort
-  if (!Matcher::supports_simd_sort(bt)) {
+  BasicType bt = T_ILLEGAL;
+
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
     return false;
   }
-  address stubAddr = nullptr;
-  stubAddr = StubRoutines::select_arraysort_function();
-  //stub not loaded
-  if (stubAddr == nullptr) {
-    return false;
-  }
-
-  // get address of the array
-  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-    return false; // failed input validation
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped()) {
+    return true;
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
 
@@ -7580,8 +7608,6 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
   return true;
 }
 

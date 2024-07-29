@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,14 +35,14 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models a method.  The contents of the method can be traversed via
- * a streaming view (e.g., {@link #elements()}), or via random access (e.g.,
+ * a streaming view, or via random access (e.g.,
  * {@link #flags()}), or by freely mixing the two.
  *
  * @since 22
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface MethodModel
-        extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
+        extends CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {
 
     /** {@return the access flags} */
