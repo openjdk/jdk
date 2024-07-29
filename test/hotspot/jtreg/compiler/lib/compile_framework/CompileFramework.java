@@ -59,12 +59,19 @@ public class CompileFramework {
         return builder.toString();
     }
 
+    private static void println(String s) {
+        if (VERBOSE) {
+            System.out.println(s);
+        }
+    }
+
     public void compile() {
         if (classLoader != null) {
             throw new RuntimeException("Cannot compile twice!");
         }
 
-        System.out.println(sourceCodesAsString());
+        println("------------------ CompileFramework: SourceCode -------------------");
+        println(sourceCodesAsString());
 
         List<SourceCode> javaSources = new ArrayList<SourceCode>();
         List<SourceCode> jasmSources = new ArrayList<SourceCode>();
@@ -76,6 +83,10 @@ public class CompileFramework {
         }
 
         String sourceDir = getSourceDirName();
+
+        println("------------------ CompileFramework: Compilation ------------------");
+        println("Source directory: " + sourceDir);
+
         compileJasmSources(sourceDir, jasmSources);
         compileJavaSources(sourceDir, javaSources);
         setUpClassLoader();
@@ -89,20 +100,19 @@ public class CompileFramework {
         } catch (Exception e) {
             throw new InternalCompileFrameworkException("Could not get ProcessID", e);
         }
-        System.out.println("Source directory: " + sourceDir);
         return sourceDir;
     }
 
     private static void compileJasmSources(String sourceDir, List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
-            System.out.println("No jasm sources to compile.");
+            println("No jasm sources to compile.");
             return;
         }
-        System.out.println("Compiling jasm sources: " + jasmSources.size());
+        println("Compiling jasm sources: " + jasmSources.size());
 
         List<String> jasmFileNames = writeSourcesToFile(sourceDir, jasmSources);
         compileJasmFiles(jasmFileNames);
-        System.out.println("Jasm sources compiled.");
+        println("Jasm sources compiled.");
     }
 
     private static void compileJasmFiles(List<String> fileNames) {
@@ -129,7 +139,6 @@ public class CompileFramework {
 
     private static String getAsmToolsPath() {
         for (String path : getClassPaths()) {
-            System.out.println("jtreg.jar?: " + path);
             if (path.endsWith("jtreg.jar")) {
                 File jtreg = new File(path);
                 File dir = jtreg.getAbsoluteFile().getParentFile();
@@ -145,15 +154,15 @@ public class CompileFramework {
 
     private static void compileJavaSources(String sourceDir, List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
-            System.out.println("No java sources to compile.");
+            println("No java sources to compile.");
             return;
         }
-        System.out.println("Compiling Java sources: " + javaSources.size());
+        println("Compiling Java sources: " + javaSources.size());
 
         List<String> javaFileNames = writeSourcesToFile(sourceDir, javaSources);
         compileJavaFiles(javaFileNames);
 
-        System.out.println("Java sources compiled.");
+        println("Java sources compiled.");
     }
 
     private static void compileJavaFiles(List<String> javaFileNames) {
@@ -183,7 +192,7 @@ public class CompileFramework {
     }
 
     private static void writeCodeToFile(String code, String fileName) {
-        System.out.println("File: " + fileName);
+        println("File: " + fileName);
         File file = new File(fileName);
         File dir = file.getAbsoluteFile().getParentFile();
         if (!dir.exists()){
@@ -197,7 +206,7 @@ public class CompileFramework {
     }
 
     private static void executeCompileCommand(List<String> command) {
-        System.out.println("Compile command: " + String.join(" ", command));
+        println("Compile command: " + String.join(" ", command));
 
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.redirectErrorStream(true);
