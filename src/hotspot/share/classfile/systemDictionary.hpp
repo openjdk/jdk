@@ -103,7 +103,7 @@ class SystemDictionary : AllStatic {
   }
 
   static InstanceKlass* resolve_with_circularity_detection(Symbol* class_name,
-                                                           Symbol* super_name,
+                                                           Symbol* next_name,
                                                            Handle class_loader,
                                                            Handle protection_domain,
                                                            bool is_superclass,

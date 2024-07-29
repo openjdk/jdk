@@ -424,7 +424,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
   }
 #endif // INCLUDE_CDS
 
-  // If klass is already loaded, just return the superclass or superinterface.
+  // If class_name is already loaded, just return the superclass or superinterface.
   // Make sure there's a placeholder for the class_name before resolving.
   // This is used as a claim that this thread is currently loading superclass/classloader
   // and for ClassCircularity checks.
@@ -455,7 +455,7 @@ InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* clas
     }
 
     if (!throw_circularity_error) {
-      // Be careful not to exit resolve_super without removing this placeholder.
+      // Be careful not to exit resolve_with_circularity_detection without removing this placeholder.
       PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
                                                                   loader_data,
                                                                   PlaceholderTable::DETECT_CIRCULARITY,
@@ -506,7 +506,7 @@ static void handle_parallel_super_load(Symbol* name,
   // optimization anyway.
   // The only thing that takes different action for is_superclass is dumping the static archive, which doesn't
   // reach this path.
-  assert (!CDSConfig::is_dumping_static_archive(), "should not be parallel loading static archive");
+  assert (!CDSConfig::is_dumping_static_archive(), "should not be dumping static archive");
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
