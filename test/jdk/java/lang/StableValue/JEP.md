@@ -21,58 +21,36 @@ This might be the subject of a future JEP.
 
 ## Motivation
 
-Some internal JDK classes are relying heavily on the annotation `jdk.internal.vm.annotation.@Stable`
-to mark scalar and array fields whose values or elements will change *at most once*, thereby providing
-crucial performance, energy efficiency, and flexibility benefits.
+Most Java developers have heard the advice "prefer immutability" (Effective Java, Third Edition, Item 17, by
+Joshua Bloch). Immutability confers many advantages, as immutable objects can be only in one state, and can
+therefore be freely shared across multiple threads.
 
-Unfortunately, the powerful `@Stable` annotation cannot be used directly by client code thereby severely
-restricting its applicability. The Stable Values & Collections API rectifies this imbalance
-between internal and client code by providing safe wrappers around the `@Stable` annotation. Hence, all _the
-important benefits of `@Stable` are now made available to regular Java developers and third-party
-library developers_.
+Java's main tool for managing immutability is `final` fields (and more recently, `record` classes). Unfortunately,
+`final` fields come with restrictions. Instance `final` fields must be set by the end of the constructor; `static
+final` fields must be set during class initialization. Moreover, the order in which `final` fields are initialized
+is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) in
+which the fields are declared. This order is then made explicit in the resulting class file.
 
-One of the benefits with `@Stable` is it makes a marked field eligible for [constant-folding](https://en.wikipedia.org/wiki/Constant_folding).
-Publicly exposing `@Stable` without a safe API, like the Stable Values & Collections API, would have
-rendered it unsafe as further updating a `@Stable` field after its initial update will result
-in undefined behavior, as the JIT compiler might have *already* constant-folded the (now overwritten)
-field value.
+As such, the initialization of a `final` field is fixed in time; it cannot be arbitrarily moved forward. In other
+words, developers are forced to choose between finality and all its benefits, and flexibility over the timing of
+initialization. Developers have devised several strategies to ameliorate this imbalance, but none are ideal.
 
-### Existing solutions
+For instance, initialization of `static` and `final` fields can be broken up by leveraging the laziness already
+built into class loading. Often referred to as the
+[*class-holder idiom*](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), this technique moves
+lazily initialized state into a helper class which is then loaded on-demand, so its initialization is only
+performed when the data is actually needed, rather than unconditionally initializing constants when a class is
+first referenced:
 
-Most Java developers have heard the advice "prefer immutability" (Effective
-Java, Third Edition, Item 17, by Joshua Bloch). Immutability confers many advantages including:
-
-* an immutable object can only be in one state
-* the invariants of an immutable object can be enforced by its constructor
-* immutable objects can be freely shared across threads
-* immutability enables all manner of runtime optimizations
-
-Java's main tool for managing immutability is `final` fields (and more recently, `record` classes).
-Unfortunately, `final` fields come with restrictions. Final instance fields must be set by the end of
-the constructor, and `static final` fields during class initialization. Moreover, the order in which
-`final` field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1)
-and is then made explicit in the resulting class file. As such, the initialization of a `final`
-field is fixed in time; it cannot be arbitrarily moved forward. In other words, developers
-cannot cause specific constants to be initialized after the class or object is initialized.
-This means that developers are forced to choose between finality and all its
-benefits, and flexibility over the timing of initialization. Developers have
-devised several strategies to ameliorate this imbalance, but none are
-ideal.
-
-For instance, monolithic class initializers can be broken up by leveraging the
-laziness already built into class loading. Often referred to as the
-[_class-holder idiom_](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom),
-this technique moves lazily initialized state into a helper class which is then
-loaded on-demand, so its initialization is only performed when the data is
-actually needed, rather than unconditionally initializing constants when a class
-is first referenced:
 ```
 // ordinary static initialization
 private static final Logger LOGGER = Logger.getLogger("com.company.Foo");
 ...
 LOGGER.log(Level.DEBUG, ...);
 ```
-we can defer initialization until we actually need it:
+
+we can defer initialization until we actually need it, like so:
+
 ```
 // Initialization-on-demand holder idiom
 Logger logger() {
@@ -84,29 +62,20 @@ Logger logger() {
 ...
 LOGGER.log(Level.DEBUG, ...);
 ```
-The code above ensures that the `Logger` object is created only when actually
-required. The (possibly expensive) initializer for the logger lives in the
-nested `Holder` class, which will only be initialized when the `logger` method
-accesses the `LOGGER` field. While this idiom works well, its reliance on the
-class loading process comes with significant drawbacks. First, each constant
-whose computation needs to be deferred generally requires its own holder
-class, thus introducing a significant static footprint cost. Second, this idiom
-is only really applicable if the field initialization is suitably isolated, not
-relying on any other parts of the object state.
 
-It should be noted that even though eventually outputting a message is slow compared to
-obtaining the `Logger` instance itself, the `LOGGER::log`method starts with checking if
-the selected `Level` is enabled or not. This latter check is a relatively fast operation
-and so, in the case of disabled loggers, the `Logger` instance retrieval performance is
-important. For example, logger output for `Level.DEBUG` is almost always disabled in production
-environments.
+The code above ensures that the `Logger` object is created only when actually required. The (possibly expensive)
+initializer for the logger lives in the nested `Holder` class, which will only be initialized when the `logger`
+method accesses the `LOGGER` field. While this idiom works well, its reliance on the class loading process comes
+with significant drawbacks. First, each constant whose computation needs to be deferred generally requires its own
+holder class, thus introducing a significant static footprint cost. Second, this idiom is only really applicable
+if the field initialization is suitably isolated, not relying on any other parts of the object state.
 
-Alternatively, the [_double-checked locking idiom_](https://en.wikipedia.org/wiki/Double-checked_locking), can also be used
-for deferring the evaluation of field initializers. The idea is to optimistically
-check if the field's value is non-null and if so, use that value directly; but
-if the value observed is null, then the field must be initialized, which, to be
-safe under multi-threaded access, requires acquiring a lock to ensure
+Alternatively, the [*double-checked locking idiom*](https://en.wikipedia.org/wiki/Double-checked_locking), can be
+used for deferring the evaluation of instance field initializers. The idea is to optimistically check if the
+field's value is non-null and if so, use that value directly; but if the value observed is null, then the field
+must be initialized, which, to be safe under multi-threaded access, requires acquiring a lock to ensure
 correctness:
+
 ```
 // Double-checked locking idiom
 class Foo {
@@ -127,86 +96,49 @@ class Foo {
     }
 }
 ```
-The double-checked locking idiom is brittle and easy to get
-subtly wrong (see _Java Concurrency in Practice_, 16.2.4, by Brian Goetz) For example, a common error
-is forgetting to declare the field `volatile` resulting in the risk of observing incomplete objects.
 
-While the double-checked locking idiom can be used for both class and instance
-variables, its usage requires that the field subject to initialization is marked
-as non-final. This is not ideal for several reasons:
+The double-checked locking idiom is brittle and easy to get subtly wrong (see *Java Concurrency in Practice*,
+16.2.4, by Brian Goetz). For example, a common error is forgetting to declare the field `volatile` resulting in
+the risk of observing incomplete objects. A more fundamental problem with the double-checked locking idiom is that
+access to the `logger` field cannot be adequately optimized by just-in-time compilers, as they cannot reliably
+assume that the field value will, in fact, change only once.
 
-* it would be possible for code to accidentally modify the field value, thus violating
-the immutability assumption of the enclosing class.
-* access to the field cannot be adequately optimized by just-in-time compilers, as they
-cannot reliably assume that the field value will, in fact, never change. An example of
-similar optimizations in existing Java implementations is when a `MethodHandle` is held
-in a `static final` field, allowing the runtime to generate machine code that is competitive
-with direct invocation of the corresponding method.
-
-Furthermore, the idiom shown above needs to be modified to properly handle `null` values, for example
-using a [sentinel](https://en.wikipedia.org/wiki/Sentinel_value) value.
-
-The situation is even worse when clients need to operate on a _collection_ of immutable values.
-
-An example of this is an array that holds HTML pages that correspond to an error code in the range [0, 7]
-where each element is pulled in from the file system on-demand, once actually used:
+Internal JDK classes can address some of the shortcomings of the approaches described above by using the internal
+`jdk.internal.vm.annotation.@Stable` annotation. This annotation is used to mark scalar and array fields whose
+values or elements will change *at most once*, thereby providing crucial performance, energy efficiency, and
+flexibility benefits. With the help of `@Stable` the above example can be rewritten as follows:
 
 ```
-class ErrorMessages {
+// Double-checked locking idiom
+class Foo {
 
-    private static final int SIZE = 8;
+    @Stable
+    private Logger logger;
 
-    // 1. Declare an array of error pages to serve up
-    private static final String[] MESSAGES = new String[SIZE];
-
-    // 2. Define a function that is to be called the first
-    //    time a particular message number is referenced
-    private static String readFromFile(int messageNumber) {
-        try {
-            return Files.readString(Path.of("message-" + messageNumber + ".html"));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+    public Logger logger() {
+        if (logger == null) {
+            logger = Logger.getLogger("com.company.Foo");
         }
+        return logger;
     }
-
-    static synchronized String message(int messageNumber) {
-        // 3. Access the memoized array element under synchronization
-        //    and compute-and-store if absent.
-        String page = MESSAGES[messageNumber];
-        if (page == null) {
-            page = readFromFile(messageNumber);
-            MESSAGES[messageNumber] = page;
-        }
-        return page;
-    }
-
- }
-```
-We can now retrieve an error page like so:
-```
-String errorPage = ErrorMessages.errorPage(2);
-
-// <!DOCTYPE html>
-// <html lang="en">
-//   <head><meta charset="utf-8"></head>
-//   <body>Payment was denied: Insufficient funds.</body>
-// </html>
+}
 ```
 
-Unfortunately, this approach provides a plethora of challenges. First, retrieving the values
-from a static array is slow, as said values cannot be constant-folded. Even worse, access to the
-array is guarded by synchronization that is not only slow but will block access to the array for
-all elements whenever one of the elements is under computation. Furthermore, the class holder idiom
-(see above) is undoubtedly insufficient in this case, as the number of required holder classes is
-*statically unbounded* - it depends on the value of the parameter `SIZE` which may change in future
-variants of the code.
+Note how the `logger` field no longer needs to be marked as `volatile`. And, since the JVM knows that `logger` can
+change at most once, subsequent accesses to the `logger` field can be
+[constant-folded](https://en.wikipedia.org/wiki/Constant_folding) away. Alas, the powerful `@Stable` is
+fundamentally unsafe: as the attentive reader might have noticed, the above code is correct only as long as
+`getLogger` returns, for any given string argument passed to it, a `Logger` object with the *same identity*.
+This is crucial to ensure that the `logger` field is mutated only once: spurious racy updates to `logger` can be
+safely ignored, as they don't affect the value stored in that field.
 
-What we are missing -- in all cases -- is a way to *promise* that a constant will be initialized
-by the time it is used, with a value that is computed at most once. Such a mechanism would give
-the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties
-(static footprint, loss of runtime optimizations) that plague the workarounds shown above. Moreover, such
-a mechanism should gracefully scale to handle collections of constant values, while retaining efficient
-computer resource management.
+What we are missing -- in all cases -- is a *safe* way to *promise* that a constant will be initialized by the
+time it is used, with a value that is computed at most once. Such a mechanism would give the Java runtime maximum
+opportunity to stage and optimize its computation, thus avoiding the penalties (static footprint, loss of runtime
+optimizations) that plague the workarounds shown above, as well as the unsafety associated with the `@Stable`
+annotation. Moreover, such a mechanism should gracefully scale to handle collections of constant values, while
+retaining efficient computer resource management.
+
 
 ## Description
 
@@ -267,7 +199,7 @@ ways, this is similar to the holder-class idiom in the sense it offers the same
 performance and constant-folding characteristics but, `StableValue` incurs a lower static
 footprint since no additional class is required.
 
-Looking at the basic example above, it becomes evident, several threads may invoke the `Logger::getLogger`
+Looking at the basic example above, it becomes evident, that several threads may invoke the `Logger::getLogger`
 method simultaneously if they call the `logger()` method at about the same time. Even though
 `StableValue` will guarantee, that only one of these results will ever be exposed to the many
 competing threads, there might be applications where it is a requirement, that a supplying method is
@@ -316,8 +248,8 @@ by a lazily computed stable value.
 
 Analogous to how a `Supplier` can be cached using a backing stable value, a similar pattern
 can be used for an `IntFunction` that will record its cached values in a backing array of
-stable value elements. Here is how the error message example above can be improved using
-a caching `IntFunction`:
+stable value elements. An example of this is an array that holds HTML pages that correspond to an error code in
+the range [0, 7] where each element is pulled in from the file system on-demand: 
 
 ```
 class ErrorMessages {
