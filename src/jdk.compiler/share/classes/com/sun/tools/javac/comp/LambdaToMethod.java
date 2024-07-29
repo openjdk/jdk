@@ -1178,11 +1178,13 @@ public class LambdaToMethod extends TreeTranslator {
          */
         VarSymbol translate(final VarSymbol sym, LambdaSymbolKind skind) {
             VarSymbol ret;
+            boolean propagateAnnos = true;
             switch (skind) {
                 case CAPTURED_VAR:
                     Name name = (sym.flags() & LOCAL_CAPTURE_FIELD) != 0 ?
                             sym.baseSymbol().name : sym.name;
                     ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym);
+                    propagateAnnos = false;
                     break;
                 case LOCAL_VAR:
                     ret = new VarSymbol(sym.flags() & FINAL, sym.name, sym.type, translatedSym);
@@ -1208,7 +1210,7 @@ public class LambdaToMethod extends TreeTranslator {
                     Assert.error(skind.name());
                     throw new AssertionError();
             }
-            if (ret != sym && skind.propagateAnnotations()) {
+            if (ret != sym && propagateAnnos) {
                 ret.setDeclarationAttributes(sym.getRawAttributes());
                 ret.setTypeAttributes(sym.getRawTypeAttributes());
             }
@@ -1304,15 +1306,6 @@ public class LambdaToMethod extends TreeTranslator {
         PARAM,          // original to translated lambda parameters
         LOCAL_VAR,      // original to translated lambda locals
         CAPTURED_VAR;   // variables in enclosing scope to translated synthetic parameters
-
-        boolean propagateAnnotations() {
-            switch (this) {
-                case CAPTURED_VAR:
-                    return false;
-                default:
-                    return true;
-            }
-        }
     }
 
     /**
