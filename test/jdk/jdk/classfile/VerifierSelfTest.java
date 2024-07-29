@@ -47,6 +47,8 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.components.ClassPrinter;
 import java.lang.constant.ModuleDesc;
+
+import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
@@ -103,7 +105,7 @@ class VerifierSelfTest {
         var bytes = cc.build(ClassDesc.of("InvalidAttrLocationClass"), cb ->
             ((DirectClassBuilder)cb).writeAttribute(new UnboundAttribute.AdHocAttribute<LocalVariableTableAttribute>(Attributes.localVariableTable()) {
                 @Override
-                public void writeBody(BufWriter b) {
+                public void writeBody(BufWriterImpl b) {
                     b.writeU2(0);
                 }
             }));

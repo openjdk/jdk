@@ -51,7 +51,7 @@ public final class StackCounter {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                ((BufWriterImpl) dcb.bytecodesBufWriter).asByteBuffer(),
+                dcb.bytecodesBufWriter.asByteBuffer(),
                 dcb.constantPool,
                 dcb.handlers);
     }

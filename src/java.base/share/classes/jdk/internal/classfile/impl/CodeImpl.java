@@ -141,7 +141,7 @@ public final class CodeImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(classReader)) {
             super.writeTo(buf);
         }
@@ -154,7 +154,7 @@ public final class CodeImpl
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
-                                    ((BufWriterImpl)buf).context(),
+                                    buf.context(),
                                     null).writeTo(buf);
         }
     }
@@ -210,7 +210,7 @@ public final class CodeImpl
         return exceptionTable;
     }
 
-    public boolean compareCodeBytes(BufWriter buf, int offset, int len) {
+    public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
         return codeLength == len
                && classReader.compare(buf, offset, codeStart, codeLength);
     }

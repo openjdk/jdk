@@ -321,12 +321,13 @@ public final class ClassReaderImpl
         return containedClass;
     }
 
-    boolean writeBootstrapMethods(BufWriter buf) {
+    boolean writeBootstrapMethods(BufWriterImpl buf) {
         Optional<BootstrapMethodsAttribute> a
                 = containedClass.findAttribute(Attributes.bootstrapMethods());
         if (a.isEmpty())
             return false;
-        a.get().writeTo(buf);
+        // BootstrapMethodAttribute implementations are all internal writable
+        ((Util.Writable) a.get()).writeTo(buf);
         return true;
     }
 
@@ -465,13 +466,12 @@ public final class ClassReaderImpl
         return entryByIndex(index, cls);
     }
 
-    @Override
-    public boolean compare(BufWriter bufWriter,
+    public boolean compare(BufWriterImpl bufWriter,
                            int bufWriterOffset,
                            int classReaderOffset,
                            int length) {
         try {
-            return Arrays.equals(((BufWriterImpl) bufWriter).elems,
+            return Arrays.equals(bufWriter.elems,
                                  bufWriterOffset, bufWriterOffset + length,
                                  buffer, classReaderOffset, classReaderOffset + length);
         } catch (IndexOutOfBoundsException e) {
