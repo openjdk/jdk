@@ -965,6 +965,9 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   }
 
   void post() {
+    if (_thread->is_in_any_VTMS_transition()) {
+      return; // no events should be posted if thread is in any VTMS transition
+    }
     post_all_envs();
     copy_modified_data();
   }
