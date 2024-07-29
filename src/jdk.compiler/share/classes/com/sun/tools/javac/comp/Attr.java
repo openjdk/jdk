@@ -3526,20 +3526,6 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
-        /* Map to hold 'fake' clinit methods. If a lambda is used to initialize a
-         * static field and that lambda has type annotations, these annotations will
-         * also be stored at these fake clinit methods.
-         *
-         * LambdaToMethod also use fake clinit methods so they can be reused.
-         * Also as LTM is a phase subsequent to attribution, the methods from
-         * clinits can be safely removed by LTM to save memory.
-         */
-        private Map<ClassSymbol, MethodSymbol> clinits = new HashMap<>();
-
-        public MethodSymbol removeClinit(ClassSymbol sym) {
-            return clinits.remove(sym);
-        }
-
         /* This method returns an environment to be used to attribute a lambda
          * expression.
          *
@@ -3567,18 +3553,14 @@ public class Attr extends JCTree.Visitor {
                         break;
                     }
                 } else {
-                    /* if the field is static then we need to create a fake clinit
-                     * method, this method can later be reused by LTM.
-                     */
-                    MethodSymbol clinit = clinits.get(enclClass);
-                    if (clinit == null) {
-                        Type clinitType = new MethodType(List.nil(),
-                                syms.voidType, List.nil(), syms.methodClass);
-                        clinit = new MethodSymbol(BLOCK | STATIC | SYNTHETIC | PRIVATE,
-                                names.clinit, clinitType, enclClass);
-                        clinit.params = List.nil();
-                        clinits.put(enclClass, clinit);
-                    }
+                    // If the field is static then we need to create a fake clinit method.
+                    // Uniqueness of this symbol is not important (as e.g. annotations will be added on the
+                    // init symbol's owner).
+                    Type clinitType = new MethodType(List.nil(),
+                            syms.voidType, List.nil(), syms.methodClass);
+                    MethodSymbol clinit = new MethodSymbol(BLOCK | STATIC | SYNTHETIC | PRIVATE,
+                            names.clinit, clinitType, enclClass);
+                    clinit.params = List.nil();
                     newScopeOwner = clinit;
                 }
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(newScopeOwner)));
