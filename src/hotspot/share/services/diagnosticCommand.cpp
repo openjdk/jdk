@@ -1211,14 +1211,12 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
     MemMapPrinter::print_all_mappings(&fs);
-#if defined(LINUX)
+#ifndef _WIN64
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
-#else
-    const char* absname = nullptr;
-#endif
     name = absname != nullptr ? absname : name;
+#endif
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {
     output()->print_cr("Failed to open \"%s\" for writing (%s).", name, os::strerror(errno));

@@ -121,11 +121,7 @@ public:
         if (prot & PAGE_WRITECOMBINE) {
             buffer[idx++] = 'W';
         }
-        if (idx == 0) {
-            snprintf(buffer, sizeof(buffer), "0x%x", prot);
-        } else {
-            buffer[idx] = 0;
-        }
+        buffer[idx] = 0;
         return buffer;
     }
     const char* getStateString(char buffer[20], MEMORY_BASIC_INFORMATION& mInfo) {
@@ -147,7 +143,7 @@ public:
         } else if (mInfo.Type == MEM_MAPPED) {
             strncpy_s(buffer, sizeof(buffer), "map", 4);
         } else if (mInfo.Type == MEM_PRIVATE) {
-            strncpy_s(buffer, sizeof(buffer), "prv", 4);
+            strncpy_s(buffer, sizeof(buffer), "pvt", 4);
         } else {
             snprintf(buffer, sizeof(buffer), "0x%x", mInfo.Type);
         }
@@ -156,22 +152,14 @@ public:
 };
 
 class ProcSmapsSummary {
-  APP_MEMORY_INFORMATION _meminfo;
-  unsigned _kernel_page_size;
   unsigned _num_mappings;
-  bool _meminfo_valid;
   size_t _total_region_size;  // combined resident set size
   size_t _total_committed;    // combined committed size
   size_t _total_reserved;     // combined shared size
 public:
   ProcSmapsSummary() : _num_mappings(0),  _total_region_size(0),
-                       _kernel_page_size(0), _meminfo_valid(false) {
-    HANDLE hProcess = GetCurrentProcess();
-    _meminfo_valid = GetProcessInformation(hProcess, ProcessAppMemoryInfo, &_meminfo, sizeof(_meminfo));
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
-    _kernel_page_size = sysInfo.dwPageSize;
-  }
+                       _total_committed(0), _total_reserved(0) {}
+
   void add_mapping(const MEMORY_BASIC_INFORMATION& mInfo, const ProcSmapsInfo& info) {
     if (mInfo.State != MEM_FREE) {
       _num_mappings++;
@@ -183,17 +171,9 @@ public:
 
   void print_on(const MappingPrintSession& session) const {
     outputStream* st = session.out();
-    st->print_cr("Number of mappings: %u", _num_mappings);
-    st->print_cr("          pagesize: %u", _kernel_page_size);
-    if (_meminfo_valid) {
-      st->print_cr("   AvailableCommit: %zu (" PROPERFMT ")", _meminfo.AvailableCommit, PROPERFMTARGS(_meminfo.AvailableCommit));
-      st->print_cr("PrivateCommitUsage: %zu (" PROPERFMT ")", _meminfo.PrivateCommitUsage, PROPERFMTARGS(_meminfo.PrivateCommitUsage));
-      st->print_cr(" PeakPrivateCommit: %zu (" PROPERFMT ")", _meminfo.PeakPrivateCommitUsage, PROPERFMTARGS(_meminfo.PeakPrivateCommitUsage));
-      st->print_cr("  TotalCommitUsage: %zu (" PROPERFMT ")", _meminfo.TotalCommitUsage, PROPERFMTARGS(_meminfo.TotalCommitUsage));
-    }
-    st->print_cr(" total region size: %zu (" PROPERFMT ")", _total_region_size, PROPERFMTARGS(_total_region_size));
-    st->print_cr("         committed: %zu (" PROPERFMT ")", _total_committed, PROPERFMTARGS(_total_committed));
-    st->print_cr("          reserved: %zu (" PROPERFMT ")", _total_reserved, PROPERFMTARGS(_total_reserved));
+    os::print_os_info(st);
+    os::print_memory_info(st);
+    st->print_cr("current process reserved memory: " PROPERFMT, PROPERFMTARGS(_total_reserved));
   }
 };
 
@@ -210,23 +190,19 @@ public:
   if (st->fill_to(n) == 0) {  \
     st->print(" ");           \
   }
+    st->print(PTR_FORMAT "-" PTR_FORMAT, mInfo.BaseAddress, static_cast<const char*>(mInfo.BaseAddress) + mInfo.RegionSize);
+    INDENT_BY(38);
+    st->print("%12zu", mInfo.RegionSize);
+    INDENT_BY(51);
     if (mInfo.State == MEM_FREE) {
-      st->print(PTR_FORMAT "-" PTR_FORMAT, mInfo.BaseAddress, static_cast<const char*>(mInfo.BaseAddress) + mInfo.RegionSize);
-      INDENT_BY(38);
-      st->print("%12zu", mInfo.RegionSize);
-      INDENT_BY(51);
       st->print("%s", "-free-");
     } else {
-      st->print(PTR_FORMAT "-" PTR_FORMAT, mInfo.BaseAddress, static_cast<const char*>(mInfo.BaseAddress) + mInfo.RegionSize);
-      INDENT_BY(38);
-      st->print("%12zu", mInfo.RegionSize);
-      INDENT_BY(51);
       st->print("%s", info.protectBuffer);
       INDENT_BY(57);
       st->print("%s-%s", info.stateBuffer, info.typeBuffer);
       INDENT_BY(60);
       st->print("%6llx", reinterpret_cast<const unsigned long long>(mInfo.BaseAddress) - reinterpret_cast<const unsigned long long>(mInfo.AllocationBase));
-      INDENT_BY(68);
+      INDENT_BY(69);
       if (_session.print_nmt_info_for_region(mInfo.BaseAddress, static_cast<const char*>(mInfo.BaseAddress) + mInfo.RegionSize)) {
         st->print(" ");
       }
@@ -243,13 +219,13 @@ public:
     st->print_cr("                     rwx: read / write / execute");
     st->print_cr("                     c: copy on write");
     st->print_cr("                     G: guard");
-    st->print_cr("                     i: targets invalid");
-    st->print_cr("                     n: targets noupdate");
     st->print_cr("                     C: no cache");
     st->print_cr("                     W: write combine");
-    st->print_cr("state/type:      region state and type");
-    st->print_cr(" state:              committed / reserved");
-    st->print_cr(" type:               image / mapped / private");
+    st->print_cr("                     i: targets invalid");
+    st->print_cr("                     n: targets noupdate");
+    st->print_cr("state:           region state and type");
+    st->print_cr("                     state: committed / reserved");
+    st->print_cr("                     type: image / mapped / private");
     st->print_cr("vm info:         VM information (requires NMT)");
     {
       streamIndentor si(st, 16);
@@ -263,7 +239,7 @@ public:
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
     //            0x0000000414000000-0x0000000453000000 123456789012 rw-p 123456789012 123456789012 16g  thp,thpadv       STACK-340754-Monitor-Deflation-Thread /shared/tmp.txt
-    st->print_cr("from               to                        vsize prot  state/type   offset  vm info/file");
+    st->print_cr("from               to                        vsize prot  state offset vm info/file");
     st->print_cr("=============================================================================================================================");
   }
 };
@@ -271,9 +247,6 @@ public:
 void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
 
     HANDLE hProcess = GetCurrentProcess();
-
-    SYSTEM_INFO sysInfo;
-    GetSystemInfo(&sysInfo);
 
     ProcSmapsPrinter printer(session);
     ProcSmapsSummary summary;
@@ -291,12 +264,6 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
       info.process(mInfo);
       printer.print_single_mapping(mInfo, info);
       summary.add_mapping(mInfo, info);
-      if (ptr != mInfo.BaseAddress) {
-          printf("XXXX\n");
-      }
-      if (mInfo.PartitionId != 0) {
-          printf("patrition = 0x%x\n", mInfo.PartitionId);
-      }
     }
     st->cr();
     summary.print_on(session);
