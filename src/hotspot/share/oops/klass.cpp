@@ -113,8 +113,8 @@ uint8_t Klass::compute_hash_slot(Symbol* n) {
     if (StressSecondarySupers) {
       // Generate many hash collisions in order to stress-test the
       // linear search fallback.
-      int codes[3] = { 0, SECONDARY_SUPERS_TABLE_SIZE / 2, SECONDARY_SUPERS_TABLE_SIZE - 1};
-      hash_code = codes[hash_code % 3];
+      hash_code = hash_code % 3;
+      hash_code = hash_code * (SECONDARY_SUPERS_TABLE_SIZE / 3);
     }
   }
 
@@ -181,10 +181,7 @@ bool Klass::linear_search_secondary_supers(const Klass* k) const {
 // occupancy bitmap rotated such that Bit 1 is the next bit to test,
 // search for k.
 bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
-  // For performance reasons we don't use a hashed lookup unless there
-  // are at least two empty slots in the table. If there were only one
-  // empty slot resulting search would be slower than linear probing.
-  if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+  if (rotated_bitmap == SECONDARY_SUPERS_BITMAP_FULL) {
     return linear_search_secondary_supers(k);
   }
 
@@ -322,16 +319,16 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
-  assert(!UseSecondarySupersTable || secondaries == nullptr, "");
-  set_secondary_supers(secondaries, SECONDARY_SUPERS_BITMAP_EMPTY);
-}
-
 void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
 #ifdef ASSERT
   if (secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
+    if (bitmap != SECONDARY_SUPERS_BITMAP_FULL) {
+      assert(((uint)secondaries->length() == population_count(bitmap)), "required");
+    }
+  } else {
+    assert(bitmap == SECONDARY_SUPERS_BITMAP_EMPTY, "");
   }
 #endif
   _secondary_supers_bitmap = bitmap;
@@ -370,12 +367,11 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  // Invariant: _secondary_supers.length >= population_count(_secondary_supers_bitmap)
-
-  // Don't attempt to hash a table that's completely full, because in
-  // the case of an absent interface linear probing would not
-  // terminate.
-  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
+  // For performance reasons we don't use a hashed table unless there
+  // are at least two empty slots in it. If there were only one empty
+  // slot it'd take a long time to create the table and the resulting
+  // search would be no faster than linear probing.
+  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 

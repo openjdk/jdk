@@ -236,7 +236,6 @@ protected:
   void set_secondary_super_cache(Klass* k) { _secondary_super_cache = k; }
 
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
-  void set_secondary_supers(Array<Klass*>* k);
   void set_secondary_supers(Array<Klass*>* k, uintx bitmap);
 
   uint8_t hash_slot() const { return _hash_slot; }
