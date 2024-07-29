@@ -26,15 +26,14 @@ package jdk.internal.net.http.quic;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.nio.channels.ClosedChannelException;
 import java.util.Objects;
-import java.util.Optional;
 
 import javax.net.ssl.SSLHandshakeException;
 
 import jdk.internal.net.quic.QuicTLSEngine;
 import jdk.internal.net.quic.QuicTransportErrors;
 import jdk.internal.net.quic.QuicTransportException;
+import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
 // TODO: document this
 public abstract sealed class TerminationCause {
@@ -53,12 +52,15 @@ public abstract sealed class TerminationCause {
         this.reportedCause = toReportedCause(this.originalCause, this.logMsg);
     }
 
-    public final long getCloseCode() {
-        return this.closeCode;
+    private TerminationCause(final long closeCode, final String loggedAs) {
+        this.closeCode = closeCode;
+        this.originalCause = null;
+        this.logMsg = loggedAs;
+        this.reportedCause = toReportedCause(this.originalCause, this.logMsg);
     }
 
-    final Optional<Throwable> getOriginalCause() {
-        return Optional.ofNullable(this.originalCause);
+    public final long getCloseCode() {
+        return this.closeCode;
     }
 
     public final IOException getCloseCause() {
@@ -89,6 +91,10 @@ public abstract sealed class TerminationCause {
         return new TransportError(err);
     }
 
+    static SilentTermination forSilentTermination(final String loggedAs) {
+        return new SilentTermination(loggedAs);
+    }
+
     public static TerminationCause forException(final Throwable cause) {
         Objects.requireNonNull(cause);
         if (cause instanceof QuicTransportException qte) {
@@ -113,10 +119,9 @@ public abstract sealed class TerminationCause {
     private static IOException toReportedCause(final Throwable original,
                                                final String fallbackExceptionMsg) {
         if (original == null) {
-            if (fallbackExceptionMsg != null) {
-                return new IOException(fallbackExceptionMsg);
-            }
-            return new ClosedChannelException();
+            return fallbackExceptionMsg == null
+                    ? new IOException("connection terminated")
+                    : new IOException(fallbackExceptionMsg);
         } else if (original instanceof QuicTransportException qte) {
             return new IOException(qte.getMessage());
         } else if (original instanceof SSLHandshakeException) {
@@ -137,10 +142,9 @@ public abstract sealed class TerminationCause {
         final QuicTLSEngine.KeySpace keySpace;
 
         private TransportError(final QuicTransportErrors err) {
-            super(err.code(), null);
+            super(err.code(), err.name());
             this.frameType = 0; // unknown frame type
             this.keySpace = null;
-            loggedAs(err.name());
         }
 
         private TransportError(final QuicTransportException exception) {
@@ -178,6 +182,20 @@ public abstract sealed class TerminationCause {
         @Override
         public boolean isAppLayer() {
             return true;
+        }
+    }
+
+    static final class SilentTermination extends TerminationCause {
+
+        private SilentTermination(final String loggedAs) {
+            // the error code won't play any role, since silent termination
+            // doesn't cause any packets to be generated or sent to the peer
+            super(NO_ERROR.code(), loggedAs);
+        }
+
+        @Override
+        public boolean isAppLayer() {
+            return false; // doesn't play a role in context of silent termination
         }
     }
 }

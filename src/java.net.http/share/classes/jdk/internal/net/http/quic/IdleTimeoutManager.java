@@ -37,8 +37,7 @@ import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.quic.ConnectionTerminator.IdleTerminationApprover;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
-import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
-import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
+import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
 
 /**
  * Keeps track of activity on a {@code QuicConnectionImpl} and manages
@@ -394,8 +393,7 @@ public final class IdleTimeoutManager {
             debug.log("silently closing connection due to idle timeout");
         }
         Log.logQuic("{0} silently closing connection due to idle timeout", connection.logTag());
-        final TerminationCause cause = forTransportError(NO_ERROR)
-                .loggedAs("connection idle timed out");
-        connection.terminator.silentTerminate(cause);
+        final TerminationCause cause = forSilentTermination("connection idle timed out");
+        connection.terminator.terminate(cause);
     }
 }

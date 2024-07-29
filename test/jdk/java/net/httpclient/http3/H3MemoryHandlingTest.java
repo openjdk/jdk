@@ -51,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.net.http.HttpRequest.H3DiscoveryConfig.HTTP_3_ONLY;
 import static org.testng.Assert.*;
@@ -107,29 +108,24 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
     @Test
     public void testOfInputStreamBlocks() throws Exception {
         CompletableFuture<TerminationCause> errorCF = new CompletableFuture<>();
-        CompletableFuture<Boolean> handlerCF = new CompletableFuture<>();
         byte[] response =  HexFormat.of().parseHex(
                 "01030000"+ // headers, length 3, section prefix
                         "d9"+ // :status:200
                         "00ffffffffffffffff"); // data, 2^62 - 1 bytes
         byte[] kilo = new byte[1024];
-
+        final CompletableFuture<Boolean> serverAllWritesDone = new CompletableFuture<>();
         server.addHandler((c,s)-> {
             // verify that the connection stays open
             completeUponTermination(c, errorCF);
-            QuicBidiStream qs = s.underlyingBidiStream();
-
             try (OutputStream outputStream = s.outputStream()) {
                 outputStream.write(response);
-                for (int i = 0;i < 20;i++) {
+                for (int i = 0; i < 20; i++) {
                     // 18 writes should succeed, 19th should block
                     outputStream.write(kilo);
                     System.out.println("Wrote "+(i+1)+"KB");
                 }
-                handlerCF.complete(false);
-            } catch (IOException e) {
-                System.out.println("Got expected exception: " + e);
-                handlerCF.complete(true);
+                // all 20 writes unexpectedly completed
+                serverAllWritesDone.complete(true);
             }
         });
         HttpClient client = getHttpClient();
@@ -140,13 +136,20 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                     .get(10, TimeUnit.SECONDS);
             assertEquals(response1.statusCode(), 200);
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
-            assertFalse(handlerCF.isDone());
+            assertFalse(serverAllWritesDone.isDone());
             response1.body().close();
         } finally {
             client.close();
         }
-        assertTrue(handlerCF.get(10, TimeUnit.SECONDS),
-                "Too much data was buffered.");
+        try {
+            final boolean done = serverAllWritesDone.get(10, TimeUnit.SECONDS);
+            assertFalse(done, "Too much data was buffered by the client");
+        } catch (TimeoutException te) {
+            // timeout is expected since the server isn't expected to be
+            // blocked forever trying to write out the response data that
+            // the client app never accepts/consumes
+            System.out.println("received the expected timeout exception");
+        }
     }
 
     /**

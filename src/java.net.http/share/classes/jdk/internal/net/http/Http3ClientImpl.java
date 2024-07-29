@@ -666,20 +666,20 @@ public final class Http3ClientImpl implements AutoCloseable {
     @Override
     public void close()  {
         try {
-            List<Http3Connection> connectionList;
             lock.lock();
             try {
                 closed = true;
-                connectionList = new ArrayList<>(connections.values());
-                connectionList.addAll(pendingClose);
                 pendingClose.clear();
                 connections.clear();
             } finally {
                 lock.unlock();
             }
-            for (var conn : connectionList) {
-                conn.close();
-            }
+            // The client itself is being closed, so we don't individually close the connections
+            // here and instead just close the QuicClient which then initiates the close of
+            // the QUIC endpoint. That will silently terminate the underlying QUIC connections
+            // without exchanging any datagram packets with the peer, since there's no point
+            // sending/receiving those (including GOAWAY frame) when the endpoint (socket channel)
+            // itself won't be around after this point.
         } finally {
             quicClient.close();
         }

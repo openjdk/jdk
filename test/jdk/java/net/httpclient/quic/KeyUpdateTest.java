@@ -140,7 +140,7 @@ public class KeyUpdateTest {
             final ClientConnection conn = ClientConnection.establishConnection(client,
                     server.getAddress());
             final Stack<Integer> clientConnKeyPhases = new Stack<>();
-            for (int i = 1; i <= 30; i++) {
+            for (int i = 1; i <= 100; i++) {
                 System.out.println("Iteration: " + i);
                 // open a bidi stream
                 final ConnectedBidiStream bidiStream = conn.initiateNewBidiStream();
@@ -176,14 +176,15 @@ public class KeyUpdateTest {
                 });
             }
             // verify that the client and server did do a key update
-            // stacks should contain at least a sequence of 0, 1
+            // stacks should contain at least a sequence of 0, 1, 0
             System.out.println("Number of 1-RTT keys used by client connection: "
-                    + clientConnKeyPhases.size());
+                    + clientConnKeyPhases.size() + ", key phase switches: " + clientConnKeyPhases);
             System.out.println("Number of 1-RTT keys used by server connection: "
-                    + handler.serverConnKeyPhases.size());
-            assertTrue(clientConnKeyPhases.size() >= 2, "Client connection" +
+                    + handler.serverConnKeyPhases.size() + ", key phase switches: "
+                    + handler.serverConnKeyPhases);
+            assertTrue(clientConnKeyPhases.size() >= 3, "Client connection" +
                     " didn't do a key update");
-            assertTrue(handler.serverConnKeyPhases.size() >= 2, "Server connection" +
+            assertTrue(handler.serverConnKeyPhases.size() >= 3, "Server connection" +
                     " didn't do a key update");
 
             assertEquals(0, (int) clientConnKeyPhases.getFirst(), "Client connection used" +
@@ -195,6 +196,11 @@ public class KeyUpdateTest {
                     " unexpected second key phase");
             assertEquals(1, (int) handler.serverConnKeyPhases.get(1), "Server connection used" +
                     " unexpected second key phase");
+
+            assertEquals(0, (int) clientConnKeyPhases.get(2), "Client connection used" +
+                    " unexpected third key phase");
+            assertEquals(0, (int) handler.serverConnKeyPhases.get(2), "Server connection used" +
+                    " unexpected third key phase");
         }
     }
 

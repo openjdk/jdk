@@ -81,6 +81,7 @@ import javax.crypto.NoSuchPaddingException;
 
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.BLOCKING_WITH_VIRTUAL_THREADS;
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.NON_BLOCKING_WITH_SELECTOR;
+import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
 import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
 import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
@@ -1153,12 +1154,11 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      */
     public abstract void detach();
 
-    void closeConnection(QuicPacketReceiver c) {
+    private void silentTerminateConnection(QuicPacketReceiver c) {
         try {
             if (c instanceof QuicConnectionImpl connection) {
-                final TerminationCause terminationCause = forTransportError(NO_ERROR)
-                        .loggedAs("QUIC endpoint closed - no error");
-                connection.terminator.terminate(terminationCause);
+                final TerminationCause st = forSilentTermination("QUIC endpoint closed - no error");
+                connection.terminator.terminate(st);
             }
         } catch (Throwable t) {
             if (debug.on()) {
@@ -1211,7 +1211,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                 if (debug.on())
                     debug.log("closing %d connections", connections.size());
                 for (var cid : connections.keySet()) {
-                    closeConnection(connections.remove(cid));
+                    // endpoint is closing, so we silently terminate the connection
+                    // since there's no point sending (and receiving) packets when the
+                    // endpoint itself won't be around for dealing with the packets.
+                    silentTerminateConnection(connections.remove(cid));
                 }
             }
         } finally {
