@@ -248,7 +248,7 @@ by a lazily computed stable value.
 Analogous to how a `Supplier` can be cached using a backing stable value, a similar pattern
 can be used for an `IntFunction` that will record its cached values in a backing array of
 stable value elements. An example of this is an array that holds HTML pages that correspond to an error code in
-the range [0, 7] where each element is pulled in from the file system on-demand: 
+the range [0, 7] where each element is pulled in from the file system on-demand:
 
 ```
 class ErrorMessages {
