@@ -570,7 +570,7 @@ public class LambdaToMethod extends TreeTranslator {
         try {
             pendingVar = tree.sym;
             if (lambdaContext != null) {
-                tree.sym = lambdaContext.addSymbol(tree.sym, LambdaSymbolKind.LOCAL_VAR);
+                tree.sym = lambdaContext.addLocal(tree.sym);
                 tree.init = translate(tree.init);
                 result = tree;
             } else {
@@ -1215,7 +1215,11 @@ public class LambdaToMethod extends TreeTranslator {
             return ret;
         }
 
-        VarSymbol addSymbol(VarSymbol sym, LambdaSymbolKind skind) {
+        VarSymbol addLocal(VarSymbol sym) {
+            return addSymbol(sym, LambdaSymbolKind.LOCAL_VAR);
+        }
+
+        private VarSymbol addSymbol(VarSymbol sym, LambdaSymbolKind skind) {
             return lambdaProxies.computeIfAbsent(sym, s -> translate(s, skind));
         }
 
