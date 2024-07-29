@@ -4984,17 +4984,8 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
 
-  {
-    Label L_continue;
-    cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
-    jcc(Assembler::notEqual, L_continue);
-
-    // The stub will clear r_array_index and load r_array_length.
-    // However, we must set r_array_base.
-    movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
-    jmp(L_slow_path);
-    bind(L_continue);
-  }
+  cmpq(r_bitmap, (int32_t)-1); // sign-extends immediate to 64-bit value
+  jccb(Assembler::equal, L_slow_path);
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
@@ -5026,9 +5017,6 @@ void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
     rorq(r_bitmap, bit);
   }
 
-  // If we reach here because the bitmap is full, the stub will clear
-  // r_array_index and load r_array_length. However, we must set
-  // r_array_base.
   bind(L_slow_path);
   movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
@@ -5218,6 +5206,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   assert(label_nulls <= 1, "at most one null in the batch");
 
   // Load the array length.
+
   movl(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
   // And adjust the array base to point to the data.
   // NB! Effectively increments current slot index by 1.
