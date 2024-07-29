@@ -46,4 +46,15 @@ public class SourceCode {
     public static SourceCode newJasmSourceCode(String className, String code) {
         return new SourceCode(className, code, Kind.JASM);
     }
+
+    public String fileExtension() {
+        return this.kind.name().toLowerCase();
+    }
+
+    public String filePathName() {
+        StringBuilder builder = new StringBuilder();
+        String extension = this.kind.name().toLowerCase();
+        builder.append(this.className.replace('.','/')).append(".").append(extension);
+        return builder.toString();
+    }
 }

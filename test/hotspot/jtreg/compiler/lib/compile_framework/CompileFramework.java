@@ -23,26 +23,25 @@
 
 package compiler.lib.compile_framework;
 
-import compiler.lib.compile_framework.SourceCode;
 import compiler.lib.compile_framework.CompileFrameworkException;
 import compiler.lib.compile_framework.InternalCompileFrameworkException;
+import compiler.lib.compile_framework.SourceCode;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
-import java.net.URI;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.List;
 import jdk.test.lib.process.ProcessTools;
 
 public class CompileFramework {
     static final int JASM_COMPILE_TIMEOUT = 60;
+    public static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
 
     private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
     private URLClassLoader classLoader;
@@ -51,11 +50,13 @@ public class CompileFramework {
         sourceCodes.add(sourceCode);
     }
 
-    public void printSourceCodes() {
+    public String sourceCodesAsString() {
+        StringBuilder builder = new StringBuilder();
         for (SourceCode sourceCode : sourceCodes) {
-            System.out.println("SourceCode: " + sourceCode.className + " " + sourceCode.kind.name().toLowerCase());
-            System.out.println(sourceCode.code);
+            builder.append("SourceCode: ").append(sourceCode.filePathName()).append(System.lineSeparator());
+            builder.append(sourceCode.code).append(System.lineSeparator());
         }
+        return builder.toString();
     }
 
     public void compile() {
@@ -63,7 +64,7 @@ public class CompileFramework {
             throw new RuntimeException("Cannot compile twice!");
         }
 
-        printSourceCodes();
+        System.out.println(sourceCodesAsString());
 
         List<SourceCode> javaSources = new ArrayList<SourceCode>();
         List<SourceCode> jasmSources = new ArrayList<SourceCode>();
@@ -174,8 +175,7 @@ public class CompileFramework {
     private static List<String> writeSourcesToFile(String sourceDir, List<SourceCode> sources) {
         List<String> storedFiles = new ArrayList<String>();
         for (SourceCode sourceCode : sources) {
-            String extension = sourceCode.kind.name().toLowerCase();
-            String fileName = sourceDir + "/" + sourceCode.className.replace('.','/') + "." + extension;
+            String fileName = sourceDir + "/" + sourceCode.filePathName();
             writeCodeToFile(sourceCode.code, fileName);
             storedFiles.add(fileName);
         }
