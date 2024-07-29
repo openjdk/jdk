@@ -1901,7 +1901,7 @@ class MutableBigInteger {
         // Unnormalize
         if (shift != 0) {
             final int halfShift = shift >> 1;
-            if (needRemainder && !sqrtRem[1].isZero()) {
+            if (needRemainder) {
                 // shift <= 62, so s0 is at most 31 bit long
                 final long s0 = sqrtRem[0].value[sqrtRem[0].offset + sqrtRem[0].intLen - 1]
                         & (-1 >>> -halfShift); // Remove excess bits
