@@ -26,6 +26,7 @@
 package java.lang;
 
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.invoke.MethodHandle;
@@ -96,7 +97,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, int value) {
-        return checkOverflow(lengthCoder + Integer.stringSize(value));
+        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
     }
 
     /**
@@ -107,7 +108,7 @@ final class StringConcatHelper {
      * @return            new length and coder
      */
     static long mix(long lengthCoder, long value) {
-        return checkOverflow(lengthCoder + Long.stringSize(value));
+        return checkOverflow(lengthCoder + DecimalDigits.stringSize(value));
     }
 
     /**
@@ -184,7 +185,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      char value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
@@ -210,7 +211,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      int value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
@@ -236,7 +237,7 @@ final class StringConcatHelper {
      * @param indexCoder final char index in the buffer, along with coder packed
      *                   into higher bits.
      * @param buf        buffer to append to
-     * @param value      boolean value to encode
+     * @param value      long value to encode
      * @param prefix     a constant to prepend before value
      * @return           updated index (coder value retained)
      */
@@ -321,15 +322,24 @@ final class StringConcatHelper {
             // newly created string required, see JLS 15.18.1
             return new String(s1);
         }
-        // start "mixing" in length and coder or arguments, order is not
-        // important
-        long indexCoder = mix(initialCoder(), s1);
-        indexCoder = mix(indexCoder, s2);
-        byte[] buf = newArray(indexCoder);
-        // prepend each argument in reverse order, since we prepending
-        // from the end of the byte array
-        indexCoder = prepend(indexCoder, buf, s2, s1);
-        return newString(buf, indexCoder);
+        return doConcat(s1, s2);
+    }
+
+    /**
+     * Perform a simple concatenation between two non-empty strings.
+     *
+     * @param s1         first argument
+     * @param s2         second argument
+     * @return String    resulting string
+     */
+    @ForceInline
+    static String doConcat(String s1, String s2) {
+        byte coder = (byte) (s1.coder() | s2.coder());
+        int newLength = (s1.length() + s2.length()) << coder;
+        byte[] buf = newArray(newLength);
+        s1.getBytes(buf, 0, coder);
+        s2.getBytes(buf, s1.length(), coder);
+        return new String(buf, coder);
     }
 
     /**
@@ -395,14 +405,22 @@ final class StringConcatHelper {
      */
     @ForceInline
     static byte[] newArray(long indexCoder) {
-        int index = (int)indexCoder;
-        if (indexCoder >= UTF16) {
-            index <<= 1;
-        }
-        if (index < 0) {
+        byte coder = (byte)(indexCoder >> 32);
+        int index = ((int)indexCoder) << coder;
+        return newArray(index);
+    }
+
+    /**
+     * Allocates an uninitialized byte array based on the length
+     * @param length
+     * @return the newly allocated byte array
+     */
+    @ForceInline
+    static byte[] newArray(int length) {
+        if (length < 0) {
             throw new OutOfMemoryError("Overflow: String length out of range");
         }
-        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, index);
+        return (byte[]) UNSAFE.allocateUninitializedArray(byte.class, length);
     }
 
     /**

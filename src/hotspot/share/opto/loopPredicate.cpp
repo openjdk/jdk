@@ -1341,8 +1341,8 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
   const Type* type_iv = loop->_head->as_CountedLoop()->phi()->bottom_type();
   assert(!type_iv->is_int()->is_con(), "constant indicates one loop iteration for which we bailed out earlier");
-  max_value = new CastIINode(max_value, type_iv);
-  register_new_node(max_value, parse_predicate_proj);
+  max_value = new CastIINode(new_proj, max_value, type_iv);
+  register_new_node(max_value, new_proj);
 
   bol = rc_predicate(new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
                      overflow);
