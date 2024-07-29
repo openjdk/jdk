@@ -171,6 +171,8 @@ class Foo {
 
         if (!LOGGER.isSet()) {
             // 2. Set the stable value _after_ the field was declared
+            //    If another thread has already set a value, this is a
+            //    no-op and we will continue to 3. and get that value.
             LOGGER.trySet(Logger.getLogger("com.company.Foo"));
         }
 
