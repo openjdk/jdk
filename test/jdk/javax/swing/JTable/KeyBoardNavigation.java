@@ -39,7 +39,7 @@ import javax.swing.table.TableModel;
 /*
  * @test
  * @key headful
- * @bug 4112270 8264102
+ * @bug 4112270 8264102 8329756
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test Keyboard Navigation in JTable.
@@ -270,7 +270,7 @@ public class KeyBoardNavigation {
                                 up/down
                 Left/Right Arrow - Deselect current selection;
                                    move focus one cell left/right
-                FN+Up Arrow/FN+Down Arrow - Deselect current selection;
+                fn+Up/Down Arrow - Deselect current selection;
                                    scroll up/down one JViewport view;
                                    first visible cell in current column gets focus
                 fn - Allows editing in a cell containing information without
