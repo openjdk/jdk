@@ -61,9 +61,6 @@ struct Tarjan {
 // Compute the dominator tree of the CFG.  The CFG must already have been
 // constructed.  This is the Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
 void PhaseCFG::build_dominator_tree() {
-  // Pre-grow the blocks array, prior to the ResourceMark kicking in
-  _blocks.map(number_of_blocks(), nullptr);
-
   ResourceMark rm;
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
