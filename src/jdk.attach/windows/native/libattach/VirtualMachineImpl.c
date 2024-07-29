@@ -43,8 +43,8 @@ static GetProcAddressFunc _GetProcAddress;
 static IsWow64ProcessFunc _IsWow64Process;
 
 /* psapi */
-typedef BOOL  (WINAPI *EnumProcessModulesFunc)  (HANDLE, HMODULE *, DWORD, LPDWORD );
-typedef DWORD (WINAPI *GetModuleFileNameExFunc) ( HANDLE, HMODULE, LPTSTR, DWORD );
+//typedef BOOL  (WINAPI *EnumProcessModulesFunc)  (HANDLE, HMODULE *, DWORD, LPDWORD );
+//typedef DWORD (WINAPI *GetModuleFileNameExFunc) ( HANDLE, HMODULE, LPTSTR, DWORD );
 
 /* exported function in target VM */
 typedef jint (WINAPI* EnqueueOperationFunc)
