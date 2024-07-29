@@ -192,8 +192,8 @@ Null-averse applications can also use `StableValue<Optional<V>>`.
 
 When retrieving values, `StableValue` instances holding reference values can be faster
 than reference values managed via double-checked-idiom constructs as stable values rely
-on explicit memory barriers rather than performing volatile access on each retrieval
-operation.
+on explicit memory barriers needed only during the single store operation rather than performing
+volatile access on each retrieval operation.
 
 In addition, stable values are eligible for constant folding optimizations by the JVM. In many
 ways, this is similar to the holder-class idiom in the sense it offers the same
