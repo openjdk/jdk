@@ -45,9 +45,9 @@ public final class LevelSetting extends JDKSettingControl {
     private String value;
 
     public LevelSetting(PlatformEventType eventType, String[] levels) {
-        this.value = levels[0];
         this.eventType = Objects.requireNonNull(eventType);
         this.levels = Arrays.asList(Objects.requireNonNull(levels));
+        this.value = levels[0];
     }
 
     @Override
