@@ -94,6 +94,12 @@ static void requireInHotSpot(const char* caller, JVMCI_TRAPS) {
   }
 }
 
+static void requireNotInHotSpot(const char* caller, JVMCI_TRAPS) {
+    if (JVMCIENV->is_hotspot()) {
+        JVMCI_THROW_MSG(IllegalStateException, err_msg("Cannot call %s from HotSpot", caller));
+    }
+}
+
 class JVMCITraceMark : public StackObj {
   const char* _msg;
  public:
@@ -700,6 +706,17 @@ C2V_VMENTRY_NULL(jobject, lookupJClass, (JNIEnv* env, jobject, jlong jclass_valu
     JVMCIKlassHandle klass(THREAD, java_lang_Class::as_Klass(obj));
     JVMCIObject result = JVMCIENV->get_jvmci_type(klass, JVMCI_CHECK_NULL);
     return JVMCIENV->get_jobject(result);
+C2V_END
+
+C2V_VMENTRY_0(jlong, getJObjectValue, (JNIEnv* env, jobject, jobject constant_jobject))
+    requireNotInHotSpot("getJObjectValue", JVMCI_CHECK_0);
+    if (!THREAD->has_last_Java_frame()) {
+        JVMCI_THROW_MSG_0(IllegalStateException, err_msg("Cannot call getJObjectValue without Java frame anchor"));
+    }
+    JVMCIObject constant = JVMCIENV->wrap(constant_jobject);
+    Handle constant_value = JVMCIENV->asConstant(constant, JVMCI_CHECK_0);
+    jobject jni_handle = JNIHandles::make_local(THREAD, constant_value());
+    return reinterpret_cast<jlong>(jni_handle);
 C2V_END
 
 C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
@@ -3254,6 +3271,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "shouldInlineMethod",                           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "IZ)" HS_RESOLVED_TYPE,                                       FN_PTR(lookupType)},
   {CC "lookupJClass",                                 CC "(J)" HS_RESOLVED_TYPE,                                                            FN_PTR(lookupJClass)},
+  {CC "getJObjectValue",                              CC "(" OBJECTCONSTANT ")J",                                                           FN_PTR(getJObjectValue)},
   {CC "getArrayType",                                 CC "(C" HS_KLASS2 ")" HS_KLASS,                                                       FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
   {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL2 "II)" STRING,                                                FN_PTR(lookupNameInPool)},
