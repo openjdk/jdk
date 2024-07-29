@@ -38,7 +38,7 @@ public sealed interface TerminalCodeBuilder extends CodeBuilder, LabelContext
             return paramSlots;
         }
         if (original instanceof CodeAttribute attr) {
-            return Math.max(paramSlots, attr.codeLength());
+            return Math.max(paramSlots, attr.maxLocals());
         }
         if (original instanceof BufferedCodeBuilder.Model buffered) {
             return Math.max(paramSlots, buffered.curTopLocal());
