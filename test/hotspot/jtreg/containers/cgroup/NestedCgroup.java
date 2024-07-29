@@ -26,25 +26,28 @@
  * @key cgroups
  * @requires os.family == "linux"
  * @requires vm.flagless
+ * @requires vm.cgroup.tools
+ * @modules java.base/jdk.internal.platform
  * @library /testlibrary /test/lib
  * @run main/othervm NestedCgroup
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
-import jdk.test.lib.JDKToolFinder;
-import jdk.test.lib.Asserts;
-import java.util.List;
-import java.util.ArrayList;
-import java.nio.file.Files;
-import jtreg.SkippedException;
-import java.nio.file.Path;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import java.nio.file.NoSuchFileException;
 import java.io.IOException;
 import java.lang.IllegalArgumentException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import jdk.internal.platform.Metrics;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.Platform;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jtreg.SkippedException;
 
 public class NestedCgroup {
     private static abstract class Test {
@@ -74,7 +77,10 @@ public class NestedCgroup {
             }
         }
 
-        public static OutputAnalyzer pSystem(List<String> args, String failStderr, String failExplanation, String ignoreStderr) throws Exception {
+        public static OutputAnalyzer pSystem(List<String> args,
+                String failStderr, String failExplanation,
+                String fail2Stderr, String fail2Explanation,
+                String ignoreStderr) throws Exception {
             System.err.println(LINE_DELIM + " command: " + String.join(" ",args));
             ProcessBuilder pb = new ProcessBuilder(args);
             Process process = pb.start();
@@ -86,6 +92,9 @@ public class NestedCgroup {
             if (!failStderr.isEmpty() && output.getStderr().equals(failStderr + "\n")) {
                 throw new SkippedException(failExplanation + ": " + failStderr);
             }
+            if (!fail2Stderr.isEmpty() && output.getStderr().equals(fail2Stderr + "\n")) {
+                throw new SkippedException(fail2Explanation + ": " + fail2Stderr);
+            }
             if (!ignoreStderr.isEmpty() && output.getStderr().equals(ignoreStderr + "\n")) {
                 return output;
             }
@@ -94,7 +103,7 @@ public class NestedCgroup {
         }
 
         public static OutputAnalyzer pSystem(List<String> args) throws Exception {
-            return pSystem(args, "", "", "");
+            return pSystem(args, "", "", "", "", "");
         }
 
         public static void args_add_cgexec(List<String> args) {
@@ -126,6 +135,7 @@ public class NestedCgroup {
             try {
                 pSystem(cgdelete,
                     "cgdelete: libcgroup initialization failed: Cgroup is not mounted", "cgroup/cgroup2 is not mounted",
+                    "", "",
                     "cgdelete: cannot remove group '" + CGROUP_OUTER + "': No such file or directory");
             } catch (IOException e) {
                 if (e.toString().equals("java.io.IOException: Cannot run program \"cgdelete\": error=2, No such file or directory")) {
@@ -140,17 +150,20 @@ public class NestedCgroup {
             cgcreate1.add("cgcreate");
             cgcreate1.add("-g");
             cgcreate1.add(CONTROLLERS_PATH_OUTER);
-            pSystem(cgcreate1, "cgcreate: can't create cgroup " + CGROUP_OUTER + "/" + CGROUP_INNER + ": Cgroup, operation not allowed", "Missing root permission", "");
+            pSystem(cgcreate1,
+                "cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, operation not allowed", "Missing root permission",
+                "cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, requested group parameter does not exist", "Missing root permission",
+                "");
 
             List<String> cgcreate2 = new ArrayList<>();
             cgcreate2.add("cgcreate");
             cgcreate2.add("-g");
             cgcreate2.add(CONTROLLERS_PATH_INNER);
-            pSystem(cgcreate2, "", "", "");
+            pSystem(cgcreate2, "", "", "", "", "");
 
             String provider = Metrics.systemMetrics().getProvider();
             System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
-            bool isCgroup2;
+            boolean isCgroup2;
             if ("cgroupv1".equals(provider)) {
               isCgroup2 = false;
             } else if ("cgroupv2".equals(provider)) {
