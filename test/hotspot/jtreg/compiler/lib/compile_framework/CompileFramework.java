@@ -29,11 +29,13 @@ import compiler.lib.compile_framework.SourceCode;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,40 +84,37 @@ public class CompileFramework {
             }
         }
 
-        String sourceDir = getSourceDirName();
+        Path sourceDir = getSourceDir();
 
         println("------------------ CompileFramework: Compilation ------------------");
-        println("Source directory: " + sourceDir);
+        println("Source directory: " + sourceDir.toString());
 
         compileJasmSources(sourceDir, jasmSources);
         compileJavaSources(sourceDir, javaSources);
         setUpClassLoader();
     }
 
-    private static String getSourceDirName() {
-        // Create temporary directory for jasm source files
-        final String sourceDir;
+    private static Path getSourceDir() {
         try {
-            sourceDir = "compile-framework-sources-" + ProcessTools.getProcessId();
+            return Paths.get("compile-framework-sources-" + ProcessTools.getProcessId());
         } catch (Exception e) {
             throw new InternalCompileFrameworkException("Could not get ProcessID", e);
         }
-        return sourceDir;
     }
 
-    private static void compileJasmSources(String sourceDir, List<SourceCode> jasmSources) {
+    private static void compileJasmSources(Path sourceDir, List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
             println("No jasm sources to compile.");
             return;
         }
         println("Compiling jasm sources: " + jasmSources.size());
 
-        List<String> jasmFileNames = writeSourcesToFile(sourceDir, jasmSources);
-        compileJasmFiles(jasmFileNames);
+        List<Path> jasmFilePaths = writeSourcesToFile(sourceDir, jasmSources);
+        compileJasmFiles(jasmFilePaths);
         println("Jasm sources compiled.");
     }
 
-    private static void compileJasmFiles(List<String> fileNames) {
+    private static void compileJasmFiles(List<Path> paths) {
         // Compile JASM files with asmtools.jar, shipped with jtreg.
         List<String> command = new ArrayList<>();
 
@@ -125,8 +124,8 @@ public class CompileFramework {
         command.add("org.openjdk.asmtools.jasm.Main");
         command.add("-d");
         command.add(System.getProperty("test.classes"));
-        for (String fileName : fileNames) {
-            command.add(new File(fileName).getAbsolutePath());
+        for (Path path : paths) {
+            command.add(path.toAbsolutePath().toString());
         }
 
         executeCompileCommand(command);
@@ -152,20 +151,20 @@ public class CompileFramework {
         throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
-    private static void compileJavaSources(String sourceDir, List<SourceCode> javaSources) {
+    private static void compileJavaSources(Path sourceDir, List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
             println("No java sources to compile.");
             return;
         }
         println("Compiling Java sources: " + javaSources.size());
 
-        List<String> javaFileNames = writeSourcesToFile(sourceDir, javaSources);
-        compileJavaFiles(javaFileNames);
+        List<Path> javaFilePaths = writeSourcesToFile(sourceDir, javaSources);
+        compileJavaFiles(javaFilePaths);
 
         println("Java sources compiled.");
     }
 
-    private static void compileJavaFiles(List<String> javaFileNames) {
+    private static void compileJavaFiles(List<Path> paths) {
         // Compile JAVA files with javac, in the "compile.jdk".
         List<String> command = new ArrayList<>();
 
@@ -174,34 +173,39 @@ public class CompileFramework {
         command.add(System.getProperty("java.class.path"));
         command.add("-d");
         command.add(System.getProperty("test.classes"));
-        for (String fileName : javaFileNames) {
-            command.add(new File(fileName).getAbsolutePath());
+        for (Path path : paths) {
+            command.add(path.toAbsolutePath().toString());
         }
 
         executeCompileCommand(command);
     }
 
-    private static List<String> writeSourcesToFile(String sourceDir, List<SourceCode> sources) {
-        List<String> storedFiles = new ArrayList<String>();
+    private static List<Path> writeSourcesToFile(Path sourceDir, List<SourceCode> sources) {
+        List<Path> storedFiles = new ArrayList<Path>();
         for (SourceCode sourceCode : sources) {
-            String fileName = sourceDir + "/" + sourceCode.filePathName();
-            writeCodeToFile(sourceCode.code, fileName);
-            storedFiles.add(fileName);
+            Path path = sourceDir.resolve(sourceCode.filePathName());
+            writeCodeToFile(sourceCode.code, path);
+            storedFiles.add(path);
         }
         return storedFiles;
     }
 
-    private static void writeCodeToFile(String code, String fileName) {
-        println("File: " + fileName);
-        File file = new File(fileName);
-        File dir = file.getAbsoluteFile().getParentFile();
-        if (!dir.exists()){
-            dir.mkdirs();
+    private static void writeCodeToFile(String code, Path path) {
+        println("File: " + path.toString());
+
+        // Ensure directory of the file exists.
+        Path dir = path.getParent();
+        try {
+            Files.createDirectories(dir);
+        } catch (Exception e) {
+            throw new CompileFrameworkException("Could not create directory: " + dir.toString(), e);
         }
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+
+        // Write to file.
+        try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(code);
         } catch (Exception e) {
-            throw new CompileFrameworkException("Could not write file: " + fileName, e);
+            throw new CompileFrameworkException("Could not write file: " + path.toString(), e);
         }
     }
 
