@@ -48,17 +48,13 @@ abstract class BooleanSetting extends JDKSettingControl {
 
     @Override
     public String combine(Set<String> values) {
-        String text = null;
-        for (String value : values) {
-            Boolean b = parse(value);
-            if (b != null) {
-                if (b.booleanValue()) {
-                    return "true";
-                }
-                text = "false";
-            }
+        if (values.contains("true")) {
+            return "true";
         }
-        return Objects.requireNonNullElse(text, defaultValue);
+        if (values.contains("false")) {
+            return "false";
+        }
+        return defaultValue;
     }
 
     @Override
