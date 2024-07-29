@@ -43,7 +43,7 @@ performed when the data is actually needed, rather than unconditionally initiali
 first referenced:
 
 ```
-// ordinary static initialization
+// Ordinary static initialization
 private static final Logger LOGGER = Logger.getLogger("com.company.Foo");
 ...
 LOGGER.log(Level.DEBUG, ...);
@@ -249,46 +249,39 @@ by a lazily computed stable value.
 
 Analogous to how a `Supplier` can be cached using a backing stable value, a similar pattern
 can be used for an `IntFunction` that will record its cached values in a backing array of
-stable value elements. An example of this is an array that holds HTML pages that correspond to an error code in
-the range [0, 7] where each element is pulled in from the file system on-demand:
+stable value elements. Here is an example where we manually map logger numbers
+(0 -> "com.company.Foo" , 1 -> "com.company.Bar") to loggers:
 
 ```
-class ErrorMessages {
-
-    private static final int SIZE = 8;
+class CachedNum {
 
     // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
-    private static final IntFunction<String> ERROR_FUNCTION =
-            StableValue.newCachingIntFunction(SIZE, ErrorMessages::readFromFile, null);
+    private static final IntFunction<Logger> LOGGERS =
+            StableValue.newCachingIntFunction(2, CachedNum::fromNumber, null);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
-    private static String readFromFile(int messageNumber) {
-        try {
-            return Files.readString(Path.of("message-" + messageNumber + ".html"));
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    //    The given loggerNumber is manually mapped to loggers
+    private static Logger fromNumber(int loggerNumber) {
+        return switch (loggerNumber) {
+            case 0 -> Logger.getLogger("com.company.Foo");
+            case 1 -> Logger.getLogger("com.company.Bar");
+            default -> throw new IllegalArgumentException();
+        };
     }
 
     // 3. Access the cached element with as-declared-final performance
     //    (evaluation made before the first access)
-    String msg = ERROR_FUNCTION.apply(2);
+    Logger logger = LOGGERS.apply(0);
 }
-
-// <!DOCTYPE html>
-// <html lang="en">
-//   <head><meta charset="utf-8"></head>
-//   <body>Payment was denied: Insufficient funds.</body>
-// </html>
 ```
 
 Note: Again, the last null parameter signifies an optional thread factory that will be explained at the end of this chapter.
 
-Finally, the most general cached function variant provided is a cached `Function` which, for example,
-can make sure `Logger::getLogger` in one of the first examples above is invoked at most once
-per input value (provided it executes successfully) in a multi-threaded environment. Such a cached
-`Function` is almost always faster and more resource efficient than a `ConcurrentHashMap`.
+As can be seen, manually mapping numbers to strings is a bit tedious. This brings us to the most general cached function
+variant provided is a cached `Function` which, for example,  can make sure `Logger::getLogger` in one of the first examples
+above is invoked at most once per input value (provided it executes successfully) in a multi-threaded environment. Such a
+cached `Function` is almost always faster and more resource efficient than a `ConcurrentHashMap`.
 
 Here is what a caching `Function` lazily holding two loggers could look like:
 
@@ -370,7 +363,7 @@ method while additionally providing the `size` of the desired `List` and a mappe
 List<E> lazyList = StableValue.lazyList(size, mapper);
 ```
 
-Note how there's only one field of type `List<E>` to initialize even though every
+Note how there's only one variable of type `List<E>` to initialize even though every
 computation is performed independently of the other element of the list when accessed (i.e. no
 blocking will occur across threads computing distinct elements simultaneously). Also, the
 `IntSupplier` mapper provided at creation is only invoked at most once for each distinct input

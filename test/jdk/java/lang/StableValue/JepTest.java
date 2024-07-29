@@ -84,6 +84,27 @@ final class JepTest {
         }
     }
 
+    static
+    class CachedNum {
+        // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
+        private static final IntFunction<Logger> LOGGERS =
+                StableValue.newCachingIntFunction(2, CachedNum::fromNumber, null);
+
+        // 2. Define a function that is to be called the first
+        //    time a particular message number is referenced
+        //    The given loggerNumber is manually mapped to loggers
+        private static Logger fromNumber(int loggerNumber) {
+            return switch (loggerNumber) {
+                case 0 -> Logger.getLogger("com.company.Foo");
+                case 1 -> Logger.getLogger("com.company.Bar");
+                default -> throw new IllegalArgumentException();
+            };
+        }
+
+        // 3. Access the cached element with as-declared-final performance
+        //    (evaluation made before the first access)
+        Logger logger = LOGGERS.apply(0);
+    }
 
     class Cached {
 
@@ -141,4 +162,5 @@ final class JepTest {
             String msg = ERROR_FUNCTION.apply(2);
         }
     }
+
 }
