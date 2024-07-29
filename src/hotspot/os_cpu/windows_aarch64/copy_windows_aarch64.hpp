@@ -28,6 +28,23 @@
 
 #include <string.h>
 
+template <typename T>
+static void pd_conjoint_atomic_helper(const T* from, T* to, size_t count) {
+  if (from > to) {
+    while (count-- > 0) {
+      // Copy forwards
+      Atomic::store(to++, Atomic::load(from++));
+    }
+  } else {
+    from += count - 1;
+    to   += count - 1;
+    while (count-- > 0) {
+      // Copy backwards
+      Atomic::store(to--, Atomic::load(from--));
+    }
+  }
+}
+
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
   (void)memmove(to, from, count * HeapWordSize);
 }
@@ -71,67 +88,19 @@ static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
 }
 
 static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-  if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+  pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
- if (from > to) {
-    while (count-- > 0) {
-      // Copy forwards
-      *to++ = *from++;
-    }
-  } else {
-    from += count - 1;
-    to   += count - 1;
-    while (count-- > 0) {
-      // Copy backwards
-      *to-- = *from--;
-    }
-  }
+ pd_conjoint_atomic_helper(from, to, count);
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
