@@ -35,7 +35,7 @@ import java.lang.classfile.CompoundElement;
 
 public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
         extends AbstractElement
-        implements CompoundElement<E>, AttributedElement, Util.Writable
+        implements CompoundElement<E>, AttributedElement
         permits BufferedCodeBuilder.Model, BufferedFieldBuilder.Model, BufferedMethodBuilder.Model {
     private final List<E> elements;
     private List<Attribute<?>> attributes;
@@ -63,8 +63,11 @@ public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
     public List<Attribute<?>> attributes() {
         if (attributes == null)
             attributes = elements.stream()
-                                 .filter(e -> e instanceof Attribute)
-                                 .<Attribute<?>>map(e -> (Attribute<?>) e)
+                                 .<Attribute<?>>mapMulti((e, sink) -> {
+                                     if (e instanceof Attribute<?> attr) {
+                                         sink.accept(attr);
+                                     }
+                                 })
                                  .toList();
         return attributes;
     }

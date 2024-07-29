@@ -184,7 +184,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   // Process merged VBAs
 
   if (EnableVectorAggressiveReboxing) {
-    Unique_Node_List calls(C->comp_arena());
+    Unique_Node_List calls;
     for (DUIterator_Fast imax, i = vec_box->fast_outs(imax); i < imax; i++) {
       Node* use = vec_box->fast_out(i);
       if (use->is_CallJava()) {
@@ -238,9 +238,9 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
   }
 
   // Process debug uses at safepoints
-  Unique_Node_List safepoints(C->comp_arena());
+  Unique_Node_List safepoints;
 
-  Unique_Node_List worklist(C->comp_arena());
+  Unique_Node_List worklist;
   worklist.push(vec_box);
   while (worklist.size() > 0) {
     Node* n = worklist.pop();

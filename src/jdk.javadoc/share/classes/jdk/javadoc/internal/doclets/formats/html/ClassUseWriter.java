@@ -142,7 +142,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
         methodSubWriter = new MethodWriter(this);
         constrSubWriter = new ConstructorWriter(this);
-        constrSubWriter.setFoundNonPubConstructor(true);
+        constrSubWriter.setShowConstructorModifiers(true);
         fieldSubWriter = new FieldWriter(this);
         classSubWriter = new NestedClassWriter(this);
     }

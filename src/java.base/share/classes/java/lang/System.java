@@ -2623,10 +2623,6 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public int stringSize(long i) {
-                return Long.stringSize(i);
-            }
-
             public int getCharsLatin1(long i, int index, byte[] buf) {
                 return StringLatin1.getChars(i, index, buf);
             }

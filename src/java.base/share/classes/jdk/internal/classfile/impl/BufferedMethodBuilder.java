@@ -196,7 +196,11 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<CodeModel> code() {
-            throw new UnsupportedOperationException("nyi");
+            return elements.stream().<CodeModel>mapMulti((e, sink) -> {
+                if (e instanceof CodeModel cm) {
+                    sink.accept(cm);
+                }
+            }).findFirst();
         }
 
         @Override
@@ -207,13 +211,6 @@ public final class BufferedMethodBuilder
                     forEach(mb);
                 }
             });
-        }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, context, name, desc, methodFlags(), null);
-            elements.forEach(mb);
-            mb.writeTo(buf);
         }
 
         @Override
