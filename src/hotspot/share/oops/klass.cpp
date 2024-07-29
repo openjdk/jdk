@@ -181,7 +181,10 @@ bool Klass::linear_search_secondary_supers(const Klass* k) const {
 // occupancy bitmap rotated such that Bit 1 is the next bit to test,
 // search for k.
 bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
-  if (rotated_bitmap == SECONDARY_SUPERS_BITMAP_FULL) {
+  // For performance reasons we don't use a hashed lookup unless there
+  // are at least two empty slots in the table. If there were only one
+  // empty slot resulting search would be slower than linear probing.
+  if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
     return linear_search_secondary_supers(k);
   }
 
@@ -366,6 +369,8 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     int hash_slot = secondaries->at(0)->hash_slot();
     return uintx(1) << hash_slot;
   }
+
+  // Invariant: _secondary_supers.length >= population_count(_secondary_supers_bitmap)
 
   // Don't attempt to hash a table that's completely full, because in
   // the case of an absent interface linear probing would not
