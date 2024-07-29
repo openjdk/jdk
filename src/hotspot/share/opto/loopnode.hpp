@@ -841,6 +841,8 @@ class PhaseIdealLoop : public PhaseTransform {
   uint *_preorders;
   uint _max_preorder;
 
+  ReallocMark _nesting; // Safety checks for arena reallocation
+
   const PhaseIdealLoop* _verify_me;
   bool _verify_only;
 
@@ -853,6 +855,7 @@ class PhaseIdealLoop : public PhaseTransform {
 
   // Allocate _preorders[] array
   void reallocate_preorders() {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, C->unique());
       _max_preorder = C->unique();
@@ -863,6 +866,7 @@ class PhaseIdealLoop : public PhaseTransform {
   // Check to grow _preorders[] array for the case when build_loop_tree_impl()
   // adds new nodes.
   void check_grow_preorders( ) {
+    _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       uint newsize = _max_preorder<<1;  // double size of array
       _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, newsize);
