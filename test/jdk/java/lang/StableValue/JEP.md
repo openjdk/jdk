@@ -109,7 +109,7 @@ values or elements will change *at most once*, thereby providing crucial perform
 flexibility benefits. With the help of `@Stable` the above example can be rewritten as follows:
 
 ```
-// Double-checked locking idiom
+// Double-checked locking idiom (JDK internal use only)
 class Foo {
 
     @Stable
@@ -127,10 +127,9 @@ class Foo {
 Note how the `logger` field no longer needs to be marked as `volatile`. And, since the JVM knows that `logger` can
 change at most once, subsequent accesses to the `logger` field can be
 [constant-folded](https://en.wikipedia.org/wiki/Constant_folding) away. Alas, the powerful `@Stable` is
-fundamentally unsafe: as the attentive reader might have noticed, the above code is correct only as long as
+fundamentally _unsafe_: as the attentive reader might have noticed, the above code is correct only as long as
 `getLogger` returns, for any given string argument passed to it, a `Logger` object with the *same identity*.
-This is crucial to ensure that the `logger` field is mutated only once: spurious racy updates to `logger` can be
-safely ignored, as they don't affect the value stored in that field.
+This is crucial to ensure that the `logger` field is mutated only once: spurious racy update attempts to `logger` can be safely ignored, only if they don't change the value stored in that field.
 
 What we are missing -- in all cases -- is a *safe* way to *promise* that a constant will be initialized by the
 time it is used, with a value that is computed at most once. Such a mechanism would give the Java runtime maximum
