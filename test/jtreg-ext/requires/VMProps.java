@@ -138,6 +138,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("vm.cgroup.tools", this::cgroupTools);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
@@ -777,6 +778,21 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String jdkForeignLinker() {
         return String.valueOf(CABI.current());
+    }
+
+    private String cgroupTools() {
+        ProcessBuilder pb = new ProcessBuilder("cgcreate","-h");
+        pb.redirectErrorStream(true);
+        int exitCode = -1;
+        try {
+            Process process = pb.start();
+            exitCode = process.waitFor();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return "" + (exitCode == 0);
     }
 
     /**
