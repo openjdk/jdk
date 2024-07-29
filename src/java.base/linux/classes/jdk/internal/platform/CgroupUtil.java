@@ -54,12 +54,15 @@ public final class CgroupUtil {
 
     static void unwrapIOExceptionAndRethrow(PrivilegedActionException pae) throws IOException {
         Throwable x = pae.getCause();
-        if (x instanceof IOException)
+        if (x instanceof IOException) {
             throw (IOException) x;
-        if (x instanceof RuntimeException)
+        }
+        if (x instanceof RuntimeException) {
             throw (RuntimeException) x;
-        if (x instanceof Error)
+        }
+        if (x instanceof Error) {
             throw (Error) x;
+        }
     }
 
     static String readStringValue(CgroupSubsystemController controller, String param) throws IOException {
@@ -87,6 +90,70 @@ public final class CgroupUtil {
             throw new InternalError(e.getCause());
         } catch (UncheckedIOException e) {
             throw e.getCause();
+        }
+    }
+
+    /**
+     * Calculate the processor count based on the host CPUs and set cpu quota.
+     *
+     * @param cpu      The cpu controller to read the quota values from.
+     * @param hostCpus The physical host CPUs
+     * @return The minimum of host CPUs and the configured cpu quota, never
+     *         negative.
+     */
+    static int processorCount(CgroupSubsystemCpuController cpu, int hostCpus) {
+        int limit = hostCpus;
+        long quota = cpu.getCpuQuota();
+        long period = cpu.getCpuPeriod();
+        int quotaCount = 0;
+
+        if (quota > CgroupSubsystem.LONG_RETVAL_UNLIMITED && period > 0) {
+            quotaCount = (int) Math.ceilDiv(quota, period);
+        }
+        if (quotaCount != 0) {
+            limit = quotaCount;
+        }
+        return Math.min(hostCpus, limit);
+    }
+
+    public static void adjustController(CgroupSubsystemCpuController cpu) {
+        if (!cpu.needsAdjustment()) {
+            return;
+        }
+        String origCgroupPath = cpu.getCgroupPath();
+        Path workingPath = Path.of(origCgroupPath);
+        boolean adjustmentDone = false;
+        int hostCpus = CgroupMetrics.getTotalCpuCount0();
+
+        int limit = CgroupUtil.processorCount(cpu, hostCpus);
+        while (limit == hostCpus && ((workingPath = workingPath.getParent()) != null)) {
+            cpu.setPath(workingPath.toString()); // adjust path
+            limit = CgroupUtil.processorCount(cpu, hostCpus);
+            adjustmentDone = true;
+        }
+        if (adjustmentDone && limit == hostCpus) {
+            // No lower limit found adjust to original path
+            cpu.setPath(origCgroupPath);
+        }
+    }
+
+    public static void adjustController(CgroupSubsystemMemoryController memory) {
+        if (!memory.needsAdjustment()) {
+            return;
+        }
+        long physicalMemory = CgroupMetrics.getTotalMemorySize0();
+        String origCgroupPath = memory.getCgroupPath();
+        Path workingPath = Path.of(origCgroupPath);
+        boolean adjustmentDone = false;
+        long limit = memory.getMemoryLimit(physicalMemory);
+        while (limit < 0 && ((workingPath = workingPath.getParent()) != null)) {
+            memory.setPath(workingPath.toString()); // adjust path
+            limit = memory.getMemoryLimit(physicalMemory);
+            adjustmentDone = true;
+        }
+        if (adjustmentDone && limit < 0) {
+            // No lower limit found adjust to original path
+            memory.setPath(origCgroupPath);
         }
     }
 }

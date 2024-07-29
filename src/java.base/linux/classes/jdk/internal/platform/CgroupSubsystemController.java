@@ -44,7 +44,29 @@ public interface CgroupSubsystemController {
 
     public static final String EMPTY_STR = "";
 
+    /**
+     * The controller path
+     *
+     * @return The path to the interface files for this controller.
+     */
     public String path();
+
+    public void setPath(String cgroupPath);
+
+    public String getCgroupPath();
+
+    /**
+     * Some systems don't have the interface files at the leaf of the controller
+     * path. That is, the hierarchy up to the root needs to get traversed looking
+     * for a lower limit at any of the paths. This is not needed for OCI containers
+     * which have the limits set at the leaf.
+     *
+     * @return {@code true} for any controller that needs adjusting, {@code false}
+     *         otherwise.
+     */
+    public default boolean needsAdjustment() {
+        return false;
+    }
 
     /**
      * getStringValue
@@ -59,7 +81,9 @@ public interface CgroupSubsystemController {
      *         an error occurs.
      */
     public static String getStringValue(CgroupSubsystemController controller, String param) {
-        if (controller == null) return null;
+        if (controller == null) {
+            return null;
+        }
 
         try {
             return CgroupUtil.readStringValue(controller, param);
@@ -122,7 +146,9 @@ public interface CgroupSubsystemController {
                                     Function<String, Long> conversion,
                                     long defaultRetval) {
         String strval = getStringValue(controller, param);
-        if (strval == null) return defaultRetval;
+        if (strval == null) {
+            return defaultRetval;
+        }
         return conversion.apply(strval);
     }
 
@@ -137,7 +163,9 @@ public interface CgroupSubsystemController {
     public static double getDoubleValue(CgroupSubsystemController controller, String param, double defaultRetval) {
         String strval = getStringValue(controller, param);
 
-        if (strval == null) return defaultRetval;
+        if (strval == null) {
+            return defaultRetval;
+        }
 
         double retval = Double.parseDouble(strval);
 
@@ -159,7 +187,9 @@ public interface CgroupSubsystemController {
      *         was found.
      */
     public static long getLongEntry(CgroupSubsystemController controller, String param, String entryname, long defaultRetval) {
-        if (controller == null) return defaultRetval;
+        if (controller == null) {
+            return defaultRetval;
+        }
 
         try (Stream<String> lines = CgroupUtil.readFilePrivileged(Paths.get(controller.path(), param))) {
 
@@ -187,7 +217,9 @@ public interface CgroupSubsystemController {
      *         was an empty string.
      */
     public static int[] stringRangeToIntArray(String range) {
-        if (range == null || EMPTY_STR.equals(range)) return null;
+        if (range == null || EMPTY_STR.equals(range)) {
+            return null;
+        }
 
         ArrayList<Integer> results = new ArrayList<>();
         String strs[] = range.split(",");
@@ -235,7 +267,9 @@ public interface CgroupSubsystemController {
      */
     public static long convertStringToLong(String strval, long overflowRetval, long defaultRetval) {
         long retval = defaultRetval;
-        if (strval == null) return retval;
+        if (strval == null) {
+            return retval;
+        }
 
         try {
             retval = Long.parseLong(strval);

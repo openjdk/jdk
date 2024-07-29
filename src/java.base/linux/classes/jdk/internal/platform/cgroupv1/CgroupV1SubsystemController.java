@@ -33,16 +33,19 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
     private static final double DOUBLE_RETVAL_UNLIMITED = CgroupSubsystem.LONG_RETVAL_UNLIMITED;
     // Values returned larger than this number are unlimited.
     static long UNLIMITED_MIN = 0x7FFFFFFFFF000000L;
-    String root;
-    String mountPoint;
-    String path;
+    private final String root;
+    private final String mountPoint;
+    private String path;
+    private String cgroupPath;
 
     public CgroupV1SubsystemController(String root, String mountPoint) {
         this.root = root;
         this.mountPoint = mountPoint;
     }
 
+    @Override
     public void setPath(String cgroupPath) {
+        this.cgroupPath = cgroupPath;
         if (root != null && cgroupPath != null) {
             if (root.equals("/")) {
                 if (!cgroupPath.equals("/")) {
@@ -66,6 +69,15 @@ public class CgroupV1SubsystemController implements CgroupSubsystemController {
                 }
             }
         }
+    }
+
+    @Override
+    public String getCgroupPath() {
+        return cgroupPath;
+    }
+
+    protected String getRoot() {
+        return root;
     }
 
     @Override

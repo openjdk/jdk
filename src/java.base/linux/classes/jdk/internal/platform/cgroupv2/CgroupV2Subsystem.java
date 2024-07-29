@@ -28,11 +28,13 @@ package jdk.internal.platform.cgroupv2;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Paths;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import jdk.internal.platform.CgroupInfo;
+import jdk.internal.platform.CgroupMetrics;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
 import jdk.internal.platform.CgroupUtil;
@@ -42,25 +44,29 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
     private static volatile CgroupV2Subsystem INSTANCE;
     private static final long[] LONG_ARRAY_NOT_SUPPORTED = null;
     private static final int[] INT_ARRAY_UNAVAILABLE = null;
-    private final CgroupSubsystemController unified;
     private static final String PROVIDER_NAME = "cgroupv2";
-    private static final int PER_CPU_SHARES = 1024;
     private static final Object EMPTY_STR = "";
-    private static final long NO_SWAP = 0;
+    private final CgroupSubsystemController unified;
+    private final CgroupV2MemorySubSystemController memory;
+    private final CgroupV2CpuSubSystemController cpu;
 
-    private CgroupV2Subsystem(CgroupSubsystemController unified) {
+    private CgroupV2Subsystem(CgroupSubsystemController unified,
+                              CgroupV2MemorySubSystemController memory,
+                              CgroupV2CpuSubSystemController cpu) {
         this.unified = unified;
+        this.memory = memory;
+        this.cpu = cpu;
     }
 
-    private long getLongVal(String file, long defaultValue) {
-        return CgroupSubsystemController.getLongValue(unified,
+    static long getLongVal(CgroupSubsystemController controller, String file, long defaultValue) {
+        return CgroupSubsystemController.getLongValue(controller,
                                                       file,
                                                       CgroupV2SubsystemController::convertStringToLong,
                                                       defaultValue);
     }
 
-    private long getLongVal(String file) {
-        return getLongVal(file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
+    static long getLongVal(CgroupSubsystemController controller, String file) {
+        return getLongVal(controller, file, CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
     /**
@@ -74,12 +80,9 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
      *
      * @return A singleton CgroupSubsystem instance, never null.
      */
-    public static CgroupSubsystem getInstance(CgroupInfo anyController) {
+    public static CgroupSubsystem getInstance(Map<String, CgroupInfo> infos) {
         if (INSTANCE == null) {
-            CgroupSubsystemController unified = new CgroupV2SubsystemController(
-                    anyController.getMountPoint(),
-                    anyController.getCgroupPath());
-            CgroupV2Subsystem tmpCgroupSystem = new CgroupV2Subsystem(unified);
+            CgroupV2Subsystem tmpCgroupSystem = initSubSystem(infos);
             synchronized (CgroupV2Subsystem.class) {
                 if (INSTANCE == null) {
                     INSTANCE = tmpCgroupSystem;
@@ -89,6 +92,28 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
         return INSTANCE;
     }
 
+    private static CgroupV2Subsystem initSubSystem(Map<String, CgroupInfo> infos) {
+        // For unified it doesn't matter which controller we pick.
+        CgroupInfo anyController = infos.values().iterator().next();
+        Objects.requireNonNull(anyController);
+        // Memory and cpu limits might not be at the leaf, so we ought to
+        // iterate the path up the hierarchy and chose the one with the lowest
+        // limit. Therefore, we have specific instances for memory and cpu.
+        // Other controllers ought to be separate too, but it hasn't yet come up.
+        CgroupSubsystemController unified = new CgroupV2SubsystemController(
+                anyController.getMountPoint(),
+                anyController.getCgroupPath());
+        CgroupV2MemorySubSystemController memory = new CgroupV2MemorySubSystemController(
+                anyController.getMountPoint(),
+                anyController.getCgroupPath());
+        CgroupUtil.adjustController(memory);
+        CgroupV2CpuSubSystemController cpu = new CgroupV2CpuSubSystemController(
+                anyController.getMountPoint(),
+                anyController.getCgroupPath());
+        CgroupUtil.adjustController(cpu);
+        return new CgroupV2Subsystem(unified, memory, cpu);
+    }
+
     @Override
     public String getProvider() {
         return PROVIDER_NAME;
@@ -96,11 +121,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getCpuUsage() {
-        long micros = CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "usage_usec");
-        if (micros < 0) {
-            return micros;
-        }
-        return TimeUnit.MICROSECONDS.toNanos(micros);
+        return cpu.getCpuUsage();
     }
 
     @Override
@@ -110,93 +131,42 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getCpuUserUsage() {
-        long micros = CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "user_usec");
-        if (micros < 0) {
-            return micros;
-        }
-        return TimeUnit.MICROSECONDS.toNanos(micros);
+        return cpu.getCpuUserUsage();
     }
 
     @Override
     public long getCpuSystemUsage() {
-        long micros = CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "system_usec");
-        if (micros < 0) {
-            return micros;
-        }
-        return TimeUnit.MICROSECONDS.toNanos(micros);
+        return cpu.getCpuSystemUsage();
     }
 
     @Override
     public long getCpuPeriod() {
-        return getFromCpuMax(1 /* $PERIOD index */);
+        return cpu.getCpuPeriod();
     }
 
     @Override
     public long getCpuQuota() {
-        return getFromCpuMax(0 /* $MAX index */);
-    }
-
-    private long getFromCpuMax(int tokenIdx) {
-        String cpuMaxRaw = CgroupSubsystemController.getStringValue(unified, "cpu.max");
-        if (cpuMaxRaw == null) {
-            // likely file not found
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        }
-        // $MAX $PERIOD
-        String[] tokens = cpuMaxRaw.split("\\s+");
-        if (tokens.length != 2) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        }
-        String quota = tokens[tokenIdx];
-        return CgroupSubsystem.limitFromString(quota);
+        return cpu.getCpuQuota();
     }
 
     @Override
     public long getCpuShares() {
-        long sharesRaw = getLongVal("cpu.weight");
-        if (sharesRaw == 100 || sharesRaw <= 0) {
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        }
-        int shares = (int)sharesRaw;
-        // CPU shares (OCI) value needs to get translated into
-        // a proper Cgroups v2 value. See:
-        // https://github.com/containers/crun/blob/master/crun.1.md#cpu-controller
-        //
-        // Use the inverse of (x == OCI value, y == cgroupsv2 value):
-        // ((262142 * y - 1)/9999) + 2 = x
-        //
-        int x = 262142 * shares - 1;
-        double frac = x/9999.0;
-        x = ((int)frac) + 2;
-        if ( x <= PER_CPU_SHARES ) {
-            return PER_CPU_SHARES; // mimic cgroups v1
-        }
-        int f = x/PER_CPU_SHARES;
-        int lower_multiple = f * PER_CPU_SHARES;
-        int upper_multiple = (f + 1) * PER_CPU_SHARES;
-        int distance_lower = Math.max(lower_multiple, x) - Math.min(lower_multiple, x);
-        int distance_upper = Math.max(upper_multiple, x) - Math.min(upper_multiple, x);
-        x = distance_lower <= distance_upper ? lower_multiple : upper_multiple;
-        return x;
+        return cpu.getCpuShares();
     }
 
     @Override
     public long getCpuNumPeriods() {
-        return CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "nr_periods");
+        return cpu.getCpuNumPeriods();
     }
 
     @Override
     public long getCpuNumThrottled() {
-        return CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "nr_throttled");
+        return cpu.getCpuNumThrottled();
     }
 
     @Override
     public long getCpuThrottledTime() {
-        long micros = CgroupV2SubsystemController.getLongEntry(unified, "cpu.stat", "throttled_usec");
-        if (micros < 0) {
-            return micros;
-        }
-        return TimeUnit.MICROSECONDS.toNanos(micros);
+        return cpu.getCpuThrottledTime();
     }
 
     @Override
@@ -237,72 +207,40 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getMemoryFailCount() {
-        return CgroupV2SubsystemController.getLongEntry(unified, "memory.events", "max");
+        return memory.getMemoryFailCount();
     }
 
     @Override
     public long getMemoryLimit() {
-        String strVal = CgroupSubsystemController.getStringValue(unified, "memory.max");
-        return CgroupSubsystem.limitFromString(strVal);
+        return memory.getMemoryLimit(CgroupMetrics.getTotalMemorySize0());
     }
 
     @Override
     public long getMemoryUsage() {
-        return getLongVal("memory.current");
+        return memory.getMemoryUsage();
     }
 
     @Override
     public long getTcpMemoryUsage() {
-        return CgroupV2SubsystemController.getLongEntry(unified, "memory.stat", "sock");
+        return memory.getTcpMemoryUsage();
     }
 
-    /**
-     * Note that for cgroups v2 the actual limits set for swap and
-     * memory live in two different files, memory.swap.max and memory.max
-     * respectively. In order to properly report a cgroup v1 like
-     * compound value we need to sum the two values. Setting a swap limit
-     * without also setting a memory limit is not allowed.
-     */
+
     @Override
     public long getMemoryAndSwapLimit() {
-        String strVal = CgroupSubsystemController.getStringValue(unified, "memory.swap.max");
-        // We only get a null string when file memory.swap.max doesn't exist.
-        // In that case we return the memory limit without any swap.
-        if (strVal == null) {
-            return getMemoryLimit();
-        }
-        long swapLimit = CgroupSubsystem.limitFromString(strVal);
-        if (swapLimit >= 0) {
-            long memoryLimit = getMemoryLimit();
-            assert memoryLimit >= 0;
-            return memoryLimit + swapLimit;
-        }
-        return swapLimit;
+        return memory.getMemoryAndSwapLimit(CgroupMetrics.getTotalMemorySize0(),
+                                            CgroupMetrics.getTotalSwapSize0());
     }
 
-    /**
-     * Note that for cgroups v2 the actual values set for swap usage and
-     * memory usage live in two different files, memory.current and memory.swap.current
-     * respectively. In order to properly report a cgroup v1 like
-     * compound value we need to sum the two values. Setting a swap limit
-     * without also setting a memory limit is not allowed.
-     */
+
     @Override
     public long getMemoryAndSwapUsage() {
-        long memoryUsage = getMemoryUsage();
-        if (memoryUsage >= 0) {
-            // If file memory.swap.current doesn't exist, only return the regular
-            // memory usage (without swap). Thus, use default value of NO_SWAP.
-            long swapUsage = getLongVal("memory.swap.current", NO_SWAP);
-            return memoryUsage + swapUsage;
-        }
-        return memoryUsage; // case of no memory limits
+        return memory.getMemoryAndSwapUsage();
     }
 
     @Override
     public long getMemorySoftLimit() {
-        String softLimitStr = CgroupSubsystemController.getStringValue(unified, "memory.low");
-        return CgroupSubsystem.limitFromString(softLimitStr);
+        return memory.getMemorySoftLimit(CgroupMetrics.getTotalMemorySize0());
     }
 
     @Override
@@ -313,7 +251,7 @@ public class CgroupV2Subsystem implements CgroupSubsystem {
 
     @Override
     public long getPidsCurrent() {
-        return getLongVal("pids.current");
+        return getLongVal(unified, "pids.current");
     }
 
     @Override

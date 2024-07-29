@@ -38,9 +38,7 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
-import jdk.test.lib.Asserts;
+
 import jdk.test.lib.Utils;
 import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
@@ -49,7 +47,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestLimitsUpdating {
     private static final long M = 1024 * 1024;
-    private static final String TARGET_CONTAINER = "limitsUpdatingJDK_" + Runtime.getRuntime().version().major();
+    private static final String TARGET_CONTAINER = "limitsUpdatingJDK_" + Runtime.version().feature();
     private static final String imageName = Common.imageName("limitsUpdatingJDK");
 
     public static void main(String[] args) throws Exception {
@@ -90,6 +88,7 @@ public class TestLimitsUpdating {
         opts.addJavaOpts("java.base/jdk.internal.platform=ALL-UNNAMED");
         final OutputAnalyzer out[] = new OutputAnalyzer[1];
         Thread t1 = new Thread() {
+                @Override
                 public void run() {
                     try {
                         out[0] = DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0);
@@ -111,6 +110,7 @@ public class TestLimitsUpdating {
         final List<String> containerCommand = getContainerUpdate(300_000, 100_000, "300m");
         // Run the update command so as to increase resources once the container signaled it has started.
         Thread t2 = new Thread() {
+                @Override
                 public void run() {
                     try {
                         DockerTestUtils.execute(containerCommand).shouldHaveExitValue(0);
