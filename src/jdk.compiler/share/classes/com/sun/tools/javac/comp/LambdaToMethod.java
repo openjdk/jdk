@@ -1199,10 +1199,6 @@ public class LambdaToMethod extends TreeTranslator {
                 case PARAM:
                     ret = new VarSymbol((sym.flags() & FINAL) | PARAMETER, sym.name, types.erasure(sym.type), translatedSym);
                     ret.pos = sym.pos;
-                    // Set ret.data. Same as case LOCAL_VAR above.
-                    if (sym.isExceptionParameter()) {
-                        ret.setData(ElementKind.EXCEPTION_PARAMETER);
-                    }
                     break;
                 default:
                     Assert.error(skind.name());

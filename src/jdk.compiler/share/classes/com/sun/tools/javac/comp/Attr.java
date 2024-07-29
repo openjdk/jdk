@@ -182,6 +182,7 @@ public class Attr extends JCTree.Visitor {
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
+        initBlockType = new MethodType(List.nil(), syms.voidType, List.nil(), syms.methodClass);
     }
 
     /** Switch: reifiable types in instanceof enabled?
@@ -628,6 +629,7 @@ public class Attr extends JCTree.Visitor {
     final ResultInfo unknownTypeInfo;
     final ResultInfo unknownTypeExprInfo;
     final ResultInfo recoveryInfo;
+    final MethodType initBlockType;
 
     Type pt() {
         return resultInfo.pt;
@@ -1419,10 +1421,9 @@ public class Attr extends JCTree.Visitor {
             // Block is a static or instance initializer;
             // let the owner of the environment be a freshly
             // created BLOCK-method.
-            Type fakeOwnerType = new MethodType(List.nil(), syms.voidType, List.nil(), syms.methodClass);
             Symbol fakeOwner =
                 new MethodSymbol(tree.flags | BLOCK |
-                    env.info.scope.owner.flags() & STRICTFP, names.empty, fakeOwnerType,
+                    env.info.scope.owner.flags() & STRICTFP, names.empty, initBlockType,
                     env.info.scope.owner);
             final Env<AttrContext> localEnv =
                 env.dup(tree, env.info.dup(env.info.scope.dupUnshared(fakeOwner)));
