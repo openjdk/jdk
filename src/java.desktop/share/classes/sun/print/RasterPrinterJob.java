@@ -2475,8 +2475,9 @@ public abstract class RasterPrinterJob extends PrinterJob {
     }
 
     /**
-     * Returns true is a print job is ongoing but will
-     * be cancelled and the next opportunity. false is
+     * Returns true if a print job is ongoing and user
+     * has cancelled the printjob and will
+     * be cancelled at the next opportunity. false is
      * returned otherwise.
      */
     public boolean isCancelled() {
