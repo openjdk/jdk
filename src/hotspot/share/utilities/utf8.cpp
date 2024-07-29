@@ -431,16 +431,21 @@ void UTF8::truncate_to_legal_utf8(unsigned char* buffer, int length) {
   // got a truncated string, then dropping one more character is not significant. So we work from the
   // end of the buffer looking for the first byte that can be the starting byte of a UTF-8 encoded sequence,
   // then we insert NUL at that location to terminate the buffer. There is an added complexity with 6 byte
-  // encodings as the first and fourth bytes are the same.
+  // encodings as the first and fourth bytes are the same and overlap with the 3 byte encoding.
 
   for (int index = length - 2; index > 0; index--) {
     if (is_starting_byte(buffer[index])) {
       if (buffer[index] == 0xED) {
-        // Could be first or fourth byte. If fourth
-        // then 2 bytes before will have second byte pattern (0b1010xxxx)
-        if ((index - 3) >= 0 && ((buffer[index - 2] & 0xF0) == 0xA0)) {
-          // it was fourth byte so truncate 3 bytes earlier
-          assert(buffer[index - 3] == 0xED, "malformed sequence");
+        // Could be first byte of 3 or 6, or fourth byte of 6.
+        // If fourth the previous three bytes will encode a high
+        // surrogate value in the range EDA080 to EDAFBF. We only
+        // need to check for EDA to establish this as the "missing"
+        // values in EDAxxx would not be valid 3 byte encodings.
+        if ((index - 3) >= 0 &&
+            (buffer[index - 3] == 0xED) &&
+            ((buffer[index - 2] & 0xF0) == 0xA0)) {
+          assert(buffer[index - 1] >= 0x80 && buffer[index - 1] <= 0xBF, "sanity check");
+          // It was fourth byte so truncate 3 bytes earlier
           index -= 3;
         }
       }
