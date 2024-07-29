@@ -126,6 +126,9 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
                 }
                 // all 20 writes unexpectedly completed
                 serverAllWritesDone.complete(true);
+            } catch(IOException ex) {
+                System.out.println("Got expected exception: " + ex);
+                serverAllWritesDone.complete(false);
             }
         });
         HttpClient client = getHttpClient();
@@ -138,17 +141,10 @@ public class H3MemoryHandlingTest implements HttpServerAdapters {
             assertFalse(errorCF.isDone(), "Expected the connection to be open");
             assertFalse(serverAllWritesDone.isDone());
             response1.body().close();
-        } finally {
-            client.close();
-        }
-        try {
             final boolean done = serverAllWritesDone.get(10, TimeUnit.SECONDS);
             assertFalse(done, "Too much data was buffered by the client");
-        } catch (TimeoutException te) {
-            // timeout is expected since the server isn't expected to be
-            // blocked forever trying to write out the response data that
-            // the client app never accepts/consumes
-            System.out.println("received the expected timeout exception");
+        } finally {
+            client.close();
         }
     }
 

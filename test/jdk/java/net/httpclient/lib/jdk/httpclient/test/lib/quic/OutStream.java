@@ -53,7 +53,8 @@ final class OutStream extends OutputStream {
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
-        while(quicStreamWriter.credit() < 0) {
+        while (quicStreamWriter.credit() < 0
+                && !quicStreamWriter.stopSendingReceived()) {
             try {
                 writeSemaphore.acquire();
             } catch (InterruptedException e) {
