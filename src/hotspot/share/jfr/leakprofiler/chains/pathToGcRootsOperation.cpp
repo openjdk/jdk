@@ -48,6 +48,9 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#endif
 
 PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs) :
   _sampler(sampler),_edge_store(edge_store), _cutoff_ticks(cutoff), _emit_all(emit_all), _skip_bfs(skip_bfs) {}
@@ -142,9 +145,10 @@ bool PathToGcRootsOperation::is_safe() {
   if (UseShenandoahGC) {
     // This operation uses mark words to track objects. While the operation
     // would restore the mark words after completion, it would interact with
-    // mark word uses by Shenandoah itself, if we hit the op during the concurrent
-    // GC cycle.
-    return ShenandoahHeap::heap()->is_idle();
+    // mark word uses by Shenandoah itself. This is a problem if we hit the op
+    // when Shenandoah has forwarded objects, which means it uses mark words
+    // to carry GC metadata.
+    return !ShenandoahHeap::heap()->has_forwarded_objects();
   }
 #endif
   return true;
