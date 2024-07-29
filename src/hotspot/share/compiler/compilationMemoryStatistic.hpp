@@ -36,6 +36,30 @@ class outputStream;
 class Symbol;
 class DirectiveSet;
 
+// Helper class to wrap the array of arena tags for easier processing
+class ArenaTagsCounter {
+private:
+  size_t _counter[Arena::tag_count()];
+
+public:
+  int element_count() const { return Arena::tag_count(); }
+  const char* tag_name(int tag) const { return Arena::tag_name[tag]; }
+
+  size_t  counter(int tag) const {
+    assert(tag < element_count(), "invalid tag %d", tag);
+    return _counter[tag];
+  }
+
+  void add(int tag, size_t value) {
+    assert(tag < element_count(), "invalid tag %d", tag);
+    _counter[tag] += value;
+  }
+
+  void clear() {
+    memset(_counter, 0, sizeof(size_t) * element_count());
+  }
+};
+
 // Counters for allocations from arenas during compilation
 class ArenaStatCounter : public CHeapObj<mtCompiler> {
   // Current bytes, total
@@ -43,23 +67,23 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   // bytes at last peak, total
   size_t _peak;
   // Current bytes used by arenas per tag
-  size_t _tags_size[Arena::tag_count()];
+  ArenaTagsCounter _current_by_tag;
+  // Peak composition:
+  ArenaTagsCounter _peak_by_tag;
   // MemLimit handling
   size_t _limit;
   bool _hit_limit;
   bool _limit_in_process;
 
-  // Peak composition:
-  size_t _tags_size_at_peak[Arena::tag_count()];
+  // When to start accounting
+  bool _active;
+
   // Number of live nodes when total peaked (c2 only)
   unsigned _live_nodes_at_peak;
 
-  // When to start account
-  bool _active;
-
   void update_c2_node_count();
 
-  void init();
+  void reset();
 
 public:
   ArenaStatCounter();
@@ -68,7 +92,7 @@ public:
   size_t peak() const { return _peak; }
 
   // Peak details
-  const size_t* tags_size_at_peak() const { return _tags_size_at_peak; }
+  ArenaTagsCounter peak_by_tag() const { return _peak_by_tag; }
   unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
 
   // Mark the start and end of a compilation.

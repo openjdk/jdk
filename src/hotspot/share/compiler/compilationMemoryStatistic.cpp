@@ -52,14 +52,14 @@
 #include "utilities/resourceHash.hpp"
 
 ArenaStatCounter::ArenaStatCounter() {
-  init();
+  reset();
 }
 
-void ArenaStatCounter::init() {
+void ArenaStatCounter::reset() {
   _current = 0;
   _peak = 0;
-  memset(_tags_size, 0, sizeof(_tags_size));
-  memset(_tags_size_at_peak, 0, sizeof(_tags_size_at_peak));
+  _current_by_tag.clear();
+  _peak_by_tag.clear();
   _limit = 0;
   _hit_limit = false;
   _limit_in_process = false;
@@ -68,7 +68,7 @@ void ArenaStatCounter::init() {
 }
 
 void ArenaStatCounter::start(size_t limit) {
-  init();
+  reset();
   _active = true;
   _limit = limit;
 }
@@ -108,20 +108,13 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
 #endif
   // Update totals
   _current += delta;
-  _tags_size[tag] += delta;
-  size_t total = 0;
-  for (int tag = 0; tag < Arena::tag_count(); tag++) {
-    total += _tags_size[tag];
-  }
-  if (total != _current) {
-    log_info(compilation, alloc)("WARNING!!! Total does not match current");
-  }
+  _current_by_tag.add(tag, delta);
   // Did we reach a peak?
   if (_current > _peak) {
     _peak = _current;
     assert(delta > 0, "Sanity (%zu %zu)", _current, _peak);
     update_c2_node_count();
-    memcpy(_tags_size_at_peak, _tags_size, sizeof(_tags_size));
+    _peak_by_tag = _current_by_tag;
     rc = true;
     // Did we hit the memory limit?
     if (!_hit_limit && _limit > 0 && _peak > _limit) {
@@ -133,9 +126,9 @@ bool ArenaStatCounter::account(ssize_t delta, int tag) {
 
 void ArenaStatCounter::print_on(outputStream* st) const {
   st->print("%zu [", _peak);
-  for (int tag = 0; tag < Arena::tag_count(); tag++) {
-    if (_tags_size_at_peak[tag] > 0) {
-      st->print("%s %zu ", Arena::tag_name[tag], _tags_size_at_peak[tag]);
+  for (int tag = 0; tag < _peak_by_tag.element_count(); tag++) {
+    if (_peak_by_tag.counter(tag) > 0) {
+      st->print("%s %zu ", _peak_by_tag.tag_name(tag), _peak_by_tag.counter(tag));
     }
   }
   st->print("]");
@@ -201,7 +194,7 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   // peak usage, bytes, over all arenas
   size_t _total;
   // usage per arena tag when total peaked
-  size_t _tags_size_at_peak[Arena::tag_count()];
+  ArenaTagsCounter _peak_by_tag;
   // number of nodes (c2 only) when total peaked
   unsigned _live_nodes_at_peak;
   const char* _result;
@@ -213,7 +206,7 @@ public:
       _time(0), _num_recomp(0), _thread(nullptr), _limit(0),
       _total(0), _live_nodes_at_peak(0),
       _result(nullptr) {
-    memset(_tags_size_at_peak, 0, sizeof(_tags_size_at_peak));
+    _peak_by_tag.clear();
   }
 
   void set_comptype(CompilerType comptype) { _comptype = comptype; }
@@ -223,10 +216,7 @@ public:
   void inc_recompilation() { _num_recomp++; }
 
   void set_total(size_t n) { _total = n; }
-  void set_tags_size_at_peak(size_t* tags_size_at_peak, int nelements) {
-    assert(nelements*sizeof(size_t) <= sizeof(_tags_size_at_peak), "overflow check");
-    memcpy(_tags_size_at_peak, tags_size_at_peak, nelements*sizeof(size_t));
-  }
+  void set_peak_by_tag(ArenaTagsCounter peak_by_tag) { _peak_by_tag = peak_by_tag; }
   void set_live_nodes_at_peak(unsigned n) { _live_nodes_at_peak = n; }
 
   void set_result(const char* s) { _result = s; }
@@ -277,9 +267,9 @@ public:
 
     for (int tag = 0; tag < Arena::tag_count(); tag++) {
       if (human_readable) {
-        st->print(PROPERFMT " ", PROPERFMTARGS(_tags_size_at_peak[tag]));
+        st->print(PROPERFMT " ", PROPERFMTARGS(_peak_by_tag.counter(tag)));
       } else {
-        st->print("%zu ", _tags_size_at_peak[tag]);
+        st->print("%zu ", _peak_by_tag.counter(tag));
       }
       col += 10; st->fill_to(col);
     }
@@ -362,7 +352,7 @@ class MemStatTable :
 public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
-           size_t total, size_t* tags_size_at_peak, int nelements,
+           size_t total, ArenaTagsCounter peak_by_tag,
            unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatTableKey key(fmn, comptype);
@@ -381,7 +371,7 @@ public:
     e->set_comptype(comptype);
     e->inc_recompilation();
     e->set_total(total);
-    e->set_tags_size_at_peak(tags_size_at_peak, nelements);
+    e->set_peak_by_tag(peak_by_tag);
     e->set_live_nodes_at_peak(live_nodes_at_peak);
     e->set_limit(limit);
     e->set_result(result);
@@ -468,8 +458,7 @@ void CompilationMemoryStatistic::on_end_compilation() {
 
     _the_table->add(fmn, ct,
                     arena_stat->peak(), // total
-                    (size_t *)arena_stat->tags_size_at_peak(),
-                    Arena::tag_count(),
+                    arena_stat->peak_by_tag(),
                     arena_stat->live_nodes_at_peak(),
                     arena_stat->limit(),
                     result);

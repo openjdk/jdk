@@ -83,26 +83,21 @@ public:
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
 };
 
-#define DO_ARENA_TAG(template) \
-  template(other, Others, Other arenas) \
-  template(ra, RA, Resource areas) \
-  template(ha, HA, Handle area) \
-  template(node, NA, Node arena) \
+#define DO_ARENA_TAG(FN) \
+  FN(other, Others, Other arenas) \
+  FN(ra, RA, Resource areas) \
+  FN(ha, HA, Handle area) \
+  FN(node, NA, Node arena) \
 
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 public:
-
-#define ARENA_TAG_ENUM_(name) tag_##name
-#define ARENA_TAG_ENUM(name, str, desc) ARENA_TAG_ENUM_(name),
-
   enum class Tag: uint8_t {
+#define ARENA_TAG_ENUM(name, str, desc) tag_##name,
     DO_ARENA_TAG(ARENA_TAG_ENUM)
+#undef ARENA_TAG_ENUM
     tag_count
   };
-
-#undef ARENA_TAG_ENUM
-#undef ARENA_TAG_ENUM_
 
   constexpr static int tag_count() {
     return static_cast<int>(Tag::tag_count);
