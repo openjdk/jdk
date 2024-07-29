@@ -34,7 +34,6 @@ package comile_framework.examples;
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This test shows a compilation of multiple jasm source code files.
@@ -75,20 +74,8 @@ public class MultiFileJasmExample {
         // Compile the source files.
         comp.compile();
 
-        // Load the compiled class.
-        Class c = comp.getClass("p.xyz.XYZ9");
-
-        // Invoke the "XYZ9.test" method from the compiled and loaded class.
-        Object ret;
-        try {
-            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("No such method:", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
-        }
+        // Object ret = XYZ9.test(5);
+        Object ret = comp.invoke("p.xyz.XYZ9", "test", new Object[] { 5 });
 
         // Extract return value of invocation, verify its value.
         int i = (int)ret;

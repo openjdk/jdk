@@ -32,7 +32,6 @@
 package compile_framework.tests;
 
 import compiler.lib.compile_framework.*;
-import java.lang.reflect.InvocationTargetException;
 
 public class TestBadJavaCompilation {
 

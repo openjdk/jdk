@@ -32,7 +32,6 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This test shows a compilation of multiple java and jasm source code files.
@@ -96,27 +95,14 @@ public class CombinedJavaJasmExample {
         // Compile the source files.
         comp.compile();
 
-        // Load the compiled class.
-        Class xyzJasm = comp.getClass("p.xyz.XYZJasm");
-        Class xyzJava = comp.getClass("p.xyz.XYZJava");
-
-        test(xyzJasm, 11, 11 * 2 * 3);
-        test(xyzJava, 13, 13 * 7 * 5);
+        test(comp, "p.xyz.XYZJasm", "test", 11, 11 * 2 * 3);
+        test(comp, "p.xyz.XYZJava", "test", 13, 13 * 7 * 5);
 
         System.out.println("Success.");
     }
 
-    public static void test(Class c, int input, int expected) {
-        Object ret;
-        try {
-            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { input });
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("No such method:", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
-        }
+    public static void test(CompileFramework comp, String className, String methodName, int input, int expected) {
+        Object ret = comp.invoke(className, methodName, new Object[] {input});
 
         // Extract return value of invocation, verify its value.
         int i = (int)ret;

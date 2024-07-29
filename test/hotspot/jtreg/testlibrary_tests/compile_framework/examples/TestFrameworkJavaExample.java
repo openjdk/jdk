@@ -86,19 +86,8 @@ public class TestFrameworkJavaExample {
         // Compile the source file.
         comp.compile();
 
-        // Load the compiled class.
-        Class c = comp.getClass("X1");
-
-        // Invoke the "X1.main" method from the compiled and loaded class.
-        try {
-            c.getDeclaredMethod("main", new Class[] { String[].class }).invoke(null, new Object[] { null });
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("No such method:", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
-        }
+        // X1.main(5);
+        comp.invoke("X1", "main", new Object[] {null});
     }
 
     // Generate a source java file as String

@@ -34,7 +34,6 @@ package compile_framework.examples;
 import compiler.lib.compile_framework.*;
 import java.io.StringWriter;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This test shows a compilation of multiple java source code files.
@@ -71,20 +70,9 @@ public class MultiFileJavaExample {
         // Compile the source files.
         comp.compile();
 
-        // Load the compiled class.
-        Class c = comp.getClass("p.xyz.XYZ9");
 
-        // Invoke the "XYZ9.test" method from the compiled and loaded class.
-        Object ret;
-        try {
-            ret = c.getDeclaredMethod("test", new Class[] {}).invoke(null, new Object[] {});
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("No such method:", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
-        }
+        // Object ret = XYZ9.test();
+        Object ret = comp.invoke("p.xyz.XYZ9", "test", new Object[] {});
 
         if (!ret.getClass().getSimpleName().equals("XYZ9")) {
             throw new RuntimeException("wrong result:" + ret);

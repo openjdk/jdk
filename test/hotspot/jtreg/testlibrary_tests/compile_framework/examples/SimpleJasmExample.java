@@ -32,7 +32,6 @@
 package compile_framework.examples;
 
 import compiler.lib.compile_framework.*;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * This test shows a simple compilation of java source code, and its invocation.
@@ -52,7 +51,7 @@ public class SimpleJasmExample {
                        ireturn;
                    }
                }
-        """;
+               """;
     }
 
     public static void main(String args[]) {
@@ -67,20 +66,8 @@ public class SimpleJasmExample {
         // Compile the source file.
         comp.compile();
 
-        // Load the compiled class.
-        Class c = comp.getClass("XYZ");
-
-        // Invoke the "XYZ.test" method from the compiled and loaded class.
-        Object ret;
-        try {
-            ret = c.getDeclaredMethod("test", new Class[] { int.class }).invoke(null, new Object[] { 5 });
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("No such method:", e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Illegal access:", e);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException("Invocation target:", e);
-        }
+        // Object ret = XYZ.test(5);
+        Object ret = comp.invoke("XYZ", "test", new Object[] {5});
 
         // Extract return value of invocation, verify its value.
         int i = (int)ret;

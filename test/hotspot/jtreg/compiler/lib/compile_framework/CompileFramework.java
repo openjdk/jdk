@@ -30,6 +30,8 @@ import compiler.lib.compile_framework.SourceCode;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -69,7 +71,7 @@ public class CompileFramework {
 
     public void compile() {
         if (classLoader != null) {
-            throw new RuntimeException("Cannot compile twice!");
+            throw new CompileFrameworkException("Cannot compile twice!");
         }
 
         println("------------------ CompileFramework: SourceCode -------------------");
@@ -260,7 +262,36 @@ public class CompileFramework {
         try {
             return Class.forName(name, true, classLoader);
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Class not found:", e);
+            throw new CompileFrameworkException("Class not found:", e);
+        }
+    }
+
+    public Object invoke(String className, String methodName, Object[] args) {
+        Class c = getClass(className);
+
+        Method[] methods = c.getDeclaredMethods();
+
+        Method method = null;
+
+        for (Method m : methods) {
+            if (m.getName().equals(methodName)) {
+                if (method != null) {
+                  throw new CompileFrameworkException("Method name \"" + methodName + "\" not unique in class \n" + className + "\".");
+                }
+                method = m;
+            }
+        }
+
+        if (method == null) {
+            throw new CompileFrameworkException("Method \"" + methodName + "\" not found in class \n" + className + "\".");
+        }
+
+        try {
+            return method.invoke(null, args);
+        } catch (IllegalAccessException e) {
+            throw new CompileFrameworkException("Illegal access:", e);
+        } catch (InvocationTargetException e) {
+            throw new CompileFrameworkException("Invocation target:", e);
         }
     }
 }
