@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
     }
 
     @Override
-    public void forEachElement(Consumer<E> consumer) {
+    public void forEach(Consumer<? super E> consumer) {
         elements.forEach(consumer);
     }
 
@@ -63,8 +63,11 @@ public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
     public List<Attribute<?>> attributes() {
         if (attributes == null)
             attributes = elements.stream()
-                                 .filter(e -> e instanceof Attribute)
-                                 .<Attribute<?>>map(e -> (Attribute<?>) e)
+                                 .<Attribute<?>>mapMulti((e, sink) -> {
+                                     if (e instanceof Attribute<?> attr) {
+                                         sink.accept(attr);
+                                     }
+                                 })
                                  .toList();
         return attributes;
     }

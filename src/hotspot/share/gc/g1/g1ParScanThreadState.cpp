@@ -277,7 +277,7 @@ void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
   }
 
   // Skip the card enqueue iff the object (to_array) is in survivor region.
-  // However, HeapRegion::is_survivor() is too expensive here.
+  // However, G1HeapRegion::is_survivor() is too expensive here.
   // Instead, we use dest_attr.is_young() because the two values are always
   // equal: successfully allocated young regions must be survivor regions.
   assert(dest_attr.is_young() == _g1h->heap_region_containing(to_array)->is_survivor(), "must be");
@@ -444,7 +444,7 @@ void G1ParScanThreadState::undo_allocation(G1HeapRegionAttr dest_attr,
 
 void G1ParScanThreadState::update_bot_after_copying(oop obj, size_t word_sz) {
   HeapWord* obj_start = cast_from_oop<HeapWord*>(obj);
-  HeapRegion* region = _g1h->heap_region_containing(obj_start);
+  G1HeapRegion* region = _g1h->heap_region_containing(obj_start);
   region->update_bot_for_block(obj_start, obj_start + word_sz);
 }
 
@@ -469,7 +469,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 
   uint age = 0;
   G1HeapRegionAttr dest_attr = next_region_attr(region_attr, old_mark, age);
-  HeapRegion* const from_region = _g1h->heap_region_containing(old);
+  G1HeapRegion* const from_region = _g1h->heap_region_containing(old);
   uint node_index = from_region->node_index();
 
   HeapWord* obj_ptr = _plab_allocator->plab_allocate(dest_attr, word_sz, node_index);
@@ -552,7 +552,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
     }
 
     // Skip the card enqueue iff the object (obj) is in survivor region.
-    // However, HeapRegion::is_survivor() is too expensive here.
+    // However, G1HeapRegion::is_survivor() is too expensive here.
     // Instead, we use dest_attr.is_young() because the two values are always
     // equal: successfully allocated young regions must be survivor regions.
     assert(dest_attr.is_young() == _g1h->heap_region_containing(obj)->is_survivor(), "must be");
@@ -623,7 +623,7 @@ void G1ParScanThreadStateSet::flush_stats() {
   _flushed = true;
 }
 
-void G1ParScanThreadStateSet::record_unused_optional_region(HeapRegion* hr) {
+void G1ParScanThreadStateSet::record_unused_optional_region(G1HeapRegion* hr) {
   for (uint worker_index = 0; worker_index < _num_workers; ++worker_index) {
     G1ParScanThreadState* pss = _states[worker_index];
     assert(pss != nullptr, "must be initialized");
@@ -640,7 +640,7 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markWord m, siz
   oop forward_ptr = old->forward_to_atomic(old, m, memory_order_relaxed);
   if (forward_ptr == nullptr) {
     // Forward-to-self succeeded. We are the "owner" of the object.
-    HeapRegion* r = _g1h->heap_region_containing(old);
+    G1HeapRegion* r = _g1h->heap_region_containing(old);
 
     if (_evac_failure_regions->record(_worker_id, r->hrm_index(), cause_pinned)) {
       G1HeapRegionPrinter::evac_failure(r);

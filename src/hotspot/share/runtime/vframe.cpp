@@ -205,8 +205,9 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       Klass* k = obj->klass();
       st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
-    else if (thread()->osthread()->get_state() == CONDVAR_WAIT) {
-      // We are waiting on the native class initialization monitor.
+    else if (thread()->osthread()->get_state() == OBJECT_WAIT) {
+      // We are waiting on an Object monitor but Object.wait() isn't the
+      // top-frame, so we should be waiting on a Class initialization monitor.
       InstanceKlass* k = thread()->class_to_be_initialized();
       if (k != nullptr) {
         st->print_cr("\t- waiting on the Class initialization monitor for %s", k->external_name());
@@ -617,94 +618,94 @@ javaVFrame* vframeStreamCommon::asJavaVFrame() {
 }
 
 #ifndef PRODUCT
-void vframe::print() {
-  if (WizardMode) _fr.print_value_on(tty,nullptr);
+void vframe::print(outputStream* output) {
+  if (WizardMode) _fr.print_value_on(output, nullptr);
 }
 
-void vframe::print_value() const {
-  ((vframe*)this)->print();
+void vframe::print_value(outputStream* output) const {
+  ((vframe*)this)->print(output);
 }
 
 
-void entryVFrame::print_value() const {
-  ((entryVFrame*)this)->print();
+void entryVFrame::print_value(outputStream* output) const {
+  ((entryVFrame*)this)->print(output);
 }
 
-void entryVFrame::print() {
-  vframe::print();
-  tty->print_cr("C Chunk in between Java");
-  tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
+void entryVFrame::print(outputStream* output) {
+  vframe::print(output);
+  output->print_cr("C Chunk in between Java");
+  output->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 
 
 // ------------- javaVFrame --------------
 
-static void print_stack_values(const char* title, StackValueCollection* values) {
+static void print_stack_values(outputStream* output, const char* title, StackValueCollection* values) {
   if (values->is_empty()) return;
-  tty->print_cr("\t%s:", title);
+  output->print_cr("\t%s:", title);
   values->print();
 }
 
 
-void javaVFrame::print() {
+void javaVFrame::print(outputStream* output) {
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
   HandleMark hm(current_thread);
 
-  vframe::print();
-  tty->print("\t");
+  vframe::print(output);
+  output->print("\t");
   method()->print_value();
-  tty->cr();
-  tty->print_cr("\tbci:    %d", bci());
+  output->cr();
+  output->print_cr("\tbci:    %d", bci());
 
-  print_stack_values("locals",      locals());
-  print_stack_values("expressions", expressions());
+  print_stack_values(output, "locals",      locals());
+  print_stack_values(output, "expressions", expressions());
 
   GrowableArray<MonitorInfo*>* list = monitors();
   if (list->is_empty()) return;
-  tty->print_cr("\tmonitor list:");
+  output->print_cr("\tmonitor list:");
   for (int index = (list->length()-1); index >= 0; index--) {
     MonitorInfo* monitor = list->at(index);
-    tty->print("\t  obj\t");
+    output->print("\t  obj\t");
     if (monitor->owner_is_scalar_replaced()) {
       Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
-      tty->print("( is scalar replaced %s)", k->external_name());
+      output->print("( is scalar replaced %s)", k->external_name());
     } else if (monitor->owner() == nullptr) {
-      tty->print("( null )");
+      output->print("( null )");
     } else {
       monitor->owner()->print_value();
-      tty->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
+      output->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
     }
     if (monitor->eliminated()) {
       if(is_compiled_frame()) {
-        tty->print(" ( lock is eliminated in compiled frame )");
+        output->print(" ( lock is eliminated in compiled frame )");
       } else {
-        tty->print(" ( lock is eliminated, frame not compiled )");
+        output->print(" ( lock is eliminated, frame not compiled )");
       }
     }
-    tty->cr();
-    tty->print("\t  ");
-    monitor->lock()->print_on(tty, monitor->owner());
-    tty->cr();
+    output->cr();
+    output->print("\t  ");
+    monitor->lock()->print_on(output, monitor->owner());
+    output->cr();
   }
 }
 
 
-void javaVFrame::print_value() const {
+void javaVFrame::print_value(outputStream* output) const {
   Method*    m = method();
   InstanceKlass*     k = m->method_holder();
-  tty->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
+  output->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
                 p2i(_fr.sp()),  p2i(_fr.unextended_sp()), p2i(_fr.fp()), p2i(_fr.pc()));
-  tty->print("%s.%s", k->internal_name(), m->name()->as_C_string());
+  output->print("%s.%s", k->internal_name(), m->name()->as_C_string());
 
   if (!m->is_native()) {
     Symbol*  source_name = k->source_file_name();
     int        line_number = m->line_number_from_bci(bci());
     if (source_name != nullptr && (line_number != -1)) {
-      tty->print("(%s:%d)", source_name->as_C_string(), line_number);
+      output->print("(%s:%d)", source_name->as_C_string(), line_number);
     }
   } else {
-    tty->print("(Native Method)");
+    output->print("(Native Method)");
   }
   // Check frame size and print warning if it looks suspiciously large
   if (fr().sp() != nullptr) {
@@ -718,25 +719,25 @@ void javaVFrame::print_value() const {
   }
 }
 
-void javaVFrame::print_activation(int index) const {
+void javaVFrame::print_activation(int index, outputStream* output) const {
   // frame number and method
-  tty->print("%2d - ", index);
+  output->print("%2d - ", index);
   ((vframe*)this)->print_value();
-  tty->cr();
+  output->cr();
 
   if (WizardMode) {
     ((vframe*)this)->print();
-    tty->cr();
+    output->cr();
   }
 }
 
 // ------------- externalVFrame --------------
 
-void externalVFrame::print() {
-  _fr.print_value_on(tty,nullptr);
+void externalVFrame::print(outputStream* output) {
+  _fr.print_value_on(output, nullptr);
 }
 
-void externalVFrame::print_value() const {
-  ((vframe*)this)->print();
+void externalVFrame::print_value(outputStream* output) const {
+  ((vframe*)this)->print(output);
 }
 #endif // PRODUCT

@@ -89,7 +89,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
 
     private static byte[] instrument(byte[] classFile) {
         var cc = ClassFile.of();
-        return cc.transform(cc.parse(classFile),
+        return cc.transformClass(cc.parse(classFile),
                         ClassTransform.transformingMethodBodies((cob, coe) -> {
                             if (coe instanceof BranchInstruction)
                                 cob.invokestatic(CD_Cancel, "stopCheck", ConstantDescs.MTD_void);

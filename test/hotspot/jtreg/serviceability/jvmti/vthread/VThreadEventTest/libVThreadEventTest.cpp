@@ -65,6 +65,11 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
   jvmtiError err;
+  JNIEnv *env;
+  jsize nVMs;
+  jint res;
+  jclass clazz;
+  jmethodID mid;
 
   LOG("Agent_OnAttach started\n");
   if (vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION) != JNI_OK || !jvmti) {
@@ -97,6 +102,41 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
   check_jvmti_error(err, "SetEventNotificationMode for VirtualThreadUnmount");
 
   LOG("vthread events enabled\n");
+
+  // call VThreadEventTest.agentStarted to notify test that agent has started
+
+  res = JNI_GetCreatedJavaVMs(&vm, 1, &nVMs);
+  if (res != JNI_OK) {
+      LOG("JNI_GetCreatedJavaVMs failed: %d\n", res);
+      return JNI_ERR;
+  }
+
+  res = vm->GetEnv((void **) &env, JNI_VERSION_21);
+  if (res != JNI_OK) {
+    LOG("GetEnv failed: %d\n", res);
+    return JNI_ERR;
+  }
+
+  clazz = env->FindClass("VThreadEventTest");
+  if (clazz == NULL) {
+      LOG("FindClass failed\n");
+      return JNI_ERR;
+  }
+
+  mid = env->GetStaticMethodID(clazz, "agentStarted", "()V");
+  if (mid == NULL) {
+      LOG("GetStaticMethodID failed\n");
+      return JNI_ERR;
+  }
+
+  env->CallStaticVoidMethod(clazz, mid);
+  if (env->ExceptionOccurred()) {
+      LOG("CallStaticVoidMethod failed\n");
+      return JNI_ERR;
+  }
+
+  LOG("Agent_OnAttach done\n");
+
   return JVMTI_ERROR_NONE;
 }
 
