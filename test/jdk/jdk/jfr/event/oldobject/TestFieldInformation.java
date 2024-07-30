@@ -51,10 +51,11 @@ public class TestFieldInformation {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        // OldObjectSample is emitted at the end of the recording, and we need
-        // to let GC catch up before we do the event. There is no reason to wait
-        // for a long time if GC can manage it quickly. Try a few backoff intervals,
-        // but try to complete as fast as possible.
+        // OldObjectSample might be skipped if GC is running shortly after
+        // the allocations. Try with a few backoff intervals to let GC finish
+        // before we stop the recording. This currently affects Shenandoah only.
+        // There is no reason to wait unconditionally, if GC can manage with
+        // a short backoff.
         for (int power = 0; power < 13; power++) {
             if (tryWith(1 << power)) {
                 return;
