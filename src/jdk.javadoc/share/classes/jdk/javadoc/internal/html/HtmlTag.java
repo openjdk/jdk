@@ -84,7 +84,7 @@ public enum HtmlTag {
     BR(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.HTML4, CLEAR)),
 
-    BUTTON(BlockType.OTHER, EndKind.REQUIRED,
+    BUTTON(BlockType.INLINE, EndKind.REQUIRED,
             attrs(AttrKind.OK, FORM, NAME, TYPE, VALUE)),
 
     CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
@@ -207,7 +207,7 @@ public enum HtmlTag {
             attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
             attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
-    INPUT(BlockType.OTHER, EndKind.NONE,
+    INPUT(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.OK, NAME, TYPE, VALUE)),
 
     INS(BlockType.INLINE, EndKind.REQUIRED,
@@ -217,14 +217,15 @@ public enum HtmlTag {
     KBD(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    LABEL(BlockType.OTHER, EndKind.REQUIRED),
+    LABEL(BlockType.INLINE, EndKind.REQUIRED),
 
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, VALUE),
             attrs(AttrKind.HTML4, TYPE)),
 
-    LINK(BlockType.OTHER, EndKind.NONE),
+    LINK(BlockType.INLINE, EndKind.NONE,
+            attrs(AttrKind.OK, REL)),
 
     MAIN(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -281,8 +282,8 @@ public enum HtmlTag {
     SAMP(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    SCRIPT(BlockType.OTHER, EndKind.REQUIRED,
-            attrs(AttrKind.OK, SRC)),
+    SCRIPT(BlockType.INLINE, EndKind.REQUIRED,
+            attrs(AttrKind.OK, SRC, TYPE)),
 
     SECTION(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
