@@ -152,10 +152,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
-    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
-  }
-
   if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
     FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
   }
@@ -235,7 +231,102 @@ void VM_Version::initialize() {
   c2_initialize();
 #endif // COMPILER2
 
-  // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
+}
+
+#ifdef COMPILER2
+void VM_Version::c2_initialize() {
+  if (UseCMoveUnconditionally) {
+    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
+  }
+
+  if (ConditionalMoveLimit > 0) {
+    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
+  }
+
+  if (!UseRVV) {
+    FLAG_SET_DEFAULT(MaxVectorSize, 0);
+    FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
+  } else {
+    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
+      warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
+               (int)MaxVectorSize, _initial_vector_length);
+    }
+    MaxVectorSize = _initial_vector_length;
+    if (MaxVectorSize < 16) {
+      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
+      UseRVV = false;
+      FLAG_SET_DEFAULT(MaxVectorSize, 0);
+    }
+  }
+
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+  }
+
+  if (!UseZicbop) {
+    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      warning("Zicbop is not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+  } else {
+    // Limit AllocatePrefetchDistance so that it does not exceed the
+    // static constraint of 512 defined in runtime/globals.hpp.
+    if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+      FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
+    }
+    if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize)) {
+      FLAG_SET_DEFAULT(AllocatePrefetchStepSize, (int)CacheLineSize);
+    }
+    if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
+      FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 3 * (int)CacheLineSize);
+    }
+    if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
+      FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3 * (int)CacheLineSize);
+    }
+
+    if (PrefetchCopyIntervalInBytes != -1 &&
+        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
+      warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
+      PrefetchCopyIntervalInBytes &= ~7;
+      if (PrefetchCopyIntervalInBytes >= 32768) {
+        PrefetchCopyIntervalInBytes = 32760;
+      }
+    }
+    if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
+      warning("AllocatePrefetchDistance must be multiple of 8");
+      AllocatePrefetchDistance &= ~7;
+    }
+    if (AllocatePrefetchStepSize & 7) {
+      warning("AllocatePrefetchStepSize must be multiple of 8");
+      AllocatePrefetchStepSize &= ~7;
+    }
+  }
+
+  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
+    FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
+  }
+
+  if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
+    FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
+  }
+
+  // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
 
@@ -330,96 +421,6 @@ void VM_Version::initialize() {
   // UseSHA
   if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
     FLAG_SET_DEFAULT(UseSHA, false);
-  }
-}
-
-#ifdef COMPILER2
-void VM_Version::c2_initialize() {
-  if (UseCMoveUnconditionally) {
-    FLAG_SET_DEFAULT(UseCMoveUnconditionally, false);
-  }
-
-  if (ConditionalMoveLimit > 0) {
-    FLAG_SET_DEFAULT(ConditionalMoveLimit, 0);
-  }
-
-  if (!UseRVV) {
-    FLAG_SET_DEFAULT(MaxVectorSize, 0);
-    FLAG_SET_DEFAULT(UseRVVForBigIntegerShiftIntrinsics, false);
-  } else {
-    if (!FLAG_IS_DEFAULT(MaxVectorSize) && MaxVectorSize != _initial_vector_length) {
-      warning("Current system does not support RVV vector length for MaxVectorSize %d. Set MaxVectorSize to %d",
-               (int)MaxVectorSize, _initial_vector_length);
-    }
-    MaxVectorSize = _initial_vector_length;
-    if (MaxVectorSize < 16) {
-      warning("RVV does not support vector length less than 16 bytes. Disabling RVV.");
-      UseRVV = false;
-      FLAG_SET_DEFAULT(MaxVectorSize, 0);
-    }
-  }
-
-  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
-    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
-  }
-
-  if (!UseZicbop) {
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-      warning("Zicbop is not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
-  } else {
-    // Limit AllocatePrefetchDistance so that it does not exceed the
-    // static constraint of 512 defined in runtime/globals.hpp.
-    if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-      FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
-    }
-    if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize)) {
-      FLAG_SET_DEFAULT(AllocatePrefetchStepSize, (int)CacheLineSize);
-    }
-    if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
-      FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 3 * (int)CacheLineSize);
-    }
-    if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
-      FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 3 * (int)CacheLineSize);
-    }
-
-    if (PrefetchCopyIntervalInBytes != -1 &&
-        ((PrefetchCopyIntervalInBytes & 7) || (PrefetchCopyIntervalInBytes >= 32768))) {
-      warning("PrefetchCopyIntervalInBytes must be -1, or a multiple of 8 and < 32768");
-      PrefetchCopyIntervalInBytes &= ~7;
-      if (PrefetchCopyIntervalInBytes >= 32768) {
-        PrefetchCopyIntervalInBytes = 32760;
-      }
-    }
-    if (AllocatePrefetchDistance !=-1 && (AllocatePrefetchDistance & 7)) {
-      warning("AllocatePrefetchDistance must be multiple of 8");
-      AllocatePrefetchDistance &= ~7;
-    }
-    if (AllocatePrefetchStepSize & 7) {
-      warning("AllocatePrefetchStepSize must be multiple of 8");
-      AllocatePrefetchStepSize &= ~7;
-    }
-  }
-
-  if (FLAG_IS_DEFAULT(UseMulAddIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
-  }
-
-  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
   }
 }
 #endif // COMPILER2

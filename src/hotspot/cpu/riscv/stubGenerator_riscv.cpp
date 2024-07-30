@@ -5970,7 +5970,6 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
-#endif // COMPILER2
 
     if (UseSHA256Intrinsics) {
       Sha2Generator sha2(_masm, this);
@@ -5983,10 +5982,6 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(false);
       StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(true);
     }
-
-    generate_compare_long_strings();
-
-    generate_string_indexof_stubs();
 
     if (UseMD5Intrinsics) {
       StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
@@ -6005,6 +6000,11 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
+#endif // COMPILER2
+
+    generate_compare_long_strings();
+
+    generate_string_indexof_stubs();
 
 #endif // COMPILER2_OR_JVMCI
   }
