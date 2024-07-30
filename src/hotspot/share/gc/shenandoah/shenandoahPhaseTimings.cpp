@@ -137,17 +137,21 @@ bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
   }
 }
 
-void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time) {
-#ifdef ASSERT
-  double d = _cycle_data[phase];
-  assert(d == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), d);
-#endif
-  _cycle_data[phase] = time;
+void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time, bool should_aggregate_cycles) {
+  if (should_aggregate_cycles) {
+    _cycle_data[phase] = _cycle_data[phase] <= 0 ? time :  _cycle_data[phase] + time;
+  } else {
+    #ifdef ASSERT
+    double d = _cycle_data[phase];
+    assert(d == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), d);
+    #endif
+    _cycle_data[phase] = time;
+  }
 }
 
-void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time) {
+void ShenandoahPhaseTimings::record_phase_time(Phase phase, double time, bool should_aggregate_cycles) {
   if (!_policy->is_at_shutdown()) {
-    set_cycle_data(phase, time);
+    set_cycle_data(phase, time, should_aggregate_cycles);
   }
 }
 

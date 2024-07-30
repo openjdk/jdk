@@ -218,9 +218,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
 
     size_t before = qset.completed_buffers_num();
-    double handshake_start_time = os::elapsedTime();
-    Handshake::execute(&flush_satb);
-    handshake_total_time += os::elapsedTime() - handshake_start_time;
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush_rendezvous, true);
+      Handshake::execute(&flush_satb);
+    }
     size_t after = qset.completed_buffers_num();
 
     if (before == after) {
@@ -228,10 +229,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
       break;
     }
   }
-  ShenandoahPhaseTimings* const timings = heap->phase_timings();
-  timings->record_phase_time(ShenandoahPhaseTimings::conc_mark_satb_flush_rendezvous, handshake_total_time);
 
-  log_info(gc, phases) ("Total SATB flush attempts : %d", (flushes + 1));
   assert(task_queues()->is_empty() || heap->cancelled_gc(), "Should be empty when not cancelled");
 }
 
