@@ -29,6 +29,8 @@
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -39,6 +41,87 @@ import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 final class JepTest {
+
+    class Progression0 {
+
+        static final
+        public class Cache {
+
+            private Logger logger;
+
+            public Logger logger() {
+                Logger v = logger;
+                if (v == null) {
+                    logger = v = Logger.getLogger("com.company.Foo");
+                }
+                return v;
+            }
+        }
+    }
+
+    class Progression1 {
+
+        static final
+        public class Cache {
+
+            private Logger logger;
+
+            public synchronized Logger logger() {
+                Logger v = logger;
+                if (v == null) {
+                    logger = v = Logger.getLogger("com.company.Foo");
+                }
+                return v;
+            }
+        }
+    }
+
+    class Progression2 {
+
+        static final
+        public class Cache {
+
+            private volatile Logger logger;
+
+            public Logger logger() {
+                Logger v = logger;
+                if (v == null) {
+                    synchronized (this) {
+                        v = logger;
+                        if (v == null) {
+                            logger = v = Logger.getLogger("com.company.Foo");
+                        }
+                    }
+                }
+                return v;
+            }
+        }
+    }
+
+    class Progression3 {
+
+        static final
+        public class Cache {
+
+            private static final VarHandle ARRAY_HANDLE = MethodHandles.arrayElementVarHandle(Logger[].class);
+            private static final int SIZE = 10;
+            private final Logger[] loggers = new Logger[SIZE];
+
+            public Logger logger(int i) {
+                Logger v = (Logger) ARRAY_HANDLE.getVolatile(loggers, i);
+                if (v == null) {
+                    synchronized (this) {
+                        v = loggers[i];
+                        if (v == null) {
+                            ARRAY_HANDLE.setVolatile(loggers, i, v = Logger.getLogger("com.company.Foo" + i));
+                        }
+                    }
+                }
+                return v;
+            }
+        }
+    }
+
 
     class Foo {
         // 1. Declare a Stable field

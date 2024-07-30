@@ -1,9 +1,9 @@
-# Stable Values & Collections (Preview)
+# Stable Values (Preview)
 
 ## Summary
 
-Introduce a _Stable Values & Collections API_, which provides performant immutable value holders where elements
-are initialized _at most once_. Stable Values & Collections offer the performance and safety benefits of
+Introduce a _Stable Values API_, which provides performant immutable value holders where elements
+are initialized _at most once_. Stable Values offer the performance and safety benefits of
 final fields, while offering greater flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
 ## Goals
@@ -11,7 +11,7 @@ final fields, while offering greater flexibility as to the timing of initializat
 - Provide an easy and intuitive API to describe value holders that can change at most once.
 - Decouple declaration from initialization without significant footprint or performance penalties.
 - Reduce the amount of static initializer and/or field initialization code.
-- Uphold integrity and consistency, even in a multi-threaded environment.
+- Uphold integrity and consistency, even in a multithreaded environment.
 
 ## Non-goals
 
@@ -21,25 +21,202 @@ This might be the subject of a future JEP.
 
 ## Motivation
 
-Most Java developers have heard the advice "prefer immutability" (Effective Java, Third Edition, Item 17, by
-Joshua Bloch). Immutability confers many advantages, as immutable objects can be only in one state, and can
-therefore be freely shared across multiple threads.
+Java allows developers to control whether fields are mutable or not. Mutable fields can be updated multiple times, and
+from any arbitrary position in the code. Conversely, immutable fields (i.e. `final` fields), can only be updated
+_once_, and only in very specific places: the class initializer (for a static immutable field) or the class constructor
+(for an instance immutable field). Unfortunately, in Java there is no way to define a field that can be updated _at most
+once_ (i.e. fields that are either not updated at all or are updated exactly once) and from _any_ arbitrary position in
+the code.
 
-Java's main tool for managing immutability is `final` fields (and more recently, `record` classes). Unfortunately,
-`final` fields come with restrictions. Instance `final` fields must be set by the end of the constructor; `static
-final` fields must be set during class initialization. Moreover, the order in which `final` fields are initialized
-is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) in
-which the fields are declared. This order is then made explicit in the resulting class file.
+| Field kind         | #Updates | Code update location              |
+|--------------------|----------|-----------------------------------|
+| Mutable            | [0, ∞)   | Anywhere                          |
+| `final`            | 1        | Constructor or static initializer |
+| at-most-once (N/A) | [0, 1]   | Anywhere                          |
 
-As such, the initialization of a `final` field is fixed in time; it cannot be arbitrarily moved forward. In other
-words, developers are forced to choose between finality and all its benefits, and flexibility over the timing of
-initialization. Developers have devised several strategies to ameliorate this imbalance, but none are ideal.
+"At-most-once fields" would be essential to expensive cache computations associated with method calls, so that they can
+be reused across multiple calls. For instance, creating a logger or reading application configurations from an external
+database. Furthermore, if the VM is made aware, a field is an "at-most-once field" and it is set, it may
+[constant-fold](https://en.wikipedia.org/wiki/Constant_folding) the field value, thereby providing crucial performance
+and energy efficiency gains. It is also important to stress a method called to compute a value might have intended or
+unintended side effects and therefore, it would be vital to also guarantee the method is invoked at most once, even in
+a multithreaded environment. Another property of at-most-once fields would be, they are written to at most once but
+are likely read at many occasions. Hence, updating the field is not so time-critical whereas every effort to make 
+reading the field performant should be made.  
 
-For instance, initialization of `static` and `final` fields can be broken up by leveraging the laziness already
-built into class loading. Often referred to as the
-[*class-holder idiom*](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), this technique moves
-lazily initialized state into a helper class which is then loaded on-demand, so its initialization is only
-performed when the data is actually needed, rather than unconditionally initializing constants when a class is
+Here is how a naïve cache could look like using a mutable field and where a `Logger` instance is cached:
+
+```
+// A naïve cache. Do not use this solution!
+public class Cache {
+
+    private Logger logger;
+
+    public Logger logger() {
+        Logger v = logger;
+        if (v == null) {
+            logger = v = Logger.getLogger("com.company.Foo");
+        }
+        return v;
+    }
+}
+```
+
+This solution does not work in a multithreaded environment as updates made by one thread to the `logger` may not be
+seen by other threads, thereby allowing the `logger` variable to be updated several times and consequently the
+`Logger::getLogger` method can be called several times.
+
+Here is how thread safety can be added together with a guarantee, `logger` is only updated at most once
+(and accordingly `Logger::getLogger` is called at most once):
+
+```
+// A field protected by synchonization. Do not use this solution!
+public class Cache {
+
+    private Logger logger;
+
+    public synchronized Logger logger() {
+        Logger v = logger;
+        if (v == null) {
+            logger = v = Logger.getLogger("com.company.Foo");
+        }
+        return v;
+    }
+}
+```
+
+While this works, acquiring the `synhronized` monitor is slow and prevents multiple threads from accessing the cached
+`Logger` instance simultaneously once computed. 
+
+The solution above can be modified to use the
+[*double-checked locking idiom*](https://en.wikipedia.org/wiki/Double-checked_locking) which would improve the
+situation a bit:
+
+```
+// A field protected by double-checked locking. Do not use this solution!
+public class Cache {
+
+    private volatile Logger logger;
+
+    public Logger logger() {
+        Logger v = logger;
+        if (v == null) {
+            synchronized (this) {
+                v = logger;
+                if (v == null) {
+                    logger = v = Logger.getLogger("com.company.Foo");
+                }
+            }
+        }
+        return v;
+    }
+}
+```
+While the solution above is an improvement over the previous one, the double-checked locking idiom is brittle and easy
+to get subtly wrong (see *Java Concurrency in Practice*, 16.2.4, by Brian Goetz). For example, a common error is forgetting
+to declare the field `volatile` resulting in the risk of observing incomplete objects. Another issue is that synchronization
+is made on the `Cache` instance itself, potentially opening up for deadlock situations. Furthermore, every access to the
+cached value is made using `volatile` semantics which may be slow on some platforms.
+
+Now, further imagine a situation where there are several loggers to be cached and where we want to reference the cached
+values using an `int` index (i.e. 0 -> "com.company.Foo0", 1 -> "com.company.Foo1", etc.):
+
+```
+// A an array of values protected by double-checked locking. Do not use this solution!
+public class Cache {
+
+    private static final VarHandle ARRAY_HANDLE = MethodHandles.arrayElementVarHandle(Logger[].class);
+    private static final int SIZE = 10;
+    private final Logger[] loggers = new Logger[SIZE];
+
+    public Logger logger(int i) {
+        Logger v = (Logger) ARRAY_HANDLE.getVolatile(loggers, i);
+        if (v == null) {
+            synchronized (this) {
+                v = loggers[i];
+                if (v == null) {
+                    ARRAY_HANDLE.setVolatile(loggers, i, v = Logger.getLogger("com.company.Foo" + i));
+                }
+            }
+        }
+        return v;
+    }
+}
+```
+
+There is no built-in semantics for declaring an array's _elements_ should be accessed using 'volatile' semantics in
+Java and so, volatile access has to be made explicit in the user code, for example via the supported API of
+`VarHandle`. This solution is also plagued with the problem that it synchronizes on `this` and, in addition to exposing
+itself for deadlocks, prevents any of the cached values from being computed simultaneously by distinct threads.
+
+While some of the problems described above might be solved (e.g. by synchronizing on internal mutex fields) they
+become increasingly complex, error-prone, and hard to maintain.
+
+A more fundamental problem with all the solutions above is that access to the cached values cannot be adequately
+optimized by just-in-time compilers, as they cannot reliably assume that field values will, in fact, change at most
+once. Alas, the solutions do not express the intent of the programmer; neither to just-in-time compilers nor to
+readers of the code.
+
+What we are missing -- in all cases -- is a *safe* way to *promise* that a constant will be initialized by the
+time it is used, with a value that is computed at most once. Such a mechanism would give the Java runtime maximum
+opportunity to stage and optimize its computation, thus avoiding the penalties (static footprint, loss of runtime
+optimizations, and brittleness) that plague the workarounds shown above and below. Moreover, such a mechanism
+should gracefully scale to handle collections of constant values, while retaining efficient computer resource
+management.
+
+It would be advantageous if compute-at-most-once constructs could be expresses something along these lines:
+
+```
+// Declare a cache that can hold a single Logger instance
+Abc<Logger> cache = ... Logger.getLogger("com.company.Foo") ...;
+...
+// If the value is set, just return it. Otherwise computes the value.
+// If another thread is computing a value, wait until it has completed.
+Logger logger = cache.xxxx();
+```
+
+and for several compute-at-most-once values indexed by an `int`:
+
+```
+// Declare a cache that can hold 10 Logger instance 
+Efg<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
+...
+// If a value at the provided index is set, just return it. Otherwise compute the value.
+// If another thread is computing a value at the provided index, wait until it has completed.
+// Values can be computed in parallel by distinct threads.
+Logger logger = cache.xxxx(7);
+```
+
+and even for several compute-at-most-once values associated with some key of arbitrary type `K` where we use Strings
+as the key type in the example below:
+
+```
+// Declare a cache that can hold a finite number of Logger instance
+// associated with the same finite number of `keys` Strings.
+Hij<String, Logger> cache = ... keys ... Logger::getLogger...
+...
+// If a value associated with the provided string is set, just return it. Otherwise comput it.
+// If another thread is computing a value for the provided String, wait until it has completed.
+// Values can be computed in parallel by distinct threads.
+Logger logger = cache.xxxx("com.company.Foo");
+```
+
+For interoperability with legacy code, it would also be desirable if some of the standard collection types could be
+expressed as compute-at-most-once constructs in a similar fashion:
+
+```
+// Declare a List whose elements are lazily computed once accessed via List::get
+List<Logger> loggerList = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
+
+// Declare a Map whose values are lazily computed once accessed via Map::get
+Map<String, Logger> loggerMap = ... keys ... Logger::getLogger...
+```
+
+A final note should be made about static fields. Initialization of `static` and `final` fields can be broken up by
+leveraging the laziness already built into class loading. Often referred to as the
+[*initialization-on-demand_holder_idiom*](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), this
+technique moves lazily initialized state into a helper class which is then loaded on-demand, so its initialization is
+only performed when the data is actually needed, rather than unconditionally initializing constants when a class is
 first referenced:
 
 ```
@@ -60,7 +237,7 @@ Logger logger() {
     return Holder.LOGGER;
 }
 ...
-LOGGER.log(Level.DEBUG, ...);
+logger().log(Level.DEBUG, ...);
 ```
 
 The code above ensures that the `Logger` object is created only when actually required. The (possibly expensive)
@@ -70,80 +247,11 @@ with significant drawbacks. First, each constant whose computation needs to be d
 holder class, thus introducing a significant static footprint cost. Second, this idiom is only really applicable
 if the field initialization is suitably isolated, not relying on any other parts of the object state.
 
-Alternatively, the [*double-checked locking idiom*](https://en.wikipedia.org/wiki/Double-checked_locking), can be
-used for deferring the evaluation of instance field initializers. The idea is to optimistically check if the
-field's value is non-null and if so, use that value directly; but if the value observed is null, then the field
-must be initialized, which, to be safe under multi-threaded access, requires acquiring a lock to ensure
-correctness:
-
-```
-// Double-checked locking idiom
-class Foo {
-
-    private volatile Logger logger;
-
-    public Logger logger() {
-        Logger v = logger;
-        if (v == null) {
-            synchronized (this) {
-                v = logger;
-                if (v == null) {
-                    logger = v = Logger.getLogger("com.company.Foo");
-                }
-            }
-        }
-        return v;
-    }
-}
-```
-
-The double-checked locking idiom is brittle and easy to get subtly wrong (see *Java Concurrency in Practice*,
-16.2.4, by Brian Goetz). For example, a common error is forgetting to declare the field `volatile` resulting in
-the risk of observing incomplete objects. A more fundamental problem with the double-checked locking idiom is that
-access to the `logger` field cannot be adequately optimized by just-in-time compilers, as they cannot reliably
-assume that the field value will, in fact, change only once.
-
-Internal JDK classes can address some of the shortcomings of the approaches described above by using the internal
-`jdk.internal.vm.annotation.@Stable` annotation. This annotation is used to mark scalar and array fields whose
-values or elements will change *at most once*, thereby providing crucial performance, energy efficiency, and
-flexibility benefits. With the help of `@Stable` the above example can be rewritten as follows:
-
-```
-// Double-checked locking idiom (JDK internal use only)
-class Foo {
-
-    @Stable
-    private Logger logger;
-
-    public Logger logger() {
-        if (logger == null) {
-            logger = Logger.getLogger("com.company.Foo");
-        }
-        return logger;
-    }
-}
-```
-
-Note how the `logger` field no longer needs to be marked as `volatile`. And, since the JVM knows that `logger` can
-change at most once, subsequent accesses to the `logger` field can be
-[constant-folded](https://en.wikipedia.org/wiki/Constant_folding) away. Alas, the powerful `@Stable` is
-fundamentally _unsafe_: as the attentive reader might have noticed, the above code is correct only as long as
-`getLogger` returns, for any given string argument passed to it, a `Logger` object with the *same identity*.
-This is crucial to ensure that the `logger` field is mutated only once: spurious racy update attempts to `logger` can be safely ignored, only if they don't change the value stored in that field.
-
-What we are missing -- in all cases -- is a *safe* way to *promise* that a constant will be initialized by the
-time it is used, with a value that is computed at most once. Such a mechanism would give the Java runtime maximum
-opportunity to stage and optimize its computation, thus avoiding the penalties (static footprint, loss of runtime
-optimizations) that plague the workarounds shown above, as well as the unsafety associated with the `@Stable`
-annotation. Moreover, such a mechanism should gracefully scale to handle collections of constant values, while
-retaining efficient computer resource management.
-
-
 ## Description
 
-The Stable Values & Collections API defines an interface so that client code in libraries and applications can
+The Stable Values API defines an interface so that client code in libraries and applications can
 
-- Define and use stable (scalar) values:
+- Define and use a stable value:
     - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newInstance())
 - Define various _cached_ functions:
     - [`StableValue.newCachedSupplier()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingSupplier(java.util.function.Supplier,java.util.concurrent.ThreadFactory))
@@ -153,13 +261,13 @@ The Stable Values & Collections API defines an interface so that client code in 
     - [`StableValue.lazyList(int size)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#lazyList(int,java.util.function.IntFunction))
     - [`StableValue.lazyMap(Set<K> keys)`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#lazyMap(java.util.Set,java.util.function.Function))
 
-The Stable Values & Collections API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/module-summary.html) module.
+The Stable Values API resides in the [java.lang](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/package-summary.html) package of the [java.base](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/module-summary.html) module.
 
 ### Stable values
 
 A _stable value_ is a thin, atomic, non-blocking, thread-safe, set-at-most-once, stable value holder
 eligible for certain JVM optimizations if set to a value. It is expressed as an object of type
-`jdk.lang.StableValue`, which, like `Future`, is a holder for some computation that may or may not have
+`java.lang.StableValue`, which, like `Future`, is a holder for some computation that may or may not have
 occurred yet. Fresh (unset) `StableValue` instances are created via the factory method `StableValue::newInstance`:
 
 ```
@@ -179,6 +287,8 @@ class Foo {
         // 3. Access the stable value with as-declared-final performance
         return LOGGER.orElseThrow();
     }
+    ...
+    logger().log(Level.DEBUG, ...);
 }
 ```
 
@@ -217,9 +327,9 @@ particular input value is computed only once and is remembered such that remembe
 reused for subsequent calls with recurring input values.
 
 In cases where the invoke-at-most-once property of a `Supplier` is important, the
-Stable Values & Collections API offers a _cached supplier_ which is a caching, thread-safe, stable,
+Stable Values API offers a _cached supplier_ which is a caching, thread-safe, stable,
 lazily computed `Supplier` that records the value of an _original_ `Supplier` upon being first
-accessed via its `Supplier::get` method. In a multi-threaded scenario, competing threads will block
+accessed via its `Supplier::get` method. In a multithreaded scenario, competing threads will block
 until the first thread has computed a cached value. Unsurprisingly, the cached value is
 stored internally in a stable value.
 
@@ -237,6 +347,8 @@ class Foo {
         //    (single evaluation made before the first access)
         return LOGGER.get();
     }
+    ...
+    logger().log(Level.DEBUG, ...);
 }
 ```
 
@@ -273,6 +385,8 @@ class CachedNum {
     // 3. Access the cached element with as-declared-final performance
     //    (evaluation made before the first access)
     Logger logger = LOGGERS.apply(0);
+    ...
+    logger.log(Level.DEBUG, ...);
 }
 ```
 
@@ -280,7 +394,7 @@ Note: Again, the last null parameter signifies an optional thread factory that w
 
 As can be seen, manually mapping numbers to strings is a bit tedious. This brings us to the most general cached function
 variant provided is a cached `Function` which, for example,  can make sure `Logger::getLogger` in one of the first examples
-above is invoked at most once per input value (provided it executes successfully) in a multi-threaded environment. Such a
+above is invoked at most once per input value (provided it executes successfully) in a multithreaded environment. Such a
 cached `Function` is almost always faster and more resource efficient than a `ConcurrentHashMap`.
 
 Here is what a caching `Function` lazily holding two loggers could look like:
@@ -298,6 +412,8 @@ class Cahced {
     // 2. Access the cached value via the function with as-declared-final
     //    performance (evaluation made before the first access)
     Logger logger = LOGGERS.apply(NAME);
+    ...
+    logger.log(Level.DEBUG, ...);
 }
 ```
 
@@ -315,7 +431,7 @@ to write such constructs in a few lines.
 
 #### Background threads
 
-As noted above, the cached-returning factories in the Stable Values & Collections API offers an optional
+As noted above, the cached-returning factories in the Stable Values API offers an optional
 tailing thread factory parameter from which new value-computing background threads will be created:
 
 ```
@@ -334,6 +450,8 @@ private static final String NAME = "com.company.Foo";
 // 2. Access the cached value via the function with as-declared-final
 //    performance (evaluation made before the first access)
 Logger logger = LOGGERS.apply(NAME);
+...
+logger.log(Level.DEBUG, ...);
 ```
 
 This can provide a best-of-several-worlds situation where the cached function can be quickly defined (as no
@@ -346,7 +464,7 @@ the background threads have had a head start compared to the accessing threads.
 
 ### Stable collections
 
-The Stable Values & Collections API also provides factories that allow the creation of new
+The Stable Values API also provides factories that allow the creation of new
 collection variants that are lazy, shallowly immutable, and stable:
 
 - `List` of stable elements
@@ -367,8 +485,8 @@ Note how there's only one variable of type `List<E>` to initialize even though e
 computation is performed independently of the other element of the list when accessed (i.e. no
 blocking will occur across threads computing distinct elements simultaneously). Also, the
 `IntSupplier` mapper provided at creation is only invoked at most once for each distinct input
-value. The Stable Values & Collections API allows modeling this cleanly, while still preserving
-good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
+value. The Stable Values API allows modeling this cleanly, while still preserving
+good constant-folding guarantees and integrity of updates in the case of multithreaded access.
 
 It should be noted that even though a lazily computed list of stable elements might mutate its
 internal state upon external access, it is _still shallowly immutable_ because _no first-level
@@ -390,6 +508,8 @@ static final Map<String, Logger> LOGGERS =
 static Logger logger(String name) {
     return LOGGERS.get(name);
 }
+...
+logger("com.company.Foo").log(Level.DEBUG, ...);
 ```
 
 In the example above, only two input values were used. However, this concept allows declaring a
@@ -407,8 +527,8 @@ existing libraries. For example, if provided as a method parameter.
 
 ### Preview feature
 
-The Stable Values & Collections is a [preview API](https://openjdk.org/jeps/12), disabled by default.
-To use the Stable Value & Collections APIs, the JVM flag `--enable-preview` must be passed in, as follows:
+The Stable Values is a [preview API](https://openjdk.org/jeps/12), disabled by default.
+To use the Stable Value APIs, the JVM flag `--enable-preview` must be passed in, as follows:
 
 - Compile the program with `javac --release 24 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
 
