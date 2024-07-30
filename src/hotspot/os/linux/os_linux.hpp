@@ -31,6 +31,7 @@
 
 class os::Linux {
   friend class CgroupSubsystem;
+  friend class CgroupUtil;
   friend class os;
   friend class OSContainer;
 

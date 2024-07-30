@@ -22,6 +22,7 @@
  *
  */
 
+#include "os_linux.hpp"
 #include "cgroupUtil_linux.hpp"
 
 int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
@@ -45,4 +46,20 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
   result = MIN2(host_cpus, limit_count);
   log_trace(os, container)("OSContainer::active_processor_count: %d", result);
   return result;
+}
+
+CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
+  if (mem->needs_hierarchy_adjustment()) {
+    julong phys_mem = os::Linux::physical_memory();
+    return mem->adjust_controller(phys_mem);
+  }
+  return mem;
+}
+
+CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
+  if (cpu->needs_hierarchy_adjustment()) {
+    int cpu_total = os::Linux::active_processor_count();
+    return cpu->adjust_controller(cpu_total);
+  }
+  return cpu;
 }

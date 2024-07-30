@@ -264,6 +264,43 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
+void CgroupV2Controller::set_subsystem_path(char* cgroup_path) {
+  if (_path != nullptr) {
+    os::free(_path);
+  }
+  _path = construct_path(_mount_path, cgroup_path);
+}
+
+bool CgroupV2MemoryController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+bool CgroupV2CpuController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+CgroupV2MemoryController* CgroupV2MemoryController::adjust_controller(julong phys_mem) {
+  ::adjust_controller("v2", "memory", reader(),
+    [&]() { return read_memory_limit_in_bytes(phys_mem); },
+    [&](jlong count) { return count < 0; }
+  );
+  return this;
+}
+
+CgroupV2CpuController* CgroupV2CpuController::adjust_controller(int host_cpus) {
+  assert(host_cpus > 0, "Negative host cpus?");
+  ::adjust_controller("v2", "cpu", reader(),
+    [&]() { return CgroupUtil::processor_count(this, host_cpus); },
+    [&](jlong count) { return count == host_cpus; }
+  );
+  return this;
+}
+
+// For cgv2 we only need hierarchy walk if the cgroup path isn't '/' (root)
+bool CgroupV2Controller::needs_hierarchy_adjustment() {
+  return strcmp(_cgroup_path, "/") != 0;
+}
+
 void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
   jlong swap_current = memory_swap_current_value(reader());
   jlong swap_limit = memory_swap_limit_value(reader());

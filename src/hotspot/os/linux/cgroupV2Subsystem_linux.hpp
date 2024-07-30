@@ -26,13 +26,12 @@
 #define CGROUP_V2_SUBSYSTEM_LINUX_HPP
 
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 
 class CgroupV2Controller: public CgroupController {
   private:
     /* the mount path of the cgroup v2 hierarchy */
     char *_mount_path;
-    /* The cgroup path for the controller */
-    char *_cgroup_path;
     bool _read_only;
 
     /* Constructed full path to the subsystem directory */
@@ -43,23 +42,27 @@ class CgroupV2Controller: public CgroupController {
     CgroupV2Controller(char* mount_path,
                        char *cgroup_path,
                        bool ro) :  _mount_path(os::strdup(mount_path)),
-                                   _cgroup_path(os::strdup(cgroup_path)),
                                    _read_only(ro),
                                    _path(construct_path(mount_path, cgroup_path)) {
+      _cgroup_path = os::strdup(cgroup_path);
     }
     // Shallow copy constructor
     CgroupV2Controller(const CgroupV2Controller& o) :
                                             _mount_path(o._mount_path),
-                                            _cgroup_path(o._cgroup_path),
                                             _read_only(o._read_only),
                                             _path(o._path) {
+      _cgroup_path = o._cgroup_path;
     }
     ~CgroupV2Controller() {
       // At least one controller exists with references to the paths
     }
 
     char *subsystem_path() override { return _path; }
+    bool needs_hierarchy_adjustment() override;
+    // Allow for optional updates of the subsystem path
+    void set_subsystem_path(char* cgroup_path);
     bool is_read_only() override { return _read_only; }
+    char * mount_point() { return _mount_path; };
 };
 
 class CgroupV2CpuController: public CgroupCpuController {
@@ -75,6 +78,8 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    bool needs_hierarchy_adjustment() override;
+    CgroupV2CpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV2MemoryController final: public CgroupMemoryController {
@@ -94,6 +99,8 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
     void print_version_specific_info(outputStream* st, julong host_mem) override;
+    bool needs_hierarchy_adjustment() override;
+    CgroupV2MemoryController* adjust_controller(julong phys_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }
@@ -113,9 +120,11 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     CgroupV2Subsystem(CgroupV2MemoryController* memory,
                       CgroupV2CpuController* cpu,
                       CgroupV2Controller unified) :
-        _unified(unified),
-        _memory(new CachingCgroupController<CgroupMemoryController>(memory)),
-        _cpu(new CachingCgroupController<CgroupCpuController>(cpu)) {
+                         _unified(unified),
+                         _memory(new CachingCgroupController<CgroupMemoryController>(
+                                         CgroupUtil::adjust_controller(memory))),
+                         _cpu(new CachingCgroupController<CgroupCpuController>(
+                                         CgroupUtil::adjust_controller(cpu))) {
     }
 
     char * cpu_cpuset_cpus() override;
