@@ -77,7 +77,6 @@ import sun.swing.SwingUtilities2;
  */
 @SuppressWarnings("serial") // Superclass not serializable
 public class GTKLookAndFeel extends SynthLookAndFeel {
-    private static boolean IS_22;
     private static boolean IS_3;
 
     /**
@@ -123,17 +122,6 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
      * Cached theme name. Used by GTKGraphicsUtils
      */
     private static String gtkThemeName = "Default";
-
-    /**
-     * Returns true if running on system containing at least 2.2.
-     */
-    static boolean is2_2() {
-        // NOTE: We're currently hard coding to use 2.2.
-        // If we want to support both GTK 2.0 and 2.2, we'll
-        // need to get the major/minor/micro version from the .so.
-        // Refer to bug 4912613 for details.
-        return IS_22;
-    }
 
     static boolean is3() {
         return IS_3;
