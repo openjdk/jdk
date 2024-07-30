@@ -78,8 +78,14 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    int version() override { return 2; }
+    char* subsystem_path() override { return reader()->subsystem_path(); }
+    void set_subsystem_path(char* cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
+    char* mount_point() override { return reader()->mount_point(); }
     bool needs_hierarchy_adjustment() override;
-    CgroupCpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV2MemoryController final: public CgroupMemoryController {
@@ -100,10 +106,16 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     jlong cache_usage_in_bytes() override;
     void print_version_specific_info(outputStream* st, julong host_mem) override;
     bool needs_hierarchy_adjustment() override;
-    CgroupMemoryController* adjust_controller(julong phys_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    int version() override { return 2; }
+    char* subsystem_path() override { return reader()->subsystem_path(); }
+    void set_subsystem_path(char* cgroup_path) override {
+      reader()->set_subsystem_path(cgroup_path);
+    }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
+    char* mount_point() override { return reader()->mount_point(); }
 };
 
 class CgroupV2Subsystem: public CgroupSubsystem {

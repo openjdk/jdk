@@ -76,7 +76,8 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
   public:
-    void set_subsystem_path(char *cgroup_path) {
+    char* subsystem_path() override { return reader()->subsystem_path(); }
+    void set_subsystem_path(char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
@@ -92,10 +93,12 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem) override;
     bool needs_hierarchy_adjustment() override;
-    CgroupV1MemoryController* adjust_controller(julong phys_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    int version() override { return 1; }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
+    char* mount_point() override { return reader()->mount_point(); }
   private:
     jlong read_mem_swappiness();
     jlong read_mem_swap(julong host_total_memsw);
@@ -116,18 +119,21 @@ class CgroupV1CpuController final : public CgroupCpuController {
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
-    void set_subsystem_path(char *cgroup_path) {
+    char* subsystem_path() override { return reader()->subsystem_path(); }
+    void set_subsystem_path(char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    int version() override { return 1; }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
+    char* mount_point() override { return reader()->mount_point(); }
 
   public:
     CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
     }
     bool needs_hierarchy_adjustment() override;
-    CgroupV1CpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {

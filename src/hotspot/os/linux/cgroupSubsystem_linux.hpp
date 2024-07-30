@@ -200,19 +200,27 @@ class CachingCgroupController : public CHeapObj<mtInternal> {
     T* controller() { return _controller; }
 };
 
+class CgroupControllerVirt: public CHeapObj<mtInternal> {
+  public:
+    virtual bool needs_hierarchy_adjustment() = 0;
+    virtual bool is_read_only() = 0;
+    virtual int version() = 0;
+    virtual char* subsystem_path() = 0;
+    virtual void set_subsystem_path(char *cgroup_path) = 0;
+    virtual char* cgroup_path() = 0;
+    virtual char* mount_point() = 0;
+};
+
 // Pure virtual class representing version agnostic CPU controllers
-class CgroupCpuController: public CHeapObj<mtInternal> {
+class CgroupCpuController: public CgroupControllerVirt {
   public:
     virtual int cpu_quota() = 0;
     virtual int cpu_period() = 0;
     virtual int cpu_shares() = 0;
-    virtual bool needs_hierarchy_adjustment() = 0;
-    virtual CgroupCpuController* adjust_controller(int host_cpus) = 0;
-    virtual bool is_read_only() = 0;
 };
 
 // Pure virtual class representing version agnostic memory controllers
-class CgroupMemoryController: public CHeapObj<mtInternal> {
+class CgroupMemoryController: public CgroupControllerVirt {
   public:
     virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
     virtual jlong memory_usage_in_bytes() = 0;
@@ -223,9 +231,6 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual jlong rss_usage_in_bytes() = 0;
     virtual jlong cache_usage_in_bytes() = 0;
     virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
-    virtual CgroupMemoryController* adjust_controller(julong phys_mem) = 0;
-    virtual bool needs_hierarchy_adjustment() = 0;
-    virtual bool is_read_only() = 0;
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
