@@ -272,7 +272,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   // cache entry.
   // Lock fields to write
   Bytecodes::Code invoke_code = Bytecodes::_invokehandle;
-  MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
+  RecursiveLocker ml(constant_pool()->pool_holder()->init_lock(), JavaThread::current());
   ResolvedMethodEntry* method_entry = resolved_method_entry_at(method_index);
 
   if (method_entry->is_resolved(invoke_code)) {
@@ -676,7 +676,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
   assert(PENDING_EXCEPTION->is_a(vmClasses::LinkageError_klass()),
          "No LinkageError exception");
 
-  MutexLocker ml(THREAD, cpool->pool_holder()->init_monitor());
+  RecursiveLocker ml(constant_pool()->pool_holder()->init_lock(), THREAD);
 
   // if the indy_info is resolved or the indy_resolution_failed flag is set then another
   // thread either succeeded in resolving the method or got a LinkageError
@@ -699,7 +699,7 @@ bool ConstantPoolCache::save_and_throw_indy_exc(
 
 oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   ResourceMark rm;
-  MutexLocker ml(constant_pool()->pool_holder()->init_monitor());
+  RecursiveLocker ml(constant_pool()->pool_holder()->init_lock(), JavaThread::current());
   assert(index >= 0, "Indy index must be positive at this point");
 
   if (resolved_indy_entry_at(index)->method() != nullptr) {

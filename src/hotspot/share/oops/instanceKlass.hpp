@@ -44,7 +44,7 @@
 class ConstantPool;
 class DeoptimizationScope;
 class klassItable;
-class Monitor;
+class RecursiveMutex;
 class RecordComponent;
 
 // An InstanceKlass is the VM level representation of a Java class.
@@ -233,7 +233,7 @@ class InstanceKlass: public Klass {
   // State is set either at parse time or while executing, atomically to not disturb other state
   InstanceKlassFlags _misc_flags;
 
-  Monitor*             _init_monitor;       // mutual exclusion to _init_state and _init_thread.
+  RecursiveMutex*      _init_lock;          // mutual exclusion to _init_state and _init_thread.
   JavaThread* volatile _init_thread;        // Pointer to current thread doing initialization (to handle recursive initialization)
 
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
@@ -497,11 +497,7 @@ public:
                                        TRAPS);
 
   JavaThread* init_thread()  { return Atomic::load(&_init_thread); }
-  // We can safely access the name as long as we hold the _init_monitor.
-  const char* init_thread_name() {
-    assert(_init_monitor->owned_by_self(), "Must hold _init_monitor here");
-    return init_thread()->name_raw();
-  }
+  const char* init_thread_name();
 
  public:
   // initialization state
@@ -516,21 +512,6 @@ public:
   ClassState  init_state() const           { return Atomic::load(&_init_state); }
   const char* init_state_name() const;
   bool is_rewritten() const                { return _misc_flags.rewritten(); }
-
-  class LockLinkState : public StackObj {
-    InstanceKlass* _ik;
-    JavaThread*    _current;
-   public:
-    LockLinkState(InstanceKlass* ik, JavaThread* current) : _ik(ik), _current(current) {
-      ik->check_link_state_and_wait(current);
-    }
-    ~LockLinkState() {
-      if (!_ik->is_linked()) {
-        // Reset to loaded if linking failed.
-        _ik->set_initialization_state_and_notify(loaded, _current);
-      }
-    }
-  };
 
   // is this a sealed class
   bool is_sealed() const;
@@ -829,7 +810,7 @@ public:
 
   // initialization
   void call_class_initializer(TRAPS);
-  void set_initialization_state_and_notify(ClassState state, JavaThread* current);
+  void set_initialization_thread_and_state(ClassState state, JavaThread* current);
 
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
@@ -1083,7 +1064,7 @@ public:
 
   static void clean_initialization_error_table();
 
-  Monitor* init_monitor() const { return _init_monitor; }
+  RecursiveMutex* init_lock() const { return _init_lock; }
 private:
   void check_link_state_and_wait(JavaThread* current);
   bool link_class_impl                           (TRAPS);

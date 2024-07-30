@@ -498,10 +498,6 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-static Monitor* create_init_monitor(const char* name) {
-  return new Monitor(Mutex::safepoint, name);
-}
-
 InstanceKlass::InstanceKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
 }
@@ -518,7 +514,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, Refe
   _nest_host_index(0),
   _init_state(allocated),
   _reference_type(reference_type),
-  _init_monitor(create_init_monitor("InstanceKlassInitMonitor_lock")),
+  _init_lock(new RecursiveMutex()),
   _init_thread(nullptr)
 {
   set_vtable_length(parser.vtable_size());
@@ -773,49 +769,6 @@ void InstanceKlass::link_class(TRAPS) {
   }
 }
 
-void InstanceKlass::check_link_state_and_wait(JavaThread* current) {
-  MonitorLocker ml(current, _init_monitor);
-
-  bool debug_logging_enabled = log_is_enabled(Debug, class, init);
-
-  // Another thread is linking this class, wait.
-  while (is_being_linked() && !is_init_thread(current)) {
-    if (debug_logging_enabled) {
-      ResourceMark rm(current);
-      log_debug(class, init)("Thread \"%s\" waiting for linking of %s by thread \"%s\"",
-                             current->name(), external_name(), init_thread_name());
-    }
-    ml.wait();
-  }
-
-  // This thread is recursively linking this class, continue
-  if (is_being_linked() && is_init_thread(current)) {
-    if (debug_logging_enabled) {
-      ResourceMark rm(current);
-      log_debug(class, init)("Thread \"%s\" recursively linking %s",
-                             current->name(), external_name());
-    }
-    return;
-  }
-
-  // If this class wasn't linked already, set state to being_linked
-  if (!is_linked()) {
-    if (debug_logging_enabled) {
-      ResourceMark rm(current);
-      log_debug(class, init)("Thread \"%s\" linking %s",
-                             current->name(), external_name());
-    }
-    set_init_state(being_linked);
-    set_init_thread(current);
-  } else {
-    if (debug_logging_enabled) {
-      ResourceMark rm(current);
-      log_debug(class, init)("Thread \"%s\" found %s already linked",
-                             current->name(), external_name());
-      }
-  }
-}
-
 // Called to verify that a class can link during initialization, without
 // throwing a VerifyError.
 bool InstanceKlass::link_class_or_fail(TRAPS) {
@@ -894,7 +847,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   // verification & rewriting
   {
-    LockLinkState init_lock(this, jt);
+    RecursiveLocker rl(_init_lock, THREAD);
 
     // rewritten will have been set if loader constraint error found
     // on an earlier link attempt
@@ -953,7 +906,22 @@ bool InstanceKlass::link_class_impl(TRAPS) {
       // In case itable verification is ever added.
       // itable().verify(tty, true);
 #endif
-      set_initialization_state_and_notify(linked, THREAD);
+      if (Universe::is_fully_initialized()) {
+        DeoptimizationScope deopt_scope;
+        {
+          // Now mark all code that assumes the class is not linked.
+          // Set state under the Compile_lock also.
+          MutexLocker ml(THREAD, Compile_lock);
+
+          set_init_state(linked);
+
+          CodeCache::mark_dependents_on(&deopt_scope, this);
+        }
+        // Perform the deopt handshake outside Compile_lock.
+        deopt_scope.deoptimize_marked();
+      } else {
+        set_init_state(linked);
+      }
       if (JvmtiExport::should_post_class_prepare()) {
         JvmtiExport::post_class_prepare(THREAD, this);
       }
@@ -1075,6 +1043,12 @@ void InstanceKlass::clean_initialization_error_table() {
   }
 }
 
+// We can safely access the name as long as we hold the _init_lock.
+const char* InstanceKlass::init_thread_name() {
+  assert(_init_lock->holds_lock(JavaThread::current()), "must hold lock");
+  return init_thread()->name_raw();
+}
+
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);
 
@@ -1091,27 +1065,20 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   bool debug_logging_enabled = log_is_enabled(Debug, class, init);
 
+  // Lock the whole initialization sequence with a recursive lock.  No other
+  // thread can pass this state.
+  // Step 2 (second thread waits here)
+  jt->set_class_to_be_initialized(this);
+  RecursiveLocker rl(_init_lock, THREAD);
+  jt->set_class_to_be_initialized(nullptr);
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   {
-    MonitorLocker ml(jt, _init_monitor);
-
-    // Step 2
-    while (is_being_initialized() && !is_init_thread(jt)) {
-      if (debug_logging_enabled) {
-        ResourceMark rm(jt);
-        log_debug(class, init)("Thread \"%s\" waiting for initialization of %s by thread \"%s\"",
-                               jt->name(), external_name(), init_thread_name());
-      }
-
-      wait = true;
-      jt->set_class_to_be_initialized(this);
-      ml.wait();
-      jt->set_class_to_be_initialized(nullptr);
-    }
 
     // Step 3
-    if (is_being_initialized() && is_init_thread(jt)) {
+    if (is_being_initialized()) {
+      assert(is_init_thread(jt), "only current thread can recursively call initialize");
       if (debug_logging_enabled) {
         ResourceMark rm(jt);
         log_debug(class, init)("Thread \"%s\" recursively initializing %s",
@@ -1153,7 +1120,6 @@ void InstanceKlass::initialize_impl(TRAPS) {
     }
   }
 
-  // Throw error outside lock
   if (throw_error) {
     DTRACE_CLASSINIT_PROBE_WAIT(erroneous, -1, wait);
     ResourceMark rm(THREAD);
@@ -1193,7 +1159,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
         EXCEPTION_MARK;
         add_initialization_error(THREAD, e);
         // Locks object, set state, and notify all waiting threads
-        set_initialization_state_and_notify(initialization_error, THREAD);
+        set_initialization_thread_and_state(initialization_error, THREAD);
         CLEAR_PENDING_EXCEPTION;
       }
       DTRACE_CLASSINIT_PROBE_WAIT(super__failed, -1, wait);
@@ -1226,7 +1192,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
 
   // Step 9
   if (!HAS_PENDING_EXCEPTION) {
-    set_initialization_state_and_notify(fully_initialized, THREAD);
+    set_initialization_thread_and_state(fully_initialized, THREAD);
     debug_only(vtable().verify(tty, true);)
   }
   else {
@@ -1239,7 +1205,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     {
       EXCEPTION_MARK;
       add_initialization_error(THREAD, e);
-      set_initialization_state_and_notify(initialization_error, THREAD);
+      set_initialization_thread_and_state(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
       // JVMTI has already reported the pending exception
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
@@ -1256,31 +1222,14 @@ void InstanceKlass::initialize_impl(TRAPS) {
     }
   }
   DTRACE_CLASSINIT_PROBE_WAIT(end, -1, wait);
+  // Unlocking RecursiveLocker signals waiting threads.
 }
 
 
-void InstanceKlass::set_initialization_state_and_notify(ClassState state, JavaThread* current) {
-  MonitorLocker ml(current, _init_monitor);
-
-  if (state == linked && Universe::is_fully_initialized()) {
-    DeoptimizationScope deopt_scope;
-    {
-      // Now mark all code that assumes the class is not linked.
-      // Set state under the Compile_lock also.
-      MutexLocker ml(current, Compile_lock);
-
-      set_init_thread(nullptr); // reset _init_thread before changing _init_state
-      set_init_state(state);
-
-      CodeCache::mark_dependents_on(&deopt_scope, this);
-    }
-    // Perform the deopt handshake outside Compile_lock.
-    deopt_scope.deoptimize_marked();
-  } else {
-    set_init_thread(nullptr); // reset _init_thread before changing _init_state
-    set_init_state(state);
-  }
-  ml.notify_all();
+void InstanceKlass::set_initialization_thread_and_state(ClassState state, JavaThread* current) {
+  assert(state != linked, "already done above");
+  set_init_thread(nullptr); // reset _init_thread before changing _init_state
+  set_init_state(state);
 }
 
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
@@ -2580,7 +2529,7 @@ void InstanceKlass::remove_unshareable_info() {
   _nest_host = nullptr;
   init_shared_package_entry();
   _dep_context_last_cleaned = 0;
-  _init_monitor = nullptr;
+  _init_lock = nullptr;
 
   remove_unshareable_flags();
 }
@@ -2686,7 +2635,7 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   }
 
   // restore the monitor
-  _init_monitor = create_init_monitor("InstanceKlassInitMonitorRestored_lock");
+  _init_lock = new RecursiveMutex(); // "InstanceKlassInitMonitorRestored_lock");
 }
 
 // Check if a class or any of its supertypes has a version older than 50.
@@ -2782,8 +2731,8 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
     methods_do(method_release_C_heap_structures);
   }
 
-  // Destroy the init_monitor
-  delete _init_monitor;
+  // Destroy the init_lock
+  delete _init_lock;
 
   // Deallocate oop map cache
   if (_oop_map_cache != nullptr) {
@@ -4112,7 +4061,7 @@ void JNIid::verify(Klass* holder) {
 
 void InstanceKlass::set_init_state(ClassState state) {
   if (state > loaded) {
-    assert_lock_strong(_init_monitor);
+    assert(_init_lock->holds_lock(JavaThread::current()), "must hold lock");
   }
 #ifdef ASSERT
   bool good_state = is_shared() ? (_init_state <= state)
