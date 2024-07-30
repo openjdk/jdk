@@ -59,13 +59,13 @@ public class PerfCounter {
     private static final int U_None      = 1;
 
     private final String name;
-    private final LongBuffer lb;
+    private final LongBuffer lbRenamed;
 
     private PerfCounter(String name, int type) {
         this.name = name;
         ByteBuffer bb = perf.createLong(name, type, U_None, 0L);
         bb.order(ByteOrder.nativeOrder());
-        this.lb = bb.asLongBuffer();
+        this.lbRenamed = bb.asLongBuffer();
     }
 
     public static PerfCounter newPerfCounter(String name) {
@@ -81,14 +81,14 @@ public class PerfCounter {
      * Returns the current value of the perf counter.
      */
     public synchronized long get() {
-        return lb.get(0);
+        return lbRenamed.get(0);
     }
 
     /**
      * Sets the value of the perf counter to the given newValue.
      */
     public synchronized void set(long newValue) {
-        lb.put(0, newValue);
+        lbRenamed.put(0, newValue);
     }
 
     /**
@@ -96,7 +96,7 @@ public class PerfCounter {
      */
     public synchronized void add(long value) {
         long res = get() + value;
-        lb.put(0, res);
+        lbRenamed.put(0, res);
     }
 
     /**
