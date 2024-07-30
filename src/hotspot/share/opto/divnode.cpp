@@ -450,7 +450,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
 template<typename IntegerType>
 static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
   typedef typename IntegerType::NativeType NativeType;
-  assert(i2->_lo != 0 && i2->_hi != 0, "Zero can't be a type for divisor");
+  assert(!i2->is_con() || i2->get_con() != 0, "Can't handle constant zero for divisor");
 
   // special case: divisor type contains zero
   if (i2->_lo < 0 && i2->_hi > 0) {
@@ -466,11 +466,13 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
 
   NativeType new_lo = max_jint;
   NativeType new_hi = min_jint;
+  NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
+  NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
 
   // Consider all combinations of bounds
   NativeType candidates[] = {
-          i1->_lo / i2->_lo, i1->_lo / i2->_hi,
-          i1->_hi / i2->_lo, i1->_hi / i2->_hi
+          i1->_lo / i2_lo, i1->_lo / i2_hi,
+          i1->_hi / i2_lo, i1->_hi / i2_hi
   };
 
   for (NativeType c : candidates) {
@@ -567,12 +569,13 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     return TypeInt::make(lo, hi, widen);
   }
 
-  if (i1->_lo == min_jint) {
-    // give up
+  if (i1->_lo == min_jint && (i2->_lo < 0 && i2->_hi >= -1)) {
+    // special case min_jint / -1 is possible
     if (i1->is_con()) {
       //  (-min_jint) == min_jint == (min_jint / -1)
       return TypeInt::make(min_jint, max_jint/2 + 1, widen);
     }
+    // give up
     return TypeInt::INT;
   }
 
@@ -667,7 +670,8 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::make(lo, hi, widen);
   }
 
-  if (i1->_lo == min_jlong) {
+  if (i1->_lo == min_jlong && (i2->_lo < 0 && i2->_hi >= -1)) {
+    // special case min_jlong / -1 is possible
     if (i1->is_con()) {
       //  (-min_jlong) == min_jlong == (min_jlong / -1)
       return TypeLong::make(min_jlong, max_jlong/2 + 1, widen);
