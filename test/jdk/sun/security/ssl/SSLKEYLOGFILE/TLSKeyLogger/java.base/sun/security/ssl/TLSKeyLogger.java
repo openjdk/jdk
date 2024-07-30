@@ -33,7 +33,6 @@ import java.nio.file.StandardOpenOption;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HexFormat;
-import java.util.Locale;
 import java.util.Objects;
 
 import javax.crypto.SecretKey;
