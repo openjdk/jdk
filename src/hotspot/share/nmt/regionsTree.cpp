@@ -43,3 +43,29 @@ void RegionsTree::find_reserved_region(address addr, ReservedMemoryRegion* found
     *found_region = rmr;
 }
 
+VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
+  ReservedMemoryRegion rgn;
+  find_reserved_region(addr, &rgn);
+  if (rgn.base() == (address)1) {
+    tty->print_cr("commit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
+    dump(tty);
+    find_reserved_region(addr, &rgn, true);
+    ShouldNotReachHere();
+  }
+  return commit_mapping((VMATree::position)addr, size, make_region_data(stack, rgn.flag()));
+
+}
+
+VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
+  ReservedMemoryRegion rgn;
+  find_reserved_region(addr, &rgn);
+  if (rgn.base() == (address)1) {
+    tty->print_cr("uncommit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
+    dump(tty);
+    find_reserved_region(addr, &rgn, true);
+    ShouldNotReachHere();
+  }
+  return reserve_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), rgn.flag()));
+}
+
+

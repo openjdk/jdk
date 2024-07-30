@@ -61,7 +61,7 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
     const VMATree::position& end = (VMATree::position)(rgn.end() + 1);
     RegionsTree::NodeHelper* prev = nullptr;
     if (start > end) {
-      _tree->dump_vmatree(tty);
+      _tree->dump(tty);
       tty->print_cr("requested addr: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i((address) end));
       _tree->find_reserved_region(addr, &rgn, true);
     }
@@ -76,8 +76,6 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
         old_flag = curr->out_flag();
         base_flag_set = true;
       }
-      // tty->print_cr("-------------");
-      // curr->dump(tty);
       bak_out_flag = curr->out_flag();
       curr->set_out_flag(flag);
       if (prev != nullptr) {
@@ -86,8 +84,6 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
         if (prev->is_committed_begin())
           comm_size += curr->distance_from(prev);
       }
-      // curr->dump(tty);
-      // tty->print_cr("-------------");
       prev = curr;
       if (curr->is_released_begin() || bak_out_flag != old_flag) {
         if (bak_out_flag != old_flag) {
@@ -100,10 +96,6 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
       }
       return true;
     });
-    if (!release_node_found) {
-      //assert(false, "not supported yet");
-    }
-
 }
 
 void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff) {

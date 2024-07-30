@@ -42,6 +42,11 @@ address operator ""_a(unsigned long long x) { return (address) x;}
 
 class VMTWithVMATreeTest : public testing::Test {
  public:
+  const int region_size = 100 * K;
+  const int commit_size = 4 * K;
+  const int region_gap = 4 * K;
+  const address all_base = 0xABCD000_a;
+
   VMTWithVMATreeTest() { }
   class TimeIt {
     size_t* _var;
@@ -62,39 +67,16 @@ class VMTWithVMATreeTest : public testing::Test {
   VMTPerfData perf_data[2];
 
 
-  void random_address_and_size(address base, address& addr, size_t& size, bool for_com_uncom = false) {
-    constexpr int region_count = 100;
-    constexpr int region_size = 200 * K;
-    constexpr int region_gap = 20 * K;
-    constexpr int page_size = 4 * K;
-    constexpr int pages_per_commit = 1;
-    constexpr int page_per_region = region_size / page_size;
-    const address address_base = 0xABCD0000_a;
-
-    int r = os::random();
-
-    if (for_com_uncom) {
-      do {
-        int page_no = os::next_random(r);
-        addr = base + (page_no % page_per_region) * page_size;
-        int page_count = (os::next_random(r) % pages_per_commit) + 1;
-        size = page_count * page_size;
-      } while((addr + size) > (base + region_size));
-    } else {
-      int rgn_no = os::next_random(r);
-      addr = address_base + (rgn_no % region_count) * (region_size + region_gap);
-      size = region_size;
-    }
-
-
+  address region_address(int r, int c = 0) {
+    address region_base = all_base + r * (region_size + region_gap);
+    return region_base + c * commit_size;
   }
 
   void vmt_cycle() {
-    const int commit_count = 50;
-    const int uncommit_count = 50;
-    const int TIME_SCALE = 1000000000;
-    address addr, region_base;
-    size_t size, region_size;
+    const int region_count = 40;
+    const int commit_count = region_size / commit_size;
+    const int uncommit_count = commit_count;
+    address region_base;
 
     int i = MemTracker::is_using_sorted_link_list() ? 0 : 1;
 
@@ -104,38 +86,45 @@ class VMTWithVMATreeTest : public testing::Test {
     perf_data[i].uncommit =
     perf_data[i].release  =  0;
 
-    random_address_and_size(0_a, region_base, region_size);
-    {
-      TimeIt timer(&perf_data[i].reserve);
-      MemTracker::record_virtual_memory_reserve(region_base, region_size, CALLER_PC);
-    }
-    {
-      TimeIt timer(&perf_data[i].set_type);
-      MemTracker::record_virtual_memory_type(region_base, mtTest);
-    }
-
-    MemTracker::record_virtual_memory_commit(region_base, region_size, CALLER_PC);
-
-    for (int c = 0; c < commit_count; c++) {
-      random_address_and_size(region_base, addr, size, true);
-      if ((region_base + region_size) > (addr + size)) {
-        TimeIt timer(&perf_data[i].commit);
-        MemTracker::record_virtual_memory_commit(addr, size, CALLER_PC);
+    for (int rgn_no = 0; rgn_no < region_count; rgn_no++) {
+      {
+        TimeIt timer(&perf_data[i].reserve);
+        region_base = region_address(rgn_no);
+        MemTracker::record_virtual_memory_reserve(region_base, region_size, CALLER_PC);
       }
-
     }
-    for (int c = 0; c < uncommit_count; c++) {
-      random_address_and_size(region_base, addr, size, true);
-      if ((region_base + region_size) > (addr + size)) {
+    for (int rgn_no = 0; rgn_no < region_count; rgn_no++) {
+      {
+        TimeIt timer(&perf_data[i].set_type);
+        region_base = region_address(rgn_no);
+        MemTracker::record_virtual_memory_type(region_base, mtTest);
+      }
+    }
+
+    for (int rgn_no = 0; rgn_no < region_count; rgn_no++) {
+      for (int c = 1; c < commit_count; c += 4) {
+        {
+          TimeIt timer(&perf_data[i].commit);
+          address commit_addr = region_address(rgn_no, c);
+          MemTracker::record_virtual_memory_commit(commit_addr, commit_size, CALLER_PC);
+        }
+      }
+      for (int c = 1; c < uncommit_count; c += 4) {
+        {
+          ThreadCritical tc;
+          TimeIt timer(&perf_data[i].uncommit);
+          address commit_addr = region_address(rgn_no, c);
+          MemTracker::record_virtual_memory_uncommit(commit_addr, commit_size);
+        }
+      }
+    }
+    for (int rgn_no = 0; rgn_no < region_count; rgn_no++) {
+      {
         ThreadCritical tc;
-        TimeIt timer(&perf_data[i].uncommit);
-        MemTracker::record_virtual_memory_uncommit(addr, size);
+        TimeIt timer(&perf_data[i].release);
+        region_base = region_address(rgn_no);
+        MemTracker::record_virtual_memory_release(region_base, region_size);
       }
-    }
-    {
-      ThreadCritical tc;
-      TimeIt timer(&perf_data[i].release);
-      MemTracker::record_virtual_memory_release(region_base, region_size);
     }
   }
 
@@ -146,9 +135,9 @@ class VMTWithVMATreeTest : public testing::Test {
     EXPECT_GT(perf_data[0].commit  , perf_data[1].commit  ) << common_str << "commit";
     EXPECT_GT(perf_data[0].uncommit, perf_data[1].uncommit) << common_str << "uncommit";
     EXPECT_GT(perf_data[0].release , perf_data[1].release ) << common_str << "release";
-    tty->print_cr(" Old version, reserve: " SIZE_FORMAT_W(5) " set_type: " SIZE_FORMAT_W(5) " commit: " SIZE_FORMAT_W(6) " uncommit: " SIZE_FORMAT_W(6) " release: " SIZE_FORMAT_W(5),
+    tty->print_cr(" Old version, reserve: " SIZE_FORMAT_W(6) " set_type: " SIZE_FORMAT_W(6) " commit: " SIZE_FORMAT_W(6) " uncommit: " SIZE_FORMAT_W(6) " release: " SIZE_FORMAT_W(6),
                   perf_data[0].reserve, perf_data[0].set_type, perf_data[0].commit, perf_data[0].uncommit, perf_data[0].release);
-    tty->print_cr(" New version, reserve: " SIZE_FORMAT_W(5) " set_type: " SIZE_FORMAT_W(5) " commit: " SIZE_FORMAT_W(6) " uncommit: " SIZE_FORMAT_W(6) " release: " SIZE_FORMAT_W(5),
+    tty->print_cr(" New version, reserve: " SIZE_FORMAT_W(6) " set_type: " SIZE_FORMAT_W(6) " commit: " SIZE_FORMAT_W(6) " uncommit: " SIZE_FORMAT_W(6) " release: " SIZE_FORMAT_W(6),
                   perf_data[1].reserve, perf_data[1].set_type, perf_data[1].commit, perf_data[1].uncommit, perf_data[1].release);
   }
 };
@@ -303,8 +292,10 @@ TEST_VM(VMTWithTree, walk_virtual_memory) {
   VMTNew::walk_virtual_memory(&walker);
 }
 
-TEST_VM_F(VMTWithVMATreeTest, performance) {
+TEST_VM_F(VMTWithVMATreeTest, performance_comparison) {
 
+  tty->print_cr("\n\nPerformance comparison of two versions is skipped.\n\n");
+  return;
   using Ver = MemTracker::VMT_Version;
 
   for (int i: {0, 1}) {

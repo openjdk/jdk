@@ -39,30 +39,8 @@ class RegionsTree : public VMATree {
 
   void find_reserved_region(address addr, ReservedMemoryRegion* result, bool with_trace = false);
 
-  SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack) {
-    ReservedMemoryRegion rgn;
-    find_reserved_region(addr, &rgn);
-    if (rgn.base() == (address)1) {
-      tty->print_cr("commit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
-      dump_vmatree(tty);
-      find_reserved_region(addr, &rgn, true);
-      ShouldNotReachHere();
-    }
-    return commit_mapping((VMATree::position)addr, size, make_region_data(stack, rgn.flag()));
-
-  }
-
-  SummaryDiff uncommit_region(address addr, size_t size) {
-    ReservedMemoryRegion rgn;
-    find_reserved_region(addr, &rgn);
-    if (rgn.base() == (address)1) {
-      tty->print_cr("uncommit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
-      dump_vmatree(tty);
-      find_reserved_region(addr, &rgn, true);
-      ShouldNotReachHere();
-    }
-    return reserve_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), rgn.flag()));
-  }
+  SummaryDiff commit_region(address addr, size_t size, const NativeCallStack& stack);
+  SummaryDiff uncommit_region(address addr, size_t size);
 
   using Node = VMATree::TreapNode;
 
@@ -102,7 +80,7 @@ class RegionsTree : public VMATree {
       }
     };
 
-  void dump_vmatree(outputStream* st) {
+  void dump(outputStream* st) {
     visit_in_order([&](Node* node) {
       NodeHelper* curr = (NodeHelper*)node;
       curr->dump(st);
@@ -149,7 +127,7 @@ class RegionsTree : public VMATree {
     size_t base = 0;
     MEMFLAGS flag = mtNone;
     auto func_rmr = [&]( NodeHelper* begin, NodeHelper* end) {
-        auto st = end->stack(_ncs_storage);
+        auto st = stack(end);
         rgn_size = end->distance_from(begin);
         if (begin->position() > begin->position() + rgn_size) {
           tty->print("end? %d, end-only? %d, joint? %d ", end->is_region_end(begin), end->is_end_only(begin), end->is_joint(begin));
@@ -173,7 +151,7 @@ class RegionsTree : public VMATree {
         if (rgn_size == 0) {
           begin_node = nullptr;
           tty->print_cr("rgn_size == 0");
-          dump_vmatree(tty);
+          dump(tty);
           return true;
         }
         *rmr = ReservedMemoryRegion((address)begin_node->position(), rgn_size, st, begin_node->out_flag());
@@ -202,7 +180,7 @@ class RegionsTree : public VMATree {
       }
       prev = curr;
       if (curr->is_released_begin() || begin_node->out_flag() != curr->out_flag()) {
-        auto st = curr->stack(_ncs_storage);
+        auto st = stack(curr);
         size_t r_size = curr->distance_from(begin_node);
         if (r_size != rgn_size) {
           tty->print_cr("----------------- size differ, distance: " SIZE_FORMAT " size: " SIZE_FORMAT, r_size, rgn_size);

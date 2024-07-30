@@ -146,6 +146,49 @@ public:
     test(5.0f);
     test(0.0f);
   }
+
+  void upsert_performance_test() {
+    auto n_upsert = [&](int n) {
+      TreapCHeap<int, int, Cmp> treap;
+      double st = os::elapsedTime();
+      for (int i = 0; i < n; i++) {
+        int a = (os::random() % n) * 100;
+        treap.upsert(a, 0);
+      }
+      double d = os::elapsedTime() - st;
+      return d;
+    };
+    const int N1 = 1000;
+    const int N2 = 10000;
+
+    double d1 = n_upsert(N1);
+    double d2 = n_upsert(N2);
+    tty->print_cr("d1: %lf, d2: %lf, d2/d1: %lf", d1, d2, d2 / d1);
+    EXPECT_LT((int)(d2 / d1), N2 / N1);
+  }
+
+  void remove_performance_test() {
+    auto n_remove = [&](int n) {
+      TreapCHeap<int, int, Cmp> treap;
+      double st = os::elapsedTime();
+      for (int i = 0; i < (n + 100); i++) {
+        treap.upsert(i * 100, 0);
+      }
+      for (int i = 0; i < n; i++) {
+        int a = (os::random() % n) * 100;
+        treap.remove(a);
+      }
+      double d = os::elapsedTime() - st;
+      return d;
+    };
+    const int N1 = 1000;
+    const int N2 = 10000;
+
+    double d1 = n_remove(N1);
+    double d2 = n_remove(N2);
+    tty->print_cr("d1: %lf, d2: %lf, d2/d1: %lf", d1, d2, d2 / d1);
+    EXPECT_LT((int)(d2 / d1), N2 / N1);
+  }
 };
 
 TEST_VM_F(NMTTreapTest, InsertingDuplicatesResultsInOneValue) {
@@ -299,6 +342,10 @@ TEST_VM_F(NMTTreapTest, TestClosestLeq) {
   }
 }
 
+TEST_VM_F(NMTTreapTest, performance) {
+  this->remove_performance_test();
+  this->upsert_performance_test();
+}
 #ifdef ASSERT
 
 TEST_VM_F(NMTTreapTest, VerifyItThroughStressTest) {

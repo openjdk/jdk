@@ -184,6 +184,27 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
+TEST_VM_F(NMTVMATreeTest, performance) {
+  VMATree::RegionData rd{si[0], mtTest};
+  auto n_reserve = [&](int n) {
+    Tree tree;
+    double st = os::elapsedTime();
+    for (int i = 0; i < n; i++) {
+      int a = (os::random() % n) * 100;
+      tree.reserve_mapping(a * 100, 90, rd);
+    }
+    double d = os::elapsedTime() - st;
+    return d;
+  };
+  const int N1 = 1000;
+  const int N2 = 10000;
+
+  double d1 = n_reserve(N1);
+  double d2 = n_reserve(N2);
+  tty->print_cr("d1: %lf, d2: %lf, d2/d1: %lf", d1, d2, d2 / d1);
+  EXPECT_LT((int)(d2 / d1), N2 / N1);
+}
+
 // Low-level tests inspecting the state of the tree.
 TEST_VM_F(NMTVMATreeTest, LowLevel) {
   adjacent_2_nodes(VMATree::empty_regiondata);
