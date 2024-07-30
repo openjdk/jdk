@@ -42,7 +42,7 @@ and energy efficiency gains.
 
 It is also important to stress a method called to compute a value might have intended or
 unintended side effects and therefore, it would be vital to also guarantee the method is invoked at most once, even in
-a multithreaded environment. 
+a multithreaded environment.
 
 Another property of at-most-once fields would be, they are written to at most once but
 are likely read at many occasions. Hence, updating the field is not so time-critical whereas every effort to make 
@@ -90,7 +90,7 @@ public class Cache {
 ```
 
 While this works, acquiring the `synhronized` monitor is slow and prevents multiple threads from accessing the cached
-`Logger` instance simultaneously once computed. 
+`Logger` instance simultaneously once computed.
 
 The solution above can be modified to use the
 [*double-checked locking idiom*](https://en.wikipedia.org/wiki/Double-checked_locking) which would improve the
@@ -182,7 +182,7 @@ Logger logger = cache.xxxx();
 and for several compute-at-most-once values indexed by an `int`:
 
 ```
-// Declare a cache that can hold 10 Logger instance 
+// Declare a cache that can hold 10 Logger instance
 Bar<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 ...
 // Just returns the value at the provided index if set. Otherwise computes and returns the value.
