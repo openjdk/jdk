@@ -194,7 +194,7 @@ class MemStatEntry : public CHeapObj<mtInternal> {
   // peak usage, bytes, over all arenas
   size_t _total;
   // usage per arena tag when total peaked
-  ArenaTagsCounter _peak_by_tag;
+  ArenaCountersByTag _peak_by_tag;
   // number of nodes (c2 only) when total peaked
   unsigned _live_nodes_at_peak;
   const char* _result;
@@ -216,7 +216,7 @@ public:
   void inc_recompilation() { _num_recomp++; }
 
   void set_total(size_t n) { _total = n; }
-  void set_peak_by_tag(ArenaTagsCounter peak_by_tag) { _peak_by_tag = peak_by_tag; }
+  void set_peak_by_tag(ArenaCountersByTag peak_by_tag) { _peak_by_tag = peak_by_tag; }
   void set_live_nodes_at_peak(unsigned n) { _live_nodes_at_peak = n; }
 
   void set_result(const char* s) { _result = s; }
@@ -352,7 +352,7 @@ class MemStatTable :
 public:
 
   void add(const FullMethodName& fmn, CompilerType comptype,
-           size_t total, ArenaTagsCounter peak_by_tag,
+           size_t total, ArenaCountersByTag peak_by_tag,
            unsigned live_nodes_at_peak, size_t limit, const char* result) {
     assert_lock_strong(NMTCompilationCostHistory_lock);
     MemStatTableKey key(fmn, comptype);

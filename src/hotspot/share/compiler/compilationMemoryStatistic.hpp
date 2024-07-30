@@ -37,7 +37,7 @@ class Symbol;
 class DirectiveSet;
 
 // Helper class to wrap the array of arena tags for easier processing
-class ArenaTagsCounter {
+class ArenaCountersByTag {
 private:
   size_t _counter[Arena::tag_count()];
 
@@ -67,9 +67,9 @@ class ArenaStatCounter : public CHeapObj<mtCompiler> {
   // bytes at last peak, total
   size_t _peak;
   // Current bytes used by arenas per tag
-  ArenaTagsCounter _current_by_tag;
+  ArenaCountersByTag _current_by_tag;
   // Peak composition:
-  ArenaTagsCounter _peak_by_tag;
+  ArenaCountersByTag _peak_by_tag;
   // MemLimit handling
   size_t _limit;
   bool _hit_limit;
@@ -92,7 +92,7 @@ public:
   size_t peak() const { return _peak; }
 
   // Peak details
-  ArenaTagsCounter peak_by_tag() const { return _peak_by_tag; }
+  ArenaCountersByTag peak_by_tag() const { return _peak_by_tag; }
   unsigned live_nodes_at_peak() const { return _live_nodes_at_peak; }
 
   // Mark the start and end of a compilation.
