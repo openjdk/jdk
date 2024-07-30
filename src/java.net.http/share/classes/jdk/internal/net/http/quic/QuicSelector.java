@@ -335,16 +335,7 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
          */
         public void shutdown() {
             super.shutdown();
-            try {
-                selector.close();
-            } catch (AssertionError e) {
-                // TODO: remove this catch close when JDK-8321167 is fixed
-                // Work around for JDK-8321167
-                if (debug.on())
-                    debug.log("Failed to close selector (JDK-8321167?): " + e);
-            } catch (IOException io) {
-                if (debug.on()) debug.log("failed to close selector: " + io);
-            }
+            selector.wakeup();
         }
 
         @Override
@@ -390,6 +381,12 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
             } finally {
                 if (debug.on()) debug.log("exiting");
                 timer().stop();
+
+                try {
+                    selector.close();
+                } catch (IOException io) {
+                    if (debug.on()) debug.log("failed to close selector: " + io);
+                }
             }
         }
 
