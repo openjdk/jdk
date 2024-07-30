@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,35 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.util;
 
-package jdk.jfr.internal.settings;
-
-import jdk.jfr.BooleanFlag;
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.MetadataDefinition;
-import jdk.jfr.Name;
-import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Type;
-
-@MetadataDefinition
-@Label("Stack Trace")
-@Name(Type.SETTINGS_PREFIX + "StackTrace")
-@Description("Record stack traces")
-@BooleanFlag
-public final class StackTraceSetting extends BooleanSetting {
-    private static final long typeId = Type.getTypeId(StackTraceSetting.class);
-
-    public StackTraceSetting(PlatformEventType eventType, String defaultValue) {
-        super(eventType, defaultValue);
+public enum TimespanUnit {
+    NANOSECONDS ("ns",                           1L, 1000),
+    MICROSECONDS("us",                        1000L, 1000),
+    MILLISECONDS("ms",                   1_000_000L, 1000),
+    SECONDS     ("s",                1_000_000_000L,   60),
+    MINUTES     ("m",           60 * 1_000_000_000L,   60),
+    HOURS       ("h",      60 * 60 * 1_000_000_000L,   24),
+    DAYS        ("d", 24 * 60 * 60 * 1_000_000_000L,    7);
+    public final String text;
+    public final long nanos;
+    public final int size;
+    TimespanUnit(String text, long nanos, int size) {
+        this.text = text;
+        this.nanos = nanos;
+        this.size = size;
     }
 
-    @Override
-    protected void apply(PlatformEventType eventType, boolean value) {
-        eventType.setStackTraceEnabled(value);
-    }
-
-    public static boolean isType(long typeId) {
-        return StackTraceSetting.typeId == typeId;
+    public static TimespanUnit fromText(String text) {
+        for (TimespanUnit tu : values()) {
+            // Case-sensitive by design
+            if (tu.text.equals(text)) {
+                return tu;
+            }
+        }
+        return null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,53 +25,43 @@
 
 package jdk.jfr.internal.settings;
 
-import static jdk.jfr.internal.util.ValueParser.MISSING;
-
 import java.util.Objects;
 import java.util.Set;
 
-import jdk.jfr.Description;
-import jdk.jfr.Label;
-import jdk.jfr.MetadataDefinition;
-import jdk.jfr.Name;
-import jdk.jfr.Timespan;
 import jdk.jfr.internal.PlatformEventType;
-import jdk.jfr.internal.Type;
-import jdk.jfr.internal.util.ValueParser;
 
-@MetadataDefinition
-@Label("Cutoff")
-@Description("Limit running time of event")
-@Name(Type.SETTINGS_PREFIX + "Cutoff")
-@Timespan
-public final class CutoffSetting extends JDKSettingControl {
-    public static final String DEFAULT_VALUE = ValueParser.INFINITY;
-    private String value = DEFAULT_VALUE;
+abstract class BooleanSetting extends JDKSettingControl {
     private final PlatformEventType eventType;
+    private final String defaultValue;
+    private String value;
 
-    public CutoffSetting(PlatformEventType eventType) {
-       this.eventType = Objects.requireNonNull(eventType);
+    public BooleanSetting(PlatformEventType eventType, String defaultValue) {
+        this.eventType = Objects.requireNonNull(eventType);
+        this.defaultValue = defaultValue;
+        this.value = defaultValue;
+        if (parse(defaultValue) == null) {
+            throw new InternalError("Only 'true' or 'false' is allowed with class BooleanSetting");
+        }
     }
+
+    protected abstract void apply(PlatformEventType eventType, boolean value);
 
     @Override
     public String combine(Set<String> values) {
-        long max = 0;
-        String text = null;
-        for (String value : values) {
-            long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
-            if (nanos != MISSING && nanos > max) {
-                text = value;
-                max = nanos;
-            }
+        if (values.contains("true")) {
+            return "true";
         }
-        return Objects.requireNonNullElse(text, DEFAULT_VALUE);
+        if (values.contains("false")) {
+            return "false";
+        }
+        return defaultValue;
     }
 
     @Override
     public void setValue(String value) {
-        long nanos = ValueParser.parseTimespanWithInfinity(value, MISSING);
-        if (nanos != MISSING) {
-            eventType.setCutoff(nanos);
+        Boolean b = parse(value);
+        if (b != null) {
+            apply(eventType, b.booleanValue());
             this.value = value;
         }
     }
@@ -81,10 +71,13 @@ public final class CutoffSetting extends JDKSettingControl {
         return value;
     }
 
-    public static long parseValueSafe(String value) {
-        if (value == null) {
-            return 0L;
+    private static Boolean parse(String value) {
+        if ("true".equals(value)) {
+            return Boolean.TRUE;
         }
-        return ValueParser.parseTimespanWithInfinity(value, 0L);
+        if ("false".equals(value)) {
+            return Boolean.FALSE;
+        }
+        return null;
     }
 }
