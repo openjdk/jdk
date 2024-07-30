@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022, JetBrains s.r.o.. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@ import java.io.IOException;
  * @test
  * @key headful
  * @bug 8280861
- * @summary  Verifies Robot screen capture capabilities with different
+ * @summary  Verifies Robot screen capture capabilities with available
  *           Gtk backends and presence of UI scaling
  * @requires os.family == "linux"
  * @run main/othervm -Djdk.gtk.version=3 -Dsun.java2d.uiScale=1 ScreenCaptureGtkTest

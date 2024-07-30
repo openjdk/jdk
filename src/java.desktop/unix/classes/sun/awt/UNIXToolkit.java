@@ -489,9 +489,7 @@ public abstract class UNIXToolkit extends SunToolkit
         @SuppressWarnings("removal")
         String version = AccessController.doPrivileged(
                 new GetPropertyAction("jdk.gtk.version"));
-        if (version == null) {
-            return GtkVersions.ANY;
-        } else if("3".equals(version) ){
+        if ("3".equals(version)) {
             return GtkVersions.GTK3;
         }
         return GtkVersions.ANY;
