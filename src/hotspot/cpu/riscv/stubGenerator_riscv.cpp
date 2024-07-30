@@ -5936,7 +5936,6 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
 #ifdef COMPILER2
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
@@ -6000,13 +5999,12 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
-#endif // COMPILER2
 
     generate_compare_long_strings();
 
     generate_string_indexof_stubs();
 
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:
