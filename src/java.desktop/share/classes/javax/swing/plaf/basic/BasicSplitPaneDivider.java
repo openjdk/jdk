@@ -395,7 +395,7 @@ public class BasicSplitPaneDivider extends Container
     /**
      * Messaged when the oneTouchExpandable value of the JSplitPane the
      * divider is contained in changes.
-     * If a particular L&amp;F supports SplitPane.supportsOneTocuhButtons property
+     * If a particular L&amp;F supports SplitPane.supportsOneTouchButtons property
      * it will create the
      * <code>leftButton</code> and <code>rightButton</code> if they are null
      * and corresponding JSplitPane supports oneTouchExpandable property.
