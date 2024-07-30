@@ -108,11 +108,6 @@ public interface PacketEmitter {
     Executor executor();
 
     /**
-     * {@return true if queued frames are available for sending}
-     */
-    boolean hasQueuedFrames();
-
-    /**
      * Reschedule the given event on the {@link #timer() timer}
      * @param event the event to reschedule
      */

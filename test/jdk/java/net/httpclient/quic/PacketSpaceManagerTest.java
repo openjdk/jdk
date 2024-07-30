@@ -705,11 +705,6 @@ public class PacketSpaceManagerTest {
         }
 
         @Override
-        public boolean hasQueuedFrames() {
-            return false;
-        }
-
-        @Override
         public void checkAbort(PacketNumberSpace packetNumberSpace) { }
 
         final CopyOnWriteArrayList<Retransmission> expectedRetransmissions = new CopyOnWriteArrayList<>();

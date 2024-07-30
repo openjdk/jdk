@@ -1441,11 +1441,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
 
             @Override
-            public boolean hasQueuedFrames() {
-                return QuicConnectionImpl.this.hasQueuedFrames();
-            }
-
-            @Override
             public void reschedule(QuicTimedEvent task) {
                 var endpoint = QuicConnectionImpl.this.endpoint();
                 if (endpoint == null) return;

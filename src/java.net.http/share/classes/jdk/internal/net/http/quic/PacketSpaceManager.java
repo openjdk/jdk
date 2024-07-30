@@ -1393,21 +1393,6 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
         var ack = nextAckFrame;
 
-        // If we need to send HANDSHAKE_DONE or other frames,
-        // and we have received at least one ONERTT packet, do it now.
-        if (isApplicationSpace()) {
-            if (ack != null) {
-                if (packetEmitter.hasQueuedFrames()) {
-                    if (verbose && debug.on()) debug.log("send queued frames");
-                    if (verbose && Log.quicTimer()) {
-                        Log.logQuic(String.format("%s: [%s] transmit now: frames available",
-                            packetEmitter.logTag(), packetNumberSpace));
-                    }
-                    return Deadline.MIN;
-                }
-            }
-        }
-
         Deadline ackDeadline = (ack == null || ack.sent() != null)
                 ? Deadline.MAX // if the ack frame has already been sent, getNextAck() returns null
                 : ack.deadline();
