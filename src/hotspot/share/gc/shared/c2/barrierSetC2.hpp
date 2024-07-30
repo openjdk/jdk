@@ -193,7 +193,7 @@ class C2OptAccess: public C2Access {
 public:
   C2OptAccess(PhaseGVN& gvn, Node* ctl, MergeMemNode* mem, DecoratorSet decorators,
               BasicType type, Node* base, C2AccessValuePtr& addr) :
-    C2Access(decorators, base, addr, type),
+    C2Access(decorators, type, base, addr),
     _gvn(gvn), _mem(mem), _ctl(ctl) {
     fixup_decorators();
   }
