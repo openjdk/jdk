@@ -30,16 +30,17 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 // Note: It would be possible to just use `LazyMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
-public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
+public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> values,
                                    Function<? super T, ? extends R> original) implements Function<T, R> {
     @ForceInline
     @Override
     public R apply(T value) {
-        final StableValueImpl<R> stable = stables.get(value);
+        final StableValueImpl<R> stable = values.get(value);
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
@@ -66,6 +67,26 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> stables,
     @Override
     public boolean equals(Object obj) {
         return obj == this;
+    }
+
+    @Override
+    public String toString() {
+        return "CachedFunction[values=" + renderValues() + ", original=" + original + "]";
+    }
+
+    private String renderValues() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        for (var e:values.entrySet()) {
+            final Object value = e.getValue().value();
+            if (value == this) {
+                sb.append("(self)");
+            } else {
+                sb.append(e.getKey()).append('=').append(StableValueUtil.render(value));
+            }
+        }
+        sb.append("}");
+        return sb.toString();
     }
 
     public static <T, R> CachedFunction<T, R> of(Set<T> inputs,

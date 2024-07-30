@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * For performance reasons (~10%), we are not delegating to a StableValue but are using
  * the more primitive functions in StableValueUtil that are shared with StableValueImpl.
  *
- * @param <T>
+ * @param <T> the return type
  */
 public final class CachedSupplier<T> implements Supplier<T> {
 

@@ -35,10 +35,15 @@ import java.util.stream.Collectors;
 // Note: It would be possible to just use `LazyList::get` instead of this
 // class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
+/**
+ * Implementation of a cached IntFunction.
+ * <p>
+ * For performance reasons (~10%), we are not delegating to a StableList but are using
+ * the more primitive functions in StableValueUtil that are shared with StableList/StableValueImpl.
+ *
+ * @param <R> the return type
+ */
 public final class CachedIntFunction<R> implements IntFunction<R> {
-
-    private static final long VALUES_OFFSET =
-            StableValueUtil.UNSAFE.objectFieldOffset(CachedIntFunction.class, "values");
 
     private final IntFunction<? extends R> original;
     private final Object[] mutexes;

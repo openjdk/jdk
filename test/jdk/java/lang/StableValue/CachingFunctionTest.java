@@ -45,10 +45,10 @@ final class CachingFunctionTest {
         assertEquals(1, cif.cnt());
         assertEquals(42, cached.apply(42));
         assertEquals(1, cif.cnt());
-        assertTrue(cached.toString().startsWith("CachedFunction[stables={"));
+        assertTrue(cached.toString().startsWith("CachedFunction[values={"));
         // Key order is unspecified
-        assertTrue(cached.toString().contains("13=StableValue.unset"));
-        assertTrue(cached.toString().contains("42=StableValue[42]"));
+        assertTrue(cached.toString().contains("13=.unset"));
+        assertTrue(cached.toString().contains("42=[42]"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
         var x = assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
         assertTrue(x.getMessage().contains("-1"));
@@ -84,10 +84,10 @@ final class CachingFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(42));
         assertEquals(2, cif.cnt());
-        assertTrue(cached.toString().startsWith("CachedFunction[stables={"));
+        assertTrue(cached.toString().startsWith("CachedFunction[values={"));
         // Key order is unspecified
-        assertTrue(cached.toString().contains("13=StableValue.unset"));
-        assertTrue(cached.toString().contains("42=StableValue.unset"));
+        assertTrue(cached.toString().contains("13=.unset"));
+        assertTrue(cached.toString().contains("42=.unset"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
     }
 
