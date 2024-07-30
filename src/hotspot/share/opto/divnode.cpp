@@ -548,8 +548,12 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
   const TypeInt *i2 = t2->is_int();
   int widen = MAX2(i1->_widen, i2->_widen);
 
-  if( i2->is_con() && i2->get_con() != 0 ) {
+  if( i2->is_con() ) {
     int32_t d = i2->get_con(); // Divisor
+    if (d == 0) {
+      // this division will always throw an exception
+      return TypeInt::INT;
+    }
     jint lo, hi;
     if( d >= 0 ) {
       lo = i1->_lo/d;
@@ -649,8 +653,12 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
   const TypeLong *i2 = t2->is_long();
   int widen = MAX2(i1->_widen, i2->_widen);
 
-  if( i2->is_con() && i2->get_con() != 0 ) {
+  if( i2->is_con() ) {
     jlong d = i2->get_con();    // Divisor
+    if (d == 0) {
+      // this division will always throw an exception
+      return TypeLong::LONG;
+    }
     jlong lo, hi;
     if( d >= 0 ) {
       lo = i1->_lo/d;
