@@ -38,9 +38,13 @@ the code.
 be reused across multiple calls. For instance, creating a logger or reading application configurations from an external
 database. Furthermore, if the VM is made aware, a field is an "at-most-once field" and it is set, it may
 [constant-fold](https://en.wikipedia.org/wiki/Constant_folding) the field value, thereby providing crucial performance
-and energy efficiency gains. It is also important to stress a method called to compute a value might have intended or
+and energy efficiency gains. 
+
+It is also important to stress a method called to compute a value might have intended or
 unintended side effects and therefore, it would be vital to also guarantee the method is invoked at most once, even in
-a multithreaded environment. Another property of at-most-once fields would be, they are written to at most once but
+a multithreaded environment. 
+
+Another property of at-most-once fields would be, they are written to at most once but
 are likely read at many occasions. Hence, updating the field is not so time-critical whereas every effort to make 
 reading the field performant should be made.  
 
@@ -144,7 +148,7 @@ public class Cache {
 }
 ```
 
-There is no built-in semantics for declaring an array's _elements_ should be accessed using 'volatile' semantics in
+There is no built-in semantics for declaring an array's _elements_ should be accessed using `volatile` semantics in
 Java and so, volatile access has to be made explicit in the user code, for example via the supported API of
 `VarHandle`. This solution is also plagued with the problem that it synchronizes on `this` and, in addition to exposing
 itself for deadlocks, prevents any of the cached values from being computed simultaneously by distinct threads.
@@ -168,9 +172,9 @@ It would be advantageous if compute-at-most-once constructs could be expresses s
 
 ```
 // Declare a cache that can hold a single Logger instance
-Abc<Logger> cache = ... Logger.getLogger("com.company.Foo") ...;
+Foo<Logger> cache = ... Logger.getLogger("com.company.Foo") ...;
 ...
-// If the value is set, just return it. Otherwise computes the value.
+// Just returns the value if set. Otherwise computes and returns the value.
 // If another thread is computing a value, wait until it has completed.
 Logger logger = cache.xxxx();
 ```
@@ -179,9 +183,9 @@ and for several compute-at-most-once values indexed by an `int`:
 
 ```
 // Declare a cache that can hold 10 Logger instance 
-Efg<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
+Bar<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 ...
-// If a value at the provided index is set, just return it. Otherwise compute the value.
+// Just returns the value at the provided index if set. Otherwise computes and returns the value.
 // If another thread is computing a value at the provided index, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
 Logger logger = cache.xxxx(7);
@@ -193,9 +197,9 @@ as the key type in the example below:
 ```
 // Declare a cache that can hold a finite number of Logger instance
 // associated with the same finite number of `keys` Strings.
-Hij<String, Logger> cache = ... keys ... Logger::getLogger...
+Baz<String, Logger> cache = ... keys ... Logger::getLogger...
 ...
-// If a value associated with the provided string is set, just return it. Otherwise comput it.
+// Just returns the value associated with the provided string if set. Otherwise computes and returns the value.
 // If another thread is computing a value for the provided String, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
 Logger logger = cache.xxxx("com.company.Foo");
@@ -206,10 +210,10 @@ expressed as compute-at-most-once constructs in a similar fashion:
 
 ```
 // Declare a List whose elements are lazily computed once accessed via List::get
-List<Logger> loggerList = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
+List<Logger> lazyList = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 
 // Declare a Map whose values are lazily computed once accessed via Map::get
-Map<String, Logger> loggerMap = ... keys ... Logger::getLogger...
+Map<String, Logger> lazyMap = ... keys ... Logger::getLogger...
 ```
 
 A final note should be made about static fields. Initialization of `static` and `final` fields can be broken up by
