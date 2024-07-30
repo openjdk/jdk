@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,9 +152,7 @@ final class DateTimePrintContext {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
                     temporal.get(OFFSET_SECONDS) != overrideZone.getRules().getOffset(Instant.EPOCH).getTotalSeconds()) {
-                throw new DateTimeException("Unable to apply override zone '" + overrideZone +
-                        "' because the temporal object being formatted has a different offset but" +
-                        " does not represent an instant: " + temporal);
+                throw overrideZoneError(temporal, overrideZone);
             }
         }
         final ZoneId effectiveZone = (overrideZone != null ? overrideZone : temporalZone);
@@ -167,9 +165,7 @@ final class DateTimePrintContext {
                 if (!(overrideChrono == IsoChronology.INSTANCE && temporalChrono == null)) {
                     for (ChronoField f : ChronoField.values()) {
                         if (f.isDateBased() && temporal.isSupported(f)) {
-                            throw new DateTimeException("Unable to apply override chronology '" + overrideChrono +
-                                    "' because the temporal object being formatted contains date fields but" +
-                                    " does not represent a whole date: " + temporal);
+                            throw overrideChronoError(temporal, overrideChrono);
                         }
                     }
                 }
@@ -226,6 +222,18 @@ final class DateTimePrintContext {
                         (effectiveZone != null ? " with zone " + effectiveZone : "");
             }
         };
+    }
+
+    private static DateTimeException overrideZoneError(TemporalAccessor temporal, ZoneId overrideZone) {
+        return new DateTimeException("Unable to apply override zone '" + overrideZone +
+                "' because the temporal object being formatted has a different offset but" +
+                " does not represent an instant: " + temporal);
+    }
+
+    private static DateTimeException overrideChronoError(TemporalAccessor temporal, Chronology overrideChrono) {
+        return new DateTimeException("Unable to apply override chronology '" + overrideChrono +
+                "' because the temporal object being formatted contains date fields but" +
+                " does not represent a whole date: " + temporal);
     }
 
     //-----------------------------------------------------------------------
