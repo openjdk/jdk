@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
-#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
+#include "jni.h"
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+JNIEXPORT void JNICALL
+Java_LockedMonitorInNative_runWithSynchronizedNative(JNIEnv *env, jobject obj, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
+    if (mid != NULL) {
+        (*env)->CallVoidMethod(env, obj, mid, task);
+    }
+}
 
-class ShenandoahHeuristics;
-
-class ShenandoahIUMode : public ShenandoahMode {
-public:
-  virtual void initialize_flags() const;
-  virtual const char* name()     { return "Incremental-Update (IU)"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return true; }
-};
-
-#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
+JNIEXPORT void JNICALL
+Java_LockedMonitorInNative_runWithMonitorEnteredInNative(JNIEnv *env, jobject obj, jobject lock, jobject task) {
+    jclass clazz = (*env)->GetObjectClass(env, obj);
+    jmethodID mid = (*env)->GetMethodID(env, clazz, "run", "(Ljava/lang/Runnable;)V");
+    if (mid != NULL && (*env)->MonitorEnter(env, lock) == 0) {
+        (*env)->CallVoidMethod(env, obj, mid, task);
+        (*env)->MonitorExit(env, lock);  // can be called with pending exception
+    }
+}

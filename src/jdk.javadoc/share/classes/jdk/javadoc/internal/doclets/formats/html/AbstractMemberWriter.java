@@ -466,16 +466,8 @@ public abstract class AbstractMemberWriter {
                     ? ((ExecutableElement)member).getTypeParameters()
                     : null;
             if (list != null && !list.isEmpty()) {
-                Content typeParameters = ((AbstractExecutableMemberWriter) this)
-                        .getTypeParameters((ExecutableElement)member);
-                code.add(typeParameters);
-                // Add explicit line break between method type parameters and
-                // return type in member summary table to avoid random wrapping.
-                if (typeParameters.charCount() > 10) {
-                    code.add(new HtmlTree(TagName.BR));
-                } else {
-                    code.add(Entity.NO_BREAK_SPACE);
-                }
+                ((AbstractExecutableMemberWriter) this)
+                  .addTypeParameters((ExecutableElement)member, code);
             }
             code.add(
                     writer.getLink(new HtmlLinkInfo(configuration,

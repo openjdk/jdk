@@ -67,9 +67,6 @@ private:
                                         Register scratch, RegSet saved_regs);
 
 public:
-
-  void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
-
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
 
 #ifdef COMPILER1

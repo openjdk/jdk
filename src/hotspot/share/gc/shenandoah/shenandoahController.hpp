@@ -102,4 +102,4 @@ public:
   size_t get_gc_id();
   void update_gc_id();
 };
-#endif //SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLLER_HPP

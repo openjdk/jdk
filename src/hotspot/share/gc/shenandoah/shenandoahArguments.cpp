@@ -50,7 +50,6 @@ void ShenandoahArguments::initialize() {
 
   FLAG_SET_DEFAULT(ShenandoahSATBBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahLoadRefBarrier,         false);
-  FLAG_SET_DEFAULT(ShenandoahIUBarrier,              false);
   FLAG_SET_DEFAULT(ShenandoahCASBarrier,             false);
   FLAG_SET_DEFAULT(ShenandoahCardBarrier,            false);
   FLAG_SET_DEFAULT(ShenandoahCloneBarrier,           false);
@@ -152,7 +151,6 @@ void ShenandoahArguments::initialize() {
   if (ShenandoahVerifyOptoBarriers &&
           (!FLAG_IS_DEFAULT(ShenandoahSATBBarrier)            ||
            !FLAG_IS_DEFAULT(ShenandoahLoadRefBarrier)         ||
-           !FLAG_IS_DEFAULT(ShenandoahIUBarrier)              ||
            !FLAG_IS_DEFAULT(ShenandoahCASBarrier)             ||
            !FLAG_IS_DEFAULT(ShenandoahCloneBarrier)
           )) {
@@ -163,10 +161,6 @@ void ShenandoahArguments::initialize() {
   guarantee(!ShenandoahVerifyOptoBarriers, "Should be disabled");
 #endif // ASSERT
 #endif // COMPILER2
-
-  if (ShenandoahIUBarrier) {
-    assert(strcmp(ShenandoahGCMode, "generational"), "Generational mode does not support IU barrier");
-  }
 
   // Record more information about previous cycles for improved debugging pleasure
   if (FLAG_IS_DEFAULT(LogEventsBufferEntries)) {
