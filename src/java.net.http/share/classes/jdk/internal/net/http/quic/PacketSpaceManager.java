@@ -1866,7 +1866,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         transferLock.lock();
         try {
             PendingAcknowledgement head = pendingAcknowledgements.peek();
-            if (head == null || head.packetNumber > largestReceivedAckedPN) {
+            if (head == null || head.packetNumber >= largestReceivedAckedPN) {
                 return null;
             }
             if (head.packetNumber < largestReceivedAckedPN - kPacketThreshold) {
