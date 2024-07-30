@@ -745,8 +745,7 @@ class SerializeClosure;
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
                                                                                                                   \
-  /* StableValues & Collections */                                                                                \
-  template(java_lang_StableValue,                  "java/lang/StableValue")                                       \
+  /* Stable Values */                                                                                             \
   template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
   /*end*/
 
