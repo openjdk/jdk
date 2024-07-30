@@ -58,6 +58,13 @@ void VM_Version::useRVA23U64Profile() {
 }
 
 void VM_Version::initialize() {
+  common_initialize();
+#ifdef COMPILER2
+  c2_initialize();
+#endif // COMPILER2
+}
+
+void VM_Version::common_initialize() {
   _supports_atomic_getset4 = true;
   _supports_atomic_getadd4 = true;
   _supports_atomic_getset8 = true;
@@ -226,11 +233,6 @@ void VM_Version::initialize() {
       _initial_vector_length = cpu_vector_length();
     }
   }
-
-#ifdef COMPILER2
-  c2_initialize();
-#endif // COMPILER2
-
 }
 
 #ifdef COMPILER2
