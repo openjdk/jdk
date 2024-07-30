@@ -40,8 +40,8 @@ public enum TimespanUnit {
     private final TimeUnit timeUnit;
     TimespanUnit(String text, TimeUnit tu, int size) {
         this.text = text;
-        this.size = size;
         this.nanos = tu.toNanos(1);
+        this.size = size;
         this.timeUnit = tu;
     }
 
