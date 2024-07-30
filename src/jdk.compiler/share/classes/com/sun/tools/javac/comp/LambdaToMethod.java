@@ -81,6 +81,7 @@ import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Options;
 
 import javax.lang.model.element.ElementKind;
+import java.lang.invoke.LambdaMetafactory;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -116,17 +117,17 @@ import static com.sun.tools.javac.code.TypeTag.VOID;
  */
 public class LambdaToMethod extends TreeTranslator {
 
-    private Attr attr;
-    private JCDiagnostic.Factory diags;
-    private Log log;
-    private Lower lower;
-    private Names names;
-    private Symtab syms;
-    private Resolve rs;
-    private Operators operators;
+    private final Attr attr;
+    private final JCDiagnostic.Factory diags;
+    private final Log log;
+    private final Lower lower;
+    private final Names names;
+    private final Symtab syms;
+    private final Resolve rs;
+    private final Operators operators;
     private TreeMaker make;
-    private Types types;
-    private TransTypes transTypes;
+    private final Types types;
+    private final TransTypes transTypes;
     private Env<AttrContext> attrEnv;
 
     /** info about the current class being processed */
@@ -154,13 +155,13 @@ public class LambdaToMethod extends TreeTranslator {
     private final boolean deduplicateLambdas;
 
     /** Flag for alternate metafactories indicating the lambda object is intended to be serializable */
-    public static final int FLAG_SERIALIZABLE = 1 << 0;
+    public static final int FLAG_SERIALIZABLE = LambdaMetafactory.FLAG_SERIALIZABLE;
 
     /** Flag for alternate metafactories indicating the lambda object has multiple targets */
-    public static final int FLAG_MARKERS = 1 << 1;
+    public static final int FLAG_MARKERS = LambdaMetafactory.FLAG_MARKERS;
 
     /** Flag for alternate metafactories indicating the lambda object requires multiple bridges */
-    public static final int FLAG_BRIDGES = 1 << 2;
+    public static final int FLAG_BRIDGES = LambdaMetafactory.FLAG_BRIDGES;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     protected static final Context.Key<LambdaToMethod> unlambdaKey = new Context.Key<>();
@@ -294,7 +295,6 @@ public class LambdaToMethod extends TreeTranslator {
      * Visit a class.
      * Maintain the translatedMethodList across nested classes.
      * Append the translatedMethodList to the class after it is translated.
-     * @param tree
      */
     @Override
     public void visitClassDef(JCClassDecl tree) {
@@ -315,7 +315,7 @@ public class LambdaToMethod extends TreeTranslator {
                 int prevPos = make.pos;
                 try {
                     make.at(tree);
-                    kInfo.addMethod(makeDeserializeMethod(tree.sym));
+                    kInfo.addMethod(makeDeserializeMethod());
                 } finally {
                     make.at(prevPos);
                 }
@@ -339,7 +339,6 @@ public class LambdaToMethod extends TreeTranslator {
      * Translate a lambda into a method to be inserted into the class.
      * Then replace the lambda site with an invokedynamic call of to lambda
      * meta-factory, which will use the lambda method.
-     * @param tree
      */
     @Override
     public void visitLambda(JCLambda tree) {
@@ -486,7 +485,6 @@ public class LambdaToMethod extends TreeTranslator {
     /**
      * Translate a method reference into an invokedynamic call to the
      * meta-factory.
-     * @param tree
      */
     @Override
     public void visitReference(JCMemberReference tree) {
@@ -495,34 +493,22 @@ public class LambdaToMethod extends TreeTranslator {
         MethodSymbol refSym = (MethodSymbol)tree.sym;
 
         //the qualifying expression is treated as a special captured arg
-        JCExpression init;
-        switch(tree.kind) {
+        JCExpression init = switch (tree.kind) {
+            case IMPLICIT_INNER,    /* Inner :: new */
+                 SUPER ->           /* super :: instMethod */
+                    makeThis(tree.owner.enclClass().asType(), tree.owner.enclClass());
+            case BOUND ->           /* Expr :: instMethod */
+                    attr.makeNullCheck(transTypes.coerce(attrEnv, tree.getQualifierExpression(),
+                            types.erasure(tree.sym.owner.type)));
+            case UNBOUND,           /* Type :: instMethod */
+                 STATIC,            /* Type :: staticMethod */
+                 TOPLEVEL,          /* Top level :: new */
+                 ARRAY_CTOR ->      /* ArrayType :: new */
+                    null;
+        };
 
-            case IMPLICIT_INNER:    /** Inner :: new */
-            case SUPER:             /** super :: instMethod */
-                init = makeThis(
-                        tree.owner.enclClass().asType(),
-                        tree.owner.enclClass());
-                break;
-
-            case BOUND:             /** Expr :: instMethod */
-                init = transTypes.coerce(attrEnv, tree.getQualifierExpression(),
-                        types.erasure(tree.sym.owner.type));
-                init = attr.makeNullCheck(init);
-                break;
-
-            case UNBOUND:           /** Type :: instMethod */
-            case STATIC:            /** Type :: staticMethod */
-            case TOPLEVEL:          /** Top level :: new */
-            case ARRAY_CTOR:        /** ArrayType :: new */
-                init = null;
-                break;
-
-            default:
-                throw new InternalError("Should not have an invalid kind");
-        }
-
-        List<JCExpression> indy_args = init==null? List.nil() : translate(List.of(init));
+        List<JCExpression> indy_args = (init == null) ?
+                List.nil() : translate(List.of(init));
 
         //build a sam instance using an indy call to the meta-factory
         result = makeMetafactoryIndyCall(tree, refSym.asHandle(), refSym, indy_args);
@@ -530,7 +516,6 @@ public class LambdaToMethod extends TreeTranslator {
 
     /**
      * Translate identifiers within a lambda to the mapped identifier
-     * @param tree
      */
     @Override
     public void visitIdent(JCIdent tree) {
@@ -635,7 +620,7 @@ public class LambdaToMethod extends TreeTranslator {
                 if (isTarget_void && !isLambda_void) {
                     //Void to void conversion:
                     // { TYPE $loc = RET-EXPR; return; }
-                    VarSymbol loc = makeSyntheticVar(0, names.fromString("$loc"), tree.expr.type, lambdaMethodDecl.sym);
+                    VarSymbol loc = new VarSymbol(SYNTHETIC, names.fromString("$loc"), tree.expr.type, lambdaMethodDecl.sym);
                     JCVariableDecl varDef = make.VarDef(loc, tree.expr);
                     result = make.Block(0, List.of(varDef, make.Return(null)));
                 } else {
@@ -654,7 +639,7 @@ public class LambdaToMethod extends TreeTranslator {
         return trans_block;
     }
 
-    private JCMethodDecl makeDeserializeMethod(Symbol kSym) {
+    private JCMethodDecl makeDeserializeMethod() {
         ListBuffer<JCCase> cases = new ListBuffer<>();
         ListBuffer<JCBreak> breaks = new ListBuffer<>();
         for (Map.Entry<String, ListBuffer<JCStatement>> entry : kInfo.deserializeCases.entrySet()) {
@@ -806,13 +791,6 @@ public class LambdaToMethod extends TreeTranslator {
      */
     private MethodSymbol makePrivateSyntheticMethod(long flags, Name name, Type type, Symbol owner) {
         return new MethodSymbol(flags | SYNTHETIC | PRIVATE, name, type, owner);
-    }
-
-    /**
-     * Create new synthetic variable with given flags, name, type, owner
-     */
-    private VarSymbol makeSyntheticVar(long flags, Name name, Type type, Symbol owner) {
-        return new VarSymbol(flags | SYNTHETIC, name, type, owner);
     }
 
     private MethodType typeToMethodType(Type mt) {
@@ -1326,7 +1304,7 @@ public class LambdaToMethod extends TreeTranslator {
 
         /**
          * Are signatures incompatible with JVM spec allowed?
-         * Used by {@link LambdaTranslationContext#serializedLambdaDisambiguation()}.
+         * Used by {@link LambdaTranslationContext#serializedLambdaDisambiguation(Symbol)}}.
          */
         boolean allowIllegalSignatures;
 
