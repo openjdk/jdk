@@ -1430,9 +1430,9 @@ public sealed class PacketSpaceManager implements PacketSpace
             if (verbose && Log.quicTimer()) {
                 Log.logQuic(String.format("%s: [%s] loss deadline: %s, ackDeadline: %s, deadline in %s",
                     packetEmitter.logTag(), packetNumberSpace, lossDeadline, ackDeadline,
-                    Utils.debugDeadline(now(), ackDeadline.isBefore(lossDeadline) ? ackDeadline : lossDeadline)));
+                    Utils.debugDeadline(now(), min(ackDeadline, lossDeadline))));
             }
-            return ackDeadline.isBefore(lossDeadline) ? ackDeadline : lossDeadline;
+            return min(ackDeadline, lossDeadline);
         }
         Deadline ptoDeadline = getPtoDeadline();
         if (verbose && debug.on()) debug.log("ptoDeadline is: " + ptoDeadline);
@@ -1449,9 +1449,9 @@ public sealed class PacketSpaceManager implements PacketSpace
             if (verbose && Log.quicTimer()) {
                 Log.logQuic(String.format("%s: [%s] PTO deadline: %s, ackDeadline: %s, deadline in %s",
                     packetEmitter.logTag(), packetNumberSpace, ptoDeadline, ackDeadline,
-                    Utils.debugDeadline(now(), ackDeadline.isBefore(ptoDeadline) ? ackDeadline : ptoDeadline)));
+                    Utils.debugDeadline(now(), min(ackDeadline, ptoDeadline))));
             }
-            return ackDeadline.isBefore(ptoDeadline) ? ackDeadline : ptoDeadline;
+            return min(ackDeadline, ptoDeadline);
         }
         if (verbose && debug.on()) {
             if (ackDeadline == Deadline.MAX) {
@@ -2145,7 +2145,7 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     }
 
-    private Deadline min(Deadline one, Deadline two) {
+    private static Deadline min(Deadline one, Deadline two) {
         return two.isAfter(one) ? one : two;
     }
 
