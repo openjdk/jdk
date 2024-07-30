@@ -81,25 +81,27 @@ public class CompileFramework {
             }
         }
 
-        Path sourceDir = getSourceDir();
+        Path sourceDir = getTempDir("compile-framework-sources-");
+        Path classesDir = getTempDir("compile-framework-classes-");
 
         System.out.println("------------------ CompileFramework: Compilation ------------------");
         System.out.println("Source directory: " + sourceDir.toString());
+        System.out.println("Classes directory: " + classesDir.toString());
 
-        compileJasmSources(sourceDir, jasmSources);
-        compileJavaSources(sourceDir, javaSources);
-        setUpClassLoader();
+        compileJasmSources(sourceDir, classesDir, jasmSources);
+        compileJavaSources(sourceDir, classesDir, javaSources);
+        setUpClassLoader(classesDir);
     }
 
-    private static Path getSourceDir() {
+    private static Path getTempDir(String prefix) {
         try {
-            return Files.createTempDirectory(Paths.get("."), "compile-framework-sources-");
+            return Files.createTempDirectory(Paths.get("."), prefix);
         } catch (Exception e) {
-            throw new InternalCompileFrameworkException("Could not get ProcessID", e);
+            throw new InternalCompileFrameworkException("Could not set up temporary directory", e);
         }
     }
 
-    private static void compileJasmSources(Path sourceDir, List<SourceCode> jasmSources) {
+    private static void compileJasmSources(Path sourceDir, Path classesDir, List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
             println("No jasm sources to compile.");
             return;
@@ -107,11 +109,11 @@ public class CompileFramework {
         println("Compiling jasm sources: " + jasmSources.size());
 
         List<Path> jasmFilePaths = writeSourcesToFile(sourceDir, jasmSources);
-        compileJasmFiles(jasmFilePaths);
+        compileJasmFiles(jasmFilePaths, classesDir);
         println("Jasm sources compiled.");
     }
 
-    private static void compileJasmFiles(List<Path> paths) {
+    private static void compileJasmFiles(List<Path> paths, Path classesDir) {
         // Compile JASM files with asmtools.jar, shipped with jtreg.
         List<String> command = new ArrayList<>();
 
@@ -120,7 +122,7 @@ public class CompileFramework {
         command.add(getAsmToolsPath());
         command.add("org.openjdk.asmtools.jasm.Main");
         command.add("-d");
-        command.add(System.getProperty("test.classes"));
+        command.add(classesDir.toString());
         for (Path path : paths) {
             command.add(path.toAbsolutePath().toString());
         }
@@ -148,7 +150,7 @@ public class CompileFramework {
         throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
-    private static void compileJavaSources(Path sourceDir, List<SourceCode> javaSources) {
+    private static void compileJavaSources(Path sourceDir, Path classesDir, List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
             println("No java sources to compile.");
             return;
@@ -156,12 +158,11 @@ public class CompileFramework {
         println("Compiling Java sources: " + javaSources.size());
 
         List<Path> javaFilePaths = writeSourcesToFile(sourceDir, javaSources);
-        compileJavaFiles(javaFilePaths);
-
+        compileJavaFiles(javaFilePaths, classesDir);
         println("Java sources compiled.");
     }
 
-    private static void compileJavaFiles(List<Path> paths) {
+    private static void compileJavaFiles(List<Path> paths, Path classesDir) {
         // Compile JAVA files with javac, in the "compile.jdk".
         List<String> command = new ArrayList<>();
 
@@ -169,7 +170,7 @@ public class CompileFramework {
         command.add("-classpath");
         command.add(System.getProperty("java.class.path"));
         command.add("-d");
-        command.add(System.getProperty("test.classes"));
+        command.add(classesDir.toString());
         for (Path path : paths) {
             command.add(path.toAbsolutePath().toString());
         }
@@ -237,7 +238,7 @@ public class CompileFramework {
         }
     }
 
-    private void setUpClassLoader() {
+    private void setUpClassLoader(Path classesDir) {
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
 
         try {
@@ -247,6 +248,8 @@ public class CompileFramework {
             for (String path : getClassPaths()) {
                 urls.add(new File(path).toURI().toURL());
             }
+            // And add in the compiled classes from this instance of CompileFramework.
+            urls.add(new File(classesDir.toString()).toURI().toURL());
             classLoader = URLClassLoader.newInstance(urls.toArray(URL[]::new), sysLoader);
         } catch (IOException e) {
             throw new CompileFrameworkException("IOException while creating ClassLoader", e);
