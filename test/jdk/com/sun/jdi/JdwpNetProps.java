@@ -51,7 +51,8 @@ public class JdwpNetProps {
 
     // Set to true to allow testing of attach from wrong address (expected to fail).
     // It's off by default as it causes test interference (see JDK-8311990).
-    private static boolean allowNegativeAttachTesting = false;
+    private static boolean allowNegativeAttachTesting =
+        "true".equalsIgnoreCase(System.getProperty("JDI_ALLOW_NEGATIVE_TESTING"));
 
     public static void main(String[] args) throws Exception {
         InetAddress addrs[] = InetAddress.getAllByName("localhost");
