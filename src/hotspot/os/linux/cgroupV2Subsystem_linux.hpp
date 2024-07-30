@@ -79,7 +79,7 @@ class CgroupV2CpuController: public CgroupCpuController {
       return reader()->is_read_only();
     }
     bool needs_hierarchy_adjustment() override;
-    CgroupV2CpuController* adjust_controller(int host_cpus) override;
+    CgroupCpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV2MemoryController final: public CgroupMemoryController {
@@ -100,7 +100,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     jlong cache_usage_in_bytes() override;
     void print_version_specific_info(outputStream* st, julong host_mem) override;
     bool needs_hierarchy_adjustment() override;
-    CgroupV2MemoryController* adjust_controller(julong phys_mem) override;
+    CgroupMemoryController* adjust_controller(julong phys_mem) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }

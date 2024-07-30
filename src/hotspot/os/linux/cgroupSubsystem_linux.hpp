@@ -323,47 +323,4 @@ class CgroupSubsystemFactory: AllStatic {
     static void cleanup(CgroupInfo* cg_infos);
 };
 
-template<class CgroupVxController, class LambdaInit, class LambdaCond> static
-void adjust_controller(const char *ver, const char *subject, CgroupVxController* reader, LambdaInit init, LambdaCond cond) {
-  log_trace(os, container)("Adjusting %s controller path for %s: %s", ver, subject, reader->subsystem_path());
-  assert(reader->cgroup_path() != nullptr, "invariant");
-  char* orig = os::strdup(reader->cgroup_path());
-  char* cg_path = os::strdup(orig);
-  char* last_slash;
-  jlong count = init();
-  bool path_iterated = false;
-  while (cond(count) && (last_slash = strrchr(cg_path, '/')) != cg_path) {
-    *last_slash = '\0'; // strip path
-    // update to shortened path and try again
-    reader->set_subsystem_path(cg_path);
-    count = init();
-    path_iterated = true;
-    if (!cond(count)) {
-      log_trace(os, container)("Adjusted %s controller path for %s to: %s", ver, subject, reader->subsystem_path());
-      os::free(cg_path);
-      os::free(orig);
-      return;
-    }
-  }
-  // no lower limit found or limit at leaf
-  os::free(cg_path);
-  if (path_iterated) {
-    reader->set_subsystem_path((char*)"/");
-    count = init();
-    if (!cond(count)) {
-      // handle limit set at mount point
-      log_trace(os, container)("Adjusted %s controller path for %s to: %s", ver, subject, reader->subsystem_path());
-      os::free(orig);
-      return;
-    }
-    log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
-                              reader->mount_point(), orig);
-    reader->set_subsystem_path(orig);
-  } else {
-    log_trace(os, container)("Lowest limit for %s at leaf: %s",
-                              subject, reader->subsystem_path());
-  }
-  os::free(orig);
-}
-
 #endif // CGROUP_SUBSYSTEM_LINUX_HPP
