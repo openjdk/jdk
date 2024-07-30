@@ -281,7 +281,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
       // But as this is not a clearly specified area we will perform our own UTF8
       // truncation anyway - though for those well-defined termination points it
       // will be a no-op.
-      UTF8::truncate_to_legal_utf8((unsigned char*)msg, len);
+      UTF8::truncate_to_legal_utf8((unsigned char*)msg, len + 1);
     }
   }
   // UTF8::is_legal_utf8 should actually be called is_legal_utf8_class_name as the final
