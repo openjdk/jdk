@@ -37,7 +37,6 @@ import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.ArrayList;
 import java.util.List;
-import jdk.test.lib.process.ProcessTools;
 
 public class CompileFramework {
     static final int JASM_COMPILE_TIMEOUT = 60;
@@ -84,8 +83,8 @@ public class CompileFramework {
 
         Path sourceDir = getSourceDir();
 
-        println("------------------ CompileFramework: Compilation ------------------");
-        println("Source directory: " + sourceDir.toString());
+        System.out.println("------------------ CompileFramework: Compilation ------------------");
+        System.out.println("Source directory: " + sourceDir.toString());
 
         compileJasmSources(sourceDir, jasmSources);
         compileJavaSources(sourceDir, javaSources);
@@ -94,7 +93,7 @@ public class CompileFramework {
 
     private static Path getSourceDir() {
         try {
-            return Paths.get("compile-framework-sources-" + ProcessTools.getProcessId());
+            return Files.createTempDirectory(Paths.get("."), "compile-framework-sources-");
         } catch (Exception e) {
             throw new InternalCompileFrameworkException("Could not get ProcessID", e);
         }
