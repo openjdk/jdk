@@ -169,6 +169,8 @@ public class CompileFramework {
         command.add("%s/bin/javac".formatted(System.getProperty("compile.jdk")));
         command.add("-classpath");
         command.add(System.getProperty("java.class.path"));
+        command.add("-classpath");
+        command.add(classesDir.toString()); // make sure jasm files are accessible.
         command.add("-d");
         command.add(classesDir.toString());
         for (Path path : paths) {
