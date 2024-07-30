@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -372,7 +372,7 @@ public final class CPrinterJob extends RasterPrinterJob {
                     try {
                         printLoop(true, firstPage, lastPage);
                     } catch (PrinterAbortException pex) {
-                        throw new PrinterAbortException(pex.getMessage());
+                        throw pex;
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -748,10 +748,7 @@ public final class CPrinterJob extends RasterPrinterJob {
     private boolean cancelCheck() throws PrinterAbortException {
         // This is called from the native side.
 
-        // This is used to avoid deadlock
-        // We would like to just call if isCancelled(),
-        // but that will block the AppKit thread against whomever is holding the synchronized lock
-        boolean cancelled = (performingPrinting && userCancelled);
+        boolean cancelled = isCancelled();
         if (cancelled) {
             cancelDoc();
         }
