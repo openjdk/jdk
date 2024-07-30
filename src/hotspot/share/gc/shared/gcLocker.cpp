@@ -33,7 +33,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
-#include "runtime/timer.hpp"
+#include "utilities/ticks.hpp"
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
