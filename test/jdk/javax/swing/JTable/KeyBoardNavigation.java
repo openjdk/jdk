@@ -178,7 +178,7 @@ public class KeyBoardNavigation {
                 1. Refer the below keyboard navigation specs
                  (referenced from bug report 4112270).
                 2. Check all combinations of navigational keys mentioned below
-                 and verifying each key combinations against the spec defined.
+                 and verify each key combination against the spec defined.
                  If it does, press "pass", otherwise press "fail".
 
                 """;
