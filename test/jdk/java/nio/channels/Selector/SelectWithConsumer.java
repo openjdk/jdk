@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,11 +308,11 @@ public class SelectWithConsumer {
             Pipe.SinkChannel sink = p.sink();
             source.configureBlocking(false);
             source.register(sel, SelectionKey.OP_READ);
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int n = sel.select(k -> assertTrue(false), 1000L);
-            long duration = System.currentTimeMillis() - start;
+            long duration = System.nanoTime() - start;
             assertTrue(n == 0);
-            assertTrue(duration > 500, "select took " + duration + " ms");
+            assertTrue(duration > 500000000, "select took " + duration + " ns");
         } finally {
             closePipe(p);
         }
@@ -332,11 +332,11 @@ public class SelectWithConsumer {
         // select(Consumer, timeout)
         try (Selector sel = Selector.open()) {
             sel.wakeup();
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            long duration = System.currentTimeMillis() - start;
+            long duration = System.nanoTime() - start;
             assertTrue(n == 0);
-            assertTrue(duration < 5000, "select took " + duration + " ms");
+            assertTrue(duration < 5000000000L, "select took " + duration + " ns");
         }
     }
 
@@ -354,12 +354,12 @@ public class SelectWithConsumer {
         // select(Consumer, timeout)
         try (Selector sel = Selector.open()) {
             scheduleWakeup(sel, 1, SECONDS);
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            long duration = System.currentTimeMillis() - start;
+            long duration = System.nanoTime() - start;
             assertTrue(n == 0);
-            assertTrue(duration > 500 && duration < 10*1000,
-                    "select took " + duration + " ms");
+            assertTrue(duration > 500000000L && duration < 10*1000000000L,
+                    "select took " + duration + " ns");
         }
     }
 
@@ -381,11 +381,11 @@ public class SelectWithConsumer {
         // select(Consumer, timeout)
         try (Selector sel = Selector.open()) {
             Thread.currentThread().interrupt();
-            long start = System.currentTimeMillis();
+            long start = System.nanoTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            long duration = System.currentTimeMillis() - start;
+            long duration = System.nanoTime() - start;
             assertTrue(n == 0);
-            assertTrue(duration < 5000, "select took " + duration + " ms");
+            assertTrue(duration < 5000000000L, "select took " + duration + " ns");
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
