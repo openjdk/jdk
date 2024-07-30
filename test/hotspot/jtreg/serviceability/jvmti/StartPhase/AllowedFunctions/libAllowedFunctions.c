@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ extern "C" {
 #define FAILED 2
 
 static jint result = PASSED;
+static jrawMonitorID event_mon = NULL;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -68,7 +69,7 @@ jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved) {
 static void check_jvmti_error(jvmtiEnv *jvmti, char* fname, jvmtiError err) {
     if (err != JVMTI_ERROR_NONE) {
         printf("  ## %s error: %d\n", fname, err);
-        exit(err);
+        abort();
     }
 }
 
@@ -317,7 +318,7 @@ VMStart(jvmtiEnv *jvmti, JNIEnv* jni) {
 }
 
 static void JNICALL
-VMInit(jvmtiEnv *jvmti, JNIEnv* jnii, jthread thread) {
+VMInit(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
     jvmtiPhase phase;
 
     printf("VMInit event\n");
@@ -330,6 +331,20 @@ VMInit(jvmtiEnv *jvmti, JNIEnv* jnii, jthread thread) {
 }
 
 static void JNICALL
+VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
+    jvmtiError err;
+
+    // Block ClassPrepare events while this callback is executed.
+    err  = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
+    check_jvmti_error(jvmti, "VMDeath event: Failed in RawMonitorEnter", err);
+
+    printf("VMDeath event\n");
+
+    err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
+    check_jvmti_error(jvmti, "VMDeath event: Failed in RawMonitorExit", err);
+}
+
+static void JNICALL
 ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     static const jint EVENTS_LIMIT = 2;
     static       jint event_no = 0;
@@ -337,11 +352,20 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     jvmtiPhase phase;
     intptr_t exp_val = 777;
     intptr_t act_val;
+    jvmtiError err;
+
+    // Block VMDeath event and other ClassPrepare events while this callback is executed.
+    // Sync with VMDeath event guards agains JVMTI_ERROR WRONG_PHASE.
+    err = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
+    check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorEnter", err);
 
     get_phase(jvmti, &phase);
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE) {
         printf("  ## Error: unexpected phase: %d, expected: %d or %d\n",
                phase, JVMTI_PHASE_START, JVMTI_PHASE_LIVE);
+
+        err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
+        check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
         return;
     }
     if (phase == JVMTI_PHASE_START && event_no < EVENTS_LIMIT) {
@@ -360,6 +384,8 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
         }
         event_no++;
     }
+    err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
+    check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
 }
 
 static
@@ -399,6 +425,9 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     callbacks.VMStart = VMStart;
     callbacks.VMInit = VMInit;
     callbacks.ClassPrepare = ClassPrepare;
+
+    err = (*jvmti)->CreateRawMonitor(jvmti, "Events Monitor", &event_mon);
+    check_jvmti_error(jvmti, "## Agent_Initialize: CreateRawMonitor", err);
 
     err = (*jvmti)->SetEventCallbacks(jvmti, &callbacks, size);
     check_jvmti_error(jvmti, "## Agent_Initialize: SetEventCallbacks", err);
