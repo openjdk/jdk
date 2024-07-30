@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.impl;
+package jdk.jfr.internal.util;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.attribute.CodeAttribute;
+public enum TimespanUnit {
+    NANOSECONDS ("ns",                           1L, 1000),
+    MICROSECONDS("us",                        1000L, 1000),
+    MILLISECONDS("ms",                   1_000_000L, 1000),
+    SECONDS     ("s",                1_000_000_000L,   60),
+    MINUTES     ("m",           60 * 1_000_000_000L,   60),
+    HOURS       ("h",      60 * 60 * 1_000_000_000L,   24),
+    DAYS        ("d", 24 * 60 * 60 * 1_000_000_000L,    7);
+    public final String text;
+    public final long nanos;
+    public final int size;
+    TimespanUnit(String text, long nanos, int size) {
+        this.text = text;
+        this.nanos = nanos;
+        this.size = size;
+    }
 
-public sealed interface TerminalCodeBuilder extends CodeBuilder, LabelContext
-        permits DirectCodeBuilder, BufferedCodeBuilder {
-    int curTopLocal();
-
-    static int setupTopLocal(MethodInfo methodInfo, CodeModel original) {
-        int paramSlots = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
-        if (original == null) {
-            return paramSlots;
+    public static TimespanUnit fromText(String text) {
+        for (TimespanUnit tu : values()) {
+            // Case-sensitive by design
+            if (tu.text.equals(text)) {
+                return tu;
+            }
         }
-        if (original instanceof CodeAttribute attr) {
-            return Math.max(paramSlots, attr.maxLocals());
-        }
-        if (original instanceof BufferedCodeBuilder.Model buffered) {
-            return Math.max(paramSlots, buffered.curTopLocal());
-        }
-        throw new InternalError("Unknown code model " + original);
+        return null;
     }
 }

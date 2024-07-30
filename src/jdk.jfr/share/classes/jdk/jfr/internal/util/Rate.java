@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,37 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.classfile.impl;
+package jdk.jfr.internal.util;
 
-import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.attribute.CodeAttribute;
+public record Rate(long amount, TimespanUnit unit) {
 
-public sealed interface TerminalCodeBuilder extends CodeBuilder, LabelContext
-        permits DirectCodeBuilder, BufferedCodeBuilder {
-    int curTopLocal();
+    public static Rate of(String text) {
+        String[] splitted = text.split("/");
+        if (splitted.length != 2) {
+            return null;
+        }
+        String value = splitted[0].strip();
+        String unit = splitted[1].strip();
+        TimespanUnit tu = TimespanUnit.fromText(unit);
+        if (unit == null) {
+            return null;
+        }
+        try {
+            long v = Long.parseLong(value);
+            if (v >= 0) {
+                return new Rate(v, tu);
+            }
+        } catch (NumberFormatException nfe) {
+            // Ignore
+        }
+        return null;
+    }
 
-    static int setupTopLocal(MethodInfo methodInfo, CodeModel original) {
-        int paramSlots = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
-        if (original == null) {
-            return paramSlots;
-        }
-        if (original instanceof CodeAttribute attr) {
-            return Math.max(paramSlots, attr.maxLocals());
-        }
-        if (original instanceof BufferedCodeBuilder.Model buffered) {
-            return Math.max(paramSlots, buffered.curTopLocal());
-        }
-        throw new InternalError("Unknown code model " + original);
+    public boolean isHigher(Rate that) {
+        return this.inNanos() > that.inNanos();
+    }
+
+    private double inNanos() {
+        return (double) amount / unit.nanos;
     }
 }

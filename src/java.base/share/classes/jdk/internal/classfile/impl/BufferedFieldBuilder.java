@@ -103,19 +103,12 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withField(name, desc, new Consumer<FieldBuilder>() {
+            builder.withField(name, desc, new Consumer<>() {
                 @Override
                 public void accept(FieldBuilder fieldBuilder) {
                     elements.forEach(fieldBuilder);
                 }
             });
-        }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
-            elements.forEach(fb);
-            fb.writeTo(buf);
         }
 
         @Override

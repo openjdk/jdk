@@ -32,7 +32,16 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class ValueParser {
-    private static final String INFINITY = "infinity";
+    public static final String INFINITY = "infinity";
+    public static final long MISSING = Long.MIN_VALUE;
+
+    public static long parseTimespanWithInfinity(String s, long defaultValue) {
+        try {
+            return parseTimespanWithInfinity(s);
+        } catch (NumberFormatException nfe) {
+            return defaultValue;
+        }
+    }
 
     public static long parseTimespanWithInfinity(String s) {
         if (INFINITY.equals(s)) {
