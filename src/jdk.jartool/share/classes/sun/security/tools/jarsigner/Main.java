@@ -1756,7 +1756,7 @@ public class Main {
                     isEndEntityCert = false;
                     // must continue with next certificate c and cannot
                     // return or break outer loop because has to fill
-                    // storeHash for printCer
+                    // storeHash for printCert
                 }
             } catch (KeyStoreException kse) {
                 // never happens, because keystore has been loaded

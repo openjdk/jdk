@@ -39,7 +39,9 @@ import java.nio.file.Path;
 public class ByAlias {
     static OutputAnalyzer kt(String cmd) throws Exception {
         return SecurityTools.keytool("-storepass changeit "
-                + "-keypass changeit -keystore ks " + cmd);
+                + "-ext bc -keypass changeit -keystore ks " + cmd);
+        // Add "-ext bc" to avoid CertPath validation failure.
+        // It's harmless to add it to an end-entity cert.
     }
 
     static void selfsign(String name) throws Exception {
@@ -81,6 +83,13 @@ public class ByAlias {
                 .shouldContain("not signed by the specified alias(es)")
                 .shouldNotContain("not signed by alias in this keystore");
 
+        js("-verify a.jar ca1 -strict") // notSignedByAlias is severe
+                .shouldContainOrderedSequence("Error:",
+                        "not signed by the specified alias(es)",
+                        "Warning:")
+                .shouldNotContain("not signed by alias in this keystore")
+                .shouldHaveExitValue(32);
+
         // Remove intermediate cert from ks. Still good.
         kt("-delete -alias ca1");
         js("-verify a.jar ee")
@@ -90,6 +99,11 @@ public class ByAlias {
         kt("-delete -alias ee");
         js("-verify a.jar")
                 .shouldContain("not signed by alias in this keystore");
+
+        js("-verify a.jar -strict") // aliasNotInStore is informational
+                .shouldContain("not signed by alias in this keystore")
+                .shouldNotContain("Error:")
+                .shouldHaveExitValue(0);
 
         // Sign with different signer n1
         js("a.jar n1");
@@ -103,13 +117,9 @@ public class ByAlias {
         js("-verify a.jar")
                 .shouldNotContain("not signed by alias in this keystore");
 
-        // If n2 is removed, then b has no signer. The warning is informational.
+        // If n2 is removed, then b has no signer
         kt("-delete -alias n2");
-        var exit = js("-verify a.jar -strict")
-                .shouldContainOrderedSequence("Warning:",
-                        "not signed by alias in this keystore")
-                .getExitValue();
-        // aliasNotInStore no longer maps to exit code 32
-        Asserts.assertEQ(exit & 32, 0);
+        var exit = js("-verify a.jar")
+                .shouldContain("not signed by alias in this keystore");
     }
 }
