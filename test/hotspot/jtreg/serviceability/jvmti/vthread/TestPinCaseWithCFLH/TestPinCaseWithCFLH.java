@@ -23,22 +23,22 @@
 
 /*
  * @test
- * @summary javaagent+tracePinnedThreads will cause jvm crash/ run into deadlock when the virtual thread is pinned
+ * @summary javaagent + tracePinnedThreads will cause jvm crash/ run into deadlock when the virtual thread is pinned
  * @library /test/lib
  * @requires os.family == "linux"
  * @requires os.arch != "riscv64"
  * @modules java.base/java.lang:+open
- * @build TestPinCaseWithTrace
+ * @build TestPinCaseWithCFLH
  * @run driver jdk.test.lib.util.JavaAgentBuilder
- *      TestPinCaseWithTrace TestPinCaseWithTrace.jar
- * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full -javaagent:TestPinCaseWithTrace.jar TestPinCaseWithTrace
+ *      TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
+ * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
 
-public class TestPinCaseWithTrace {
+public class TestPinCaseWithCFLH {
 
     public static class TestClassFileTransformer implements ClassFileTransformer {
         public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
@@ -51,16 +51,19 @@ public class TestPinCaseWithTrace {
         instrumentation.addTransformer(new TestClassFileTransformer());
     }
 
+    private static int result = 0;
+
     public static void main(String[] args) throws Exception{
         Thread t1 = Thread.ofVirtual().name("vthread-1").start(() -> {
-            System.out.println("call native: " + nativeFuncPin(1));
+            result = nativeFuncPin(1);
         });
         t1.join();
+        assert result == 4;
     }
 
     static int native2Java(int b) {
         try {
-            Thread.sleep(500); // try yield, will pin, javaagent + tracePinnedThreads will crash here (because of the class `PinnedThreadPrinter`)
+            Thread.sleep(500); // try yield, will pin, javaagent + tracePinnedThreads should not lead to crash (because of the class `PinnedThreadPrinter`)
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -71,6 +74,6 @@ public class TestPinCaseWithTrace {
     private static native int nativeFuncPin(int x);
 
     static {
-        System.loadLibrary("PinJNI");
+        System.loadLibrary("TestPinCaseWithCFLH");
     }
 }

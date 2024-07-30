@@ -21,11 +21,15 @@
  * questions.
  */
 
-#include "jni.h"
+#include <jni.h>
+
+extern "C" {
 
 JNIEXPORT jint JNICALL
-Java_TestPinCaseWithTrace_nativeFuncPin(JNIEnv* env, jclass klass, jint x) {
-    jmethodID m = (*env)->GetStaticMethodID(env, klass, "native2Java", "(I)I");
-    jint r = (*env)->CallStaticIntMethod(env, klass, m, x+1);
+Java_TestPinCaseWithCFLH_nativeFuncPin(JNIEnv* env, jclass klass, jint x) {
+    jmethodID m = env->GetStaticMethodID(klass, "native2Java", "(I)I");
+    jint r = env->CallStaticIntMethod(klass, m, x+1);
     return r + 1;
 }
+
+} // extern "C"
