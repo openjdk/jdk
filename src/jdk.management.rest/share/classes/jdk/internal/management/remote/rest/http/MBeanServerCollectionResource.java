@@ -45,7 +45,7 @@ import java.util.List;
 public class MBeanServerCollectionResource implements RestResource {
 
     private final List<MBeanServerResource> restAdapters;
-    private final int pageSize = 5;
+    private final int pageSize = 20;
 
     public MBeanServerCollectionResource(List<MBeanServerResource> adapters, HttpServer server) {
         this.restAdapters = adapters;

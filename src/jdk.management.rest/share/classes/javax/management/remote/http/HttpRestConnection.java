@@ -39,7 +39,9 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,10 +52,13 @@ import javax.management.openmbean.CompositeDataSupport;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import jdk.internal.management.remote.rest.json.JSONArray;
 import jdk.internal.management.remote.rest.json.JSONElement;
 import jdk.internal.management.remote.rest.json.JSONObject;
 import jdk.internal.management.remote.rest.json.JSONPrimitive;
 import jdk.internal.management.remote.rest.json.parser.JSONParser;
+
+import jdk.internal.management.remote.rest.mapper.JSONDataException;
 import jdk.internal.management.remote.rest.mapper.JSONMapper;
 import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
 
@@ -67,6 +72,8 @@ public class HttpRestConnection implements MBeanServerConnection {
     protected String defaultDomain;
     protected String[] domains;
 
+    protected HashMap<ObjectName,String> objectMap;
+
     private static final String CHARSET = "UTF-8";
     
     public HttpRestConnection(String baseURL, Map<String,?> env) {
@@ -79,7 +86,8 @@ public class HttpRestConnection implements MBeanServerConnection {
     public void setup() throws IOException { 
         // Fetch /jmx/servers/platform and populate basic info.
         String str = executeHttpGetRequest(url(baseURL, ""));
-        System.err.println("XXX setup: raw = " + str);
+    
+//        System.err.println("XXX setup: raw = " + str);
 
         try {
         JSONParser parser = new JSONParser(str);
@@ -92,11 +100,62 @@ public class HttpRestConnection implements MBeanServerConnection {
         // domains:  "[JMImplementation, java.util.logging, jdk.management.jfr, java.lang, com.sun.management, java.nio]"
         // populated in MBeanServerResource with Arrays.toString(mbeanServer.getDomains())
         value = jo.get("domains");
-        System.err.println("domains json value = " + value);
-        String domainsList = (String) ((JSONPrimitive) value).getValue();
-        System.err.println("domains list json value = " + domainsList);
-        // leaves [ and ] so change to a better decoding of arrays!...
-        domains = domainsList.split(",");
+
+//        System.err.println("domains json value = " + value);
+//        System.err.println("domains json class = " + value.getClass());
+        if (value instanceof JSONArray) {
+            // JSONArray extends ArrayList<JSONElement>. 
+            ArrayList<String> a = new ArrayList<>();
+            for (JSONElement e : (JSONArray) value) {
+                String d = (String) ((JSONPrimitive) e).getValue();
+                a.add(d);
+            }
+            domains = a.toArray(new String[0]);
+        } else {
+            throw new RuntimeException("JSONArray expected, got: " + value.getClass());
+        }
+//        System.err.println("domains array = " + domains);
+
+        readMBeans();
+
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    protected void readMBeans() throws IOException {
+        // Fetch jmx/servers/platform/mbeans/ and populate map:
+        objectMap = new HashMap<ObjectName,String>();
+        // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
+        String str = executeHttpGetRequest(url(baseURL, "mbeans"));
+//        System.err.println("XXX readMBeans: str = " + str);
+
+        try {
+        JSONParser parser = new JSONParser(str);
+        JSONObject jo = (JSONObject) parser.parse();
+//        System.err.println("XXX readMBeans: jo = " + jo);
+        JSONElement count = jo.get("mbeanCount");
+
+        JSONElement mbeans = jo.get("mbeans");
+        if (mbeans instanceof JSONArray) {
+            for (JSONElement b : (JSONArray) mbeans) {
+                System.err.println("XXX MBEAN: " + b );
+                JSONObject bean = (JSONObject) b;
+                // Extract info to populate objectMap...
+                JSONElement value = bean.get("name");
+                String name = (String) ((JSONPrimitive) value).getValue();
+                System.err.println("XXX name = " + name);
+                value = bean.get("href");
+                String href = (String) ((JSONPrimitive) value).getValue();
+                System.err.println("XXX href = " + href);
+                if (name != null) {
+                    objectMap.put(new ObjectName(name), href);
+                }
+            }
+        } else {
+            throw new RuntimeException("JSONArray expected, got: " + mbeans.getClass());
+        }
+
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -157,8 +216,6 @@ public class HttpRestConnection implements MBeanServerConnection {
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query)
             throws IOException {
 
-        // jmx/servers/platform/mbeans/
-        // { "mbeans": [ { name, interfaceClassName, className, desription, attributeCout, operationCount, href, info }, ...
         String str = executeHttpGetRequest(url(baseURL, "mbeans/"));
         System.err.println("queryMBeans: " + str);
 
@@ -200,18 +257,6 @@ public class HttpRestConnection implements MBeanServerConnection {
             } catch (NumberFormatException nfe) {
                 throw new IOException("bad field");
             }
-            // JSON Mapper - say what we expect to get out:
-//            JMXServersInfo jsi = new JMXServersInfo(1, null);
-/*            Object [] objs = new Object[1];
-            objs[0] = new Object();
-            /* JMXServersInfo */ /*CompositeData cd = JMXServersInfoCompositeData.toCompositeData(1, objs);
-            JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(cd);
-            System.err.println("typeMapper = " + typeMapper);
-            if (typeMapper != null) { 
-                Object result = typeMapper.toJavaObject(json);
-                System.err.println("getMBeanCount: " + result);
-            } */
-
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -222,7 +267,33 @@ public class HttpRestConnection implements MBeanServerConnection {
                    InstanceNotFoundException, ReflectionException,
                    IOException {
 
-        return null;
+        // Covert name to MBean.
+        // Get MBean Info.
+        JSONObject o = objectForName(name);
+        if (o == null) {
+            throw new InstanceNotFoundException("no object for '" + name + "'");
+        }
+//        System.err.println("XXX getAttribute gets " + o);
+        // Get attribute.
+        JSONObject attributes = (JSONObject) o.get("attributes");
+        JSONElement a = attributes.get(attribute);
+        System.err.println("XXX -> gets " + a);
+        System.err.println("XXX -> gets " + a.toJsonString());
+        System.err.println("XXX -> gets " + a.getClass()); // e.g. jdk.internal.management.remote.rest.json.JSONPrimitive
+        // String s = (String) ((JSONPrimitive) value).getValue();
+//        return ((JSONPrimitive)a).getValue();
+
+        JSONMapper typeMapper = JSONMappingFactory.INSTANCE.getTypeMapper(a);
+        if (typeMapper == null) {
+            System.err.println("No JSONMapper for: " + a);
+            throw new InstanceNotFoundException("No JSONMapper for: " + a);
+        } else {
+            try {
+                return typeMapper.toJavaObject(a);
+            } catch (JSONDataException jde) {
+                throw new InstanceNotFoundException("Mapper " + typeMapper + " gives: " + jde);
+            }
+        }
     }
 
     public AttributeList getAttributes(ObjectName name, String[] attributes)
@@ -251,9 +322,9 @@ public class HttpRestConnection implements MBeanServerConnection {
             throws InstanceNotFoundException, MBeanException,
                    ReflectionException, IOException {
 
-        System.err.println("XXX invoke name = " + name + " op = " + operationName
+        System.err.println("XXX HttpRestConnection.invoke name = " + name + " op = " + operationName
                            + " params: " + params + " signature: " + signature);
-        return null;
+        return new Object();
     }
 
     public String getDefaultDomain() throws IOException {
@@ -346,6 +417,19 @@ public class HttpRestConnection implements MBeanServerConnection {
         return url;
     }
 
+    protected JSONObject objectForName(ObjectName name) {
+        // jmx/servers/platform/mbeans/
+        try {
+        String ref = objectMap.get(name);
+        String text = executeHttpGetRequest(url("", ref));
+        JSONParser parser = new JSONParser(text);
+        JSONElement json = parser.parse();
+        return (JSONObject) json;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     protected static String executeHttpGetRequest(URL url) throws MalformedURLException, IOException {
             // HttpsURLConnection con = (HttpsURLConnection) url.openConnection();
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -353,7 +437,7 @@ public class HttpRestConnection implements MBeanServerConnection {
             String userCredentials = "username1:password1";
             String basicAuth = "Basic " + Base64.getEncoder().encodeToString(userCredentials.getBytes());
             con.setRequestProperty("Authorization", basicAuth);
-            try {
+//            try {
                 int status = con.getResponseCode();
                 if (status == 200) {
 
@@ -379,9 +463,10 @@ public class HttpRestConnection implements MBeanServerConnection {
                     }
                     return sbuf.toString();
                 }
-            } catch (IOException e) {
-            }
-        return null;
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//        return null;
     }
 
     private String executeHttpPostRequest(String postBody) throws MalformedURLException, IOException {
@@ -400,7 +485,7 @@ public class HttpRestConnection implements MBeanServerConnection {
                 out.write(URLEncoder.encode(postBody, CHARSET));
                 out.flush();
             }
-            try {
+//            try {
                 int status = connection.getResponseCode();
                 if (status == 200) {
 
@@ -426,9 +511,9 @@ public class HttpRestConnection implements MBeanServerConnection {
                     }
                     return sbuf.toString();
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
         }
         return null;
     }

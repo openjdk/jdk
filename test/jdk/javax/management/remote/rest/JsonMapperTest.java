@@ -23,9 +23,16 @@
  * questions.
  */
 
-import javax.management.remote.rest.json.JSONElement;
-import javax.management.remote.rest.json.parser.JSONParser;
-import javax.management.remote.rest.json.parser.ParseException;
+
+import jdk.internal.management.remote.rest.json.JSONElement;
+import jdk.internal.management.remote.rest.json.JSONObject;
+import jdk.internal.management.remote.rest.json.parser.JSONParser;
+import jdk.internal.management.remote.rest.json.parser.ParseException;
+
+import jdk.internal.management.remote.rest.mapper.JSONMapper;
+import jdk.internal.management.remote.rest.mapper.JSONMappingFactory;
+
+
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -42,34 +49,14 @@ import org.testng.annotations.Test;
  *          jdk.management.rest/jdk.internal.management.remote.rest.mapper
  *          jdk.management.rest/jdk.internal.management.remote.rest
  *
+ * @run testng JsonMapperTest
+ *
  */
-public class JsonParserTest {
+public class JsonMapperTest {
     
-    public JsonParserTest() {
+    public JsonMapperTest() {
     }
 
-    // TODO add test methods here.
-    // The methods must be annotated with annotation @Test. For example:
-    //
-    // @Test
-    // public void hello() {}
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
-    
     @DataProvider
     public Object[][] getJsonString() {
         Object[][] data = new Object[2][1];
@@ -112,7 +99,7 @@ public class JsonParserTest {
         return data;
     }
     
-    @Test (dataProvider = "getJsonString")
+/*    @Test (dataProvider = "getJsonString")
     public void parserTest(String input) throws ParseException {
         JSONParser jsonParser = new JSONParser(input);
         JSONElement parse = jsonParser.parse();
@@ -120,5 +107,35 @@ public class JsonParserTest {
         System.out.println("\t: " + input);
         System.out.println("\t: " + output);
 //        Assert.assertEquals(input, output);
+    } */
+
+    @Test
+    public void mapperTest() throws Exception {
+        toJsonAndBack("hi there");
+        toJsonAndBack(0);
+        toJsonAndBack(123);
+        toJsonAndBack(new String[] { "a", "b", "c" } );
+        
+    } 
+
+    public void toJsonAndBack(Object o) throws Exception {
+        System.out.println("Test toJsonAndBack: Java Object: " + o);
+        JSONMapper mapper = JSONMappingFactory.INSTANCE.getTypeMapper(o);
+        if (mapper == null) throw new RuntimeException("no mapper for: " + o);        
+        System.out.println("Mapper = " + mapper);
+        JSONElement j = mapper.toJsonValue(o);
+        System.out.println("  mapper gives JsonValue ->" + j);
+        System.out.println("          which is Class ->" + j.getClass());
+        System.out.println("            asJsonString ->" + j.toJsonString());
+
+        // mapper = JSONMappingFactory.INSTANCE.getTypeMapper(o);
+        mapper = JSONMappingFactory.INSTANCE.getTypeMapper(j);
+        if (mapper == null) throw new RuntimeException("no mapper for: " + j);
+        System.out.println("Mapper = " + mapper);
+        Object oo = mapper.toJavaObject((JSONElement) j);
+        //Object oo = mapper.toJavaObject(j.toJsonString());
+        System.out.println("mapper gives Java Object ->" + oo);
+        System.out.println("          which is Class ->" + oo.getClass());
     }
+
 }

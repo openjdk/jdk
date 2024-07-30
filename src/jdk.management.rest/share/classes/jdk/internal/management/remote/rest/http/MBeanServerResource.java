@@ -239,7 +239,10 @@ public final class MBeanServerResource implements RestResource, JmxRestAdapter {
 
         result.put("defaultDomain", mbeanServer.getDefaultDomain());
         result.put("mBeanCount", mbeanServer.getMBeanCount());
-        result.put("domains", Arrays.toString(mbeanServer.getDomains()));
+
+        result.put("domains", mbeanServer.getDomains());
+        // Do not use Arrays.toString(domains) as that flattens array to one String,
+        // without quoting the elements. Let caller's Mapper handle it.
 
         result.put("specName", mBeanServerDelegateMBean.getSpecificationName());
         result.put("specVersion", mBeanServerDelegateMBean.getSpecificationVersion());

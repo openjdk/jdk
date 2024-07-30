@@ -55,7 +55,7 @@ public class MBeanCollectionResource implements RestResource, NotificationListen
     private List<ObjectName> allowedMbeans;
     private final MBeanServer mBeanServer;
     private final Map<ObjectName, MBeanResource> mBeanResourceMap = new ConcurrentHashMap<>();
-    private static final int pageSize = 10;
+    private static final int pageSize = 50;
     private static final String pathPrefix = "^/?jmx/servers/[a-zA-Z0-9\\-\\.]+/mbeans";
 
     // Only MXBean or any other MBean that uses types
