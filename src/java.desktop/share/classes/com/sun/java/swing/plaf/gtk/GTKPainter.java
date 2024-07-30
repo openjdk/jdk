@@ -1042,15 +1042,6 @@ class GTKPainter extends SynthPainter {
             }
             ENGINE.paintShadow(g, context, id, gtkState,
                                ShadowType.IN, "entry", x, y, w, h);
-            if (!GTKLookAndFeel.is3()) {
-                ENGINE.paintFlatBox(g, context, id,
-                        gtkState, ShadowType.NONE, "entry_bg",
-                        x + xThickness,
-                        y + yThickness,
-                        w - (2 * xThickness),
-                        h - (2 * yThickness),
-                        ColorType.TEXT_BACKGROUND);
-            }
 
             if (focusSize > 0 && (state & SynthConstants.FOCUSED) != 0) {
                 if (!interiorFocus) {
