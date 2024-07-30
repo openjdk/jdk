@@ -28,6 +28,7 @@
  * @library /test/lib
  */
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.SecurityTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.util.JarUtils;
@@ -102,9 +103,13 @@ public class ByAlias {
         js("-verify a.jar")
                 .shouldNotContain("not signed by alias in this keystore");
 
-        // If n2 is removed, then b has no signer
+        // If n2 is removed, then b has no signer. The warning is informational.
         kt("-delete -alias n2");
-        js("-verify a.jar")
-                .shouldContain("not signed by alias in this keystore");
+        var exit = js("-verify a.jar -strict")
+                .shouldContainOrderedSequence("Warning:",
+                        "not signed by alias in this keystore")
+                .getExitValue();
+        // aliasNotInStore no longer maps to exit code 32
+        Asserts.assertEQ(exit & 32, 0);
     }
 }
