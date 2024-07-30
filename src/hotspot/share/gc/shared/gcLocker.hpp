@@ -67,7 +67,6 @@ class GCLocker: public AllStatic {
   }
 
   static void log_debug_jni(const char* msg);
-  static void log_debug_jni(const char* msg, const elapsedTimer elapsed_timer);
 
   static bool is_at_safepoint();
 
@@ -152,3 +151,16 @@ class GCLocker: public AllStatic {
 };
 
 #endif // SHARE_GC_SHARED_GCLOCKER_HPP
+
+/*
+ * GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
+ */
+class GCLockerTimingDebugLogger : public StackObj {
+private:
+  const char*  _log_message;
+  Ticks _start;
+
+public:
+  GCLockerTimingDebugLogger(const char* log_message);
+  ~GCLockerTimingDebugLogger();
+};

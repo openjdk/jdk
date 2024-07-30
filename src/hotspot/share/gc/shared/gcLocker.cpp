@@ -89,14 +89,6 @@ void GCLocker::log_debug_jni(const char* msg) {
   }
 }
 
-void GCLocker::log_debug_jni(const char* msg, const elapsedTimer elapsed_timer) {
-  Log(gc, jni) log;
-  if (log.is_debug()) {
-    ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-    log.debug("%s " JLONG_FORMAT "ms. Thread \"%s\" %d locked.", msg, elapsed_timer.milliseconds(), Thread::current()->name(), _jni_lock_count);
-  }
-}
-
 bool GCLocker::is_at_safepoint() {
   return SafepointSynchronize::is_at_safepoint();
 }
@@ -121,16 +113,11 @@ void GCLocker::stall_until_clear() {
     log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
   }
 
-  elapsedTimer elapsed_timer;
-  elapsed_timer.start();
-
   // Wait for _needs_gc  to be cleared
   while (needs_gc()) {
+    GCLockerTimingDebugLogger logger("Thread stalled by JNI critical section.");
     ml.wait();
   }
-
-  elapsed_timer.stop();
-  log_debug_jni("Resuming thread after allocation stall due to JNI critical section after", elapsed_timer);
 }
 
 bool GCLocker::should_discard(GCCause::Cause cause, uint total_collections) {
@@ -145,9 +132,9 @@ void GCLocker::jni_lock(JavaThread* thread) {
   if (needs_gc()) {
     log_debug_jni("Blocking thread as there is a pending GC request");
   }
-  elapsedTimer elapsed_timer;
-  elapsed_timer.start();
+
   while (needs_gc()) {
+    GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
     // There's at least one thread that has not left the critical region (CR)
     // completely. When that last thread (no new threads can enter CR due to the
     // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
@@ -158,8 +145,6 @@ void GCLocker::jni_lock(JavaThread* thread) {
     // a GCCause::_gc_locker GC.
     ml.wait();
   }
-  elapsed_timer.stop();
-  log_debug_jni("Thread unblocked to enter critical region after", elapsed_timer);
   thread->enter_critical();
   _jni_lock_count++;
   increment_debug_jni_lock_count();
@@ -189,5 +174,20 @@ void GCLocker::jni_unlock(JavaThread* thread) {
     }
     _needs_gc = false;
     JNICritical_lock->notify_all();
+  }
+}
+
+GCLockerTimingDebugLogger::GCLockerTimingDebugLogger(const char* log_message) :
+  _log_message(log_message) {
+  assert(_log_message != nullptr, "GC locker debug message must be set.");
+  _start = Ticks::now();
+}
+
+GCLockerTimingDebugLogger::~GCLockerTimingDebugLogger() {
+  const Tickspan elapsed_time = Ticks::now() - _start;
+  Log(gc, jni) log;
+  if (log.is_debug()) {
+    ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+    log.debug("%s Resumed after " JLONG_FORMAT "ms. Thread \"%s\".", _log_message, elapsed_time.milliseconds(), Thread::current()->name());
   }
 }
