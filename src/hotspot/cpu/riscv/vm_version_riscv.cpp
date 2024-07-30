@@ -131,8 +131,14 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
 
-  if (UseCRC32Intrinsics) {
-    warning("CRC32 intrinsics are not available on this CPU.");
+  if (UseZba) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+    }
+  } else {
+    if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      warning("CRC32 intrinsic requires Zba instructions (not available on this CPU)");
+    }
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
@@ -232,6 +238,18 @@ void VM_Version::initialize() {
   // NOTE: Make sure codes dependent on UseRVV are put after c2_initialize(),
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
+
+  // Adler32
+  if (UseRVV) {
+    if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+    }
+  } else if (UseAdler32Intrinsics) {
+    if (!FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+      warning("Adler32 intrinsic requires RVV instructions (not available on this CPU).");
+    }
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
+  }
 
   // ChaCha20
   if (UseRVV) {

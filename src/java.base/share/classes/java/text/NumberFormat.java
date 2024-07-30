@@ -315,6 +315,23 @@ public abstract class NumberFormat extends Format  {
         }
     }
 
+    @Override
+    StringBuf format(Object number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
+        if (number instanceof Long || number instanceof Integer ||
+                    number instanceof Short || number instanceof Byte ||
+                    number instanceof AtomicInteger || number instanceof AtomicLong ||
+                    (number instanceof BigInteger &&
+                             ((BigInteger) number).bitLength() < 64)) {
+            return format(((Number) number).longValue(), toAppendTo, pos);
+        } else if (number instanceof Number) {
+            return format(((Number) number).doubleValue(), toAppendTo, pos);
+        } else {
+            throw new IllegalArgumentException("Cannot format given Object as a Number");
+        }
+    }
+
     /**
      * {@inheritDoc Format}
      *
@@ -347,8 +364,13 @@ public abstract class NumberFormat extends Format  {
         if (result != null)
             return result;
 
-        return format(number, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(number, StringBufFactory.of(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(number, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /*
@@ -367,8 +389,13 @@ public abstract class NumberFormat extends Format  {
      * @see java.text.Format#format
      */
     public final String format(long number) {
-        return format(number, new StringBuffer(),
-                      DontCareFieldPosition.INSTANCE).toString();
+        if ("java.text".equals(getClass().getPackageName())) {
+            return format(number, StringBufFactory.of(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        } else {
+            return format(number, new StringBuffer(),
+                    DontCareFieldPosition.INSTANCE).toString();
+        }
     }
 
     /**
@@ -394,6 +421,12 @@ public abstract class NumberFormat extends Format  {
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
 
+    StringBuf format(double number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
+
     /**
      * Specialization of format.
      *
@@ -416,6 +449,12 @@ public abstract class NumberFormat extends Format  {
     public abstract StringBuffer format(long number,
                                         StringBuffer toAppendTo,
                                         FieldPosition pos);
+
+    StringBuf format(long number,
+                     StringBuf toAppendTo,
+                     FieldPosition pos) {
+        throw new UnsupportedOperationException("Subclasses should override this method");
+    }
 
     /**
      * Parses text from the beginning of the given string to produce a {@code Number}.
@@ -468,12 +507,11 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns true if this format will parse numbers as integers only.
+     * Returns {@code true} if this format will parse numbers as integers only.
+     * The {@code ParsePosition} index will be set to the position of the decimal
+     * symbol. The exact format accepted by the parse operation is locale dependent.
      * For example in the English locale, with ParseIntegerOnly true, the
-     * string "1234." would be parsed as the integer value 1234 and parsing
-     * would stop at the "." character.  Of course, the exact format accepted
-     * by the parse operation is locale dependent and determined by sub-classes
-     * of NumberFormat.
+     * string "123.45" would be parsed as the integer value 123.
      *
      * @return {@code true} if numbers should be parsed as integers only;
      *         {@code false} otherwise

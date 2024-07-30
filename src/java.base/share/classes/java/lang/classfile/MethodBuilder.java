@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package java.lang.classfile;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -49,12 +48,6 @@ import jdk.internal.javac.PreviewFeature;
 public sealed interface MethodBuilder
         extends ClassFileBuilder<MethodElement, MethodBuilder>
         permits ChainedMethodBuilder, TerminalMethodBuilder {
-
-    /**
-     * {@return the {@link MethodModel} representing the method being transformed,
-     * if this method builder represents the transformation of some {@link MethodModel}}
-     */
-    Optional<MethodModel> original();
 
     /**
      * Sets the method access flags.

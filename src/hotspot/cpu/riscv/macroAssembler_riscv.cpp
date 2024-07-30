@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -978,36 +978,23 @@ void MacroAssembler::li(Register Rd, int64_t imm) {
   }
 }
 
-void MacroAssembler::jump_link(const address dest, Register temp) {
-  assert_cond(dest != nullptr);
-  int64_t distance = dest - pc();
-  if (is_simm21(distance) && ((distance % 2) == 0)) {
-    Assembler::jal(x1, distance);
-  } else {
-    assert(temp != noreg && temp != x0, "expecting a register");
-    int32_t offset = 0;
-    la(temp, dest, offset);
-    jalr(temp, offset);
-  }
+void MacroAssembler::load_link_jump(const address source, Register temp) {
+  assert(temp != noreg && temp != x0, "expecting a register");
+  assert_cond(source != nullptr);
+  int64_t distance = source - pc();
+  assert(is_simm32(distance), "Must be");
+  auipc(temp, (int32_t)distance + 0x800);
+  ld(temp, Address(temp, ((int32_t)distance << 20) >> 20));
+  jalr(temp);
 }
 
-void MacroAssembler::jump_link(const Address &adr, Register temp) {
-  switch (adr.getMode()) {
-    case Address::literal: {
-      relocate(adr.rspec(), [&] {
-        jump_link(adr.target(), temp);
-      });
-      break;
-    }
-    case Address::base_plus_offset: {
-      int32_t offset = ((int32_t)adr.offset() << 20) >> 20;
-      la(temp, Address(adr.base(), adr.offset() - offset));
-      jalr(temp, offset);
-      break;
-    }
-    default:
-      ShouldNotReachHere();
-  }
+void MacroAssembler::jump_link(const address dest, Register temp) {
+  assert(UseTrampolines, "Must be");
+  assert_cond(dest != nullptr);
+  int64_t distance = dest - pc();
+  assert(is_simm21(distance), "Must be");
+  assert((distance % 2) == 0, "Must be");
+  jal(x1, distance);
 }
 
 void MacroAssembler::j(const address dest, Register temp) {
@@ -1426,6 +1413,174 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
   assert(words_popped == count, "oops, popped(%d) != count(%d)", words_popped, count);
 
   return count;
+}
+
+static const int64_t right_32_bits = right_n_bits(32);
+static const int64_t right_8_bits = right_n_bits(8);
+
+/**
+ * Emits code to update CRC-32 with a byte value according to constants in table
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]val       Register containing the byte to fold into the CRC.
+ * @param [in]table     Register containing the table of crc constants.
+ *
+ * uint32_t crc;
+ * val = crc_table[(val ^ crc) & 0xFF];
+ * crc = val ^ (crc >> 8);
+ *
+ */
+void MacroAssembler::update_byte_crc32(Register crc, Register val, Register table) {
+  assert_different_registers(crc, val, table);
+
+  xorr(val, val, crc);
+  andi(val, val, right_8_bits);
+  shadd(val, val, table, val, 2);
+  lwu(val, Address(val));
+  srli(crc, crc, 8);
+  xorr(crc, val, crc);
+}
+
+/**
+ * Emits code to update CRC-32 with a 32-bit value according to tables 0 to 3
+ *
+ * @param [in,out]crc   Register containing the crc.
+ * @param [in]v         Register containing the 32-bit to fold into the CRC.
+ * @param [in]table0    Register containing table 0 of crc constants.
+ * @param [in]table1    Register containing table 1 of crc constants.
+ * @param [in]table2    Register containing table 2 of crc constants.
+ * @param [in]table3    Register containing table 3 of crc constants.
+ *
+ * uint32_t crc;
+ *   v = crc ^ v
+ *   crc = table3[v&0xff]^table2[(v>>8)&0xff]^table1[(v>>16)&0xff]^table0[v>>24]
+ *
+ */
+void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, Register tmp2, Register tmp3,
+        Register table0, Register table1, Register table2, Register table3, bool upper) {
+  assert_different_registers(crc, v, tmp1, tmp2, tmp3, table0, table1, table2, table3);
+
+  if (upper)
+    srli(v, v, 32);
+  xorr(v, v, crc);
+
+  andi(tmp1, v, right_8_bits);
+  shadd(tmp1, tmp1, table3, tmp2, 2);
+  lwu(crc, Address(tmp1));
+
+  slli(tmp1, v, 16);
+  slli(tmp3, v, 8);
+
+  srliw(tmp1, tmp1, 24);
+  srliw(tmp3, tmp3, 24);
+
+  shadd(tmp1, tmp1, table2, tmp1, 2);
+  lwu(tmp2, Address(tmp1));
+
+  shadd(tmp3, tmp3, table1, tmp3, 2);
+  xorr(crc, crc, tmp2);
+
+  lwu(tmp2, Address(tmp3));
+  // It is more optimal to use 'srli' instead of 'srliw' for case when it is not necessary to clean upper bits
+  if (upper)
+    srli(tmp1, v, 24);
+  else
+    srliw(tmp1, v, 24);
+
+  // no need to clear bits other than lowest two
+  shadd(tmp1, tmp1, table0, tmp1, 2);
+  xorr(crc, crc, tmp2);
+  lwu(tmp2, Address(tmp1));
+  xorr(crc, crc, tmp2);
+}
+
+/**
+ * @param crc   register containing existing CRC (32-bit)
+ * @param buf   register pointing to input byte buffer (byte*)
+ * @param len   register containing number of bytes
+ * @param table register that will contain address of CRC table
+ * @param tmp   scratch registers
+ */
+void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
+        Register table0, Register table1, Register table2, Register table3,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+  assert_different_registers(crc, buf, len, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
+
+  const int64_t unroll = 16;
+  const int64_t unroll_words = unroll*wordSize;
+  mv(tmp5, right_32_bits);
+  subw(len, len, unroll_words);
+  andn(crc, tmp5, crc);
+
+  const ExternalAddress table_addr = StubRoutines::crc_table_addr();
+  la(table0, table_addr);
+  add(table1, table0, 1*256*sizeof(juint), tmp1);
+  add(table2, table0, 2*256*sizeof(juint), tmp1);
+  add(table3, table2, 1*256*sizeof(juint), tmp1);
+
+  bge(len, zr, L_unroll_loop_entry);
+  addiw(len, len, unroll_words-4);
+  bge(len, zr, L_by4_loop);
+  addiw(len, len, 4);
+  bgt(len, zr, L_by1_loop);
+  j(L_exit);
+
+  align(CodeEntryAlignment);
+  bind(L_unroll_loop_entry);
+    const Register buf_end = tmp3;
+    add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
+    andi(len, len, unroll_words-1); // len = (len % unroll_words)
+    sub(len, len, unroll_words); // Length after all iterations
+  bind(L_unroll_loop);
+    for (int i = 0; i < unroll; i++) {
+      ld(tmp1, Address(buf, i*wordSize));
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, true);
+    }
+
+    addi(buf, buf, unroll_words);
+    ble(buf, buf_end, L_unroll_loop);
+    addiw(len, len, unroll_words-4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    bgt(len, zr, L_by1_loop);
+    j(L_exit);
+
+  bind(L_by4_loop);
+    lwu(tmp1, Address(buf));
+    update_word_crc32(crc, tmp1, tmp2, tmp4, tmp6, table0, table1, table2, table3, false);
+    subw(len, len, 4);
+    addi(buf, buf, 4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    ble(len, zr, L_exit);
+
+  bind(L_by1_loop);
+    subw(len, len, 1);
+    lwu(tmp1, Address(buf));
+    andi(tmp2, tmp1, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    subw(len, len, 1);
+    srli(tmp2, tmp1, 8);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    subw(len, len, 1);
+    srli(tmp2, tmp1, 16);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    srli(tmp2, tmp1, 24);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+
+  bind(L_exit);
+    andn(crc, tmp5, crc);
 }
 
 #ifdef COMPILER2
@@ -2492,6 +2647,51 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
     }
+  }
+}
+
+void MacroAssembler::encode_heap_oop_not_null(Register r) {
+#ifdef ASSERT
+  if (CheckCompressedOops) {
+    Label ok;
+    bnez(r, ok);
+    stop("null oop passed to encode_heap_oop_not_null");
+    bind(ok);
+  }
+#endif
+  verify_oop_msg(r, "broken oop in encode_heap_oop_not_null");
+  if (CompressedOops::base() != nullptr) {
+    sub(r, r, xheapbase);
+  }
+  if (CompressedOops::shift() != 0) {
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    srli(r, r, LogMinObjAlignmentInBytes);
+  }
+}
+
+void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
+#ifdef ASSERT
+  if (CheckCompressedOops) {
+    Label ok;
+    bnez(src, ok);
+    stop("null oop passed to encode_heap_oop_not_null2");
+    bind(ok);
+  }
+#endif
+  verify_oop_msg(src, "broken oop in encode_heap_oop_not_null2");
+
+  Register data = src;
+  if (CompressedOops::base() != nullptr) {
+    sub(dst, src, xheapbase);
+    data = dst;
+  }
+  if (CompressedOops::shift() != 0) {
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    srli(dst, data, LogMinObjAlignmentInBytes);
+    data = dst;
+  }
+  if (data == src) {
+    mv(dst, src);
   }
 }
 
@@ -3728,15 +3928,7 @@ bool MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
   // The next slot to be inspected, by the stub we're about to call,
   // is secondary_supers[r_array_index]. Bits 0 and 1 in the bitmap
   // have been checked.
-  Address stub = RuntimeAddress(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
-  if (stub_is_near) {
-    jump_link(stub, t0);
-  } else {
-    address call = trampoline_call(stub);
-    if (call == nullptr) {
-      return false; // trampoline allocation failed
-    }
-  }
+  rt_call(StubRoutines::lookup_secondary_supers_table_slow_path_stub());
 
   BLOCK_COMMENT("} lookup_secondary_supers_table");
 
@@ -3799,7 +3991,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
     // Check for wraparound.
     Label skip;
-    bge(r_array_length, r_array_index, skip);
+    blt(r_array_index, r_array_length, skip);
     mv(r_array_index, zr);
     bind(skip);
 
@@ -4045,12 +4237,42 @@ address MacroAssembler::trampoline_call(Address entry) {
   return call_pc;
 }
 
+address MacroAssembler::load_and_call(Address entry) {
+  assert(entry.rspec().type() == relocInfo::runtime_call_type ||
+         entry.rspec().type() == relocInfo::opt_virtual_call_type ||
+         entry.rspec().type() == relocInfo::static_call_type ||
+         entry.rspec().type() == relocInfo::virtual_call_type, "wrong reloc type");
+
+  address target = entry.target();
+
+  if (!in_scratch_emit_size()) {
+    address stub = emit_address_stub(offset(), target);
+    if (stub == nullptr) {
+      postcond(pc() == badAddress);
+      return nullptr; // CodeCache is full
+    }
+  }
+
+  address call_pc = pc();
+#ifdef ASSERT
+  if (entry.rspec().type() != relocInfo::runtime_call_type) {
+    assert_alignment(call_pc);
+  }
+#endif
+  relocate(entry.rspec(), [&] {
+    load_link_jump(target);
+  });
+
+  postcond(pc() != badAddress);
+  return call_pc;
+}
+
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   IncompressibleRegion ir(this);  // relocations
   movptr(t1, (address)Universe::non_oop_word(), t0);
   assert_cond(entry != nullptr);
-  return trampoline_call(Address(entry, rh));
+  return reloc_call(Address(entry, rh));
 }
 
 int MacroAssembler::ic_check_size() {
@@ -4095,6 +4317,34 @@ int MacroAssembler::ic_check(int end_alignment) {
   return uep_offset;
 }
 
+address MacroAssembler::emit_address_stub(int insts_call_instruction_offset, address dest) {
+  address stub = start_a_stub(max_reloc_call_stub_size());
+  if (stub == nullptr) {
+    return nullptr;  // CodeBuffer::expand failed
+  }
+
+  // We are always 4-byte aligned here.
+  assert_alignment(pc());
+
+  // Make sure the address of destination 8-byte aligned.
+  align(wordSize, 0);
+
+  RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
+                                                         insts_call_instruction_offset);
+  const int stub_start_offset = offset();
+  relocate(rh, [&] {
+    assert(offset() - stub_start_offset == 0,
+           "%ld - %ld == %ld : should be", (long)offset(), (long)stub_start_offset, (long)0);
+    assert(offset() % wordSize == 0, "bad alignment");
+    emit_int64((int64_t)dest);
+  });
+
+  const address stub_start_addr = addr_at(stub_start_offset);
+  end_a_stub();
+
+  return stub_start_addr;
+}
+
 // Emit a trampoline stub for a call to a target which is too far away.
 //
 // code sequences:
@@ -4109,10 +4359,12 @@ int MacroAssembler::ic_check(int end_alignment) {
 address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
                                              address dest) {
   // Max stub size: alignment nop, TrampolineStub.
-  address stub = start_a_stub(max_trampoline_stub_size());
+  address stub = start_a_stub(max_reloc_call_stub_size());
   if (stub == nullptr) {
     return nullptr;  // CodeBuffer::expand failed
   }
+
+  assert(UseTrampolines, "Must be using trampos.");
 
   // We are always 4-byte aligned here.
   assert_alignment(pc());
@@ -4122,7 +4374,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   // instructions code-section.
 
   // Make sure the address of destination 8-byte aligned after 3 instructions.
-  align(wordSize, MacroAssembler::trampoline_stub_data_offset);
+  align(wordSize, MacroAssembler::NativeShortCall::trampoline_data_offset);
 
   RelocationHolder rh = trampoline_stub_Relocation::spec(code()->insts()->start() +
                                                          insts_call_instruction_offset);
@@ -4135,7 +4387,7 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
     ld(t0, target);  // auipc + ld
     jr(t0);          // jalr
     bind(target);
-    assert(offset() - stub_start_offset == MacroAssembler::trampoline_stub_data_offset,
+    assert(offset() - stub_start_offset == MacroAssembler::NativeShortCall::trampoline_data_offset,
            "should be");
     assert(offset() % wordSize == 0, "bad alignment");
     emit_int64((int64_t)dest);
@@ -4143,15 +4395,17 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
 
   const address stub_start_addr = addr_at(stub_start_offset);
 
-  assert(MacroAssembler::is_trampoline_stub_at(stub_start_addr), "doesn't look like a trampoline");
-
   end_a_stub();
+
   return stub_start_addr;
 }
 
-int MacroAssembler::max_trampoline_stub_size() {
+int MacroAssembler::max_reloc_call_stub_size() {
   // Max stub size: alignment nop, TrampolineStub.
-  return MacroAssembler::instruction_size + MacroAssembler::trampoline_stub_instruction_size;
+  if (UseTrampolines) {
+    return instruction_size + MacroAssembler::NativeShortCall::trampoline_size;
+  }
+  return instruction_size + wordSize;
 }
 
 int MacroAssembler::static_call_stub_size() {
@@ -4870,14 +5124,14 @@ address MacroAssembler::zero_words(Register ptr, Register cnt) {
     RuntimeAddress zero_blocks(StubRoutines::riscv::zero_blocks());
     assert(zero_blocks.target() != nullptr, "zero_blocks stub has not been generated");
     if (StubRoutines::riscv::complete()) {
-      address tpc = trampoline_call(zero_blocks);
+      address tpc = reloc_call(zero_blocks);
       if (tpc == nullptr) {
         DEBUG_ONLY(reset_labels(around));
         postcond(pc() == badAddress);
         return nullptr;
       }
     } else {
-      jump_link(zero_blocks, t0);
+      rt_call(zero_blocks.target());
     }
   }
   bind(around);

@@ -2178,6 +2178,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return ((r = result) == null) ? valueIfAbsent : (T) reportJoin(r, "getNow");
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public T resultNow() {
         Object r = result;
@@ -2193,6 +2196,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         throw new IllegalStateException();
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public Throwable exceptionNow() {
         Object r = result;
@@ -2440,26 +2446,41 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return uniExceptionallyStage(null, fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyAsync(
         Function<Throwable, ? extends T> fn) {
         return uniExceptionallyStage(defaultExecutor(), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyAsync(
         Function<Throwable, ? extends T> fn, Executor executor) {
         return uniExceptionallyStage(screenExecutor(executor), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyCompose(
         Function<Throwable, ? extends CompletionStage<T>> fn) {
         return uniComposeExceptionallyStage(null, fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyComposeAsync(
         Function<Throwable, ? extends CompletionStage<T>> fn) {
         return uniComposeExceptionallyStage(defaultExecutor(), fn);
     }
 
+    /**
+     * @since 12
+     */
     public CompletableFuture<T> exceptionallyComposeAsync(
         Function<Throwable, ? extends CompletionStage<T>> fn,
         Executor executor) {
@@ -2585,6 +2606,9 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         return ((r = result) instanceof AltResult) && r != NIL;
     }
 
+    /**
+     * @since 19
+     */
     @Override
     public State state() {
         Object r = result;
