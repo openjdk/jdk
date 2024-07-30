@@ -265,6 +265,7 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
   char msg[max_msg_size];
   int ret = os::vsnprintf(msg, max_msg_size, format, ap);
   va_end(ap);
+
   // If ret == -1 then either there was a format conversion error, or the required buffer size
   // exceeds INT_MAX and so couldn't be returned (undocumented behaviour of vsnprintf). Depending
   // on the platform the buffer may be filled to its capacity (Linux), filled to the conversion
@@ -272,9 +273,16 @@ void Exceptions::fthrow(JavaThread* thread, const char* file, int line, Symbol* 
   // have a truncated UTF-8 sequence. Similarly, if the buffer was too small and ret >= max_msg_size
   // we may also have a truncated UTF-8 sequence. In such cases we need to fix the buffer so the UTF-8
   // sequence is valid.
-  if ((ret == -1 || ret >= max_msg_size) && strlen(msg) > 0) {
-    assert(msg[max_msg_size - 1] == '\0', "should be null terminated");
-    UTF8::truncate_to_legal_utf8((unsigned char*)msg, max_msg_size);
+  if (ret == -1 || ret >= max_msg_size) {
+    int len = (int) strlen(msg);
+    if (len > 0) {
+      // Truncation will only happen if the buffer was filled by vsnprintf,
+      // otherwise vsnprintf already terminated filling it at a well-defined point.
+      // But as this is not a clearly specified area we will perform our own UTF8
+      // truncation anyway - though for those well-defined termination points it
+      // will be a no-op.
+      UTF8::truncate_to_legal_utf8((unsigned char*)msg, len);
+    }
   }
   // UTF8::is_legal_utf8 should actually be called is_legal_utf8_class_name as the final
   // parameter controls a check for a specific character appearing in the "name", which is only
