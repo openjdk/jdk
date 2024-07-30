@@ -377,6 +377,11 @@ typedef enum {
     invokerLock_Rank,
     stepLock_Rank,
     handlerLock_Rank, // event handler lock
+    callbackLock_Rank, // event handler lock
+
+    // cbVMDeath() enters callbackBlock before callbackLock, so its rank must
+    // be higher than callbacklock.
+    callbackBlock_Rank, // event handler lock
 
     // popFrameEventLock and popFrameProceedLock have special handling in
     // verifyMonitorRank(). See comment there. They must be ranked higher than
@@ -385,15 +390,9 @@ typedef enum {
     popFrameProceedLock_Rank, // thread control lock
 
     // This lock is grabbed in commandLoop(), which eventually leads to
-    // threadControl getLocks() grabbing the group of 7 locks
-    // above, so it must be ranked higher than handlerLock.
+    // threadControl getLocks() grabbing the group of 8 locks
+    // above, so it must be ranked higher than callbackLock.
     vmDeathLock_Rank, // event helper lock
-
-    // cbVMDeath() enters callbackBlock before callbackLock. All other event handlers
-    // are executed while holding callbackLock, so it needs to rank higher than all
-    // the other locks since they are all used during event handling.
-    callbackLock_Rank, // event handler lock
-    callbackBlock_Rank, // event handler lock
 
     // This lock is held by debugLoop_run() while replying to commands, so it needs
     // to be ranked higher than sendLock. Also it needs to rank higher than handlerLock
@@ -409,6 +408,8 @@ typedef enum {
 void dbgRawMonitor_lock();
 
 void dbgRawMonitor_unlock();
+
+void dumpRawMonitors();
 
 DebugRawMonitor* debugMonitorCreate(DebugRawMonitorRank dbg_monitor, char *name);
 void debugMonitorEnter(DebugRawMonitor* dbg_monitor);
