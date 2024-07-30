@@ -62,6 +62,7 @@
  */
 package java.time.format;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
@@ -72,7 +73,23 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import static java.time.temporal.ChronoField.ERA;
+import static java.lang.constant.ConstantDescs.*;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption;
+import static java.lang.invoke.MethodType.methodType;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.Opcode;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -119,10 +136,17 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.misc.VM;
+import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.vm.annotation.Stable;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -162,6 +186,14 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    private static final boolean COMPILE;
+
+    static {
+        String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.compile");
+        COMPILE = property == null || "true".equalsIgnoreCase(property);
+    }
+
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     /**
      * Query for a time-zone that is region-only.
      */
@@ -2504,10 +2536,14 @@ public final class DateTimeFormatterBuilder {
      * Composite printer and parser.
      */
     static class CompositePrinterParser implements DateTimePrinterParser {
+        @Stable
         private final DateTimePrinterParser[] printerParsers;
         final boolean optional;
 
         static CompositePrinterParser of(DateTimePrinterParser[] printerParsers, boolean optional) {
+            if (COMPILE) {
+                return PrinterParserFactory.generate(printerParsers, optional);
+            }
             // Use subclasses with printerParsers.length of 1 to 15 so that C2 can do TypeProfile optimization
             return switch (printerParsers.length) {
                 case 1 -> new N1(printerParsers, optional);
@@ -2533,7 +2569,7 @@ public final class DateTimeFormatterBuilder {
             return of(printerParsers.toArray(new DateTimePrinterParser[0]), optional);
         }
 
-        private CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
+        protected CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
             this.printerParsers = printerParsers;
             this.optional = optional;
         }
@@ -3792,7 +3828,7 @@ public final class DateTimeFormatterBuilder {
 
         static NanosPrinterParser of(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
             if (!decimalPoint && subsequentWidth == 0 && minWidth == 3 && maxWidth == 3) {
-                return new FixWith3();
+                return new FixWidth3();
             }
             return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, subsequentWidth);
         }
@@ -3940,8 +3976,8 @@ public final class DateTimeFormatterBuilder {
         }
 
         // decimalPoint
-        static final class FixWith3 extends NanosPrinterParser {
-            private FixWith3() {
+        static final class FixWidth3 extends NanosPrinterParser {
+            private FixWidth3() {
                 super(3, 3, false, 0);
             }
 
@@ -6104,6 +6140,286 @@ public final class DateTimeFormatterBuilder {
         public String toString() {
             return "DayPeriod(%02d:%02d".formatted(from / 60, from % 60) +
                     (from == to ? ")" : "-%02d:%02d)".formatted(to / 60, to % 60));
+        }
+    }
+
+    /**
+     * Bytecode PrinterParserFactory.
+     *
+     */
+    private static final class PrinterParserFactory {
+        static final ClassFileDumper DUMPER = ClassFileDumper.getInstance("java.time.format.DateTimeFormatterBuilder.dump", "formatClasses");
+        static final Set<Lookup.ClassOption> SET_OF = Set.of();
+
+        static final ClassDesc CD_CharSequence  = ClassDesc.ofDescriptor("Ljava/lang/CharSequence;");
+        static final ClassDesc CD_StringBuilder = ClassDesc.ofDescriptor("Ljava/lang/StringBuilder;");
+        static final ClassDesc CD_TemporalField = ClassDesc.ofDescriptor("Ljava/time/temporal/TemporalField;");
+
+        static final ClassDesc CD_CharLiteralPrinterParser    = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CharLiteralPrinterParser;");
+        static final ClassDesc CD_ChronoField                 = ClassDesc.ofDescriptor("Ljava/time/temporal/ChronoField;");
+        static final ClassDesc CD_CompositePrinterParser      = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CompositePrinterParser;");
+        static final ClassDesc CD_DateTimeParseContext        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeParseContext;");
+        static final ClassDesc CD_DateTimePrintContext        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimePrintContext;");
+        static final ClassDesc CD_DateTimePrinterParser       = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$DateTimePrinterParser;");
+        static final ClassDesc CD_DateTimePrinterParser_array = ClassDesc.ofDescriptor("[Ljava/time/format/DateTimeFormatterBuilder$DateTimePrinterParser;");
+        static final ClassDesc CD_DecimalStyle                = ClassDesc.ofDescriptor("Ljava/time/format/DecimalStyle;");
+        static final ClassDesc CD_NanosPrinterParser          = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NanosPrinterParser;");
+        static final ClassDesc CD_NanosPrinterParserFixWidth3 = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NanosPrinterParser$FixWidth3;");
+        static final ClassDesc CD_NumberPrinterParser         = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser;");
+        static final ClassDesc CD_Width1NotNegative           = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width1NotNegative;");
+        static final ClassDesc CD_Width2NotNegative           = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width2NotNegative;");
+        static final ClassDesc CD_FixWidth2NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2NotNegative;");
+        static final ClassDesc CD_FixWidth3NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth3NotNegative;");
+        static final ClassDesc CD_Width4ExceedsPad            = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width4ExceedsPad;");
+        static final ClassDesc CD_FixWidth4NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth4NotNegative;");
+
+        static final MethodTypeDesc MTD_StringBuilder_char = MethodTypeDesc.of(CD_StringBuilder, CD_char);
+        static final MethodTypeDesc MTD_void_int           = MethodTypeDesc.of(CD_void, CD_int);
+        static final MethodTypeDesc MTD_int                = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_long               = MethodTypeDesc.of(CD_long);
+        static final MethodTypeDesc MTD_DecimalStyle       = MethodTypeDesc.of(CD_DecimalStyle);
+        static final MethodTypeDesc MTD_Long_TemporalField = MethodTypeDesc.of(CD_Long, CD_TemporalField);
+
+        static final MethodTypeDesc MTD_void_StringBuilder_DecimalStyle_long       = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_DecimalStyle, CD_long);
+        static final MethodTypeDesc MTD_void_DateTimePrintParserArray_boolean      = MethodTypeDesc.of(CD_void, CD_DateTimePrinterParser_array, CD_boolean);
+        static final MethodTypeDesc MTD_int_DateTimeParserContext_CharSequence_int = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int);
+        static final MethodTypeDesc MTD_boolean_DateTimePrintContext_StringBuilder = MethodTypeDesc.of(CD_boolean, CD_DateTimePrintContext, CD_StringBuilder);
+        static final MethodTypeDesc MTD_int_DateTimePrintContext_CharSequence_int  = MethodTypeDesc.of(CD_int, CD_DateTimePrintContext, CD_CharSequence, CD_int);
+
+        private PrinterParserFactory() {
+            // no instantiation
+        }
+
+        static CompositePrinterParser generate(DateTimePrinterParser[] printerParsers, boolean optional) {
+            var lookup     = MethodHandles.lookup();
+            var className  = getClassName(lookup.lookupClass());
+            var classDesc  = ConstantUtils.binaryNameToDesc(className);
+
+            byte[] classBytes = ClassFile.of().build(classDesc,
+                    new Consumer<ClassBuilder>() {
+                        @Override
+                        public void accept(ClassBuilder clb) {
+                            clb.withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
+                               .withSuperclass(CD_CompositePrinterParser)
+                               .withMethodBody("format",
+                                       MTD_boolean_DateTimePrintContext_StringBuilder,
+                                       ACC_PUBLIC | ACC_FINAL,
+                                       generateFormat(classDesc, printerParsers, optional))
+                               .withMethodBody(INIT_NAME,
+                                       MTD_void_DateTimePrintParserArray_boolean,
+                                       ACC_PUBLIC,
+                                       generateConstructor(classDesc, printerParsers));
+
+                            for (int i = 0; i < printerParsers.length; ++i) {
+                                clb.withField("printerParser" + i, paramType(printerParsers[i]), ACC_FINAL | ACC_PRIVATE);
+                            }
+                        }});
+            try {
+                var lookupClass = lookup.lookupClass();
+                var loader      = lookupClass.getClassLoader();
+                var pd          = (loader != null) ? JLA.protectionDomain(lookupClass) : null;
+                var classFlags  = ACC_FINAL | ACC_PRIVATE | ACC_STATIC;
+                var hiddenClass = JLA.defineClass(loader, lookupClass, className, classBytes, pd, true, classFlags, null);
+                var constructor = hiddenClass.getConstructor(DateTimePrinterParser[].class, boolean.class);
+                return (CompositePrinterParser) constructor.newInstance(printerParsers, optional);
+            } catch (Exception e) {
+                throw new DateTimeException("Exception while spinning the class", e);
+            }
+        }
+
+        private static Consumer<CodeBuilder> generateConstructor(ClassDesc classDesc, DateTimePrinterParser[] printerParsers) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    int thisSlot = 0, parsersSlot = 1, optionalSlot = 2;
+                    /*
+                     * super(printerParsers, optional)
+                     */
+                    cb.aload(thisSlot)
+                      .aload(parsersSlot)
+                      .iload(optionalSlot)
+                      .invokespecial(CD_CompositePrinterParser, INIT_NAME, MTD_void_DateTimePrintParserArray_boolean);
+
+                    /*
+                     * this.printerParser0 = printerParsers[0];
+                     * this.printerParser1 = printerParsers[1];
+                     * ...
+                     */
+                    for (int i = 0; i < printerParsers.length; ++i) {
+                        var paramDesc = paramType(printerParsers[i]);
+                        cb.aload(thisSlot)
+                          .aload(parsersSlot)
+                          .loadConstant(i)
+                          .arrayLoad(TypeKind.ReferenceType)
+                          .checkcast(paramDesc)
+                          .putfield(classDesc, "printerParser" + i, paramDesc);
+                    }
+                    cb.return_();
+                }
+            };
+        }
+
+        private static ClassDesc paramType(DateTimePrinterParser p) {
+            if (p instanceof NanosPrinterParser.FixWidth3) {
+                return CD_NanosPrinterParserFixWidth3;
+            } else if (p instanceof NanosPrinterParser) {
+                return CD_NanosPrinterParser;
+            } else if (p instanceof NumberPrinterParser.Width1NotNegative) {
+                return CD_Width1NotNegative;
+            } else if (p instanceof NumberPrinterParser.Width2NotNegative) {
+                return CD_Width2NotNegative;
+            } else if (p instanceof NumberPrinterParser.FixWidth2NotNegative) {
+                return CD_FixWidth2NotNegative;
+            } else if (p instanceof NumberPrinterParser.FixWidth3NotNegative) {
+                return CD_FixWidth3NotNegative;
+            } else if (p instanceof NumberPrinterParser.Width4ExceedsPad) {
+                return CD_Width4ExceedsPad;
+            } else if (p instanceof NumberPrinterParser.FixWidth4NotNegative) {
+                return CD_FixWidth4NotNegative;
+            } else if (p instanceof NumberPrinterParser) {
+                return CD_NumberPrinterParser;
+            } else if (p instanceof CharLiteralPrinterParser) {
+                return CD_CharLiteralPrinterParser;
+            } else {
+                return CD_DateTimePrinterParser;
+            }
+        }
+
+        private static Consumer<CodeBuilder> generateFormat(
+                ClassDesc classDesc,
+                DateTimePrinterParser[] printerParsers,
+                boolean optional
+        ) {
+            final int thisSlot         = 0,
+                      contextSlot      = 1,
+                      bufSlot          = 2,
+                      lengthSlot       = 3,
+                      valueLongSlot    = 4,
+                      decimalStyleSlot = 5;
+
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    if (optional) {
+                        /*
+                         * context.startOptional();
+                         */
+                        cb.aload(contextSlot)
+                          .invokevirtual(CD_DateTimePrintContext, "startOptional", MTD_void);
+                    }
+
+                    /*
+                     * int length = buf.length();
+                     */
+                    cb.aload(bufSlot)
+                      .invokevirtual(CD_StringBuilder, "length", MTD_int)
+                      .istore(lengthSlot);
+
+                    var LReturn = cb.newLabel();
+                    for (int i = 0; i < printerParsers.length; ++i) {
+                        var pp = printerParsers[i];
+
+                        if (pp instanceof CharLiteralPrinterParser literlal) {
+                            appendLiteral(cb, literlal);
+                            continue;
+                        }
+
+                        if (pp instanceof NumberPrinterParser npp) {
+                            appendNumber(cb, npp, i, LReturn);
+                            continue;
+                        }
+
+                        /*
+                         * if (printerParserN.format(context, buf) == false) {
+                         *     buf.setLength(length);
+                         *     return true;
+                         * }
+                         */
+                        var paramType = paramType(pp);
+                        boolean isInterface = paramType == CD_DateTimePrinterParser;
+                        var invokeType = isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL;
+                        var L0 = cb.newLabel();
+                        cb.aload(thisSlot)
+                          .getfield(classDesc, "printerParser" + i, paramType(pp))
+                          .aload(contextSlot)
+                          .aload(bufSlot)
+                          .invoke(invokeType, paramType, "format", MTD_boolean_DateTimePrintContext_StringBuilder, isInterface)
+                          .ifne(L0)
+                          .aload(bufSlot)
+                          .iload(lengthSlot)
+                          .invokevirtual(CD_StringBuilder, "setLength", MTD_void_int)
+                          .goto_(LReturn)
+                          .labelBinding(L0);
+                    }
+
+                    cb.labelBinding(LReturn);
+                    if (optional) {
+                        /*
+                         * context.endOptional();
+                         */
+                        cb.aload(contextSlot)
+                          .invokevirtual(CD_DateTimePrintContext, "endOptional", MTD_void);
+                    }
+                    cb.iconst_1()
+                      .ireturn();
+                }
+
+                private void appendNumber(CodeBuilder cb, NumberPrinterParser parser, int index, Label unableLabel) {
+                    var L0 = cb.newLabel();
+
+                    /*
+                     * Long valueLong = context.getValue(field);
+                     * if (valueLong == null) {
+                     *     return false;
+                     * }
+                     */
+                    cb.aload(contextSlot);
+                    if (parser.field instanceof ChronoField chronoField) {
+                        cb.getstatic(CD_ChronoField, chronoField.name(), CD_ChronoField);
+                    } else {
+                        cb.aload(thisSlot)
+                          .getfield(classDesc, "printerParser" + index, paramType(parser))
+                          .getfield(CD_NumberPrinterParser, "field", CD_TemporalField);
+                    }
+                    cb.invokevirtual(CD_DateTimePrintContext, "getValue", MTD_Long_TemporalField)
+                      .dup()
+                      .astore(valueLongSlot)
+                      .ifnonnull(L0)
+                      .iconst_0()
+                      .ireturn()
+                      .labelBinding(L0);
+
+                    /*
+                     * printerParserN.format(buf, context.getDecimalStyle(), longValue.longValue());
+                     */
+                    cb.aload(thisSlot)
+                      .getfield(classDesc, "printerParser" + index, paramType(parser))
+                      .aload(bufSlot)
+                      .aload(contextSlot)
+                      .invokevirtual(CD_DateTimePrintContext, "getDecimalStyle", MTD_DecimalStyle)
+                      .aload(valueLongSlot)
+                      .invokevirtual(CD_Long, "longValue", MTD_long)
+                      .invokevirtual(CD_NumberPrinterParser, "format", MTD_void_StringBuilder_DecimalStyle_long);
+                }
+
+                private void appendLiteral(CodeBuilder cb, CharLiteralPrinterParser parser) {
+                    cb.aload(bufSlot)
+                      .loadConstant((int) parser.literal)
+                      .invokevirtual(CD_StringBuilder, "append", MTD_StringBuilder_char)
+                      .pop();
+                }
+            };
+        }
+
+        /**
+         * The generated class is in the same package as the host class as
+         * it's the implementation of the string concatenation for the host
+         * class.
+         */
+        private static String getClassName(Class<?> hostClass) {
+            String name = hostClass.isHidden() ? hostClass.getName().replace('/', '_')
+                    : hostClass.getName();
+            return name + "$$PrinterParser";
         }
     }
 }
