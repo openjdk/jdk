@@ -168,6 +168,7 @@ public:
     EXPECT_TRUE(exists(found[2]));
     EXPECT_TRUE(exists(found[3]));
   };
+
   void copy_flag_test() {
     {
       Tree tree;
@@ -192,9 +193,9 @@ public:
       tree.reserve_mapping(10000, 10, rd2);
       tree.visit_in_order([&](Node* node) {
         if ((size_t)node->key() == 0    ) { EXPECT_EQ(node->val().out.flag(), mtTest) << "failed at: " << node->key(); }
-        if ((size_t)node->key() == 10   ) { EXPECT_EQ(node->val().in.flag(), mtTest) << "failed at: " << node->key(); }
-        if ((size_t)node->key() == 10000) { EXPECT_EQ(node->val().out.flag(), mtNMT) << "failed at: " << node->key(); }
-        if ((size_t)node->key() == 10010) { EXPECT_EQ(node->val().in.flag(), mtNMT) << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10   ) { EXPECT_EQ(node->val().in.flag(),  mtTest) << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10000) { EXPECT_EQ(node->val().out.flag(), mtNMT)  << "failed at: " << node->key(); }
+        if ((size_t)node->key() == 10010) { EXPECT_EQ(node->val().in.flag(),  mtNMT)  << "failed at: " << node->key(); }
       });
     }
   }
@@ -362,11 +363,12 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     // the new memory in the commit diff.
     Tree tree;
     Tree::RegionData rd(NCS::StackIndex(), mtTest);
+    tree.reserve_mapping(0, 1024, rd);
     tree.commit_mapping(128, 128, rd);
     tree.commit_mapping(512, 128, rd);
     VMATree::SummaryDiff diff = tree.commit_mapping(0, 1024, rd);
     EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].commit);
-    EXPECT_EQ(768, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
+    EXPECT_EQ(0, diff.flag[NMTUtil::flag_to_index(mtTest)].reserve);
   }
 }
 
@@ -497,14 +499,17 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     VMATree::SummaryDiff tree_diff;
     VMATree::SummaryDiff simple_diff;
     if (type == SimpleVMATracker::Reserved) {
-      simple_diff = tr->reserve(start, size, stack, flag);
       tree_diff = tree.reserve_mapping(start, size, data);
+      if (!tree_diff.is_valid()) { i--; continue; }
+      simple_diff = tr->reserve(start, size, stack, flag);
     } else if (type == SimpleVMATracker::Committed) {
-      simple_diff = tr->commit(start, size, stack, flag);
       tree_diff = tree.commit_mapping(start, size, data);
+      if (!tree_diff.is_valid()) { i--; continue; }
+      simple_diff = tr->commit(start, size, stack, flag);
     } else {
-      simple_diff = tr->release(start, size);
       tree_diff = tree.release_mapping(start, size);
+      if (!tree_diff.is_valid()) { i--; continue; }
+      simple_diff = tr->release(start, size);
     }
 
     for (int j = 0; j < mt_number_of_types; j++) {

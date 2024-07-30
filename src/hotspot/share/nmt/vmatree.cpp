@@ -62,6 +62,76 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   } else {
     LEQ_A_found = true;
     LEQ_A = AddressState{leqA_n->key(), leqA_n->val()};
+    StateType leqA_state = leqA_n->val().out.type();
+    StateType new_state = stA.out.type();
+    // Table of states and copy_flag permutations. '..' means 'the same as above line'.
+    //   #  leqA_state new_state  copy_flag   meaning                                 comments                    visibility   VMATree::xxx()
+    //   1  Reserved   Reserved     true      re-reserving a region                    ?                             private    register_mapping
+    //   2  Committed     ..         ..       uncommitting a committed region          OK                            private        ..
+    //   3  Released      ..         ..       reserving a released region              invalid mapping request       private        ..
+    //   4  Reserved   Committed     ..       committing a reserved region             OK                            public     commit_mapping
+    //   5  Committed     ..         ..       re-committing a region                   OK                            public         ..
+    //   6  Released      ..         ..       committing a non-reserved region         invalid mapping request       public         ..
+    //   7  Reserved   Released      ..       releasing a reserved region              invalid mapping request       private    register_mapping
+    //   8  Committed     ..         ..       releasing a committed region             invalid mapping request       private        ..
+    //   9  Released      ..         ..       re-releasing a region                    ?                             private        ..
+    //  10  Reserved   Reserved     false     re-reserving a region                    split a reserved region       public     reserve_mapping
+    //  11  Committed     ..         ..       uncommitting a region                    Error                         public         ..
+    //  12  Released      ..         ..       reserving a released region              OK                            public         ..
+    //  13  Reserved   Committed     ..       committing a reserved ergion             OK                            public     commit_mapping
+    //  14  Committed     ..         ..       re-committing a region                   flags should match            public         ..
+    //  15  Released      ..         ..       committing a non-reserved region         invalid mapping request       public         ..
+    //  16  Reserved   Released      ..       releasing a reserved region              OK                            private    register_mapping
+    //  17  Committed     ..         ..       releasing w/out uncommitting a region    OK                            private        ..
+    //  18  Released      ..         ..       re-releasing a region                    OK                            private        ..
+
+
+    static int count_6 = 0;
+    static int count_11 = 0;
+    static int count_14 = 0;
+    auto notify = [&](int row_no, const char* str) -> bool {
+      if (row_no == 6 || row_no == 11 || row_no == 14) {
+        if (row_no == 6)  { if (count_6++) return true; }
+        if (row_no == 11) { if (count_11++) return true; }
+        if (row_no == 14) { if (count_14++) return true; }
+        tty->print_cr("new region " SIZE_FORMAT "-" SIZE_FORMAT, (size_t)A, (size_t)B);
+        tty->print_cr("leqA node " SIZE_FORMAT ", flag: %d", (size_t)leqA_n->key(), (int)leqA_n->val().out.flag());
+        warning("%s", str);
+        return true;
+      } else {
+        fatal("%s", str);
+        return false;
+      }
+      return false;
+    };
+    VMATree::SummaryDiff invalid_diff(-1);
+    if (leqA_state == StateType::Released && new_state == StateType::Reserved && copy_flag) { // row #3
+      if (!notify(3, "Reserving a released region and requesting to copy the flag") )
+        return invalid_diff;
+    }
+    if (leqA_state == StateType::Released && new_state == StateType::Committed) { // rows #6 and #15
+      if (!notify(6, "Committing a non-reserved region"))
+        return invalid_diff;
+    }
+    if ((leqA_state == StateType::Reserved || leqA_state == StateType::Committed) &&  // rows #7 and #8
+         new_state == StateType::Released && copy_flag) {
+      if (!notify(7, "Releasing a region and requesting to copy the flag"))
+        return invalid_diff;
+    }
+    if (leqA_state == StateType::Committed && new_state == StateType::Reserved && !copy_flag) { // row #11
+      if (!notify(11, "Reserving a committed region is requested"))
+        return invalid_diff;
+    }
+    if (leqA_state == StateType::Committed && new_state == StateType::Committed && !copy_flag) { // row #14
+      if (leqA_n->val().out.flag() != stA.out.flag()) {
+        if (!notify(14, "Re-committing a region with a different flag"))
+          return invalid_diff;
+      }
+    }
+    if (new_state == StateType::Released && stA.out.flag() != mtNone) {
+      if (!notify(0, "Releasng a region with a not mtNone flag"))
+      return invalid_diff;
+    }
     if (copy_flag) {
       MEMFLAGS flag = leqA_n->val().out.flag();
       stA.out.set_flag(flag);
