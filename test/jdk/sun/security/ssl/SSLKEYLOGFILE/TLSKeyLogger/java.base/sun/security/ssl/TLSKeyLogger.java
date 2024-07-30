@@ -64,7 +64,6 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
  *         -g:vars,lines \
  *         -d module/java.base \
  *         --patch-module java.base=TLSKeyLogger/java.base \
- *         --add-reads java.base=ALL-UNNAMED \
  *         TLSKeyLogger/java.base/sun/security/ssl/TLSKeyLogger.java
  *
  *     # Run the test app
