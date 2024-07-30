@@ -261,6 +261,10 @@ void VM_Version::c2_initialize() {
     }
   }
 
+  // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
+  //       as there are extra checks inside it which could disable UseRVV
+  //       in some situations.
+
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
@@ -327,10 +331,6 @@ void VM_Version::c2_initialize() {
   if (FLAG_IS_DEFAULT(UseMD5Intrinsics)) {
     FLAG_SET_DEFAULT(UseMD5Intrinsics, true);
   }
-
-  // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
-  //       as there are extra checks inside it which could disable UseRVV
-  //       in some situations.
 
   // Adler32
   if (UseRVV) {
