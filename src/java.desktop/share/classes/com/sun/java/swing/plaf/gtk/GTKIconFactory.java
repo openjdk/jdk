@@ -66,7 +66,7 @@ class GTKIconFactory {
         DelegatingIcon result = iconsPool.get(methodName);
         if (result == null) {
             if (methodName == TREE_COLLAPSED_ICON ||
-                    methodName == TREE_EXPANDED_ICON)
+                methodName == TREE_EXPANDED_ICON)
             {
                 result = new SynthExpanderIcon(methodName);
 
