@@ -210,7 +210,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
             final var match = RequestPathMatcherUtil.findHandler(reqPath, this.handlers);
             handler = match.handler();
         }
-        // The server Http3ExchangeImpl uses a BlockingQueue<ByteBuffer> to
+        // The server Http3ServerExchange uses a BlockingQueue<ByteBuffer> to
         // read data so handling the exchange in the current thread would
         // wedge it. The executor must have at least one thread and must not
         // execute inline - otherwise, we'd be wedged.
