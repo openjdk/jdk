@@ -22,6 +22,8 @@
  * questions.
  */
 
+import jdk.test.lib.Platform;
+
 public class SystemMapTestBase {
 
     // e.g.
@@ -98,13 +100,13 @@ public class SystemMapTestBase {
         wincommitted + "STACK-\\d+-main.*"
     };
 
-    private static final boolean isLinux = false; /* TODO */
+    private static final boolean isWindows = Platform.isWindows();
 
     protected static String[] shouldMatchUnconditionally() {
-        return isLinux ? shouldMatchUnconditionally_linux : shouldMatchUnconditionally_windows;
+        return isWindows ? shouldMatchUnconditionally_windows : shouldMatchUnconditionally_linux;
     }
     protected static String[] shouldMatchIfNMTIsEnabled() {
-        return isLinux ? shouldMatchIfNMTIsEnabled_linux : shouldMatchIfNMTIsEnabled_windows;
+        return isWindows ? shouldMatchIfNMTIsEnabled_windows : shouldMatchIfNMTIsEnabled_linux;
     }
 
 }
