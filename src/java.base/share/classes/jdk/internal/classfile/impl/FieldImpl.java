@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -48,7 +49,7 @@ public final class FieldImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofField(reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.FIELD, reader.readU2(startPos));
     }
 
     @Override

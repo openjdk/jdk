@@ -628,7 +628,7 @@ JRT_LEAF(oopDesc*, JVMCIRuntime::load_and_clear_exception(JavaThread* thread))
   oop exception = thread->exception_oop();
   assert(exception != nullptr, "npe");
   thread->set_exception_oop(nullptr);
-  thread->set_exception_pc(0);
+  thread->set_exception_pc(nullptr);
   return exception;
 JRT_END
 

@@ -413,6 +413,8 @@ class VM_Version: public Abstract_VM_Version {
   // s390 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
 
+  constexpr static bool supports_secondary_supers_table() { return true; }
+
   constexpr static bool supports_recursive_lightweight_locking() { return true; }
 
   // CPU feature query functions

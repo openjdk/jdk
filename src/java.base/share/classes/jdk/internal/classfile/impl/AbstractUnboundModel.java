@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -37,11 +38,11 @@ public abstract sealed class AbstractUnboundModel<E extends ClassFileElement>
         extends AbstractElement
         implements CompoundElement<E>, AttributedElement
         permits BufferedCodeBuilder.Model, BufferedFieldBuilder.Model, BufferedMethodBuilder.Model {
-    private final List<E> elements;
+    final List<E> elements;
     private List<Attribute<?>> attributes;
 
     public AbstractUnboundModel(List<E> elements) {
-        this.elements = elements;
+        this.elements = Collections.unmodifiableList(elements);
     }
 
     @Override

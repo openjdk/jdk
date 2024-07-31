@@ -148,7 +148,7 @@ public final class BufferedCodeBuilder
             implements CodeModel {
 
         private Model() {
-            super(elements);
+            super(BufferedCodeBuilder.this.elements);
         }
 
         @Override
