@@ -2541,7 +2541,7 @@ public final class DateTimeFormatterBuilder {
         final boolean optional;
 
         static CompositePrinterParser of(DateTimePrinterParser[] printerParsers, boolean optional) {
-            if (COMPILE) {
+            if (COMPILE && !optional) {
                 return PrinterParserFactory.generate(printerParsers, optional);
             }
             // Use subclasses with printerParsers.length of 1 to 15 so that C2 can do TypeProfile optimization
