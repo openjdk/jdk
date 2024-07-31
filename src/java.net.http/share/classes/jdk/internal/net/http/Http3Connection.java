@@ -1417,10 +1417,16 @@ public final class Http3Connection implements AutoCloseable {
             debug.log("Connection will no longer allow new streams due to receipt of GOAWAY" +
                     " from peer");
         }
-        // We abort any requests that are in-transit on stream ids that are equal or greater than
-        // this stream id. The spec (RFC-9114, section 5.2) allows us to retry those requests on a
-        // new connection, but for simplicity, for now, we just abort/fail them locally.
-        // TODO: impl this
+        handlePeerUnprocessedStreams(quicStreamId);
+    }
+
+    private void handlePeerUnprocessedStreams(final long leastUnprocessedStreamId) {
+        this.exchanges.forEach((id, exchange) -> {
+            if (id >= leastUnprocessedStreamId) {
+                // close the exchange as unprocessed
+                client.client().theExecutor().execute(exchange::closeAsUnprocessed);
+            }
+        });
     }
 
     private boolean isMarked(int state, int mask) {

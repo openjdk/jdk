@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,7 +512,7 @@ class MultiExchange<T> implements Cancelable {
                             return completedFuture(response);
                         }
                         // all exceptions thrown are handled here
-                        CompletableFuture<Response> errorCF = getExceptionalCF(ex);
+                        CompletableFuture<Response> errorCF = getExceptionalCF(ex, exch.exchImpl);
                         if (errorCF == null) {
                             return responseAsyncImpl();
                         } else {
@@ -598,27 +598,30 @@ class MultiExchange<T> implements Cancelable {
      * Takes a Throwable and returns a suitable CompletableFuture that is
      * completed exceptionally, or null.
      */
-    private CompletableFuture<Response> getExceptionalCF(Throwable t) {
+    private CompletableFuture<Response> getExceptionalCF(Throwable t, ExchangeImpl<?> exchImpl) {
         if ((t instanceof CompletionException) || (t instanceof ExecutionException)) {
             if (t.getCause() != null) {
                 t = t.getCause();
             }
         }
+        final boolean retryAsUnprocessed = exchImpl != null && exchImpl.isUnprocessedByPeer();
         if (cancelled && !requestCancelled() && t instanceof IOException) {
             if (!(t instanceof HttpTimeoutException)) {
                 t = toTimeoutException((IOException)t);
             }
-        } else if (retryOnFailure(t)) {
+        } else if (retryAsUnprocessed || retryOnFailure(t)) {
             Throwable cause = retryCause(t);
 
             if (!(t instanceof ConnectException || t instanceof StreamLimitException)) {
                 // we may need to start a new connection, and if so
                 // we want to start with a fresh connect timeout again.
                 if (connectTimeout != null) connectTimeout.reset();
-                if (!canRetryRequest(currentreq)) {
-                    return failedFuture(cause); // fails with original cause
+                if (!retryAsUnprocessed && !canRetryRequest(currentreq)) {
+                    // a (peer) processed request which cannot be retried, fail with
+                    // the original cause
+                    return failedFuture(cause);
                 }
-            } // ConnectException: retry, but don't reset the connectTimeout.
+            } // retry, but don't reset the connectTimeout.
 
             // allow the retry mechanism to do its work
             var retryStreamLimitReached = (t instanceof StreamLimitException)
