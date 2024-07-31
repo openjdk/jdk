@@ -27,9 +27,6 @@ package java.lang;
 
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.javac.PreviewFeature;
-import jdk.internal.lang.stable.CachedFunction;
-import jdk.internal.lang.stable.CachedIntFunction;
-import jdk.internal.lang.stable.CachedSupplier;
 import jdk.internal.lang.stable.StableValueImpl;
 import jdk.internal.lang.stable.StableValueUtil;
 
@@ -68,12 +65,12 @@ import java.util.function.Supplier;
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
  * environment, can be created like this:
  * {@snippet lang = java :
- *     Supplier<T> cached = StableValue.newCachedSupplier(original, null);
+ *     Supplier<T> cached = StableValue.newCachingSupplier(original, null);
  * }
  * The cached supplier can also be computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
  * {@snippet lang = java :
- *     Supplier<T> cached = StableValue.newCachedSupplier(original, Thread.ofVirtual().factory());
+ *     Supplier<T> cached = StableValue.newCachingSupplier(original, Thread.ofVirtual().factory());
  * }
  *     </li>
  *
@@ -83,7 +80,7 @@ import java.util.function.Supplier;
  * guaranteed to be successfully invoked at most once per inout index even in a
  * multithreaded environment, can be created like this:
  * {@snippet lang = java:
- *     IntFunction<R> cached = StableValue.newCachedIntFunction(size, original, null);
+ *     IntFunction<R> cached = StableValue.newCachingIntFunction(size, original, null);
  *}
  * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
@@ -96,7 +93,7 @@ import java.util.function.Supplier;
  * at most once per input value even in a multithreaded environment, can be created like
  * this:
  * {@snippet lang = java :
- *    Function<T, R> cached = StableValue.newCachedFunction(inputs, original, null);
+ *    Function<T, R> cached = StableValue.newCachingFunction(inputs, original, null);
  * }
  * Just like a cached supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct

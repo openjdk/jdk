@@ -52,8 +52,7 @@ Another property of "at-most-once fields" would be, they are written to at most 
 are likely read at many occasions. Hence, updating the field would not be so time-critical whereas every effort
 should be made to make reading the field performant. 
 
-Using existing Java semantics, it is possible to devise solutions that _partially_ emulates an "at-most-once field". In
-the solutions exemplified below, an "at-most-once field" of type `Logger` is used in a cache.  
+Using existing Java semantics, it is possible to devise solutions that _partially_ emulates an "at-most-once field".
 
 Here is how a naïve `Logger` cache backed by a mutable field could look like:
 
@@ -63,19 +62,18 @@ public class Cache {
 
     private Logger logger;
 
-    public Logger logger() {
-        Logger v = logger;
-        if (v == null) {
-            logger = v = Logger.getLogger("com.company.Foo");
+    public Logger get() {
+        if (logger == null) {
+            logger = Logger.getLogger("com.company.Foo");
         }
-        return v;
+        return logger;
     }
 }
 ```
 
-This solution does not work in a multithreaded environment as updates made by one thread to the `logger` may not be
-visible to other threads, thereby allowing the `logger` variable to be updated several times and consequently the
-`Logger::getLogger` method can be called several times.
+This solution does not work in a multithreaded environment. One of many problems is, updates made by one thread to the
+`logger` may  not be visible to other threads, thereby allowing the `logger` variable to be updated several times and
+consequently the `Logger::getLogger` method can be called several times.
 
 Here is how thread safety can be added together with a guarantee, `logger` is only updated at most once
 (and thereby `Logger::getLogger` is called at most once):
@@ -86,12 +84,11 @@ public class Cache {
 
     private Logger logger;
 
-    public synchronized Logger logger() {
-        Logger v = logger;
-        if (v == null) {
-            logger = v = Logger.getLogger("com.company.Foo");
+    public synchronized Logger get() {
+        if (logger == null) {
+            logger = Logger.getLogger("com.company.Foo");
         }
-        return v;
+        return logger;
     }
 }
 ```
@@ -110,11 +107,14 @@ public class Cache {
     private volatile Logger logger;
 
     public Logger logger() {
+        // Use a local variable to save a volatile read if `logger` is non-null
         Logger v = logger;
         if (v == null) {
             synchronized (this) {
+                // Re-read the cached value under synchronization
                 v = logger;
                 if (v == null) {
+                    // Assign both `logger` and `v` in one line
                     logger = v = Logger.getLogger("com.company.Foo");
                 }
             }
@@ -266,7 +266,7 @@ The Stable Values API defines an interface so that client code in libraries and 
 
 - Define and use a stable value:
     - [`StableValue.newInstance()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newInstance())
-- Define various _cached_ functions:
+- Define various _caching_ functions:
     - [`StableValue.newCachedSupplier()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingSupplier(java.util.function.Supplier,java.util.concurrent.ThreadFactory))
     - [`StableValue.newCachedIntFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingIntFunction(int,java.util.function.IntFunction,java.util.concurrent.ThreadFactory))
     - [`StableValue.newCachedFunction()`](https://cr.openjdk.org/~pminborg/stable-values2/api/java.base/java/lang/StableValue.html#newCachingFunction(java.util.Set,java.util.function.Function,java.util.concurrent.ThreadFactory))

@@ -79,10 +79,11 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> values,
         sb.append("{");
         for (var e:values.entrySet()) {
             final Object value = e.getValue().value();
+            sb.append(e.getKey()).append('=');
             if (value == this) {
-                sb.append("(self)");
+                sb.append("(this CachedFunction)");
             } else {
-                sb.append(e.getKey()).append('=').append(StableValueUtil.render(value));
+                sb.append(StableValueUtil.render(value));
             }
         }
         sb.append("}");
