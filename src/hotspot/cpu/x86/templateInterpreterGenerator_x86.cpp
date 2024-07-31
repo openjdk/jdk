@@ -178,7 +178,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(
                rarg, rarg2);
   }
   // throw exception
-  __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
+  __ jump(RuntimeAddress(Interpreter::throw_exception_entry()));
   return entry;
 }
 
@@ -546,7 +546,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
   assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+  __ jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
   // all done with frame size check
   __ bind(after_frame_check_pop);
   NOT_LP64(__ pop(rsi));

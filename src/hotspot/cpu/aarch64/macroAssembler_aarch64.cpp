@@ -736,7 +736,7 @@ void MacroAssembler::reserved_stack_check() {
     br(Assembler::LO, no_reserved_zone_enabling);
 
     enter();   // LR and FP are live.
-    lea(rscratch1, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+    lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone)));
     mov(c_rarg0, rthread);
     blr(rscratch1);
     leave();
@@ -6454,7 +6454,7 @@ void MacroAssembler::verify_cross_modify_fence_not_required() {
     Label fence_not_required;
     cbz(rscratch1, fence_not_required);
     // If it does then fail.
-    lea(rscratch1, CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure));
+    lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::verify_cross_modify_fence_failure)));
     mov(c_rarg0, rthread);
     blr(rscratch1);
     bind(fence_not_required);
