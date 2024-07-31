@@ -3119,14 +3119,6 @@ JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   return JNIHandles::make_local(THREAD, trace);
 JVM_END
 
-JVM_ENTRY(void, JVM_DumpAllStacks(JNIEnv* env, jclass))
-  VM_PrintThreads op;
-  VMThread::execute(&op);
-  if (JvmtiExport::should_post_data_dump()) {
-    JvmtiExport::post_data_dump();
-  }
-JVM_END
-
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
   // We don't use a ThreadsListHandle here because the current thread
   // must be alive.
