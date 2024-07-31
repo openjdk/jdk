@@ -57,20 +57,8 @@ const char* Arena::tag_desc[] = {
 #undef ARENA_TAG_DESC
 };
 
-
-const char* Arena::tag_name[] = {
-#define ARENA_TAG_STRING(name, str, desc) XSTR(name),
-  DO_ARENA_TAG(ARENA_TAG_STRING)
-#undef ARENA_TAG_STRING
-};
-
-const char* Arena::tag_desc[] = {
-#define ARENA_TAG_DESC(name, str, desc) XSTR(desc),
-  DO_ARENA_TAG(ARENA_TAG_DESC)
-#undef ARENA_TAG_DESC
-};
-
 bool Arena::use_pool = false;
+
 // MT-safe pool of same-sized chunks to reduce malloc/free thrashing
 // NB: not using Mutex because pools are used before Threads are initialized
 class ChunkPool {
