@@ -392,7 +392,7 @@ struct X : public TestRunnable {
   static size_t total_alloc_dur;
   static size_t total_free_dur;
 
-  const size_t N = 1000;
+  const int N = 1000;
   const size_t K = 1024;
   size_t chunks[10] = {32 * K, 16 * K, 8 * K, 4 * K, 2 * K, 1 * K, 512, 256, 128, 64};
   typedef struct {
@@ -403,12 +403,12 @@ struct X : public TestRunnable {
     ResourceMark rm;
     double dur;
     GrowableArray<MemEntry> entries(N);
-    for (size_t n = 0; n < N; n++) {
+    for (int n = 0; n < N; n++) {
       entries.push(MemEntry { nullptr, 0 });
     }
     size_t alloc_dur = 0;
     size_t free_dur = 0;
-    size_t free_count = 0;
+    int free_count = 0;
     while (free_count < N) {
       int i = frand.next() % N;
       MemEntry& entry = entries.at(i);
@@ -437,7 +437,7 @@ struct X : public TestRunnable {
 
   }
   static void report(const char *s) {
-    tty->print_cr("Total time, %s, alloc: %lu, free: %lu", s,
+    tty->print_cr("Total time, %s, alloc: " SIZE_FORMAT ", free: " SIZE_FORMAT, s,
                   total_alloc_dur / 1000000,
                   total_free_dur / 1000000);
     total_alloc_dur = 0;
@@ -452,7 +452,7 @@ struct X : public TestRunnable {
  size_t X::total_free_dur = 0;
 
 
-TEST_VM(Arena, speed_and memory_compare) {
+TEST_VM(Arena, speed_and_memory_compare) {
   X x;
   ConcurrentTestRunner runner(&x, 100, 5000);
   const int N = 5;

@@ -114,10 +114,10 @@ class ChunkPool {
   }
 
 public:
-  static int usage[_num_pools];
+  static size_t usage[_num_pools];
   static void report_usage() {
     for (size_t i = 0; i < _num_pools; i++) {
-      tty->print_cr("pool %lu, used count: %d", i, usage[i]);
+      tty->print_cr("pool " SIZE_FORMAT ", used count: " SIZE_FORMAT, i, usage[i]);
       usage[i] = 0;
     }
   }
@@ -193,7 +193,7 @@ void ChunkPool::deallocate_chunk(Chunk* c) {
 }
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
-int ChunkPool::usage[] = { 0, 0, 0, 0};
+size_t ChunkPool::usage[] = { 0, 0, 0, 0};
 
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
