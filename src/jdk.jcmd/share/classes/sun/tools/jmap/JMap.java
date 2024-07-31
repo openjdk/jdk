@@ -310,7 +310,7 @@ public class JMap {
         System.err.println("      file=<file>  dump heap to <file>");
         System.err.println("      gz=<number>  If specified, the heap dump is written in gzipped format using the given compression level.");
         System.err.println("                   1 (recommended) is the fastest, 9 the strongest compression.");
-        System.err.println("      redact       Redact primitive values from the dump.");
+        System.err.println("      redact       redact head dump by setting primitives to zero");
         System.err.println("");
         System.err.println("    Example: jmap -dump:live,format=b,file=heap.bin <pid>");
         System.err.println("");

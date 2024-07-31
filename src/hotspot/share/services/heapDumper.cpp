@@ -464,7 +464,7 @@ bool AbstractDumpWriter::can_write_fast(size_t len) {
   return buffer_size() - position() >= len;
 }
 
-// write raw bytes
+// write raw bytes, writes 0 if s is nullptr which is used for redaction
 void AbstractDumpWriter::write_raw(const void* s, size_t len) {
   assert(!_in_dump_segment || (_sub_record_left >= len), "sub-record too large");
   debug_only(_sub_record_left -= len);
@@ -474,8 +474,12 @@ void AbstractDumpWriter::write_raw(const void* s, size_t len) {
     assert(!_in_dump_segment || _is_huge_sub_record,
            "Cannot overflow in non-huge sub-record.");
     size_t to_write = buffer_size() - position();
-    memcpy(buffer() + position(), s, to_write);
-    s = (void*) ((char*) s + to_write);
+    if (s == nullptr) {
+      memset(buffer() + position(), 0, to_write);
+    } else {
+      memcpy(buffer() + position(), s, to_write);
+      s = (void*) ((char*) s + to_write);
+    }
     len -= to_write;
     set_position(position() + to_write);
     flush();
@@ -1378,7 +1382,7 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
     return;
   }
 
-  if(redact) {
+  if (redact) {
     writer->write_raw(nullptr, length_in_bytes); //nullptr to write zeros
   } else {
     // If the byte ordering is big endian then we can copy most types directly
@@ -2847,6 +2851,6 @@ void HeapDumper::dump_heap(bool oome) {
 
   HeapDumper dumper(false /* no GC before heap dump */,
                     oome  /* pass along out-of-memory-error flag */);
-  dumper.dump(my_path, tty, HeapDumpGzipLevel, HeapDumpRedacted);
+  dumper.dump(my_path, tty, HeapDumpGzipLevel, false, HeapDumpRedacted);
   os::free(my_path);
 }
