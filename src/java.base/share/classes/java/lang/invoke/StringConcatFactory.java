@@ -48,7 +48,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -378,11 +377,10 @@ public final class StringConcatFactory {
                 mh = generateMHInlineCopy(concatType, constantStrings);
             }
 
-            if (mh != null) {
-                mh = mh.viewAsType(concatType, true);
-            } else {
+            if (mh == null) {
                 mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
             }
+            mh = mh.viewAsType(concatType, true);
 
             return new ConstantCallSite(mh);
         } catch (Error e) {
@@ -1087,14 +1085,6 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_String, CD_String);
 
-        /**
-         * Ensure a capacity in the initial StringBuilder to accommodate all
-         * constants plus this factor times the number of arguments.
-         */
-        static final int ARGUMENT_SIZE_FACTOR = 4;
-
-        static final Set<Lookup.ClassOption> SET_OF_STRONG = Set.of(STRONG);
-
         private SimpleStringBuilderStrategy() {
             // no instantiation
         }
@@ -1102,6 +1092,7 @@ public final class StringConcatFactory {
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
+            MethodType erasedArgs = args.erase().changeReturnType(String.class);
 
             byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
                     new Consumer<ClassBuilder>() {
@@ -1109,14 +1100,14 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
                                 .withMethodBody(METHOD_NAME,
-                                        ConstantUtils.methodTypeDesc(args),
+                                        ConstantUtils.methodTypeDesc(erasedArgs),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateMethod(constants, args));
+                                        generateMethod(constants, erasedArgs));
                     }});
             try {
-                var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, SET_OF_STRONG, DUMPER)
+                var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                         .defineClass(true, null);
-                return lookup.findStatic(hiddenClass, METHOD_NAME, args);
+                return lookup.findStatic(hiddenClass, METHOD_NAME, erasedArgs);
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
@@ -1186,23 +1177,18 @@ public final class StringConcatFactory {
                         TypeKind kind = TypeKind.from(cl);
                         paramSlots[i] = paramSlotsTotalSize;
                         paramSlotsTotalSize += kind.slotSize();
-                    }
 
-                    int lengthCoderSlot = paramSlotsTotalSize;
-                    int bufSlot         = paramSlotsTotalSize + 2;
-
-                    /*
-                     * store string variants:
-                     *
-                     * str0 = Float.toString(args(0));
-                     * str1 = Double.toString(args(1));
-                     * ...
-                     * strN = StringConcatHelper.stringOf(args(N));
-                     *
-                     */
-                    for (int i = 0, strings = 0; i < paramCount; i++) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
+                        /*
+                         * Stringify by storing String variants in
+                         * repurposed argument slots:
+                         *
+                         * arg0 = Float.toString(args0);
+                         * arg1 = Double.toString(arg1);
+                         * ...
+                         * argN = StringConcatHelper.stringOf(argN);
+                         *
+                         *
+                         */
                         if (needStringOf(cl)) {
                             ClassDesc classDesc;
                             MethodTypeDesc methodTypeDesc;
@@ -1221,18 +1207,14 @@ public final class StringConcatFactory {
                                 methodTypeDesc = OBJECT_TO_STRING;
                             }
 
-                            // Types other than byte/short/int/long/boolean/String require a local variable to store
-                            int strLocalSlot = (cl == String.class)
-                                    ? paramSlots[i]
-                                    : bufSlot + (++strings);
                             cb.loadLocal(kind, paramSlots[i])
                               .invokestatic(classDesc, methodName, methodTypeDesc)
-                              .astore(strLocalSlot);
-                            if (cl != String.class) {
-                                paramSlots[i] = strLocalSlot;
-                            }
+                              .astore(paramSlots[i]);
                         }
                     }
+
+                    int lengthCoderSlot = paramSlotsTotalSize;
+                    int bufSlot         = paramSlotsTotalSize + 2;
 
                     /*
                      * Store init index :
@@ -1247,13 +1229,10 @@ public final class StringConcatFactory {
                         TypeKind kind = TypeKind.from(cl);
                         int paramSlot = paramSlots[i];
 
-                        ClassDesc classDesc = CD_StringConcatHelper;
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
-                            classDesc = CD_Integer;
                             methodTypeDesc = Mix_int;
                         } else if (cl == long.class) {
-                            classDesc = CD_Long;
                             methodTypeDesc = MIX_long;
                         } else if (cl == boolean.class) {
                             methodTypeDesc = Mix_boolean;
