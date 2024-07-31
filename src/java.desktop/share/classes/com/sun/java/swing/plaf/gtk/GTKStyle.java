@@ -877,7 +877,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             int focusPad =
                 getClassSpecificIntValue(context, "focus-padding", 1);
             return indicatorSpacing + focusSize + focusPad;
-        } else if (GTKLookAndFeel.is3() && "ComboBox.forceOpaque".equals(key)) {
+        } else if ("ComboBox.forceOpaque".equals(key)) {
             return true;
         } else if ("Tree.expanderSize".equals(key)) {
             Object value = getClassSpecificValue("expander-size");

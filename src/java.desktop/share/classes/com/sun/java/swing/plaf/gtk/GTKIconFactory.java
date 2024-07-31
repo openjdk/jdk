@@ -214,7 +214,7 @@ class GTKIconFactory {
 
             Region region = context.getRegion();
             GTKStyle style = (GTKStyle) context.getStyle();
-            if (GTKLookAndFeel.is3() && region == Region.MENU) {
+            if (region == Region.MENU) {
                 Object value = style.getClassSpecificValue("arrow-scaling");
                 if (value instanceof Number) {
                     iconDimension = (int)(((Number) value).floatValue() *

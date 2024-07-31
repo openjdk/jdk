@@ -211,9 +211,7 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
-            if (GTKLookAndFeel.is3()) {
-                paintComponentBackground(context, g, x, y, w, h);
-            }
+            paintComponentBackground(context, g, x, y, w, h);
         }
     }
 
@@ -559,9 +557,7 @@ class GTKPainter extends SynthPainter {
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 context.getRegion(), context.getComponentState());
         if (gtkState == SynthConstants.MOUSE_OVER) {
-            if (GTKLookAndFeel.is3()) {
-                paintComponentBackground(context, g, x, y, w, h);
-            }
+            paintComponentBackground(context, g, x, y, w, h);
         }
     }
 
@@ -675,17 +671,14 @@ class GTKPainter extends SynthPainter {
             } else {
                 h -= (insets.top + insets.bottom);
             }
-            if (GTKLookAndFeel.is3()) {
-                if (id == Region.POPUP_MENU_SEPARATOR) {
-                    detail = "menuitem";
-                    h -= (insets.top + insets.bottom);
-                } else {
-                    detail = "separator";
-                }
+
+            if (id == Region.POPUP_MENU_SEPARATOR) {
+                detail = "menuitem";
+                h -= (insets.top + insets.bottom);
             } else {
-                detail = orientation == JSeparator.HORIZONTAL ?
-                                                    "hseparator" : "vseparator";
+                detail = "separator";
             }
+
             synchronized (UNIXToolkit.GTK_LOCK) {
                 if (! ENGINE.paintCachedImage(g, x, y, w, h, id, state,
                             detail, orientation)) {
@@ -800,15 +793,15 @@ class GTKPainter extends SynthPainter {
         // The ubuntulooks engine paints slider troughs differently depending
         // on the current slider value and its component orientation.
         JSlider slider = (JSlider)context.getComponent();
-        if (GTKLookAndFeel.is3()) {
-            if (slider.getOrientation() == JSlider.VERTICAL) {
-                y += 1;
-                h -= 2;
-            } else {
-                x += 1;
-                w -= 2;
-            }
+
+        if (slider.getOrientation() == JSlider.VERTICAL) {
+            y += 1;
+            h -= 2;
+        } else {
+            x += 1;
+            w -= 2;
         }
+
         double value = slider.getValue();
         double min = slider.getMinimum();
         double max = slider.getMaximum();
@@ -842,7 +835,7 @@ class GTKPainter extends SynthPainter {
         Region id = context.getRegion();
         int gtkState = GTKLookAndFeel.synthStateToGTKState(
                 id, context.getComponentState());
-        boolean hasFocus = GTKLookAndFeel.is3() &&
+        boolean hasFocus =
                 ((context.getComponentState() & SynthConstants.FOCUSED) != 0);
         synchronized (UNIXToolkit.GTK_LOCK) {
             if (! ENGINE.paintCachedImage(g, x, y, w, h, id, gtkState, dir,
@@ -1036,10 +1029,8 @@ class GTKPainter extends SynthPainter {
             int yThickness = style.getYThickness();
 
             ENGINE.startPainting(g, x, y, w, h, id, state);
-            if (GTKLookAndFeel.is3()) {
-                ENGINE.paintBackground(g, context, id, gtkState, null,
-                                                                    x, y, w, h);
-            }
+            ENGINE.paintBackground(g, context, id, gtkState, null,
+                                                                x, y, w, h);
             ENGINE.paintShadow(g, context, id, gtkState,
                                ShadowType.IN, "entry", x, y, w, h);
 

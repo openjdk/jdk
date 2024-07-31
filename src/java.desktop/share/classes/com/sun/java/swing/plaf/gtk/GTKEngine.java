@@ -493,13 +493,13 @@ class GTKEngine {
             GTKLookAndFeel.synthStateToGTKStateType(state).ordinal();
         int synthState = context.getComponentState();
         Container parent = context.getComponent().getParent();
-        if(GTKLookAndFeel.is3()) {
-            if (parent != null && parent.getParent() instanceof JComboBox) {
-                if (parent.getParent().hasFocus()) {
-                    synthState |= SynthConstants.FOCUSED;
-                }
+
+        if (parent != null && parent.getParent() instanceof JComboBox) {
+            if (parent.getParent().hasFocus()) {
+                synthState |= SynthConstants.FOCUSED;
             }
         }
+
         int dir = getTextDirection(context);
         int widget = getWidgetType(context.getComponent(), id).ordinal();
         native_paint_shadow(widget, gtkState, shadowType.ordinal(), detail,
