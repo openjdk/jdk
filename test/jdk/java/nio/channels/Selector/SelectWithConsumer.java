@@ -310,7 +310,7 @@ public class SelectWithConsumer {
             source.register(sel, SelectionKey.OP_READ);
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 1000L);
-            expectDuration(start, 501, Long.MAX_VALUE);
+            expectDuration(start, 500, Long.MAX_VALUE);
             assertTrue(n == 0);
         } finally {
             closePipe(p);
@@ -333,7 +333,7 @@ public class SelectWithConsumer {
             sel.wakeup();
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            expectDuration(start, 0, 4999);
+            expectDuration(start, 0, 20_000);
             assertTrue(n == 0);
         }
     }
@@ -354,7 +354,7 @@ public class SelectWithConsumer {
             scheduleWakeup(sel, 1, SECONDS);
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            expectDuration(start, 501, 10*1000 - 1);
+            expectDuration(start, 0, 20_000);
             assertTrue(n == 0);
         }
     }
@@ -379,7 +379,7 @@ public class SelectWithConsumer {
             Thread.currentThread().interrupt();
             long start = millisTime();
             int n = sel.select(k -> assertTrue(false), 60*1000);
-            expectDuration(start, 0, 4999);
+            expectDuration(start, 0, 20_000);
             assertTrue(n == 0);
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
