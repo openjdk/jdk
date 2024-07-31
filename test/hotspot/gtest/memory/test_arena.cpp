@@ -455,16 +455,28 @@ struct X : public TestRunnable {
 TEST_VM(Arena, speed) {
   X x;
   ConcurrentTestRunner runner(&x, 100, 5000);
+  const int N = 5;
+  ssize_t rss[2][N];
 
   for (bool pool : { false, true }) {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < N; i++) {
       Arena::use_pool = pool;
-      double dur = os::elapsedTime();
+
+      os::Linux::meminfo_t minfo_before;
+      os::Linux::query_process_memory_info(&minfo_before);
+
       runner.run();
-      dur = os::elapsedTime() - dur;
+
+      os::Linux::meminfo_t minfo_after;
+      os::Linux::query_process_memory_info(&minfo_after);
+
+      rss[pool ? 1 : 0][i] = minfo_after.vmrss - minfo_before.vmrss;
+
       const char* pool_text = pool ? "with pool" : "  no pool";
-      tty->print_cr("Time spent, %s : %f", pool_text, dur);
       X::report(pool_text);
     }
+  }
+  for (int i = 0; i < N; i++) {
+    tty->print_cr("\nRSS(KB): no-pool= " SSIZE_FORMAT ", pool= " SSIZE_FORMAT ", diff=" SSIZE_FORMAT "\n", rss[0][i], rss[1][i], rss[0][i] - rss[1][i]);
   }
 }
