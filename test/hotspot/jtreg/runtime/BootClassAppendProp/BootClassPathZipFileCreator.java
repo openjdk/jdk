@@ -62,12 +62,12 @@ public class BootClassPathZipFileCreator {
     private static final int ZIP64_MAGICCOUNT = 0xFFFF;
     private static byte[] classBytes;
 
-    static {
+    private static void createClassBytes() {
         String code = "class " + CLASS_NAME + "{}";
         classBytes = new InMemoryJavaCompiler().compile(CLASS_NAME, code);
     }
 
-    private BootClassPathZipFileCreator(String type) throws Exception {
+    private static void createZip(String type) throws Exception {
         HashMap<String, Object> env = new HashMap<>();
         env.put("create", "true");
         if (type.equals("NoMagicZip64")) {
@@ -93,9 +93,10 @@ public class BootClassPathZipFileCreator {
     }
 
     public static void main(String[] args) throws Exception {
-        new BootClassPathZipFileCreator("NonZip64");
-        new BootClassPathZipFileCreator("TotalMagicZip64");
-        new BootClassPathZipFileCreator("NoMagicZip64");
+        createClassBytes();
+        createZip("NonZip64");
+        createZip("TotalMagicZip64");
+        createZip("NoMagicZip64");
     }
 
 }
