@@ -35,8 +35,12 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Benchmark measuring StableValue performance
@@ -51,45 +55,52 @@ import java.util.function.Supplier;
         // Prevent the use of uncommon traps
         "-XX:PerMethodTrapLimit=0"})
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(2)
-public class CachedSupplierBenchmark {
+@OperationsPerInvocation(100)
+public class CachingFunctionBenchmark {
 
-    private static final int VALUE = 42;
-    private static final int VALUE2 = 23;
+    private static final int SIZE = 100;
+    private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
-    private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = StableValue.newCachingSupplier(() -> VALUE, null);
-    private static final Supplier<Integer> SUPPLIER2 = StableValue.newCachingSupplier(() -> VALUE, null);
+    private static final Map<Integer, Integer> STABLE = StableValue.lazyMap(SET, Function.identity());
+    private static final Function<Integer, Integer> FUNCTION = StableValue.newCachingFunction(SET, Function.identity(), null);
 
-    private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
-    private final Supplier<Integer> supplier = StableValue.newCachingSupplier(() -> VALUE, null);
-    private final Supplier<Integer> supplier2 = StableValue.newCachingSupplier(() -> VALUE2, null);
+    private final Map<Integer, Integer> stable = StableValue.lazyMap(SET, Function.identity());
+    private final Function<Integer, Integer> function = StableValue.newCachingFunction(SET, Function.identity(), null);
 
     @Benchmark
     public int stable() {
-        return stable.orElseThrow() + stable2.orElseThrow();
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += stable.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
-    public int supplier() {
-        return supplier.get() + supplier2.get();
+    public int function() {
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += function.apply(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += STABLE.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
-    public int staticSupplier() {
-        return SUPPLIER.get() + SUPPLIER2.get();
-    }
-
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
+    public int staticIntFunction() {
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += FUNCTION.apply(i);
+        }
+        return sum;
     }
 
 }

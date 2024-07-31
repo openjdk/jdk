@@ -53,7 +53,7 @@ import java.util.function.IntFunction;
         "-XX:PerMethodTrapLimit=0"})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(100)
-public class CachedIntFunctionBenchmark {
+public class CachingIntFunctionBenchmark {
 
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;

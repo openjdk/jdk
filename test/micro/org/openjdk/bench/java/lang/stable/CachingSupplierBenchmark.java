@@ -35,14 +35,8 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.function.Supplier;
 
 /**
  * Benchmark measuring StableValue performance
@@ -57,52 +51,45 @@ import java.util.stream.IntStream;
         // Prevent the use of uncommon traps
         "-XX:PerMethodTrapLimit=0"})
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(100)
-public class CachedFunctionBenchmark {
+@OperationsPerInvocation(2)
+public class CachingSupplierBenchmark {
 
-    private static final int SIZE = 100;
-    private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 23;
 
-    private static final Map<Integer, Integer> STABLE = StableValue.lazyMap(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.newCachingFunction(SET, Function.identity(), null);
+    private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
+    private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
+    private static final Supplier<Integer> SUPPLIER = StableValue.newCachingSupplier(() -> VALUE, null);
+    private static final Supplier<Integer> SUPPLIER2 = StableValue.newCachingSupplier(() -> VALUE, null);
 
-    private final Map<Integer, Integer> stable = StableValue.lazyMap(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.newCachingFunction(SET, Function.identity(), null);
+    private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
+    private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
+    private final Supplier<Integer> supplier = StableValue.newCachingSupplier(() -> VALUE, null);
+    private final Supplier<Integer> supplier2 = StableValue.newCachingSupplier(() -> VALUE2, null);
 
     @Benchmark
     public int stable() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += stable.get(i);
-        }
-        return sum;
+        return stable.orElseThrow() + stable2.orElseThrow();
     }
 
     @Benchmark
-    public int function() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += function.apply(i);
-        }
-        return sum;
+    public int supplier() {
+        return supplier.get() + supplier2.get();
     }
 
     @Benchmark
     public int staticStable() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += STABLE.get(i);
-        }
-        return sum;
+        return STABLE.orElseThrow() + STABLE2.orElseThrow();
     }
 
     @Benchmark
-    public int staticIntFunction() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += FUNCTION.apply(i);
-        }
-        return sum;
+    public int staticSupplier() {
+        return SUPPLIER.get() + SUPPLIER2.get();
+    }
+
+    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
+        m.trySet(value);
+        return m;
     }
 
 }

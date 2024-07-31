@@ -54,6 +54,8 @@ public class StableValueBenchmark {
     private static final StableValue<Integer> DCL2 = init(StableValue.newInstance(), VALUE2);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
     private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
+    private static final Holder HOLDER = new Holder(VALUE);
+    private static final Holder HOLDER2 = new Holder(VALUE2);
 
     private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
@@ -111,8 +113,8 @@ public class StableValueBenchmark {
     }
 
     @Benchmark
-    public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+    public int staticAtomic() {
+        return ATOMIC.get() + ATOMIC2.get();
     }
 
     @Benchmark
@@ -121,13 +123,35 @@ public class StableValueBenchmark {
     }
 
     @Benchmark
-    public int staticAtomic() {
-        return ATOMIC.get() + ATOMIC2.get();
+    public int staticHolder() {
+        return HOLDER.get() + HOLDER2.get();
     }
+
+    @Benchmark
+    public int staticStable() {
+        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+    }
+
 
     private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
         m.trySet(value);
         return m;
+    }
+
+    // The VM should be able to constant-fold the value given in the constructor
+    // because StableValue fields have a special meaning.
+    private static final class Holder {
+
+        private final StableValue<Integer> delegate = StableValue.newInstance();
+
+        Holder(int value) {
+            delegate.setOrThrow(value);
+        }
+
+        int get() {
+            return delegate.orElseThrow();
+        }
+
     }
 
     // Handles null values
