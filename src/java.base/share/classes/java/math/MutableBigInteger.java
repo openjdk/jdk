@@ -2002,7 +2002,8 @@ class MutableBigInteger {
                 sqrt.subtract(ONE);
         }
 
-        return new MutableBigInteger[] { sqrt, rem };
+        sr[1] = rem;
+        return sr;
     }
 
     /**
