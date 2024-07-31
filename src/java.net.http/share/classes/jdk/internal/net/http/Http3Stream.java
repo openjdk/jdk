@@ -399,7 +399,7 @@ sealed abstract class Http3Stream<T> extends ExchangeImpl<T> permits Http3Exchan
                      connectionError(new IOException(errMsg), Http3Error.H3_FRAME_UNEXPECTED);
                      return;
                  }
-                 if (frame instanceof PartialFrame<?> partialFrame) {
+                 if (frame instanceof PartialFrame partialFrame) {
                      final List<ByteBuffer> payload = framesDecoder.readPayloadBytes();
                      if (debug.on()) {
                          debug.log("processQuicData - payload: %s",

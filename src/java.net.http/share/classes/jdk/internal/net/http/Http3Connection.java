@@ -1201,7 +1201,7 @@ public final class Http3Connection implements AutoCloseable {
             if (frame instanceof GoAwayFrame goaway) {
                 handleIncomingGoAway(goaway);
             }
-            if (frame instanceof PartialFrame<?> partial) {
+            if (frame instanceof PartialFrame partial) {
                 var payloadBytes = controlFramesDecoder.readPayloadBytes();
                 debug.log("added %s bytes to %s",
                         payloadBytes == null ? 0 : Utils.remaining(payloadBytes),

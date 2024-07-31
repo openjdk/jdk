@@ -56,7 +56,7 @@ import jdk.internal.net.http.quic.BuffersReader.ListBuffersReader;
  * The sequence of calls: {@snippet
  *    framesDecoder.submit(buffer);
  *    while ((frame = framesDecoder.poll()) {
- *        if (frame instanceof PartialFrame<?> partial) {
+ *        if (frame instanceof PartialFrame partial) {
  *            var nextPayloadByte = framesDecoder.readPayloadBytes();
  *            // nextPayloadByte are the next bytes for the payload
  *            // of the partial frame
@@ -79,7 +79,7 @@ public class FramesDecoder {
     private final LongPredicate isAllowed;
 
     // the current partial frame or null
-    PartialFrame<?> partialFrame;
+    PartialFrame partialFrame;
     boolean eof;
 
     /**
@@ -164,7 +164,7 @@ public class FramesDecoder {
                 } else partialFrame = null;
             }
             var frame = Http3Frame.decode(framesReader, this::isAllowed, debug);
-            if (frame instanceof PartialFrame<?> partial) {
+            if (frame instanceof PartialFrame partial) {
                 partialFrame = partial;
             }
             return frame;

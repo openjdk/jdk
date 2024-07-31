@@ -44,16 +44,11 @@ package jdk.internal.net.http.http3.frames;
  * read or written the frame type and length.
  * @see jdk.internal.net.http.http3.frames.PartialFrame
  * */
-public final class UnknownFrame extends PartialFrame<UnknownFrame> {
+public final class UnknownFrame extends PartialFrame {
     final long length;
     UnknownFrame(long type, long length) {
         super(type, length);
         this.length = length;
-    }
-
-    @Override
-    public UnknownFrame frame() {
-        return this;
     }
 
     @Override

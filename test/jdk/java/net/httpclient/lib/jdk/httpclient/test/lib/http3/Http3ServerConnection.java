@@ -631,7 +631,7 @@ public class Http3ServerConnection {
         final BlockingQueue<ByteBuffer> requestBodyQueue = new LinkedBlockingQueue<>();
         private volatile boolean eof;
 
-        volatile PartialFrame<?> partialFrame;
+        volatile PartialFrame partialFrame;
         Http3ServerStreamImpl(QuicBidiStream stream) {
             this.stream = stream;
             requestHeadersBuilder = new HttpHeadersBuilder();
@@ -686,7 +686,7 @@ public class Http3ServerConnection {
                     incoming.add(buffer);
                     Http3Frame frame = Http3Frame.decode(incoming, FramesDecoder::isAllowedOnRequestStream, debug);
                     if (frame == null) continue;
-                    if (frame instanceof PartialFrame<?> partial) {
+                    if (frame instanceof PartialFrame partial) {
                         this.partialFrame = partialFrame = partial;
                         if (frame instanceof HeadersFrame partialHeaders) {
                             if (debug.on()) {

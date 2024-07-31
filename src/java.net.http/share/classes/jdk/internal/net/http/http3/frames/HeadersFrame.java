@@ -34,7 +34,7 @@ package jdk.internal.net.http.http3.frames;
  * read or written the frame type and length.
  * @see jdk.internal.net.http.http3.frames.PartialFrame
  */
-public final class HeadersFrame extends PartialFrame<HeadersFrame> {
+public final class HeadersFrame extends PartialFrame {
 
     /**
      * The HEADERS frame type, as defined by HTTP/3
@@ -50,11 +50,6 @@ public final class HeadersFrame extends PartialFrame<HeadersFrame> {
     public HeadersFrame(long length) {
         super(TYPE, length);
         this.length = length;
-    }
-
-    @Override
-    public HeadersFrame frame() {
-        return this;
     }
 
     @Override

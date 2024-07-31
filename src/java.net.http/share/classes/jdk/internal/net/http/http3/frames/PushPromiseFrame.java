@@ -31,7 +31,7 @@ import jdk.internal.net.http.quic.VariableLengthEncoder;
 /**
  * Represents a PUSH_PROMISE HTTP3 frame
  */
-public final class PushPromiseFrame extends PartialFrame<PushPromiseFrame> {
+public final class PushPromiseFrame extends PartialFrame {
 
     /**
      * The PUSH_PROMISE frame type, as defined by HTTP/3
@@ -49,11 +49,6 @@ public final class PushPromiseFrame extends PartialFrame<PushPromiseFrame> {
         this.pushId = pushId;
         // the payload length of this frame
         this.length = VariableLengthEncoder.getEncodedSize(this.pushId) + fieldLength;
-    }
-
-    @Override
-    public PushPromiseFrame frame() {
-        return this;
     }
 
     @Override

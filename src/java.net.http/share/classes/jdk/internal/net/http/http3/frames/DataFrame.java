@@ -35,7 +35,7 @@ package jdk.internal.net.http.http3.frames;
  * read or written the frame type and length.
  * @see PartialFrame
  */
-public final class DataFrame extends PartialFrame<DataFrame> {
+public final class DataFrame extends PartialFrame {
 
     /**
      * The DATA frame type, as defined by HTTP/3
@@ -50,11 +50,6 @@ public final class DataFrame extends PartialFrame<DataFrame> {
     public DataFrame(long length) {
         super(TYPE, length);
         this.length = length;
-    }
-
-    @Override
-    public DataFrame frame() {
-        return this;
     }
 
     @Override

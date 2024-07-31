@@ -35,7 +35,7 @@ import jdk.internal.net.http.quic.BuffersReader;
  * A PartialFrame helps to read the payload of a frame.
  * This class is not multi-thread safe.
  */
-public abstract sealed class PartialFrame<T extends Http3Frame>
+public abstract sealed class PartialFrame
         extends AbstractHttp3Frame implements Http3Frame
         permits HeadersFrame,
                 DataFrame,
@@ -49,8 +49,6 @@ public abstract sealed class PartialFrame<T extends Http3Frame>
         super(frameType);
         this.remaining = this.streamingLength = streamingLength;
     }
-
-    public abstract T frame();
 
     @Override
     public final long streamingLength() {
