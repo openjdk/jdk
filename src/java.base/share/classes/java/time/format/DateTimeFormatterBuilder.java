@@ -2631,7 +2631,7 @@ public final class DateTimeFormatterBuilder {
             for (DateTimePrinterParser pp : printerParsers) {
                 pos = pp.parse(context, text, pos);
                 if (pos < 0) {
-                    return pos;
+                    break;
                 }
             }
             return pos;
@@ -6528,9 +6528,8 @@ public final class DateTimeFormatterBuilder {
         static final MethodTypeDesc MTD_void_StringBuilder_DecimalStyle_int        = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_DecimalStyle, CD_int);
         static final MethodTypeDesc MTD_void_StringBuilder_DecimalStyle_long       = MethodTypeDesc.of(CD_void, CD_StringBuilder, CD_DecimalStyle, CD_long);
         static final MethodTypeDesc MTD_void_DateTimePrintParserArray_boolean      = MethodTypeDesc.of(CD_void, CD_DateTimePrinterParser_array, CD_boolean);
-        static final MethodTypeDesc MTD_int_DateTimeParserContext_CharSequence_int = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int);
+        static final MethodTypeDesc MTD_int_DateTimeParseContext_CharSequence_int  = MethodTypeDesc.of(CD_int, CD_DateTimeParseContext, CD_CharSequence, CD_int);
         static final MethodTypeDesc MTD_boolean_DateTimePrintContext_StringBuilder = MethodTypeDesc.of(CD_boolean, CD_DateTimePrintContext, CD_StringBuilder);
-        static final MethodTypeDesc MTD_int_DateTimePrintContext_CharSequence_int  = MethodTypeDesc.of(CD_int, CD_DateTimePrintContext, CD_CharSequence, CD_int);
 
         private PrinterParserFactory() {
             // no instantiation
@@ -6551,6 +6550,10 @@ public final class DateTimeFormatterBuilder {
                                        MTD_boolean_DateTimePrintContext_StringBuilder,
                                        ACC_PUBLIC | ACC_FINAL,
                                        generateFormat(classDesc, printerParsers, optional))
+                               .withMethodBody("parse0",
+                                       MTD_int_DateTimeParseContext_CharSequence_int,
+                                       ACC_FINAL,
+                                       generateParse0(classDesc, printerParsers))
                                .withMethodBody(INIT_NAME,
                                        MTD_void_DateTimePrintParserArray_boolean,
                                        ACC_PUBLIC,
@@ -6790,6 +6793,64 @@ public final class DateTimeFormatterBuilder {
                       .loadConstant((int) parser.literal)
                       .invokevirtual(CD_StringBuilder, "append", MTD_StringBuilder_char)
                       .pop();
+                }
+            };
+        }
+
+        private static Consumer<CodeBuilder> generateParse0(
+                ClassDesc classDesc,
+                DateTimePrinterParser[] printerParsers
+        ) {
+            final int thisSlot     = 0,
+                      contextSlot  = 1,
+                      textSlot     = 2,
+                      positionSlot = 3,
+                      posSlot      = 4;
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    var LReturn = cb.newLabel();
+
+                    /*
+                     * int pos = positioin;
+                     *
+                     */
+                    cb.iload(positionSlot)
+                      .istore(posSlot);
+
+                    /*
+                     * pos = this.printerParser0.parse(context, text, pos);
+                     * if (pos < 0) goto LReturn;
+                     * pos = this.printerParser1.parse(context, text, pos);
+                     * if (pos < 0) goto LReturn;
+                     *  ...
+                     * return this.printerParserN.parse(context, text, pos);
+                     */
+                    for (int i = 0; i < printerParsers.length; ++i) {
+                        var paramType = paramType(printerParsers[i]);
+                        boolean isInterface = paramType == CD_DateTimePrinterParser;
+                        Opcode invokeType = isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL;
+                        cb.aload(thisSlot)
+                          .getfield(classDesc, "printerParser" + i, paramType)
+                          .aload(contextSlot)
+                          .aload(textSlot)
+                          .iload(posSlot)
+                          .invoke(invokeType, paramType, "parse", MTD_int_DateTimeParseContext_CharSequence_int, isInterface);
+                        if (i != printerParsers.length - 1) {
+                            cb.dup()
+                              .istore(posSlot)
+                              .iflt(LReturn);
+                        } else {
+                            cb.ireturn();
+                        }
+                    }
+
+                    /*
+                     * return pos;
+                     */
+                    cb.labelBinding(LReturn)
+                      .iload(posSlot)
+                      .ireturn();
                 }
             };
         }
