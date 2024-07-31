@@ -48,19 +48,19 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 
 #ifndef PRODUCT
 void ShenandoahRegionPartitions::dump_bitmap() const {
-  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
-  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
-               "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
 
-  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_debug(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
   dump_bitmap_range(0, _max-1);
 }
 
@@ -83,8 +83,8 @@ void ShenandoahRegionPartitions::dump_bitmap_row(idx_t region_idx) const {
   uintx collector_bits = _membership[int(ShenandoahFreeSetPartitionId::Collector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits;
   uintx notfree_bits =  ~free_bits;
-  log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
-               aligned_idx, mutator_bits, collector_bits, notfree_bits);
+  log_debug(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
+                aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
 #endif
 
@@ -1060,8 +1060,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   }
 
   size_t collector_xfer = collector_empty_xfer + collector_not_empty_xfer;
-  log_info(gc)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
-               byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
+  log_info(gc, ergo)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
+                     byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
 }
 
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {

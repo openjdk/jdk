@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -529,6 +529,7 @@ public class Signatures {
         private int appendTypeParameters(Content target, int lastLineSeparator) {
             // Apply different wrapping strategies for type parameters
             // depending on the combined length of type parameters and return type.
+            // Note return type will be null if this is a constructor.
             int typeParamLength = typeParameters.charCount();
 
             if (typeParamLength >= TYPE_PARAMS_MAX_INLINE_LENGTH) {
@@ -539,9 +540,10 @@ public class Signatures {
 
             int lineLength = target.charCount() - lastLineSeparator;
             int newLastLineSeparator = lastLineSeparator;
+            int returnTypeLength = returnType != null ? returnType.charCount() : 0;
 
             // sum below includes length of modifiers plus type params added above
-            if (lineLength + returnType.charCount() > RETURN_TYPE_MAX_LINE_LENGTH) {
+            if (lineLength + returnTypeLength > RETURN_TYPE_MAX_LINE_LENGTH) {
                 target.add(Text.NL);
                 newLastLineSeparator = target.charCount();
             } else {
