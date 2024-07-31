@@ -2609,28 +2609,32 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public int parse(DateTimeParseContext context, CharSequence text, int position) {
+        public final int parse(DateTimeParseContext context, CharSequence text, int position) {
             if (optional) {
                 context.startOptional();
-                int pos = position;
-                for (DateTimePrinterParser pp : printerParsers) {
-                    pos = pp.parse(context, text, pos);
-                    if (pos < 0) {
-                        context.endOptional(false);
-                        return position;  // return original position
-                    }
-                }
-                context.endOptional(true);
-                return pos;
-            } else {
-                for (DateTimePrinterParser pp : printerParsers) {
-                    position = pp.parse(context, text, position);
-                    if (position < 0) {
-                        break;
-                    }
-                }
-                return position;
             }
+            int pos = parse0(context, text, position);
+            if (pos < 0) {
+                if (optional) {
+                    context.endOptional(false);
+                    return position;  // return original position
+                }
+            }
+            if (optional) {
+                context.endOptional(true);
+            }
+            return pos;
+        }
+
+        int parse0(DateTimeParseContext context, CharSequence text, int position) {
+            int pos = position;
+            for (DateTimePrinterParser pp : printerParsers) {
+                pos = pp.parse(context, text, pos);
+                if (pos < 0) {
+                    return pos;
+                }
+            }
+            return pos;
         }
 
         @Override
@@ -2669,8 +2673,12 @@ public final class DateTimeFormatterBuilder {
                 }
                 return true;
             }
-            public boolean format0(DateTimePrintContext context, StringBuilder buf) {
+            boolean format0(DateTimePrintContext context, StringBuilder buf) {
                 return p0.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                return p0.parse(context, text, position);
             }
         }
 
@@ -2680,9 +2688,18 @@ public final class DateTimeFormatterBuilder {
                 super(printerParsers, optional);
                 p1 = printerParsers[1];
             }
-            public boolean format0(DateTimePrintContext context, StringBuilder buf) {
+            @Override
+            boolean format0(DateTimePrintContext context, StringBuilder buf) {
                 return p0.format(context, buf)
                     && p1.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0) {
+                    return pos;
+                }
+                return p1.parse(context, text, pos);
             }
         }
 
@@ -2696,6 +2713,16 @@ public final class DateTimeFormatterBuilder {
                 return p0.format(context, buf)
                     && p1.format(context, buf)
                     && p2.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p2.parse(context, text, pos);
             }
         }
 
@@ -2711,6 +2738,17 @@ public final class DateTimeFormatterBuilder {
                     && p2.format(context, buf)
                     && p3.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p3.parse(context, text, pos);
+            }
         }
 
         static class N5 extends N4 {
@@ -2725,6 +2763,18 @@ public final class DateTimeFormatterBuilder {
                     && p2.format(context, buf)
                     && p3.format(context, buf)
                     && p4.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p4.parse(context, text, pos);
             }
         }
 
@@ -2742,6 +2792,19 @@ public final class DateTimeFormatterBuilder {
                     && p4.format(context, buf)
                     && p5.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p5.parse(context, text, pos);
+            }
         }
 
         static class N7 extends N6 {
@@ -2758,6 +2821,20 @@ public final class DateTimeFormatterBuilder {
                     && p4.format(context, buf)
                     && p5.format(context, buf)
                     && p6.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p6.parse(context, text, pos);
             }
         }
 
@@ -2777,6 +2854,21 @@ public final class DateTimeFormatterBuilder {
                     && p6.format(context, buf)
                     && p7.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p7.parse(context, text, pos);
+            }
         }
 
         static class N9 extends N8 {
@@ -2795,6 +2887,22 @@ public final class DateTimeFormatterBuilder {
                     && p6.format(context, buf)
                     && p7.format(context, buf)
                     && p8.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p8.parse(context, text, pos);
             }
         }
 
@@ -2818,6 +2926,23 @@ public final class DateTimeFormatterBuilder {
                     && p8.format(context, buf)
                     && p9.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p9.parse(context, text, pos);
+            }
         }
 
         static class N11 extends N10 {
@@ -2838,6 +2963,24 @@ public final class DateTimeFormatterBuilder {
                     && p8.format(context, buf)
                     && p9.format(context, buf)
                     && p10.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                 || (pos = p9.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p10.parse(context, text, pos);
             }
         }
 
@@ -2861,6 +3004,25 @@ public final class DateTimeFormatterBuilder {
                     && p10.format(context, buf)
                     && p11.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                 || (pos = p9.parse(context, text, pos)) < 0
+                 || (pos = p10.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p11.parse(context, text, pos);
+            }
         }
 
         static class N13 extends N12 {
@@ -2883,6 +3045,26 @@ public final class DateTimeFormatterBuilder {
                     && p10.format(context, buf)
                     && p11.format(context, buf)
                     && p12.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                 || (pos = p9.parse(context, text, pos)) < 0
+                 || (pos = p10.parse(context, text, pos)) < 0
+                 || (pos = p11.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p12.parse(context, text, pos);
             }
         }
 
@@ -2908,6 +3090,27 @@ public final class DateTimeFormatterBuilder {
                     && p12.format(context, buf)
                     && p13.format(context, buf);
             }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                 || (pos = p9.parse(context, text, pos)) < 0
+                 || (pos = p10.parse(context, text, pos)) < 0
+                 || (pos = p11.parse(context, text, pos)) < 0
+                 || (pos = p12.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p13.parse(context, text, pos);
+            }
         }
 
         static final class N15 extends N14 {
@@ -2932,6 +3135,28 @@ public final class DateTimeFormatterBuilder {
                     && p12.format(context, buf)
                     && p13.format(context, buf)
                     && p14.format(context, buf);
+            }
+            @Override
+            int parse0(DateTimeParseContext context, CharSequence text, int position) {
+                int pos  = position;
+                if ((pos = p0.parse(context, text, pos)) < 0
+                 || (pos = p1.parse(context, text, pos)) < 0
+                 || (pos = p2.parse(context, text, pos)) < 0
+                 || (pos = p3.parse(context, text, pos)) < 0
+                 || (pos = p4.parse(context, text, pos)) < 0
+                 || (pos = p5.parse(context, text, pos)) < 0
+                 || (pos = p6.parse(context, text, pos)) < 0
+                 || (pos = p7.parse(context, text, pos)) < 0
+                 || (pos = p8.parse(context, text, pos)) < 0
+                 || (pos = p9.parse(context, text, pos)) < 0
+                 || (pos = p10.parse(context, text, pos)) < 0
+                 || (pos = p11.parse(context, text, pos)) < 0
+                 || (pos = p12.parse(context, text, pos)) < 0
+                 || (pos = p13.parse(context, text, pos)) < 0
+                ) {
+                    return pos;
+                }
+                return p14.parse(context, text, pos);
             }
         }
     }
