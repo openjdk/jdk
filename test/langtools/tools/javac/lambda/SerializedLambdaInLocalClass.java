@@ -39,7 +39,9 @@ public class SerializedLambdaInLocalClass {
 
     public static void main(String[] args) {
         SerializedLambdaInLocalClass s = new SerializedLambdaInLocalClass();
-        s.test(s::f_lambda);
+        s.test(s::f_lambda_in_anon);
+        s.test(s::f_lambda_in_local);
+        s.test(s::f_lambda_in_lambda);
     }
 
     void test(IntFunction<Supplier<F>> fSupplier) {
@@ -68,12 +70,26 @@ public class SerializedLambdaInLocalClass {
         int getValue();
     }
 
-    Supplier<F> f_lambda(int x) {
+    Supplier<F> f_lambda_in_anon(int x) {
         return new Supplier<F>() {
             @Override
             public F get() {
                 return () -> x;
             }
         };
+    }
+
+    Supplier<F> f_lambda_in_local(int x) {
+        class FSupplier implements Supplier<F> {
+            @Override
+            public F get() {
+                return () -> x;
+            }
+        }
+        return new FSupplier();
+    }
+
+    Supplier<F> f_lambda_in_lambda(int x) {
+        return () -> () -> x;
     }
 }
