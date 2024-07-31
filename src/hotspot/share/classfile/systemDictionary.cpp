@@ -504,9 +504,6 @@ static void handle_parallel_super_load(Symbol* name,
   // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
   // This passes true to is_superclass even though it might not be the super class in order to perform the
   // optimization anyway.
-  // The only thing that takes different action for is_superclass is dumping the static archive, which doesn't
-  // reach this path.
-  assert (!CDSConfig::is_dumping_static_archive(), "should not be dumping static archive");
   Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
                                                                        superclassname,
                                                                        class_loader,
