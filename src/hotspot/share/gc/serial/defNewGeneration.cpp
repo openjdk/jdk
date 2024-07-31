@@ -833,7 +833,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
-  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
