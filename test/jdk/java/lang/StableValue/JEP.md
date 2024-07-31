@@ -181,7 +181,7 @@ It would be advantageous if "compute-at-most-once fields" could be expresses som
 // Declare a cache that can hold a single Logger instance
 Foo<Logger> cache = ... Logger.getLogger("com.company.Foo") ...;
 ...
-// Just returns the value if set. Otherwise computes and returns the value.
+// Just returns the value if set. Otherwise computes, sets, and returns the value.
 // If another thread is computing a value, wait until it has completed.
 Logger logger = cache.xxxx();
 ```
@@ -192,7 +192,7 @@ and for several compute-at-most-once values indexed by an `int`:
 // Declare a cache that can hold 10 Logger instance
 Bar<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 ...
-// Just returns the value at the provided index if set. Otherwise computes and returns the value.
+// Just returns the value at the provided index if set. Otherwise computes, sets, and returns the value.
 // If another thread is computing a value at the provided index, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
 Logger logger = cache.xxxx(7);
@@ -206,7 +206,7 @@ as the key type in the example below):
 // associated with the same finite number of `keys` Strings.
 Baz<String, Logger> cache = ... keys ... Logger::getLogger...
 ...
-// Just returns the value associated with the provided string if set. Otherwise computes and returns the value.
+// Just returns the value associated with the provided string if set. Otherwise computes, sets, and returns the value.
 // If another thread is computing a value for the provided String, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
 Logger logger = cache.xxxx("com.company.Foo");
@@ -216,10 +216,10 @@ For interoperability with legacy code, it would also be desirable if some of the
 expressed as compute-at-most-once constructs in a similar fashion:
 
 ```
-// Declare a List whose elements are lazily computed once accessed via List::get
+// Declare a List whose elements are lazily computed upon being first accessed via List::get
 List<Logger> lazyList = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 
-// Declare a Map whose values are lazily computed once accessed via Map::get
+// Declare a Map whose values are lazily computed upon being first accessed via Map::get
 Map<String, Logger> lazyMap = ... keys ... Logger::getLogger...
 ```
 
