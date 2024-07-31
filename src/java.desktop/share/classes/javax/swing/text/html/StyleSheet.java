@@ -2391,7 +2391,7 @@ public class StyleSheet extends StyleContext {
             // Position shape to the middle of the html text.
             int gap = isLeftToRight ? - (bulletgap + size/3) : (aw + bulletgap);
             int x = ax + gap;
-            int y = Math.max(ay, ay + (int)Math.ceil(ah/2));
+            int y = Math.max(ay, ay + ah/2);
 
             if (type == CSS.Value.SQUARE) {
                 g.drawRect(x, y, size/3, size/3);

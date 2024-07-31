@@ -407,6 +407,7 @@ public enum HtmlTag {
     /**
      * Enum representing the type of HTML element.
      */
+    // See JDK-8337586 for suggestions
     public enum BlockType {
         BLOCK,
         INLINE,
