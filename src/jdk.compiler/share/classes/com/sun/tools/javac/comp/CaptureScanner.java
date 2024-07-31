@@ -30,9 +30,9 @@ import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.List;
-import com.sun.tools.javac.util.ListBuffer;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
@@ -57,7 +57,7 @@ public class CaptureScanner extends TreeScanner {
      * The list of owner's variables accessed from within the local class,
      * without any duplicates.
      */
-    private final ListBuffer<VarSymbol> fvs = new ListBuffer<>();
+    private final Set<VarSymbol> fvs = new LinkedHashSet<>();
 
     public CaptureScanner(JCTree ownerTree) {
         this.tree = ownerTree;
@@ -78,9 +78,7 @@ public class CaptureScanner extends TreeScanner {
      * Add free variable to fvs list unless it is already there.
      */
     protected void addFreeVar(Symbol.VarSymbol v) {
-        if (!fvs.contains(v)) {
-            fvs.prepend(v);
-        }
+        fvs.add(v);
     }
 
     @Override
@@ -96,6 +94,6 @@ public class CaptureScanner extends TreeScanner {
      */
     List<Symbol.VarSymbol> analyzeCaptures() {
         scan(tree);
-        return fvs.toList();
+        return List.from(fvs);
     }
 }

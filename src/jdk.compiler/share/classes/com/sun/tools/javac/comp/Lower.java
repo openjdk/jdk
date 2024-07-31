@@ -314,7 +314,7 @@ public class Lower extends TreeTranslator {
             return fvs;
         }
         FreeVarCollector collector = new FreeVarCollector(classDef(c));
-        fvs = collector.analyzeCaptures();
+        fvs = collector.analyzeCaptures().reverse();
         freevarCache.put(c, fvs);
         return fvs;
     }
@@ -2248,7 +2248,7 @@ public class Lower extends TreeTranslator {
         // Enclosing instance field is used
         return true;
       }
-      if (sym.owner.kind != MTH && rs.isSerializable(sym.type)) {
+      if (rs.isSerializable(sym.type)) {
         // Class is serializable
         return true;
       }
