@@ -39,7 +39,7 @@ public class CaptureVarOrder {
         final byte B = 0;
         return () -> System.out.println(s + i + B + o);
     }
-    
+
     public static void main(String[] args) throws ReflectiveOperationException {
         CaptureVarOrder.class.getDeclaredMethod("lambda$r$0", String.class, int.class, Object.class);
         m("", 1, null).getClass().getDeclaredConstructor(String.class, int.class, Object.class);
