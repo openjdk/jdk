@@ -38,8 +38,6 @@ import static jdk.internal.net.http.quic.VariableLengthEncoder.MAX_ENCODED_INTEG
 /**
  * This class models an HTTP/3 SETTINGS frame
  */
-// TODO: this class is keeping the logic of HTTP/2 SettingsFrame,
-//       which might not be needed for HTTP/3
 public class SettingsFrame extends AbstractHttp3Frame {
 
     // An array of setting parameters.
@@ -152,22 +150,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
     }
 
     /**
-     * Copies settings from another SETTINGS frame.
-     * @param other the other frames
-     */
-    // TODO: do we need this constructor? it was imported from HTTP/2 but we may
-    //       not need this constructor for HTTP/3
-    public SettingsFrame(SettingsFrame other) {
-        super(TYPE);
-        parameters = Arrays.copyOf(other.parameters, MAX_PARAM);
-        if (other.undefinedId != -1) {
-            assert isReservedId(other.undefinedId);
-            undefinedId = other.undefinedId;
-            undefinedValue = other.undefinedValue;
-        }
-    }
-
-    /**
      * Get the parameter value for the given parameter id
      *
      * @param paramID the parameter id
@@ -217,33 +199,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
         return this;
     }
 
-    /**
-     * {@return a stream of the defined parameter ids present in this frame}
-     * Parameters whose ids are greater than {@link #MAX_PARAM} are
-     * ignored.
-     */
-    public LongStream parameterIds() {
-        return LongStream.range(1, MAX_PARAM)
-                .filter(i -> parameters[(int)i-1] != -1);
-    }
-
-    /**
-     * {@return a stream of the defined parameter ids present in this frame}
-     * If {@code includeUndefined} is true, includes at least one reserved
-     * parameter id, if present.
-     *
-     * @param includeUndefined whether to include reserved parameters if
-     *                         present
-     */
-    public LongStream parameterIds(boolean includeUndefined) {
-        LongStream ids = parameterIds();
-        if (includeUndefined && undefinedId != -1) {
-            assert isReservedId(undefinedId);
-            ids = LongStream.concat(LongStream.of(undefinedId), ids);
-        }
-        return ids;
-    }
-
     @Override
     public long length() {
         int len = 0;
@@ -261,14 +216,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
         }
         return len;
     }
-
-    @Override
-    public long size() {
-        var len = length();
-        return len + VariableLengthEncoder.getEncodedSize(len)
-                   + VariableLengthEncoder.getEncodedSize(TYPE);
-    }
-
 
     /**
      * Writes this frame to the given buffer.
@@ -361,15 +308,6 @@ public class SettingsFrame extends AbstractHttp3Frame {
 
         reader.release();
         return frame;
-    }
-
-    public byte[] toByteArray() {
-        long size = size();
-        assert size >=0 && size < Integer.MAX_VALUE;
-        byte[] bytes = new byte[(int)size];
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
-        writeFrame(buf);
-        return bytes;
     }
 
     public static SettingsFrame defaultRFCSettings() {
