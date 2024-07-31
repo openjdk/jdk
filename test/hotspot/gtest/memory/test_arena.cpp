@@ -452,7 +452,7 @@ struct X : public TestRunnable {
  size_t X::total_free_dur = 0;
 
 
-TEST_VM(Arena, speed) {
+TEST_VM(Arena, speed_and memory_compare) {
   X x;
   ConcurrentTestRunner runner(&x, 100, 5000);
   const int N = 5;
