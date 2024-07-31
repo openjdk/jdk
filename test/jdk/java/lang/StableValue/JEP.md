@@ -29,8 +29,9 @@ Java allows developers to control whether fields are mutable or not.
   Only the thread that creates an instance or first reference a class can update values.
  
 Unfortunately, in Java there is no way to define a field that can be updated _at most once_ (i.e. fields that are
-either not updated at all or are updated exactly once) and from _any_ arbitrary position in the code and by
-any thread:
+either not updated at all or are updated exactly once) and from _any_ arbitrary position and thread in the code.
+
+Here is how the different kinds of fields compare:
 
 | Field kind         | #Updates | Code update location              | Constant folding | Update thread |
 |--------------------|----------|-----------------------------------|------------------|---------------|
@@ -109,8 +110,10 @@ public class Cache {
     private volatile Logger logger;
 
     public Logger logger() {
+        
         // Use a local variable to save a volatile read if `logger` is non-null
         Logger v = logger;
+        
         if (v == null) {
             synchronized (this) {
                 // Re-read the cached value under synchronization
@@ -135,10 +138,11 @@ Now, further imagine a situation where there are several loggers to be cached an
 values using an `int` index (i.e. 0 -> "com.company.Foo0", 1 -> "com.company.Foo1", etc.):
 
 ```
-// A an array of values protected by double-checked locking. Do not use this solution!
+// An array of values protected by double-checked locking. Do not use this solution!
 public class Cache {
 
     private static final VarHandle ARRAY_HANDLE = MethodHandles.arrayElementVarHandle(Logger[].class);
+    
     private static final int SIZE = 10;
     private final Logger[] loggers = new Logger[SIZE];
 
@@ -334,7 +338,7 @@ called *only once*. This brings us to the introduction of _cached functions_.
 ### Cached functions
 
 So far, we have talked about the fundamental features of StableValue as s securely
-wrapped `@Stable` value holder. However, it has become apparent, stable primitives are amenable
+wrapped stable value holder. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Cached (or Memoized) functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a
