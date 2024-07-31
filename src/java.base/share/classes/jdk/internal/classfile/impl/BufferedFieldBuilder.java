@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -50,7 +51,7 @@ public final class BufferedFieldBuilder
         this.context = context;
         this.name = name;
         this.desc = type;
-        this.flags = AccessFlags.ofField();
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.FIELD);
     }
 
     @Override
@@ -78,7 +79,7 @@ public final class BufferedFieldBuilder
             extends AbstractUnboundModel<FieldElement>
             implements FieldModel {
         public Model() {
-            super(elements);
+            super(BufferedFieldBuilder.this.elements);
         }
 
         @Override
@@ -103,19 +104,12 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withField(name, desc, new Consumer<FieldBuilder>() {
+            builder.withField(name, desc, new Consumer<>() {
                 @Override
                 public void accept(FieldBuilder fieldBuilder) {
                     elements.forEach(fieldBuilder);
                 }
             });
-        }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
-            elements.forEach(fb);
-            fb.writeTo(buf);
         }
 
         @Override
