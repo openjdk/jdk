@@ -51,7 +51,6 @@ import java.util.Objects;
 import java.util.List;
 import java.nio.BufferUnderflowException;
 
-import static jdk.internal.net.http.quic.packets.QuicPacket.PACKET_NUMBER_MASK;
 import static jdk.internal.net.http.quic.packets.QuicPacket.peekVersion;
 
 /**
@@ -1203,6 +1202,7 @@ public class QuicPacketDecoder {
      *
      */
     public class PacketReader {
+        private static final int PACKET_NUMBER_MASK = 0x03;
         final ByteBuffer buffer;
         final int offset;
         final int initialLimit;

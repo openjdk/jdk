@@ -42,16 +42,6 @@ import jdk.internal.net.quic.QuicTLSEngine.KeySpace;
 public interface QuicPacket {
 
     /**
-     * A mask where the 2 bits used to encode the packet
-     * number length are set to 1.
-     */
-    // TODO: This is quic version dependant as it is not defined
-    //       in RFC 8999.
-    //       Maybe it's OK to leave it here as it is unlikely to
-    //       change too often.
-    int PACKET_NUMBER_MASK = 0x03;
-
-    /**
      * {@return the packet's Destination Connection ID}
      *
      * @see <a href="https://www.rfc-editor.org/rfc/rfc9000#section-7.2">
