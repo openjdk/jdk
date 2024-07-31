@@ -92,6 +92,7 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
     private final Logger debug;
     private final InetSocketAddress serverAddr;
     private volatile ConnectionSettings ourSettings;
+    private volatile Predicate<Http3ServerConnection> newRequestApprover;
 
     private static String nextName() {
         return "h3-server-" + IDS.incrementAndGet();
@@ -154,6 +155,10 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
         Objects.requireNonNull(path);
         Objects.requireNonNull(handler);
         this.handlers.put(path, handler);
+    }
+
+    public void setRequestApprover(final Predicate<Http3ServerConnection> approver) {
+        this.newRequestApprover = approver;
     }
 
     /**
@@ -259,6 +264,15 @@ public class Http3TestServer implements QuicServer.ConnectionAcceptor, AutoClose
             http3Connection.start();
         });
         return true;
+    }
+
+    public boolean shouldProcessNewHTTPRequest(final Http3ServerConnection serverConn) {
+        final Predicate<Http3ServerConnection> approver = this.newRequestApprover;
+        if (approver == null) {
+            // by the default the server will process new requests
+            return true;
+        }
+        return approver.test(serverConn);
     }
 
     @Override

@@ -630,7 +630,7 @@ class MultiExchange<T> implements Cancelable {
             if (!expiredOnce && !retryStreamLimitReached) {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
-                            + " (async): retrying due to: ", t);
+                            + " (async): retrying " + currentreq + " " + id + " due to: ", t);
                 }
                 expiredOnce = !(t instanceof StreamLimitException);
                 // The connection was abruptly closed.
@@ -646,7 +646,7 @@ class MultiExchange<T> implements Cancelable {
             } else {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
-                            + " (async): already retried once.", t);
+                            + " (async): already retried once " + currentreq + " " + id, t);
                 }
                 t = cause;
             }

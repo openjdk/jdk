@@ -98,6 +98,8 @@ public class Http3ServerConnection {
     private volatile long maxPushId = 0;
     private final ReentrantLock pushIdLock = new ReentrantLock();
     private final Condition pushIdChanged = pushIdLock.newCondition();
+    private final ConcurrentHashMap<Long, CompletableFuture<Http3ServerStreamImpl>> requests =
+            new ConcurrentHashMap<>();
     private volatile boolean closeRequested;
     // the max stream id of a processed H3 request. -1 implies none were processed.
     private final AtomicLong maxProcessedRequestStreamId = new AtomicLong(-1);
@@ -420,9 +422,15 @@ public class Http3ServerConnection {
         return true;
     }
 
-    final ConcurrentHashMap<Long, CompletableFuture<Http3ServerStreamImpl>> requests =
-            new ConcurrentHashMap<>();
     private void onNewHttpRequest(QuicBidiStream stream) {
+        if (!this.server.shouldProcessNewHTTPRequest(this)) {
+            if (debug.on()) {
+                debug.log("Rejecting HTTP request on stream %s of connection %s",
+                        stream.streamId(), this);
+            }
+            // just return back and consider the request unprocessed
+            return;
+        }
         var streamId = stream.streamId();
         // keep track of the largest request id that we have processed
         long currentLargest = maxProcessedRequestStreamId.get();
@@ -512,7 +520,8 @@ public class Http3ServerConnection {
         }
     }
 
-    private void sendGoAway() throws IOException {
+    // public, to allow invocations from within tests
+    public void sendGoAway() throws IOException {
         final QuicStreamWriter writer = controlStreams.localWriter();
         if (writer == null || !quicConnection.isOpen()) {
             return;
@@ -520,13 +529,15 @@ public class Http3ServerConnection {
         // RFC-9114, section 5.2:
         // Requests ... with the indicated identifier or greater
         // are rejected ... by the sender of the GOAWAY.
-        final long streamIdToReject = maxProcessedRequestStreamId.get() + 1;
+        final long maxProcessedStreamId = maxProcessedRequestStreamId.get();
+        // adding 4 gets us the next stream id for the stream type
+        final long streamIdToReject = maxProcessedStreamId == -1 ? 0 : maxProcessedStreamId + 4;
         // An endpoint MAY send multiple GOAWAY frames indicating different
         // identifiers, but the identifier in each frame MUST NOT be greater
         // than the identifier in any previous frame, since clients might
         // already have retried unprocessed requests on another HTTP connection.
         long currentGoAwayReqStrmId = goAwayRequestStreamId.get();
-        while (streamIdToReject < currentGoAwayReqStrmId) {
+        while (currentGoAwayReqStrmId != -1 && streamIdToReject < currentGoAwayReqStrmId) {
             if (goAwayRequestStreamId.compareAndSet(currentGoAwayReqStrmId, streamIdToReject)) {
                 break;
             }

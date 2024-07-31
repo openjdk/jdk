@@ -924,7 +924,7 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         // We arrange for the request to be retried on a new connection as allowed
         // by RFC-9114, section 5.2
         this.unprocessedByPeer = true;
-        this.errorRef.compareAndSet(null, new IOException("rejected as unprocessed by peer"));
+        this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
         // close the exchange and complete the response CF exceptionally
         close();
         completeResponseExceptionally(this.errorRef.get());
