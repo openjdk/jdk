@@ -21,12 +21,14 @@ This might be the subject of a future JEP.
 
 ## Motivation
 
-Java allows developers to control whether fields are mutable or not. Mutable fields can be updated multiple times, and
-from any arbitrary position in the code. Conversely, immutable fields (i.e. `final` fields), can only be updated
-_once_, and only in very specific places: the class initializer (for a static immutable field) or the class constructor
-(for an instance immutable field). Unfortunately, in Java there is no way to define a field that can be updated _at most
-once_ (i.e. fields that are either not updated at all or are updated exactly once) and from _any_ arbitrary position in
-the code.
+Java allows developers to control whether fields are mutable or not. 
+
+* Mutable fields can be updated multiple times, and from any arbitrary position in the code.
+* Immutable fields (i.e. `final` fields), can only be updated _once_, and only in very specific places: the
+  class initializer (for a static immutable field) or the class constructor(for an instance immutable field). 
+ 
+Unfortunately, in Java there is no way to define a field that can be updated _at most once_ (i.e. fields that are
+either not updated at all or are updated exactly once) and from _any_ arbitrary position in the code:
 
 | Field kind         | #Updates | Code update location              |
 |--------------------|----------|-----------------------------------|
@@ -34,21 +36,26 @@ the code.
 | `final`            | 1        | Constructor or static initializer |
 | at-most-once (N/A) | [0, 1]   | Anywhere                          |
 
+_Table 1, showing properties of mutable, immutable, and at-most-once (currently not available) fields._
+
 "At-most-once fields" would be essential to expensive cache computations associated with method calls, so that they can
 be reused across multiple calls. For instance, creating a logger or reading application configurations from an external
 database. Furthermore, if the VM is made aware, a field is an "at-most-once field" and it is set, it may
 [constant-fold](https://en.wikipedia.org/wiki/Constant_folding) the field value, thereby providing crucial performance
 and energy efficiency gains. 
 
-It is also important to stress a method called to compute a value might have intended or
+It is also important to stress a method called to compute an "at-most-once field" might have intended or
 unintended side effects and therefore, it would be vital to also guarantee the method is invoked at most once, even in
 a multithreaded environment.
 
-Another property of at-most-once fields would be, they are written to at most once but
-are likely read at many occasions. Hence, updating the field is not so time-critical whereas every effort to make 
-reading the field performant should be made.  
+Another property of "at-most-once fields" would be, they are written to at most once but
+are likely read at many occasions. Hence, updating the field would not be so time-critical whereas every effort
+should be made to make reading the field performant. 
 
-Here is how a naïve cache could look like using a mutable field and where a `Logger` instance is cached:
+Using existing Java semantics, it is possible to devise solutions that _partially_ emulates an "at-most-once field". In
+the solutions exemplified below, an "at-most-once field" of type `Logger` is used in a cache.  
+
+Here is how a naïve `Logger` cache backed by a mutable field could look like:
 
 ```
 // A naïve cache. Do not use this solution!
@@ -67,11 +74,11 @@ public class Cache {
 ```
 
 This solution does not work in a multithreaded environment as updates made by one thread to the `logger` may not be
-seen by other threads, thereby allowing the `logger` variable to be updated several times and consequently the
+visible to other threads, thereby allowing the `logger` variable to be updated several times and consequently the
 `Logger::getLogger` method can be called several times.
 
 Here is how thread safety can be added together with a guarantee, `logger` is only updated at most once
-(and accordingly `Logger::getLogger` is called at most once):
+(and thereby `Logger::getLogger` is called at most once):
 
 ```
 // A field protected by synchonization. Do not use this solution!
@@ -168,7 +175,7 @@ optimizations, and brittleness) that plague the workarounds shown above and belo
 should gracefully scale to handle collections of constant values, while retaining efficient computer resource
 management.
 
-It would be advantageous if compute-at-most-once constructs could be expresses something along these lines:
+It would be advantageous if "compute-at-most-once fields" could be expresses something along these lines:
 
 ```
 // Declare a cache that can hold a single Logger instance
@@ -191,8 +198,8 @@ Bar<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 Logger logger = cache.xxxx(7);
 ```
 
-and even for several compute-at-most-once values associated with some key of arbitrary type `K` where we use Strings
-as the key type in the example below:
+and even for several compute-at-most-once values associated with some key of arbitrary type `K` (where we use Strings
+as the key type in the example below):
 
 ```
 // Declare a cache that can hold a finite number of Logger instance
