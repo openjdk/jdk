@@ -29,6 +29,7 @@ public class SystemMapTestBase {
     private static final String range = "0x\\p{XDigit}+-0x\\p{XDigit}+";
     private static final String space = " +";
     private static final String someSize = "\\d+";
+    private static final String someNumber = "(0x\\p{XDigit}+|\\d+)";
     private static final String pagesize = "(4K|8K|16K|64K|2M|16M|64M)";
     private static final String prot = "[rwsxp-]+";
 
@@ -44,7 +45,8 @@ public class SystemMapTestBase {
 
     // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
     private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
-    protected static final String shouldMatchUnconditionally[] = {
+
+    private static final String shouldMatchUnconditionally_linux[] = {
         // java launcher
         regexBase_committed + "/bin/java",
         // libjvm
@@ -55,7 +57,7 @@ public class SystemMapTestBase {
         regexBase_shared_and_committed + "hsperfdata_.*"
     };
 
-    protected static final String shouldMatchIfNMTIsEnabled[] = {
+    private static final String shouldMatchIfNMTIsEnabled_linux[] = {
         regexBase_java_heap + "JAVAHEAP.*",
         // metaspace
         regexBase_committed + "META.*",
@@ -66,4 +68,43 @@ public class SystemMapTestBase {
         // Main thread stack
         regexBase_committed + "STACK.*main.*"
     };
+
+    // windows:
+    private static final String winprot = "[\\-rwxcin]*";
+    private static final String wintype = "[rc]-(img|map|pvt)";
+
+    private static final String winbase = range + space + someSize + space + winprot + space;
+
+    private static final String winimage     = winbase + "c-img" + space + someNumber + space;
+    private static final String wincommitted = winbase + "c-pvt" + space + someNumber + space;
+    private static final String winreserved  = winbase + "r-pvt" + space + someNumber + space;
+
+    private static final String shouldMatchUnconditionally_windows[] = {
+        // java launcher
+        winimage + ".*[\\/\\\\]bin[\\/\\\\]java[.]exe",
+        // libjvm
+        winimage + ".*[\\/\\\\]bin[\\/\\\\].*[\\/\\\\]jvm.dll"
+    };
+
+    private static final String shouldMatchIfNMTIsEnabled_windows[] = {
+        wincommitted + "JAVAHEAP.*",
+        // metaspace
+        wincommitted + "META.*",
+        // parts of metaspace should be uncommitted
+        winreserved + "META.*",
+        // code cache
+        wincommitted + "CODE.*",
+        // Main thread stack
+        wincommitted + "STACK-\\d+-main.*"
+    };
+
+    private static final boolean isLinux = false; /* TODO */
+
+    protected static String[] shouldMatchUnconditionally() {
+        return isLinux ? shouldMatchUnconditionally_linux : shouldMatchUnconditionally_windows;
+    }
+    protected static String[] shouldMatchIfNMTIsEnabled() {
+        return isLinux ? shouldMatchIfNMTIsEnabled_linux : shouldMatchIfNMTIsEnabled_windows;
+    }
+
 }

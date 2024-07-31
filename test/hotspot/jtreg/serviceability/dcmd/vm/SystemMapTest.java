@@ -31,7 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @summary Test of diagnostic command System.map
  * @library /test/lib
- * @requires (os.family=="linux")
+ * @requires (os.family == "linux" | os.family == "windows")
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
@@ -42,11 +42,11 @@ public class SystemMapTest extends SystemMapTestBase {
     public void run(CommandExecutor executor) {
         OutputAnalyzer output = executor.execute("System.map");
         boolean NMTOff = output.contains("NMT is disabled");
-        for (String s: shouldMatchUnconditionally) {
+        for (String s: shouldMatchUnconditionally()) {
             output.shouldMatch(s);
         }
         if (!NMTOff) { // expect VM annotations if NMT is on
-            for (String s: shouldMatchIfNMTIsEnabled) {
+            for (String s: shouldMatchIfNMTIsEnabled()) {
                 output.shouldMatch(s);
             }
         }
