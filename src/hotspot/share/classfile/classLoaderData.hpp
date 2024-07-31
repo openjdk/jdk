@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
 
-  int _keep_alive;         // if this CLD is kept alive.
+  int _strongly_reachable; // if this CLD should not be considered eligible for unloading.
                            // Used for non-strong hidden classes and the
-                           // boot class loader. _keep_alive does not need to be volatile or
+                           // boot class loader. _strongly_reachable does not need to be volatile or
                            // atomic since there is one unique CLD per non-strong hidden class.
 
   volatile int _claim; // non-zero if claimed, for example during GC traces.
@@ -205,12 +205,14 @@ private:
   bool has_modified_oops()               { return _modified_oops; }
 
   oop holder_no_keepalive() const;
+  // Resolving the holder keeps this CLD alive for the current GC cycle.
   oop holder() const;
+  void keep_alive() const { (void)holder(); }
 
   void classes_do(void f(Klass* const));
 
  private:
-  bool keep_alive() const       { return _keep_alive > 0; }
+  bool is_strongly_reachable() const       { return _strongly_reachable > 0; }
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -303,8 +305,8 @@ private:
   }
 
   // Used to refcount a non-strong hidden class's s CLD in order to indicate their aliveness.
-  void inc_keep_alive();
-  void dec_keep_alive();
+  void inc_strongly_reachable();
+  void dec_strongly_reachable();
 
   void initialize_holder(Handle holder);
 
@@ -335,8 +337,8 @@ private:
   bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
-  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
+  static ByteSize holder_offset() { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize strongly_reachable_offset() { return byte_offset_of(ClassLoaderData, _strongly_reachable); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }
