@@ -3262,7 +3262,7 @@ public final class DateTimeFormatterBuilder {
                             return new Width2NotNegative(field, subsequentWidth);
                         }
                         if (minWidth == 2) {
-                            return new FixWidth2NotNegative(field, subsequentWidth);
+                            return FixWidth2NotNegative.of(field, subsequentWidth);
                         }
                     }
                 }
@@ -3277,6 +3277,9 @@ public final class DateTimeFormatterBuilder {
             if (minWidth == 4) {
                 if (signStyle == SignStyle.EXCEEDS_PAD) {
                     if (minimumSize <= maxWidth && maximumSize <= maxWidth) {
+                        if (field == ChronoField.YEAR) {
+                            return new Width4ExceedsPadYear(maxWidth);
+                        }
                         return new Width4ExceedsPad(field, maxWidth);
                     }
                 }
@@ -3550,7 +3553,7 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        static final class FixWidth2NotNegative extends NumberPrinterParser {
+        static class FixWidth2NotNegative extends NumberPrinterParser {
             private FixWidth2NotNegative(TemporalField field, int subsequentWidth) {
                 super(field, 2, 2, SignStyle.NOT_NEGATIVE, subsequentWidth);
             }
@@ -3563,6 +3566,79 @@ public final class DateTimeFormatterBuilder {
                 char zeroDigit = decimalStyle.getZeroDigit();
                 buf.append((char) (zeroDigit + value / 10))
                    .append((char) (zeroDigit + value % 10));
+            }
+
+            private static FixWidth2NotNegative of(TemporalField field, int subsequentWidth) {
+                FixWidth2NotNegative pp = null;
+                if (field instanceof ChronoField chronoField) {
+                    pp = switch (chronoField) {
+                        case MONTH_OF_YEAR    -> new FixWidth2Month(subsequentWidth);
+                        case DAY_OF_MONTH     -> new FixWidth2DayOfMonth(subsequentWidth);
+                        case HOUR_OF_DAY      -> new FixWidth2Hour(subsequentWidth);
+                        case MINUTE_OF_HOUR   -> new FixWidth2Minute(subsequentWidth);
+                        case SECOND_OF_MINUTE -> new FixWidth2Second(subsequentWidth);
+                        default               -> null;
+                    };
+                }
+                if (pp == null) {
+                    pp = new FixWidth2NotNegative(field, subsequentWidth);
+                }
+                return pp;
+            }
+        }
+
+        static final class FixWidth2Month extends FixWidth2NotNegative {
+            private FixWidth2Month(int subsequentWidth) {
+                super(ChronoField.MONTH_OF_YEAR, subsequentWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getMonthValue());
+                return true;
+            }
+        }
+
+        static final class FixWidth2DayOfMonth extends FixWidth2NotNegative {
+            private FixWidth2DayOfMonth(int subsequentWidth) {
+                super(ChronoField.DAY_OF_MONTH, subsequentWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getDayOfMonth());
+                return true;
+            }
+        }
+
+        static final class FixWidth2Hour extends FixWidth2NotNegative {
+            private FixWidth2Hour(int subsequentWidth) {
+                super(ChronoField.HOUR_OF_DAY, subsequentWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getHour());
+                return true;
+            }
+        }
+
+        static final class FixWidth2Minute extends FixWidth2NotNegative {
+            private FixWidth2Minute(int subsequentWidth) {
+                super(ChronoField.MINUTE_OF_HOUR, subsequentWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getMinute());
+                return true;
+            }
+        }
+
+        static final class FixWidth2Second extends FixWidth2NotNegative {
+            private FixWidth2Second(int subsequentWidth) {
+                super(ChronoField.SECOND_OF_MINUTE, subsequentWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getSecond());
+                return true;
             }
         }
 
@@ -3584,7 +3660,7 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        static final class Width4ExceedsPad extends NumberPrinterParser {
+        static class Width4ExceedsPad extends NumberPrinterParser {
             private Width4ExceedsPad(TemporalField field, int maxWidth) {
                 super(field, 4, maxWidth, SignStyle.EXCEEDS_PAD, 0);
             }
@@ -3609,6 +3685,17 @@ public final class DateTimeFormatterBuilder {
                 } else {
                     buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
                 }
+            }
+        }
+
+        static final class Width4ExceedsPadYear extends Width4ExceedsPad {
+            private Width4ExceedsPadYear(int maxWidth) {
+                super(ChronoField.YEAR, maxWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                format(buf, context.getDecimalStyle(), context.getTemporal().getYear());
+                return true;
             }
         }
 
@@ -3896,6 +3983,12 @@ public final class DateTimeFormatterBuilder {
             10000000,
             100000000
         };
+
+        @Override
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+            format(buf, context.getDecimalStyle(), context.getTemporal().getNano());
+            return true;
+        }
 
         @Override
         public void format(StringBuilder buf, DecimalStyle decimalStyle, long value) {
@@ -6186,7 +6279,13 @@ public final class DateTimeFormatterBuilder {
         static final ClassDesc CD_Width1NotNegative           = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width1NotNegative;");
         static final ClassDesc CD_Width2NotNegative           = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width2NotNegative;");
         static final ClassDesc CD_FixWidth2NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2NotNegative;");
+        static final ClassDesc CD_FixWidth2Month              = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2Month;");
+        static final ClassDesc CD_FixWidth2DayOfMonth         = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2DayOfMonth;");
+        static final ClassDesc CD_FixWidth2Hour               = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2Hour;");
+        static final ClassDesc CD_FixWidth2Minute             = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2Minute;");
+        static final ClassDesc CD_FixWidth2Second             = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth2Second;");
         static final ClassDesc CD_FixWidth3NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth3NotNegative;");
+        static final ClassDesc CD_Width4ExceedsPadYear        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width4ExceedsPadYear;");
         static final ClassDesc CD_Width4ExceedsPad            = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$Width4ExceedsPad;");
         static final ClassDesc CD_FixWidth4NotNegative        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$NumberPrinterParser$FixWidth4NotNegative;");
 
@@ -6292,10 +6391,22 @@ public final class DateTimeFormatterBuilder {
                 return CD_Width2NotNegative;
             } else if (pp instanceof NumberPrinterParser.FixWidth2NotNegative) {
                 return CD_FixWidth2NotNegative;
+            } else if (pp instanceof NumberPrinterParser.FixWidth2Month) {
+                return CD_FixWidth2Month;
+            } else if (pp instanceof NumberPrinterParser.FixWidth2DayOfMonth) {
+                return CD_FixWidth2DayOfMonth;
+            } else if (pp instanceof NumberPrinterParser.FixWidth2Hour) {
+                return CD_FixWidth2Hour;
+            } else if (pp instanceof NumberPrinterParser.FixWidth2Minute) {
+                return CD_FixWidth2Minute;
+            } else if (pp instanceof NumberPrinterParser.FixWidth2Second) {
+                return CD_FixWidth2Second;
             } else if (pp instanceof NumberPrinterParser.FixWidth3NotNegative) {
                 return CD_FixWidth3NotNegative;
             } else if (pp instanceof NumberPrinterParser.Width4ExceedsPad) {
                 return CD_Width4ExceedsPad;
+            } else if (pp instanceof NumberPrinterParser.Width4ExceedsPadYear) {
+                return CD_Width4ExceedsPadYear;
             } else if (pp instanceof NumberPrinterParser.FixWidth4NotNegative) {
                 return CD_FixWidth4NotNegative;
             } else if (pp instanceof NumberPrinterParser) {
