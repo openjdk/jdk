@@ -146,13 +146,13 @@ public class H3ErrorHandlingTest implements HttpServerAdapters {
     @DataProvider
     public static Object[][] malformedCancelPushFrames() {
         byte[] cancelPush = new byte[]{(byte)3,(byte)2, (byte)0x40, (byte)0};
-        return chopFrame(cancelPush, 0, 1, 3);
+        return chopFrame(cancelPush, 0, 1, 3, 9);
     }
 
     @DataProvider
     public static Object[][] malformedGoawayFrames() {
         byte[] goaway = new byte[]{(byte)7,(byte)2, (byte)0x40, (byte)0};
-        return chopFrame(goaway, 0, 1, 3);
+        return chopFrame(goaway, 0, 1, 3, 9);
     }
 
     @DataProvider
