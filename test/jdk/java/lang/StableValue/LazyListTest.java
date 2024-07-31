@@ -23,17 +23,22 @@
 
 /* @test
  * @summary Basic tests for LazyList methods
+ * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} LazyListTest.java
  * @run junit/othervm --enable-preview LazyListTest
  */
 
+import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.Serializable;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
@@ -240,6 +245,16 @@ final class LazyListTest {
         assertInstanceOf(RandomAccess.class, newList());
         assertInstanceOf(RandomAccess.class, newEmptyList());
         assertInstanceOf(RandomAccess.class, newList().subList(1, INDEX));
+    }
+
+    @Test
+    void distinct() {
+        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(13);
+        assertEquals(13, list.size());
+        // Check, every StableValue is distinct
+        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        list.forEach(e -> idMap.put(e, true));
+        assertEquals(13, idMap.size());
     }
 
     // Support constructs

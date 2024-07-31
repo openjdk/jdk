@@ -28,7 +28,6 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -39,17 +38,17 @@ import java.util.function.Supplier;
  *
  * @param <T> the return type
  */
-public final class CachedSupplier<T> implements Supplier<T> {
+public final class CachingSupplier<T> implements Supplier<T> {
 
     private static final long VALUE_OFFSET =
-            StableValueUtil.UNSAFE.objectFieldOffset(CachedSupplier.class, "value");
+            StableValueUtil.UNSAFE.objectFieldOffset(CachingSupplier.class, "value");
 
     private final Supplier<? extends T> original;
     private final Object mutex = new Object();
     @Stable
     private T value;
 
-    public CachedSupplier(Supplier<? extends T> original) {
+    public CachingSupplier(Supplier<? extends T> original) {
         this.original = original;
     }
 
@@ -72,13 +71,15 @@ public final class CachedSupplier<T> implements Supplier<T> {
         return t;
     }
 
-    public static <T> CachedSupplier<T> of(Supplier<? extends T> original) {
-        return new CachedSupplier<>(original);
+    public static <T> CachingSupplier<T> of(Supplier<? extends T> original) {
+        return new CachingSupplier<>(original);
     }
 
     @Override
     public String toString() {
-        return "CachedSupplier[value=" + StableValueUtil.render(StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET)) + ", original=" + original + "]";
+        @SuppressWarnings("unchecked")
+        final T t = (T) StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+        return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.render(t)) + ", original=" + original + "]";
     }
 
 }

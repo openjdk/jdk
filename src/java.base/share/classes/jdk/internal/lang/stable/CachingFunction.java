@@ -30,13 +30,12 @@ import jdk.internal.vm.annotation.ForceInline;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 // Note: It would be possible to just use `LazyMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
-public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> values,
-                                   Function<? super T, ? extends R> original) implements Function<T, R> {
+public record CachingFunction<T, R>(Map<T, StableValueImpl<R>> values,
+                                    Function<? super T, ? extends R> original) implements Function<T, R> {
     @ForceInline
     @Override
     public R apply(T value) {
@@ -71,17 +70,19 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> values,
 
     @Override
     public String toString() {
-        return "CachedFunction[values=" + renderValues() + ", original=" + original + "]";
+        return "CachingFunction[values=" + renderValues() + ", original=" + original + "]";
     }
 
     private String renderValues() {
         final StringBuilder sb = new StringBuilder();
         sb.append("{");
+        boolean first = true;
         for (var e:values.entrySet()) {
+            if (first) { first = false; } else { sb.append(", "); };
             final Object value = e.getValue().value();
             sb.append(e.getKey()).append('=');
             if (value == this) {
-                sb.append("(this CachedFunction)");
+                sb.append("(this CachingFunction)");
             } else {
                 sb.append(StableValueUtil.render(value));
             }
@@ -90,9 +91,9 @@ public record CachedFunction<T, R>(Map<T, StableValueImpl<R>> values,
         return sb.toString();
     }
 
-    public static <T, R> CachedFunction<T, R> of(Set<T> inputs,
-                                                 Function<? super T, ? extends R> original) {
-        return new CachedFunction<>(StableValueUtil.ofMap(inputs), original);
+    public static <T, R> CachingFunction<T, R> of(Set<T> inputs,
+                                                  Function<? super T, ? extends R> original) {
+        return new CachingFunction<>(StableValueUtil.ofMap(inputs), original);
     }
 
 }

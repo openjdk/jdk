@@ -23,21 +23,15 @@
 
 /* @test
  * @summary Basic tests for StableValue implementations
- * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} StableValueTest.java
  * @run junit/othervm --enable-preview StableValueTest
  */
 
-import jdk.internal.lang.stable.StableValueImpl;
-import jdk.internal.lang.stable.StableValueUtil;
 import org.junit.jupiter.api.Test;
 
 import java.util.BitSet;
-import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -108,23 +102,23 @@ final class StableValueTest {
     }
 
     @Test
-    void ofList() {
-        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(13);
-        assertEquals(13, list.size());
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        list.forEach(e -> idMap.put(e, true));
-        assertEquals(13, idMap.size());
+    void circular() {
+        StableValue<StableValue<?>> stable = StableValue.newInstance();
+        stable.trySet(stable);
+        String toString = stable.toString();
+        assertEquals(toString, "(this StableValue)");
+        assertDoesNotThrow(stable::hashCode);
+        assertDoesNotThrow((() -> stable.equals(stable)));
     }
 
     @Test
-    void ofMap() {
-        Map<Integer, StableValueImpl<Integer>> map = StableValueUtil.ofMap(Set.of(1, 2, 3));
-        assertEquals(3, map.size());
-        // Check, every StableValue is distinct
-        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
-        map.forEach((k, v) -> idMap.put(v, true));
-        assertEquals(3, idMap.size());
+    void hashCodeDependsOnHolderValue() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        int hBefore = stable.hashCode();
+        stable.trySet(42);
+        int hAfter = stable.hashCode();
+        // hashCode() shall change
+        assertNotEquals(hBefore, hAfter);
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;

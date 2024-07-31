@@ -31,6 +31,9 @@ import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,12 +43,12 @@ final class CachingSupplierTest {
     void basic() {
         StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
         var cached = StableValue.newCachingSupplier(cs, null);
-        assertEquals("CachedSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
         assertEquals(42, cached.get());
         assertEquals(1, cs.cnt());
         assertEquals(42, cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals("CachedSupplier[value=[42], original=" + cs + "]", cached.toString());
+        assertEquals("CachingSupplier[value=[42], original=" + cs + "]", cached.toString());
     }
 
     @Test
@@ -77,7 +80,37 @@ final class CachingSupplierTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, cached::get);
         assertEquals(2, cs.cnt());
-        assertEquals("CachedSupplier[value=.unset, original=" + cs + "]", cached.toString());
+        assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
+    }
+
+    @Test
+    void circular() {
+        final AtomicReference<Supplier<?>> ref = new AtomicReference<>();
+        Supplier<Supplier<?>> cached = StableValue.newCachingSupplier(ref::get, null);
+        ref.set(cached);
+        cached.get();
+        String toString = cached.toString();
+        assertTrue(toString.startsWith("CachingSupplier[value=(this CachingSupplier), original="));
+        assertDoesNotThrow(cached::hashCode);
+    }
+
+    @Test
+    void equality() {
+        Supplier<Integer> mapper = () -> 42;
+        Supplier<Integer> f0 = StableValue.newCachingSupplier(mapper, null);
+        Supplier<Integer> f1 = StableValue.newCachingSupplier(mapper, null);
+        // No function is equal to another function
+        assertNotEquals(f0, f1);
+    }
+
+    @Test
+    void hashCodeStable() {
+        Supplier<Integer> f0 = StableValue.newCachingSupplier(() -> 42, null);
+        int hBefore = f0.hashCode();
+        f0.get();
+        int hAfter = f0.hashCode();
+        // hashCode() shall not change
+        assertEquals(hBefore, hAfter);
     }
 
 }

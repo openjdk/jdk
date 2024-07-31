@@ -96,7 +96,7 @@ public final class StableValueUtil {
     public static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
                                                      ThreadFactory factory) {
 
-        final Supplier<T> memoized = CachedSupplier.of(original);
+        final Supplier<T> memoized = CachingSupplier.of(original);
 
         if (factory != null) {
             final Thread thread = factory.newThread(new Runnable() {
@@ -114,7 +114,7 @@ public final class StableValueUtil {
                                                            IntFunction<? extends R> original,
                                                            ThreadFactory factory) {
 
-        final IntFunction<R> memoized = CachedIntFunction.of(size, original);
+        final IntFunction<R> memoized = CachingIntFunction.of(size, original);
 
         if (factory != null) {
             for (int i = 0; i < size; i++) {
@@ -132,7 +132,7 @@ public final class StableValueUtil {
                                                     Function<? super T, ? extends R> original,
                                                     ThreadFactory factory) {
 
-        final Function<T, R> memoized = CachedFunction.of(inputs, original);
+        final Function<T, R> memoized = CachingFunction.of(inputs, original);
 
         if (factory != null) {
             for (final T t : inputs) {

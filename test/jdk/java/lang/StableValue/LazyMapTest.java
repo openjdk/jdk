@@ -23,10 +23,13 @@
 
 /* @test
  * @summary Basic tests for LazyMap methods
+ * @modules java.base/jdk.internal.lang.stable
  * @compile --enable-preview -source ${jdk.version} LazyMapTest.java
  * @run junit/othervm --enable-preview LazyMapTest
  */
 
+import jdk.internal.lang.stable.StableValueImpl;
+import jdk.internal.lang.stable.StableValueUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -34,6 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -195,6 +199,16 @@ final class LazyMapTest {
     void serializable() {
         assertFalse(newMap() instanceof Serializable);
         assertFalse(newEmptyMap() instanceof Serializable);
+    }
+
+    @Test
+    void distinct() {
+        Map<Integer, StableValueImpl<Integer>> map = StableValueUtil.ofMap(Set.of(1, 2, 3));
+        assertEquals(3, map.size());
+        // Check, every StableValue is distinct
+        Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
+        map.forEach((k, v) -> idMap.put(v, true));
+        assertEquals(3, idMap.size());
     }
 
     // Support constructs

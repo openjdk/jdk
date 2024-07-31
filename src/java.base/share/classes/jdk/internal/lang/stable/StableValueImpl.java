@@ -91,7 +91,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(value());
+        final T t = value();
+        return t == this
+                ? 1
+                : Objects.hashCode(value());
     }
 
     @Override
@@ -104,7 +107,10 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     @Override
     public String toString() {
-        return "StableValue" + StableValueUtil.render(value());
+        final T t = value();
+        return t == this
+                ? "(this StableValue)"
+                : "StableValue" + StableValueUtil.render(t);
     }
 
     @SuppressWarnings("unchecked")

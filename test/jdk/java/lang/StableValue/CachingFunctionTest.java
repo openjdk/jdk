@@ -32,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -45,11 +47,13 @@ final class CachingFunctionTest {
         assertEquals(1, cif.cnt());
         assertEquals(42, cached.apply(42));
         assertEquals(1, cif.cnt());
-        assertTrue(cached.toString().startsWith("CachedFunction[values={"));
+        assertTrue(cached.toString().startsWith("CachingFunction[values={"));
         // Key order is unspecified
         assertTrue(cached.toString().contains("13=.unset"));
         assertTrue(cached.toString().contains("42=[42]"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
+        // One between the values and one just before "original"
+        assertEquals(2L, cached.toString().chars().filter(ch -> ch == ',').count());
         var x = assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
         assertTrue(x.getMessage().contains("-1"));
     }
@@ -84,11 +88,44 @@ final class CachingFunctionTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(42));
         assertEquals(2, cif.cnt());
-        assertTrue(cached.toString().startsWith("CachedFunction[values={"));
+        assertTrue(cached.toString().startsWith("CachingFunction[values={"));
         // Key order is unspecified
         assertTrue(cached.toString().contains("13=.unset"));
         assertTrue(cached.toString().contains("42=.unset"));
         assertTrue(cached.toString().endsWith(", original=" + cif + "]"));
+    }
+
+    @Test
+    void circular() {
+        final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
+        Function<Integer, Function<?, ?>> cached = StableValue.newCachingFunction(Set.of(0, 1), _ -> ref.get(), null);
+        ref.set(cached);
+        cached.apply(0);
+        String toString = cached.toString();
+        assertTrue(toString.contains("(this CachingFunction)"));
+        assertDoesNotThrow(cached::hashCode);
+        assertDoesNotThrow((() -> cached.equals(cached)));
+    }
+
+    @Test
+    void equality() {
+        Set<Integer> keys = Set.of(13, 42);
+        Function<Integer, Integer> mapper = Function.identity();
+        Function<Integer, Integer> f0 = StableValue.newCachingFunction(keys, mapper, null);
+        Function<Integer, Integer> f1 = StableValue.newCachingFunction(keys, mapper, null);
+        // No function is equal to another function
+        assertNotEquals(f0, f1);
+    }
+
+    @Test
+    void hashCodeStable() {
+        Set<Integer> keys = Set.of(13, 42);
+        Function<Integer, Integer> f0 = StableValue.newCachingFunction(keys, Function.identity(), null);
+        int hBefore = f0.hashCode();
+        f0.apply(42);
+        int hAfter = f0.hashCode();
+        // hashCode() shall not change
+        assertEquals(hBefore, hAfter);
     }
 
 }

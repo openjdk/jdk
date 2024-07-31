@@ -43,15 +43,15 @@ import java.util.stream.Collectors;
  *
  * @param <R> the return type
  */
-public final class CachedIntFunction<R> implements IntFunction<R> {
+public final class CachingIntFunction<R> implements IntFunction<R> {
 
     private final IntFunction<? extends R> original;
     private final Object[] mutexes;
     @Stable
     private final Object[] values;
 
-    public CachedIntFunction(int size,
-                             IntFunction<? extends R> original) {
+    public CachingIntFunction(int size,
+                              IntFunction<? extends R> original) {
         this.original = original;
         this.mutexes = new Object[size];
         for (int i = 0; i < size; i++) {
@@ -85,20 +85,20 @@ public final class CachedIntFunction<R> implements IntFunction<R> {
         return r;
     }
 
-    public static <R> CachedIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new CachedIntFunction<>(size, original);
+    public static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
+        return new CachingIntFunction<>(size, original);
     }
 
     @Override
     public String toString() {
-        return "CachedIntFunction[values=" +
+        return "CachingIntFunction[values=" +
                 "[" + valuesAsString() + "]"
                 + ", original=" + original + ']';
     }
 
     private String valuesAsString() {
         return Arrays.stream(values, 0, values.length)
-                .map(StableValueUtil::render)
+                .map(v -> (v == this) ? "(this CachingIntFunction)" : StableValueUtil.render(v))
                 .collect(Collectors.joining(", "));
     }
 
