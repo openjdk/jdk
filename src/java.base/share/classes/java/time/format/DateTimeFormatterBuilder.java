@@ -2541,7 +2541,7 @@ public final class DateTimeFormatterBuilder {
         final boolean optional;
 
         static CompositePrinterParser of(DateTimePrinterParser[] printerParsers, boolean optional) {
-            if (COMPILE && !optional) {
+            if (COMPILE) {
                 return PrinterParserFactory.generate(printerParsers, optional);
             }
             // Use subclasses with printerParsers.length of 1 to 15 so that C2 can do TypeProfile optimization
@@ -6398,22 +6398,17 @@ public final class DateTimeFormatterBuilder {
                     Label L0 = cb.newLabel(), L1 = cb.newLabel(), L2 = cb.newLabel();
 
                     /*
-                     * if (context.isOptional() && temporal.isSupported(field)) {
-                     *     return false;
+                     * if (context.isOptional() && !temporal.isSupported(field)) {
+                     *     break;
                      * }
                      */
                     cb.aload(contextSlot)
                       .invokevirtual(CD_DateTimePrintContext, "isOptional", MTD_boolean)
-                      .ifgt(L0)
+                      .ifeq(unableLabel)
                       .aload(temporalSlot);
                     getfield(cb, pp, index);
                     cb.invokeinterface(CD_TemporalAccessor, "isSupported", MTD_boolean_TemporalField)
-                      .ifeq(L0)
-                      .goto_(L1)
-                      .labelBinding(L0)
-                      .iconst_0()
-                      .ireturn()
-                      .labelBinding(L1);
+                      .ifeq(unableLabel);
 
                     /*
                      * printerParserN.format(buf, context.getDecimalStyle(), temporal.getLong(field));
