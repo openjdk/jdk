@@ -17,13 +17,13 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 
 /*
- * @test 
+ * @test
  * @summary  Test that primitive values in the heap dump are 0
  * @library /test/lib
  * @run main/othervm HeapDumpRedactedTest
  */
 
- 
+
  // test class with nonzero fields
  class PrimitiveTestTarget {
     byte byteTest = 0x1;
@@ -34,7 +34,7 @@ import jdk.test.lib.process.OutputAnalyzer;
     float floatValue = 123.456f;
     double doubleValue = 987.654;
     boolean bool = true;
-    
+
     // Array of primitive types
     byte[] byteArray = {0x1,0x2,0x3,0x4,0x5};
     char[] charArray = {'a','b','c','d','e'};
@@ -63,7 +63,7 @@ public class HeapDumpRedactedTest {
         Snapshot snapshot = Reader.readFile(dump.getAbsolutePath(), true, 0);
         snapshot.resolve(false);
         Enumeration<JavaHeapObject> things = snapshot.getThings();
-        
+
         // Find the test object from heap dump
         String className = PrimitiveTestTarget.class.getName();
         JavaClass testClass = snapshot.findClass(className);
@@ -106,7 +106,6 @@ public class HeapDumpRedactedTest {
         JavaObject str = getObject("str", targetObject);
         testPrimitiveArray("value", str, "0x0"); // String.value is byte array
 
-        
         HprofParser.parseAndVerify(dump);
         dump.delete();
     }
@@ -122,7 +121,7 @@ public class HeapDumpRedactedTest {
         JavaHeapObject field = (JavaHeapObject) obj.getField(fieldName);
         Asserts.assertTrue(field instanceof JavaValueArray);
         JavaValueArray array = (JavaValueArray) field;
-        JavaThing[] elements = array.getElements(); 
+        JavaThing[] elements = array.getElements();
         for (JavaThing element : elements) {
             Asserts.assertTrue(element instanceof JavaValue);
             JavaValue value = (JavaValue) element;
