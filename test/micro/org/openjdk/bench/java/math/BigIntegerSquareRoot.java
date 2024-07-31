@@ -48,76 +48,85 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class BigIntegerSquareRoot {
 
-    private BigInteger[] hugeArray, bigArray, largeArray, smallArray;
+    private BigInteger[] xsArray, sArray, mArray, lArray, xlArray;
     private static final int TESTSIZE = 1000;
 
     @Setup
     public void setup() {
         Random r = new Random(1123);
 
-        hugeArray = new BigInteger[TESTSIZE]; /*
-         * Each array entry is atmost 16k bits
+        xsArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 64 bits
          * in size
          */
-        bigArray = new BigInteger[TESTSIZE]; /*
-         * Big numbers larger than
-         * MAX_LONG
+        sArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 256 bits
+         * in size
          */
-        largeArray = new BigInteger[TESTSIZE]; /*
-         * Large numbers less than
-         * MAX_LONG but larger than
-         * MAX_INT
+        mArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 1024 bits
+         * in size
          */
-        smallArray = new BigInteger[TESTSIZE]; /*
-         * Small number less than
-         * MAX_INT
+        lArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 4096 bits
+         * in size
+         */
+        xlArray = new BigInteger[TESTSIZE]; /*
+         * Each array entry is atmost 16384 bits
+         * in size
          */
 
         for (int i = 0; i < TESTSIZE; i++) {
-            int nBits = r.nextInt(32);
-            long hi = r.nextLong(1L << nBits);
-            long value = r.nextLong(1L << 31);
-
-            hugeArray[i] = new BigInteger(r.nextInt(16384), r);
-            bigArray[i] = new BigInteger("" + hi + (value + Integer.MAX_VALUE));
-            largeArray[i] = new BigInteger("" + (value / 1000));
-            smallArray[i] = new BigInteger("" + hi);
+            xsArray[i] = new BigInteger(r.nextInt(64), r);
+            sArray[i] = new BigInteger(r.nextInt(256), r);
+            mArray[i] = new BigInteger(r.nextInt(1024), r);
+            lArray[i] = new BigInteger(r.nextInt(4096), r);
+            xlArray[i] = new BigInteger(r.nextInt(16384), r);
         }
     }
 
-    /** Test BigInteger.sqrtAndRemainder() with huge numbers long at most 16k bits  */
+    /** Test BigInteger.sqrt() with numbers long at most 64 bits  */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testHugeSqrtAndRemainder(Blackhole bh) {
-        for (BigInteger s : hugeArray) {
-            bh.consume(s.sqrtAndRemainder());
+    public void testSqrtXS(Blackhole bh) {
+        for (BigInteger s : xsArray) {
+            bh.consume(s.sqrt());
         }
     }
 
-    /** Test BigInteger.sqrtAndRemainder() with big numbers larger than MAX_LONG */
+    /** Test BigInteger.sqrt() with numbers long at most 256 bits */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testBigSqrtAndRemainder(Blackhole bh) {
-        for (BigInteger s : bigArray) {
-            bh.consume(s.sqrtAndRemainder());
+    public void testSqrtS(Blackhole bh) {
+        for (BigInteger s : sArray) {
+            bh.consume(s.sqrt());
         }
     }
 
-    /** Test BigInteger.sqrtAndRemainder() with large numbers less than MAX_LONG but larger than MAX_INT */
+    /** Test BigInteger.sqrt() with numbers long at most 1024 bits */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testLargeSqrtAndRemainder(Blackhole bh) {
-        for (BigInteger s : largeArray) {
-            bh.consume(s.sqrtAndRemainder());
+    public void testSqrtM(Blackhole bh) {
+        for (BigInteger s : mArray) {
+            bh.consume(s.sqrt());
         }
     }
 
-    /** Test BigInteger.sqrtAndRemainder() with small numbers less than MAX_INT */
+    /** Test BigInteger.sqrt() with numbers long at most 4096 bits */
     @Benchmark
     @OperationsPerInvocation(TESTSIZE)
-    public void testSmallSqrtAndRemainder(Blackhole bh) {
-        for (BigInteger s : smallArray) {
-            bh.consume(s.sqrtAndRemainder());
+    public void testSqrtL(Blackhole bh) {
+        for (BigInteger s : lArray) {
+            bh.consume(s.sqrt());
+        }
+    }
+
+    /** Test BigInteger.sqrt() with numbers long at most 16384 bits */
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void testSqrtXL(Blackhole bh) {
+        for (BigInteger s : xlArray) {
+            bh.consume(s.sqrt());
         }
     }
 }

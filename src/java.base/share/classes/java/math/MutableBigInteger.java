@@ -547,7 +547,7 @@ class MutableBigInteger {
      * Like {@link #rightShift(int)} but {@code n} can be greater than the length of the number.
      */
     void safeRightShift(int n) {
-        if (n >= bitLength()) {
+        if (n/32 >= intLen) {
             reset();
         } else {
             rightShift(n);
@@ -557,6 +557,7 @@ class MutableBigInteger {
     /**
      * Right shift this MutableBigInteger n bits. The MutableBigInteger is left
      * in normal form.
+     * Assume {@code Math.ceilDiv(n, 32) <= intLen || intLen == 0}
      */
     void rightShift(int n) {
         if (intLen == 0)
@@ -1876,7 +1877,7 @@ class MutableBigInteger {
         // Special cases.
         if (this.intLen <= 2) {
             final long x = this.toLong(); // unsigned
-            long s = ulongSqrt(x);
+            long s = unsignedLongSqrt(x);
 
             return new MutableBigInteger[] {
                     new MutableBigInteger((int) s),
@@ -1886,9 +1887,8 @@ class MutableBigInteger {
 
         // Normalize
         MutableBigInteger x = this;
-        int shift = Integer.numberOfLeadingZeros(x.value[x.offset]) & ~1; // shift must be even
-        if ((x.intLen & 1) != 0)
-            shift += 32; // x.intLen must be even
+        final int shift = (Integer.numberOfLeadingZeros(x.value[x.offset]) & ~1) // shift must be even
+                + ((x.intLen & 1) << 5); // x.intLen must be even
 
         if (shift != 0) {
             x = new MutableBigInteger(x);
@@ -1896,7 +1896,7 @@ class MutableBigInteger {
         }
 
         // Compute sqrt and remainder
-        MutableBigInteger[] sqrtRem = x.sqrtRemZimmermann(x.intLen, needRemainder);
+        MutableBigInteger[] sqrtRem = x.sqrtRemKaratsuba(x.intLen, needRemainder);
 
         // Unnormalize
         if (shift != 0) {
@@ -1919,7 +1919,7 @@ class MutableBigInteger {
         return sqrtRem;
     }
 
-    private static long ulongSqrt(long x) {
+    private static long unsignedLongSqrt(long x) {
         /* For every long value s in [0, 2^32) such that x == s * s,
          * it is true that s - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= s,
          * and if x == 2^64 - 1, then (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) == 2^32.
@@ -1942,13 +1942,13 @@ class MutableBigInteger {
      * Assume {@code 2 <= len <= intLen && len % 2 == 0
      * && Integer.numberOfLeadingZeros(value[offset]) <= 1}
      * @implNote The implementation is based on Zimmermann's works available
-     * <a href="https://inria.hal.science/inria-00072854/en/">  here</a> and
-     * <a href="https://www.researchgate.net/publication/220532560_A_proof_of_GMP_square_root">  here</a>
+     * <a href="https://inria.hal.science/inria-00072854v1/document">  here</a> and
+     * <a href="https://inria.hal.science/inria-00072113/document">  here</a>
      */
-    private MutableBigInteger[] sqrtRemZimmermann(int len, boolean needRemainder) {
+    private MutableBigInteger[] sqrtRemKaratsuba(int len, boolean needRemainder) {
         if (len == 2) { // Base case
             long x = ((value[offset] & LONG_MASK) << 32) | (value[offset + 1] & LONG_MASK);
-            long s = ulongSqrt(x);
+            long s = unsignedLongSqrt(x);
 
             // Allocate sufficient space to hold the final square root, assuming intLen % 2 == 0
             MutableBigInteger sqrt = new MutableBigInteger(new int[intLen >> 1]);
@@ -1961,15 +1961,15 @@ class MutableBigInteger {
             return new MutableBigInteger[] { sqrt, new MutableBigInteger(x - s * s) };
         }
 
-        // Recursive step (len >= 3)
+        // Recursive step (len >= 4)
 
         final int halfLen = len >> 1;
         // Recursive invocation
-        MutableBigInteger[] sr = sqrtRemZimmermann((halfLen & 1) == 0 ? halfLen : halfLen + 1, true);
+        MutableBigInteger[] sr = sqrtRemKaratsuba(halfLen + (halfLen & 1), true);
 
         final int blockLen = halfLen >> 1;
         MutableBigInteger dividend = sr[1];
-        dividend.shiftAddDisjoint(getBlockZimmermann(1, len, blockLen), blockLen);
+        dividend.shiftAddDisjoint(getBlockForSqrt(1, len, blockLen), blockLen);
 
         // Compute dividend / (2*sqrt)
         MutableBigInteger sqrt = sr[0];
@@ -1977,11 +1977,11 @@ class MutableBigInteger {
         MutableBigInteger u = dividend.divide(sqrt, q);
         if (q.isOdd())
             u.add(sqrt);
-        q.safeRightShift(1);
+        q.rightShift(1);
 
         sqrt.shiftAdd(q, blockLen);
         // Corresponds to ub + a_0 in the paper
-        u.shiftAddDisjoint(getBlockZimmermann(0, len, blockLen), blockLen);
+        u.shiftAddDisjoint(getBlockForSqrt(0, len, blockLen), blockLen);
         BigInteger qBig = q.toBigInteger(); // Cast to BigInteger to use fast multiplication
         MutableBigInteger qSqr = new MutableBigInteger(qBig.multiply(qBig).mag);
 
@@ -2001,13 +2001,14 @@ class MutableBigInteger {
             if (u.compare(qSqr) == -1)
                 sqrt.subtract(ONE);
         }
+
         return new MutableBigInteger[] { sqrt, rem };
     }
 
     /**
      * Returns a {@code MutableBigInteger} obtained by taking {@code blockLen} ints from
      * {@code this} number, ending at {@code blockIndex*blockLen} (exclusive).<br/>
-     * Used in Zimmermann's square root.
+     * Used in Karatsuba square root.
      * @param blockIndex the block index, starting from the lowest
      * @param len the logical length of the input value in units of 32 bits
      * @param blockLen the length of the block in units of 32 bits
@@ -2015,7 +2016,7 @@ class MutableBigInteger {
      * @return a {@code MutableBigInteger} obtained by taking {@code blockLen} ints from
      * {@code this} number, ending at {@code blockIndex*blockLen} (exclusive).
      */
-    private MutableBigInteger getBlockZimmermann(int blockIndex, int len, int blockLen) {
+    private MutableBigInteger getBlockForSqrt(int blockIndex, int len, int blockLen) {
         final int to = offset + len - blockIndex * blockLen;
 
         // Skip leading zeros

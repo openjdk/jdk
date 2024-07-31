@@ -297,6 +297,7 @@ public class BigIntegerTest {
         /* For every long value n in [0, 2^32) such that x == n * n,
          * n - 1 <= (long) Math.sqrt(x >= 0 ? x : x + 0x1p64) <= n
          * must be true.
+         * This property is used to implement MutableBigInteger.unsignedLongSqrt().
          */
         int failCount = 0;
 
