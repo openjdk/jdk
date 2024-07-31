@@ -6395,7 +6395,7 @@ public final class DateTimeFormatterBuilder {
                 }
 
                 private void appendNumber(CodeBuilder cb, NumberPrinterParser pp, int index, Label unableLabel) {
-                    Label L0 = cb.newLabel(), L1 = cb.newLabel(), L2 = cb.newLabel();
+                    var L0 = cb.newLabel();
 
                     /*
                      * if (context.isOptional() && !temporal.isSupported(field)) {
@@ -6404,11 +6404,12 @@ public final class DateTimeFormatterBuilder {
                      */
                     cb.aload(contextSlot)
                       .invokevirtual(CD_DateTimePrintContext, "isOptional", MTD_boolean)
-                      .ifeq(unableLabel)
+                      .ifne(L0)
                       .aload(temporalSlot);
                     getfield(cb, pp, index);
                     cb.invokeinterface(CD_TemporalAccessor, "isSupported", MTD_boolean_TemporalField)
-                      .ifeq(unableLabel);
+                      .ifeq(unableLabel)
+                      .labelBinding(L0);
 
                     /*
                      * printerParserN.format(buf, context.getDecimalStyle(), temporal.getLong(field));
