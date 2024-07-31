@@ -40,10 +40,11 @@ import java.util.List;
  * <p>
  * In the Extract and Extract-then-Expand cases, the {@code addIKM} and
  * {@code addSalt} methods may be called repeatedly (and chained). This provides
- * for use-cases where a {@code SecretKey} may reside on an HSM and not be
- * exportable. The caller may wish to provide a label (or other components) of
- * the IKM without having access to the portion stored on the HSM. The same
- * feature is available for salts.
+ * for use-cases where a portion of the IKM resides in a non-extractable
+ * {@code SecretKey} and the whole IKM cannot be provided as a single object.
+ * The caller may wish to provide a label (or other components) of
+ * the IKM without having access to all portions. The same feature is
+ * available for salts.
  * <p>
  * The above feature is particularly useful for "labeled" HKDF Extract used in
  * TLS 1.3 and HPKE, where the IKM consists of concatenated components, which
@@ -52,26 +53,29 @@ import java.util.List;
  * Examples:
  * {@snippet lang = java:
  *
+ * // this usage depicts the initialization of an HKDF-Extract AlgorithmParameterSpec
  * AlgorithmParameterSpec kdfParameterSpec =
  *             HKDFParameterSpec.ofExtract()
- *                              .addIKM(ikmPart1)
- *                              .addIKM(ikmPart2)
+ *                              .addIKM(label)
+ *                              .addIKM(ikm)
  *                              .addSalt(salt).extractOnly();
  *
  *
  *}
  * {@snippet lang = java:
  *
- * AlgorithmParameterSpec kdfParameterSpec = HKDFParameterSpec.expandOnly(prk,
- * info, 32);
+ * // this usage depicts the initialization of an HKDF-Expand AlgorithmParameterSpec
+ * AlgorithmParameterSpec kdfParameterSpec =
+ *             HKDFParameterSpec.expandOnly(prk, info, 32);
  *
  *}
  * {@snippet lang = java:
  *
+ * // this usage depicts the initialization of an HKDF-ExtractExpand AlgorithmParameterSpec
  * AlgorithmParameterSpec kdfParameterSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
- *                              .addSalt(salt).thenExpand(info, 42);
+ *                              .addSalt(salt).thenExpand(info, 32);
  *
  *}
  *
@@ -98,7 +102,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         List<SecretKey> ikms = new ArrayList<>();
         List<SecretKey> salts = new ArrayList<>();
 
-        Builder() {}
+        private Builder() {}
 
         /**
          * Creates a {@code Builder} for an {@code Extract}.
@@ -124,7 +128,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *
          * @param info
          *     the optional context and application specific information (may be
-         *     {@code null}); the byte[] is copied to prevent subsequent
+         *     {@code null}); the byte array is copied to prevent subsequent
          *     modification
          * @param length
          *     the length of the output key material
@@ -272,10 +276,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
     /**
      * Returns a builder for building {@code Extract} and
      * {@code ExtractThenExpand} objects.
-     * <p>
-     * Note: one or more of the methods {@code addIKM} or {@code addSalt} should
-     * be called next, before calling build methods, such as
-     * {@code Builder.extractOnly()}
      *
      * @return a {@code Builder} to mutate
      */
@@ -287,7 +287,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Defines the input parameters of an {@code Expand} object
      *
      * @param prk
-     *     the pseudorandom key; must not be {@code null} in the Expand case
+     *     the pseudorandom key; must not be {@code null}
      * @param info
      *     the optional context and application specific information (may be
      *     {@code null}); the byte[] is copied to prevent subsequent
@@ -320,10 +320,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         // HKDF-Extract(salt, IKM) -> PRK
         private final List<SecretKey> ikms;
         private final List<SecretKey> salts;
-
-        private Extract() {
-            this(new ArrayList<>(), new ArrayList<>());
-        }
 
         private Extract(List<SecretKey> ikms, List<SecretKey> salts) {
             this.ikms = List.copyOf(ikms);
@@ -422,8 +418,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
     /**
      * Defines the input parameters of an ExtractThenExpand operation as defined
-     * in
-     * <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
+     * in <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
     @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class ExtractThenExpand implements HKDFParameterSpec {
@@ -463,7 +458,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of input key material values in
          * the order they were added.
          *
-         * @return the input key material values
+         * @return the unmodifiable {@code List} of input key material values
          */
         public List<SecretKey> ikms() {
             return ext.ikms();
@@ -473,7 +468,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of salt values in the order they
          * were added.
          *
-         * @return the salt values
+         * @return the unmodifiable {@code List} of salt values
          */
         public List<SecretKey> salts() {
             return ext.salts();

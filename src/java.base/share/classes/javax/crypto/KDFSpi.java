@@ -39,8 +39,15 @@ import java.security.spec.InvalidParameterSpecException;
  * All the abstract methods in this class must be implemented by each
  * cryptographic service provider who wishes to supply the implementation of a
  * particular key derivation algorithm.
+ * <p>
+ * In addition, all implementations must provide a public constructor which
+ * accepts a {@code KDFParameters} object. The constructor must call {@code
+ * super(params)} passing the parameters supplied. The constructor must also
+ * throw an {@code InvalidAlgorithmParameterException} if the supplied
+ * parameters are inappropriate.
  *
  * @see KDF
+ * @see KDFParameters
  * @see SecretKey
  * @since 24
  */
@@ -77,11 +84,14 @@ public abstract class KDFSpi {
      *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters
+     *     KDF output and according to the derivation parameters or {@code null}
+     *     in cases where an exception is not thrown but a value cannot be
+     *     returned
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code KDFParameterSpec} is
-     *     invalid or incorrect for the type of key to be derived
+     *     if the information contained within the {@code kdfParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived or if
+     *     {@code alg} is invalid or unsupported by the KDF implementation
      * @throws NullPointerException
      *     if {@code alg} or {@code kdfParameterSpec} is null
      */
@@ -98,13 +108,15 @@ public abstract class KDFSpi {
      * @param kdfParameterSpec
      *     derivation parameters
      *
-     * @return a byte array whose length matches the specified length in the
-     *     processed {@code KDFParameterSpec} and containing the output from the
-     *     key derivation function
+     * @return a byte array corresponding to a key built from the
+     *     KDF output and according to the derivation parameters or {@code null}
+     *     in cases where an exception is not thrown but a value cannot be
+     *     returned
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code KDFParameterSpec} is
-     *     invalid or incorrect for the type of key to be derived
+     *     if the information contained within the {@code kdfParameterSpec} is
+     *     invalid or incorrect for the type of key to be derived or if
+     *     {@code alg} is invalid or unsupported by the KDF implementation
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      * @throws NullPointerException
