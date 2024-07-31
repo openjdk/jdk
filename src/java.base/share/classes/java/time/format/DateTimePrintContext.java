@@ -287,8 +287,8 @@ final class DateTimePrintContext {
     /**
      * isOption segment of the input.
      */
-    boolean isOptional() {
-        return optional > 0;
+    boolean isSupported(TemporalField field) {
+        return optional == 0 || temporal.isSupported(field);
     }
 
     /**

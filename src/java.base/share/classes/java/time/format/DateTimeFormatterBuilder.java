@@ -6394,22 +6394,16 @@ public final class DateTimeFormatterBuilder {
                       .ireturn();
                 }
 
-                private void appendNumber(CodeBuilder cb, NumberPrinterParser pp, int index, Label unableLabel) {
-                    var L0 = cb.newLabel();
-
+                private void appendNumber(CodeBuilder cb, NumberPrinterParser pp, int index, Label LReturn) {
                     /*
-                     * if (context.isOptional() && !temporal.isSupported(field)) {
+                     * if (context.isSupported(field)) {
                      *     break;
                      * }
                      */
-                    cb.aload(contextSlot)
-                      .invokevirtual(CD_DateTimePrintContext, "isOptional", MTD_boolean)
-                      .ifne(L0)
-                      .aload(temporalSlot);
+                    cb.aload(contextSlot);
                     getfield(cb, pp, index);
-                    cb.invokeinterface(CD_TemporalAccessor, "isSupported", MTD_boolean_TemporalField)
-                      .ifeq(unableLabel)
-                      .labelBinding(L0);
+                    cb.invokevirtual(CD_DateTimePrintContext, "isSupported", MTD_boolean_TemporalField)
+                      .ifeq(LReturn);
 
                     /*
                      * printerParserN.format(buf, context.getDecimalStyle(), temporal.getLong(field));
