@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,20 +49,38 @@ public class StringConcat {
 
     @Param("4711")
     public int intValue;
-
+    public Integer integerValue = intValue;
+    public float floatValue = 156456.36435637F + intValue;
     public String stringValue = String.valueOf(intValue);
-
     public Object objectValue = Long.valueOf(intValue);
-
     public boolean boolValue = true;
-
+    public Boolean booleanValue = Boolean.TRUE;
     public byte byteValue = (byte)-128;
-
     public String emptyString = "";
+
+    @Benchmark
+    public String concatConstBool() {
+        return "string" + boolValue;
+    }
+
+    @Benchmark
+    public String concatConstBoolean() {
+        return "string" + booleanValue;
+    }
 
     @Benchmark
     public String concatConstInt() {
         return "string" + intValue;
+    }
+
+    @Benchmark
+    public String concatConstInteger() {
+        return "string" + integerValue;
+    }
+
+    @Benchmark
+    public String concatConstFloat() {
+        return "string" + floatValue;
     }
 
     @Benchmark
@@ -95,6 +114,31 @@ public class StringConcat {
     }
 
     @Benchmark
+    public String concatConstBoolString() {
+        return "string" + boolValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstBooleanString() {
+        return "string" + booleanValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstIntString() {
+        return "string" + intValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstIntegerString() {
+        return "string" + integerValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatConstFloatString() {
+        return "string" + floatValue + stringValue;
+    }
+
+    @Benchmark
     public String concatConstIntConstInt() {
         return "string" + intValue + "string" + intValue;
     }
@@ -112,6 +156,31 @@ public class StringConcat {
         String s3 = stringValue + stringValue + "string" + stringValue + "string" + stringValue + "string";
         String s4 = "string" + stringValue + "string" + stringValue + "string" + stringValue + "string" + stringValue + "string";
         return s1 + s2 + s3 + s4;
+    }
+
+    @Benchmark
+    public String concat3String() {
+        return stringValue + stringValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringBoolString() {
+        return stringValue + boolValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringBooleanString() {
+        return stringValue + booleanValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringIntString() {
+        return stringValue + intValue + stringValue;
+    }
+
+    @Benchmark
+    public String concatStringIntegerString() {
+        return stringValue + integerValue + stringValue;
     }
 
     @Benchmark
@@ -176,6 +245,15 @@ public class StringConcat {
                 + f10 + ","+ f11 + ","+ f12 + ","+ f13 + ","+ f14 + ","+ f15 + ","+ f16 + ","+ f17 + ","+ f18 + ","+ f19 + ","
                 + f20 + ","+ f21 + ","+ f22;
     }
+
+    @Benchmark
+    public String concat30Mix() {
+        return f0 + "," + f1 + ","+ f2 + ","+  f3 + ","+  f4 + ","+  f5 + ","+  f6 + ","+  f7 + ","+  f8 + ","+  f9 + ","
+              +f10 + ","+f11 + ","+f12 + ","+ f13 + ","+ f14 + ","+ f15 + ","+ f16 + ","+ f17 + ","+ f18 + ","+ f19 + ","
+              +f20 + ","+f21 + ","+f22 + "," + boolValue + "," + booleanValue + "," + intValue + "," + integerValue
+              + "," + floatValue + "," + byteValue + "," + objectValue;
+    }
+
     @Benchmark
     public String concat123String() {
         return f0 + ","+ f1 + ","+ f2 + ","+ f3 + ","+ f4 + ","+ f5 + ","+ f6 + ","+ f7 + ","+ f8 + ","+ f9 + ","
@@ -194,8 +272,37 @@ public class StringConcat {
     }
 
     @Benchmark
+    public String concat13StringConst() {
+        return f0  + f1  + f2  + f3 + f4
+             + f5  + f6  + f7  + f8 + f9
+             +f10 + f11 + f12 + """
+                A really long constant string. Such as a copyright header:
+                 * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+                 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+                 *
+                 * This code is free software; you can redistribute it and/or modify it
+                 * under the terms of the GNU General Public License version 2 only, as
+                 * published by the Free Software Foundation.
+                 *
+                 * This code is distributed in the hope that it will be useful, but WITHOUT
+                 * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+                 * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+                 * version 2 for more details (a copy is included in the LICENSE file that
+                 * accompanied this code).
+                 *
+                 * You should have received a copy of the GNU General Public License version
+                 * 2 along with this work; if not, write to the Free Software Foundation,
+                 * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+                 *
+                 * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+                 * or visit www.oracle.com if you need additional information or have any
+                 * questions.
+                """;
+    }
+
+    @Benchmark
     public String concat23StringConst() {
-        return f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + f0 + """
+        return f0 + f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12 + f13 + f14 + f15 + f16 + f17 + f18 + f19 + f20 + f21 + f22 + """
                 A really long constant string. Such as a copyright header:
                  * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
                  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.

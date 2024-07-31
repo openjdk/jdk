@@ -372,7 +372,7 @@ public final class StringConcatFactory {
         }
 
         try {
-            MethodHandle mh = simpleConcat(concatType, constantStrings);
+            MethodHandle mh = makeSimpleConcat(concatType, constantStrings);
             if (mh == null && concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
                 mh = generateMHInlineCopy(concatType, constantStrings);
             }
@@ -470,7 +470,7 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
-    private static MethodHandle simpleConcat(MethodType mt, String[] constants) {
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
@@ -491,8 +491,7 @@ public final class StringConcatFactory {
                 // Non-primitive argument
                 return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
             } // fall-through if there's both a prefix and suffix
-        }
-        if (paramCount == 2 && !mt.hasPrimitives() && suffix == null
+        } else if (paramCount == 2 && !mt.hasPrimitives() && suffix == null
                 && constants[0] == null && constants[1] == null) {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
@@ -1066,24 +1065,26 @@ public final class StringConcatFactory {
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_byteArray = ClassDesc.ofDescriptor("[B");
-        static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
-        static final MethodTypeDesc FLOAT_TO_STRING = MethodTypeDesc.of(CD_String, CD_float);
+        static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
+
+        static final MethodTypeDesc FLOAT_TO_STRING  = MethodTypeDesc.of(CD_String, CD_float);
         static final MethodTypeDesc DOUBLE_TO_STRING = MethodTypeDesc.of(CD_String, CD_double);
-        static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_byteArray, CD_String, CD_long);
-        static final MethodTypeDesc NEW_STRING = MethodTypeDesc.of(CD_String, CD_byteArray, CD_long);
+        static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
 
-        static final MethodTypeDesc Mix_int = MethodTypeDesc.of(CD_long, CD_long, CD_int);
-        static final MethodTypeDesc MIX_long = MethodTypeDesc.of(CD_long, CD_long, CD_long);
-        static final MethodTypeDesc Mix_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_boolean);
-        static final MethodTypeDesc Mix_char = MethodTypeDesc.of(CD_long, CD_long, CD_char);
-        static final MethodTypeDesc Mix_String = MethodTypeDesc.of(CD_long, CD_long, CD_String);
+        static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_long);
+        static final MethodTypeDesc NEW_STRING       = MethodTypeDesc.of(CD_String, CD_Array_byte, CD_long);
 
-        static final MethodTypeDesc PREPEND_int = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_int, CD_String);
-        static final MethodTypeDesc PREPEND_long = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_long, CD_String);
-        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_boolean, CD_String);
-        static final MethodTypeDesc PREPEND_char = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_char, CD_String);
-        static final MethodTypeDesc PREPEND_String = MethodTypeDesc.of(CD_long, CD_long, CD_byteArray, CD_String, CD_String);
+        static final MethodTypeDesc MIX_int     = MethodTypeDesc.of(CD_long, CD_long, CD_int);
+        static final MethodTypeDesc MIX_long    = MethodTypeDesc.of(CD_long, CD_long, CD_long);
+        static final MethodTypeDesc MIX_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_boolean);
+        static final MethodTypeDesc MIX_char    = MethodTypeDesc.of(CD_long, CD_long, CD_char);
+        static final MethodTypeDesc MIX_String  = MethodTypeDesc.of(CD_long, CD_long, CD_String);
+
+        static final MethodTypeDesc PREPEND_int     = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_int, CD_String);
+        static final MethodTypeDesc PREPEND_long    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_long, CD_String);
+        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_boolean, CD_String);
+        static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
+        static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
 
         private SimpleStringBuilderStrategy() {
             // no instantiation
@@ -1231,15 +1232,15 @@ public final class StringConcatFactory {
 
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
-                            methodTypeDesc = Mix_int;
+                            methodTypeDesc = MIX_int;
                         } else if (cl == long.class) {
                             methodTypeDesc = MIX_long;
                         } else if (cl == boolean.class) {
-                            methodTypeDesc = Mix_boolean;
+                            methodTypeDesc = MIX_boolean;
                         } else if (cl == char.class) {
-                            methodTypeDesc = Mix_char;
+                            methodTypeDesc = MIX_char;
                         } else {
-                            methodTypeDesc = Mix_String;
+                            methodTypeDesc = MIX_String;
                             kind = TypeKind.from(String.class);
                         }
                         cb.loadLocal(kind, paramSlot)
@@ -1252,6 +1253,7 @@ public final class StringConcatFactory {
                         suffix = "";
                     }
                     if (!suffix.isEmpty()) {
+                        // lengthCoder = lengthCoder - suffix.length()
                         cb.lload(lengthCoderSlot)
                           .ldc((long) suffix.length())
                           .lsub()
@@ -1269,7 +1271,7 @@ public final class StringConcatFactory {
 
                     /*
                      * prepend arguments :
-                     *  lengthCoder = prepend(prepend(prepend(lengthCoder, buf, arg0), buf, arg1), ...)
+                     *  lengthCoder = prepend(prepend(lengthCoder, buf, argN, constantN), ...), buf, arg0, constant0)
                      */
                     cb.lload(lengthCoderSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
