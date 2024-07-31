@@ -212,7 +212,7 @@ private:
   void classes_do(void f(Klass* const));
 
  private:
-  bool is_strongly_reachable() const       { return _strongly_reachable > 0; }
+  bool is_strongly_reachable() const { return _strongly_reachable > 0; }
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
