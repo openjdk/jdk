@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,11 +83,11 @@ TEST_VM(RegMask, Set_ALL) {
   // Check that Set_All doesn't add bits outside of CHUNK_SIZE
   RegMask rm;
   rm.Set_All();
-  ASSERT_TRUE(rm.Size() == RegMask::CHUNK_SIZE);
+  ASSERT_TRUE(rm.Size() == rm.rm_size_bits());
   ASSERT_TRUE(rm.is_NotEmpty());
   // Set_All sets AllStack bit
   ASSERT_TRUE(rm.is_AllStack());
-  contains_expected_num_of_registers(rm, RegMask::CHUNK_SIZE);
+  contains_expected_num_of_registers(rm, rm.rm_size_bits());
 }
 
 TEST_VM(RegMask, Clear) {
@@ -133,19 +133,20 @@ TEST_VM(RegMask, SUBTRACT) {
   RegMask rm2;
 
   rm2.Set_All();
-  for (int i = 17; i < RegMask::CHUNK_SIZE; i++) {
+  for (int i = 17; i < (int)rm1.rm_size_bits(); i++) {
     rm1.Insert(i);
   }
+  rm1.set_AllStack();
   ASSERT_TRUE(rm1.is_AllStack());
   rm2.SUBTRACT(rm1);
-  contains_expected_num_of_registers(rm1, RegMask::CHUNK_SIZE - 17);
+  contains_expected_num_of_registers(rm1, rm1.rm_size_bits() - 17);
   contains_expected_num_of_registers(rm2, 17);
 }
 
 TEST_VM(RegMask, is_bound1) {
   RegMask rm;
   ASSERT_FALSE(rm.is_bound1());
-  for (int i = 0; i < RegMask::CHUNK_SIZE - 1; i++) {
+  for (int i = 0; i < (int)rm.rm_size_bits() - 1; i++) {
     rm.Insert(i);
     ASSERT_TRUE(rm.is_bound1())       << "Index " << i;
     ASSERT_TRUE(rm.is_bound(Op_RegI)) << "Index " << i;
@@ -160,7 +161,7 @@ TEST_VM(RegMask, is_bound1) {
 TEST_VM(RegMask, is_bound_pair) {
   RegMask rm;
   ASSERT_TRUE(rm.is_bound_pair());
-  for (int i = 0; i < RegMask::CHUNK_SIZE - 2; i++) {
+  for (int i = 0; i < (int)rm.rm_size_bits() - 2; i++) {
     rm.Insert(i);
     rm.Insert(i + 1);
     ASSERT_TRUE(rm.is_bound_pair())   << "Index " << i;
@@ -171,8 +172,9 @@ TEST_VM(RegMask, is_bound_pair) {
   }
   // A pair with the AllStack bit does not count as a bound pair
   rm.Clear();
-  rm.Insert(RegMask::CHUNK_SIZE - 2);
-  rm.Insert(RegMask::CHUNK_SIZE - 1);
+  rm.Insert(rm.rm_size_bits() - 2);
+  rm.Insert(rm.rm_size_bits() - 1);
+  rm.set_AllStack();
   ASSERT_FALSE(rm.is_bound_pair());
 }
 
@@ -180,7 +182,7 @@ TEST_VM(RegMask, is_bound_set) {
   RegMask rm;
   for (int size = 1; size <= 16; size++) {
     ASSERT_TRUE(rm.is_bound_set(size));
-    for (int i = 0; i < RegMask::CHUNK_SIZE - size; i++) {
+    for (int i = 0; i < (int)rm.rm_size_bits() - size; i++) {
       for (int j = i; j < i + size; j++) {
         rm.Insert(j);
       }
@@ -189,9 +191,10 @@ TEST_VM(RegMask, is_bound_set) {
       rm.Clear();
     }
     // A set with the AllStack bit does not count as a bound set
-    for (int j = RegMask::CHUNK_SIZE - size; j < RegMask::CHUNK_SIZE; j++) {
+    for (int j = rm.rm_size_bits() - size; j < (int)rm.rm_size_bits(); j++) {
         rm.Insert(j);
     }
+    rm.set_AllStack();
     ASSERT_FALSE(rm.is_bound_set(size));
     rm.Clear();
   }

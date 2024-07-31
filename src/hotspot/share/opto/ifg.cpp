@@ -54,6 +54,7 @@ void PhaseIFG::init( uint maxlrg ) {
   // Init all to empty
   for( uint i = 0; i < maxlrg; i++ ) {
     _adjs[i].initialize(maxlrg);
+    _lrgs[i].init_mask();
     _lrgs[i].Set_All();
   }
 }
