@@ -370,20 +370,19 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   address callee    = pd_call_destination(orig_addr);
 
   bool is_pc_relative = NativeInstruction::is_pc_relative_at(addr());
-  uintptr_t delta = 0;
-
-  if (!CodeCache::contains(callee) && is_pc_relative) {
-    assert(!CodeCache::contains(orig_addr) && CodeCache::contains(addr()), "move instruction from the temporary compiler buffer into a final place");
-    int sect = src->section_index_of(orig_addr);
-    intptr_t sect_start = (intptr_t)src->code_section(sect)->start();
-    delta = (intptr_t)CodeCache::low_bound() - sect_start;
-  } else {
-    int sect = src->section_index_of(orig_addr);
-    intptr_t sect_start = (intptr_t)src->code_section(sect)->start();
+  bool move_into_codecache = CodeCache::contains(addr()) && !CodeCache::contains(orig_addr);
+  bool has_trampoline = (addr() == callee) || (NativeCall::is_call_at(addr()) && nativeCall_at(addr())->get_trampoline());
+  // target address was patched during code generation. now adding the delta back during code realocation
+  if (move_into_codecache && is_pc_relative && !has_trampoline) {
+    int section = src->section_index_of(orig_addr);
+    intptr_t section_start = (intptr_t)src->code_section(section)->start();
+    uintptr_t delta = (intptr_t)CodeCache::low_bound() - section_start;
+    if (PrintCodeCache) tty->print_cr("%i-%i pc:%p<-%p target:%p<-%p offset:%i", move_into_codecache, !CodeCache::contains(callee), addr(), orig_addr, callee+delta, callee, orig_addr - section_start);
+    callee += delta;
   }
 
   // Reassert the callee address, this time in the new copy of the code.
-  pd_set_call_destination(callee+delta);
+  pd_set_call_destination(callee);
 }
 
 

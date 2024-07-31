@@ -943,10 +943,11 @@ address MacroAssembler::trampoline_call(Address entry) {
   address call_pc = pc();
   relocate(entry.rspec());
 
-  if (!CodeCache::contains(pc()) && target != pc()) {
+  // the generated stub holds a real address. delta is applied to pc relative jump only
+  if (target != pc() && !CodeCache::contains(pc())) {
     intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
     target = entry.target() - delta;
-  };
+  }
 
   bl(target);
 
