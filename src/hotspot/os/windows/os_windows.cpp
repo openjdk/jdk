@@ -3388,7 +3388,7 @@ int os::create_file_for_heap(const char* dir) {
 }
 
 // If 'base' is not null, function will return null if it cannot get 'base'
-char* os::map_memory_to_file(char* base, size_t size, int fd) {
+char* os::map_memory_to_file(char* base, size_t size, int fd, MEMFLAGS flag) {
   assert(fd != -1, "File descriptor is not valid");
 
   HANDLE fh = (HANDLE)_get_osfhandle(fd);
@@ -3414,15 +3414,16 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
 
   CloseHandle(fileMapping);
 
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, size, CALLER_PC, flag);
   return (char*)addr;
 }
 
-char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd) {
+char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd, MEMFLAGS flag) {
   assert(fd != -1, "File descriptor is not valid");
   assert(base != nullptr, "Base address cannot be null");
 
   release_memory(base, size);
-  return map_memory_to_file(base, size, fd);
+  return map_memory_to_file(base, size, fd, flag);
 }
 
 // Multiple threads can race in this code but it's not possible to unmap small sections of
@@ -3467,9 +3468,9 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   return aligned_base;
 }
 
-char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
+char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec, MEMFLAGS flag) {
   // exec can be ignored
-  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
+  return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */, flag);
 }
 
 char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
