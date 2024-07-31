@@ -23,18 +23,20 @@ This might be the subject of a future JEP.
 
 Java allows developers to control whether fields are mutable or not. 
 
-* Mutable fields can be updated multiple times, and from any arbitrary position in the code.
+* Mutable fields can be updated multiple times, and from any arbitrary position in the code and by any thread.
 * Immutable fields (i.e. `final` fields), can only be updated _once_, and only in very specific places: the
-  class initializer (for a static immutable field) or the class constructor(for an instance immutable field). 
+  class initializer (for a static immutable field) or the class constructor(for an instance immutable field).
+  Only the thread that creates an instance or first reference a class can update values.
  
 Unfortunately, in Java there is no way to define a field that can be updated _at most once_ (i.e. fields that are
-either not updated at all or are updated exactly once) and from _any_ arbitrary position in the code:
+either not updated at all or are updated exactly once) and from _any_ arbitrary position in the code and by
+any thread:
 
-| Field kind         | #Updates | Code update location              |
-|--------------------|----------|-----------------------------------|
-| Mutable            | [0, ∞)   | Anywhere                          |
-| `final`            | 1        | Constructor or static initializer |
-| at-most-once (N/A) | [0, 1]   | Anywhere                          |
+| Field kind         | #Updates | Code update location              | Constant folding | Update thread |
+|--------------------|----------|-----------------------------------|------------------|---------------|
+| Mutable            | [0, ∞)   | Anywhere                          | no               | any           |
+| `final`            | 1        | Constructor or static initializer | yes              | creating/init |
+| at-most-once (N/A) | [0, 1]   | Anywhere                          | only if updated  | any           |
 
 _Table 1, showing properties of mutable, immutable, and at-most-once (currently not available) fields._
 
