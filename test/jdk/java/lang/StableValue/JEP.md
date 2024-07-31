@@ -175,7 +175,9 @@ optimizations, and brittleness) that plague the workarounds shown above and belo
 should gracefully scale to handle collections of constant values, while retaining efficient computer resource
 management.
 
-It would be advantageous if "compute-at-most-once fields" could be expresses something along these lines:
+It would be advantageous if "compute-at-most-once fields" could be expresses something along these lines where
+`Foo`, `Bar`, and `Baz` indicates some Java class and the methods `Foo::xxxx`, `Bar::yyyy`, `Baz::zzzz` represents
+some method with a yet-to-determine name:
 
 ```
 // Declare a cache that can hold a single Logger instance
@@ -195,7 +197,7 @@ Bar<Logger> cache = ... 10 ... i -> Logger.getLogger("com.company.Foo" + i) ...
 // Just returns the value at the provided index if set. Otherwise computes, sets, and returns the value.
 // If another thread is computing a value at the provided index, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
-Logger logger = cache.xxxx(7);
+Logger logger = cache.yyyy(7);
 ```
 
 and even for several compute-at-most-once values associated with some key of arbitrary type `K` (where we use Strings
@@ -209,7 +211,7 @@ Baz<String, Logger> cache = ... keys ... Logger::getLogger...
 // Just returns the value associated with the provided string if set. Otherwise computes, sets, and returns the value.
 // If another thread is computing a value for the provided String, wait until it has completed.
 // Values can be computed in parallel by distinct threads.
-Logger logger = cache.xxxx("com.company.Foo");
+Logger logger = cache.zzzz("com.company.Foo");
 ```
 
 For interoperability with legacy code, it would also be desirable if some of the standard collection types could be
