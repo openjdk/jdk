@@ -3747,7 +3747,7 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
 
   // Check if threads is null
   if (threads == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(threads));
@@ -3755,13 +3755,13 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
   int num_threads = ah->length();
   // check if threads is non-empty array
   if (num_threads == 0) {
-    THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   // check if threads is not an array of objects of Thread class
   Klass* k = ObjArrayKlass::cast(ah->klass())->element_klass();
   if (k != vmClasses::Thread_klass()) {
-    THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   ResourceMark rm(THREAD);
