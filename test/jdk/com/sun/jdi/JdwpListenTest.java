@@ -51,7 +51,7 @@ public class JdwpListenTest {
     // Set to true to allow testing of attach from wrong address (expected to fail).
     // It's off by default as it causes test time increase and test interference (see JDK-8231915).
     private static boolean allowNegativeTesting =
-        "true".equalsIgnoreCase(System.getProperty("JDI_ALLOW_NEGATIVE_TESTING"));
+        "true".equalsIgnoreCase(System.getProperty("jdk.jdi.allowNegativeTesting"));
 
     public static void main(String[] args) throws Exception {
         List<InetAddress> addresses = Utils.getAddressesWithSymbolicAndNumericScopes();
