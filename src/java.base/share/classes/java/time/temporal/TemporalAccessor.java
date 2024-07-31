@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,4 +314,85 @@ public interface TemporalAccessor {
         return query.queryFrom(this);
     }
 
+    /**
+     * Gets the year field.
+     * <p>
+     * This method returns the primitive {@code int} value for the year.
+     * <p>
+     * The year returned by this method is proleptic as per {@code get(YEAR)}.
+     * To obtain the year-of-era, use {@code get(YEAR_OF_ERA)}.
+     *
+     * @return the year, from MIN_YEAR to MAX_YEAR
+     */
+    default int getYear() {
+        return get(ChronoField.YEAR);
+    }
+
+    /**
+     * Gets the month-of-year field using the {@code Month} enum.
+     *
+     * @return the month-of-year, not null
+     * @see #getMonthValue()
+     */
+    default int getMonthValue() {
+        return get(ChronoField.MONTH_OF_YEAR);
+    }
+
+    /**
+     * Gets the day-of-year field.
+     * <p>
+     * This method returns the primitive {@code int} value for the day-of-year.
+     *
+     * @return the day-of-year, from 1 to 365, or 366 in a leap year
+     */
+    default int getDayOfYear() {
+        return get(ChronoField.DAY_OF_YEAR);
+    }
+
+    /**
+     * Gets the day-of-month field.
+     * <p>
+     * This method returns the primitive {@code int} value for the day-of-month.
+     *
+     * @return the day-of-month, from 1 to 31
+     */
+    default int getDayOfMonth() {
+        return get(ChronoField.DAY_OF_MONTH);
+    }
+
+    /**
+     * Gets the hour-of-day field.
+     *
+     * @return the hour-of-day, from 0 to 23
+     */
+    default int getHour() {
+        return get(ChronoField.HOUR_OF_DAY);
+    }
+
+    /**
+     * Gets the minute-of-hour field.
+     *
+     * @return the minute-of-hour, from 0 to 59
+     */
+    default int getMinute() {
+        return get(ChronoField.MINUTE_OF_HOUR);
+    }
+
+    /**
+     * Gets the second-of-minute field.
+     *
+     * @return the second-of-minute, from 0 to 59
+     */
+    default int getSecond() {
+        return get(ChronoField.SECOND_OF_MINUTE);
+    }
+
+    /**
+     * Gets the nano-of-second field.
+     *
+     * @return the nano-of-second, from 0 to 999,999,999
+     */
+    default int getNano() {
+        return get(ChronoField.NANO_OF_SECOND);
+    }
 }

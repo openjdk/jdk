@@ -285,6 +285,13 @@ final class DateTimePrintContext {
     }
 
     /**
+     * isOption segment of the input.
+     */
+    boolean isOptional() {
+        return optional > 0;
+    }
+
+    /**
      * Gets a value using a query.
      *
      * @param query  the query to use, not null
