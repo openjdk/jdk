@@ -375,7 +375,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(rscratch1, rmethod);
 
   // Is it a strong CLD?
-  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::strongly_reachable_offset()));
+  __ ldrw(rscratch2, Address(rscratch1, ClassLoaderData::keep_alive_ref_count_offset()));
   __ cbnz(rscratch2, method_live);
 
   // Is it a weak but alive CLD?

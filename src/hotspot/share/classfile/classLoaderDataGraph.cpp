@@ -201,7 +201,7 @@ void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
   assert_is_safepoint_or_gc();
   for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
-    CLDClosure* closure = cld->is_strongly_reachable() ? strong : weak;
+    CLDClosure* closure = (cld->keep_alive_ref_count() > 0) ? strong : weak;
     if (closure != nullptr) {
       closure->do_cld(cld);
     }

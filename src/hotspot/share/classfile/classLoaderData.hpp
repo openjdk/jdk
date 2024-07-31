@@ -125,10 +125,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
 
-  int _strongly_reachable; // if this CLD should not be considered eligible for unloading.
-                           // Used for non-strong hidden classes and the
-                           // boot class loader. _strongly_reachable does not need to be volatile or
-                           // atomic since there is one unique CLD per non-strong hidden class.
+  int _keep_alive_ref_count; // if this CLD should not be considered eligible for unloading.
+                             // Used for non-strong hidden classes and the
+                             // boot class loader. _keep_alive_ref_count does not need to be volatile or
+                             // atomic since there is one unique CLD per non-strong hidden class.
 
   volatile int _claim; // non-zero if claimed, for example during GC traces.
                        // To avoid applying oop closure more than once.
@@ -212,7 +212,7 @@ private:
   void classes_do(void f(Klass* const));
 
  private:
-  bool is_strongly_reachable() const { return _strongly_reachable > 0; }
+  bool keep_alive_ref_count() const { return _keep_alive_ref_count; }
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -305,8 +305,8 @@ private:
   }
 
   // Used to refcount a non-strong hidden class's s CLD in order to indicate their aliveness.
-  void inc_strongly_reachable();
-  void dec_strongly_reachable();
+  void inc_keep_alive_ref_count();
+  void dec_keep_alive_ref_count();
 
   void initialize_holder(Handle holder);
 
@@ -338,7 +338,7 @@ private:
 
   // Offsets
   static ByteSize holder_offset() { return byte_offset_of(ClassLoaderData, _holder); }
-  static ByteSize strongly_reachable_offset() { return byte_offset_of(ClassLoaderData, _strongly_reachable); }
+  static ByteSize keep_alive_ref_count_offset() { return byte_offset_of(ClassLoaderData, _keep_alive_ref_count); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }
