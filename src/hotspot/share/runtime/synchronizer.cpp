@@ -2074,7 +2074,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
 void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
     stringStream ss;
-    out->print_cr("In-use monitor info:");
+    out->print_cr("In-use monitor info%s:", log_all ? "" : " (eliding idle monitors)");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
