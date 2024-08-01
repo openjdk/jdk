@@ -557,7 +557,7 @@ class MutableBigInteger {
     /**
      * Right shift this MutableBigInteger n bits. The MutableBigInteger is left
      * in normal form.
-     * Assume {@code Math.ceilDiv(n, 32) <= intLen || intLen == 0}
+     * Assumes {@code Math.ceilDiv(n, 32) <= intLen || intLen == 0}
      */
     void rightShift(int n) {
         if (intLen == 0)
@@ -949,7 +949,7 @@ class MutableBigInteger {
 
     /**
      * Shifts {@code this} of {@code n} ints to the left and adds {@code addend}.
-     * Assume {@code addend.intLen <= n}.
+     * Assumes {@code addend.intLen <= n}.
      */
     void shiftAddDisjoint(MutableBigInteger addend, int n) {
         if (intLen == 0) { // Avoid unnormal values
@@ -1939,7 +1939,7 @@ class MutableBigInteger {
     }
 
     /**
-     * Assume {@code 2 <= len <= intLen && len % 2 == 0
+     * Assumes {@code 2 <= len <= intLen && len % 2 == 0
      * && Integer.numberOfLeadingZeros(value[offset]) <= 1}
      * @implNote The implementation is based on Zimmermann's works available
      * <a href="https://inria.hal.science/inria-00072854v1/document">  here</a> and
@@ -1957,7 +1957,6 @@ class MutableBigInteger {
             sqrt.intLen = 1;
             sqrt.value[0] = (int) s;
 
-            // The first invocation is never a base case, so the remainder is needed
             return new MutableBigInteger[] { sqrt, new MutableBigInteger(x - s * s) };
         }
 
@@ -1988,17 +1987,20 @@ class MutableBigInteger {
         MutableBigInteger rem;
         if (needRemainder) {
             rem = u;
-            if (rem.subtract(qSqr) == -1) {
+            if (rem.subtract(qSqr) < 0) {
                 MutableBigInteger twiceSqrt = new MutableBigInteger(sqrt);
                 twiceSqrt.leftShift(1);
 
+                // Since subtract() performs an absolute difference, to get the correct algebraic sum
+                // we must first add the sum of absolute values of addends concordant with the sign of rem
+                // and then subtract the sum of absolute values of addends that are discordant
                 rem.add(ONE);
                 rem.subtract(twiceSqrt);
                 sqrt.subtract(ONE);
             }
         } else {
             rem = null;
-            if (u.compare(qSqr) == -1)
+            if (u.compare(qSqr) < 0)
                 sqrt.subtract(ONE);
         }
 
