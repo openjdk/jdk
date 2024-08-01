@@ -402,10 +402,6 @@ public class AdaptorMulticasting {
                      () -> s.setOption((SocketOption) IP_MULTICAST_LOOP, "badValue"));
     }
 
-    static int getPort(SocketAddress address) {
-        return ((InetSocketAddress) address).getPort();
-    }
-
     /**
      * Send a datagram to the given multicast group and check that it is received.
      */
@@ -427,10 +423,10 @@ public class AdaptorMulticasting {
 
         // receive message
         s.setSoTimeout(0);
-        do {
+        while (true) {
             p = new DatagramPacket(new byte[1024], 100);
             s.receive(p);
-            if (getPort(p.getSocketAddress()) == getPort(s.getLocalSocketAddress())) {
+            if (p.getPort() == s.getLocalPort()) {
                 String str = new String(p.getData(), p.getOffset(), p.getLength(), "UTF-8");
                 if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
                     System.out.format("Got expected message \"%s\" from %s%n", str, p.getSocketAddress());
@@ -442,7 +438,7 @@ public class AdaptorMulticasting {
                 System.out.println("Unexpected message received. Expected message from: " + s.getLocalAddress());
                 System.out.println("Received message sender doesn't match - skipping: " + p.getSocketAddress());
             }
-        } while(true);
+        }
 
         assertTrue(p.getLength() == message.length);
         assertTrue(p.getPort() == s.getLocalPort());

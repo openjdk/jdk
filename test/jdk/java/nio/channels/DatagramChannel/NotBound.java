@@ -109,7 +109,7 @@ public class NotBound {
         // connect
         dc = DatagramChannel.open();
         try {
-            System.out.println("Checks that connect() binds the socket");
+            System.out.println("Check that connect() binds the socket");
             try (DatagramChannel peer = DatagramChannel.open()) {
                 peer.bind(new InetSocketAddress(0));
                 int peerPort = ((InetSocketAddress)(peer.getLocalAddress())).getPort();
@@ -123,7 +123,7 @@ public class NotBound {
         // send
         dc = DatagramChannel.open();
         try {
-            System.out.println("Checks that send() binds the socket");
+            System.out.println("Check that send() binds the socket");
             ByteBuffer bb = ByteBuffer.wrap("NotBound: ignore this".getBytes());
             SocketAddress target =
                 new InetSocketAddress(InetAddress.getLocalHost(), 5000);
@@ -136,7 +136,7 @@ public class NotBound {
         // receive (blocking)
         dc = DatagramChannel.open();
         try {
-            System.out.println("Checks that blocking receive() binds the socket");
+            System.out.println("Check that blocking receive() binds the socket");
             ByteBuffer bb = ByteBuffer.allocateDirect(128);
             wakeupWhenBound(dc);
             SocketAddress sender = dc.receive(bb);
@@ -151,7 +151,7 @@ public class NotBound {
         // receive (non-blocking)
         dc = DatagramChannel.open();
         try {
-            System.out.println("Checks that non-blocking receive() binds the socket");
+            System.out.println("Check that non-blocking receive() binds the socket");
             dc.configureBlocking(false);
             ByteBuffer bb = ByteBuffer.allocateDirect(128);
             SocketAddress sender = dc.receive(bb);

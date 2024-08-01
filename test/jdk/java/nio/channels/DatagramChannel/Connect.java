@@ -118,6 +118,13 @@ public class Connect {
                 ByteBuffer bb = ByteBuffer.allocateDirect(MAX);
                 bb.put(bytes);
                 bb.flip();
+                // When connecting an unbound datagram channel, the underlying
+                // socket will first be bound to the wildcard address. On macOS,
+                // the system may allocate the same port on which another socket
+                // is already bound with a more specific address. This may prevent
+                // datagrams directed at the connected socket to reach it.
+                // To avoid this, when on macOS, we preemptively bind `dc` to the
+                // specific address instead of letting it bind to the wildcard.
                 if (Platform.isOSX()) {
                     dc.bind(new InetSocketAddress(((InetSocketAddress)connectSocketAddress).getAddress(), 0));
                     err.println("Initiator bound to: " + connectSocketAddress);
