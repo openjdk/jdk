@@ -27,22 +27,32 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
 
 /*
  * Represents a key to a specific file on Windows
  */
 public class FileKey {
 
-    private int dwVolumeSerialNumber;
-    private int nFileIndexHigh;
-    private int nFileIndexLow;
+    private final int dwVolumeSerialNumber;
+    private final int nFileIndexHigh;
+    private final int nFileIndexLow;
 
-    private FileKey() { }
+    private FileKey(int dwVolumeSerialNumber, int nFileIndexHigh,
+        int nFileIndexLow) {
+        this.dwVolumeSerialNumber = dwVolumeSerialNumber;
+        this.nFileIndexHigh = nFileIndexHigh;
+        this.nFileIndexLow = nFileIndexLow;
+    }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        FileKey fk = new FileKey();
-        fk.init(fd);
-        return fk;
+        JavaIOFileDescriptorAccess access =
+            SharedSecrets.getJavaIOFileDescriptorAccess();
+        long handleVal = access.getHandle(fd);
+        int finfo[] = new int[3];
+        init(handleVal, finfo);
+        return new FileKey(finfo[0], finfo[1], finfo[2]);
     }
 
     @Override
@@ -60,11 +70,6 @@ public class FileKey {
                 && this.nFileIndexLow == other.nFileIndexLow;
     }
 
-    private native void init(FileDescriptor fd) throws IOException;
-    private static native void initIDs();
-
-    static {
-        IOUtil.load();
-        initIDs();
-    }
+    private static native void init(long handleVal, int[] finfo)
+        throws IOException;
 }
