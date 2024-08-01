@@ -112,7 +112,7 @@ private:
 
   void collect_old();
   void gc(const ZDriverRequest& request);
-  void handle_alloc_stalls(bool cleared_soft_refs) const;
+  void handle_alloc_stalls() const;
 
 protected:
   virtual void run_thread();
