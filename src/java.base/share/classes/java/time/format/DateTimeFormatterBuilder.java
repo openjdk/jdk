@@ -196,7 +196,7 @@ public final class DateTimeFormatterBuilder {
         COMPILE = property == null || property.isEmpty() || "true".equalsIgnoreCase(property);
 
         property = VM.getSavedProperty("java.time.format.DateTimeFormatter.monolithic");
-        MONOLITHIC = property != null && (property.isEmpty() || "true".equalsIgnoreCase(property));
+        MONOLITHIC = property == null || property.isEmpty() || "true".equalsIgnoreCase(property);
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -3448,7 +3448,7 @@ public final class DateTimeFormatterBuilder {
                 pos = litteral(text, pos, literal);
 
                 valuePos = printerParserDayOfMonth.parse(text, pos);
-                pos = position(text, valuePos);
+                position(text, valuePos);
                 int dayOfMonth = (int) (valuePos >> 32);
 
                 return query.queryFrom(
@@ -3592,7 +3592,7 @@ public final class DateTimeFormatterBuilder {
                 pos = litteral(text, pos, literal7);
 
                 valuePos = printerParserSecond.parse(text, pos);
-                pos = position(text, valuePos);
+                position(text, valuePos);
                 int second = (int) (valuePos >> 32);
 
                 return query.queryFrom(
@@ -3673,7 +3673,7 @@ public final class DateTimeFormatterBuilder {
                 pos = litteral(text, pos, literal11);
 
                 valuePos = printerParserNano.parse(text, pos);
-                pos = position(text, valuePos);
+                position(text, valuePos);
                 int nano = (int) (valuePos >> 32);
 
                 return query.queryFrom(
