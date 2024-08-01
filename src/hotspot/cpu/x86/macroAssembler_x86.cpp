@@ -4842,8 +4842,8 @@ void MacroAssembler::check_klass_subtype_slow_path_table(Register sub_klass,
     push_set(pushed_regs, 0);
 
     lookup_secondary_supers_table_var(sub_klass,
-				      super_klass,
-				      temp_reg, temp2_reg, temp3_reg, temp4_reg, result_reg);
+                                      super_klass,
+                                      temp_reg, temp2_reg, temp3_reg, temp4_reg, result_reg);
     cmpq(result_reg, 0);
 
     // Unspill the temp. registers:
@@ -4941,13 +4941,13 @@ void MacroAssembler::rorq(Register dest, Register count) {
 // super_klass_slot of the class you're looking for. This is always
 // the case for instanceof and checkcast.
 void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
-							 Register r_super_klass,
-							 Register temp1,
-							 Register temp2,
-							 Register temp3,
-							 Register temp4,
-							 Register result,
-							 u1 super_klass_slot) {
+                                                         Register r_super_klass,
+                                                         Register temp1,
+                                                         Register temp2,
+                                                         Register temp3,
+                                                         Register temp4,
+                                                         Register result,
+                                                         u1 super_klass_slot) {
   assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
 
   Label L_fallthrough, L_success, L_failure;
@@ -5044,12 +5044,12 @@ void MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
 // runtime stubs. It is larger and has somewhat greater latency than
 // the version above, which takes a constant super_klass_slot.
 void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
-						       Register r_super_klass,
-						       Register temp1,
-						       Register temp2,
-						       Register temp3,
-						       Register temp4,
-						       Register result) {
+                                                       Register r_super_klass,
+                                                       Register temp1,
+                                                       Register temp2,
+                                                       Register temp3,
+                                                       Register temp4,
+                                                       Register result) {
   assert_different_registers(r_sub_klass, r_super_klass, temp1, temp2, temp3, temp4, result);
   assert_different_registers(r_sub_klass, r_super_klass, rcx);
   RegSet temps = RegSet::of(temp1, temp2, temp3, temp4);
