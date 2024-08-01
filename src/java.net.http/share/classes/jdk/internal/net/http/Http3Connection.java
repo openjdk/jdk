@@ -582,11 +582,15 @@ public final class Http3Connection implements AutoCloseable {
             return true;
         }
         lock();
-        boolean okToIdleTimeout = false;
+        final boolean okToIdleTimeout;
         try {
             if (markIdleShutdownInitiated()) {
                 // don't allow any new streams to be created
                 setFinalStream();
+                okToIdleTimeout = finalStreamClosed();
+            } else {
+                // already marked for idle shutdown previously.
+                // check if all streams on the connection have now closed.
                 okToIdleTimeout = finalStreamClosed();
             }
         } finally {
