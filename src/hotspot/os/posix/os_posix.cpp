@@ -328,7 +328,8 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     warning("Failed mmap to file. (%s)", os::strerror(errno));
     return nullptr;
   }
-  assert(base != nullptr && addr != base, "should not");
+
+  assert(base == nullptr || addr == base, "should not, base: %p, addr: %p", base, addr);
 
   return addr;
 }
