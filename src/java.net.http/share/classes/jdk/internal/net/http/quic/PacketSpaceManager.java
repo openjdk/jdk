@@ -1843,19 +1843,14 @@ public sealed class PacketSpaceManager implements PacketSpace
     }
 
     private Deadline getLossTimer() {
-        transferLock.lock();
-        try {
-            PendingAcknowledgement head = pendingAcknowledgements.peek();
-            if (head == null || head.packetNumber >= largestReceivedAckedPN) {
-                return null;
-            }
-            if (head.packetNumber < largestReceivedAckedPN - kPacketThreshold) {
-                return Deadline.MIN;
-            }
-            return head.sent.plus(rttEstimator.getLossThreshold());
-        } finally {
-            transferLock.unlock();
+        PendingAcknowledgement head = pendingAcknowledgements.peek();
+        if (head == null || head.packetNumber >= largestReceivedAckedPN) {
+            return null;
         }
+        if (head.packetNumber < largestReceivedAckedPN - kPacketThreshold) {
+            return Deadline.MIN;
+        }
+        return head.sent.plus(rttEstimator.getLossThreshold());
     }
 
     // Compute the new deadline when adding an ack-eliciting packet number
