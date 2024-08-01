@@ -49,6 +49,8 @@ public class RasterReuseWriteTest {
         test(BufferedImage.TYPE_INT_RGB);
         test(BufferedImage.TYPE_INT_ARGB);
         test(BufferedImage.TYPE_INT_ARGB_PRE);
+        test(BufferedImage.TYPE_4BYTE_ABGR);
+        test(BufferedImage.TYPE_4BYTE_ABGR_PRE);
     }
 
     private static void test(int type) throws Exception {
