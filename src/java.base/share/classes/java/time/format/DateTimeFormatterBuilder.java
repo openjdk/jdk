@@ -94,6 +94,8 @@ import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -2676,6 +2678,16 @@ public final class DateTimeFormatterBuilder {
             return CompositePrinterParser.of(printerParsers, optional);
         }
 
+        public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
+            Objects.requireNonNull(temporal, "temporal");
+            Objects.requireNonNull(formatter, "formatter");
+            DateTimePrintContext context = new DateTimePrintContext(temporal, formatter);
+
+            StringBuilder buf = new StringBuilder(32);
+            format(context, buf);
+            return buf.toString();
+        }
+
         @Override
         public boolean format(DateTimePrintContext context, StringBuilder buf) {
             int length = buf.length();
@@ -3254,10 +3266,35 @@ public final class DateTimeFormatterBuilder {
                 super(printerParsers, optional);
             }
 
+            public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
+                var zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0') {
+                    StringBuilder buf = new StringBuilder(15);
+                    format(new DateTimePrintContext(temporal, formatter), buf);
+                    return buf.toString();
+                }
+
+                var hour   = temporal.getHour();
+                var minute = temporal.getMinute();
+                var second = temporal.getSecond();
+
+                byte[] buf = new byte[8];
+                int index  = DecimalDigits.putPairLatin1(buf, 0, hour);
+                buf[index] = (byte) ':';
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, minute);
+                buf[index] = (byte) ':';
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, second);
+                try {
+                    return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException cce) {
+                    throw new AssertionError(cce);
+                }
+            }
+
             @Override
             public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 var temporal = context.getTemporal();
-                var hour = temporal.getHour();
+                var hour   = temporal.getHour();
                 var minute = temporal.getMinute();
                 var second = temporal.getSecond();
 
@@ -3283,12 +3320,40 @@ public final class DateTimeFormatterBuilder {
                 literal = ((CharLiteralPrinterParser) printerParsers[1]).literal;
             }
 
+            public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0'
+                        && (literal >>> 8 == 0) // StringLatin1.canEncode
+                ) {
+                    StringBuilder buf = new StringBuilder(15);
+                    format(new DateTimePrintContext(temporal, formatter), buf);
+                    return buf.toString();
+                }
+
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
+
+                int size   = printerParserYear.size(year) + 6;
+                byte[] buf = new byte[size];
+                int index  = printerParserYear.formatTo(buf, 0, year);
+                buf[index] = (byte) literal;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, month);
+                buf[index] = (byte) literal;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, dayOfMonth);
+                try {
+                    return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException cce) {
+                    throw new AssertionError(cce);
+                }
+            }
+
             @Override
             public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 var temporal = context.getTemporal();
-                var year = temporal.getYear();
-                var month = temporal.getMonthValue();
-                var dayOfMonth = temporal.getDayOfMonth();
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
 
                 if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
                     year = (year >= 1 ? year : 1 - year);
@@ -3319,15 +3384,55 @@ public final class DateTimeFormatterBuilder {
                 literal7 = ((CharLiteralPrinterParser) printerParsers[7]).literal;
             }
 
+            public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
+                var zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0'
+                        && (literal1 >>> 8 == 0) // StringLatin1.canEncode
+                        && (literal5 >>> 8 == 0) // StringLatin1.canEncode
+                        && (literal7 >>> 8 == 0) // StringLatin1.canEncode
+                ) {
+                    StringBuilder buf = new StringBuilder(32);
+                    format(new DateTimePrintContext(temporal, formatter), buf);
+                    return buf.toString();
+                }
+
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
+                int hour       = temporal.getHour();
+                int minute     = temporal.getMinute();
+                int second     = temporal.getSecond();
+
+                int size = printerParserYear.size(year) + 15;
+                byte[] buf = new byte[size];
+                int index  = printerParserYear.formatTo(buf, 0, year);
+                buf[index] = (byte) literal1;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, month);
+                buf[index] = (byte) literal1;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, dayOfMonth);
+                buf[index] = (byte) literal5;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, hour);
+                buf[index] = (byte) literal7;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, minute);
+                buf[index] = (byte) literal7;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, second);
+                try {
+                    return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException cce) {
+                    throw new AssertionError(cce);
+                }
+            }
+
             @Override
             public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 var temporal = context.getTemporal();
-                var year = temporal.getYear();
-                var month = temporal.getMonthValue();
-                var dayOfMonth = temporal.getDayOfMonth();
-                var hour = temporal.getHour();
-                var minute = temporal.getMinute();
-                var second = temporal.getSecond();
+
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
+                int hour       = temporal.getHour();
+                int minute     = temporal.getMinute();
+                int second     = temporal.getSecond();
 
                 if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
                     year = (year >= 1 ? year : 1 - year);
@@ -3335,22 +3440,22 @@ public final class DateTimeFormatterBuilder {
 
                 var decimalStyle = context.getDecimalStyle();
                 printerParserYear.format(buf, decimalStyle, year);
-                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                char zeroDigit = context.getDecimalStyle().getZeroDigit();
                 buf.append(literal1)
-                        .append((char) (zeroDigit + month / 10))
-                        .append((char) (zeroDigit + month % 10))
-                        .append(literal1)
-                        .append((char) (zeroDigit + dayOfMonth / 10))
-                        .append((char) (zeroDigit + dayOfMonth % 10))
-                        .append(literal5)
-                        .append((char) (zeroDigit + hour / 10))
-                        .append((char) (zeroDigit + hour % 10))
-                        .append(literal7)
-                        .append((char) (zeroDigit + minute / 10))
-                        .append((char) (zeroDigit + minute % 10))
-                        .append(literal7)
-                        .append((char) (zeroDigit + second / 10))
-                        .append((char) (zeroDigit + second % 10));
+                   .append((char) (zeroDigit + month / 10))
+                   .append((char) (zeroDigit + month % 10))
+                   .append(literal1)
+                   .append((char) (zeroDigit + dayOfMonth / 10))
+                   .append((char) (zeroDigit + dayOfMonth % 10))
+                   .append(literal5)
+                   .append((char) (zeroDigit + hour / 10))
+                   .append((char) (zeroDigit + hour % 10))
+                   .append(literal7)
+                   .append((char) (zeroDigit + minute / 10))
+                   .append((char) (zeroDigit + minute % 10))
+                   .append(literal7)
+                   .append((char) (zeroDigit + second / 10))
+                   .append((char) (zeroDigit + second % 10));
                 return true;
             }
         }
@@ -3365,23 +3470,64 @@ public final class DateTimeFormatterBuilder {
             YMDHMSS (DateTimePrinterParser[] printerParsers, boolean optional) {
                 super(printerParsers, optional);
                 printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
-                literal1 = ((CharLiteralPrinterParser) printerParsers[1]).literal;
-                literal5 = ((CharLiteralPrinterParser) printerParsers[5]).literal;
-                literal7 = ((CharLiteralPrinterParser) printerParsers[7]).literal;
+                literal1  = ((CharLiteralPrinterParser) printerParsers[1]).literal;
+                literal5  = ((CharLiteralPrinterParser) printerParsers[5]).literal;
+                literal7  = ((CharLiteralPrinterParser) printerParsers[7]).literal;
                 literal11 = ((CharLiteralPrinterParser) printerParsers[11]).literal;
                 printerParserNano = (NanosPrinterParser) printerParsers[12];
+            }
+
+            public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0'
+                        && !(printerParserNano instanceof NanosPrinterParser.FixWidth3)
+                ) {
+                    StringBuilder buf = new StringBuilder(32);
+                    format(new DateTimePrintContext(temporal, formatter), buf);
+                    return buf.toString();
+                }
+
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
+                int hour       = temporal.getHour();
+                int minute     = temporal.getMinute();
+                int second     = temporal.getSecond();
+                int nano       = temporal.getNano();
+
+                int size   = printerParserYear.size(year) + 19;
+                byte[] buf = new byte[size];
+                int index  = printerParserYear.formatTo(buf, 0, year);
+                buf[index] = (byte) literal1;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, month);
+                buf[index] = (byte) literal1;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, dayOfMonth);
+                buf[index] = (byte) literal5;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, hour);
+                buf[index] = (byte) literal7;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, minute);
+                buf[index] = (byte) literal7;
+                index      = DecimalDigits.putPairLatin1(buf, index + 1, second);
+                buf[index] = (byte) literal11;
+                ((NanosPrinterParser.FixWidth3) printerParserNano).formatTo(buf, index + 1, nano);
+                try {
+                    return JLA.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+                } catch (CharacterCodingException cce) {
+                    throw new AssertionError(cce);
+                }
             }
 
             @Override
             public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 var temporal = context.getTemporal();
-                var year = temporal.getYear();
-                var month = temporal.getMonthValue();
-                var dayOfMonth = temporal.getDayOfMonth();
-                var hour = temporal.getHour();
-                var minute = temporal.getMinute();
-                var second = temporal.getSecond();
-                var nano = temporal.getNano();
+
+                int year       = temporal.getYear();
+                int month      = temporal.getMonthValue();
+                int dayOfMonth = temporal.getDayOfMonth();
+                int hour       = temporal.getHour();
+                int minute     = temporal.getMinute();
+                int second     = temporal.getSecond();
+                int nano       = temporal.getNano();
 
                 if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
                     year = (year >= 1 ? year : 1 - year);
@@ -3389,7 +3535,7 @@ public final class DateTimeFormatterBuilder {
 
                 var decimalStyle = context.getDecimalStyle();
                 printerParserYear.format(buf, decimalStyle, year);
-                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                char zeroDigit = context.getDecimalStyle().getZeroDigit();
                 buf.append(literal1)
                    .append((char) (zeroDigit + month / 10))
                    .append((char) (zeroDigit + month % 10))
@@ -4171,7 +4317,6 @@ public final class DateTimeFormatterBuilder {
 
             @Override
             public void format(StringBuilder buf, DecimalStyle decimalStyle, int value) {
-                int div = value / 10;
                 if (value >= 0) {
                     if (value > 9999) {
                         buf.append(decimalStyle.getPositiveSign());
@@ -4189,6 +4334,44 @@ public final class DateTimeFormatterBuilder {
                 } else {
                     buf.append(decimalStyle.convertNumberToI18N(Integer.toString(value)));
                 }
+            }
+
+            public int size(int value) {
+                if (value > -1000 && value < 10000) {
+                    return 4;
+                }
+
+                int size = 0;
+                if (value >= 0) {
+                    if (value > 9999) {
+                        size = 1;
+                    }
+                } else {
+                    value = -value;
+                    size = 1;
+                }
+                return size + DecimalDigits.stringSize(value);
+            }
+
+            public int formatTo(byte[] buf, int index, int value) {
+                if (value >= 0) {
+                    if (value > 9999) {
+                        buf[index++] = '+';
+                    }
+                } else {
+                    value = -value;
+                    buf[index++] = '-';
+                }
+                if (value < 10000) {
+                    int div = value / 100;
+                    int rem = value % 100;
+                    index = DecimalDigits.putPairLatin1(buf, index, div);
+                    index = DecimalDigits.putPairLatin1(buf, index, rem);
+                } else {
+                    index += DecimalDigits.stringSize(value);
+                    JLA.getCharsLatin1(value, index, buf);
+                }
+                return index;
             }
         }
 
@@ -4588,6 +4771,7 @@ public final class DateTimeFormatterBuilder {
             int val = field.range().checkValidIntValue(value, field);
             format(buf, decimalStyle, val);
         }
+
         @Override
         public void format(StringBuilder buf, DecimalStyle decimalStyle, int val) {
             int stringSize = DecimalDigits.stringSize(val);
@@ -4691,6 +4875,19 @@ public final class DateTimeFormatterBuilder {
                 buf.append((char) (zeroDigit + nano2 / 10))
                    .append((char) (zeroDigit + nano2 % 10))
                    .append((char) (zeroDigit + nano3 % 10));
+            }
+
+            public int formatTo(byte[] buf, int index, int value) {
+                int nano3 = value / 1_000_000;
+                int nano2  = nano3 / 10;
+                buf[index    ] = (byte) ('0' + nano2 / 10);
+                buf[index + 1] = (byte) ('0' + nano2 % 10);
+                buf[index + 2] = (byte) ('0' + nano3 % 10);
+                return index + 3;
+            }
+
+            public int size(int value) {
+                return 3;
             }
         }
     }

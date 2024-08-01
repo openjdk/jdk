@@ -136,4 +136,11 @@ public final class DecimalDigits {
         }
         return 19 + d;
     }
+
+    public static int putPairLatin1(byte[] buf, int charPos, int value) {
+        short pair = DIGITS[value];
+        buf[charPos    ] = (byte)(pair);
+        buf[charPos + 1] = (byte)(pair >> 8);
+        return charPos + 2;
+    }
 }
