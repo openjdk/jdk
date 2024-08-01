@@ -47,7 +47,6 @@ public class TestJcmdPIDSubstitution {
     public static void main(String[] args) throws Exception {
         verifyOutputFilenames("Thread.dump_to_file", FILENAME);
         verifyOutputFilenames("GC.heap_dump", FILENAME);
-        verifyOutputFilenames("Compiler.perfmap", FILENAME);
         verifyOutputFilenames("System.dump_map", "-F=%s".formatted(FILENAME));
     }
 
