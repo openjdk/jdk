@@ -309,7 +309,6 @@ void ClassLoaderDataGraph::modules_do_keepalive(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
-    // Keep the holder alive.
     cld->keep_alive();
     cld->modules_do(f);
   }
@@ -334,7 +333,6 @@ void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
 void ClassLoaderDataGraph::loaded_classes_do_keepalive(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
-    // Keep the holder alive.
     cld->keep_alive();
     cld->loaded_classes_do(klass_closure);
   }

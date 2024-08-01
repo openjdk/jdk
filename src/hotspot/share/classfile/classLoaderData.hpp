@@ -212,7 +212,7 @@ private:
   void classes_do(void f(Klass* const));
 
  private:
-  bool keep_alive_ref_count() const { return _keep_alive_ref_count; }
+  int keep_alive_ref_count() const { return _keep_alive_ref_count; }
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -304,7 +304,8 @@ private:
     return _unloading;
   }
 
-  // Used to refcount a non-strong hidden class's s CLD in order to indicate their aliveness.
+  // Used to refcount a non-strong hidden class's CLD in order to force its aliveness during
+  // loading, when gc tracing may not find this CLD alive through the holder.
   void inc_keep_alive_ref_count();
   void dec_keep_alive_ref_count();
 
