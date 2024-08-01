@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,21 +27,29 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import jdk.internal.access.SharedSecrets;
+import jdk.internal.access.JavaIOFileDescriptorAccess;
 
 /*
  * Represents a key to a specific file on Solaris or Linux
  */
 public class FileKey {
 
-    private long st_dev;    // ID of device
-    private long st_ino;    // Inode number
+    private final long st_dev;    // ID of device
+    private final long st_ino;    // Inode number
 
-    private FileKey() { }
+    private FileKey(long st_dev, long st_ino) {
+        this.st_dev = st_dev;
+        this.st_ino = st_ino;
+    }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        FileKey fk = new FileKey();
-        fk.init(fd);
-        return fk;
+        JavaIOFileDescriptorAccess access =
+            SharedSecrets.getJavaIOFileDescriptorAccess();
+        int fdVal = access.get(fd);
+        long devIno[] = new long[2];
+        getDevIno(fdVal, devIno);
+        return new FileKey(devIno[0], devIno[1]);
     }
 
     @Override
@@ -59,10 +67,6 @@ public class FileKey {
                 && (this.st_ino == other.st_ino);
     }
 
-    private native void init(FileDescriptor fd) throws IOException;
-    private static native void initIDs();
-
-    static {
-        initIDs();
-    }
+    private static native void getDevIno(int fd, long[] ids)
+        throws IOException;
 }
