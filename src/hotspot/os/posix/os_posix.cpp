@@ -329,7 +329,7 @@ char* os::map_memory_to_file(char* base, size_t size, int fd) {
     return nullptr;
   }
 
-  assert(base == nullptr || addr == base, "should not, base: %p, addr: %p", base, addr);
+  assert(base == nullptr || addr == base, "should not, base: " PTR_FORMAT " addr: " PTR_FORMAT, p2i(base), p2i(addr));
 
   return addr;
 }
