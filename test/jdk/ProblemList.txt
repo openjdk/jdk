@@ -613,7 +613,7 @@ com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
 ############################################################################
 
