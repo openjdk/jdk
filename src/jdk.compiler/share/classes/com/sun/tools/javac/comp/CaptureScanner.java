@@ -54,8 +54,7 @@ public class CaptureScanner extends TreeScanner {
     private final Set<Symbol.VarSymbol> seenVars = new HashSet<>();
 
     /**
-     * The list of owner's variables accessed from within the local class,
-     * without any duplicates.
+     * The set of captured local variables accessed from within the tree under analysis.
      */
     private final Set<VarSymbol> fvs = new LinkedHashSet<>();
 
