@@ -558,7 +558,9 @@ const int ObjectAlignmentInBytes = 8;
           "(also see HeapDumpPath, HeapDumpGzipLevel)")                     \
                                                                             \
   product(bool, HeapDumpRedacted, false, MANAGEABLE,                        \
-          "Redact primitive type values from heap dump by setting "         \
+          "When HeapDumpOnOutOfMemoryError, HeapDumpBeforeFullGC "          \
+          "or HeapDumpAfterFullGC is on, "                                  \
+          "redact primitive type values from heap dump by setting "         \
           "them to zero.")                                                  \
                                                                             \
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \

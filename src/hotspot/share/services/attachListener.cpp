@@ -249,15 +249,12 @@ static jint dump_heap(AttachOperation* op, outputStream* out) {
         return JNI_ERR;
       }
     }
-    const char* redact_str = op->arg(3);
-    bool redact = redact_str != nullptr && strcmp(redact_str, "true") == 0;
-
 
     // Request a full GC before heap dump if live_objects_only = true
     // This helps reduces the amount of unreachable objects in the dump
     // and makes it easier to browse.
     HeapDumper dumper(live_objects_only /* request GC */);
-    dumper.dump(path, out, level, false, redact);
+    dumper.dump(path, out, level);
   }
   return JNI_OK;
 }
