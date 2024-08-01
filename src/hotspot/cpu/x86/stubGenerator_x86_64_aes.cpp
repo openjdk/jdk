@@ -2928,7 +2928,7 @@ __ vpternlogq(dst3, 0x96, src32, src33, Assembler::AVX_512bit); \
 //schoolbook multiply of 16 blocks(8 x 16 bytes)
 //it is assumed that data read is already shuffledand
 void StubGenerator::ghash16_avx512(bool start_ghash, bool do_reduction, bool uload_shuffle, bool hk_broadcast, bool do_hxor,
-                                   Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, int in_offset, 
+                                   Register in, Register pos, Register subkeyHtbl, XMMRegister HASH, int in_offset,
                                    int in_disp, int displacement, int hashkey_offset) {
   const XMMRegister ZTMP0 = xmm0;
   const XMMRegister ZTMP1 = xmm3;
