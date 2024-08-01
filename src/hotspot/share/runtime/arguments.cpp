@@ -503,7 +503,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RequireSharedSpaces",          JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "UseSharedSpaces",              JDK_Version::jdk(18), JDK_Version::jdk(19), JDK_Version::undefined() },
   { "DontYieldALot",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
-  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "LockingMode",                  JDK_Version::jdk(24), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
@@ -512,6 +511,7 @@ static SpecialFlag const special_jvm_flags[] = {
 
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
+  { "UseNotificationThread",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "PreserveAllAnnotations",       JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseEmptySlotsInSupers",        JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "OldSize",                      JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
@@ -521,6 +521,8 @@ static SpecialFlag const special_jvm_flags[] = {
   { "RTMRetryCount",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #endif // X86
 
+
+  { "BaseFootPrintEstimate",           JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "HeapFirstMaximumCompactionCount", JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
   { "UseVtableBasedCHA",               JDK_Version::undefined(), JDK_Version::jdk(24), JDK_Version::jdk(25) },
 #ifdef ASSERT
@@ -1653,9 +1655,6 @@ jint Arguments::set_aggressive_heap_flags() {
 #endif
 
   // Increase some data structure sizes for efficiency
-  if (FLAG_SET_CMDLINE(BaseFootPrintEstimate, MaxHeapSize) != JVMFlag::SUCCESS) {
-    return JNI_EINVAL;
-  }
   if (FLAG_SET_CMDLINE(ResizeTLAB, false) != JVMFlag::SUCCESS) {
     return JNI_EINVAL;
   }

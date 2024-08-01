@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
   PerfVariable* _avg_major_interval;
   PerfVariable* _live_space;
   PerfVariable* _free_space;
-  PerfVariable* _avg_base_footprint;
   PerfVariable* _live_at_last_full_gc_counter;
   PerfVariable* _old_capacity;
 
@@ -142,11 +141,6 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
     _free_space->set_value(ps_size_policy()->free_space());
   }
 
-  inline void update_avg_base_footprint() {
-    _avg_base_footprint->set_value(
-      (jlong)(ps_size_policy()->avg_base_footprint()->average())
-    );
-  }
   inline void update_avg_old_live() {
     _avg_old_live_counter->set_value(
       (jlong)(ps_size_policy()->avg_old_live()->average())

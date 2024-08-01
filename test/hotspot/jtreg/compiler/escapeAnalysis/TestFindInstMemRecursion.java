@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,29 @@
  * questions.
  */
 
-package jdk.jfr.event.gc.collection;
-import jdk.test.lib.jfr.GCHelper;
-
 /**
  * @test
- * @key jfr
- * @requires vm.hasJFR
+ * @bug 8324345
+ * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack
+ *          overflow.
  *
- * @requires vm.gc == "Parallel" | vm.gc == null
- * @library /test/lib /test/jdk
+ * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
+ *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
+ *                   -XX:CompileCommand=MemLimit,*.*,0
+ *                   compiler.escapeAnalysis.TestFindInstMemRecursion
  *
- * @run driver jdk.jfr.event.gc.collection.TestGCCauseWithParallelOld
  */
-public class TestGCCauseWithParallelOld {
+
+package compiler.escapeAnalysis;
+
+import javax.swing.*;
+import javax.swing.plaf.metal.*;
+
+public class TestFindInstMemRecursion {
     public static void main(String[] args) throws Exception {
-        String testID = "ParallelOld";
-        String[] vmFlags = {"-XX:+UseParallelGC"};
-        String[] gcNames = {GCHelper.gcParallelScavenge, GCHelper.gcParallelOld};
-        String[] gcCauses = {"Allocation Failure", "System.gc()", "GCLocker Initiated GC"};
-        GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
+        LookAndFeel lookAndFeel = new MetalLookAndFeel();
+        for (int i = 0; i < 20; ++i) {
+            UIManager.setLookAndFeel(lookAndFeel);
+        }
     }
 }
