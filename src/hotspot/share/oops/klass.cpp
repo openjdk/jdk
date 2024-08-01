@@ -181,7 +181,7 @@ bool Klass::linear_search_secondary_supers(const Klass* k) const {
 // occupancy bitmap rotated such that Bit 1 is the next bit to test,
 // search for k.
 bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx rotated_bitmap) const {
-  if (rotated_bitmap == SECONDARY_SUPERS_BITMAP_FULL) {
+  if (secondary_supers()->length() > SECONDARY_SUPERS_TABLE_SIZE - 2) {
     return linear_search_secondary_supers(k);
   }
 
