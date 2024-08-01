@@ -758,6 +758,65 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
 }
 
 // public static
+// public static
+// <E,
+//  SH extends VectorShuffle<E>>
+// SH shuffleWrapIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+//                       ShuffleWrapIndexesOperation<SH> defaultImpl)
+bool LibraryCallKit::inline_vector_shuffle_wrap_indexes() {
+  const TypeInstPtr* elem_klass    = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* shuffle_klass = gvn().type(argument(1))->isa_instptr();
+  Node*              shuffle       = argument(2);
+  const TypeInt*     vlen          = gvn().type(argument(3))->isa_int();
+
+  if (elem_klass == nullptr || shuffle_klass == nullptr || shuffle->is_top() || vlen == nullptr) {
+    return false; // dead code
+  }
+  if (!vlen->is_con() || shuffle_klass->const_oop() == nullptr) {
+    return false; // not enough info for intrinsification
+  }
+  if (!is_klass_initialized(shuffle_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  int num_elem = vlen->get_con();
+  if ((num_elem < 4) || !is_power_of_2(num_elem)) {
+    return false;
+  }
+
+  // Shuffles use byte array based backing storage
+  BasicType shuffle_bt = T_BYTE;
+
+  if (!arch_supports_vector(Op_AndV, num_elem, shuffle_bt, VecMaskNotUsed) ||
+      !arch_supports_vector(Op_Replicate, num_elem, shuffle_bt, VecMaskNotUsed)) {
+    return false;
+  }
+
+  ciKlass* sbox_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* shuffle_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, sbox_klass);
+
+  // Unbox shuffle with true flag to indicate its load shuffle to vector
+  // shuffle is a byte array
+  Node* shuffle_vec = unbox_vector(shuffle, shuffle_box_type, shuffle_bt, num_elem, true);
+
+  const TypeVect* vt  = TypeVect::make(shuffle_bt, num_elem);
+  const Type* shuffle_type_bt = Type::get_const_basic_type(shuffle_bt);
+
+  Node* mod_mask = gvn().makecon(TypeInt::make(num_elem-1));
+  Node* bcast_mod_mask  = gvn().transform(VectorNode::scalar2vector(mod_mask, num_elem, shuffle_type_bt));
+
+  // Wrap the indices greater than lane count.
+  Node* res = gvn().transform(VectorNode::make(Op_AndV, shuffle_vec, bcast_mod_mask, vt));
+
+  // Wrap it up in VectorBox to keep object type information.
+  res = box_vector(res, shuffle_box_type, shuffle_bt, num_elem);
+  set_result(res);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(shuffle_bt))));
+  return true;
+}
+
+// public static
 // <M,
 //  S extends VectorSpecies<E>,
 //  E>

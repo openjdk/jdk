@@ -434,10 +434,16 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float128Vector rearrange(VectorShuffle<Float> s) {
+    public Float128Vector rearrange(VectorShuffle<Float> s, boolean wrap) {
         return (Float128Vector)
             super.rearrangeTemplate(Float128Shuffle.class,
-                                    (Float128Shuffle) s);  // specialize
+                                    (Float128Shuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float128Vector rearrange(VectorShuffle<Float> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -823,6 +829,13 @@ final class Float128Vector extends FloatVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Float128Shuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, Float128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Float128Shuffle)(((AbstractShuffle<Float>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

@@ -263,6 +263,20 @@ public class VectorSupport {
       return defaultImpl.apply(sh);
     }
 
+    public interface ShuffleWrapIndexesOperation<SH extends VectorShuffle<?>> {
+        SH apply(SH sh);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <E,
+     SH extends VectorShuffle<E>>
+    SH shuffleWrapIndexes(Class<E> eClass, Class<? extends SH> shClass, SH sh, int length,
+                          ShuffleWrapIndexesOperation<SH> defaultImpl) {
+       assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+       return defaultImpl.apply(sh);
+    }
+
     /* ============================================================================ */
     public interface IndexOperation<V extends Vector<?>,
                                     S extends VectorSpecies<?>> {

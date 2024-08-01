@@ -447,10 +447,16 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
-    public IntMaxVector rearrange(VectorShuffle<Integer> s) {
+    public IntMaxVector rearrange(VectorShuffle<Integer> s, boolean wrap) {
         return (IntMaxVector)
             super.rearrangeTemplate(IntMaxShuffle.class,
-                                    (IntMaxShuffle) s);  // specialize
+                                    (IntMaxShuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public IntMaxVector rearrange(VectorShuffle<Integer> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -839,6 +845,13 @@ final class IntMaxVector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public IntMaxShuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, IntMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((IntMaxShuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

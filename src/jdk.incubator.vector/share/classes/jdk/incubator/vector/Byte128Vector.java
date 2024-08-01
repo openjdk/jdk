@@ -447,10 +447,16 @@ final class Byte128Vector extends ByteVector {
 
     @Override
     @ForceInline
-    public Byte128Vector rearrange(VectorShuffle<Byte> s) {
+    public Byte128Vector rearrange(VectorShuffle<Byte> s, boolean wrap) {
         return (Byte128Vector)
             super.rearrangeTemplate(Byte128Shuffle.class,
-                                    (Byte128Shuffle) s);  // specialize
+                                    (Byte128Shuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte128Vector rearrange(VectorShuffle<Byte> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -858,6 +864,13 @@ final class Byte128Vector extends ByteVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Byte128Shuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, Byte128Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Byte128Shuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

@@ -434,10 +434,16 @@ final class DoubleMaxVector extends DoubleVector {
 
     @Override
     @ForceInline
-    public DoubleMaxVector rearrange(VectorShuffle<Double> s) {
+    public DoubleMaxVector rearrange(VectorShuffle<Double> s, boolean wrap) {
         return (DoubleMaxVector)
             super.rearrangeTemplate(DoubleMaxShuffle.class,
-                                    (DoubleMaxShuffle) s);  // specialize
+                                    (DoubleMaxShuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public DoubleMaxVector rearrange(VectorShuffle<Double> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -816,6 +822,13 @@ final class DoubleMaxVector extends DoubleVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public DoubleMaxShuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, DoubleMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((DoubleMaxShuffle)(((AbstractShuffle<Double>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

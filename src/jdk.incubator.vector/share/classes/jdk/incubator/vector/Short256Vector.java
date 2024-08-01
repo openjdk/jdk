@@ -447,10 +447,16 @@ final class Short256Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short256Vector rearrange(VectorShuffle<Short> s) {
+    public Short256Vector rearrange(VectorShuffle<Short> s, boolean wrap) {
         return (Short256Vector)
             super.rearrangeTemplate(Short256Shuffle.class,
-                                    (Short256Shuffle) s);  // specialize
+                                    (Short256Shuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short256Vector rearrange(VectorShuffle<Short> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -858,6 +864,13 @@ final class Short256Vector extends ShortVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Short256Shuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, Short256Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short256Shuffle)(((AbstractShuffle<Short>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

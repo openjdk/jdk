@@ -2770,17 +2770,28 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
      */
     @Override
     public abstract
-    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> m);
+    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $abstractvectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<$Boxtype$>>
-    $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+    $abstractvectortype$ rearrangeTemplate(Class<S> shuffletype, S shuffle, boolean wrap) {
+        if (!wrap) {
+          shuffle.checkIndexes();
+        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, $type$.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);

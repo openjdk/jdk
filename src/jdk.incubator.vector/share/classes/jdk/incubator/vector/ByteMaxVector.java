@@ -447,10 +447,16 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
-    public ByteMaxVector rearrange(VectorShuffle<Byte> s) {
+    public ByteMaxVector rearrange(VectorShuffle<Byte> s, boolean wrap) {
         return (ByteMaxVector)
             super.rearrangeTemplate(ByteMaxShuffle.class,
-                                    (ByteMaxShuffle) s);  // specialize
+                                    (ByteMaxShuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector rearrange(VectorShuffle<Byte> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -828,6 +834,13 @@ final class ByteMaxVector extends ByteVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public ByteMaxShuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, ByteMaxShuffle.class, this, VLENGTH,
+                                                    (s) -> ((ByteMaxShuffle)(((AbstractShuffle<Byte>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

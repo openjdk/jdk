@@ -2394,17 +2394,28 @@ public abstract class ShortVector extends AbstractVector<Short> {
      */
     @Override
     public abstract
-    ShortVector rearrange(VectorShuffle<Short> m);
+    ShortVector rearrange(VectorShuffle<Short> shuffle, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector rearrange(VectorShuffle<Short> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Short>>
-    ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
-        shuffle.checkIndexes();
+    ShortVector rearrangeTemplate(Class<S> shuffletype, S shuffle, boolean wrap) {
+        if (!wrap) {
+          shuffle.checkIndexes();
+        }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
             getClass(), shuffletype, null, short.class, length(),
-            this, shuffle, null,
+            this, ws, null,
             (v1, s_, m_) -> v1.uOp((i, a) -> {
                 int ei = s_.laneSource(i);
                 return v1.lane(ei);

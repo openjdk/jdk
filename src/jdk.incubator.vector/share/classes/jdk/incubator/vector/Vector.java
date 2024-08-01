@@ -2619,6 +2619,29 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * the input vector at lane {@code I}.
      *
      * @param s the shuffle controlling lane index selection
+     * @param wrap wrap the shuffle to vector length
+     * @return the rearrangement of the lane elements of this vector
+     * @throws IndexOutOfBoundsException if there are any exceptional
+     *        source indexes in the shuffle
+     * @see #rearrange(VectorShuffle,VectorMask)
+     * @see #rearrange(VectorShuffle,Vector)
+     * @see VectorShuffle#laneIsValid()
+     */
+    public abstract Vector<E> rearrange(VectorShuffle<E> s, boolean wrap);
+
+    /**
+     * Rearranges the lane elements of this vector, selecting lanes
+     * under the control of a specific shuffle.
+     *
+     * This is a cross-lane operation that rearranges the lane
+     * elements of this vector.
+     *
+     * For each lane {@code N} of the shuffle, and for each lane
+     * source index {@code I=s.laneSource(N)} in the shuffle,
+     * the output lane {@code N} obtains the value from
+     * the input vector at lane {@code I}.
+     *
+     * @param s the shuffle controlling lane index selection
      * @return the rearrangement of the lane elements of this vector
      * @throws IndexOutOfBoundsException if there are any exceptional
      *        source indexes in the shuffle

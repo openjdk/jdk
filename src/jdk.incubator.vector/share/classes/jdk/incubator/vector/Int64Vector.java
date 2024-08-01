@@ -447,10 +447,16 @@ final class Int64Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int64Vector rearrange(VectorShuffle<Integer> s) {
+    public Int64Vector rearrange(VectorShuffle<Integer> s, boolean wrap) {
         return (Int64Vector)
             super.rearrangeTemplate(Int64Shuffle.class,
-                                    (Int64Shuffle) s);  // specialize
+                                    (Int64Shuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int64Vector rearrange(VectorShuffle<Integer> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -830,6 +836,13 @@ final class Int64Vector extends IntVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Int64Shuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, Int64Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Int64Shuffle)(((AbstractShuffle<Integer>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline

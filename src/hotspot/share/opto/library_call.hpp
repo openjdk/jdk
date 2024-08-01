@@ -350,6 +350,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_vector_nary_operation(int n);
   bool inline_vector_frombits_coerced();
   bool inline_vector_shuffle_to_vector();
+  bool inline_vector_shuffle_wrap_indexes();
   bool inline_vector_shuffle_iota();
   Node* partially_wrap_indexes(Node* index_vec, int num_elem, BasicType type_bt);
   bool inline_vector_mask_operation();

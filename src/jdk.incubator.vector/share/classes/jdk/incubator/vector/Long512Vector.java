@@ -437,10 +437,16 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long512Vector rearrange(VectorShuffle<Long> s) {
+    public Long512Vector rearrange(VectorShuffle<Long> s, boolean wrap) {
         return (Long512Vector)
             super.rearrangeTemplate(Long512Shuffle.class,
-                                    (Long512Shuffle) s);  // specialize
+                                    (Long512Shuffle) s, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long512Vector rearrange(VectorShuffle<Long> s) {
+        return rearrange(s, true);
     }
 
     @Override
@@ -832,6 +838,13 @@ final class Long512Vector extends LongVector {
                 throw new IllegalArgumentException("VectorShuffle length and species length differ");
             int[] shuffleArray = toArray();
             return s.shuffleFromArray(shuffleArray, 0).check(s);
+        }
+
+        @Override
+        @ForceInline
+        public Long512Shuffle wrapIndexes() {
+            return VectorSupport.shuffleWrapIndexes(ETYPE, Long512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Long512Shuffle)(((AbstractShuffle<Long>)(s)).wrapIndexesTemplate())));
         }
 
         @ForceInline
