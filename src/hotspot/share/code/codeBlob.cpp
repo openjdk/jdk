@@ -275,26 +275,28 @@ static intptr_t offset_to_codecache(char* ptr) {
   return offset;
 }
 
+static BufferBlob* malloc_buffer_blob(unsigned size) {
+  // CodeBuffers in CodeCache are aligned to segment size with offset
+  // need to preserve this alignment to avoid "copy must preserve alignment" assert on realocation
+  int bufferblob_offset = sizeof(HeapBlock);
+  int bufferblob_alignment = CodeCacheSegmentSize;
+  char* buf = (char*)malloc(size + bufferblob_alignment + bufferblob_offset);
+  char* ptr = align_up(buf, bufferblob_alignment);
+  *((char**)ptr) = buf; // store pointer to a buffer to release it later
+  return (BufferBlob*)(ptr + bufferblob_offset);
+}
+
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
   if (!alloc_in_codecache) {
-    // ##
-    // ## Note. aligned_alloc is declared FORBID_C_FUNCTION("don't use") in globalDefinitions.hpp
-    // ## todo: use malloc, allocate an extra bytes and use aligned offset within the allocated range
-    // ##
-    char* ptr = (char*)aligned_alloc(K, size + 16); // 16 is a header gap
-
+    BufferBlob* blob = malloc_buffer_blob(size);
     if (StressCodeBuffers) {
-      while (offset_to_codecache(ptr) < 4L*1000*1000*1000 &&
-             offset_to_codecache(ptr) > -4L*1000*1000*1000) {
+      while (offset_to_codecache((char*)blob) < 4L*1000*1000*1000 &&
+             offset_to_codecache((char*)blob) > -4L*1000*1000*1000) {
         // stress test: leave the garbage and reallocate
-        ptr = (char*)aligned_alloc(1000, 100*1000*1000);
-        ptr = (char*)aligned_alloc(K, size + 16);
+        blob = malloc_buffer_blob(100*1000*1000);
+        blob = malloc_buffer_blob(size);
       }
     }
-
-    // this is to avoid "copy must preserve alignment" assert in CodeBuffer::compute_final_layout:
-    // usual BufferBlob start position is ~ segment alignment + 16 due to HeapBlock header size
-    BufferBlob* blob = (BufferBlob*) ((char*)ptr + 16);
     return blob;
   }
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
@@ -302,8 +304,9 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
 
 void BufferBlob::free(BufferBlob *blob) {
   if (!CodeCache::contains((void*)blob)) {
-    // see alloc_in_codecache
-    std::free((char*)blob - 16);
+    int bufferblob_offset = sizeof(HeapBlock);
+    char* buf = *((char**)((char*)blob - bufferblob_offset));
+    std::free(buf);
     return;
   }
   RuntimeBlob::free(blob);
