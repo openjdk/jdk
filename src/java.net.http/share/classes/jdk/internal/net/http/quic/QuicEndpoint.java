@@ -1377,6 +1377,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (debug.on()) debug.log("removing connection " + connection);
         // remove the connection completely
         connection.connectionIds().forEach(connections::remove);
+        assert !connections.containsValue(connection) : connection;
         // remove references to this connection from the map which holds the peer issued
         // reset tokens
         dropPeerIssuedResetTokensFor(connection);
@@ -1417,6 +1418,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         if (closed) return;
         connection.connectionIds().forEach((id) ->
                 connections.compute(id, (i, r) -> remapDraining(i, r) ));
+        assert !connections.containsValue(connection) : connection;
     }
 
     private DrainingConnection remapDraining(QuicConnectionId id, QuicPacketReceiver conn) {
@@ -1457,6 +1459,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         closing.flip();
         connection.connectionIds().forEach((id) ->
                 connections.compute(id, (i, r) -> remapClosing(i, r, closing)));
+        assert !connections.containsValue(connection) : connection;
     }
 
     private ClosedConnection remapClosing(QuicConnectionId id, QuicPacketReceiver conn, ByteBuffer datagram) {
