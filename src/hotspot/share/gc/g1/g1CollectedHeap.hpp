@@ -669,10 +669,6 @@ public:
   // Allocates a new heap region instance.
   G1HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
-  // Allocate the highest free region in the reserved heap. This will commit
-  // regions as necessary.
-  G1HeapRegion* alloc_highest_free_region();
-
   // Frees a region by resetting its metadata and adding it to the free list
   // passed as a parameter (this is usually a local list which will be appended
   // to the master free list later or null if free list management is handled

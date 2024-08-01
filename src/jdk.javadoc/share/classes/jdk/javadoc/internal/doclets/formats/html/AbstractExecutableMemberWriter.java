@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
@@ -128,6 +129,24 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
     @Override
     protected void addInheritedSummaryLink(TypeElement te, Element member, Content target) {
         target.add(writer.getDocLink(PLAIN, te, member, name(member)));
+    }
+
+    /**
+     * Adds the generic type parameters.
+     *
+     * @param member the member to add the generic type parameters for
+     * @param target the content to which the generic type parameters will be added
+     */
+    protected void addTypeParameters(ExecutableElement member, Content target) {
+        Content typeParameters = getTypeParameters(member);
+        target.add(typeParameters);
+        // Add explicit line break between method type parameters and
+        // return type in member summary table to avoid random wrapping.
+        if (typeParameters.charCount() > 10) {
+            target.add(new HtmlTree(TagName.BR));
+        } else {
+            target.add(Entity.NO_BREAK_SPACE);
+        }
     }
 
     /**
