@@ -3017,24 +3017,19 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * Compose a list of Quic frames containing a crypto frame, an ack frame (if ackSize > 0),
-     * and a padding frame (if padding size > 0)
+     * Compose a list of Quic frames containing a crypto frame and an ack frame,
+     * omitting null frames.
      * @param crypto        the crypto frame
-     * @param ack           the ack frame, or {@code null} if ackSize <= 0
-     * @param ackSize       the size of the ack frame, if {@code ack} is not null
-     * @param paddingSize   the size of the padding frame
+     * @param ack           the ack frame
      * @return A list of {@link QuicFrame}.
      */
-    private List<QuicFrame> withPadding(CryptoFrame crypto, AckFrame ack, int ackSize, int paddingSize) {
-        List<QuicFrame> frames;
-        if (ackSize > 0 && paddingSize > 0) {
-            frames = List.of(crypto, ack, new PaddingFrame(paddingSize));
-        } else if (paddingSize > 0) {
-            frames = List.of(crypto, new PaddingFrame(paddingSize));
-        } else if (ackSize > 0) {
-            frames = List.of(crypto, ack);
-        } else {
-            frames = List.of(crypto);
+    private List<QuicFrame> makeList(CryptoFrame crypto, AckFrame ack) {
+        List<QuicFrame> frames = new ArrayList<>(2);
+        if (crypto != null) {
+            frames.add(crypto);
+        }
+        if (ack != null) {
+            frames.add(ack);
         }
         return frames;
     }
@@ -3196,50 +3191,38 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             byte[] token = initialToken();
             int tksize = token == null ? 0 : token.length;
             PacketSpace packetSpace = packetSpaces.get(PacketNumberSpace.INITIAL);
-            AckFrame ackFrame = packetSpace.getNextAckFrame(false);
-            int ackSize = ackFrame == null ? 0 : ackFrame.size();
-            if (debug.on()) {
-                debug.log("ack frame size: %d", ackSize);
-            }
             int maxDstIdLength = MAX_CONNECTION_ID_LENGTH; // reserve space for the id to grow
             int maxSrcIdLength = isClientConnection() ? connectionId.length() : MAX_CONNECTION_ID_LENGTH;
             // compute maxPayloadSize given maxSizeBeforeEncryption
             var largestAckedPN = packetSpace.getLargestPeerAckedPN();
             var packetNumber = packetSpace.allocateNextPN();
-            int maxPayloadSize = QuicPacketEncoder.computeMaxInitialPayloadSize(codingContext,
-                    packetNumber, tksize, connectionId.length(), peerConnId.length(),
-                    SMALLEST_MAXIMUM_DATAGRAM_SIZE);
-            // compute how many bytes we should reserve to allow smooth retransmission
-            // of packets
-            int reserved = maxPayloadSize - QuicPacketEncoder.computeReservedInitialPayloadSize(codingContext,
+            int maxPayloadSize = QuicPacketEncoder.computeReservedInitialPayloadSize(codingContext,
                     tksize, maxSrcIdLength, maxDstIdLength, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
+            // compute how many bytes were reserved to allow smooth retransmission
+            // of packets
+            int reserved = QuicPacketEncoder.computeMaxInitialPayloadSize(codingContext,
+                    packetNumber, tksize, connectionId.length(), peerConnId.length(),
+                    SMALLEST_MAXIMUM_DATAGRAM_SIZE) - maxPayloadSize;
             assert reserved >= 0 : "reserved is negative: " + reserved;
-            maxPayloadSize = maxPayloadSize - ackSize - reserved;
             if (debug.on()) {
                 debug.log("reserved %s byte in initial packet", reserved);
             }
-
-            CryptoFrame crypto = flow.localInitial.produceFrame(maxPayloadSize);
-            if (crypto == null) {
-                // we know that there are bytes remaining, so most likely maxPayloadSize is too small / token is too big
-                crypto = flow.localInitial.produceFrame(maxPayloadSize + ackSize);
-                if (crypto != null) {
-                    // TODO send ack in a separate packet
-                    // drop ack and send crypto alone
-                    ackFrame = null;
-                    ackSize = 0;
-                    maxPayloadSize = maxPayloadSize + ackSize;
-                } else {
-                    // token too long, can't fit a crypto frame in this packet. Abort.
-                    final String msg = "Initial token too large, maxPayload: " + (maxPayloadSize + ackSize);
-                    terminator.terminate(TerminationCause.forException(new IOException(msg)));
-                    return false;
-                }
+            if (maxPayloadSize < 5) {
+                // token too long, can't fit a crypto frame in this packet. Abort.
+                final String msg = "Initial token too large, maxPayload: " + maxPayloadSize;
+                terminator.terminate(TerminationCause.forException(new IOException(msg)));
+                return false;
             }
-            int cryptoSize = crypto.size();
+            AckFrame ackFrame = packetSpace.getNextAckFrame(false, maxPayloadSize);
+            int ackSize = ackFrame == null ? 0 : ackFrame.size();
+            if (debug.on()) {
+                debug.log("ack frame size: %d", ackSize);
+            }
+
+            CryptoFrame crypto = flow.localInitial.produceFrame(maxPayloadSize - ackSize);
+            int cryptoSize = crypto == null ? 0 : crypto.size();
             assert cryptoSize <= maxPayloadSize : cryptoSize - maxPayloadSize;
-            int paddingSize = maxPayloadSize - cryptoSize + reserved;
-            List<QuicFrame> frames = withPadding(crypto, ackFrame, ackSize, paddingSize);
+            List<QuicFrame> frames = makeList(crypto, ackFrame);
 
             if (debug.on()) {
                 debug.log("building initial packet: source=%s, dest=%s",
@@ -3250,8 +3233,8 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     packetNumber, largestAckedPN, frames, codingContext);
             int size = packet.size();
             if (debug.on()) {
-                debug.log("initial packet size is %d, max is %d, padding is %d",
-                        size, SMALLEST_MAXIMUM_DATAGRAM_SIZE, paddingSize);
+                debug.log("initial packet size is %d, max is %d",
+                        size, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
             }
             assert size == SMALLEST_MAXIMUM_DATAGRAM_SIZE : size - SMALLEST_MAXIMUM_DATAGRAM_SIZE;
 
@@ -3289,7 +3272,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                     " frame was produced, for max frame size: " + maxPayloadSize;
             int cryptoSize = crypto.size();
             assert cryptoSize <= maxPayloadSize : cryptoSize - maxPayloadSize;
-            List<QuicFrame> frames = withPadding(crypto, ackFrame, ackSize, 0);
+            List<QuicFrame> frames = makeList(crypto, ackFrame);
 
             if (debug.on()) {
                 debug.log("building handshake packet: source=%s, dest=%s",
