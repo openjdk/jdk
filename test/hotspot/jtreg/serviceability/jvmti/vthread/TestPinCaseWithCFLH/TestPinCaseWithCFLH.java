@@ -31,12 +31,13 @@
  * @build TestPinCaseWithCFLH
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *      TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
- * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
+ * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
 import java.security.ProtectionDomain;
+import jdk.test.lib.thread.VThreadPinner;
 
 public class TestPinCaseWithCFLH {
 
@@ -55,25 +56,15 @@ public class TestPinCaseWithCFLH {
 
     public static void main(String[] args) throws Exception{
         Thread t1 = Thread.ofVirtual().name("vthread-1").start(() -> {
-            result = nativeFuncPin(1);
+            VThreadPinner.runPinned(() -> {
+                try {
+                    Thread.sleep(500); // try yield, will pin, javaagent + tracePinnedThreads should not lead to crash (because of the class `PinnedThreadPrinter`)
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            });
         });
         t1.join();
-        assert result == 4;
     }
 
-    static int native2Java(int b) {
-        try {
-            Thread.sleep(500); // try yield, will pin, javaagent + tracePinnedThreads should not lead to crash (because of the class `PinnedThreadPrinter`)
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return b+1;
-    }
-
-    private static native int nativeFuncPin(int x);
-
-    static {
-        System.loadLibrary("TestPinCaseWithCFLH");
-    }
 }

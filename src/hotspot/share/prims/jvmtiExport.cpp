@@ -1090,9 +1090,7 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return false;
   }
-  if (JavaThread::current()->is_in_tmp_VTMS_transition()) {
-    return false; // skip CFLH events in tmp VTMS transition
-  }
+
   if (JavaThread::current()->is_in_any_VTMS_transition()) {
     return false; // no events should be posted if thread is in any VTMS transition
   }
