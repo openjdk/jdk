@@ -38,10 +38,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 /*
  * @test
  * @bug 8235404
- * @summary temp
+ * @summary Checks that JOptionPane doesn't block drawing strings on another component
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main OptionPaneInput
+ * @run main/manual OptionPaneInput
  */
 public class OptionPaneInput {
     private static JFrame f;
@@ -55,8 +55,6 @@ public class OptionPaneInput {
             """;
 
     public static void main(String[] args) throws Exception {
-//        UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
-
         PassFailJFrame testFrame = new PassFailJFrame(instructions);
 
         SwingUtilities.invokeAndWait(() -> createGUI());
@@ -68,9 +66,6 @@ public class OptionPaneInput {
         c = new Canvas();
         t = new JTextField();
         f.add(c);
-
-//        RepaintManager.currentManager(f).setDoubleBufferingEnabled(false);
-//        RepaintManager.currentManager(c).setDoubleBufferingEnabled(false);
 
         t.addActionListener(e->{
             String text = t.getText();
@@ -87,16 +82,5 @@ public class OptionPaneInput {
         f.setVisible(true);
 
         JOptionPane.showMessageDialog(null, t);
-
-//        JDialog d = new JDialog(f, true);
-//        d.add(t);
-//        d.setLocationRelativeTo(f);
-//        d.pack();
-//        d.show();
-
-//        Graphics2D g2 = (Graphics2D)(c.getGraphics());
-//        g2.setColor(Color.BLACK);
-//        g2.drawString("Dialog Closed", 10, 25);
-//        g2.dispose();
     }
 }
