@@ -3203,8 +3203,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
             int maxDstIdLength = MAX_CONNECTION_ID_LENGTH; // reserve space for the id to grow
             int maxSrcIdLength = isClientConnection() ? connectionId.length() : MAX_CONNECTION_ID_LENGTH;
-            // only clients include tokens  in initial packets
-            int maxTkSize = isClientConnection() ? Math.max(tksize, RESET_TOKEN_LENGTH) : tksize;
             // compute maxPayloadSize given maxSizeBeforeEncryption
             var largestAckedPN = packetSpace.getLargestPeerAckedPN();
             var packetNumber = packetSpace.allocateNextPN();
@@ -3214,7 +3212,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             // compute how many bytes we should reserve to allow smooth retransmission
             // of packets
             int reserved = maxPayloadSize - QuicPacketEncoder.computeReservedInitialPayloadSize(codingContext,
-                        maxTkSize, maxSrcIdLength, maxDstIdLength, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
+                    tksize, maxSrcIdLength, maxDstIdLength, SMALLEST_MAXIMUM_DATAGRAM_SIZE);
             assert reserved >= 0 : "reserved is negative: " + reserved;
             maxPayloadSize = maxPayloadSize - ackSize - reserved;
             if (debug.on()) {
