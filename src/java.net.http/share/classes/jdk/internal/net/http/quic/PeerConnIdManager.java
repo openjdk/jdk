@@ -230,12 +230,7 @@ final class PeerConnIdManager {
                     newCid.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
         }
         final ByteBuffer statelessResetToken = newCid.statelessResetToken();
-        final int resetTokenLength = statelessResetToken.remaining();
-        if (resetTokenLength != QuicConnectionImpl.RESET_TOKEN_LENGTH) {
-            throw new QuicTransportException("Invalid stateless reset token length " + resetTokenLength,
-                    packetType.keySpace().orElse(null),
-                    newCid.getTypeField(), QuicTransportErrors.FRAME_ENCODING_ERROR);
-        }
+        assert statelessResetToken.remaining() == QuicConnectionImpl.RESET_TOKEN_LENGTH;
         // see if we have received any connection ids for this same sequence number.
         // this is possible if the packet containing the new connection id frame was retransmitted.
         // the connection id for such a (duplicate) sequence number is expected to be the same.
