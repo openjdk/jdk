@@ -484,7 +484,7 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
   _parallel("-parallel", "Number of parallel threads to use for heap dump. The VM "
                           "will try to use the specified number of threads, but might use fewer.",
             "INT", false, "1"),
-  _redact("-redact", "redact heap dump by setting primitives to zero", "BOOLEAN", false, "false") {
+  _redact("-redact", "Redact heap dump by setting primitives to zero", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);

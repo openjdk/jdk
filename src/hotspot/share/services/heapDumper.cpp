@@ -759,7 +759,9 @@ class DumperSupport : AllStatic {
   // dump a jdouble
   static void dump_double(AbstractDumpWriter* writer, jdouble d);
   // dumps the raw value of the given field
-  static void dump_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset, bool redact);
+  static void dump_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset);
+  // dumps the given field redacting all primitives
+  static void dump_redacted_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset);
   // returns the size of the static fields; also counts the static fields
   static u4 get_static_fields_size(InstanceKlass* ik, u2& field_count);
   // dumps static fields of the given class
@@ -996,7 +998,7 @@ void DumperSupport::dump_double(AbstractDumpWriter* writer, jdouble d) {
 }
 
 // dumps the raw value of the given field
-void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset, bool redact) {
+void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset) {
   switch (type) {
     case JVM_SIGNATURE_CLASS :
     case JVM_SIGNATURE_ARRAY : {
@@ -1007,43 +1009,80 @@ void DumperSupport::dump_field_value(AbstractDumpWriter* writer, char type, oop 
       break;
     }
     case JVM_SIGNATURE_BYTE : {
-      jbyte b = redact ? 0 : obj->byte_field(offset);
+      jbyte b = obj->byte_field(offset);
       writer->write_u1(b);
       break;
     }
     case JVM_SIGNATURE_CHAR : {
-      jchar c = redact ? 0 : obj->char_field(offset);
+      jchar c = obj->char_field(offset);
       writer->write_u2(c);
       break;
     }
     case JVM_SIGNATURE_SHORT : {
-      jshort s = redact ? 0 : obj->short_field(offset);
+      jshort s = obj->short_field(offset);
       writer->write_u2(s);
       break;
     }
     case JVM_SIGNATURE_FLOAT : {
-      jfloat f = redact ? 0 : obj->float_field(offset);
+      jfloat f = obj->float_field(offset);
       dump_float(writer, f);
       break;
     }
     case JVM_SIGNATURE_DOUBLE : {
-      jdouble d = redact ? 0 : obj->double_field(offset);
+      jdouble d = obj->double_field(offset);
       dump_double(writer, d);
       break;
     }
     case JVM_SIGNATURE_INT : {
-      jint i = redact ? 0 : obj->int_field(offset);
+      jint i = obj->int_field(offset);
       writer->write_u4(i);
       break;
     }
     case JVM_SIGNATURE_LONG : {
-      jlong l = redact ? 0 : obj->long_field(offset);
+      jlong l = obj->long_field(offset);
       writer->write_u8(l);
       break;
     }
     case JVM_SIGNATURE_BOOLEAN : {
-      jboolean b = redact ? false : obj->bool_field(offset);
+      jboolean b = obj->bool_field(offset);
       writer->write_u1(b);
+      break;
+    }
+    default : {
+      ShouldNotReachHere();
+      break;
+    }
+  }
+}
+
+void DumperSupport::dump_redacted_field_value(AbstractDumpWriter* writer, char type, oop obj, int offset) {
+  switch (type) {
+    case JVM_SIGNATURE_CLASS :
+    case JVM_SIGNATURE_ARRAY : {
+      oop o = obj->obj_field_access<ON_UNKNOWN_OOP_REF | AS_NO_KEEPALIVE>(offset);
+      o = mask_dormant_archived_object(o, obj);
+      assert(oopDesc::is_oop_or_null(o), "Expected an oop or nullptr at " PTR_FORMAT, p2i(o));
+      writer->write_objectID(o);
+      break;
+    }
+    case JVM_SIGNATURE_BOOLEAN :
+    case JVM_SIGNATURE_BYTE : {
+      writer->write_u1(0);
+      break;
+    }
+    case JVM_SIGNATURE_CHAR :
+    case JVM_SIGNATURE_SHORT : {
+      writer->write_u2(0);
+      break;
+    }
+    case JVM_SIGNATURE_FLOAT :
+    case JVM_SIGNATURE_INT : {
+      writer->write_u4(0);
+      break;
+    }
+    case JVM_SIGNATURE_DOUBLE :
+    case JVM_SIGNATURE_LONG : {
+      writer->write_u8(0);
       break;
     }
     default : {
@@ -1122,7 +1161,11 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k, boo
       writer->write_u1(sig2tag(sig));       // type
 
       // value
-      dump_field_value(writer, sig->char_at(0), ik->java_mirror(), fld.offset(), redact);
+      if (redact) {
+        dump_redacted_field_value(writer, sig->char_at(0), ik->java_mirror(), fld.offset());
+      } else {
+        dump_field_value(writer, sig->char_at(0), ik->java_mirror(), fld.offset());
+      }
     }
   }
 
@@ -1156,7 +1199,11 @@ void DumperSupport::dump_static_fields(AbstractDumpWriter* writer, Klass* k, boo
 void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, DumperClassCacheTableEntry* class_cache_entry, bool redact) {
   assert(class_cache_entry != nullptr, "Pre-condition: must be provided");
   for (int idx = 0; idx < class_cache_entry->field_count(); idx++) {
-    dump_field_value(writer, class_cache_entry->sig_start(idx), o, class_cache_entry->offset(idx), redact);
+    if (redact) {
+      dump_redacted_field_value(writer, class_cache_entry->sig_start(idx), o, class_cache_entry->offset(idx));
+    } else {
+      dump_field_value(writer, class_cache_entry->sig_start(idx), o, class_cache_entry->offset(idx));
+    }
   }
 }
 
@@ -1383,73 +1430,74 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
   }
 
   if (redact) {
-    writer->write_raw(nullptr, length_in_bytes); //nullptr to write zeros
-  } else {
-    // If the byte ordering is big endian then we can copy most types directly
-    switch (type) {
-      case T_INT : {
-        if (Endian::is_Java_byte_ordering_different()) {
-          WRITE_ARRAY(array, int, u4, length);
-        } else {
-          writer->write_raw(array->int_at_addr(0), length_in_bytes);
-        }
-        break;
-      }
-      case T_BYTE : {
-        writer->write_raw(array->byte_at_addr(0), length_in_bytes);
-        break;
-      }
-      case T_CHAR : {
-        if (Endian::is_Java_byte_ordering_different()) {
-          WRITE_ARRAY(array, char, u2, length);
-        } else {
-          writer->write_raw(array->char_at_addr(0), length_in_bytes);
-        }
-        break;
-      }
-      case T_SHORT : {
-        if (Endian::is_Java_byte_ordering_different()) {
-          WRITE_ARRAY(array, short, u2, length);
-        } else {
-          writer->write_raw(array->short_at_addr(0), length_in_bytes);
-        }
-        break;
-      }
-      case T_BOOLEAN : {
-        if (Endian::is_Java_byte_ordering_different()) {
-          WRITE_ARRAY(array, bool, u1, length);
-        } else {
-          writer->write_raw(array->bool_at_addr(0), length_in_bytes);
-        }
-        break;
-      }
-      case T_LONG : {
-        if (Endian::is_Java_byte_ordering_different()) {
-          WRITE_ARRAY(array, long, u8, length);
-        } else {
-          writer->write_raw(array->long_at_addr(0), length_in_bytes);
-        }
-        break;
-      }
+    writer->write_raw(nullptr, length_in_bytes); // nullptr to write zeros
+    writer->end_sub_record();
+    return;
+  }
 
-      // handle float/doubles in a special value to ensure than NaNs are
-      // written correctly. TO DO: Check if we can avoid this on processors that
-      // use IEEE 754.
-
-      case T_FLOAT : {
-        for (int i = 0; i < length; i++) {
-          dump_float(writer, array->float_at(i));
-        }
-        break;
+  // If the byte ordering is big endian then we can copy most types directly
+  switch (type) {
+    case T_INT : {
+      if (Endian::is_Java_byte_ordering_different()) {
+        WRITE_ARRAY(array, int, u4, length);
+      } else {
+        writer->write_raw(array->int_at_addr(0), length_in_bytes);
       }
-      case T_DOUBLE : {
-        for (int i = 0; i < length; i++) {
-          dump_double(writer, array->double_at(i));
-        }
-        break;
-      }
-      default : ShouldNotReachHere();
+      break;
     }
+    case T_BYTE : {
+      writer->write_raw(array->byte_at_addr(0), length_in_bytes);
+      break;
+    }
+    case T_CHAR : {
+      if (Endian::is_Java_byte_ordering_different()) {
+        WRITE_ARRAY(array, char, u2, length);
+      } else {
+        writer->write_raw(array->char_at_addr(0), length_in_bytes);
+      }
+      break;
+    }
+    case T_SHORT : {
+      if (Endian::is_Java_byte_ordering_different()) {
+        WRITE_ARRAY(array, short, u2, length);
+      } else {
+        writer->write_raw(array->short_at_addr(0), length_in_bytes);
+      }
+      break;
+    }
+    case T_BOOLEAN : {
+      if (Endian::is_Java_byte_ordering_different()) {
+        WRITE_ARRAY(array, bool, u1, length);
+      } else {
+        writer->write_raw(array->bool_at_addr(0), length_in_bytes);
+      }
+      break;
+    }
+    case T_LONG : {
+      if (Endian::is_Java_byte_ordering_different()) {
+        WRITE_ARRAY(array, long, u8, length);
+      } else {
+        writer->write_raw(array->long_at_addr(0), length_in_bytes);
+      }
+      break;
+    }
+
+    // handle float/doubles in a special value to ensure than NaNs are
+    // written correctly. TO DO: Check if we can avoid this on processors that
+    // use IEEE 754.
+    case T_FLOAT : {
+      for (int i = 0; i < length; i++) {
+        dump_float(writer, array->float_at(i));
+      }
+      break;
+    }
+    case T_DOUBLE : {
+      for (int i = 0; i < length; i++) {
+        dump_double(writer, array->double_at(i));
+      }
+      break;
+    }
+    default : ShouldNotReachHere();
   }
 
   writer->end_sub_record();
