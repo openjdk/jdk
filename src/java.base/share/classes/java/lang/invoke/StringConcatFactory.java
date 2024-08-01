@@ -46,7 +46,6 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.AccessFlag;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1137,7 +1136,7 @@ public final class StringConcatFactory {
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
-                            clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                            clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
                                 .withField(LENGTH, CD_int, ClassFile.ACC_FINAL)
                                 .withField(CODER, CD_byte, ClassFile.ACC_FINAL)
                                 .withField(CONSTANTS, CD_Array_String, ClassFile.ACC_FINAL)
