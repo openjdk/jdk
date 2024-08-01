@@ -46,12 +46,14 @@ import java.util.Objects;
  * which is a cryptographic algorithm for deriving additional keys from input
  * keying material and (optionally) other data.
  * <p>
- * {@code KDF} objects are instantiated with the {@code getInstance} family of
- * methods. KDF algorithm names follow a naming convention of
+ * {@code KDF} objects are instantiated with the {@code getInstance} family
+ * of methods. For <a href="https://www.rfc-editor.org/rfc/rfc5869">RFC 5869</a>,
+ * KDF algorithm names follow a naming convention of
  * <em>Algorithm</em>With<em>PRF</em>. For instance, a KDF implementation of
- * HKDF using HMAC-SHA256 has an algorithm name of "HKDFWithHmacSHA256". In some
- * cases the WithPRF portion of the algorithm field may be omitted if the KDF
- * algorithm has a fixed or default PRF.
+ * HKDF using HMAC-SHA256 has an algorithm name of "HKDFWithHmacSHA256". For
+ * future algorithms, the "WithPRF" portion of the algorithm field may be
+ * omitted if the KDF algorithm has a fixed or default PRF or if the PRF is
+ * specified as part of the {@code KDFParameters}.
  * <p>
  * The class has two derive methods, {@code deriveKey} and {@code deriveData}.
  * The {@code deriveKey} method accepts an algorithm {@code String} and
@@ -452,7 +454,8 @@ public final class KDF {
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is
-     *     invalid or incorrect for the type of key to be derived
+     *     invalid or incorrect for the type of key to be derived or if
+     *     {@code alg} is invalid or unsupported by the KDF implementation
      * @throws NullPointerException
      *     if {@code alg} or {@code kdfParameterSpec} is null
      */

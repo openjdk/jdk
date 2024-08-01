@@ -115,8 +115,7 @@ public abstract class KDFSpi {
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is
-     *     invalid or incorrect for the type of key to be derived or if
-     *     {@code alg} is invalid or unsupported by the KDF implementation
+     *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      * @throws NullPointerException
