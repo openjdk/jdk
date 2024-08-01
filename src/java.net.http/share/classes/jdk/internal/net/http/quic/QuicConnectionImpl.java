@@ -1211,21 +1211,16 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 return added;
             }
             final PacketSpace space = packetSpace(PacketNumberSpace.APPLICATION);
-            final AckFrame ack = space.getNextAckFrame(false);
+            final AckFrame ack = space.getNextAckFrame(false, remaining);
             if (ack != null) {
                 final int ackFrameSize = ack.size();
-                // Note: The current algorithm implements the suggestion from RFC 9000
-                //       in order to reduce the size of the ACK, but that may not guarantee
-                //       that the ackframe won't still be too big. In which case ACKs may
-                //       not get sent. We may want to revisit this later on.
-                if (ackFrameSize <= remaining) {
-                    if (debug.on()) {
-                        debug.log("Adding AckFrame");
-                    }
-                    frames.add(ack);
-                    added += ackFrameSize;
-                    remaining -= ackFrameSize;
+                assert ackFrameSize <= remaining;
+                if (debug.on()) {
+                    debug.log("Adding AckFrame");
                 }
+                frames.add(ack);
+                added += ackFrameSize;
+                remaining -= ackFrameSize;
             }
             final long credit = credit();
             if (credit < remaining && remaining > 10) {
