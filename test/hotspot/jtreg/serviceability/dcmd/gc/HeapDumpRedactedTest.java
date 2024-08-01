@@ -14,8 +14,6 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
 
-
-
 /*
  * @test
  * @summary  Test that primitive values in the heap dump are 0
@@ -23,9 +21,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @run main/othervm HeapDumpRedactedTest
  */
 
-
- // test class with nonzero fields
- class PrimitiveTestTarget {
+// test class with nonzero fields
+class PrimitiveTestTarget {
     byte byteTest = 0x1;
     char character = 'A';
     short shortInt = Short.MAX_VALUE;
@@ -36,14 +33,14 @@ import jdk.test.lib.process.OutputAnalyzer;
     boolean bool = true;
 
     // Array of primitive types
-    byte[] byteArray = {0x1,0x2,0x3,0x4,0x5};
-    char[] charArray = {'a','b','c','d','e'};
-    short[] shortArray = {1,2,3,4,5};
-    int[] intArray = {1,2,3,4,5};
-    float[] floatArray = {1.0f,2.0f,3.0f,4.0f,5.0f};
-    double[] doubleArray = {1.0,2.0,3.0,4.0,Double.NaN};
-    long[] longArray = {1,2,3,4,5};
-    boolean[] boolArray = {true,false,true,false,true};
+    byte[] byteArray = { 0x1, 0x2, 0x3, 0x4, 0x5 };
+    char[] charArray = { 'a', 'b', 'c', 'd', 'e' };
+    short[] shortArray = { 1, 2, 3, 4, 5 };
+    int[] intArray = { 1, 2, 3, 4, 5 };
+    float[] floatArray = { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
+    double[] doubleArray = { 1.0, 2.0, 3.0, 4.0, Double.NaN };
+    long[] longArray = { 1, 2, 3, 4, 5 };
+    boolean[] boolArray = { true, false, true, false, true };
 
     static int staticInt = 100;
     String str = "test_string";
@@ -78,7 +75,7 @@ public class HeapDumpRedactedTest {
 
         // primitives
         testPrimitive("byteTest", targetObject, "0x0");
-        testPrimitive("character", targetObject , ""+'\u0000');
+        testPrimitive("character", targetObject, "" + '\u0000');
         testPrimitive("shortInt", targetObject, "0");
         testPrimitive("integer", targetObject, "0");
         testPrimitive("longInt", targetObject, "0");
@@ -88,7 +85,7 @@ public class HeapDumpRedactedTest {
 
         // arrays
         testPrimitiveArray("byteArray", targetObject, "0x0");
-        testPrimitiveArray("charArray", targetObject , ""+'\u0000');
+        testPrimitiveArray("charArray", targetObject, "" + '\u0000');
         testPrimitiveArray("shortArray", targetObject, "0");
         testPrimitiveArray("intArray", targetObject, "0");
         testPrimitiveArray("longArray", targetObject, "0");
@@ -96,8 +93,8 @@ public class HeapDumpRedactedTest {
         testPrimitiveArray("doubleArray", targetObject, "0.0");
         testPrimitiveArray("boolArray", targetObject, "false");
 
-        //static field
-        JavaThing staticInt =  testClass.getStaticField("staticInt");
+        // static field
+        JavaThing staticInt = testClass.getStaticField("staticInt");
         Asserts.assertTrue(staticInt instanceof JavaValue);
         JavaValue value = (JavaValue) staticInt;
         Asserts.assertEquals(value.toString(), "0");
