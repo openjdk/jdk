@@ -190,7 +190,7 @@ public final class DateTimeFormatterBuilder {
 
     static {
         String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.compile");
-        COMPILE = property == null || "true".equalsIgnoreCase(property);
+        COMPILE = property == null || property.isEmpty() || "true".equalsIgnoreCase(property);
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -2541,9 +2541,98 @@ public final class DateTimeFormatterBuilder {
         final boolean optional;
 
         static CompositePrinterParser of(DateTimePrinterParser[] printerParsers, boolean optional) {
+            if (printerParsers.length == 5) {
+                var pp0 = printerParsers[0];
+                var pp1 = printerParsers[1];
+                var pp2 = printerParsers[2];
+                var pp3 = printerParsers[3];
+                var pp4 = printerParsers[4];
+
+                if (pp0 instanceof NumberPrinterParser.FixWidth2Hour
+                        && pp1 instanceof CharLiteralPrinterParser cpp1 && cpp1.literal == ':'
+                        && pp2 instanceof NumberPrinterParser.FixWidth2Minute
+                        && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == ':'
+                        && pp4 instanceof NumberPrinterParser.FixWidth2Second
+                ) {
+                    return new HMS(new DateTimePrinterParser[] {pp0, pp1, pp2, pp3, pp4}, optional);
+                }
+
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                        && pp1 instanceof CharLiteralPrinterParser cpp1
+                        && pp2 instanceof NumberPrinterParser.FixWidth2Month
+                        && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
+                        && pp4 instanceof NumberPrinterParser.FixWidth2DayOfMonth
+                ) {
+                    return new YMD(printerParsers, optional);
+                }
+            }
+
+            if (printerParsers.length == 11) {
+                var pp0 = printerParsers[0];
+                var pp1 = printerParsers[1];
+                var pp2 = printerParsers[2];
+                var pp3 = printerParsers[3];
+                var pp4 = printerParsers[4];
+                var pp5 = printerParsers[5];
+                var pp6 = printerParsers[6];
+                var pp7 = printerParsers[7];
+                var pp8 = printerParsers[8];
+                var pp9 = printerParsers[9];
+                var pp10 = printerParsers[10];
+
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                        && pp1 instanceof CharLiteralPrinterParser cpp1
+                        && pp2 instanceof NumberPrinterParser.FixWidth2Month
+                        && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
+                        && pp4 instanceof NumberPrinterParser.FixWidth2DayOfMonth
+                        && pp5 instanceof CharLiteralPrinterParser
+                        && pp6 instanceof NumberPrinterParser.FixWidth2Hour
+                        && pp7 instanceof CharLiteralPrinterParser cpp7 && cpp7.literal == ':'
+                        && pp8 instanceof NumberPrinterParser.FixWidth2Minute
+                        && pp9 instanceof CharLiteralPrinterParser cpp9 && cpp9.literal == ':'
+                        && pp10 instanceof NumberPrinterParser.FixWidth2Second
+                ) {
+                    return new YMDHMS(printerParsers, optional);
+                }
+            }
+
+            if (printerParsers.length == 13) {
+                var pp0 = printerParsers[0];
+                var pp1 = printerParsers[1];
+                var pp2 = printerParsers[2];
+                var pp3 = printerParsers[3];
+                var pp4 = printerParsers[4];
+                var pp5 = printerParsers[5];
+                var pp6 = printerParsers[6];
+                var pp7 = printerParsers[7];
+                var pp8 = printerParsers[8];
+                var pp9 = printerParsers[9];
+                var pp10 = printerParsers[10];
+                var pp11 = printerParsers[11];
+                var pp12 = printerParsers[12];
+
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                        && pp1 instanceof CharLiteralPrinterParser cpp1
+                        && pp2 instanceof NumberPrinterParser.FixWidth2Month
+                        && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
+                        && pp4 instanceof NumberPrinterParser.FixWidth2DayOfMonth
+                        && pp5 instanceof CharLiteralPrinterParser
+                        && pp6 instanceof NumberPrinterParser.FixWidth2Hour
+                        && pp7 instanceof CharLiteralPrinterParser cpp7 && cpp7.literal == ':'
+                        && pp8 instanceof NumberPrinterParser.FixWidth2Minute
+                        && pp9 instanceof CharLiteralPrinterParser cpp9 && cpp9.literal == ':'
+                        && pp10 instanceof NumberPrinterParser.FixWidth2Second
+                        && pp11 instanceof CharLiteralPrinterParser
+                        && pp12 instanceof NanosPrinterParser
+                ) {
+                    return new YMDHMSS(printerParsers, optional);
+                }
+            }
+
             if (COMPILE) {
                 return PrinterParserFactory.generate(printerParsers, optional);
             }
+
             // Use subclasses with printerParsers.length of 1 to 15 so that C2 can do TypeProfile optimization
             return switch (printerParsers.length) {
                 case 1 -> new N1(printerParsers, optional);
@@ -2657,7 +2746,7 @@ public final class DateTimeFormatterBuilder {
                 p0 = printerParsers[0];
             }
             @Override
-            public final boolean format(DateTimePrintContext context, StringBuilder buf) {
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 int length = buf.length();
                 if (optional) {
                     context.startOptional();
@@ -3159,6 +3248,168 @@ public final class DateTimeFormatterBuilder {
                 return p14.parse(context, text, pos);
             }
         }
+
+        static final class HMS extends N5 {
+            HMS (DateTimePrinterParser[] printerParsers, boolean optional) {
+                super(printerParsers, optional);
+            }
+
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                var temporal = context.getTemporal();
+                var hour = temporal.getHour();
+                var minute = temporal.getMinute();
+                var second = temporal.getSecond();
+
+                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                buf.append((char) (zeroDigit + hour / 10))
+                   .append((char) (zeroDigit + hour % 10))
+                   .append(':')
+                   .append((char) (zeroDigit + minute / 10))
+                   .append((char) (zeroDigit + minute % 10))
+                   .append(':')
+                   .append((char) (zeroDigit + second / 10))
+                   .append((char) (zeroDigit + second % 10));
+                return true;
+            }
+        }
+
+        static final class YMD extends N5 {
+            final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+            final char literal;
+            YMD (DateTimePrinterParser[] printerParsers, boolean optional) {
+                super(printerParsers, optional);
+                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                literal = ((CharLiteralPrinterParser) printerParsers[1]).literal;
+            }
+
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                var temporal = context.getTemporal();
+                var year = temporal.getYear();
+                var month = temporal.getMonthValue();
+                var dayOfMonth = temporal.getDayOfMonth();
+
+                if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
+                    year = (year >= 1 ? year : 1 - year);
+                }
+
+                printerParserYear.format(buf, context.getDecimalStyle(), year);
+                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                buf.append(literal)
+                   .append((char) (zeroDigit + month / 10))
+                   .append((char) (zeroDigit + month % 10))
+                   .append(literal)
+                   .append((char) (zeroDigit + dayOfMonth / 10))
+                   .append((char) (zeroDigit + dayOfMonth % 10));
+                return true;
+            }
+        }
+
+        static class YMDHMS extends N11 {
+            final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+            final char literal1;
+            final char literal5;
+            final char literal7;
+            YMDHMS (DateTimePrinterParser[] printerParsers, boolean optional) {
+                super(printerParsers, optional);
+                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                literal1 = ((CharLiteralPrinterParser) printerParsers[1]).literal;
+                literal5 = ((CharLiteralPrinterParser) printerParsers[5]).literal;
+                literal7 = ((CharLiteralPrinterParser) printerParsers[7]).literal;
+            }
+
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                var temporal = context.getTemporal();
+                var year = temporal.getYear();
+                var month = temporal.getMonthValue();
+                var dayOfMonth = temporal.getDayOfMonth();
+                var hour = temporal.getHour();
+                var minute = temporal.getMinute();
+                var second = temporal.getSecond();
+
+                if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
+                    year = (year >= 1 ? year : 1 - year);
+                }
+
+                var decimalStyle = context.getDecimalStyle();
+                printerParserYear.format(buf, decimalStyle, year);
+                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                buf.append(literal1)
+                        .append((char) (zeroDigit + month / 10))
+                        .append((char) (zeroDigit + month % 10))
+                        .append(literal1)
+                        .append((char) (zeroDigit + dayOfMonth / 10))
+                        .append((char) (zeroDigit + dayOfMonth % 10))
+                        .append(literal5)
+                        .append((char) (zeroDigit + hour / 10))
+                        .append((char) (zeroDigit + hour % 10))
+                        .append(literal7)
+                        .append((char) (zeroDigit + minute / 10))
+                        .append((char) (zeroDigit + minute % 10))
+                        .append(literal7)
+                        .append((char) (zeroDigit + second / 10))
+                        .append((char) (zeroDigit + second % 10));
+                return true;
+            }
+        }
+
+        static class YMDHMSS extends N13 {
+            final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+            final char literal1;
+            final char literal5;
+            final char literal7;
+            final char literal11;
+            final NanosPrinterParser printerParserNano;
+            YMDHMSS (DateTimePrinterParser[] printerParsers, boolean optional) {
+                super(printerParsers, optional);
+                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                literal1 = ((CharLiteralPrinterParser) printerParsers[1]).literal;
+                literal5 = ((CharLiteralPrinterParser) printerParsers[5]).literal;
+                literal7 = ((CharLiteralPrinterParser) printerParsers[7]).literal;
+                literal11 = ((CharLiteralPrinterParser) printerParsers[11]).literal;
+                printerParserNano = (NanosPrinterParser) printerParsers[12];
+            }
+
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                var temporal = context.getTemporal();
+                var year = temporal.getYear();
+                var month = temporal.getMonthValue();
+                var dayOfMonth = temporal.getDayOfMonth();
+                var hour = temporal.getHour();
+                var minute = temporal.getMinute();
+                var second = temporal.getSecond();
+                var nano = temporal.getNano();
+
+                if (printerParserYear.field == ChronoField.YEAR_OF_ERA) {
+                    year = (year >= 1 ? year : 1 - year);
+                }
+
+                var decimalStyle = context.getDecimalStyle();
+                printerParserYear.format(buf, decimalStyle, year);
+                var zeroDigit = context.getDecimalStyle().getZeroDigit();
+                buf.append(literal1)
+                   .append((char) (zeroDigit + month / 10))
+                   .append((char) (zeroDigit + month % 10))
+                   .append(literal1)
+                   .append((char) (zeroDigit + dayOfMonth / 10))
+                   .append((char) (zeroDigit + dayOfMonth % 10))
+                   .append(literal5)
+                   .append((char) (zeroDigit + hour / 10))
+                   .append((char) (zeroDigit + hour % 10))
+                   .append(literal7)
+                   .append((char) (zeroDigit + minute / 10))
+                   .append((char) (zeroDigit + minute % 10))
+                   .append(literal7)
+                   .append((char) (zeroDigit + second / 10))
+                   .append((char) (zeroDigit + second % 10))
+                   .append(literal11);
+                printerParserNano.format(buf, decimalStyle, nano);
+                return true;
+            }
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -3422,7 +3673,7 @@ public final class DateTimeFormatterBuilder {
         final TemporalField field;
         final int minWidth;
         final int maxWidth;
-        private final SignStyle signStyle;
+        final SignStyle signStyle;
         final int subsequentWidth;
 
         /**
@@ -3499,13 +3750,14 @@ public final class DateTimeFormatterBuilder {
                     return new FixWidth4NotNegative(field, subsequentWidth);
                 }
             }
-            if (minWidth == 4) {
+            if (minWidth == 4 && maximum <= 1_000_000_000 && minimum >= -1_000_000_000) {
                 if (signStyle == SignStyle.EXCEEDS_PAD) {
                     if (minimumSize <= maxWidth && maximumSize <= maxWidth) {
                         if (field == ChronoField.YEAR) {
                             return new Width4ExceedsPadYear(maxWidth);
+                        } else if (field == ChronoField.YEAR_OF_ERA) {
+                            return new Width4ExceedsPadYearOfEra(maxWidth);
                         }
-                        return new Width4ExceedsPad(field, maxWidth);
                     }
                 }
             }
@@ -3810,6 +4062,26 @@ public final class DateTimeFormatterBuilder {
                 }
                 return pp;
             }
+
+            public final int parse(DateTimeParseContext context, CharSequence text, int position) {
+                boolean strict = context.isStrict();
+                int length = text.length();
+                if (position == length) {
+                    // valid if whole field is optional, invalid if minimum width
+                    return strict ? ~position : position;
+                }
+                if (position + 2 > length) {
+                    return ~position;  // need at least min width digits
+                }
+                var decimalStyle = context.getDecimalStyle();
+                int d0 = decimalStyle.convertToDigit(text.charAt(position));
+                int d1 = decimalStyle.convertToDigit(text.charAt(position + 1));
+                if (d0 < 0 || d1 < 0) {
+                    return ~position;  // need at least min width digits
+                }
+                int value = d0 * 10 + d1;
+                return context.setParsedField(field, value, position, position + 2);
+            }
         }
 
         static final class FixWidth2Month extends FixWidth2NotNegative {
@@ -3885,30 +4157,37 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
-        static class Width4ExceedsPad extends NumberPrinterParser {
-            private Width4ExceedsPad(TemporalField field, int maxWidth) {
+        static sealed abstract class Width4ExceedsPad
+                extends NumberPrinterParser
+                permits Width4ExceedsPadYear, Width4ExceedsPadYearOfEra {
+            Width4ExceedsPad(TemporalField field, int maxWidth) {
                 super(field, 4, maxWidth, SignStyle.EXCEEDS_PAD, 0);
             }
+
             @Override
             public void format(StringBuilder buf, DecimalStyle decimalStyle, long value) {
-                int val = (int) value;
-                int div = val / 10;
-                if (val >= 0) {
-                    if (val > 9999) {
+                format(buf, decimalStyle, (int) value);
+            }
+
+            @Override
+            public void format(StringBuilder buf, DecimalStyle decimalStyle, int value) {
+                int div = value / 10;
+                if (value >= 0) {
+                    if (value > 9999) {
                         buf.append(decimalStyle.getPositiveSign());
                     }
                 } else {
-                    val = -val;
+                    value = -value;
                     buf.append(decimalStyle.getNegativeSign());
                 }
                 char zeroDigit = decimalStyle.getZeroDigit();
-                if (val < 1000) {
-                    buf.repeat('0', val < 10 ? 3 : val < 100 ? 2 : 1);
+                if (value < 1000) {
+                    buf.repeat('0', value < 10 ? 3 : value < 100 ? 2 : 1);
                 }
                 if (zeroDigit == '0') {
-                    buf.append(val);
+                    buf.append(value);
                 } else {
-                    buf.append(decimalStyle.convertNumberToI18N(Integer.toString(val)));
+                    buf.append(decimalStyle.convertNumberToI18N(Integer.toString(value)));
                 }
             }
         }
@@ -3920,6 +4199,95 @@ public final class DateTimeFormatterBuilder {
             @Override
             public boolean format(DateTimePrintContext context, StringBuilder buf) {
                 format(buf, context.getDecimalStyle(), context.getTemporal().getYear());
+                return true;
+            }
+            @Override
+            public int parse(DateTimeParseContext context, CharSequence text, int position) {
+                int length = text.length();
+                if (position == length) {
+                    return ~position;
+                }
+                char sign = text.charAt(position);  // IOOBE if invalid position
+                boolean negative = false;
+                boolean positive = false;
+                boolean strict = context.isStrict();
+                var decimalStyle = context.getDecimalStyle();
+                if (sign == decimalStyle.getPositiveSign()) {
+                    if (signStyle.parse(true, strict, 4 == maxWidth) == false) {
+                        return ~position;
+                    }
+                    positive = true;
+                    position++;
+                } else if (sign == decimalStyle.getNegativeSign()) {
+                    if (signStyle.parse(false, strict, 4 == maxWidth) == false) {
+                        return ~position;
+                    }
+                    negative = true;
+                    position++;
+                }
+                boolean isFixedWidth = subsequentWidth == -1;
+                int effMinWidth = (strict || isFixedWidth ? 4 : 1);
+                int minEndPos = position + effMinWidth;
+                if (minEndPos > length) {
+                    return ~position;
+                }
+                int effMaxWidth = (strict || isFixedWidth ? maxWidth : 9) + Math.max(subsequentWidth, 0);
+                int total = 0;
+                int pos = position;
+                for (int pass = 0; pass < 2; pass++) {
+                    int maxEndPos = Math.min(pos + effMaxWidth, length);
+                    while (pos < maxEndPos) {
+                        char ch = text.charAt(pos++);
+                        int digit = decimalStyle.convertToDigit(ch);
+                        if (digit < 0) {
+                            pos--;
+                            if (pos < minEndPos) {
+                                return ~position;  // need at least min width digits
+                            }
+                            break;
+                        }
+                        total = total * 10 + digit;
+                    }
+                    if (subsequentWidth > 0 && pass == 0) {
+                        // re-parse now we know the correct width
+                        int parseLen = pos - position;
+                        effMaxWidth = Math.max(effMinWidth, parseLen - subsequentWidth);
+                        pos = position;
+                        total = 0;
+                    } else {
+                        break;
+                    }
+                }
+                if (negative) {
+                    if (total == 0 && strict) {
+                        return ~(position - 1);  // minus zero not allowed
+                    }
+                    total = -total;
+                } else if (strict) {
+                    int parseLen = pos - position;
+                    if (positive) {
+                        if (parseLen <= minWidth) {
+                            return ~(position - 1);  // '+' only parsed if minWidth exceeded
+                        }
+                    } else {
+                        if (parseLen > minWidth) {
+                            return ~position;  // '+' must be parsed if minWidth exceeded
+                        }
+                    }
+                }
+                return setValue(context, total, position, pos);
+            }
+        }
+
+        static final class Width4ExceedsPadYearOfEra extends Width4ExceedsPad {
+            private Width4ExceedsPadYearOfEra(int maxWidth) {
+                super(ChronoField.YEAR_OF_ERA, maxWidth);
+            }
+            @Override
+            public boolean format(DateTimePrintContext context, StringBuilder buf) {
+                int year = context.getTemporal().getYear();
+                int yearOfEra = (year >= 1 ? year : 1 - year);
+                format(buf, context.getDecimalStyle(), yearOfEra);
                 return true;
             }
         }
@@ -6492,6 +6860,7 @@ public final class DateTimeFormatterBuilder {
         static final ClassDesc CD_CharLiteralPrinterParser    = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CharLiteralPrinterParser;");
         static final ClassDesc CD_ChronoField                 = ClassDesc.ofDescriptor("Ljava/time/temporal/ChronoField;");
         static final ClassDesc CD_CompositePrinterParser      = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CompositePrinterParser;");
+        static final ClassDesc CD_CompositePrinterParser_HMS  = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$CompositePrinterParser$HMS;");
         static final ClassDesc CD_DateTimeParseContext        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeParseContext;");
         static final ClassDesc CD_DateTimePrintContext        = ClassDesc.ofDescriptor("Ljava/time/format/DateTimePrintContext;");
         static final ClassDesc CD_DateTimePrinterParser       = ClassDesc.ofDescriptor("Ljava/time/format/DateTimeFormatterBuilder$DateTimePrinterParser;");
@@ -6641,6 +7010,10 @@ public final class DateTimeFormatterBuilder {
                 return CD_NumberPrinterParser;
             } else if (pp instanceof CharLiteralPrinterParser) {
                 return CD_CharLiteralPrinterParser;
+            } else if (pp instanceof CompositePrinterParser.HMS) {
+                return CD_CompositePrinterParser_HMS;
+            } else if (pp instanceof CompositePrinterParser) {
+                return CD_CompositePrinterParser;
             } else {
                 return CD_DateTimePrinterParser;
             }
