@@ -134,9 +134,9 @@ private:
     assert(type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
-    size_t hdr_size_in_bytes = base_offset_in_bytes(type);
+    int hdr_size_in_bytes = base_offset_in_bytes(type);
     // This is rounded-up and may overlap with the first array elements.
-    size_t hdr_size_in_words = align_up(hdr_size_in_bytes, HeapWordSize) / HeapWordSize;
+    int hdr_size_in_words = align_up(hdr_size_in_bytes, HeapWordSize) / HeapWordSize;
 
     const size_t max_element_words_per_size_t =
       align_down((SIZE_MAX/HeapWordSize - hdr_size_in_words), MinObjAlignment);
