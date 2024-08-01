@@ -37,11 +37,8 @@
 #include "runtime/vframeArray.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "vmreg_arm.inline.hpp"
-#endif
 
 #define __ masm->
-
-#ifdef COMPILER2
 
 //------------------------------generate_uncommon_trap_blob--------------------
 // Ought to generate an ideal graph & compile, but here's some ASM
@@ -287,3 +284,6 @@ void OptoRuntime::generate_exception_blob() {
 
   _exception_blob = ExceptionBlob::create(&buffer, oop_maps, framesize_in_words);
 }
+
+#endif // COMPILER2
+
