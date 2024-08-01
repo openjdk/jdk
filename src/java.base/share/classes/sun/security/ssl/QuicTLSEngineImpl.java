@@ -719,8 +719,7 @@ public final class QuicTLSEngineImpl implements QuicTLSEngine, SSLTransport {
                 isClientMode());
     }
 
-    // TODO: this is only here for use in PacketEncryptionTest. remove this
-    //  later
+    // for testing (PacketEncryptionTest)
     void deriveOneRttKeys(final QuicVersion version,
             final SecretKey client_application_traffic_secret_0,
             final SecretKey server_application_traffic_secret_0,
