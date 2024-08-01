@@ -745,12 +745,24 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private boolean cancelCheck() throws PrinterAbortException {
+    private boolean cancelCheck() {
         // This is called from the native side.
 
-        boolean cancelled = isCancelled();
+        // This is used to avoid deadlock
+        // We would like to just call if isCancelled(),
+        // but that will block the AppKit thread against whomever is holding the synchronized lock
+        boolean cancelled = (performingPrinting && userCancelled);
         if (cancelled) {
-            cancelDoc();
+            try {
+                LWCToolkit.invokeLater(new Runnable() { public void run() {
+                    try {
+                    cancelDoc();
+                    } catch (PrinterAbortException pae) {
+                        // no-op, let the native side handle it
+                    }
+                }}, null);
+            } catch (NullPointerException ex) {
+            } catch (java.lang.reflect.InvocationTargetException ite) {}
         }
         return cancelled;
     }

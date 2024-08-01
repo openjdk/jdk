@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,10 @@
 #import "JNIUtilities.h"
 
 static jclass sjc_CPrinterJob = NULL;
+static jclass sjc_PAbortEx = NULL;
 #define GET_CPRINTERJOB_CLASS() (sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
 #define GET_CPRINTERJOB_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", ret);
+#define GET_PRINERABORTEXCEPTION_CLASS(ret) GET_CLASS_RETURN(sjc_PAbortEx, "java/awt/print/PrinterAbortException", ret);
 
 @implementation PrinterView
 
@@ -261,6 +263,10 @@ static jclass sjc_CPrinterJob = NULL;
 
     BOOL b = (*env)->CallBooleanMethod(env, fPrinterJob, jm_cancelCheck); // AWT_THREADING Safe (known object)
     CHECK_EXCEPTION();
+    if (b) {
+        GET_PRINERABORTEXCEPTION_CLASS(b);
+        (*env)->ThrowNew(env, sjc_PAbortEx, "Printer Job cancelled");
+    }
     return b;
 }
 
