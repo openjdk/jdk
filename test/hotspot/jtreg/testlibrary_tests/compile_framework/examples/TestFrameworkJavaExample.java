@@ -86,7 +86,7 @@ public class TestFrameworkJavaExample {
         // Compile the source file.
         comp.compile();
 
-        // X1.main(5);
+        // X1.main();
         comp.invoke("X1", "main", new Object[] {null});
     }
 
