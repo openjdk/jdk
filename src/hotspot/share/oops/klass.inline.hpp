@@ -79,7 +79,7 @@ inline ByteSize Klass::vtable_start_offset() {
 
 // subtype check: true if is_subclass_of, or if k is interface and receiver implements it
 inline bool Klass::is_subtype_of(Klass* k) const {
-  guarantee(secondary_supers() != nullptr, "must be");
+  assert(secondary_supers() != nullptr, "must be");
   const juint off = k->super_check_offset();
   const juint secondary_offset = in_bytes(secondary_super_cache_offset());
   if (off == secondary_offset) {
