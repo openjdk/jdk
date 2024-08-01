@@ -39,11 +39,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CompileFramework {
-    static final int JASM_COMPILE_TIMEOUT = 60;
-    public static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
+    private static final int JASM_COMPILE_TIMEOUT = 60;
+    private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
 
     private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
+    private final Path sourceDir = getTempDir("compile-framework-sources-");
+    private final Path classesDir = getTempDir("compile-framework-classes-");
     private URLClassLoader classLoader;
+
+    public String getClassPathOfCompiledClasses() {
+        return System.getProperty("java.class.path") +
+               File.pathSeparator +
+               classesDir.toAbsolutePath().toString();
+    }
 
     public void add(SourceCode sourceCode) {
         sourceCodes.add(sourceCode);
@@ -81,16 +89,13 @@ public class CompileFramework {
             }
         }
 
-        Path sourceDir = getTempDir("compile-framework-sources-");
-        Path classesDir = getTempDir("compile-framework-classes-");
-
         System.out.println("------------------ CompileFramework: Compilation ------------------");
         System.out.println("Source directory: " + sourceDir.toString());
         System.out.println("Classes directory: " + classesDir.toString());
 
-        compileJasmSources(sourceDir, classesDir, jasmSources);
-        compileJavaSources(sourceDir, classesDir, javaSources);
-        setUpClassLoader(classesDir);
+        compileJasmSources(jasmSources);
+        compileJavaSources(javaSources);
+        setUpClassLoader();
     }
 
     private static Path getTempDir(String prefix) {
@@ -101,19 +106,19 @@ public class CompileFramework {
         }
     }
 
-    private static void compileJasmSources(Path sourceDir, Path classesDir, List<SourceCode> jasmSources) {
+    private void compileJasmSources(List<SourceCode> jasmSources) {
         if (jasmSources.size() == 0) {
             println("No jasm sources to compile.");
             return;
         }
         println("Compiling jasm sources: " + jasmSources.size());
 
-        List<Path> jasmFilePaths = writeSourcesToFile(sourceDir, jasmSources);
-        compileJasmFiles(jasmFilePaths, classesDir);
+        List<Path> jasmFilePaths = writeSourcesToFile(jasmSources);
+        compileJasmFiles(jasmFilePaths);
         println("Jasm sources compiled.");
     }
 
-    private static void compileJasmFiles(List<Path> paths, Path classesDir) {
+    private void compileJasmFiles(List<Path> paths) {
         // Compile JASM files with asmtools.jar, shipped with jtreg.
         List<String> command = new ArrayList<>();
 
@@ -150,27 +155,25 @@ public class CompileFramework {
         throw new InternalCompileFrameworkException("Could not find asmtools because could not find jtreg.jar in classpath");
     }
 
-    private static void compileJavaSources(Path sourceDir, Path classesDir, List<SourceCode> javaSources) {
+    private void compileJavaSources(List<SourceCode> javaSources) {
         if (javaSources.size() == 0) {
             println("No java sources to compile.");
             return;
         }
         println("Compiling Java sources: " + javaSources.size());
 
-        List<Path> javaFilePaths = writeSourcesToFile(sourceDir, javaSources);
-        compileJavaFiles(javaFilePaths, classesDir);
+        List<Path> javaFilePaths = writeSourcesToFile(javaSources);
+        compileJavaFiles(javaFilePaths);
         println("Java sources compiled.");
     }
 
-    private static void compileJavaFiles(List<Path> paths, Path classesDir) {
+    private void compileJavaFiles(List<Path> paths) {
         // Compile JAVA files with javac, in the "compile.jdk".
         List<String> command = new ArrayList<>();
 
         command.add("%s/bin/javac".formatted(System.getProperty("compile.jdk")));
         command.add("-classpath");
-        command.add(System.getProperty("java.class.path"));
-        command.add("-classpath");
-        command.add(classesDir.toString()); // make sure jasm files are accessible.
+        command.add(getClassPathOfCompiledClasses());
         command.add("-d");
         command.add(classesDir.toString());
         for (Path path : paths) {
@@ -180,7 +183,7 @@ public class CompileFramework {
         executeCompileCommand(command);
     }
 
-    private static List<Path> writeSourcesToFile(Path sourceDir, List<SourceCode> sources) {
+    private List<Path> writeSourcesToFile(List<SourceCode> sources) {
         List<Path> storedFiles = new ArrayList<Path>();
         for (SourceCode sourceCode : sources) {
             Path path = sourceDir.resolve(sourceCode.filePathName());
@@ -240,7 +243,7 @@ public class CompileFramework {
         }
     }
 
-    private void setUpClassLoader(Path classesDir) {
+    private void setUpClassLoader() {
         ClassLoader sysLoader = ClassLoader.getSystemClassLoader();
 
         try {

@@ -51,13 +51,15 @@ public class TestFrameworkJavaExample {
     }
 
     // Generate a source java file as String
-    public static String generate_X1() {
-        return """
+    public static String generate_X1(CompileFramework comp) {
+        return String.format("""
                import compiler.lib.ir_framework.*;
 
                public class X1 {
                    public static void main(String args[]) {
-                       TestFramework.run(X1.class);
+                       TestFramework framework = new TestFramework(X1.class);
+                       framework.addFlags("-classpath", "%s");
+                       framework.start();
                    }
 
                    @Test
@@ -71,7 +73,7 @@ public class TestFrameworkJavaExample {
                        return a;
                    }
                }
-               """;
+               """, comp.getClassPathOfCompiledClasses());
     }
 
     static void test_X1() {
@@ -79,9 +81,7 @@ public class TestFrameworkJavaExample {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        String src = generate_X1();
-        SourceCode file = SourceCode.newJavaSourceCode("X1", src);
-        comp.add(file);
+        comp.add(SourceCode.newJavaSourceCode("X1", generate_X1(comp)));
 
         // Compile the source file.
         comp.compile();
@@ -91,14 +91,16 @@ public class TestFrameworkJavaExample {
     }
 
     // Generate a source java file as String
-    public static String generate_X2() {
+    public static String generate_X2(CompileFramework comp) {
         // Example with conflicting "@IR" rules -> expect a IRViolationException.
-        return """
+        return String.format("""
                import compiler.lib.ir_framework.*;
 
                public class X2 {
                    public static void main(String args[]) {
-                       TestFramework.run(X2.class);
+                       TestFramework framework = new TestFramework(X2.class);
+                       framework.addFlags("-classpath", "%s");
+                       framework.start();
                    }
 
                    @Test
@@ -107,7 +109,7 @@ public class TestFrameworkJavaExample {
                    static void test() {
                    }
                }
-               """;
+               """, comp.getClassPathOfCompiledClasses());
     }
 
     static void test_X2() {
@@ -115,9 +117,7 @@ public class TestFrameworkJavaExample {
         CompileFramework comp = new CompileFramework();
 
         // Add a java source file.
-        String src = generate_X2();
-        SourceCode file = SourceCode.newJavaSourceCode("X2", src);
-        comp.add(file);
+        comp.add(SourceCode.newJavaSourceCode("X2", generate_X2(comp)));
 
         // Compile the source file.
         comp.compile();
