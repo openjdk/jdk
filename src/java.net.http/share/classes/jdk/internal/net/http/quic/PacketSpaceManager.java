@@ -1532,6 +1532,31 @@ public sealed class PacketSpaceManager implements PacketSpace
                     null, frame.getTypeField(), QuicTransportErrors.PROTOCOL_VIOLATION);
         }
 
+        transferLock.lock();
+        try {
+            pendingRetransmission.removeIf((p) -> isAcknowledging(p, frame));
+            triggeredForRetransmission.removeIf((p) -> isAcknowledging(p, frame));
+            for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext(); ) {
+                PendingAcknowledgement p = iterator.next();
+                if (isAcknowledging(p, frame)) {
+                    iterator.remove();
+                    congestionController.packetAcked(p.packet.size(), p.sent);
+                }
+            }
+            @SuppressWarnings({"unchecked", "rawtypes"})
+            List<PendingAcknowledgement>[] recovered = Log.quicRetransmit() ? new List[1] : null;
+            lostPackets.removeIf((p) -> isAcknowledgingLostPacket(p, frame, recovered));
+            if (recovered != null && recovered[0] != null) {
+                Log.logQuic("{0} lost packets recovered: {1}({2})  total unrecovered {3}, unacknowledged {4}",
+                        packetEmitter.logTag(), packetType(),
+                        recovered[0].stream().map(PendingAcknowledgement::packetNumber).toList(),
+                        lostPackets.size(), pendingAcknowledgements.size() + pendingRetransmission.size());
+            }
+        } finally {
+            transferLock.unlock();
+        }
+        // avoid races with lost packet detection:
+        // update largestAckReceived after removing acknowledged packets
         if (largestAckReceived(largestAcknowledged)) {
             // if the largest acknowledged PN is newly acknowledged
             // and at least one of the newly acked packets is ack-eliciting
@@ -1585,31 +1610,6 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
         }
 
-        int lostCount;
-        transferLock.lock();
-        try {
-            pendingRetransmission.removeIf((p) -> isAcknowledging(p, frame));
-            triggeredForRetransmission.removeIf((p) -> isAcknowledging(p, frame));
-            for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext(); ) {
-                PendingAcknowledgement p = iterator.next();
-                if (isAcknowledging(p, frame)) {
-                    iterator.remove();
-                    congestionController.packetAcked(p.packet.size(), p.sent);
-                }
-            }
-            lostCount = detectAndRemoveLostPackets(now);
-            @SuppressWarnings({"unchecked","rawtypes"})
-            List<PendingAcknowledgement>[] recovered= Log.quicRetransmit() ? new List[1] : null;
-            lostPackets.removeIf((p) -> isAcknowledgingLostPacket(p, frame, recovered));
-            if (recovered != null && recovered[0] != null) {
-                Log.logQuic("{0} lost packets recovered: {1}({2})  total unrecovered {3}, unacknowledged {4}",
-                        packetEmitter.logTag(), packetType(),
-                        recovered[0].stream().map(PendingAcknowledgement::packetNumber).toList(),
-                        lostPackets.size(), pendingAcknowledgements.size() + pendingRetransmission.size());
-            }
-         } finally {
-            transferLock.unlock();
-        }
 
         long largestAckAcked = emittedAckTracker.largestAckAcked();
         if (largestAckAcked > largestAckAckedBefore) {
@@ -1623,12 +1623,7 @@ public sealed class PacketSpaceManager implements PacketSpace
             cleanupAcks();
         }
 
-        if (lostCount > 0) {
-            if (debug.on())
-                debug.log("Found %s lost packets", lostCount);
-            // retransmit if possible
-            runTransmitter();
-        } else if (blockedByCC && congestionController.canSendPacket()) {
+        if (blockedByCC && congestionController.canSendPacket()) {
             // CC just got unblocked... send more data
             blockedByCC = false;
             runTransmitter();
