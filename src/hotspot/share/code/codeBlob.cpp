@@ -280,7 +280,7 @@ static BufferBlob* malloc_buffer_blob(unsigned size) {
   // need to preserve this alignment to avoid "copy must preserve alignment" assert on realocation
   int bufferblob_offset = sizeof(HeapBlock);
   int bufferblob_alignment = CodeCacheSegmentSize;
-  char* buf = (char*)malloc(size + bufferblob_alignment + bufferblob_offset);
+  char* buf = (char*)os::malloc(size + bufferblob_alignment + bufferblob_offset, mtCompiler);
   char* ptr = align_up(buf, bufferblob_alignment);
   *((char**)ptr) = buf; // store pointer to a buffer to release it later
   return (BufferBlob*)(ptr + bufferblob_offset);
@@ -289,7 +289,7 @@ static BufferBlob* malloc_buffer_blob(unsigned size) {
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
   if (!alloc_in_codecache) {
     BufferBlob* blob = malloc_buffer_blob(size);
-    if (StressCodeBuffers) {
+    if (StressCodeBuffers) { // temporary code for testing purposes only
       while (offset_to_codecache((char*)blob) < 4L*1000*1000*1000 &&
              offset_to_codecache((char*)blob) > -4L*1000*1000*1000) {
         // stress test: leave the garbage and reallocate
@@ -306,7 +306,7 @@ void BufferBlob::free(BufferBlob *blob) {
   if (!CodeCache::contains((void*)blob)) {
     int bufferblob_offset = sizeof(HeapBlock);
     char* buf = *((char**)((char*)blob - bufferblob_offset));
-    std::free(buf);
+    os::free(buf);
     return;
   }
   RuntimeBlob::free(blob);
