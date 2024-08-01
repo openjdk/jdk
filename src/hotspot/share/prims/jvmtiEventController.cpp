@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,12 +985,14 @@ JvmtiEventControllerPrivate::change_field_watch(jvmtiEvent event_type, bool adde
   if (added) {
     (*count_addr)++;
     if (*count_addr == 1) {
+      JvmtiVTMSTransitionDisabler disabler;
       recompute_enabled();
     }
   } else {
     if (*count_addr > 0) {
       (*count_addr)--;
       if (*count_addr == 0) {
+        JvmtiVTMSTransitionDisabler disabler;
         recompute_enabled();
       }
     } else {
