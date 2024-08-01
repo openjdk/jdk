@@ -16235,9 +16235,9 @@ instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_
 // used for instanceof, checkcast, and any case where C2 can determine
 // it by constant propagation.
 
-instruct partialSubtypeCheckSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, iRegP_R5 result,
-                                 iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
-                                 rFlagsReg cr)
+instruct partialSubtypeCheckVarSuper(iRegP_R4 sub, iRegP_R0 super, vRegD_V0 vtemp, iRegP_R5 result,
+                                     iRegP_R1 tempR1, iRegP_R2 tempR2, iRegP_R3 tempR3,
+                                     rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
   predicate(UseSecondarySupersTable);

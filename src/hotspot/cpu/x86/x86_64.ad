@@ -12197,6 +12197,25 @@ instruct partialSubtypeCheck(rdi_RegP result,
 // this is used for instanceof, checkcast, and any case where C2 can
 // determine it by constant propagation.
 
+instruct partialSubtypeCheckVarSuper(rsi_RegP sub, rax_RegP super, rdi_RegP result,
+                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
+                                       rFlagsReg cr)
+%{
+  match(Set result (PartialSubtypeCheck sub super));
+  predicate(UseSecondarySupersTable);
+  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+
+  ins_cost(1000);
+  format %{ "partialSubtypeCheck $result, $sub, $super" %}
+
+  ins_encode %{
+    __ lookup_secondary_supers_table_var($sub$$Register, $super$$Register, $temp1$$Register, $temp2$$Register,
+					 $temp3$$Register, $temp4$$Register, $result$$Register);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP super_con, rdi_RegP result,
                                        rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
                                        rFlagsReg cr)
@@ -12211,31 +12230,12 @@ instruct partialSubtypeCheckConstSuper(rsi_RegP sub, rax_RegP super_reg, immP su
   ins_encode %{
     u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
     if (InlineSecondarySupersTest) {
-      __ lookup_secondary_supers_table($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
+      __ lookup_secondary_supers_table_const($sub$$Register, $super_reg$$Register, $temp1$$Register, $temp2$$Register,
                                        $temp3$$Register, $temp4$$Register, $result$$Register,
                                        super_klass_slot);
     } else {
       __ call(RuntimeAddress(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot)));
     }
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct partialSubtypeCheckVarSuper(rsi_RegP sub, rax_RegP super, rdi_RegP result,
-                                       rdx_RegL temp1, rcx_RegL temp2, rbx_RegP temp3, r11_RegL temp4,
-                                       rFlagsReg cr)
-%{
-  match(Set result (PartialSubtypeCheck sub super));
-  predicate(UseSecondarySupersTable);
-  effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
-
-  ins_cost(1000);
-  format %{ "partialSubtypeCheck $result, $sub, $super" %}
-
-  ins_encode %{
-    __ lookup_secondary_supers_table($sub$$Register, $super$$Register, $temp1$$Register, $temp2$$Register,
-                                     $temp3$$Register, $temp4$$Register, $result$$Register);
   %}
 
   ins_pipe(pipe_slow);
