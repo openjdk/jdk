@@ -71,6 +71,9 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
+        System.out.println("Same instance encrypted Encoder test:");
+        PEMEncoder encEncoder = encoder.withEncryption("fish".toCharArray());
+        keymap.keySet().stream().forEach(key -> testSameEncryptor(key, encEncoder));
         try {
             encoder.withEncryption(null);
         } catch (Exception e) {
@@ -133,9 +136,24 @@ public class PEMEncoderTest {
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             encoder.withEncryption(
-                (entry.password() != null ? entry.password() :
-                    "fish".toCharArray()))
+                    (entry.password() != null ? entry.password() :
+                        "fish".toCharArray()))
                 .encodeToString(keymap.get(key));
+        } catch (RuntimeException e) {
+            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+        }
+
+        System.out.println("PASS: " + entry.name());
+    }
+
+    /*
+     Test cannot verify PEM was the same as known PEM because we have no
+     public access to the AlgoritmID.params and PBES2Parameters.
+     */
+    static void testSameEncryptor(String key, PEMEncoder encoder) {
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
             throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
         }

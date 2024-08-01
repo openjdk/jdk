@@ -47,7 +47,6 @@ public class PEMDecoderTest {
     }
 
     public static void main(String[] args) throws IOException {
-//        test(new PEMCerts.Entry("oasrfc8410", PEMCerts.oasrfc8410, PrivateKey.class, null));
         System.out.println("Decoder test:");
         PEMCerts.entryList.stream().forEach(entry -> test(entry));
         System.out.println("Decoder test returning DEREncodable class:");
@@ -74,6 +73,9 @@ public class PEMDecoderTest {
         testClass(PEMCerts.getEntry("oasrfc8410"), PrivateKey.class, true);
         testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
         System.out.println("Decoder test encEdECkey:");
+        testFailure(new PEMCerts.Entry("pubecpem-no",
+            PEMCerts.makeNoCRLF(PEMCerts.pubecpem), PublicKey.class,
+            null));
     }
 
     static void testFailure(PEMCerts.Entry entry) {

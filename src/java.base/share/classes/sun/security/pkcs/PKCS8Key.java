@@ -26,10 +26,7 @@
 package sun.security.pkcs;
 
 import jdk.internal.access.SharedSecrets;
-import sun.security.util.DerInputStream;
-import sun.security.util.DerOutputStream;
-import sun.security.util.DerValue;
-import sun.security.util.InternalPrivateKey;
+import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X509Key;
 
@@ -39,6 +36,7 @@ import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Optional;
 
 /**
  * Holds a PKCS#8 key, for example a private key
@@ -142,25 +140,25 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
             }
 
             // OPTIONAL Context tag 0 for Attributes for PKCS8 v1 & v2
-            // Uses 0xA0 constructed define-length
-            var result = val.data.getOptionalConstructed(0,
-                DerValue.tag_Sequence);
-            if (result.isPresent()) {
-                attributes = new DerInputStream(result.get().getDataBytes()).
-                    toByteArray();
+            // Uses 0xA0 constructed define-length or 0x80 constructed
+            // indefinite.
+            DerValue v = val.data.getDerValue();
+            if (v.isContextSpecific((byte)0)) {
+                attributes = v.getDataBytes();  // Save DER sequence
                 if (val.data.available() == 0) {
                     return;
                 }
+                v = val.data.getDerValue();
             }
 
             // OPTIONAL context tag 1 for Public Key for PKCS8 v2 only
             if (version == V2) {
-                result = val.data.getOptionalImplicitContextSpecific(1,
-                    DerValue.tag_BitString);
-                if (result.isPresent()) {
-                    // Store public key material for later parsing
+                if (v.isContextSpecific((byte)1)) {
+                    DerValue bits = v.withTag(DerValue.tag_BitString);
                     pubKeyEncoded = new X509Key(algid,
-                        result.get().getUnalignedBitString()).getEncoded();
+                        bits.getUnalignedBitString()).getEncoded();
+                } else {
+                    throw new InvalidKeyException("Invalid context tag");
                 }
                 if (val.data.available() == 0) {
                     return;
@@ -191,7 +189,8 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * @param encoded the DER-encoded SubjectPublicKeyInfo value
      * @exception IOException on data format errors
      */
-    public static PrivateKey parseKey(byte[] encoded) throws InvalidKeyException {
+    public static PrivateKey parseKey(byte[] encoded)
+        throws InvalidKeyException {
         try {
             PKCS8Key rawKey = new PKCS8Key(encoded);
             byte[] internal = rawKey.generateEncoding();

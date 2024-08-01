@@ -33,7 +33,6 @@
  * @run main PKCS8Test
  */
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.util.Arrays;

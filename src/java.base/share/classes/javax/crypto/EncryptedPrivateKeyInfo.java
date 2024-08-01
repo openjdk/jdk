@@ -66,7 +66,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     // {@link #EncryptedPrivateKeyInfo(AlgorithmParameters, byte[])}
     // with an uninitialized AlgorithmParameters, the AlgorithmParameters
     // object is stored in the params field and algid is set to null.
-    // In all other cases, algid is non null and params is null.
+    // In all other cases, algid is non-null and params is null.
     private final AlgorithmId algid;
     private final AlgorithmParameters params;
 
@@ -315,10 +315,15 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     /**
      * Returns an {@code EncryptedPrivateKeyInfo} from a given PrivateKey,
      * password, and encryption options.  A valid password-based encryption
-     * algorithm must be specified.  AlgorithmParameterSpec,
+     * (PBE) algorithm must be specified.  AlgorithmParameterSpec,
      * {@code params}, will use the provider default if {@code null} is
      * passed.  If {@code provider} is {@code null}, the provider will be
      * selected through the default configuration.
+     * <p>
+     * The PBE algorithm string format details can be found in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
+     * Cipher section</a> of the Java Security Standard Algorithm Names
+     * Specification.
      *
      * @param key the PrivateKey object to encrypt.
      * @param password the password used in the PBE encryption.
@@ -396,6 +401,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) {
+        if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
+            throw new SecurityException("Security property " +
+                "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                "valid algorithm.  Operation cannot be performed.");
+        }
         return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
     }
 
