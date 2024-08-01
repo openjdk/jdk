@@ -795,10 +795,6 @@ const int ObjectAlignmentInBytes = 8;
           "but not all -Xrun libraries may support the state of the VM "    \
           "at this time")                                                   \
                                                                             \
-  product(bool, PreserveAllAnnotations, false,                              \
-          "(Deprecated) Preserve RuntimeInvisibleAnnotations as well "      \
-          "as RuntimeVisibleAnnotations")                                   \
-                                                                            \
   develop(uintx, PreallocatedOutOfMemoryErrorCount, 4,                      \
           "Number of OutOfMemoryErrors preallocated with backtrace")        \
                                                                             \
@@ -955,9 +951,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \
-                                                                            \
-  product(bool, UseNotificationThread, true,                                \
-          "(Deprecated) Use Notification Thread")                           \
                                                                             \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \

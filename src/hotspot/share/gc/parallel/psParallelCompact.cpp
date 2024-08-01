@@ -1188,10 +1188,11 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingNMethodClosure mark_and_push_in_blobs(&mark_and_push_closure, !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
+                                                 !NMethodToOopClosure::FixRelocations,
+                                                 true /* keepalive nmethods */);
 
-    thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
+    thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
     // Do the real work
     cm->follow_marking_stacks();
@@ -1232,22 +1233,22 @@ public:
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
     cm->create_marking_stats_cache();
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-
     {
-      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
+      CLDToOopClosure cld_closure(&cm->_mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
       ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
 
       // Do the real work
       cm->follow_marking_stacks();
     }
 
-    PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    {
+      PCAddThreadRootsMarkingTaskClosure closure(worker_id);
+      Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
+    }
 
     // Mark from OopStorages
     {
-      _oop_storage_set_par_state.oops_do(&mark_and_push_closure);
+      _oop_storage_set_par_state.oops_do(&cm->_mark_and_push_closure);
       // Do the real work
       cm->follow_marking_stacks();
     }
@@ -1269,10 +1270,9 @@ public:
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
     ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    PCMarkAndPushClosure keep_alive(cm);
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
-    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &enqueue, &complete_gc);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &cm->_mark_and_push_closure, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {

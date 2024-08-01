@@ -436,7 +436,6 @@ Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToNative:     return vmSymbols::linkToNative_name();
   default:
     fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
-    return 0;
   }
 }
 
@@ -449,7 +448,6 @@ Bytecodes::Code MethodHandles::signature_polymorphic_intrinsic_bytecode(vmIntrin
     case vmIntrinsics::_invokeBasic:     return Bytecodes::_invokehandle;
     default:
       fatal("unexpected id: (%d) %s", (uint)id, vmIntrinsics::name_at(id));
-      return Bytecodes::_illegal;
   }
 }
 
@@ -463,7 +461,6 @@ int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToInterface:  return JVM_REF_invokeInterface;
   default:
     fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
-    return 0;
   }
 }
 
