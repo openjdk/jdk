@@ -2941,20 +2941,6 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
   G1HeapRegionPrinter::retire(alloc_region);
 }
 
-G1HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
-  bool expanded = false;
-  uint index = _hrm.find_highest_free(&expanded);
-
-  if (index != G1_NO_HRM_INDEX) {
-    if (expanded) {
-      log_debug(gc, ergo, heap)("Attempt heap expansion (requested address range outside heap bounds). region size: " SIZE_FORMAT "B",
-                                G1HeapRegion::GrainWords * HeapWordSize);
-    }
-    return _hrm.allocate_free_regions_starting_at(index, 1);
-  }
-  return nullptr;
-}
-
 void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {
   assert(!_cm->is_marked_in_bitmap(obj), "must be");
 
