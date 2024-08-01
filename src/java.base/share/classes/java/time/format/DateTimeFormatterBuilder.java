@@ -189,10 +189,14 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  */
 public final class DateTimeFormatterBuilder {
     private static final boolean COMPILE;
+    private static final boolean MONOLITHIC;
 
     static {
         String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.compile");
         COMPILE = property == null || property.isEmpty() || "true".equalsIgnoreCase(property);
+
+        property = VM.getSavedProperty("java.time.format.DateTimeFormatter.monolithic");
+        MONOLITHIC = property != null && (property.isEmpty() || "true".equalsIgnoreCase(property));
     }
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
@@ -2543,7 +2547,7 @@ public final class DateTimeFormatterBuilder {
         final boolean optional;
 
         static CompositePrinterParser of(DateTimePrinterParser[] printerParsers, boolean optional) {
-            if (printerParsers.length == 5) {
+            if (MONOLITHIC && printerParsers.length == 5) {
                 var pp0 = printerParsers[0];
                 var pp1 = printerParsers[1];
                 var pp2 = printerParsers[2];
@@ -2559,7 +2563,8 @@ public final class DateTimeFormatterBuilder {
                     return new HMS(new DateTimePrinterParser[] {pp0, pp1, pp2, pp3, pp4}, optional);
                 }
 
-                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad width4ExceedsPad
+                        && width4ExceedsPad.subsequentWidth == 0
                         && pp1 instanceof CharLiteralPrinterParser cpp1
                         && pp2 instanceof NumberPrinterParser.FixWidth2Month
                         && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
@@ -2569,7 +2574,7 @@ public final class DateTimeFormatterBuilder {
                 }
             }
 
-            if (printerParsers.length == 11) {
+            if (MONOLITHIC && printerParsers.length == 11) {
                 var pp0 = printerParsers[0];
                 var pp1 = printerParsers[1];
                 var pp2 = printerParsers[2];
@@ -2582,7 +2587,8 @@ public final class DateTimeFormatterBuilder {
                 var pp9 = printerParsers[9];
                 var pp10 = printerParsers[10];
 
-                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad width4ExceedsPad
+                        && width4ExceedsPad.subsequentWidth == 0
                         && pp1 instanceof CharLiteralPrinterParser cpp1
                         && pp2 instanceof NumberPrinterParser.FixWidth2Month
                         && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
@@ -2598,7 +2604,7 @@ public final class DateTimeFormatterBuilder {
                 }
             }
 
-            if (printerParsers.length == 13) {
+            if (MONOLITHIC && printerParsers.length == 13) {
                 var pp0 = printerParsers[0];
                 var pp1 = printerParsers[1];
                 var pp2 = printerParsers[2];
@@ -2613,7 +2619,8 @@ public final class DateTimeFormatterBuilder {
                 var pp11 = printerParsers[11];
                 var pp12 = printerParsers[12];
 
-                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad
+                if (pp0 instanceof NumberPrinterParser.Width4ExceedsPad width4ExceedsPad
+                        && width4ExceedsPad.subsequentWidth == 0
                         && pp1 instanceof CharLiteralPrinterParser cpp1
                         && pp2 instanceof NumberPrinterParser.FixWidth2Month
                         && pp3 instanceof CharLiteralPrinterParser cpp3 && cpp3.literal == cpp1.literal
@@ -2676,6 +2683,18 @@ public final class DateTimeFormatterBuilder {
                 return this;
             }
             return CompositePrinterParser.of(printerParsers, optional);
+        }
+
+        public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+            Objects.requireNonNull(text, "text");
+            Objects.requireNonNull(query, "query");
+            try {
+                return formatter.parseResolved0(text, null).query(query);
+            } catch (DateTimeParseException ex) {
+                throw ex;
+            } catch (RuntimeException ex) {
+                throw formatter.createError(text, ex);
+            }
         }
 
         public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
@@ -3262,8 +3281,16 @@ public final class DateTimeFormatterBuilder {
         }
 
         static final class HMS extends N5 {
+            final NumberPrinterParser.FixWidth2NotNegative printerParserHour;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMinute;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserSecond;
+
             HMS (DateTimePrinterParser[] printerParsers, boolean optional) {
                 super(printerParsers, optional);
+
+                printerParserHour   = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[0];
+                printerParserMinute = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[2];
+                printerParserSecond = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[4];
             }
 
             public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
@@ -3309,14 +3336,46 @@ public final class DateTimeFormatterBuilder {
                    .append((char) (zeroDigit + second % 10));
                 return true;
             }
+
+            public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0') {
+                    return super.parse(text, formatter, query);
+                }
+
+                long valuePos = printerParserHour.parse(text, 0);
+                int pos = position(text, valuePos);
+                int hour = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, ':');
+
+                valuePos = printerParserMinute.parse(text, pos);
+                pos = position(text, valuePos);
+                int minute = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, ':');
+
+                valuePos = printerParserSecond.parse(text, pos);
+                pos = position(text, valuePos);
+                int second = (int) (valuePos >> 32);
+
+                return query.queryFrom(
+                        LocalTime.of(hour, minute, second));
+            }
         }
 
         static final class YMD extends N5 {
             final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMonth;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserDayOfMonth;
+
             final char literal;
             YMD (DateTimePrinterParser[] printerParsers, boolean optional) {
                 super(printerParsers, optional);
-                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                printerParserYear       = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                printerParserMonth      = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[2];
+                printerParserDayOfMonth = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[4];
+
                 literal = ((CharLiteralPrinterParser) printerParsers[1]).literal;
             }
 
@@ -3369,16 +3428,53 @@ public final class DateTimeFormatterBuilder {
                    .append((char) (zeroDigit + dayOfMonth % 10));
                 return true;
             }
+
+            public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0') {
+                    return super.parse(text, formatter, query);
+                }
+
+                long valuePos = printerParserYear.parse(text, 0);
+                int pos = position(text, valuePos);
+                int year = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal);
+
+                valuePos = printerParserMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int month = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal);
+
+                valuePos = printerParserDayOfMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int dayOfMonth = (int) (valuePos >> 32);
+
+                return query.queryFrom(
+                        LocalDate.of(year, month, dayOfMonth));
+            }
         }
 
-        static class YMDHMS extends N11 {
-            final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+        static final class YMDHMS extends N11 {
+            final NumberPrinterParser.Width4ExceedsPad     printerParserYear;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMonth;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserDayOfMonth;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserHour;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMinute;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserSecond;
             final char literal1;
             final char literal5;
             final char literal7;
             YMDHMS (DateTimePrinterParser[] printerParsers, boolean optional) {
                 super(printerParsers, optional);
-                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                printerParserYear       = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                printerParserMonth      = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[2];
+                printerParserDayOfMonth = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[4];
+                printerParserHour       = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[6];
+                printerParserMinute     = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[8];
+                printerParserSecond     = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[10];
+
                 literal1 = ((CharLiteralPrinterParser) printerParsers[1]).literal;
                 literal5 = ((CharLiteralPrinterParser) printerParsers[5]).literal;
                 literal7 = ((CharLiteralPrinterParser) printerParsers[7]).literal;
@@ -3458,23 +3554,130 @@ public final class DateTimeFormatterBuilder {
                    .append((char) (zeroDigit + second % 10));
                 return true;
             }
+
+            public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0') {
+                    return super.parse(text, formatter, query);
+                }
+
+                long valuePos = printerParserYear.parse(text, 0);
+                int pos = position(text, valuePos);
+                int year = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal1);
+
+                valuePos = printerParserMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int month = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal1);
+
+                valuePos = printerParserDayOfMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int dayOfMonth = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal5);
+
+                valuePos = printerParserHour.parse(text, pos);
+                pos = position(text, valuePos);
+                int hour = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal7);
+
+                valuePos = printerParserMinute.parse(text, pos);
+                pos = position(text, valuePos);
+                int minute = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal7);
+
+                valuePos = printerParserSecond.parse(text, pos);
+                pos = position(text, valuePos);
+                int second = (int) (valuePos >> 32);
+
+                return query.queryFrom(
+                        LocalDateTime.of(year, month, dayOfMonth, hour, minute, second));
+            }
         }
 
-        static class YMDHMSS extends N13 {
-            final NumberPrinterParser.Width4ExceedsPad printerParserYear;
+        static final class YMDHMSS extends N13 {
             final char literal1;
             final char literal5;
             final char literal7;
             final char literal11;
+            final NumberPrinterParser.Width4ExceedsPad     printerParserYear;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMonth;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserDayOfMonth;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserHour;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserMinute;
+            final NumberPrinterParser.FixWidth2NotNegative printerParserSecond;
             final NanosPrinterParser printerParserNano;
+
             YMDHMSS (DateTimePrinterParser[] printerParsers, boolean optional) {
                 super(printerParsers, optional);
-                printerParserYear = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+
+                printerParserYear       = (NumberPrinterParser.Width4ExceedsPad) printerParsers[0];
+                printerParserMonth      = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[2];
+                printerParserDayOfMonth = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[4];
+                printerParserHour       = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[6];
+                printerParserMinute     = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[8];
+                printerParserSecond     = (NumberPrinterParser.FixWidth2NotNegative) printerParsers[10];
+                printerParserNano       = (NanosPrinterParser) printerParsers[12];
+
                 literal1  = ((CharLiteralPrinterParser) printerParsers[1]).literal;
                 literal5  = ((CharLiteralPrinterParser) printerParsers[5]).literal;
                 literal7  = ((CharLiteralPrinterParser) printerParsers[7]).literal;
                 literal11 = ((CharLiteralPrinterParser) printerParsers[11]).literal;
-                printerParserNano = (NanosPrinterParser) printerParsers[12];
+            }
+
+            public <T> T parse(CharSequence text, DateTimeFormatter formatter, TemporalQuery<T> query) {
+                char zeroDigit = formatter.getDecimalStyle().getZeroDigit();
+                if (zeroDigit != '0') {
+                    return super.parse(text, formatter, query);
+                }
+
+                long valuePos = printerParserYear.parse(text, 0);
+                int pos = position(text, valuePos);
+                int year = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal1);
+
+                valuePos = printerParserMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int month = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal1);
+
+                valuePos = printerParserDayOfMonth.parse(text, pos);
+                pos = position(text, valuePos);
+                int dayOfMonth = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal5);
+
+                valuePos = printerParserHour.parse(text, pos);
+                pos = position(text, valuePos);
+                int hour = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal7);
+
+                valuePos = printerParserMinute.parse(text, pos);
+                pos = position(text, valuePos);
+                int minute = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal7);
+
+                valuePos = printerParserSecond.parse(text, pos);
+                pos = position(text, valuePos);
+                int second = (int) (valuePos >> 32);
+
+                pos = litteral(text, pos, literal11);
+
+                valuePos = printerParserNano.parse(text, pos);
+                pos = position(text, valuePos);
+                int nano = (int) (valuePos >> 32);
+
+                return query.queryFrom(
+                        LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano));
             }
 
             public String format(TemporalAccessor temporal, DateTimeFormatter formatter) {
@@ -3555,6 +3758,35 @@ public final class DateTimeFormatterBuilder {
                 printerParserNano.format(buf, decimalStyle, nano);
                 return true;
             }
+        }
+
+        static int litteral(CharSequence text, int pos, char literlal) {
+            char ch;
+            if (pos == text.length() || text.charAt(pos) != literlal) {
+                throw error(text, pos);
+            }
+            return pos + 1;
+        }
+
+        static int position(CharSequence text, long valuePos) {
+            int pos = (int) valuePos;
+            if (pos >= 0) {
+                return pos;
+            }
+
+            throw error(text, ~pos);
+        }
+
+        static DateTimeParseException error(CharSequence text, int pos) {
+            String abbr;
+            if (text.length() > 64) {
+                abbr = text.subSequence(0, 64).toString() + "...";
+            } else {
+                abbr = text.toString();
+            }
+            int errorIndex = ~pos;
+            return new DateTimeParseException("Text '" + abbr + "' could not be parsed at index " +
+                    errorIndex, text, errorIndex);
         }
     }
 
@@ -4228,6 +4460,28 @@ public final class DateTimeFormatterBuilder {
                 int value = d0 * 10 + d1;
                 return context.setParsedField(field, value, position, position + 2);
             }
+
+            public final long parse(CharSequence text, int position) {
+                int length = text.length();
+                if (position == length) {
+                    // valid if whole field is optional, invalid if minimum width
+                    return ~position;
+                }
+                if (position + 2 > length) {
+                    return ~position;  // need at least min width digits
+                }
+                int d0 = digit(text.charAt(position));
+                int d1 = digit(text.charAt(position + 1));
+                if (d0 < 0 || d1 < 0) {
+                    return ~position;  // need at least min width digits
+                }
+                int value = d0 * 10 + d1;
+                return (position + 2) | (((long) value) << 32L);
+            }
+        }
+
+        static int digit(char ch) {
+            return ch >= '0' && ch <= '9' ?  ch - '0' : -1;
         }
 
         static final class FixWidth2Month extends FixWidth2NotNegative {
@@ -4372,6 +4626,62 @@ public final class DateTimeFormatterBuilder {
                     JLA.getCharsLatin1(value, index, buf);
                 }
                 return index;
+            }
+
+            public long parse(CharSequence text, int position) {
+                int length = text.length();
+                if (position == length) {
+                    return ~position;
+                }
+                boolean fixedWidth = false;
+                char sign = text.charAt(position);  // IOOBE if invalid position
+                boolean negative = false;
+                boolean positive = false;
+                if (sign == '+') {
+                    positive = true;
+                    position++;
+                } else if (sign == '-') {
+                    negative = true;
+                    position++;
+                }
+                int minEndPos = position + minWidth;
+                if (minEndPos > length) {
+                    return ~position;
+                }
+                int total = 0;
+                int pos = position;
+                int maxEndPos = Math.min(pos + maxWidth, length);
+                while (pos < maxEndPos) {
+                    char ch = text.charAt(pos++);
+                    int digit = digit(ch);
+                    if (digit < 0) {
+                        pos--;
+                        if (pos < minEndPos) {
+                            return ~position;  // need at least min width digits
+                        }
+                        break;
+                    }
+                    total = total * 10 + digit;
+                }
+
+                if (negative) {
+                    if (total == 0) {
+                        return ~(position - 1);  // minus zero not allowed
+                    }
+                    total = -total;
+                } else {
+                    int parseLen = pos - position;
+                    if (positive) {
+                        if (parseLen <= minWidth) {
+                            return ~(position - 1);  // '+' only parsed if minWidth exceeded
+                        }
+                    } else {
+                        if (parseLen > minWidth) {
+                            return ~position;  // '+' must be parsed if minWidth exceeded
+                        }
+                    }
+                }
+                return pos | (((long) total) << 32);
             }
         }
 
@@ -4854,6 +5164,37 @@ public final class DateTimeFormatterBuilder {
                 total *= 10;
             }
             return context.setParsedField(field, total, position, pos);
+        }
+
+        public final long parse(CharSequence text, int position) {
+            int length = text.length();
+            if (position == length) {
+                // valid if whole field is optional, invalid if minimum width
+                return (minWidth > 0 ? ~position : position);
+            }
+            int minEndPos = position + minWidth;
+            if (minEndPos > length) {
+                return ~position;  // need at least min width digits
+            }
+            int maxEndPos = Math.min(position + maxWidth, length);
+            int total = 0;  // can use int because we are only parsing up to 9 digits
+            int pos = position;
+            while (pos < maxEndPos) {
+                char ch = text.charAt(pos);
+                int digit = digit(ch);
+                if (digit < 0) {
+                    if (pos < minEndPos) {
+                        return ~position;  // need at least min width digits
+                    }
+                    break;
+                }
+                pos++;
+                total = total * 10 + digit;
+            }
+            for (int i = 9 - (pos - position); i > 0; i--) {
+                total *= 10;
+            }
+            return pos | (((long) total) << 32);
         }
 
         @Override
