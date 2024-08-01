@@ -66,7 +66,7 @@ public record PEMRecord(String id, String pem) {
         } else {
             this.id = id;
         }
-        
+
         this.pem = pem;
     }
 }
