@@ -26,14 +26,10 @@
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
-import javax.swing.RepaintManager;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 /*
  * @test
@@ -81,6 +77,6 @@ public class OptionPaneInput {
         PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
         f.setVisible(true);
 
-        JOptionPane.showMessageDialog(null, t);
+        JOptionPane.showMessageDialog(f, t);
     }
 }
