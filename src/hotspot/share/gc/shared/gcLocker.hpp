@@ -29,7 +29,6 @@
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/ticks.hpp"
 
 class JavaThread;
 
@@ -151,16 +150,3 @@ class GCLocker: public AllStatic {
 };
 
 #endif // SHARE_GC_SHARED_GCLOCKER_HPP
-
-/*
- * GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
- */
-class GCLockerTimingDebugLogger : public StackObj {
-private:
-  const char*  _log_message;
-  Ticks _start;
-
-public:
-  GCLockerTimingDebugLogger(const char* log_message);
-  ~GCLockerTimingDebugLogger();
-};
