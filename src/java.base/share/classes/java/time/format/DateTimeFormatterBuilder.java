@@ -3280,6 +3280,9 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
+        /**
+         * Optimized implementation of Pattern `HH:mm:ss.SSS`
+         */
         static final class HMS extends N5 {
             final NumberPrinterParser.FixWidth2NotNegative printerParserHour;
             final NumberPrinterParser.FixWidth2NotNegative printerParserMinute;
@@ -3364,6 +3367,9 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
+        /**
+         * Optimized implementation of Pattern `yyyy-MM-dd`
+         */
         static final class YMD extends N5 {
             final NumberPrinterParser.Width4ExceedsPad printerParserYear;
             final NumberPrinterParser.FixWidth2NotNegative printerParserMonth;
@@ -3456,6 +3462,9 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
+        /**
+         * Optimized implementation of Pattern `yyyy-MM-ddTHH:mm:ss.SSS`
+         */
         static final class YMDHMS extends N11 {
             final NumberPrinterParser.Width4ExceedsPad     printerParserYear;
             final NumberPrinterParser.FixWidth2NotNegative printerParserMonth;
@@ -3600,6 +3609,9 @@ public final class DateTimeFormatterBuilder {
             }
         }
 
+        /**
+         * Optimized implementation of Pattern `yyyy-MM-ddTHH:mm:ss.SSS`
+         */
         static final class YMDHMSS extends N13 {
             final char literal1;
             final char literal5;
