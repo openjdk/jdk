@@ -156,17 +156,15 @@ class RegisterMap : public StackObj {
 #ifndef PRODUCT
   void print_on(outputStream* st) const;
   void print() const;
-#endif
 
-  void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
-  void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
-
-#ifndef PRODUCT
   bool is_async() const             { return _async; }
   bool should_skip_missing() const  { return _skip_missing; }
 
   VMReg find_register_spilled_here(void* p, intptr_t* sp);
 #endif
+
+  void set_async(bool value)        { NOT_PRODUCT(_async = value;) }
+  void set_skip_missing(bool value) { NOT_PRODUCT(_skip_missing = value;) }
 
   // the following contains the definition of pd_xxx methods
 #include CPU_HEADER(registerMap)
