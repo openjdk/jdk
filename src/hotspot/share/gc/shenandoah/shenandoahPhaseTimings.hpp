@@ -217,13 +217,13 @@ private:
   ShenandoahWorkerData* worker_data(Phase phase, ParPhase par_phase);
   Phase worker_par_phase(Phase phase, ParPhase par_phase);
 
-  void set_cycle_data(Phase phase, double time, bool should_aggregate=false);
+  void set_cycle_data(Phase phase, double time, bool should_aggregate_cycles=false);
   static double uninitialized() { return -1; }
 
 public:
   ShenandoahPhaseTimings(uint max_workers);
 
-  void record_phase_time(Phase phase, double time, bool should_aggregate=false);
+  void record_phase_time(Phase phase, double time, bool should_aggregate_cycles=false);
 
   void record_workers_start(Phase phase);
   void record_workers_end(Phase phase);
@@ -237,11 +237,11 @@ public:
   }
 
   static const char* phase_name_without_leading_whitespace(Phase phase) {
-    const char* current_phase_name = phase_name(phase);
-    while (*current_phase_name == ' ') {
-      current_phase_name++;
+    const char* trimmed_phase_name = phase_name(phase);
+    while (*trimmed_phase_name == ' ') {
+      trimmed_phase_name++;
     }
-    return current_phase_name;
+    return trimmed_phase_name;
   }
 
   void print_cycle_on(outputStream* out) const;
