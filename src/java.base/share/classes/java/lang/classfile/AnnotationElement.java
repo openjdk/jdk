@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a key-value pair in the {@code element_value_pairs}
+ * Models an element-value pair in the {@code element_value_pairs}
  * table in the {@code annotation} structure defined in
  * {@jvms 4.7.16} or the {@code type_annotation} structure defined
  * in {@jvms 4.7.20}.
@@ -51,18 +51,14 @@ public sealed interface AnnotationElement
 
     /**
      * {@return the element name}
-     * <p>
-     * A single-element annotation ({@jls 9.7.3}) in Java source code is
-     * compiled to an {@link Annotation} with exactly one {@linkplain
-     * Annotation#elements key-value pair} where the element has the name
-     * {@code value}.
-     * <p>
-     * Multiple annotations of the same interface <i>A</i> in Java source code
-     * is compiled to an implicitly declared container annotation ({@jls 9.7.5})
-     * with exactly one {@linkplain Annotation#elements key-value pair} where
-     * the element has the name {@code value} and the type of the element is the
-     * {@linkplain AnnotationValue.OfArray array} whose component type is the
-     * {@linkplain AnnotationValue.OfAnnotation annotation interface <i>A</i>}.
+     *
+     * @apiNote
+     * In Java source code, by convention, the name of the sole element in a
+     * single-element annotation interface is {@code value}. ({@jls 9.6.1})
+     * A single-element annotation ({@jls 9.7.3}) declares the element value
+     * for the {@code value} element. The single element of a containing
+     * annotation interface that holds {@linkplain Annotation##repeatable
+     * multiple} base annotations is also named {@code value}. ({@jls 9.6.3})
      */
     Utf8Entry name();
 
@@ -72,7 +68,7 @@ public sealed interface AnnotationElement
     AnnotationValue value();
 
     /**
-     * {@return an annotation key-value pair}
+     * {@return an annotation element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -82,7 +78,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair}
+     * {@return an annotation element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -92,7 +88,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a class-valued annotation}
+     * {@return an annotation element-value pair for a class-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -102,7 +98,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a string-valued annotation}
+     * {@return an annotation element-value pair for a string-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -112,7 +108,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a long-valued annotation}
+     * {@return an annotation element-value pair for a long-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -122,7 +118,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an int-valued annotation}
+     * {@return an annotation element-value pair for an int-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -132,7 +128,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a char-valued annotation}
+     * {@return an annotation element-value pair for a char-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -142,7 +138,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a short-valued annotation}
+     * {@return an annotation element-value pair for a short-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -152,7 +148,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a byte-valued annotation}
+     * {@return an annotation element-value pair for a byte-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -162,7 +158,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a boolean-valued annotation}
+     * {@return an annotation element-value pair for a boolean-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -172,7 +168,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a double-valued annotation}
+     * {@return an annotation element-value pair for a double-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -182,7 +178,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for a float-valued annotation}
+     * {@return an annotation element-value pair for a float-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -192,7 +188,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an annotation-valued annotation}
+     * {@return an annotation element-value pair for an annotation-valued annotation}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -202,7 +198,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation key-value pair for an array-valued annotation}
+     * {@return an annotation element-value pair for an array-valued annotation}
      * @param name the name of the key
      * @param values the associated values
      */
