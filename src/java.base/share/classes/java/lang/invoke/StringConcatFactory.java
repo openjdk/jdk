@@ -31,21 +31,28 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
+import jdk.internal.util.ReferenceKey;
+import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.AccessFlag;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodType.methodType;
@@ -431,7 +438,7 @@ public final class StringConcatFactory {
                 }
 
                 // Flush any accumulated characters into a constant
-                consts[oCount++] = acc.length() > 0 ? acc.toString() : null;
+                consts[oCount++] = acc.length() > 0 ? acc.toString() : "";
                 acc.setLength(0);
             } else {
                 // Not a special character, this is a constant embedded into
@@ -447,7 +454,7 @@ public final class StringConcatFactory {
         }
 
         // Flush the remaining characters as constant:
-        consts[oCount] = acc.length() > 0 ? acc.toString() : null;
+        consts[oCount] = acc.length() > 0 ? acc.toString() : "";
         return consts;
     }
 
@@ -481,18 +488,18 @@ public final class StringConcatFactory {
         if (paramCount == 1) {
             String prefix = constants[0];
             // Empty constants will be
-            if (prefix == null) {
-                if (suffix == null) {
+            if (prefix.isEmpty()) {
+                if (suffix.isEmpty()) {
                     return unaryConcat(mt.parameterType(0));
                 } else if (!mt.hasPrimitives()) {
                     return MethodHandles.insertArguments(simpleConcat(), 1, suffix);
                 } // else fall-through
-            } else if (suffix == null && !mt.hasPrimitives()) {
+            } else if (suffix.isEmpty() && !mt.hasPrimitives()) {
                 // Non-primitive argument
                 return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
             } // fall-through if there's both a prefix and suffix
-        } else if (paramCount == 2 && !mt.hasPrimitives() && suffix == null
-                && constants[0] == null && constants[1] == null) {
+        } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
+                && constants[0].isEmpty() && constants[1].isEmpty()) {
             // Two reference arguments, no surrounding constants
             return simpleConcat();
         }
@@ -1062,17 +1069,25 @@ public final class StringConcatFactory {
      */
     private static final class SimpleStringBuilderStrategy {
         static final String METHOD_NAME = "concat";
+        static final String LENGTH = "length";
+        static final String CODER = "coder";
+        static final String CONSTANTS = "constants";
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
-
+        static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
+        static final MethodTypeDesc ARRAY_STRING_TO_VOID = MethodTypeDesc.of(CD_void, CD_Array_String);
         static final MethodTypeDesc FLOAT_TO_STRING  = MethodTypeDesc.of(CD_String, CD_float);
         static final MethodTypeDesc DOUBLE_TO_STRING = MethodTypeDesc.of(CD_String, CD_double);
         static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
 
         static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_long);
         static final MethodTypeDesc NEW_STRING       = MethodTypeDesc.of(CD_String, CD_Array_byte, CD_long);
+
+        static final MethodTypeDesc MTD_Object  = MethodTypeDesc.of(CD_Object);
+        static final MethodTypeDesc MTD_int     = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_byte    = MethodTypeDesc.of(CD_byte);
 
         static final MethodTypeDesc MIX_int     = MethodTypeDesc.of(CD_long, CD_long, CD_int);
         static final MethodTypeDesc MIX_long    = MethodTypeDesc.of(CD_long, CD_long, CD_long);
@@ -1086,32 +1101,120 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
 
+        static final ReferencedKeyMap<MethodType, WeakReference<MethodHandlePair>> CACHE =
+                ReferencedKeyMap.create(true, true,
+                        new Supplier<>() {
+                            @Override
+                            public Map<ReferenceKey<MethodType>, WeakReference<MethodHandlePair>> get() {
+                                return new ConcurrentHashMap<>(64);
+                            }
+                        });
+
         private SimpleStringBuilderStrategy() {
             // no instantiation
         }
+
+        private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
             MethodType erasedArgs = args.erase().changeReturnType(String.class);
-
-            byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
+            WeakReference<MethodHandlePair> weakConstructorHandle = CACHE.get(erasedArgs);
+            if (weakConstructorHandle != null) {
+                MethodHandlePair handlePair = weakConstructorHandle.get();
+                if (handlePair != null) {
+                    try {
+                        var instance = handlePair.constructor.invoke(constants);
+                        return handlePair.concatenator.bindTo(instance);
+                    } catch (Throwable e) {
+                        throw new StringConcatException("Exception while utilizing the hidden class", e);
+                    }
+                }
+            }
+            ClassDesc concatClass = ConstantUtils.binaryNameToDesc(className);
+            byte[] classBytes = ClassFile.of().build(concatClass,
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(AccessFlag.FINAL, AccessFlag.SUPER, AccessFlag.SYNTHETIC)
+                                .withField(LENGTH, CD_int, ClassFile.ACC_FINAL)
+                                .withField(CODER, CD_byte, ClassFile.ACC_FINAL)
+                                .withField(CONSTANTS, CD_Array_String, ClassFile.ACC_FINAL)
+                                .withMethodBody("<init>",
+                                        ARRAY_STRING_TO_VOID,
+                                        ClassFile.ACC_PRIVATE,
+                                        generateConstructor(concatClass, constants.length)
+                                )
                                 .withMethodBody(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(erasedArgs),
-                                        ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateMethod(constants, erasedArgs));
+                                        ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE,
+                                        generateConcatMethod(concatClass, erasedArgs));
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                         .defineClass(true, null);
-                return lookup.findStatic(hiddenClass, METHOD_NAME, erasedArgs);
-            } catch (Exception e) {
+
+                MethodHandle constructorHandle = lookup.findConstructor(hiddenClass, MethodType.methodType(void.class, String[].class));
+                var instance = hiddenClass.cast(constructorHandle.invoke(constants));
+                MethodHandle handle = lookup.findVirtual(hiddenClass, METHOD_NAME, erasedArgs);
+                CACHE.put(erasedArgs, new WeakReference<>(new MethodHandlePair(constructorHandle, handle)));
+                return handle.bindTo(instance);
+            } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
+        }
+
+        private static Consumer<CodeBuilder> generateConstructor(ClassDesc concatClass, int numConstants) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    cb.aload(0);
+                    cb.invokespecial(CD_Object, INIT_NAME, MTD_void, false);
+                    cb.aload(0);
+                    cb.aload(1);
+                    // Defensive clone here might be overkill
+                    cb.invokevirtual(CD_Array_String, "clone", MTD_Object);
+                    cb.checkcast(CD_Array_String);
+                    cb.putfield(concatClass, CONSTANTS, CD_Array_String);
+                    cb.iconst_0();
+                    cb.istore(2);
+                    cb.iconst_0();
+                    cb.istore(3);
+                    cb.iconst_0();
+                    cb.istore(4);
+                    Label loopStart = cb.newLabel();
+                    Label loopEnd = cb.newLabel();
+                    {
+                        cb.labelBinding(loopStart);
+                        cb.iload(4);
+                        cb.ldc(numConstants);
+                        cb.if_icmpge(loopEnd);
+                        cb.aload(1);
+                        cb.iload(4);
+                        cb.aaload();
+                        cb.dup();
+                        cb.invokevirtual(CD_String, LENGTH, MTD_int);
+                        cb.iload(2);
+                        cb.iadd();
+                        cb.istore(2);
+                        cb.invokevirtual(CD_String, CODER, MTD_byte);
+                        cb.iload(3);
+                        cb.ior();
+                        cb.istore(3);
+                        cb.iinc(4, 1);
+                        cb.goto_(loopStart);
+                    }
+                    cb.labelBinding(loopEnd);
+                    cb.aload(0);
+                    cb.iload(2);
+                    cb.putfield(concatClass, LENGTH, CD_int);
+                    cb.aload(0);
+                    cb.iload(3);
+                    cb.putfield(concatClass, CODER, CD_byte);
+                    cb.return_();
+                }
+            };
         }
 
         /**
@@ -1157,21 +1260,15 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateMethod(String[] constants, MethodType args) {
+        private static Consumer<CodeBuilder> generateConcatMethod(ClassDesc concatClass, MethodType args) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    long initalLengthCoder = JLA.stringConcatInitialCoder();
-                    for (String constant : constants) {
-                        if (constant != null) {
-                            initalLengthCoder = JLA.stringConcatMix(initalLengthCoder, constant);
-                        }
-                    }
 
                     int paramCount = args.parameterCount();
 
                     // Compute parameter and local string variable slots
-                    int   paramSlotsTotalSize = 0;
+                    int   paramSlotsTotalSize = 1;
                     int[] paramSlots          = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         Class<?> cl = args.parameterType(i);
@@ -1224,7 +1321,17 @@ public final class StringConcatFactory {
                      *  ...
                      *
                      */
-                    cb.loadConstant(initalLengthCoder);
+                    cb.aload(0)
+                      .getfield(concatClass, CODER, CD_byte)
+                      .istore(lengthCoderSlot)
+                      .lload(lengthCoderSlot)
+                      .ldc(32)
+                      .lshl()
+                      .aload(0)
+                      .getfield(concatClass, LENGTH, CD_int)
+                      .i2l()
+                      .ladd();
+
                     for (int i = paramCount - 1; i >= 0; i--) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
@@ -1246,25 +1353,25 @@ public final class StringConcatFactory {
                         cb.loadLocal(kind, paramSlot)
                           .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
                     }
-                    cb.lstore(lengthCoderSlot);
 
-                    String suffix = constants[constants.length - 1];
-                    if (suffix == null) {
-                        suffix = "";
-                    }
-                    if (!suffix.isEmpty()) {
-                        // lengthCoder = lengthCoder - suffix.length()
-                        cb.lload(lengthCoderSlot)
-                          .ldc((long) suffix.length())
-                          .lsub()
-                          .lstore(lengthCoderSlot);
-                    }
+                    // lengthCoder = lengthCoder - suffix.length()
+                    cb.aload(0)
+                      .getfield(concatClass, CONSTANTS, CD_Array_String)
+                      .ldc(paramCount)
+                      .aaload()
+                      .invokevirtual(CD_String, LENGTH, MTD_int)
+                      .i2l()
+                      .lsub()
+                      .lstore(lengthCoderSlot);
 
                     /*
                      * Allocate buffer :
                      *  buf = StringConcatHelper.newArray(suffix, lengthCoder)
                      */
-                    cb.ldc(suffix)
+                    cb.aload(0)
+                      .getfield(concatClass, CONSTANTS, CD_Array_String)
+                      .ldc(paramCount)
+                      .aaload()
                       .lload(lengthCoderSlot)
                       .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", NEW_ARRAY_SUFFIX)
                       .astore(bufSlot);
@@ -1292,13 +1399,12 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_String;
                             kind = TypeKind.from(String.class);
                         }
-                        String constant = constants[i];
-                        if (constant == null) {
-                            constant = "";
-                        }
                         cb.aload(bufSlot)
                           .loadLocal(kind, paramSlot)
-                          .ldc(constant)
+                          .aload(0)
+                          .getfield(concatClass, CONSTANTS, CD_Array_String)
+                          .ldc(i)
+                          .aaload()
                           .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
                     cb.lstore(lengthCoderSlot);
