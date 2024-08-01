@@ -181,13 +181,10 @@ public final class QuicServerConnection extends QuicConnectionImpl {
             return;
         }
         if (!connectionIdAcknowledged && localConnectionId().matches(destConnId)) {
-            // TODO: should we unregister the original connection id now?
-            //       maybe only if we are in Handshake?
-            //       We don't want to initiate a new connection if a stray initial
-            //       packet comes late...
             debug.log("connection acknowledged");
             connectionIdAcknowledged = true;
             server.connectionAcknowledged(this, clientSentDestConnId, localConnectionId());
+            endpoint.removeConnectionId(clientSentDestConnId, this);
         }
         super.processIncoming(source, destConnId, headersType, buffer);
     }

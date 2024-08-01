@@ -82,8 +82,6 @@ import javax.crypto.NoSuchPaddingException;
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.BLOCKING_WITH_VIRTUAL_THREADS;
 import static jdk.internal.net.http.quic.QuicEndpoint.ChannelType.NON_BLOCKING_WITH_SELECTOR;
 import static jdk.internal.net.http.quic.TerminationCause.forSilentTermination;
-import static jdk.internal.net.http.quic.TerminationCause.forTransportError;
-import static jdk.internal.net.quic.QuicTransportErrors.NO_ERROR;
 
 
 /**
@@ -1382,6 +1380,18 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // remove references to this connection from the map which holds the peer issued
         // reset tokens
         dropPeerIssuedResetTokensFor(connection);
+    }
+
+    /**
+     * Remove the cid to connection mapping from the endpoint.
+     *
+     * @param cid        the connection ID to be removed
+     * @param connection the connection that is mapped to the cid
+     * @return true if connection ID was removed, false otherwise
+     */
+    public boolean removeConnectionId(QuicConnectionId cid, QuicPacketReceiver connection) {
+        if (debug.on()) debug.log("removing connection ID " + cid);
+        return connections.remove(cid, connection);
     }
 
     public final int connectionCount() {
