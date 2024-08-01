@@ -31,8 +31,8 @@
 #include "sun_nio_ch_FileKey.h"
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_getDevIno(JNIEnv* env, jclass clazz, jint fdVal,
-    jlongArray devIno)
+Java_sun_nio_ch_FileKey_init(JNIEnv* env, jclass clazz, jint fdVal,
+    jlongArray finfo)
 {
     struct stat fbuf;
     int res;
@@ -44,6 +44,6 @@ Java_sun_nio_ch_FileKey_getDevIno(JNIEnv* env, jclass clazz, jint fdVal,
     } else {
         deviceAndInode[0] = (jlong)fbuf.st_dev;
         deviceAndInode[1] = (jlong)fbuf.st_ino;
-        (*env)->SetLongArrayRegion(env, devIno, 0, 2, deviceAndInode);
+        (*env)->SetLongArrayRegion(env, finfo, 0, 2, deviceAndInode);
     }
 }

@@ -47,9 +47,9 @@ public class FileKey {
         JavaIOFileDescriptorAccess access =
             SharedSecrets.getJavaIOFileDescriptorAccess();
         int fdVal = access.get(fd);
-        long devIno[] = new long[2];
-        getDevIno(fdVal, devIno);
-        return new FileKey(devIno[0], devIno[1]);
+        long finfo[] = new long[2];
+        init(fdVal, finfo);
+        return new FileKey(finfo[0], finfo[1]);
     }
 
     @Override
@@ -67,6 +67,6 @@ public class FileKey {
                 && (this.st_ino == other.st_ino);
     }
 
-    private static native void getDevIno(int fd, long[] ids)
+    private static native void init(int fdVal, long[] finfo)
         throws IOException;
 }
