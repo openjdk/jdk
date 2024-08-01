@@ -3123,7 +3123,7 @@ class NUMANodeListHolder {
 
 static size_t _large_page_size = 0;
 
-bool os::request_lock_memory_privilege() {
+bool os::win32::request_lock_memory_privilege() {
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE,
                                 os::current_process_id());
 
@@ -3315,7 +3315,7 @@ size_t os::large_page_init_decide_size() {
 #define WARN(msg) if (warn_on_failure) { warning(msg); }
 #define WARN1(msg,p) if (warn_on_failure) { warning(msg,p); }
 
-  if (!request_lock_memory_privilege()) {
+  if (!os::win32::request_lock_memory_privilege()) {
     WARN("JVM cannot use large page memory because it does not have enough privilege to lock pages in memory.");
     return 0;
   }

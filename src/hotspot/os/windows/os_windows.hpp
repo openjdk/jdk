@@ -65,6 +65,7 @@ class os::win32 {
   static void   setmode_streams();
   static bool   is_windows_11_or_greater();
   static bool   is_windows_server_2022_or_greater();
+  static bool   request_lock_memory_privilege();
   static int windows_major_version() {
     assert(_major_version > 0, "windows version not initialized.");
     return _major_version;
