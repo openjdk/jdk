@@ -2474,6 +2474,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
     }
 
+    @Override
     public boolean isCancelled() {
 
         boolean cancelled = false;
