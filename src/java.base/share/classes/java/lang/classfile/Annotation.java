@@ -24,6 +24,7 @@
  */
 package java.lang.classfile;
 
+import java.lang.classfile.attribute.AnnotationDefaultAttribute;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
@@ -50,6 +51,19 @@ import jdk.internal.javac.PreviewFeature;
  * In either case, the structure indicates the interface of the annotation
  * and a set of element-value pairs.
  * <p>
+ * In an annotation in Java source code, elements in the annotation interface
+ * with default values may not be compiled into element-value pairs unless an
+ * explicit value is provided. ({@jls 9.6.2}) The default value is derived from
+ * the {@link AnnotationDefaultAttribute AnnotationDefault} attribute on the
+ * method representing the annotation interface element in the class file
+ * representing the annotation interface.
+ * <p id="repeatable">
+ * Multiple annotations of the same interface <i>A</i> in Java source code
+ * ({@jls 9.7.5}) are represented by the {@linkplain AnnotationValue.OfAnnotation
+ * annotation-valued} array elements of the {@linkplain AnnotationValue.OfArray
+ * array-valued} element named {@code value} of a container annotation of the
+ * containing annotation interface of <i>A</i>. ({@jls 9.6.3})
+ * <p>
  * The location in the class file of an {@code annotation} structure or a
  * {@code type_annotation} structure,
  * respectively, indicates the source code construct or type, respectively, to
@@ -69,7 +83,12 @@ import jdk.internal.javac.PreviewFeature;
  * annotation, where the type of the element value is itself an annotation
  * interface. In this case, the {@code annotation} structure appears as the
  * {@code annotation_value} item of an {@code element_value} structure
- * ({@jvms 4.7.16.1}).
+ * ({@jvms 4.7.16.1}).<br>
+ * If this is an array element of an array-valued element named {@code value} in
+ * the container annotation of a containing annotation interface <i>AC</i> of a
+ * {@linkplain ##repeatable repeatable annotation interface <i>A</i>},
+ * this represents a base annotation of type <i>A</i>, which applies to the same
+ * source code construct or type as the container annotation of type <i>AC</i>.
  * <li>A <i>type annotation</i>, when a {@code type_annotation} structure
  * appears in the {@link RuntimeVisibleTypeAnnotationsAttribute}
  * or {@link RuntimeInvisibleTypeAnnotationsAttribute} of a class, field,
@@ -94,12 +113,13 @@ public sealed interface Annotation
         permits AnnotationImpl {
 
     /**
-     * {@return the class of the annotation}
+     * {@return the constant pool entry holding the {@linkplain Class#descriptorString
+     * descriptor string} of the annotation interface}
      */
     Utf8Entry className();
 
     /**
-     * {@return the class of the annotation, as a symbolic descriptor}
+     * {@return the annotation interface, as a symbolic descriptor}
      */
     default ClassDesc classSymbol() {
         return ClassDesc.ofDescriptor(className().stringValue());
@@ -112,7 +132,8 @@ public sealed interface Annotation
 
     /**
      * {@return an annotation}
-     * @param annotationClass the class of the annotation
+     * @param annotationClass the constant pool entry holding the descriptor string
+     *                        of the annotation interface
      * @param elements the elements of the annotation
      */
     static Annotation of(Utf8Entry annotationClass,
@@ -122,7 +143,8 @@ public sealed interface Annotation
 
     /**
      * {@return an annotation}
-     * @param annotationClass the class of the annotation
+     * @param annotationClass the constant pool entry holding the descriptor string
+     *                        of the annotation interface
      * @param elements the elements of the annotation
      */
     static Annotation of(Utf8Entry annotationClass,
@@ -132,7 +154,7 @@ public sealed interface Annotation
 
     /**
      * {@return an annotation}
-     * @param annotationClass the class of the annotation
+     * @param annotationClass the descriptor of the annotation interface
      * @param elements the elements of the annotation
      */
     static Annotation of(ClassDesc annotationClass,
@@ -142,7 +164,7 @@ public sealed interface Annotation
 
     /**
      * {@return an annotation}
-     * @param annotationClass the class of the annotation
+     * @param annotationClass the descriptor of the annotation interface
      * @param elements the elements of the annotation
      */
     static Annotation of(ClassDesc annotationClass,

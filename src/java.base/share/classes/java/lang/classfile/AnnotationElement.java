@@ -34,7 +34,8 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * Models a key-value pair in the {@code element_value_pairs}
  * table in the {@code annotation} structure defined in
- * {@jvms 4.7.16}.
+ * {@jvms 4.7.16} or the {@code type_annotation} structure defined
+ * in {@jvms 4.7.20}.
  * <p>
  * Two {@code AnnotationElement} objects should be compared using the
  * {@link Object#equals(Object) equals} method.
@@ -50,6 +51,18 @@ public sealed interface AnnotationElement
 
     /**
      * {@return the element name}
+     * <p>
+     * A single-element annotation ({@jls 9.7.3}) in Java source code is
+     * compiled to an {@link Annotation} with exactly one {@linkplain
+     * Annotation#elements key-value pair} where the element has the name
+     * {@code value}.
+     * <p>
+     * Multiple annotations of the same interface <i>A</i> in Java source code
+     * is compiled to an implicitly declared container annotation ({@jls 9.7.5})
+     * with exactly one {@linkplain Annotation#elements key-value pair} where
+     * the element has the name {@code value} and the type of the element is the
+     * {@linkplain AnnotationValue.OfArray array} whose component type is the
+     * {@linkplain AnnotationValue.OfAnnotation annotation interface <i>A</i>}.
      */
     Utf8Entry name();
 

@@ -64,6 +64,12 @@ import jdk.internal.javac.PreviewFeature;
  * interface of the annotation and a set of element-value pairs; this
  * information is exposed by the {@link #annotation() annotation()} method.
  * <p>
+ * Multiple annotations of the same interface <i>A</i> in Java source code
+ * ({@jls 9.7.5}) are represented by the {@linkplain AnnotationValue.OfAnnotation
+ * annotation-valued} array elements of the {@linkplain AnnotationValue.OfArray
+ * array-valued} element named {@code value} of a container annotation of the
+ * containing annotation interface of <i>A</i>. ({@jls 9.6.3})
+ * <p>
  * The {@code type_annotation} structure is a superset of the {@code annotation}
  * structure ({@jvms 4.7.16}),
  * so a {@code TypeAnnotation} exposes more information about its location than
