@@ -29,6 +29,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Locale;
 
+
+/**
+ * An abstraction for the type-safe representation and use of HTML attributes.
+ * 
+ * @apiNote
+ * Attributes are used when performing simple validity checks on HTML in
+ * documentation comments, and when generating HTML for output.
+ * 
+ * @see HtmlTree#put(HtmlAttr, String)
+ */
 public enum HtmlAttr {
     ABBR,
     ACCESSKEY(true),
@@ -152,11 +162,17 @@ public enum HtmlAttr {
      * The "external" name of this attribute.
      */
     private final String name;
+
     /**
      * Whether this is a global attribute, that can be used with all HTML tags.
      */
     private final boolean isGlobal;
 
+    /**
+     * An abstraction for the type-safe representation and use of ARIA roles.
+     *
+     * @see HtmlTree#setRole(Role)
+     */
     public enum Role {
 
         BANNER,
@@ -176,6 +192,12 @@ public enum HtmlAttr {
         }
     }
 
+    /**
+     * An abstraction for the type-safe representation and use of "input" types.
+     *
+     * @see HtmlTree#INPUT(InputType, HtmlId)
+     * @see HtmlTree#INPUT(InputType, HtmlStyle)
+     */
     public enum InputType {
 
         CHECKBOX,
@@ -193,6 +215,11 @@ public enum HtmlAttr {
         }
     }
 
+    /**
+     * An abstraction for the kind of an attribute in the context of an HTML tag.
+     *
+     * @see HtmlTag#attrs(AttrKind,HtmlAttr...)
+     */
     public enum AttrKind {
         OK,
         INVALID,
