@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,9 +226,9 @@ public class AnnotationWriter extends BasicWriter {
 
     public void write(AnnotationValue value, boolean resolveIndices) {
         switch (value) {
-            case AnnotationValue.OfConstant ev -> {
+            case AnnotationValue.OfConstant<?, ?> ev -> {
                 if (resolveIndices) {
-                    var entry = ev.constant();
+                    var entry = ev.poolEntry();
                     switch (ev.tag()) {
                         case 'B':
                             print("(byte) ");
@@ -262,7 +262,7 @@ public class AnnotationWriter extends BasicWriter {
                             break;
                     }
                 } else {
-                    print(ev.tag() + "#" + ev.constant().index());
+                    print(ev.tag() + "#" + ev.poolEntry().index());
                 }
             }
             case AnnotationValue.OfEnum ev -> {

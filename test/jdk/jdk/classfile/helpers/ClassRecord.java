@@ -1058,7 +1058,7 @@ public record ClassRecord(
 
         public static ElementValueRecord ofElementValue(AnnotationValue ev) {
             return switch (ev) {
-                case AnnotationValue.OfConstant evc -> new EvConstRecord(ev.tag(), ConstantPoolEntryRecord.ofCPEntry(evc.constant()));
+                case AnnotationValue.OfConstant<?, ?> evc -> new EvConstRecord(ev.tag(), ConstantPoolEntryRecord.ofCPEntry(evc.poolEntry()));
                 case AnnotationValue.OfEnum enumVal -> new EvEnumConstRecord(ev.tag(), enumVal.className().stringValue(), enumVal.constantName().stringValue());
                 case AnnotationValue.OfClass classVal -> new EvClassRecord(ev.tag(), classVal.className().stringValue());
                 case AnnotationValue.OfAnnotation ann -> new EvAnnotationRecord(ev.tag(), AnnotationRecord.ofAnnotation(ann.annotation()));
