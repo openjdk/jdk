@@ -113,6 +113,9 @@
 #if INCLUDE_MANAGEMENT
 #include "services/finalizerService.hpp"
 #endif
+#ifdef LINUX
+#include "osContainer_linux.hpp"
+#endif
 
 #include <errno.h>
 
@@ -490,6 +493,15 @@ JVM_END
 JVM_LEAF(jboolean, JVM_IsUseContainerSupport(void))
 #ifdef LINUX
   if (UseContainerSupport) {
+    return JNI_TRUE;
+  }
+#endif
+  return JNI_FALSE;
+JVM_END
+
+JVM_LEAF(jboolean, JVM_IsContainerized(void))
+#ifdef LINUX
+  if (OSContainer::is_containerized()) {
     return JNI_TRUE;
   }
 #endif
@@ -1238,45 +1250,6 @@ JVM_ENTRY(jboolean, JVM_IsHiddenClass(JNIEnv *env, jclass cls))
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
   return k->is_hidden();
-JVM_END
-
-JVM_ENTRY(jobjectArray, JVM_GetClassSigners(JNIEnv *env, jclass cls))
-  JvmtiVMObjectAllocEventCollector oam;
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (java_lang_Class::is_primitive(mirror)) {
-    // There are no signers for primitive types
-    return nullptr;
-  }
-
-  objArrayHandle signers(THREAD, java_lang_Class::signers(mirror));
-
-  // If there are no signers set in the class, or if the class
-  // is an array, return null.
-  if (signers == nullptr) return nullptr;
-
-  // copy of the signers array
-  Klass* element = ObjArrayKlass::cast(signers->klass())->element_klass();
-  objArrayOop signers_copy = oopFactory::new_objArray(element, signers->length(), CHECK_NULL);
-  for (int index = 0; index < signers->length(); index++) {
-    signers_copy->obj_at_put(index, signers->obj_at(index));
-  }
-
-  // return the copy
-  return (jobjectArray) JNIHandles::make_local(THREAD, signers_copy);
-JVM_END
-
-
-JVM_ENTRY(void, JVM_SetClassSigners(JNIEnv *env, jclass cls, jobjectArray signers))
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  if (!java_lang_Class::is_primitive(mirror)) {
-    // This call is ignored for primitive types and arrays.
-    // Signers are only set once, ClassLoader.java, and thus shouldn't
-    // be called with an array.  Only the bootstrap loader creates arrays.
-    Klass* k = java_lang_Class::as_Klass(mirror);
-    if (k->is_instance_klass()) {
-      java_lang_Class::set_signers(k->java_mirror(), objArrayOop(JNIHandles::resolve(signers)));
-    }
-  }
 JVM_END
 
 
@@ -3146,14 +3119,6 @@ JVM_ENTRY(jobject, JVM_GetStackTrace(JNIEnv *env, jobject jthread))
   return JNIHandles::make_local(THREAD, trace);
 JVM_END
 
-JVM_ENTRY(void, JVM_DumpAllStacks(JNIEnv* env, jclass))
-  VM_PrintThreads op;
-  VMThread::execute(&op);
-  if (JvmtiExport::should_post_data_dump()) {
-    JvmtiExport::post_data_dump();
-  }
-JVM_END
-
 JVM_ENTRY(void, JVM_SetNativeThreadName(JNIEnv* env, jobject jthread, jstring name))
   // We don't use a ThreadsListHandle here because the current thread
   // must be alive.
@@ -3729,7 +3694,7 @@ JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
     }
     if (ClassListWriter::is_enabled()) {
       ClassListWriter w;
-      w.stream()->print_cr("%s %s", LAMBDA_FORM_TAG, c_line);
+      w.stream()->print_cr("%s %s", ClassListParser::lambda_form_tag(), c_line);
     }
   }
 #endif // INCLUDE_CDS
@@ -3782,7 +3747,7 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
 
   // Check if threads is null
   if (threads == nullptr) {
-    THROW_(vmSymbols::java_lang_NullPointerException(), 0);
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(threads));
@@ -3790,13 +3755,13 @@ JVM_ENTRY(jobjectArray, JVM_DumpThreads(JNIEnv *env, jclass threadClass, jobject
   int num_threads = ah->length();
   // check if threads is non-empty array
   if (num_threads == 0) {
-    THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   // check if threads is not an array of objects of Thread class
   Klass* k = ObjArrayKlass::cast(ah->klass())->element_klass();
   if (k != vmClasses::Thread_klass()) {
-    THROW_(vmSymbols::java_lang_IllegalArgumentException(), 0);
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   ResourceMark rm(THREAD);

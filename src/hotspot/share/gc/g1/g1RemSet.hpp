@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ class CardTableBarrierSet;
 class G1AbstractSubTask;
 class G1CollectedHeap;
 class G1CMBitMap;
+class G1HeapRegionClaimer;
 class G1RemSetScanState;
 class G1ParScanThreadState;
 class G1ParScanThreadStateSet;
@@ -49,7 +50,6 @@ class G1Policy;
 class G1RemSetSamplingTask;
 class G1ScanCardClosure;
 class G1ServiceThread;
-class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,

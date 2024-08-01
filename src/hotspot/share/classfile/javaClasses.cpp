@@ -751,8 +751,16 @@ bool java_lang_String::equals(oop str1, oop str2) {
   return value_equals(value1, value2);
 }
 
-void java_lang_String::print(oop java_string, outputStream* st) {
+// Print the given string to the given outputStream, limiting the output to
+// at most max_length of the string's characters. If the length exceeds the
+// limit we print an abridged version of the string with the "middle" elided
+// and replaced by " ... (N characters ommitted) ... ". If max_length is odd
+// it is treated as max_length-1.
+void java_lang_String::print(oop java_string, outputStream* st, int max_length) {
   assert(java_string->klass() == vmClasses::String_klass(), "must be java_string");
+  // We need at least two characters to print A ... B
+  assert(max_length > 1, "invalid max_length: %d", max_length);
+
   typeArrayOop value  = java_lang_String::value_no_keepalive(java_string);
 
   if (value == nullptr) {
@@ -765,8 +773,17 @@ void java_lang_String::print(oop java_string, outputStream* st) {
   int length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
 
+  bool abridge = length > max_length;
+
   st->print("\"");
   for (int index = 0; index < length; index++) {
+    // If we need to abridge and we've printed half the allowed characters
+    // then jump to the tail of the string.
+    if (abridge && index >= max_length / 2) {
+      st->print(" ... (%d characters ommitted) ... ", length - 2 * (max_length / 2));
+      index = length - (max_length / 2);
+      abridge = false; // only do this once
+    }
     jchar c = (!is_latin1) ?  value->char_at(index) :
                              ((jchar) value->byte_at(index)) & 0xff;
     if (c < ' ') {
@@ -776,6 +793,10 @@ void java_lang_String::print(oop java_string, outputStream* st) {
     }
   }
   st->print("\"");
+
+  if (length > max_length) {
+    st->print(" (abridged) ");
+  }
 }
 
 // java_lang_Class
@@ -788,6 +809,7 @@ int java_lang_Class::_class_loader_offset;
 int java_lang_Class::_module_offset;
 int java_lang_Class::_protection_domain_offset;
 int java_lang_Class::_component_mirror_offset;
+int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
 int java_lang_Class::_name_offset;
 int java_lang_Class::_source_file_offset;
@@ -911,6 +933,12 @@ void java_lang_Class::initialize_mirror_fields(Klass* k,
                                                Handle protection_domain,
                                                Handle classData,
                                                TRAPS) {
+  // Allocate a simple java object for a lock.
+  // This needs to be a java object because during class initialization
+  // it can be held across a java call.
+  typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK);
+  set_init_lock(mirror(), r);
+
   // Set protection domain also
   set_protection_domain(mirror(), protection_domain());
 
@@ -1132,6 +1160,10 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
   if (!k->is_array_klass()) {
     // - local static final fields with initial values were initialized at dump time
 
+    // create the init_lock
+    typeArrayOop r = oopFactory::new_typeArray(T_INT, 0, CHECK_(false));
+    set_init_lock(mirror(), r);
+
     if (protection_domain.not_null()) {
       set_protection_domain(mirror(), protection_domain());
     }
@@ -1196,13 +1228,18 @@ oop java_lang_Class::component_mirror(oop java_class) {
   return java_class->obj_field(_component_mirror_offset);
 }
 
+oop java_lang_Class::init_lock(oop java_class) {
+  assert(_init_lock_offset != 0, "must be set");
+  return java_class->obj_field(_init_lock_offset);
+}
+void java_lang_Class::set_init_lock(oop java_class, oop init_lock) {
+  assert(_init_lock_offset != 0, "must be set");
+  java_class->obj_field_put(_init_lock_offset, init_lock);
+}
+
 objArrayOop java_lang_Class::signers(oop java_class) {
   assert(_signers_offset != 0, "must be set");
   return (objArrayOop)java_class->obj_field(_signers_offset);
-}
-void java_lang_Class::set_signers(oop java_class, objArrayOop signers) {
-  assert(_signers_offset != 0, "must be set");
-  java_class->obj_field_put(_signers_offset, signers);
 }
 
 oop java_lang_Class::class_data(oop java_class) {
@@ -1398,12 +1435,13 @@ oop java_lang_Class::primitive_mirror(BasicType t) {
 }
 
 #define CLASS_FIELDS_DO(macro) \
-  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,         false); \
-  macro(_class_loader_offset,        k, "classLoader",         classloader_signature, false); \
-  macro(_component_mirror_offset,    k, "componentType",       class_signature,       false); \
-  macro(_module_offset,              k, "module",              module_signature,      false); \
-  macro(_name_offset,                k, "name",                string_signature,      false); \
-  macro(_classData_offset,           k, "classData",           object_signature,      false);
+  macro(_classRedefinedCount_offset, k, "classRedefinedCount", int_signature,          false); \
+  macro(_class_loader_offset,        k, "classLoader",         classloader_signature,  false); \
+  macro(_component_mirror_offset,    k, "componentType",       class_signature,        false); \
+  macro(_module_offset,              k, "module",              module_signature,       false); \
+  macro(_name_offset,                k, "name",                string_signature,       false); \
+  macro(_classData_offset,           k, "classData",           object_signature,       false); \
+  macro(_signers_offset,             k, "signers",             object_array_signature, false);
 
 void java_lang_Class::compute_offsets() {
   if (_offsets_computed) {
@@ -1415,12 +1453,18 @@ void java_lang_Class::compute_offsets() {
   InstanceKlass* k = vmClasses::Class_klass();
   CLASS_FIELDS_DO(FIELD_COMPUTE_OFFSET);
 
+  // Init lock is a C union with component_mirror.  Only instanceKlass mirrors have
+  // init_lock and only ArrayKlass mirrors have component_mirror.  Since both are oops
+  // GC treats them the same.
+  _init_lock_offset = _component_mirror_offset;
+
   CLASS_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_Class::serialize_offsets(SerializeClosure* f) {
   f->do_bool(&_offsets_computed);
+  f->do_u4((u4*)&_init_lock_offset);
 
   CLASS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 
@@ -5328,7 +5372,7 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
 
 // Compute field offsets of all the classes in this file
 void JavaClasses::compute_offsets() {
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     JVMTI_ONLY(assert(JvmtiExport::is_early_phase() && !(JvmtiExport::should_post_class_file_load_hook() &&
                                                          JvmtiExport::has_early_class_hook_env()),
                       "JavaClasses::compute_offsets() must be called in early JVMTI phase."));

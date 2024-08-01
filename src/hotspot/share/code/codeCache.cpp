@@ -165,8 +165,8 @@ class CodeBlob_sizes {
 // Iterate over all CodeBlobs (cb) on the given CodeHeap
 #define FOR_ALL_BLOBS(cb, heap) for (CodeBlob* cb = first_blob(heap); cb != nullptr; cb = next_blob(heap, cb))
 
-address CodeCache::_low_bound = 0;
-address CodeCache::_high_bound = 0;
+address CodeCache::_low_bound = nullptr;
+address CodeCache::_high_bound = nullptr;
 volatile int CodeCache::_number_of_nmethods_with_dependencies = 0;
 ExceptionCache* volatile CodeCache::_exception_cache_purge_list = nullptr;
 
@@ -227,6 +227,11 @@ void CodeCache::initialize_heaps() {
 
   if (!non_nmethod.set) {
     non_nmethod.size += compiler_buffer_size;
+    // Further down, just before FLAG_SET_ERGO(), all segment sizes are
+    // aligned down to the next lower multiple of min_size. For large page
+    // sizes, this may result in (non_nmethod.size == 0) which is not acceptable.
+    // Therefore, force non_nmethod.size to at least min_size.
+    non_nmethod.size = MAX2(non_nmethod.size, min_size);
   }
 
   if (!profiled.set && !non_profiled.set) {
@@ -1783,20 +1788,22 @@ void CodeCache::log_state(outputStream* st) {
 }
 
 #ifdef LINUX
-void CodeCache::write_perf_map(const char* filename) {
+void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map
-  // if the file name is not specified.
-  char fname[32];
+  char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    // Invocation outside of jcmd requires pid substitution.
+    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+                                    strlen(DEFAULT_PERFMAP_FILENAME),
+                                    fname, JVM_MAXPATHLEN)) {
+      st->print_cr("Warning: Not writing perf map as pid substitution failed.");
+      return;
+    }
     filename = fname;
   }
-
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
-    log_warning(codecache)("Failed to create %s for perf map", filename);
+    st->print_cr("Warning: Failed to create %s for perf map", filename);
     return;
   }
 

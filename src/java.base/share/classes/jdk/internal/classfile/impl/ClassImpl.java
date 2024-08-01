@@ -101,7 +101,7 @@ public final class ClassImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofClass(reader.flags());
+        return new AccessFlagsImpl(AccessFlag.Location.CLASS, reader.flags());
     }
 
     @Override
@@ -137,7 +137,7 @@ public final class ClassImpl
             pos += 2;
             var arr = new Object[cnt];
             for (int i = 0; i < cnt; ++i) {
-                arr[i] = reader.readClassEntry(pos);
+                arr[i] = reader.readEntry(pos, ClassEntry.class);
                 pos += 2;
             }
             this.interfaces = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(arr);
@@ -156,7 +156,7 @@ public final class ClassImpl
     // ClassModel
 
     @Override
-    public void forEachElement(Consumer<ClassElement> consumer) {
+    public void forEach(Consumer<? super ClassElement> consumer) {
         consumer.accept(flags());
         consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {

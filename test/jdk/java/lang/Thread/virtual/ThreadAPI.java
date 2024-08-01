@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,16 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 import java.nio.channels.Selector;
 
-import jdk.test.lib.thread.VThreadRunner;
 import jdk.test.lib.thread.VThreadPinner;
+import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadScheduler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
@@ -78,9 +81,12 @@ class ThreadAPI {
     private static ScheduledExecutorService scheduler;
 
     @BeforeAll
-    static void setup() throws Exception {
+    static void setup() {
         ThreadFactory factory = Executors.defaultThreadFactory();
         scheduler = Executors.newSingleThreadScheduledExecutor(factory);
+
+        // need >=2 carriers for testing pinning
+        VThreadRunner.ensureParallelism(2);
     }
 
     @AfterAll
@@ -719,14 +725,7 @@ class ThreadAPI {
      */
     @Test
     void testJoin34() throws Exception {
-        // need at least two carrier threads due to pinning
-        int previousParallelism = VThreadRunner.ensureParallelism(2);
-        try {
-            VThreadRunner.run(this::testJoin33);
-        } finally {
-            // restore
-            VThreadRunner.setParallelism(previousParallelism);
-        }
+        VThreadRunner.run(this::testJoin33);
     }
 
     /**
@@ -1084,11 +1083,10 @@ class ThreadAPI {
      */
     @Test
     void testYield1() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
             var thread = factory.newThread(() -> {
                 list.add("A");
                 var child = factory.newThread(() -> {
@@ -1112,11 +1110,10 @@ class ThreadAPI {
      */
     @Test
     void testYield2() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            ThreadFactory factory = builder.factory();
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
             var thread = factory.newThread(() -> {
                 list.add("A");
                 var child = factory.newThread(() -> {
@@ -1708,50 +1705,59 @@ class ThreadAPI {
      */
     @Test
     void testGetState4() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         AtomicBoolean completed = new AtomicBoolean();
         try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            Thread t1 = builder.start(() -> {
-                Thread t2 = builder.unstarted(LockSupport::park);
-                assertEquals(Thread.State.NEW, t2.getState());
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            Thread thread1 = factory.newThread(() -> {
+                Thread thread2 = factory.newThread(LockSupport::park);
+                assertEquals(Thread.State.NEW, thread2.getState());
 
                 // start t2 to make it runnable
-                t2.start();
+                thread2.start();
                 try {
-                    assertEquals(Thread.State.RUNNABLE, t2.getState());
+                    assertEquals(Thread.State.RUNNABLE, thread2.getState());
 
                     // yield to allow t2 to run and park
                     Thread.yield();
-                    assertEquals(Thread.State.WAITING, t2.getState());
+                    assertEquals(Thread.State.WAITING, thread2.getState());
                 } finally {
                     // unpark t2 to make it runnable again
-                    LockSupport.unpark(t2);
+                    LockSupport.unpark(thread2);
                 }
 
                 // t2 should be runnable (not mounted)
-                assertEquals(Thread.State.RUNNABLE, t2.getState());
+                assertEquals(Thread.State.RUNNABLE, thread2.getState());
 
                 completed.set(true);
             });
-            t1.join();
+            thread1.start();
+            thread1.join();
         }
         assertTrue(completed.get() == true);
     }
 
     /**
-     * Test Thread::getState when thread is waiting to enter a monitor.
+     * Test Thread::getState when thread is blocked waiting to enter a monitor.
      */
-    @Test
-    void testGetState5() throws Exception {
-        var started = new CountDownLatch(1);
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetState5(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
         var thread = Thread.ofVirtual().unstarted(() -> {
-            started.countDown();
-            synchronized (lock) { }
+            if (pinned) {
+                VThreadPinner.runPinned(() -> {
+                    ready.set(true);
+                    synchronized (lock) { }
+                });
+            } else {
+                ready.set(true);
+                synchronized (lock) { }
+            }
         });
         synchronized (lock) {
             thread.start();
-            started.await();
+            awaitTrue(ready);
 
             // wait for thread to block
             await(thread, Thread.State.BLOCKED);
@@ -1762,16 +1768,35 @@ class ThreadAPI {
     /**
      * Test Thread::getState when thread is waiting in Object.wait.
      */
-    @Test
-    void testGetState6() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetState6(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                try { lock.wait(); } catch (InterruptedException e) { }
+                try {
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            ready.set(true);
+                            lock.wait();
+                        });
+                    } else {
+                        ready.set(true);
+                        lock.wait();
+                    }
+                } catch (InterruptedException e) { }
             }
         });
         try {
             // wait for thread to wait
+            awaitTrue(ready);
             await(thread, Thread.State.WAITING);
+
+            // notify, thread should block trying to reenter
+            synchronized (lock) {
+                lock.notifyAll();
+                await(thread, Thread.State.BLOCKED);
+            }
         } finally {
             thread.interrupt();
             thread.join();
@@ -1781,18 +1806,35 @@ class ThreadAPI {
     /**
      * Test Thread::getState when thread is waiting in Object.wait(millis).
      */
-    @Test
-    void testGetState7() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetState7(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 try {
-                    lock.wait(Long.MAX_VALUE);
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            ready.set(true);
+                            lock.wait(Long.MAX_VALUE);
+                        });
+                    } else {
+                        ready.set(true);
+                        lock.wait(Long.MAX_VALUE);
+                    }
                 } catch (InterruptedException e) { }
             }
         });
         try {
-            // wait for thread to wait
+            // wait for thread to timed-wait
+            awaitTrue(ready);
             await(thread, Thread.State.TIMED_WAITING);
+
+            // notify, thread should block trying to reenter
+            synchronized (lock) {
+                lock.notifyAll();
+                await(thread, Thread.State.BLOCKED);
+            }
         } finally {
             thread.interrupt();
             thread.join();
@@ -1933,7 +1975,7 @@ class ThreadAPI {
      * Test Thread::getStackTrace on unstarted thread.
      */
     @Test
-    void testGetStackTrace1() {
+    void testGetStackTraceUnstarted() {
         var thread = Thread.ofVirtual().unstarted(() -> { });
         StackTraceElement[] stack = thread.getStackTrace();
         assertTrue(stack.length == 0);
@@ -1943,136 +1985,224 @@ class ThreadAPI {
      * Test Thread::getStackTrace on thread that has been started but has not run.
      */
     @Test
-    void testGetStackTrace2() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+    void testGetStackTraceStarted() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         Executor scheduler = task -> { };
-        Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-        Thread thread = builder.start(() -> { });
+        ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+        Thread thread = factory.newThread(() -> { });
+        thread.start();
         StackTraceElement[] stack = thread.getStackTrace();
         assertTrue(stack.length == 0);
     }
 
     /**
-     * Test Thread::getStackTrace on running thread.
+     * Test Thread::getStackTrace on thread that is runnable-mounted.
      */
     @Test
-    void testGetStackTrace3() throws Exception {
-        var sel = Selector.open();
-        var thread = Thread.ofVirtual().start(() -> {
-            try { sel.select(); } catch (Exception e) { }
-        });
-        try {
-            while (!contains(thread.getStackTrace(), "select")) {
-                assertTrue(thread.isAlive());
-                Thread.sleep(20);
+    void testGetStackTraceRunnableMounted() throws Exception {
+        var ready = new AtomicBoolean();
+        var done = new AtomicBoolean();
+
+        class Foo {
+            void spinUntilDone() {
+                ready.set(true);
+                while (!done.get()) {
+                    Thread.onSpinWait();
+                }
             }
+        }
+
+        Foo foo = new Foo();
+        var thread = Thread.ofVirtual().start(foo::spinUntilDone);
+        try {
+            awaitTrue(ready);
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, Foo.class.getName() + ".spinUntilDone"));
         } finally {
-            sel.close();
+            done.set(true);
             thread.join();
         }
     }
 
     /**
-     * Test Thread::getStackTrace on thread waiting in Object.wait.
+     * Test Thread::getStackTrace on thread that is runnable-unmounted.
      */
     @Test
-    void testGetStackTrace4() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
-        try (ForkJoinPool pool = new ForkJoinPool(1)) {
-            AtomicReference<Thread> ref = new AtomicReference<>();
-            Executor scheduler = task -> {
-                pool.submit(() -> {
-                    ref.set(Thread.currentThread());
-                    task.run();
-                });
-            };
+    void testGetStackTraceRunnableUnmounted() throws Exception {
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
 
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            Thread vthread = builder.start(() -> {
-                synchronized (lock) {
-                    try {
-                        lock.wait();
-                    } catch (Exception e) { }
+        // custom scheduler with one carrier thread
+        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+
+            // start thread1 to park
+            Thread thread1 = factory.newThread(LockSupport::park);
+            thread1.start();
+            await(thread1, Thread.State.WAITING);
+
+            // start thread2 to spin and pin the carrier thread
+            var started = new AtomicBoolean();
+            var done = new AtomicBoolean();
+            Thread thread2 = factory.newThread(() -> {
+                started.set(true);
+                while (!done.get()) {
+                    Thread.onSpinWait();
                 }
             });
+            thread2.start();
+            awaitTrue(started);
 
-            // get carrier Thread
-            Thread carrier;
-            while ((carrier = ref.get()) == null) {
-                Thread.sleep(20);
+            try {
+                // unpark thread1, it should be "stuck" in runnable state
+                // (the carrier thread is pinned, no other virtual thread can run)
+                LockSupport.unpark(thread1);
+                assertEquals(Thread.State.RUNNABLE, thread1.getState());
+
+                // print thread1's stack trace
+                StackTraceElement[] stack = thread1.getStackTrace();
+                assertTrue(contains(stack, "LockSupport.park"));
+
+            } finally {
+                done.set(true);
             }
-
-            // wait for virtual thread to block in wait
-            await(vthread, Thread.State.WAITING);
-
-            // get stack trace of both carrier and virtual thread
-            StackTraceElement[] carrierStackTrace = carrier.getStackTrace();
-            StackTraceElement[] vthreadStackTrace = vthread.getStackTrace();
-
-            // allow virtual thread to terminate
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-
-            // check carrier thread's stack trace
-            assertTrue(contains(carrierStackTrace, "java.util.concurrent.ForkJoinPool.runWorker"));
-            assertFalse(contains(carrierStackTrace, "java.lang.Object.wait"));
-
-            // check virtual thread's stack trace
-            assertFalse(contains(vthreadStackTrace, "java.util.concurrent.ForkJoinPool.runWorker"));
-            assertTrue(contains(vthreadStackTrace, "java.lang.Object.wait"));
         }
     }
 
     /**
-     * Test Thread::getStackTrace on parked thread.
+     * Test Thread::getStackTrace on thread blocked on monitor enter.
      */
-    @Test
-    void testGetStackTrace5() throws Exception {
-        var thread = Thread.ofVirtual().start(LockSupport::park);
-        await(thread, Thread.State.WAITING);
-        try {
-            StackTraceElement[] stack = thread.getStackTrace();
-            assertTrue(contains(stack, "LockSupport.park"));
-        } finally {
-            LockSupport.unpark(thread);
-            thread.join();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetStackTraceBlocked(boolean pinned) throws Exception {
+        class Foo {
+            void enter() {
+                synchronized (this) { }
+            }
         }
-    }
-
-    /**
-     * Test Thread::getStackTrace on timed-parked thread.
-     */
-    @Test
-    void testGetStackTrace6() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            LockSupport.parkNanos(Long.MAX_VALUE);
+        Foo foo = new Foo();
+        var ready = new AtomicBoolean();
+        var thread = Thread.ofVirtual().unstarted(() -> {
+            if (pinned) {
+                VThreadPinner.runPinned(() -> {
+                    ready.set(true);
+                    foo.enter();
+                });
+            } else {
+                ready.set(true);
+                foo.enter();
+            }
         });
-        await(thread, Thread.State.TIMED_WAITING);
-        try {
+        synchronized (foo) {
+            thread.start();
+            awaitTrue(ready);
+
+            // wait for thread to block
+            await(thread, Thread.State.BLOCKED);
+
             StackTraceElement[] stack = thread.getStackTrace();
-            assertTrue(contains(stack, "LockSupport.parkNanos"));
+            assertTrue(contains(stack, Foo.class.getName() + ".enter"));
+        }
+        thread.join();
+    }
+
+    /**
+     * Test Thread::getStackTrace when thread is waiting in Object.wait.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetStackTraceWaiting(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            synchronized (lock) {
+                try {
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            ready.set(true);
+                            lock.wait();
+                        });
+                    } else {
+                        ready.set(true);
+                        lock.wait();
+                    }
+                } catch (InterruptedException e) { }
+            }
+        });
+        try {
+            // wait for thread to wait
+            awaitTrue(ready);
+            await(thread, Thread.State.WAITING);
+
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "Object.wait"));
         } finally {
-            LockSupport.unpark(thread);
+            thread.interrupt();
             thread.join();
         }
     }
 
     /**
-     * Test Thread::getStackTrace on parked thread that is pinned.
+     * Test Thread::getStackTrace when thread is waiting in timed-Object.wait.
      */
-    @Test
-    void testGetStackTrace7() throws Exception {
-        AtomicBoolean done = new AtomicBoolean();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetStackTraceTimedWaiting(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            VThreadPinner.runPinned(() -> {
+            synchronized (lock) {
+                try {
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            ready.set(true);
+                            lock.wait(Long.MAX_VALUE);
+                        });
+                    } else {
+                        ready.set(true);
+                        lock.wait(Long.MAX_VALUE);
+                    }
+                } catch (InterruptedException e) { }
+            }
+        });
+        try {
+            // wait for thread to wait
+            awaitTrue(ready);
+            await(thread, Thread.State.TIMED_WAITING);
+
+            StackTraceElement[] stack = thread.getStackTrace();
+            assertTrue(contains(stack, "Object.wait"));
+        } finally {
+            thread.interrupt();
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getStackTrace when thread in park.
+     */
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetStackTraceParked(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            if (pinned) {
+                VThreadPinner.runPinned(() -> {
+                    ready.set(true);
+                    while (!done.get()) {
+                        LockSupport.park();
+                    }
+                });
+            } else {
+                ready.set(true);
                 while (!done.get()) {
                     LockSupport.park();
                 }
-            });
+            }
         });
-        await(thread, Thread.State.WAITING);
         try {
+            // wait for thread to park
+            awaitTrue(ready);
+            await(thread, Thread.State.WAITING);
+
             StackTraceElement[] stack = thread.getStackTrace();
             assertTrue(contains(stack, "LockSupport.park"));
         } finally {
@@ -2083,20 +2213,33 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::getStackTrace on timed-parked thread that is pinned.
+     * Test Thread::getStackTrace when thread in timed-park.
      */
-    @Test
-    void testGetStackTrace8() throws Exception {
-        AtomicBoolean done = new AtomicBoolean();
+    @ParameterizedTest
+    @ValueSource(booleans = { true, false })
+    void testGetStackTraceTimedPark(boolean pinned) throws Exception {
+        var ready = new AtomicBoolean();
+        var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            VThreadPinner.runPinned(() -> {
+            if (pinned) {
+                ready.set(true);
+                VThreadPinner.runPinned(() -> {
+                    while (!done.get()) {
+                        LockSupport.parkNanos(Long.MAX_VALUE);
+                    }
+                });
+            } else {
+                ready.set(true);
                 while (!done.get()) {
                     LockSupport.parkNanos(Long.MAX_VALUE);
                 }
-            });
+            }
         });
-        await(thread, Thread.State.TIMED_WAITING);
         try {
+            // wait for thread to park
+            awaitTrue(ready);
+            await(thread, Thread.State.TIMED_WAITING);
+
             StackTraceElement[] stack = thread.getStackTrace();
             assertTrue(contains(stack, "LockSupport.parkNanos"));
         } finally {
@@ -2110,7 +2253,7 @@ class ThreadAPI {
      * Test Thread::getStackTrace on terminated thread.
      */
     @Test
-    void testGetStackTrace9() throws Exception {
+    void testGetStackTraceTerminated() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         StackTraceElement[] stack = thread.getStackTrace();
@@ -2133,7 +2276,7 @@ class ThreadAPI {
      */
     @Test
     void testGetAllStackTraces2() throws Exception {
-        assumeTrue(ThreadBuilders.supportsCustomScheduler(), "No support for custom schedulers");
+        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         try (ForkJoinPool pool = new ForkJoinPool(1)) {
             AtomicReference<Thread> ref = new AtomicReference<>();
             Executor scheduler = task -> {
@@ -2143,14 +2286,15 @@ class ThreadAPI {
                 });
             };
 
-            Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            Thread vthread = builder.start(() -> {
+            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
+            Thread vthread = factory.newThread(() -> {
                 synchronized (lock) {
                     try {
                         lock.wait();
                     } catch (Exception e) { }
                 }
             });
+            vthread.start();
 
             // get carrier Thread
             Thread carrier;
@@ -2168,8 +2312,9 @@ class ThreadAPI {
             synchronized (lock) {
                 lock.notifyAll();
             }
+            vthread.join();
 
-            // get stack trace for the carrier thread
+            // stack trace for the carrier thread
             StackTraceElement[] stackTrace = map.get(carrier);
             assertNotNull(stackTrace);
             assertTrue(contains(stackTrace, "java.util.concurrent.ForkJoinPool"));
@@ -2414,6 +2559,15 @@ class ThreadAPI {
             synchronized (this) {
                 return exception;
             }
+        }
+    }
+
+    /**
+     * Waits for the boolean value to become true.
+     */
+    private static void awaitTrue(AtomicBoolean ref) throws Exception {
+        while (!ref.get()) {
+            Thread.sleep(20);
         }
     }
 

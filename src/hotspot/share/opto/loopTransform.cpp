@@ -901,15 +901,6 @@ bool IdealLoopTree::policy_maximally_unroll(PhaseIdealLoop* phase) const {
       case Op_CountPositives: {
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 
@@ -1074,15 +1065,6 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
         // String intrinsics are large and have loops.
         return false;
       }
-#if INCLUDE_RTM_OPT
-      case Op_FastLock:
-      case Op_FastUnlock: {
-        // Don't unroll RTM locking code because it is large.
-        if (UseRTMLocking) {
-          return false;
-        }
-      }
-#endif
     } // switch
   }
 
@@ -1200,9 +1182,11 @@ bool IdealLoopTree::policy_range_check(PhaseIdealLoop* phase, bool provisional, 
         iff->Opcode() == Op_RangeCheck) { // Test?
 
       // Comparing trip+off vs limit
-      Node *bol = iff->in(1);
-      if (bol->req() < 2) {
-        continue; // dead constant test
+      Node* bol = iff->in(1);
+      if (bol->req() != 2) {
+        // Could be a dead constant test or another dead variant (e.g. a Phi with 2 inputs created with split_thru_phi).
+        // Either way, skip this test.
+        continue;
       }
       if (!bol->is_Bool()) {
         assert(bol->is_Opaque4() || bol->is_OpaqueInitializedAssertionPredicate(),
@@ -2785,10 +2769,9 @@ bool PhaseIdealLoop::is_scaled_iv_plus_extra_offset(Node* exp1, Node* offset3, N
 
 // Same as PhaseIdealLoop::duplicate_predicates() but for range checks
 // eliminated by iteration splitting.
-Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* ctrl,
-                                                                      const int scale_con, Node* offset, Node* limit,
-                                                                      jint stride_con, Node* value,
-                                                                      const bool is_template) {
+Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(
+    IdealLoopTree* loop, Node* ctrl, const int scale_con, Node* offset, Node* limit, jint stride_con, Node* value,
+    const bool is_template NOT_PRODUCT(COMMA AssertionPredicateType assertion_predicate_type)) {
   bool overflow = false;
   BoolNode* bol = rc_predicate(ctrl, scale_con, offset, value, nullptr, stride_con,
                                limit, (stride_con > 0) != (scale_con > 0), overflow);
@@ -2888,6 +2871,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   // Must know if its a count-up or count-down loop
 
   int stride_con = cl->stride_con();
+  bool abs_stride_is_one = stride_con == 1 || stride_con == -1;
   Node* zero = _igvn.longcon(0);
   Node* one  = _igvn.longcon(1);
   // Use symmetrical int range [-max_jint,max_jint]
@@ -2898,6 +2882,15 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
   Node* loop_entry = cl->skip_strip_mined()->in(LoopNode::EntryControl);
   assert(loop_entry->is_Proj() && loop_entry->in(0)->is_If(), "if projection only");
+
+  // if abs(stride) == 1, an Assertion Predicate for the final iv value is added. We don't know the final iv value until
+  // we're done with range check elimination so use a place holder.
+  Node* final_iv_placeholder = nullptr;
+  if (abs_stride_is_one) {
+    final_iv_placeholder = new Node(1);
+    _igvn.set_type(final_iv_placeholder, TypeInt::INT);
+    final_iv_placeholder->init_req(0, loop_entry);
+  }
 
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
   for (uint i = 0; i < loop->_body.size(); i++) {
@@ -3002,6 +2995,20 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           Node* opaque_init = new OpaqueLoopInitNode(C, init);
           register_new_node(opaque_init, loop_entry);
 
+          if (abs_stride_is_one) {
+            // If the main loop becomes empty and the array access for this range check is sunk out of the loop, the index
+            // for the array access will be set to the index value of the final iteration which could be out of loop.
+            // Add an Assertion Predicate for that corner case. The final iv is computed from LoopLimit which is the
+            // LoopNode::limit() only if abs(stride) == 1 otherwise the computation depends on LoopNode::init_trip() as
+            // well. When LoopLimit only depends on LoopNode::limit(), there are cases where the zero trip guard for the
+            // main loop doesn't constant fold after range check elimination but, the array access for the final
+            // iteration of the main loop is out of bound and the index for that access is out of range for the range
+            // check CastII.
+            loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
+                                                                         int_limit, stride_con, final_iv_placeholder, false);
+            assert(!assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
+          }
+
           // Initialized Assertion Predicate for the value of the initial main-loop.
           loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
                                                                        int_limit, stride_con, init, false);
@@ -3009,8 +3016,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
 
           // Add two Template Assertion Predicates to create new Initialized Assertion Predicates from when either
           // unrolling or splitting this main-loop further.
-          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
-                                                                       int_limit, stride_con, opaque_init, true);
+          loop_entry = add_range_check_elimination_assertion_predicate(
+              loop, loop_entry, scale_con, int_offset, int_limit, stride_con, opaque_init, true
+              NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
           Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
@@ -3020,10 +3028,11 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
           max_value = new AddINode(opaque_init, max_value);
           register_new_node(max_value, loop_entry);
           // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-          max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
+          max_value = new CastIINode(loop_entry, max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
           register_new_node(max_value, loop_entry);
-          loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
-                                                                       int_limit, stride_con, max_value, true);
+          loop_entry = add_range_check_elimination_assertion_predicate(
+              loop, loop_entry, scale_con, int_offset, int_limit, stride_con, max_value, true
+              NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
         } else {
@@ -3131,11 +3140,14 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   register_new_node(main_limit, pre_ctrl);
   // Hack the now-private loop bounds
   _igvn.replace_input_of(main_cmp, 2, main_limit);
+  if (abs_stride_is_one) {
+    Node* final_iv = new SubINode(main_limit, cl->stride());
+    register_new_node(final_iv, loop_entry);
+    _igvn.replace_node(final_iv_placeholder, final_iv);
+  }
   // The OpaqueNode is unshared by design
   assert(opqzm->outcnt() == 1, "cannot hack shared node");
   _igvn.replace_input_of(opqzm, 1, main_limit);
-
-  return;
 }
 
 bool IdealLoopTree::compute_has_range_checks() const {

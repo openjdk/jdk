@@ -115,8 +115,8 @@ public final class Unsafe {
         return theUnsafe;
     }
 
-    /// peek and poke operations
-    /// (compilers should optimize these to memory ops)
+    //| peek and poke operations
+    //| (compilers should optimize these to memory ops)
 
     // These work on object fields in the Java heap.
     // They will not work on elements of packed arrays.
@@ -648,7 +648,7 @@ public final class Unsafe {
     }
 
 
-    /// wrappers for malloc, realloc, free:
+    //| wrappers for malloc, realloc, free:
 
     /**
      * Allocates a new block of native memory, of the given size in bytes.  The
@@ -858,7 +858,7 @@ public final class Unsafe {
         theInternalUnsafe.freeMemory(address);
     }
 
-    /// random queries
+    //| random queries
 
     /**
      * This constant differs from all results that will ever be returned from
@@ -1177,7 +1177,7 @@ public final class Unsafe {
     }
 
 
-    /// random trusted operations from JNI:
+    //| random trusted operations from JNI:
 
     /**
      * Allocates an instance but does not run any constructor.

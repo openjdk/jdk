@@ -147,10 +147,7 @@ void ShenandoahControlThread::run_service() {
       heap->set_forced_counters_update(true);
 
       // If GC was requested, we better dump freeset data for performance debugging
-      {
-        ShenandoahHeapLocker locker(heap->lock());
-        heap->free_set()->log_status();
-      }
+      heap->free_set()->log_status_under_lock();
 
       switch (mode) {
         case concurrent_normal:
@@ -178,18 +175,15 @@ void ShenandoahControlThread::run_service() {
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
-      {
-        ShenandoahHeapLocker locker(heap->lock());
-        heap->free_set()->log_status();
+      heap->free_set()->log_status_under_lock();
 
-        // Notify Universe about new heap usage. This has implications for
-        // global soft refs policy, and we better report it every time heap
-        // usage goes down.
-        heap->update_capacity_and_used_at_gc();
+      // Notify Universe about new heap usage. This has implications for
+      // global soft refs policy, and we better report it every time heap
+      // usage goes down.
+      heap->update_capacity_and_used_at_gc();
 
-        // Signal that we have completed a visit to all live objects.
-        heap->record_whole_heap_examined_timestamp();
-      }
+      // Signal that we have completed a visit to all live objects.
+      heap->record_whole_heap_examined_timestamp();
 
       // Disable forced counters update, and update counters one more time
       // to capture the state at the end of GC session.
@@ -324,7 +318,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
 
   ShenandoahConcurrentGC gc;
   if (gc.collect(cause)) {
-    // Cycle is complete
+    // Cycle is complete.  There were no failed allocation requests and no degeneration, so count this as good progress.
+    heap->notify_gc_progress();
     heap->heuristics()->record_success_concurrent();
     heap->shenandoah_policy()->record_success_concurrent(gc.abbreviated());
   } else {

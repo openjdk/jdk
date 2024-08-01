@@ -181,7 +181,7 @@ static void JNICALL agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg)
     checkNoObjIterated(jni, jvmti, JAVA_UTIL_CALENDAR_CLASS_NAME);
 
     NSK_DISPLAY0("Let debugee to finish");
-    fflush(0);
+    fflush(nullptr);
 
     if (!NSK_VERIFY(nsk_jvmti_waitForSync(g_timeout))) {
         return;

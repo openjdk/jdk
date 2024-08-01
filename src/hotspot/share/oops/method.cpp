@@ -26,6 +26,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
@@ -62,12 +63,14 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationEntry.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/relocator.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -319,7 +322,7 @@ void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* m
 }
 
 int Method::bci_from(address bcp) const {
-  if (is_native() && bcp == 0) {
+  if (is_native() && bcp == nullptr) {
     return 0;
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
@@ -342,7 +345,7 @@ int Method::validate_bci(int bci) const {
 int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcp == 0 || bcp == code_base()) {
+  if (bcp == nullptr || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
@@ -1168,6 +1171,10 @@ void Method::remove_unshareable_flags() {
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
 void Method::link_method(const methodHandle& h_method, TRAPS) {
+  if (log_is_enabled(Info, perf, class, link)) {
+    ClassLoader::perf_ik_link_methods_count()->inc();
+  }
+
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (adapter() != nullptr) {
@@ -1219,6 +1226,8 @@ void Method::link_method(const methodHandle& h_method, TRAPS) {
 }
 
 address Method::make_adapters(const methodHandle& mh, TRAPS) {
+  PerfTraceTime timer(ClassLoader::perf_method_adapters_time());
+
   // Adapters for compiled code are made eagerly here.  They are fairly
   // small (generally < 100 bytes) and quick to make (and cached and shared)
   // so making them eagerly shouldn't be too expensive.
@@ -1724,7 +1733,7 @@ void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_compa
     }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func);
     }
     // Reset method ordering
     if (set_idnums) {

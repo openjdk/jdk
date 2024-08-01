@@ -78,6 +78,7 @@ import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
+import com.sun.source.doctree.SeeTree;
 import com.sun.source.doctree.SerialDataTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SinceTree;
@@ -151,6 +152,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     private int implicitHeadingRank;
     private boolean inIndex;
     private boolean inLink;
+    private boolean inSee;
     private boolean inSummary;
 
     // <editor-fold defaultstate="collapsed" desc="Top level">
@@ -688,7 +690,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             }
             // for now, doclint allows all attribute names beginning with "on" as event handler names,
             // without checking the validity or applicability of the name
-            if (!name.toString().startsWith("on")) {
+            // custom "data-*" attributes are also accepted
+            var attrName = name.toString();
+            if (!attrName.startsWith("on") && !attrName.startsWith("data-")) {
                 AttrKind k = currTag.getAttrKind(name);
                 switch (k) {
                     case OK -> { }
@@ -903,6 +907,16 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
+    @Override
+    public Void visitSee(SeeTree node, Void unused) {
+        try {
+            inSee = true;
+            return super.visitSee(node, unused);
+        } finally {
+            inSee = false;
+        }
+    }
+
     @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLiteral(LiteralTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
@@ -983,6 +997,9 @@ public class Checker extends DocTreePathScanner<Void, Void> {
     public Void visitReference(ReferenceTree tree, Void ignore) {
         Element e = env.trees.getElement(getCurrentPath());
         if (e == null) {
+            reportBadReference(tree);
+        } else if ((inLink || inSee)
+                && e.getKind() == ElementKind.CLASS && e.asType().getKind() != TypeKind.DECLARED) {
             reportBadReference(tree);
         }
         return super.visitReference(tree, ignore);
