@@ -46,11 +46,17 @@ import javax.imageio.stream.MemoryCacheImageOutputStream;
 public class RasterReuseWriteTest {
 
     public static void main(String[] args) throws Exception {
+        test(BufferedImage.TYPE_INT_RGB);
         test(BufferedImage.TYPE_INT_ARGB);
         test(BufferedImage.TYPE_INT_ARGB_PRE);
     }
 
     private static void test(int type) throws Exception {
+
+        // swaps blue and red
+        int bands = (type == BufferedImage.TYPE_INT_RGB ? 3 : 4);
+        int[] sourceBands = bands == 3 ? new int[] { 2, 1, 0 } :
+                                         new int[] { 2, 1, 0, 3 };
 
         // test writing a BufferedImage without source bands
         BufferedImage img1 = createImage(256, 256, type);
@@ -60,7 +66,6 @@ public class RasterReuseWriteTest {
 
         // test writing a BufferedImage with source bands
         BufferedImage img3 = createImage(256, 256, type);
-        int[] sourceBands = new int[] { 2, 1, 0, 3 }; // swap blue and red
         byte[] bytes3 = writePng(img3, sourceBands);
         BufferedImage img4 = ImageIO.read(new ByteArrayInputStream(bytes3));
         compare(img3, img4, true);
