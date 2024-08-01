@@ -26,7 +26,7 @@
  * @library /test/lib
  * @library /javax/net/ssl/templates
  * @bug 8242008
- * @summary Verifies multiple session tickets are PSKs are used by JSSE
+ * @summary Verifies multiple PSKs are used by JSSE
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=1
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=3
  * @run main/othervm MultiNSTClient -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.server.newSessionTicketCount=10

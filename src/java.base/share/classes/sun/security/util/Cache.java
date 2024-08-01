@@ -336,10 +336,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
             // entry. If not, re-add the entry
             if ((currentEntry != null) && (entry != currentEntry)) {
                 cacheMap.put(key, currentEntry);
-                continue;
-            }
-            if (currentEntry instanceof QueueCacheEntry<K,V> qe) {
-                qe.clear();
             }
         }
         if (DEBUG) {
@@ -370,20 +366,12 @@ class MemoryCache<K,V> extends Cache<K,V> {
             CacheEntry<K,V> entry = t.next();
             if (!entry.isValid(time)) {
                 t.remove();
-                // If the top level entry expires, the whole queue is expired.
-                if (entry instanceof QueueCacheEntry<K,V> qe) {
-                    qe.clear();
-                }
                 cnt++;
             } else if (nextExpirationTime > entry.getExpirationTime()) {
                 nextExpirationTime = entry.getExpirationTime();
                 // If this is a queue, check for some expired entries
                 if (entry instanceof QueueCacheEntry<K,V> qe) {
-                    qe.getQueue().forEach(e -> {
-                        if (e.isValid(time)) {
-                            qe.getQueue().remove(e);
-                        }
-                    });
+                    qe.getQueue().removeIf(e -> e.isValid(time));
                 }
             }
         }
@@ -441,7 +429,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             nextExpirationTime = expirationTime;
         }
         CacheEntry<K,V> newEntry = newEntry(key, value, expirationTime, queue);
-        if (maxQueueSize == 0) {
+        if (maxQueueSize == 0 || !canQueue) {
             CacheEntry<K,V> oldEntry = cacheMap.put(key, newEntry);
             if (oldEntry != null) {
                 oldEntry.invalidate();
@@ -460,17 +448,9 @@ class MemoryCache<K,V> extends Cache<K,V> {
                             System.out.println(i.getAndIncrement() + "= " + e));
                     }
                 }
-                case null,
-                    default -> {
-                    // If `canQueue` create a queue and put in entry.  If
-                    // canQueue == false, replace or put this CacheEntry only.
-                    if (canQueue) {
-                        cacheMap.put(key, new QueueCacheEntry<>(key, newEntry,
-                            expirationTime, maxQueueSize));
-                    } else {
-                        cacheMap.put(key, newEntry);
-                    }
-                }
+                case null, default ->
+                    cacheMap.put(key, new QueueCacheEntry<>(key, newEntry,
+                        expirationTime, maxQueueSize));
             }
 
             if (DEBUG) {
@@ -760,10 +740,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
                     return null;
                 }
                 if (entry.isValid(time)) {
-                    // Use SoftReference get()
-                    if (entry instanceof SoftCacheEntry<K,V> sce) {
-                        return sce.get();
-                    }
                     return entry.getValue();
                 }
                 entry.invalidate();

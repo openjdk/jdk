@@ -26,7 +26,7 @@
  * @library /test/lib
  * @library /javax/net/ssl/templates
  * @bug 8242008
- * @summary Verifies multiple session tickets are PSKs are used by TLSv1.3
+ * @summary Verifies multiple PSKs are used by TLSv1.3
  * @run main/othervm MultiNSTParallel 10 -Djdk.tls.client.protocols=TLSv1.3
  */
 
@@ -191,13 +191,9 @@ public class MultiNSTParallel {
         }
 
         wait.countDown();
-        try {
-            for (Thread t : slist) {
-                t.join(1000);
-                System.err.println("released: " + t.getName());
-            }
-        } catch (Exception e) {
-            System.err.println("any exception?");
+        for (Thread t : slist) {
+            t.join(1000);
+            System.err.println("released: " + t.getName());
         }
 
         System.out.println("------  Closing connections");
