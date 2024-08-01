@@ -2355,16 +2355,36 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
 }
 
 void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt,
-                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2) {
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2,
+                                         VectorRegister v6, VectorRegister vx, VectorRegister vy, VectorRegister vz, VectorRegister v00, VectorRegister v01, VectorRegister v02,
+                                        Register rx, Register ry, Register rz, Register r00, Register r01, Register r02) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
-
   BLOCK_COMMENT("string_equals_v {");
 
   mv(result, false);
 
   element_compare(a1, a2, result, cnt, tmp1, tmp2, vg1, vg2, vg1, true, DONE);
+
+  vsetvli(ry, rx, Assembler::e32, Assembler::m1);
+  if (true) {
+
+    vlex_v(v6, a1, Assembler::e32);
+    vlex_v(vx, a2, Assembler::e32);
+
+    Register src = a1;
+    Register dsts[] = {rx, ry, rz, r00, r01, r02};
+    VectorRegister vdsts[] = {v6, vx, vy, vz, v00, v01, v02};
+    for (int i = 0; i < sizeof(dsts)/sizeof(Register); i++) {
+      mv(dsts[i], src);
+    }
+    for (int j = 0; j < sizeof(vdsts)/sizeof(VectorRegister); j++) {
+      vlex_v(vdsts[j], src, Assembler::e32);
+    }
+
+  }
+  ld(r02, Address(zr, 0));
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
