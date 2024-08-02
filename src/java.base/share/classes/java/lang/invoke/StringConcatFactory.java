@@ -45,6 +45,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Objects;
@@ -1100,11 +1101,11 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
 
-        static final ReferencedKeyMap<MethodType, WeakReference<MethodHandlePair>> CACHE =
+        static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
                 ReferencedKeyMap.create(true, true,
                         new Supplier<>() {
                             @Override
-                            public Map<ReferenceKey<MethodType>, WeakReference<MethodHandlePair>> get() {
+                            public Map<ReferenceKey<MethodType>, SoftReference<MethodHandlePair>> get() {
                                 return new ConcurrentHashMap<>(64);
                             }
                         });
@@ -1119,7 +1120,7 @@ public final class StringConcatFactory {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
             MethodType erasedArgs = args.erase().changeReturnType(String.class);
-            WeakReference<MethodHandlePair> weakConstructorHandle = CACHE.get(erasedArgs);
+            SoftReference<MethodHandlePair> weakConstructorHandle = CACHE.get(erasedArgs);
             if (weakConstructorHandle != null) {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
                 if (handlePair != null) {
@@ -1157,7 +1158,7 @@ public final class StringConcatFactory {
                 MethodHandle constructorHandle = lookup.findConstructor(hiddenClass, MethodType.methodType(void.class, String[].class));
                 var instance = hiddenClass.cast(constructorHandle.invoke(constants));
                 MethodHandle handle = lookup.findVirtual(hiddenClass, METHOD_NAME, erasedArgs);
-                CACHE.put(erasedArgs, new WeakReference<>(new MethodHandlePair(constructorHandle, handle)));
+                CACHE.put(erasedArgs, new SoftReference<>(new MethodHandlePair(constructorHandle, handle)));
                 return handle.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
