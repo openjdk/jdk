@@ -32,11 +32,11 @@ import java.util.Locale;
 
 /**
  * An abstraction for the type-safe representation and use of HTML attributes.
- * 
+ *
  * @apiNote
  * Attributes are used when performing simple validity checks on HTML in
  * documentation comments, and when generating HTML for output.
- * 
+ *
  * @see HtmlTree#put(HtmlAttr, String)
  */
 public enum HtmlAttr {
