@@ -27,8 +27,6 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaIOFileDescriptorAccess;
 
 /*
  * Represents a key to a specific file on Solaris or Linux
@@ -44,11 +42,8 @@ public class FileKey {
     }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        JavaIOFileDescriptorAccess access =
-            SharedSecrets.getJavaIOFileDescriptorAccess();
-        int fdVal = access.get(fd);
         long finfo[] = new long[2];
-        init(fdVal, finfo);
+        init(fd, finfo);
         return new FileKey(finfo[0], finfo[1]);
     }
 
@@ -67,6 +62,6 @@ public class FileKey {
                 && (this.st_ino == other.st_ino);
     }
 
-    private static native void init(int fdVal, long[] finfo)
+    private static native void init(FileDescriptor fd, long[] finfo)
         throws IOException;
 }

@@ -31,14 +31,15 @@
 #include "sun_nio_ch_FileKey.h"
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_init(JNIEnv* env, jclass clazz, jint fdVal,
+Java_sun_nio_ch_FileKey_init(JNIEnv* env, jclass clazz, jobject fdo,
     jlongArray finfo)
 {
     struct stat fbuf;
     int res;
     long deviceAndInode[2];
 
-    RESTARTABLE(fstat(fdVal, &fbuf), res);
+    int fd = fdval(env, fdo);
+    RESTARTABLE(fstat(fd, &fbuf), res);
     if (res < 0) {
         JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
     } else {

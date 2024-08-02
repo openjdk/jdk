@@ -27,8 +27,6 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import jdk.internal.access.SharedSecrets;
-import jdk.internal.access.JavaIOFileDescriptorAccess;
 
 /*
  * Represents a key to a specific file on Windows
@@ -47,11 +45,8 @@ public class FileKey {
     }
 
     public static FileKey create(FileDescriptor fd) throws IOException {
-        JavaIOFileDescriptorAccess access =
-            SharedSecrets.getJavaIOFileDescriptorAccess();
-        long handleVal = access.getHandle(fd);
         int finfo[] = new int[3];
-        init(handleVal, finfo);
+        init(fd, finfo);
         return new FileKey(finfo[0], finfo[1], finfo[2]);
     }
 
@@ -70,6 +65,6 @@ public class FileKey {
                 && this.nFileIndexLow == other.nFileIndexLow;
     }
 
-    private static native void init(long handleVal, int[] finfo)
+    private static native void init(FileDescriptor fd, int[] finfo)
         throws IOException;
 }

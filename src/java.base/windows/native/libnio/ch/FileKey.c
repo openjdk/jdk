@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,10 @@
 #include "sun_nio_ch_FileKey.h"
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_init(JNIEnv *env, jclass clazz, jlong handleVal,
+Java_sun_nio_ch_FileKey_init(JNIEnv *env, jclass clazz, jobject fdo,
     jintArray finfo)
 {
-    HANDLE fileHandle = (HANDLE)handleVal;
+    HANDLE fileHandle = (HANDLE)handleval(env, fdo);
     BOOL result;
     BY_HANDLE_FILE_INFORMATION fileInfo;
     jint info[3];
