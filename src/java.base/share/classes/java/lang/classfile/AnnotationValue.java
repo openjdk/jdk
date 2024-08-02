@@ -104,19 +104,20 @@ public sealed interface AnnotationValue {
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
          */
-        AnnotationConstantValueEntry poolEntry();
+        AnnotationConstantValueEntry constant();
 
         /**
          * {@return the resolved live constant value, as an object} The type of
          * the returned value may be a wrapper class or {@link String}.
          *
          * @apiNote
-         * The returned object, which may be {@link Constable}, may not
+         * The returned object, despite being {@link Constable}, may not
          * {@linkplain Constable#describeConstable() describe} the right constant
-         * pool entry for encoding the annotation value in a class file. For example,
-         * {@link OfChar} describes itself as a {@link DynamicConstantPoolEntry},
-         * but it is actually backed by {@link IntegerEntry} in annotation format.
-         * Use {@link #poolEntry poolEntry()} for a correct constant pool representation.
+         * for encoding the annotation value in a class file. For example,
+         * {@link Character} returned by {@link OfChar} describes itself as a
+         * {@link DynamicConstantPoolEntry}, but it is actually backed by
+         * {@link IntegerEntry} in annotation format.
+         * Use {@link #constant constant()} for a correct constant pool representation.
          */
         Constable resolvedValue();
     }
@@ -132,7 +133,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfStringImpl {
         /** {@return the backing UTF8 entry} */
         @Override
-        Utf8Entry poolEntry();
+        Utf8Entry constant();
 
         /** {@return the constant string value} */
         String stringValue();
@@ -160,7 +161,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfDoubleImpl {
         /** {@return the backing double entry} */
         @Override
-        DoubleEntry poolEntry();
+        DoubleEntry constant();
 
         /** {@return the constant double value} */
         double doubleValue();
@@ -188,7 +189,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfFloatImpl {
         /** {@return the backing float entry} */
         @Override
-        FloatEntry poolEntry();
+        FloatEntry constant();
 
         /** {@return the constant float value} */
         float floatValue();
@@ -216,7 +217,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfLongImpl {
         /** {@return the backing long entry} */
         @Override
-        LongEntry poolEntry();
+        LongEntry constant();
 
         /** {@return the constant long value} */
         long longValue();
@@ -244,7 +245,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfIntImpl {
         /** {@return the backing integer entry} */
         @Override
-        IntegerEntry poolEntry();
+        IntegerEntry constant();
 
         /** {@return the constant int value} */
         int intValue();
@@ -272,7 +273,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfShortImpl {
         /** {@return the backing integer entry} */
         @Override
-        IntegerEntry poolEntry();
+        IntegerEntry constant();
 
         /**
          * {@return the constant short value}
@@ -303,7 +304,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfCharImpl {
         /** {@return the backing integer entry} */
         @Override
-        IntegerEntry poolEntry();
+        IntegerEntry constant();
 
         /**
          * {@return the constant char value}
@@ -334,7 +335,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfByteImpl {
         /** {@return the backing integer entry} */
         @Override
-        IntegerEntry poolEntry();
+        IntegerEntry constant();
 
         /**
          * {@return the constant byte value}
@@ -365,7 +366,7 @@ public sealed interface AnnotationValue {
             permits AnnotationImpl.OfBooleanImpl {
         /** {@return the backing integer entry} */
         @Override
-        IntegerEntry poolEntry();
+        IntegerEntry constant();
 
         /**
          * {@return the constant boolean value}

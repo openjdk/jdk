@@ -84,12 +84,12 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         @Override
         default void writeTo(BufWriterImpl buf) {
             buf.writeU1(tag());
-            buf.writeIndex(poolEntry());
+            buf.writeIndex(constant());
         }
 
     }
 
-    public record OfStringImpl(Utf8Entry poolEntry)
+    public record OfStringImpl(Utf8Entry constant)
             implements OfConstantImpl, AnnotationValue.OfString {
 
         @Override
@@ -99,11 +99,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public String stringValue() {
-            return poolEntry().stringValue();
+            return constant().stringValue();
         }
     }
 
-    public record OfDoubleImpl(DoubleEntry poolEntry)
+    public record OfDoubleImpl(DoubleEntry constant)
             implements OfConstantImpl, AnnotationValue.OfDouble {
 
         @Override
@@ -113,11 +113,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public double doubleValue() {
-            return poolEntry().doubleValue();
+            return constant().doubleValue();
         }
     }
 
-    public record OfFloatImpl(FloatEntry poolEntry)
+    public record OfFloatImpl(FloatEntry constant)
             implements OfConstantImpl, AnnotationValue.OfFloat {
 
         @Override
@@ -127,11 +127,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public float floatValue() {
-            return poolEntry().floatValue();
+            return constant().floatValue();
         }
     }
 
-    public record OfLongImpl(LongEntry poolEntry)
+    public record OfLongImpl(LongEntry constant)
             implements OfConstantImpl, AnnotationValue.OfLong {
 
         @Override
@@ -141,11 +141,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public long longValue() {
-            return poolEntry().longValue();
+            return constant().longValue();
         }
     }
 
-    public record OfIntImpl(IntegerEntry poolEntry)
+    public record OfIntImpl(IntegerEntry constant)
             implements OfConstantImpl, AnnotationValue.OfInt {
 
         @Override
@@ -155,11 +155,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public int intValue() {
-            return poolEntry().intValue();
+            return constant().intValue();
         }
     }
 
-    public record OfShortImpl(IntegerEntry poolEntry)
+    public record OfShortImpl(IntegerEntry constant)
             implements OfConstantImpl, AnnotationValue.OfShort {
 
         @Override
@@ -169,11 +169,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public short shortValue() {
-            return (short) poolEntry().intValue();
+            return (short) constant().intValue();
         }
     }
 
-    public record OfCharImpl(IntegerEntry poolEntry)
+    public record OfCharImpl(IntegerEntry constant)
             implements OfConstantImpl, AnnotationValue.OfChar {
 
         @Override
@@ -183,11 +183,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public char charValue() {
-            return (char) poolEntry().intValue();
+            return (char) constant().intValue();
         }
     }
 
-    public record OfByteImpl(IntegerEntry poolEntry)
+    public record OfByteImpl(IntegerEntry constant)
             implements OfConstantImpl, AnnotationValue.OfByte {
 
         @Override
@@ -197,11 +197,11 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public byte byteValue() {
-            return (byte) poolEntry().intValue();
+            return (byte) constant().intValue();
         }
     }
 
-    public record OfBooleanImpl(IntegerEntry poolEntry)
+    public record OfBooleanImpl(IntegerEntry constant)
             implements OfConstantImpl, AnnotationValue.OfBoolean {
 
         @Override
@@ -211,7 +211,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public boolean booleanValue() {
-            return poolEntry().intValue() != 0;
+            return constant().intValue() != 0;
         }
     }
 
