@@ -1138,7 +1138,7 @@ public final class StringConcatFactory {
                 }
             }
             final MethodType concatArgs = erasedArgs;
-            SoftReference<MethodHandlePair> weakConstructorHandle = CACHE.get(erasedArgs);
+            SoftReference<MethodHandlePair> weakConstructorHandle = CACHE.get(concatArgs);
             if (weakConstructorHandle != null) {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
                 if (handlePair != null) {
