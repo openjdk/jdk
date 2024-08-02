@@ -54,40 +54,44 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an annotation-valued element.
-     * The tag of this element is {@value ClassFile#AEV_ANNOTATION}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ANNOTATION}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfAnnotation extends AnnotationValue
             permits AnnotationImpl.OfAnnotationImpl {
-        /** {@return the annotation} */
+        /** {@return the annotation value} */
         Annotation annotation();
     }
 
     /**
      * Models an array-valued element.
-     * The tag of this element is {@value ClassFile#AEV_ARRAY}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ARRAY}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfArray extends AnnotationValue
             permits AnnotationImpl.OfArrayImpl {
-        /** {@return the values} */
+        /**
+         * {@return the array elements of the array value}
+         *
+         * @apiNote
+         * All array elements derived from Java source code have the same type,
+         * which must not be an array type. ({@jls 9.6.1})
+         */
         List<AnnotationValue> values();
     }
 
     /**
      * Models a constant-valued element.
      *
-     * @param <C> the constant pool entry type
-     * @param <R> the resolved live constant type
      * @sealedGraph
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant<C extends AnnotationConstantValueEntry, R extends Comparable<R> & Constable>
+    sealed interface OfConstant
             extends AnnotationValue
             permits OfString, OfDouble, OfFloat, OfLong, OfInteger, OfShort, OfCharacter, OfByte,
                     OfBoolean, AnnotationImpl.OfConstantImpl {
@@ -100,35 +104,45 @@ public sealed interface AnnotationValue {
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
          */
-        C poolEntry();
+        AnnotationConstantValueEntry poolEntry();
 
         /**
          * {@return the resolved live constant value, as an object} The type of
          * the returned value may be a wrapper class or {@link String}.
          *
          * @apiNote
-         * The returned object, despite being {@link Constable}, may not
+         * The returned object, which may be {@link Constable}, may not
          * {@linkplain Constable#describeConstable() describe} the right constant
          * pool entry for encoding the annotation value in a class file. For example,
          * {@link OfCharacter} describes itself as a {@link DynamicConstantPoolEntry},
          * but it is actually backed by {@link IntegerEntry} in annotation format.
          * Use {@link #poolEntry poolEntry()} for a correct constant pool representation.
          */
-        R resolvedValue();
+        Object resolvedValue();
     }
 
     /**
      * Models a string-valued element.
-     * The tag of this element is {@value ClassFile#AEV_STRING}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_STRING}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfString extends OfConstant<Utf8Entry, String>
+    sealed interface OfString extends OfConstant
             permits AnnotationImpl.OfStringImpl {
-        /** {@return the constant} */
+        /** {@return the backing UTF8 entry} */
+        @Override
+        Utf8Entry poolEntry();
+
+        /** {@return the constant string value} */
         String stringValue();
 
+        /**
+         * {@return the resolved string value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #stringValue()}.
+         */
         @Override
         default String resolvedValue() {
             return stringValue();
@@ -137,16 +151,26 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a double-valued element.
-     * The tag of this element is {@value ClassFile#AEV_DOUBLE}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_DOUBLE}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfDouble extends OfConstant<DoubleEntry, Double>
+    sealed interface OfDouble extends OfConstant
             permits AnnotationImpl.OfDoubleImpl {
-        /** {@return the constant} */
+        /** {@return the backing double entry} */
+        @Override
+        DoubleEntry poolEntry();
+
+        /** {@return the constant double value} */
         double doubleValue();
 
+        /**
+         * {@return the resolved double value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #doubleValue()}.
+         */
         @Override
         default Double resolvedValue() {
             return doubleValue();
@@ -155,16 +179,26 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a float-valued element.
-     * The tag of this element is {@value ClassFile#AEV_FLOAT}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_FLOAT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfFloat extends OfConstant<FloatEntry, Float>
+    sealed interface OfFloat extends OfConstant
             permits AnnotationImpl.OfFloatImpl {
-        /** {@return the constant} */
+        /** {@return the backing float entry} */
+        @Override
+        FloatEntry poolEntry();
+
+        /** {@return the constant float value} */
         float floatValue();
 
+        /**
+         * {@return the resolved float value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #floatValue()}.
+         */
         @Override
         default Float resolvedValue() {
             return floatValue();
@@ -173,16 +207,26 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a long-valued element.
-     * The tag of this element is {@value ClassFile#AEV_LONG}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_LONG}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfLong extends OfConstant<LongEntry, Long>
+    sealed interface OfLong extends OfConstant
             permits AnnotationImpl.OfLongImpl {
-        /** {@return the constant} */
+        /** {@return the backing long entry} */
+        @Override
+        LongEntry poolEntry();
+
+        /** {@return the constant long value} */
         long longValue();
 
+        /**
+         * {@return the resolved long value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #longValue()}.
+         */
         @Override
         default Long resolvedValue() {
             return longValue();
@@ -191,16 +235,26 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an int-valued element.
-     * The tag of this element is {@value ClassFile#AEV_INT}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_INT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfInteger extends OfConstant<IntegerEntry, Integer>
+    sealed interface OfInteger extends OfConstant
             permits AnnotationImpl.OfIntegerImpl {
-        /** {@return the constant} */
+        /** {@return the backing integer entry} */
+        @Override
+        IntegerEntry poolEntry();
+
+        /** {@return the constant int value} */
         int intValue();
 
+        /**
+         * {@return the resolved int value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #intValue()}.
+         */
         @Override
         default Integer resolvedValue() {
             return intValue();
@@ -209,16 +263,29 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a short-valued element.
-     * The tag of this element is {@value ClassFile#AEV_SHORT}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_SHORT}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfShort extends OfConstant<IntegerEntry, Short>
+    sealed interface OfShort extends OfConstant
             permits AnnotationImpl.OfShortImpl {
-        /** {@return the constant} */
+        /** {@return the backing integer entry} */
+        @Override
+        IntegerEntry poolEntry();
+
+        /**
+         * {@return the constant short value}
+         * @jvms 2.11.1 Types and the Java Virtual Machine
+         */
         short shortValue();
 
+        /**
+         * {@return the resolved short value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #shortValue()}.
+         */
         @Override
         default Short resolvedValue() {
             return shortValue();
@@ -227,16 +294,29 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a char-valued element.
-     * The tag of this element is {@value ClassFile#AEV_CHAR}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_CHAR}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfCharacter extends OfConstant<IntegerEntry, Character>
+    sealed interface OfCharacter extends OfConstant
             permits AnnotationImpl.OfCharacterImpl {
-        /** {@return the constant} */
+        /** {@return the backing integer entry} */
+        @Override
+        IntegerEntry poolEntry();
+
+        /**
+         * {@return the constant char value}
+         * @jvms 2.11.1 Types and the Java Virtual Machine
+         */
         char charValue();
 
+        /**
+         * {@return the resolved char value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #charValue()}.
+         */
         @Override
         default Character resolvedValue() {
             return charValue();
@@ -245,16 +325,29 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a byte-valued element.
-     * The tag of this element is {@value ClassFile#AEV_BYTE}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_BYTE}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfByte extends OfConstant<IntegerEntry, Byte>
+    sealed interface OfByte extends OfConstant
             permits AnnotationImpl.OfByteImpl {
-        /** {@return the constant} */
+        /** {@return the backing integer entry} */
+        @Override
+        IntegerEntry poolEntry();
+
+        /**
+         * {@return the constant byte value}
+         * @jvms 2.11.1 Types and the Java Virtual Machine
+         */
         byte byteValue();
 
+        /**
+         * {@return the resolved byte value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #byteValue()}.
+         */
         @Override
         default Byte resolvedValue() {
             return byteValue();
@@ -263,16 +356,29 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a boolean-valued element.
-     * The tag of this element is {@value ClassFile#AEV_BOOLEAN}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_BOOLEAN}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfBoolean extends OfConstant<IntegerEntry, Boolean>
+    sealed interface OfBoolean extends OfConstant
             permits AnnotationImpl.OfBooleanImpl {
-        /** {@return the constant} */
+        /** {@return the backing integer entry} */
+        @Override
+        IntegerEntry poolEntry();
+
+        /**
+         * {@return the constant boolean value}
+         * @jvms 2.3.4 The <i>boolean</i> Type
+         */
         boolean booleanValue();
 
+        /**
+         * {@return the resolved boolean value}
+         *
+         * @implSpec
+         * This method returns the same as {@link #booleanValue()}.
+         */
         @Override
         default Boolean resolvedValue() {
             return booleanValue();
@@ -281,17 +387,17 @@ public sealed interface AnnotationValue {
 
     /**
      * Models a class-valued element.
-     * The tag of this element is {@value ClassFile#AEV_CLASS}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_CLASS}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfClass extends AnnotationValue
             permits AnnotationImpl.OfClassImpl {
-        /** {@return the class name} */
+        /** {@return the class descriptor string} */
         Utf8Entry className();
 
-        /** {@return the class symbol} */
+        /** {@return the class descriptor} */
         default ClassDesc classSymbol() {
             return ClassDesc.ofDescriptor(className().stringValue());
         }
@@ -299,17 +405,17 @@ public sealed interface AnnotationValue {
 
     /**
      * Models an enum-valued element.
-     * The tag of this element is {@value ClassFile#AEV_ENUM}.
+     * The {@linkplain #tag tag} of this element is {@value ClassFile#AEV_ENUM}.
      *
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfEnum extends AnnotationValue
             permits AnnotationImpl.OfEnumImpl {
-        /** {@return the enum class name} */
+        /** {@return the enum class descriptor string} */
         Utf8Entry className();
 
-        /** {@return the enum class symbol} */
+        /** {@return the enum class descriptor} */
         default ClassDesc classSymbol() {
             return ClassDesc.ofDescriptor(className().stringValue());
         }
@@ -325,7 +431,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for a enum-valued element}
-     * @param className the name of the enum class
+     * @param className the descriptor string of the enum class
      * @param constantName the name of the enum constant
      */
     static OfEnum ofEnum(Utf8Entry className,
@@ -335,7 +441,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for a enum-valued element}
-     * @param className the name of the enum class
+     * @param className the descriptor of the enum class
      * @param constantName the name of the enum constant
      */
     static OfEnum ofEnum(ClassDesc className, String constantName) {
@@ -345,7 +451,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for a class-valued element}
-     * @param className the name of the enum class
+     * @param className the descriptor string of the class
      */
     static OfClass ofClass(Utf8Entry className) {
         return new AnnotationImpl.OfClassImpl(className);
@@ -353,7 +459,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for a class-valued element}
-     * @param className the name of the enum class
+     * @param className the descriptor of the class
      */
     static OfClass ofClass(ClassDesc className) {
         return ofClass(TemporaryConstantPool.INSTANCE.utf8Entry(className.descriptorString()));
@@ -514,7 +620,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for an array-valued element}
-     * @param values the values
+     * @param values the array elements
      */
     static OfArray ofArray(List<AnnotationValue> values) {
         return new AnnotationImpl.OfArrayImpl(values);
@@ -522,7 +628,7 @@ public sealed interface AnnotationValue {
 
     /**
      * {@return an annotation element for an array-valued element}
-     * @param values the values
+     * @param values the array elements
      */
     static OfArray ofArray(AnnotationValue... values) {
         return ofArray(List.of(values));

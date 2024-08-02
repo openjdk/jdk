@@ -96,7 +96,7 @@ class AnnotationTest {
             names.add(evp.name().stringValue());
             switch (evp.name().stringValue()) {
                 case "i", "j", "s", "b", "f", "d", "z", "c", "st":
-                    if (!(evp.value() instanceof AnnotationValue.OfConstant<?, ?> c))
+                    if (!(evp.value() instanceof AnnotationValue.OfConstant c))
                         return fail();
                     assertEquals(c.resolvedValue(),
                                  constants.get(evp.name().stringValue()).getKey());
@@ -119,7 +119,7 @@ class AnnotationTest {
                     if (!(evp.value() instanceof AnnotationValue.OfArray arr))
                         return fail();
                     List<AnnotationValue> values = arr.values();
-                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant<?, ?>) v).poolEntry().constantValue()).collect(toSet()),
+                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).poolEntry().constantValue()).collect(toSet()),
                                  Set.of(1, 1.0f, "1"));
                     break;
                 default:

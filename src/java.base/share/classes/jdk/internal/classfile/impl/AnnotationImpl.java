@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 
-import java.lang.constant.Constable;
 import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
@@ -80,8 +79,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
     }
 
-    public sealed interface OfConstantImpl<C extends AnnotationConstantValueEntry, T extends Constable & Comparable<T>>
-            extends AnnotationValue.OfConstant<C, T>, Util.Writable {
+    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant, Util.Writable {
 
         @Override
         default void writeTo(BufWriterImpl buf) {
@@ -92,7 +90,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfStringImpl(Utf8Entry poolEntry)
-            implements OfConstantImpl<Utf8Entry, String>, AnnotationValue.OfString {
+            implements OfConstantImpl, AnnotationValue.OfString {
 
         @Override
         public char tag() {
@@ -106,7 +104,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfDoubleImpl(DoubleEntry poolEntry)
-            implements OfConstantImpl<DoubleEntry, Double>, AnnotationValue.OfDouble {
+            implements OfConstantImpl, AnnotationValue.OfDouble {
 
         @Override
         public char tag() {
@@ -120,7 +118,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfFloatImpl(FloatEntry poolEntry)
-            implements OfConstantImpl<FloatEntry, Float>, AnnotationValue.OfFloat {
+            implements OfConstantImpl, AnnotationValue.OfFloat {
 
         @Override
         public char tag() {
@@ -134,7 +132,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfLongImpl(LongEntry poolEntry)
-            implements OfConstantImpl<LongEntry, Long>, AnnotationValue.OfLong {
+            implements OfConstantImpl, AnnotationValue.OfLong {
 
         @Override
         public char tag() {
@@ -148,7 +146,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfIntegerImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl<IntegerEntry, Integer>, AnnotationValue.OfInteger {
+            implements OfConstantImpl, AnnotationValue.OfInteger {
 
         @Override
         public char tag() {
@@ -162,7 +160,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfShortImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl<IntegerEntry, Short>, AnnotationValue.OfShort {
+            implements OfConstantImpl, AnnotationValue.OfShort {
 
         @Override
         public char tag() {
@@ -176,7 +174,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfCharacterImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl<IntegerEntry, Character>, AnnotationValue.OfCharacter {
+            implements OfConstantImpl, AnnotationValue.OfCharacter {
 
         @Override
         public char tag() {
@@ -190,7 +188,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfByteImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl<IntegerEntry, Byte>, AnnotationValue.OfByte {
+            implements OfConstantImpl, AnnotationValue.OfByte {
 
         @Override
         public char tag() {
@@ -204,7 +202,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfBooleanImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl<IntegerEntry, Boolean>, AnnotationValue.OfBoolean {
+            implements OfConstantImpl, AnnotationValue.OfBoolean {
 
         @Override
         public char tag() {
@@ -213,15 +211,15 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public boolean booleanValue() {
-            return poolEntry().intValue() == 1;
+            return poolEntry().intValue() != 0;
         }
     }
 
     public record OfArrayImpl(List<AnnotationValue> values)
             implements AnnotationValue.OfArray, Util.Writable {
 
-        public OfArrayImpl(List<AnnotationValue> values) {
-            this.values = List.copyOf(values);
+        public OfArrayImpl {
+            values = List.copyOf(values);
         }
 
         @Override

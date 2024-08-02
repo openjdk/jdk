@@ -226,7 +226,7 @@ public class AnnotationWriter extends BasicWriter {
 
     public void write(AnnotationValue value, boolean resolveIndices) {
         switch (value) {
-            case AnnotationValue.OfConstant<?, ?> ev -> {
+            case AnnotationValue.OfConstant ev -> {
                 if (resolveIndices) {
                     var entry = ev.poolEntry();
                     switch (ev.tag()) {

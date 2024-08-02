@@ -391,7 +391,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 AnnotationValue.ofAnnotation(mapAnnotation(oa.annotation()));
             case AnnotationValue.OfArray oa ->
                 AnnotationValue.ofArray(oa.values().stream().map(this::mapAnnotationValue).toList());
-            case AnnotationValue.OfConstant<?, ?> oc -> oc;
+            case AnnotationValue.OfConstant oc -> oc;
             case AnnotationValue.OfClass oc ->
                 AnnotationValue.ofClass(map(oc.classSymbol()));
             case AnnotationValue.OfEnum oe ->
