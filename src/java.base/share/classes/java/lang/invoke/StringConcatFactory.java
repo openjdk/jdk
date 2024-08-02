@@ -1174,22 +1174,20 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     long initalLengthCoder = JLA.stringConcatInitialCoder();
-                    for (String constant : constants) {
+                    for (var constant : constants) {
                         if (constant != null) {
                             initalLengthCoder = JLA.stringConcatMix(initalLengthCoder, constant);
                         }
                     }
 
-                    int paramCount = args.parameterCount();
+                    var paramCount = args.parameterCount();
 
                     // Compute parameter and local string variable slots
-                    int   paramSlotsTotalSize = 0;
-                    int[] paramSlots          = new int[paramCount];
+                    int paramSlotsTotalSize = 0;
+                    var paramSlots          = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
-                        paramSlots[i] = paramSlotsTotalSize;
-                        paramSlotsTotalSize += kind.slotSize();
+                        paramSlots[i]        = paramSlotsTotalSize;
+                        paramSlotsTotalSize += TypeKind.from(args.parameterType(i)).slotSize();
                     }
 
                     int lengthCoderSlot = paramSlotsTotalSize;
@@ -1205,7 +1203,7 @@ public final class StringConcatFactory {
                      *
                      */
                     for (int i = 0, strings = 0; i < paramCount; i++) {
-                        Class<?> cl = args.parameterType(i);
+                        var cl = args.parameterType(i);
                         if (!needStringOf(cl)) {
                             continue;
                         }
@@ -1214,16 +1212,16 @@ public final class StringConcatFactory {
                         MethodTypeDesc methodTypeDesc;
                         String methodName;
                         if (cl == float.class) {
-                            classDesc = CD_Float;
-                            methodName = "toString";
+                            classDesc      = CD_Float;
+                            methodName     = "toString";
                             methodTypeDesc = FLOAT_TO_STRING;
                         } else if (cl == double.class) {
-                            classDesc = CD_Double;
-                            methodName = "toString";
+                            classDesc      = CD_Double;
+                            methodName     = "toString";
                             methodTypeDesc = DOUBLE_TO_STRING;
                         } else {
-                            classDesc = CD_StringConcatHelper;
-                            methodName = "stringOf";
+                            classDesc      = CD_StringConcatHelper;
+                            methodName     = "stringOf";
                             methodTypeDesc = OBJECT_TO_STRING;
                         }
 
@@ -1248,9 +1246,9 @@ public final class StringConcatFactory {
                      */
                     cb.loadConstant(initalLengthCoder);
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
-                        int paramSlot = paramSlots[i];
+                        var cl        = args.parameterType(i);
+                        var kind      = TypeKind.from(cl);
+                        var paramSlot = paramSlots[i];
 
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1263,14 +1261,14 @@ public final class StringConcatFactory {
                             methodTypeDesc = MIX_char;
                         } else {
                             methodTypeDesc = MIX_String;
-                            kind = TypeKind.from(String.class);
+                            kind           = TypeKind.from(String.class);
                         }
                         cb.loadLocal(kind, paramSlot)
                           .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
                     }
                     cb.lstore(lengthCoderSlot);
 
-                    String suffix = constants[constants.length - 1];
+                    var suffix = constants[constants.length - 1];
                     if (suffix == null) {
                         suffix = "";
                     }
@@ -1297,9 +1295,9 @@ public final class StringConcatFactory {
                      */
                     cb.lload(lengthCoderSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        int paramSlot = paramSlots[i];
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
+                        var paramSlot = paramSlots[i];
+                        var cl        = args.parameterType(i);
+                        var kind      = TypeKind.from(cl);
 
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1312,9 +1310,9 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_char;
                         } else {
                             methodTypeDesc = PREPEND_String;
-                            kind = TypeKind.from(String.class);
+                            kind           = TypeKind.from(String.class);
                         }
-                        String constant = constants[i];
+                        var constant = constants[i];
                         if (constant == null) {
                             constant = "";
                         }
