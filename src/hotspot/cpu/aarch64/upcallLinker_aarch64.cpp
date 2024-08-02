@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -242,7 +243,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ get_vm_result(j_rarg0, rthread);
   __ block_comment("} receiver ");
 
-  __ mov_metadata(rmethod, entry);
+  // Load target method from receiver
+  __ load_heap_oop(rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
+  __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1, rscratch2);
+  __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1, rscratch2);
+  __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
+                    Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                    noreg, noreg);
   __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
   __ push_cont_fastpath(rthread);

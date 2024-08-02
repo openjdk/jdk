@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -240,7 +241,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ get_vm_result(R3_ARG1);
   __ block_comment("} receiver ");
 
-  __ load_const_optimized(R19_method, (intptr_t)entry);
+  __ load_heap_oop(R19_method, java_lang_invoke_MethodHandle::form_offset(), R3_ARG1,
+                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+  __ load_heap_oop(R19_method, java_lang_invoke_LambdaForm::vmentry_offset(), R19_method,
+                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+  __ load_heap_oop(R19_method, java_lang_invoke_MemberName::method_offset(), R19_method,
+                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+  __ ld(R19_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), R19_method);
   __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread);
 
   __ push_cont_fastpath();
