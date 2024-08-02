@@ -1794,11 +1794,7 @@ void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
     blob->purge();
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     if (!CodeCache::contains((void*)blob)) {
-      // ## aligned_alloc gives aligned memory. though with CodeCache we are used to
-      //    +16 bytes offset that is caused by the HeapBlock header
-      // ## todo: get rid of aligned_alloc
-      // ## why not use BufferBlob::free here?
-      std::free((char*)blob - 16);
+      BufferBlob::free(blob);
     } else {
       CodeCache::free(blob);
     }

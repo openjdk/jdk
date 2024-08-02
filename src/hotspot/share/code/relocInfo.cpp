@@ -377,7 +377,6 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
     int section = src->section_index_of(orig_addr);
     intptr_t section_start = (intptr_t)src->code_section(section)->start();
     uintptr_t delta = (intptr_t)CodeCache::low_bound() - section_start;
-    if (PrintCodeCache) tty->print_cr("%i-%i pc:%p<-%p target:%p<-%p offset:%i", move_into_codecache, !CodeCache::contains(callee), addr(), orig_addr, callee+delta, callee, orig_addr - section_start);
     callee += delta;
   }
 

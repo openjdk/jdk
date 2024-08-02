@@ -1077,8 +1077,7 @@ int MacroAssembler::ic_check(int end_alignment) {
   br(Assembler::EQ, dont);
   far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   bind(dont);
-  // ## todo: fix the alignment
-  // assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+  // why? assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
 
   return uep_offset;
 }
