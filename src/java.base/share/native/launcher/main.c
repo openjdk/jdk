@@ -117,6 +117,8 @@ main(int argc, char **argv)
     int mbSize = WideCharToMultiByte(CP_ACP,
         WC_NO_BEST_FIT_CHARS | WC_COMPOSITECHECK | WC_DEFAULTCHAR,
         wcCmdline, -1, NULL, 0, NULL, NULL);
+    // If the call to WideCharToMultiByte() fails, it returns 0, which
+    // will then make the following JLI_MemAlloc() to issue exit(1)
     LPSTR mbCmdline = JLI_MemAlloc(mbSize);
     if (WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS | WC_COMPOSITECHECK | WC_DEFAULTCHAR,
         wcCmdline, -1, mbCmdline, mbSize, NULL, NULL) == 0) {
