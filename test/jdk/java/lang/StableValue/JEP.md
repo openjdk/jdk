@@ -335,13 +335,13 @@ method simultaneously if they call the `logger()` method at about the same time.
 competing threads, there might be applications where it is a requirement, that a supplying method is
 called *only once*. This brings us to the introduction of _cached functions_.
 
-### Cached functions
+### Caching functions
 
 So far, we have talked about the fundamental features of StableValue as s securely
 wrapped stable value holder. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
-[Cached (or Memoized) functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a
+[Caching (or Memoized) functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a
 particular input value is computed only once and is remembered such that remembered outputs can be
 reused for subsequent calls with recurring input values.
 
@@ -352,7 +352,7 @@ accessed via its `Supplier::get` method. In a multithreaded scenario, competing 
 until the first thread has computed a cached value. Unsurprisingly, the cached value is
 stored internally in a stable value.
 
-Here is how the code in the previous example can be improved using a cached supplier:
+Here is how the code in the previous example can be improved using a caching supplier:
 
 ```
 class Foo {
@@ -386,7 +386,7 @@ stable value elements. Here is an example where we manually map logger numbers
 ```
 class CachedNum {
 
-    // 1. Centrally declare a cached IntFunction backed by a list of StableValue elements
+    // 1. Centrally declare a caching IntFunction backed by a list of StableValue elements
     private static final IntFunction<Logger> LOGGERS =
             StableValue.newCachingIntFunction(2, CachedNum::fromNumber, null);
 
@@ -411,17 +411,17 @@ class CachedNum {
 
 Note: Again, the last null parameter signifies an optional thread factory that will be explained at the end of this chapter.
 
-As can be seen, manually mapping numbers to strings is a bit tedious. This brings us to the most general cached function
-variant provided is a cached `Function` which, for example,  can make sure `Logger::getLogger` in one of the first examples
+As can be seen, manually mapping numbers to strings is a bit tedious. This brings us to the most general caching function
+variant provided is a caching `Function` which, for example,  can make sure `Logger::getLogger` in one of the first examples
 above is invoked at most once per input value (provided it executes successfully) in a multithreaded environment. Such a
-cached `Function` is almost always faster and more resource efficient than a `ConcurrentHashMap`.
+caching `Function` is almost always faster and more resource efficient than a `ConcurrentHashMap`.
 
 Here is what a caching `Function` lazily holding two loggers could look like:
 
 ```
 class Cahced {
 
-    // 1. Centrally declare a cached function backed by a map of stable values
+    // 1. Centrally declare a caching function backed by a map of stable values
     private static final Function<String, Logger> LOGGERS =
             StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
             Logger::getLogger, null);
@@ -437,24 +437,24 @@ class Cahced {
 ```
 
 It should be noted that the enumerated set of valid inputs given at creation time constitutes the only valid
-input keys for the cached function. Providing a non-valid input for a cached `Function` (or a cached `IntFunction`)
+input keys for the caching function. Providing a non-valid input for a caching `Function` (or a caching `IntFunction`)
 would incur an `IllegalArgumentException`.
 
-An advantage with cached functions, compared to working directly with `StableValue` instances, is that the
+An advantage with caching functions, compared to working directly with `StableValue` instances, is that the
 initialization logic can be centralized and maintained in a single place, usually at the same place where
-the cached function is defined.
+the caching function is defined.
 
-Additional cached function types, such a cached `Predicate<K>` (backed by a lazily computed
-`Map<K, StableValue<Boolean>>`) or a cached `BiFunction` can be custom-made. An astute reader will be able
+Additional caching function types, such a caching `Predicate<K>` (backed by a lazily computed
+`Map<K, StableValue<Boolean>>`) or a caching `BiFunction` can be custom-made. An astute reader will be able
 to write such constructs in a few lines.
 
 #### Background threads
 
-As noted above, the cached-returning factories in the Stable Values API offers an optional
+As noted above, the caching-returning factories in the Stable Values API offers an optional
 tailing thread factory parameter from which new value-computing background threads will be created:
 
 ```
-// 1. Centrally declare a cached function backed by a map of stable values
+// 1. Centrally declare a caching function backed by a map of stable values
 //    computed in the background by two distinct virtual threads.
 private static final Function<String, Logger> LOGGERS =
         StableValue.newCachingFunction(Set.of("com.company.Foo", "com.company.Bar"),
@@ -473,7 +473,7 @@ Logger logger = LOGGERS.apply(NAME);
 logger.log(Level.DEBUG, ...);
 ```
 
-This can provide a best-of-several-worlds situation where the cached function can be quickly defined (as no
+This can provide a best-of-several-worlds situation where the caching function can be quickly defined (as no
 computation is made by the defining thread), the holder value is computed in background threads (thus neither
 interfering significantly with the critical startup path nor with future accessing threads), and the threads actually
 accessing the holder value can directly access the holder value with as-if-final performance and without having to compute
@@ -540,7 +540,7 @@ Analogue to a lazy list, the lazy map guarantees the function provided at map cr
 (used to lazily compute the map values) is invoked at most once per key (absent any Exceptions),
 even though used from several threads.
 
-Even though a cached `IntFunction` may sometimes replace a lazy `List` and a cached `Function` may be
+Even though a caching `IntFunction` may sometimes replace a lazy `List` and a caching `Function` may be
 used in place of a lazy `Map`, a lazy `List` or `Map` oftentimes provides better interoperability with
 existing libraries. For example, if provided as a method parameter.
 
