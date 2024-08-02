@@ -21,13 +21,11 @@ This might be the subject of a future JEP.
 
 ## Motivation
 
-Java allows developers to control whether fields should be mutable or not. Mutable fields can be updated multiple times, and from any arbitrary position in the code and by any thread. As such, mutable fields are often used to model complex objects whose state can be updated several times throughout their lifetimes, such as the contents of a text field in a UI component. Conversely, immutable fields (i.e. `final` fields), must be updated *exactly once*, and only in very specific places: the class initializer (for a static immutable field) or the class constructor(for an instance immutable field). As such, `final` fields are typically used to model values that act as *constants* (albeit shallowly so) throughout the lifetime of a class (in the case of `static` fields) or of an instance (in the case of an instance field).
+Java allows developers to control whether fields should be mutable or not. Mutable fields can be updated multiple times, and from any arbitrary position in the code and by any thread. As such, mutable fields are often used to model complex objects whose state can be updated several times throughout their lifetimes, such as the contents of a text field in a UI component. Conversely, immutable fields (i.e. `final` fields), must be updated exactly *once*, and only in very specific places: the class initializer (for a static immutable field) or the class constructor(for an instance immutable field). As such, `final` fields are typically used to model values that act as *constants* (albeit shallowly so) throughout the lifetime of a class (in the case of `static` fields) or of an instance (in the case of an instance field).
 
-Most of the time deciding whether an object should feature mutable or immutable state is straightforward enough. However, there are cases where a field is subject to *constrained mutation*. That is, a field's value is neither constant, nor can can be mutated at will. Consider a program that might want to mutate a password field at most three times before it becomes immutable, in order to reflect the three login attempts allowed for a user; further mutation would result in some kind of exception. Expressing this kind of constrained mutation is hard, and cannot be achieved without the help of advanced type-system [calculi](https://en.wikipedia.org/wiki/Dependent_type). 
+Most of the time deciding whether an object should feature mutable or immutable state is straightforward enough. There are however cases where a field is subject to *constrained mutation*. That is, a field's value is neither constant, nor can it be mutated at will. Consider a program that might want to mutate a password field at most three times before it becomes immutable, in order to reflect the three login attempts allowed for a user; further mutation would result in some kind of exception. Expressing this kind of constrained mutation is hard, and cannot be achieved without the help of advanced type-system [calculi](https://en.wikipedia.org/wiki/Dependent_type). However, one important and simpler case of constrained mutation is that of a field whose updated *at most once*. As we shall see, the lack of a mechanism to capture this specific kind of constrained mutation in the Java platform comes at a considerable cost of performance and expressiveness.
 
-However, one important and simpler case of constrained mutation is that of a field whose updated *at most once*. As we shall see, the lack of a mechanism to capture this specific kind of constrained mutation in the Java platform comes at a considerable cost of performance and expressiveness.
-
-### An example: memoization
+#### An example: memoization
 
 Constrained mutation is essential to reliably cache the result of an expensive method call, so that it can be reused several times throughout the lifetime of an application (this technique is also known as [memoization](https://en.wikipedia.org/wiki/Memoization)). A nearly ubiquitous example of such an expensive method call is that to obtain a logger object through which an application's events can be reported. Obtaining a logger often entails expensive operations, such as reading and parsing configuration data, or prepare the backing storage where logging events will be recorded. Since these operations are expensive, an application will typically want to move them as much *forward in time* as possible: after all, an application might never need to log an event, so why paying the cost for this expensive initialization? Moreover, as some of these operation results in side effects - such as the creation of files and folders - it is crucial that they are executed _at most once_.
 
@@ -36,14 +34,14 @@ Combining mutable fields and encapsulation is a common way to approximate at-mos
 ```
 public class Application {
 
-    private Logger logger;
+  private Logger logger;
 
-    public Logger getLogger() {
-        if (logger == null) {
-            logger = Logger.create("com.company.Application");
-        }
-        return logger;
+  public Logger getLogger() {
+    if (logger == null) {
+      logger = Logger.create("com.company.Application");
     }
+    return logger;
+  }
 }
 ```
 
@@ -51,9 +49,11 @@ As the `logger` field is private, the only way for clients to access it is to ca
 
 Unfortunately, the above solution does not work in a multithreaded environment. For instance, updates to the `logger` field made by one thread may not be immediately visible to other threads. This condition might result in multiple concurrent calls to the `Logger::create` method, thereby violating the "at-most-once" update guarantee.
 
-#### Thread safety with double-checked locking
+##### Thread-safety with double-checked locking
 
-One possible way to achieve thread-safety would be to serialize access to the `Application::getLogger` method - i.e. by marking that method as `synchronized`. However, doing so has a performance cost, as multiple threads cannot concurrently obtain the application's logger object, even *long after* this object has been computed, and safely stored in the `logger` field. In other words, using  `synchronized` amounts at applying a *permanent* performance tax on *all* logger accesses, in the rare event that a race occurs during the initial update of the `logger` field.
+One possible way to achieve thread safety would be to serialize access to the `Application::getLogger` method - i.e. by marking that method as `synchronized`. However, doing so has a performance cost, as multiple threads cannot concurrently obtain the application's logger object, even *long after* this object has been computed, and safely stored in the `logger` field. In other words, using  `synchronized` amounts at applying a *permanent* performance tax on *all* logger accesses, in the rare event that a race occurs during the initial update of the `logger` field.
+
+A more efficient solution is the so-called [class holder idiom](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), which achieves thread-safe "at-most-once" update guarantees by leaning on the lazy semantics of class initialization. However, for this approach to work correctly, the memoized data should be `static`, which is not the case here.
 
 In order to achieve thread-safety without compromising performance, developers often resorts to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking):
 
@@ -77,49 +77,32 @@ class Application {
 }
 ```
 
-The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or the returned Logger is fully initialized (all its fields set properly). That is, no *partial reads* are possible.
+The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or initialized (its value set to the final logger object). That is, no *dirty reads* are possible.
 
-#### Problems with double-checked locking
+##### Problems with double-checked locking
 
 Unfortunately, double-checked locking has several inherent design flaws:
 
 * *brittleness* - the convoluted nature of the code required to write a correct double-checked locking makes it all too easy for developers to make subtle mistakes. A very common one is forgetting to add the `volatile` keyword to the `logger` field.
-* *lack of expressiveness* - even when written correctly, the double-checked idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that are impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
+* *lack of expressiveness* - even when written correctly, the double-checked idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that is impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
 * *lack of optimizations* - as the `logger` field is updated at most once, one might expect the JVM to optimize access to this field accordingly, e.g. by [constant-folding](https://en.wikipedia.org/wiki/Constant_folding) access to an already-initialized `logger` field. Unfortunately, since `logger` is just a plan mutable field, the JVM cannot trust the field to never be updated again. As such, access to at-most-once fields, when realized with double-checked locking is not as efficient as it could be.
-* *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to an even more complex solutions using where at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error-prone, and should be avoided at all costs.
+* *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to even more complex solutions using where at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error-prone, and should be avoided at all costs.
 
-#### Thread safety with class initialization 
+##### At-most-once as a first class concept
 
-Initialization of `static` and `final` fields can be broken up by leveraging the laziness already built into class loading. Often referred to as the [*initialization-on-demand_holder_idiom*](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), this technique moves lazily initialized state into a helper class which is then loaded on-demand, so its initialization is only performed when the data is actually needed, rather than unconditionally initializing constants when a class is first referenced:
+At-most-once semantics is unquestionably critical to implement important use cases such as caches and memoized functions. Unfortunately, existing workarounds, such as double-checked locking, cannot be considered adequate replacements for *first-class* "at-most-once" support. What we are missing is a way to *promise* that a variable will be initialized by the time it is used, with a value that is computed at most once, and *safely* across multiple threads. Such a mechanism would give the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties that plague the workarounds shown above. Moreover, such a mechanism should gracefully scale to handle *collections* of "at-most-once" variables, while retaining efficient computer resource management.
 
-```
-// Initialization-on-demand holder idiom
-Logger logger() {
-    class Holder {
-         static final Logger LOGGER = Logger.getLogger("com.company.Foo");
-    }
-    return Holder.LOGGER;
-}
-...
-logger().log(Level.DEBUG, ...);
-```
+When fully realized, first-class support for "at-most-once" sematics would fill an important gap between mutable and immutable fields, as shown in the table below:
 
-The code above ensures that the `Logger` object is created only when actually required. The (possibly expensive) initializer for the logger lives in the nested `Holder` class, which will only be initialized when the `logger` method accesses the `LOGGER` field. While this idiom works well, its reliance on the class loading process comes with significant drawbacks. First, instance fields cannot be modeled, only static fields. Second, each constant whose computation needs to be deferred generally requires its own holder class, thus introducing a significant static footprint cost. Third, this idiom is only really applicable if the field initialization is suitably isolated, not relying on any other parts of the object state.
 
-### At-most-once as a first class concept
+| Storage kind   | #Updates | Code update location              | Constant folding  | Concurrent updates       |
+| -------------- | -------- | --------------------------------- | ----------------- | ------------------------ |
+| non-`final`    | [0, ∞)   | Anywhere                          | no                | yes                      |
+| `final`        | 1[^1]    | Constructor or static initializer | yes               | no[^1]                   |
+| "at-most-once" | [0, 1]   | Anywhere                          | yes, after update | yes, but only one "wins" |
+[^1] See [JLS 17.5](https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.5)
 
-What we are missing -- in all cases -- is a way to *promise* that a variable will be initialized by the time it is used, with a value that is computed at most once, and *safely* across multiple threads. Such a mechanism would give the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties that plague the workarounds shown above. Moreover, such a mechanism should gracefully scale to handle *collections* of "at-most-once" variables, while retaining efficient computer resource management:
-
-| Storage kind    | #Updates | Code update location              | Constant folding  | Concurrent updates      |
-|-----------------|----------|-----------------------------------|-------------------|-------------------------|
-| non-`final`     | [0, ∞)   | Anywhere                          | no                | yes                     |
-| `final`         | 1        | Constructor or static initializer | yes               | no [1]                  |
-| "at-most-once"  | [0, 1]   | Anywhere                          | yes, after update | yes, but only one "win" |
-
-[1] Thread-safe initialization of instance and `static final` fields is covered in JLS 17.5.
-
-_Table 1, showing properties of mutable, immutable, and at-most-once (currently not available) fields._
-
+_Table 1: properties of mutable, immutable, and at-most-once variables_
 
 ## Description
 
