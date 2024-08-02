@@ -25,12 +25,9 @@
  * @test
  * @summary javaagent + tracePinnedThreads will cause jvm crash/ run into deadlock when the virtual thread is pinned
  * @library /test/lib
- * @requires os.family == "linux"
- * @requires os.arch != "riscv64"
+ * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @build TestPinCaseWithCFLH
- * @run driver jdk.test.lib.util.JavaAgentBuilder
- *      TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
  * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
 import java.lang.instrument.ClassFileTransformer;
