@@ -1032,7 +1032,7 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
     // The hidden class loader data has been artificially been kept alive to
     // this point. The mirror and any instances of this class have to keep
     // it alive afterwards.
-    ik->class_loader_data()->dec_keep_alive();
+    ik->class_loader_data()->dec_keep_alive_ref_count();
 
     if (is_nestmate && log_is_enabled(Debug, class, nestmates)) {
       ModuleEntry* module = ik->module();
