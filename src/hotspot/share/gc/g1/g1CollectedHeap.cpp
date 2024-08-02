@@ -2336,16 +2336,6 @@ void G1CollectedHeap::start_new_collection_set() {
   _cm->verify_no_collection_set_oops();
 }
 
-G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
-  if (collector_state()->in_concurrent_start_gc()) {
-    return G1HeapVerifier::G1VerifyConcurrentStart;
-  } else if (collector_state()->in_young_only_phase()) {
-    return G1HeapVerifier::G1VerifyYoungNormal;
-  } else {
-    return G1HeapVerifier::G1VerifyMixed;
-  }
-}
-
 void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyType type) {
   if (!VerifyBeforeGC) {
     return;
