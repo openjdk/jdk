@@ -362,12 +362,15 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
             if (armed | selected) {
                 //Paint the check
+                AffineTransform af = g2.getTransform();
+                double scaleX = af.getScaleX();
+                double scaleY = af.getScaleY();
 
                 // FIXME: is this the right color?
                 g2.setColor(getPeerForeground());
 
-                AffineTransform af = g2.getTransform();
-                g2.setTransform(AffineTransform.getTranslateInstance(rx,ry));
+                g2.setTransform(AffineTransform.getTranslateInstance(rx * scaleX, ry * scaleY));
+                g2.scale(scaleX, scaleY);
                 g2.fill(myCheckMark);
                 g2.setTransform(af);
             }
