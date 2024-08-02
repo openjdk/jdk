@@ -371,6 +371,10 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         return kdfOutput;
     }
 
+    protected KDFParameters engineGetKDFParameters() {
+        return null;
+    }
+
     public static final class HkdfSHA256 extends HkdfKeyDerivation {
         public HkdfSHA256(KDFParameters kdfParameters)
             throws InvalidAlgorithmParameterException {
