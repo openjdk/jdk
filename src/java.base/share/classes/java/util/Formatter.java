@@ -3021,7 +3021,7 @@ public final class Formatter implements Closeable, Flushable {
         String toString();
     }
 
-    private static record FixedString(String s, int start, int end) implements FormatString {
+    private record FixedString(String s, int start, int end) implements FormatString {
         public int index() { return -2; }
         public void print(Formatter fmt, Object arg, Locale l)
             throws IOException { fmt.a.append(s, start, end); }
