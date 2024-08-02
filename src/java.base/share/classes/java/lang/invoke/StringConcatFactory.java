@@ -378,8 +378,9 @@ public final class StringConcatFactory {
 
             if (mh == null) {
                 mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
+            } else {
+                mh = mh.viewAsType(concatType, true);
             }
-            mh = mh.viewAsType(concatType, true);
 
             return new ConstantCallSite(mh);
         } catch (Error e) {
@@ -1092,7 +1093,6 @@ public final class StringConcatFactory {
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
             String className = getClassName(String.class);
-            MethodType erasedArgs = args.erase().changeReturnType(String.class);
 
             byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
                     new Consumer<ClassBuilder>() {
@@ -1100,14 +1100,14 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
                                 .withMethodBody(METHOD_NAME,
-                                        ConstantUtils.methodTypeDesc(erasedArgs),
+                                        ConstantUtils.methodTypeDesc(args),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateMethod(constants, erasedArgs));
+                                        generateMethod(constants, args));
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                         .defineClass(true, null);
-                return lookup.findStatic(hiddenClass, METHOD_NAME, erasedArgs);
+                return lookup.findStatic(hiddenClass, METHOD_NAME, args);
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
@@ -1177,44 +1177,54 @@ public final class StringConcatFactory {
                         TypeKind kind = TypeKind.from(cl);
                         paramSlots[i] = paramSlotsTotalSize;
                         paramSlotsTotalSize += kind.slotSize();
-
-                        /*
-                         * Stringify by storing String variants in
-                         * repurposed argument slots:
-                         *
-                         * arg0 = Float.toString(args0);
-                         * arg1 = Double.toString(arg1);
-                         * ...
-                         * argN = StringConcatHelper.stringOf(argN);
-                         *
-                         *
-                         */
-                        if (needStringOf(cl)) {
-                            ClassDesc classDesc;
-                            MethodTypeDesc methodTypeDesc;
-                            String methodName;
-                            if (cl == float.class) {
-                                classDesc = CD_Float;
-                                methodName = "toString";
-                                methodTypeDesc = FLOAT_TO_STRING;
-                            } else if (cl == double.class) {
-                                classDesc = CD_Double;
-                                methodName = "toString";
-                                methodTypeDesc = DOUBLE_TO_STRING;
-                            } else {
-                                classDesc = CD_StringConcatHelper;
-                                methodName = "stringOf";
-                                methodTypeDesc = OBJECT_TO_STRING;
-                            }
-
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(classDesc, methodName, methodTypeDesc)
-                              .astore(paramSlots[i]);
-                        }
                     }
 
                     int lengthCoderSlot = paramSlotsTotalSize;
-                    int bufSlot         = paramSlotsTotalSize + 2;
+                    int bufSlot         = paramSlotsTotalSize + TypeKind.from(long.class).slotSize();
+
+                    /*
+                     * store string variants:
+                     *
+                     * str0 = Float.toString(args(0));
+                     * str1 = Double.toString(args(1));
+                     * ...
+                     * strN = StringConcatHelper.stringOf(args(N));
+                     *
+                     */
+                    for (int i = 0, strings = 0; i < paramCount; i++) {
+                        Class<?> cl = args.parameterType(i);
+                        if (!needStringOf(cl)) {
+                            continue;
+                        }
+
+                        ClassDesc classDesc;
+                        MethodTypeDesc methodTypeDesc;
+                        String methodName;
+                        if (cl == float.class) {
+                            classDesc = CD_Float;
+                            methodName = "toString";
+                            methodTypeDesc = FLOAT_TO_STRING;
+                        } else if (cl == double.class) {
+                            classDesc = CD_Double;
+                            methodName = "toString";
+                            methodTypeDesc = DOUBLE_TO_STRING;
+                        } else {
+                            classDesc = CD_StringConcatHelper;
+                            methodName = "stringOf";
+                            methodTypeDesc = OBJECT_TO_STRING;
+                        }
+
+                        // Types other than byte/short/int/long/boolean/String require a local variable to store
+                        int strLocalSlot = (cl == String.class)
+                                ? paramSlots[i]
+                                : bufSlot + (++strings);
+                        cb.loadLocal(TypeKind.from(cl), paramSlots[i])
+                          .invokestatic(classDesc, methodName, methodTypeDesc)
+                          .astore(strLocalSlot);
+                        if (cl != String.class) {
+                            paramSlots[i] = strLocalSlot;
+                        }
+                    }
 
                     /*
                      * Store init index :
