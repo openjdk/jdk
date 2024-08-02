@@ -28,7 +28,11 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
  * @build TestPinCaseWithCFLH
- * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1 -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
+* @run driver jdk.test.lib.util.JavaAgentBuilder
+ *      TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
+ * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1
+ *       -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED
+ *       -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
@@ -39,7 +43,9 @@ import jdk.test.lib.thread.VThreadPinner;
 public class TestPinCaseWithCFLH {
 
     public static class TestClassFileTransformer implements ClassFileTransformer {
-        public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws IllegalClassFormatException {
+        public byte[] transform(ClassLoader loader, String className, Class<?> classBeingRedefined,
+                                ProtectionDomain protectionDomain, byte[] classfileBuffer)
+                                throws IllegalClassFormatException {
             return classfileBuffer;
         }
     }
@@ -55,7 +61,10 @@ public class TestPinCaseWithCFLH {
         Thread t1 = Thread.ofVirtual().name("vthread-1").start(() -> {
             VThreadPinner.runPinned(() -> {
                 try {
-                    Thread.sleep(500); // try yield, will pin, javaagent + tracePinnedThreads should not lead to crash (because of the class `PinnedThreadPrinter`)
+                    // try yield, will pin, 
+                    // javaagent + tracePinnedThreads should not lead to crash 
+                    // (because of the class `PinnedThreadPrinter`)
+                    Thread.sleep(500);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
