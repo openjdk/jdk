@@ -36,14 +36,10 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
-import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.FieldBuilder;
-import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
-import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -1076,6 +1072,7 @@ public final class StringConcatFactory {
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_StringConcatBase = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
         static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
         static final MethodTypeDesc ARRAY_STRING_TO_VOID = MethodTypeDesc.of(CD_void, CD_Array_String);
@@ -1086,9 +1083,7 @@ public final class StringConcatFactory {
         static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_long);
         static final MethodTypeDesc NEW_STRING       = MethodTypeDesc.of(CD_String, CD_Array_byte, CD_long);
 
-        static final MethodTypeDesc MTD_Object  = MethodTypeDesc.of(CD_Object);
         static final MethodTypeDesc MTD_int     = MethodTypeDesc.of(CD_int);
-        static final MethodTypeDesc MTD_byte    = MethodTypeDesc.of(CD_byte);
 
         static final MethodTypeDesc MIX_int     = MethodTypeDesc.of(CD_long, CD_long, CD_int);
         static final MethodTypeDesc MIX_long    = MethodTypeDesc.of(CD_long, CD_long, CD_long);
@@ -1102,13 +1097,15 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
 
-        public static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
-                Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/Stable;")));
-
-        private static final Consumer<FieldBuilder> FINAL_STABLE_FIELD = new Consumer<FieldBuilder>() {
-            public void accept(FieldBuilder fb) {
-                fb.withFlags(ClassFile.ACC_FINAL)
-                        .with(STABLE_ANNOTATION);
+        private static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
+            @Override
+            public void accept(CodeBuilder cb) {
+                int thisSlot = cb.receiverSlot();
+                int constantsSlot = cb.parameterSlot(0);
+                cb.aload(thisSlot);
+                cb.aload(constantsSlot);
+                cb.invokespecial(CD_StringConcatBase, INIT_NAME, ARRAY_STRING_TO_VOID, false);
+                cb.return_();
             }
         };
 
@@ -1158,14 +1155,12 @@ public final class StringConcatFactory {
                     new Consumer<ClassBuilder>() {
                         @Override
                         public void accept(ClassBuilder clb) {
-                            clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
-                                .withField(LENGTH, CD_int, FINAL_STABLE_FIELD)
-                                .withField(CODER, CD_byte, FINAL_STABLE_FIELD)
-                                .withField(CONSTANTS, CD_Array_String, FINAL_STABLE_FIELD)
+                            clb.withSuperclass(CD_StringConcatBase)
+                                .withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
                                 .withMethodBody("<init>",
                                         ARRAY_STRING_TO_VOID,
                                         ClassFile.ACC_PRIVATE,
-                                        generateConstructor(concatClass, constants.length)
+                                        CONSTRUCTOR_BUILDER
                                 )
                                 .withMethodBody(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(concatArgs),
@@ -1184,55 +1179,6 @@ public final class StringConcatFactory {
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
-        }
-
-        private static Consumer<CodeBuilder> generateConstructor(ClassDesc concatClass, int numConstants) {
-            return new Consumer<CodeBuilder>() {
-                @Override
-                public void accept(CodeBuilder cb) {
-                    cb.aload(0);
-                    cb.invokespecial(CD_Object, INIT_NAME, MTD_void, false);
-                    cb.aload(0);
-                    cb.aload(1);
-                    cb.putfield(concatClass, CONSTANTS, CD_Array_String);
-                    cb.iconst_0();
-                    cb.istore(2);
-                    cb.iconst_0();
-                    cb.istore(3);
-                    cb.iconst_0();
-                    cb.istore(4);
-                    Label loopStart = cb.newLabel();
-                    Label loopEnd = cb.newLabel();
-                    {
-                        cb.labelBinding(loopStart);
-                        cb.iload(4);
-                        cb.ldc(numConstants);
-                        cb.if_icmpge(loopEnd);
-                        cb.aload(1);
-                        cb.iload(4);
-                        cb.aaload();
-                        cb.dup();
-                        cb.invokevirtual(CD_String, LENGTH, MTD_int);
-                        cb.iload(2);
-                        cb.iadd();
-                        cb.istore(2);
-                        cb.invokevirtual(CD_String, CODER, MTD_byte);
-                        cb.iload(3);
-                        cb.ior();
-                        cb.istore(3);
-                        cb.iinc(4, 1);
-                        cb.goto_(loopStart);
-                    }
-                    cb.labelBinding(loopEnd);
-                    cb.aload(0);
-                    cb.iload(2);
-                    cb.putfield(concatClass, LENGTH, CD_int);
-                    cb.aload(0);
-                    cb.iload(3);
-                    cb.putfield(concatClass, CODER, CD_byte);
-                    cb.return_();
-                }
-            };
         }
 
         /**
