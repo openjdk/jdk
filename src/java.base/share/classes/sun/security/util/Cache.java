@@ -31,7 +31,6 @@ import java.lang.ref.SoftReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Abstract base class and factory for caches. A cache is a key-value mapping.
@@ -275,9 +274,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
     final private int maxQueueSize;
     private long lifetime;
     private long nextExpirationTime = Long.MAX_VALUE;
-    // Locking is to protect QueueCacheEntry's from being removed from the
-    // cacheMap while another thread is adding new queue entries.
-    private ReentrantLock lock;
 
     // ReferenceQueue is of type V instead of Cache<K,V>
     // to allow SoftCacheEntry to extend SoftReference<V>
@@ -303,9 +299,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
         // LinkedHashMap is needed for its access order.  0.75f load factor is
         // default.
         cacheMap = new LinkedHashMap<>(1, 0.75f, true);
-        if (qSize > 0) {
-            lock = new ReentrantLock();
-        }
     }
 
     /**
@@ -438,9 +431,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
             CacheEntry<K, V> entry = cacheMap.get(key);
             switch (entry) {
                 case QueueCacheEntry<K, V> qe -> {
-                    lock.lock();
                     qe.putValue(newEntry);
-                    lock.unlock();
                     if (DEBUG) {
                         System.out.println("QueueCacheEntry= " + qe);
                         final AtomicInteger i = new AtomicInteger(1);
@@ -474,37 +465,27 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
-    public V get(Object key) {
+    synchronized public V get(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.get(key);
         if (entry == null) {
             return null;
         }
-        if (maxQueueSize > 0) {
-            lock.lock();
-        }
-        try {
-            if (lifetime > 0 && !entry.isValid(System.currentTimeMillis())) {
-                removeImpl(key);
-                if (DEBUG) {
-                    System.out.println("Ignoring expired entry: ");
-                }
-                return null;
+
+        if (lifetime > 0 && !entry.isValid(System.currentTimeMillis())) {
+            removeImpl(key);
+            if (DEBUG) {
+                System.out.println("Ignoring expired entry: ");
             }
-        } finally {
-            if (maxQueueSize > 0) {
-                lock.unlock();
-            }
+            return null;
         }
 
         // If the value is a queue, return a queue entry.
         if (entry instanceof QueueCacheEntry<K, V> qe) {
             V result = qe.getValue(lifetime);
-            lock.lock();
             if (qe.isEmpty()) {
                 removeImpl(key);
             }
-            lock.unlock();
             return result;
         }
         return entry.getValue();
@@ -515,7 +496,6 @@ class MemoryCache<K,V> extends Cache<K,V> {
         removeImpl(key);
     }
 
-    // removeImpl is thread-safe entry removal from the cacheMap.
     private synchronized void removeImpl(Object key) {
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry != null) {
