@@ -247,8 +247,8 @@ int ExternalsRecorder::find_index(address adr) {
   MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
   int index = _recorder->_externals.find_index(adr);
 #ifndef PRODUCT
-  total_access_count++;
   if (PrintNMethodStatistics) {
+    total_access_count++;
     int n = extern_hist->at_grow(index, 0);
     extern_hist->at_put(index, (n + 1));
   }
@@ -283,8 +283,7 @@ extern "C" {
 void ExternalsRecorder::print_statistics() {
   int cnt = count();
   tty->print_cr("External addresses table: %d entries, %d accesses", cnt, total_access_count);
-  if (PrintNMethodStatistics) {
-    // Order entries by access count
+  { // Print most accessed entries in the table.
     int* array = NEW_C_HEAP_ARRAY(int, (2 * cnt), mtCode);
     for (int i = 0; i < cnt; i++) {
       array[(2 * i) + 0] = extern_hist->at(i);
