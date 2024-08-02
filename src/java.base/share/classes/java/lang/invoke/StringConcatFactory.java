@@ -1194,9 +1194,6 @@ public final class StringConcatFactory {
                     cb.invokespecial(CD_Object, INIT_NAME, MTD_void, false);
                     cb.aload(0);
                     cb.aload(1);
-                    // Defensive clone here might be overkill
-                    cb.invokevirtual(CD_Array_String, "clone", MTD_Object);
-                    cb.checkcast(CD_Array_String);
                     cb.putfield(concatClass, CONSTANTS, CD_Array_String);
                     cb.iconst_0();
                     cb.istore(2);
