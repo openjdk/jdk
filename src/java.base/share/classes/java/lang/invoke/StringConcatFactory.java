@@ -1192,9 +1192,17 @@ public final class StringConcatFactory {
          * import static java.lang.StringConcatHelper.newString;
          * import static java.lang.StringConcatHelper.newArray;
          *
-         * public static String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4, float arg5, double arg6, Object arg7) {
-         *     String constant0, constant1, ..., constant8;
-         *     int lengthCoder = ...;
+         * class StringConcat extends java.lang.StringConcatHelper.StringConcatBase {
+         *   // super class defines
+         *   // String[] constants;
+         *   // int length;
+         *   // byte coder;
+         *
+         *   StringConcat(String[] constants) {
+         *       super(constants);
+         *   }
+         *   String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4, float arg5, double arg6, Object arg7) {
+         *     long lengthCoder = this.length + (this.coder << 32L);
          *
          *     // String arg
          *     arg4 = stringOf(arg4);
@@ -1205,20 +1213,20 @@ public final class StringConcatFactory {
          *     String str7 = stringOf(arg7);
          *
          *     lengthCoder = mix(mix(mix(mix(
-         *                   mix(mix(mix(mix(engthCoder,
+         *                   mix(mix(mix(mix(lengthCoder,
          *                       str7), str6), str5), arg4),
          *                       arg3), arg2), arg1), arg0);
          *
-         *     String suffix = constant9;
+         *     String suffix = constant[8];
          *     lengthCoder -= suffix.length();
          *     byte[] buf = newArray(suffix, lengthCoder);
          *
          *     lengthCoder = prepend(prepend(prepend(prepend(
          *                   prepend(prepend(prepend(prepend(lengthCoder,
-         *                        buf, str7, constant7), buf, str6, constant6),
-         *                        buf, str5, constant5), buf, arg4, constant4),
-         *                        buf, arg3, constant3), buf, arg2, constant2),
-         *                        buf, arg1, constant1), buf, arg0, constant0);
+         *                        buf, str7, constant[7]), buf, str6, constant[6]),
+         *                        buf, str5, constant[5]), buf, arg4, constant[4]),
+         *                        buf, arg3, constant[3]), buf, arg2, constant[2]),
+         *                        buf, arg1, constant[1]), buf, arg0, constant[0]);
          *
          *     return newArray(buf, lengthCoder);
          * }
