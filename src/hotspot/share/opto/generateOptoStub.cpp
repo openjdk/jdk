@@ -256,12 +256,11 @@ void GraphKit::gen_stub(address C_function,
 
   assert (StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   Node *exc_target = makecon(TypeRawPtr::make( StubRoutines::forward_exception_entry() ));
-  Node *to_exc = new TailCallNode(if_not_null,
-                                  i_o(),
-                                  exit_memory,
-                                  frameptr(),
-                                  returnadr(),
-                                  exc_target, null());
+  Node *to_exc = new ForwardExceptionNode(if_not_null,
+                                          i_o(),
+                                          exit_memory,
+                                          frameptr(),
+                                          returnadr());
   root()->add_req(_gvn.transform(to_exc));  // bind to root to keep live
   C->init_start(start);
 
