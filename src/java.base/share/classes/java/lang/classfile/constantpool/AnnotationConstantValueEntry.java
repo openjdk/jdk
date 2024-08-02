@@ -38,7 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  * An annotation constant value entry alone is not sufficient to determine
  * the annotation constant; for example, an {@link IntegerEntry} of {@code 1}
  * can mean {@code true} in {@link AnnotationValue.OfBoolean} or {@code 1}
- * in {@link AnnotationValue.OfInteger}.
+ * in {@link AnnotationValue.OfInt}.
  *
  * @see AnnotationValue.OfConstant
  * @sealedGraph

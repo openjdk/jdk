@@ -93,14 +93,14 @@ public sealed interface AnnotationValue {
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface OfConstant
             extends AnnotationValue
-            permits OfString, OfDouble, OfFloat, OfLong, OfInteger, OfShort, OfCharacter, OfByte,
+            permits OfString, OfDouble, OfFloat, OfLong, OfInt, OfShort, OfChar, OfByte,
                     OfBoolean, AnnotationImpl.OfConstantImpl {
         /**
          * {@return the constant pool entry backing this constant element}
          *
          * @apiNote
          * Different types of constant values may share the same type of entry.
-         * For example, {@link OfInteger} and {@link OfCharacter} are both
+         * For example, {@link OfInt} and {@link OfChar} are both
          * backed by {@link IntegerEntry}. Use {@link #resolvedValue
          * resolvedValue()} for a value of accurate type.
          */
@@ -114,11 +114,11 @@ public sealed interface AnnotationValue {
          * The returned object, which may be {@link Constable}, may not
          * {@linkplain Constable#describeConstable() describe} the right constant
          * pool entry for encoding the annotation value in a class file. For example,
-         * {@link OfCharacter} describes itself as a {@link DynamicConstantPoolEntry},
+         * {@link OfChar} describes itself as a {@link DynamicConstantPoolEntry},
          * but it is actually backed by {@link IntegerEntry} in annotation format.
          * Use {@link #poolEntry poolEntry()} for a correct constant pool representation.
          */
-        Object resolvedValue();
+        Constable resolvedValue();
     }
 
     /**
@@ -240,8 +240,8 @@ public sealed interface AnnotationValue {
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfInteger extends OfConstant
-            permits AnnotationImpl.OfIntegerImpl {
+    sealed interface OfInt extends OfConstant
+            permits AnnotationImpl.OfIntImpl {
         /** {@return the backing integer entry} */
         @Override
         IntegerEntry poolEntry();
@@ -299,8 +299,8 @@ public sealed interface AnnotationValue {
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfCharacter extends OfConstant
-            permits AnnotationImpl.OfCharacterImpl {
+    sealed interface OfChar extends OfConstant
+            permits AnnotationImpl.OfCharImpl {
         /** {@return the backing integer entry} */
         @Override
         IntegerEntry poolEntry();
@@ -533,15 +533,15 @@ public sealed interface AnnotationValue {
      * {@return an annotation element for an int-valued element}
      * @param value the int value
      */
-    static OfInteger ofInt(IntegerEntry value) {
-        return new AnnotationImpl.OfIntegerImpl(value);
+    static OfInt ofInt(IntegerEntry value) {
+        return new AnnotationImpl.OfIntImpl(value);
     }
 
     /**
      * {@return an annotation element for an int-valued element}
      * @param value the int value
      */
-    static OfInteger ofInt(int value) {
+    static OfInt ofInt(int value) {
         return ofInt(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 
@@ -565,15 +565,15 @@ public sealed interface AnnotationValue {
      * {@return an annotation element for a char-valued element}
      * @param value the char value
      */
-    static OfCharacter ofChar(IntegerEntry value) {
-        return new AnnotationImpl.OfCharacterImpl(value);
+    static OfChar ofChar(IntegerEntry value) {
+        return new AnnotationImpl.OfCharImpl(value);
     }
 
     /**
      * {@return an annotation element for a char-valued element}
      * @param value the char value
      */
-    static OfCharacter ofChar(char value) {
+    static OfChar ofChar(char value) {
         return ofChar(TemporaryConstantPool.INSTANCE.intEntry(value));
     }
 

@@ -511,9 +511,9 @@ public final class ClassPrinterImpl {
             case OfDouble cv -> leafs("double", String.valueOf(cv.doubleValue()));
             case OfFloat cv -> leafs("float", String.valueOf(cv.floatValue()));
             case OfLong cv -> leafs("long", String.valueOf(cv.longValue()));
-            case OfInteger cv -> leafs("int", String.valueOf(cv.intValue()));
+            case OfInt cv -> leafs("int", String.valueOf(cv.intValue()));
             case OfShort cv -> leafs("short", String.valueOf(cv.shortValue()));
-            case OfCharacter cv -> leafs("char", String.valueOf(cv.charValue()));
+            case OfChar cv -> leafs("char", String.valueOf(cv.charValue()));
             case OfByte cv -> leafs("byte", String.valueOf(cv.byteValue()));
             case OfBoolean cv -> leafs("boolean", String.valueOf(cv.booleanValue()));
             case OfClass clv -> leafs("class", clv.className().stringValue());

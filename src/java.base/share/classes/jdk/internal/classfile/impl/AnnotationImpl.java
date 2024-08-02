@@ -145,8 +145,8 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
     }
 
-    public record OfIntegerImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl, AnnotationValue.OfInteger {
+    public record OfIntImpl(IntegerEntry poolEntry)
+            implements OfConstantImpl, AnnotationValue.OfInt {
 
         @Override
         public char tag() {
@@ -173,8 +173,8 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
     }
 
-    public record OfCharacterImpl(IntegerEntry poolEntry)
-            implements OfConstantImpl, AnnotationValue.OfCharacter {
+    public record OfCharImpl(IntegerEntry poolEntry)
+            implements OfConstantImpl, AnnotationValue.OfChar {
 
         @Override
         public char tag() {
