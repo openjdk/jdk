@@ -8961,7 +8961,8 @@ instruct ForwardExceptionjmp()
 
   format %{ "b    forward_exception_stub" %}
   ins_encode %{
-    __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, scratch);
+    // OK to trash Rtemp, because Rtemp is used by stub
+    __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
   %}
   ins_pipe(tail_call);
 %}
