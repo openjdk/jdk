@@ -1118,8 +1118,18 @@ public final class StringConcatFactory {
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
             lookup = MethodHandles.Lookup.IMPL_LOOKUP;
-            String className = getClassName(String.class);
+            String className = "java.lang.String$$StringConcat";
             MethodType erasedArgs = args.erase().changeReturnType(String.class);
+            for (int i = 0; i < erasedArgs.parameterCount(); i++) {
+                Class<?> cl = erasedArgs.parameterType(i);
+                // Use int as the logical type for subword integral types
+                // (byte and short). char and boolean require special
+                // handling so don't change the logical type of those
+                if (cl == byte.class || cl == short.class) {
+                    erasedArgs = erasedArgs.changeParameterType(i, int.class);
+                }
+            }
+            final MethodType concatArgs = erasedArgs;
             SoftReference<MethodHandlePair> weakConstructorHandle = CACHE.get(erasedArgs);
             if (weakConstructorHandle != null) {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
@@ -1147,9 +1157,9 @@ public final class StringConcatFactory {
                                         generateConstructor(concatClass, constants.length)
                                 )
                                 .withMethodBody(METHOD_NAME,
-                                        ConstantUtils.methodTypeDesc(erasedArgs),
+                                        ConstantUtils.methodTypeDesc(concatArgs),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE,
-                                        generateConcatMethod(concatClass, erasedArgs));
+                                        generateConcatMethod(concatClass, concatArgs));
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
@@ -1157,8 +1167,8 @@ public final class StringConcatFactory {
 
                 MethodHandle constructorHandle = lookup.findConstructor(hiddenClass, MethodType.methodType(void.class, String[].class));
                 var instance = hiddenClass.cast(constructorHandle.invoke(constants));
-                MethodHandle handle = lookup.findVirtual(hiddenClass, METHOD_NAME, erasedArgs);
-                CACHE.put(erasedArgs, new SoftReference<>(new MethodHandlePair(constructorHandle, handle)));
+                MethodHandle handle = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructorHandle, handle)));
                 return handle.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
@@ -1315,6 +1325,7 @@ public final class StringConcatFactory {
 
                     int lengthCoderSlot = nextSlot;
                     int bufSlot         = nextSlot + 2;
+                    int constantsSlot   = nextSlot + 3;
 
                     /*
                      * Store init index :
@@ -1358,6 +1369,8 @@ public final class StringConcatFactory {
                     // lengthCoder = lengthCoder - suffix.length()
                     cb.aload(0)
                       .getfield(concatClass, CONSTANTS, CD_Array_String)
+                      .astore(constantsSlot)
+                      .aload(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
                       .invokevirtual(CD_String, LENGTH, MTD_int)
@@ -1369,8 +1382,7 @@ public final class StringConcatFactory {
                      * Allocate buffer :
                      *  buf = StringConcatHelper.newArray(suffix, lengthCoder)
                      */
-                    cb.aload(0)
-                      .getfield(concatClass, CONSTANTS, CD_Array_String)
+                    cb.aload(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
                       .lload(lengthCoderSlot)
@@ -1402,8 +1414,7 @@ public final class StringConcatFactory {
                         }
                         cb.aload(bufSlot)
                           .loadLocal(kind, paramSlot)
-                          .aload(0)
-                          .getfield(concatClass, CONSTANTS, CD_Array_String)
+                          .aload(constantsSlot)
                           .ldc(i)
                           .aaload()
                           .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
