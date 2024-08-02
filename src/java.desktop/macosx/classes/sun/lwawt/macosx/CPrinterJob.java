@@ -753,16 +753,13 @@ public final class CPrinterJob extends RasterPrinterJob {
         // but that will block the AppKit thread against whomever is holding the synchronized lock
         boolean cancelled = (performingPrinting && userCancelled);
         if (cancelled) {
-            try {
-                LWCToolkit.invokeLater(new Runnable() { public void run() {
-                    try {
+            EventQueue.invokeLater(() -> {
+                try {
                     cancelDoc();
-                    } catch (PrinterAbortException pae) {
-                        // no-op, let the native side handle it
-                    }
-                }}, null);
-            } catch (NullPointerException ex) {
-            } catch (java.lang.reflect.InvocationTargetException ite) {}
+                } catch (PrinterAbortException pae) {
+                    // no-op, let the native side handle it
+                }
+            });
         }
         return cancelled;
     }
