@@ -25,6 +25,13 @@
 
 /**
  * <p>
+ * <b>Deprecated, for removal: This API element is subject to removal
+ * in a future version.</b><br>
+ * <em>Users are advised to ship the jdk.jsobject module
+ * with their application.</em>
+ * </p>
+ *
+ * <p>
  * Provides Java code the ability to access the JavaScript engine and the
  * HTML DOM in the web browser.
  * </p>

@@ -28,7 +28,11 @@
  *
  * @moduleGraph
  * @since 9
+ * @deprecated Users are advised to ship the jdk.jsobject module
+ * with their application.
  */
+@Deprecated(since = "24", forRemoval = true)
+@SuppressWarnings("removal")
 module jdk.jsobject {
     exports netscape.javascript;
 }

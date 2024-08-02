@@ -44,7 +44,11 @@ package netscape.javascript;
  * engine is converted to JavaScript data types.
  * </p>
  * @since 1.5
+ * @deprecated Users are advised to ship the jdk.jsobject module
+ * with their application.
  */
+@Deprecated(since = "24", forRemoval = true)
+@SuppressWarnings("removal")
 public abstract class JSObject {
     /**
      * Constructs a new JSObject. Users should neither call this method nor

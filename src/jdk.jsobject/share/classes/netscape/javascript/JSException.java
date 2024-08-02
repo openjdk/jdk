@@ -30,7 +30,11 @@ package netscape.javascript;
  * a marker class to indicate an exception relating to the JavaScript
  * interface.
  * @since 1.5
+ * @deprecated Users are advised to ship the jdk.jsobject module
+ * with their application.
  */
+@Deprecated(since = "24", forRemoval = true)
+@SuppressWarnings("removal")
 public class JSException extends RuntimeException {
     private static final long serialVersionUID = 2778103758223661489L;
 
