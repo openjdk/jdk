@@ -23,7 +23,9 @@ This might be the subject of a future JEP.
 
 Java allows developers to control whether fields should be mutable or not. Mutable fields can be updated multiple times, and from any arbitrary position in the code and by any thread. As such, mutable fields are often used to model complex objects whose state can be updated several times throughout their lifetimes, such as the contents of a text field in a UI component. Conversely, immutable fields (i.e. `final` fields), must be updated *exactly once*, and only in very specific places: the class initializer (for a static immutable field) or the class constructor(for an instance immutable field). As such, `final` fields are typically used to model values that act as *constants* (albeit shallowly so) throughout the lifetime of a class (in the case of `static` fields) or of an instance (in the case of an instance field).
 
-Most of the time deciding whether an object should feature mutable or immutable state is straightforward enough. There are however cases where a field is subject to *constrained mutation*. That is, field's value are neither constant, nor can they it mutated at will. Consider a program that might want to mutate a password field at most three times before it becomes immutable, in order to reflect the three login attempts allowed for a user; further mutation would result in some exception. Expressing this kind of constrained mutation is hard, and cannot be achieved without the help of advanced type-system [calculi](https://en.wikipedia.org/wiki/Dependent_type). However, one important and simpler case of constrained mutation is that of a field whose updated *at most once*. As we shall see, the lack of a mechanism to capture this specific kind of constrained mutation in the Java platform comes at a considerable cost of performance and expressiveness.
+Most of the time deciding whether an object should feature mutable or immutable state is straightforward enough. However, there are cases where a field is subject to *constrained mutation*. That is, a field's value is neither constant, nor can can be mutated at will. Consider a program that might want to mutate a password field at most three times before it becomes immutable, in order to reflect the three login attempts allowed for a user; further mutation would result in some kind of exception. Expressing this kind of constrained mutation is hard, and cannot be achieved without the help of advanced type-system [calculi](https://en.wikipedia.org/wiki/Dependent_type). 
+
+However, one important and simpler case of constrained mutation is that of a field whose updated *at most once*. As we shall see, the lack of a mechanism to capture this specific kind of constrained mutation in the Java platform comes at a considerable cost of performance and expressiveness.
 
 ### An example: memoization
 
@@ -47,7 +49,7 @@ public class Application {
 
 As the `logger` field is private, the only way for clients to access it is to call the `getLogger` method. This method first tests whether a logger is already available, and if so that logger is returned. Otherwise, it proceeds to the creation of a *new* logger object, which is then stored in the `logger` field. In this way, we guarantee that the logger object is created at most once: the first time the `Application::getLogger` method is invoked.
 
-Unfortunately, the above solution does not work in a multithreaded environment. For instance, updates to the `logger` field made by one thread may  not be immediately visible to other threads. This condition might result in multiple concurrent calls to the `Logger::create` method, thereby violating the "at-most-once" update guarantee.
+Unfortunately, the above solution does not work in a multithreaded environment. For instance, updates to the `logger` field made by one thread may not be immediately visible to other threads. This condition might result in multiple concurrent calls to the `Logger::create` method, thereby violating the "at-most-once" update guarantee.
 
 #### Thread safety with double-checked locking
 
@@ -75,16 +77,16 @@ class Application {
 }
 ```
 
-The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or initialized (its value set to the final logger object). That is, no *dirty reads* are possible.
+The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or the returned Logger is fully initialized (all its fields set properly). That is, no *partial reads* are possible.
 
 #### Problems with double-checked locking
 
 Unfortunately, double-checked locking has several inherent design flaws:
 
 * *brittleness* - the convoluted nature of the code required to write a correct double-checked locking makes it all too easy for developers to make subtle mistakes. A very common one is forgetting to add the `volatile` keyword to the `logger` field.
-* *lack of expressiveness* - even when written correctly, the double-checked idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
+* *lack of expressiveness* - even when written correctly, the double-checked idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that are impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
 * *lack of optimizations* - as the `logger` field is updated at most once, one might expect the JVM to optimize access to this field accordingly, e.g. by [constant-folding](https://en.wikipedia.org/wiki/Constant_folding) access to an already-initialized `logger` field. Unfortunately, since `logger` is just a plan mutable field, the JVM cannot trust the field to never be updated again. As such, access to at-most-once fields, when realized with double-checked locking is not as efficient as it could be.
-* *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to an even more complex solutions using wher at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error prone, and should be avoided at all costs.
+* *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to an even more complex solutions using where at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error-prone, and should be avoided at all costs.
 
 #### Thread safety with class initialization 
 
@@ -114,7 +116,7 @@ What we are missing -- in all cases -- is a way to *promise* that a variable wil
 | `final`         | 1        | Constructor or static initializer | yes               | no [1]                  |
 | "at-most-once"  | [0, 1]   | Anywhere                          | yes, after update | yes, but only one "win" |
 
-[1] Thread-safe initialization of instance and `static final` fields is covered in JLS 17.5 and JLS 5.5 respectively.
+[1] Thread-safe initialization of instance and `static final` fields is covered in JLS 17.5.
 
 _Table 1, showing properties of mutable, immutable, and at-most-once (currently not available) fields._
 
