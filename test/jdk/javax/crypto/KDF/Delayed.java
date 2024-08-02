@@ -133,6 +133,10 @@ public class Delayed {
             throws InvalidAlgorithmParameterException {
             return new byte[0];
         }
+
+        protected KDFParameters engineGetKDFParameters(){
+            return null;
+        }
     }
 
     static class MyKDFParameterSpec implements AlgorithmParameterSpec {}
