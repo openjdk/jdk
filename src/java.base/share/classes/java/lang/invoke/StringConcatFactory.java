@@ -1325,7 +1325,7 @@ public final class StringConcatFactory {
                     cb.aload(0)
                       .getfield(concatClass, CODER, CD_byte)
                       .i2l()
-                      .ldc(32L)
+                      .ldc(32)
                       .lshl()
                       .aload(0)
                       .getfield(concatClass, LENGTH, CD_int)
