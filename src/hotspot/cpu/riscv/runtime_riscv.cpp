@@ -58,7 +58,7 @@ public:
 #define __ masm->
 
 //------------------------------generate_uncommon_trap_blob--------------------
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -122,7 +122,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
     __ lwu(t0, Address(x14, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ mv(t1, Deoptimization::Unpack_uncommon_trap);
     __ beq(t0, t1, L);
-    __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
+    __ stop("OptoRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
     __ bind(L);
   }
 #endif
