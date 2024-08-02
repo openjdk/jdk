@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,20 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 /**
- * Supported DOCTYPE declarations.
+ * An abstraction for the type-safe representation and use of CSS class names.
+ *
+ * @apiNote
+ * Despite the name, implementations of this interface provide values for the HTML
+ * {@code class} attribute, and <strong>not</strong> the HTML {@code style} attribute.
+ * This is to avoid confusion with the widespread use of the word "class" in the Java ecosystem,
+ * and the potential for clashes with methods called {@code setClass} instead of {@code setStyle}.
+ *
+ * @see HtmlTree#addStyle(HtmlStyle)
+ * @see HtmlTree#setStyle(HtmlStyle)
  */
-public enum DocType {
-    HTML5("<!DOCTYPE HTML>");
-
-    public final String text;
-
-    DocType(String text) {
-        this.text = text;
-    }
+public interface HtmlStyle {
+    String cssName();
 }
