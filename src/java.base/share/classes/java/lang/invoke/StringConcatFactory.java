@@ -1105,7 +1105,7 @@ public final class StringConcatFactory {
         public static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
                 Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/Stable;")));
 
-        private static final Consumer<FieldBuilder> STATIC_STABLE_FIELD_BUILDER = new Consumer<FieldBuilder>() {
+        private static final Consumer<FieldBuilder> FINAL_STABLE_FIELD = new Consumer<FieldBuilder>() {
             public void accept(FieldBuilder fb) {
                 fb.withFlags(ClassFile.ACC_FINAL)
                         .with(STABLE_ANNOTATION);
@@ -1159,9 +1159,9 @@ public final class StringConcatFactory {
                         @Override
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
-                                .withField(LENGTH, CD_int, STATIC_STABLE_FIELD_BUILDER)
-                                .withField(CODER, CD_byte, STATIC_STABLE_FIELD_BUILDER)
-                                .withField(CONSTANTS, CD_Array_String, STATIC_STABLE_FIELD_BUILDER)
+                                .withField(LENGTH, CD_int, FINAL_STABLE_FIELD)
+                                .withField(CODER, CD_byte, FINAL_STABLE_FIELD)
+                                .withField(CONSTANTS, CD_Array_String, FINAL_STABLE_FIELD)
                                 .withMethodBody("<init>",
                                         ARRAY_STRING_TO_VOID,
                                         ClassFile.ACC_PRIVATE,
@@ -1285,9 +1285,7 @@ public final class StringConcatFactory {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-
                     int paramCount = args.parameterCount();
-
 
                     // Compute parameter variable slots
                     int   nextSlot = 1;
