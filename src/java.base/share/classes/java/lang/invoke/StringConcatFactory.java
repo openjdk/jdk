@@ -378,9 +378,8 @@ public final class StringConcatFactory {
 
             if (mh == null) {
                 mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
-            } else {
-                mh = mh.viewAsType(concatType, true);
             }
+            mh = mh.viewAsType(concatType, true);
 
             return new ConstantCallSite(mh);
         } catch (Error e) {
@@ -1090,9 +1089,23 @@ public final class StringConcatFactory {
             // no instantiation
         }
 
+        private static MethodType erase(MethodType args) {
+            var bootstrapClassLoader = String.class.getClassLoader();
+            var paramTypes = args.parameterArray();
+            boolean changed = false;
+            for (int i = 0; i < paramTypes.length; ++i) {
+                if (paramTypes[i].getClassLoader() != bootstrapClassLoader) {
+                    paramTypes[i] = Object.class;
+                    changed = true;
+                }
+            }
+            return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
+        }
+
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
-            lookup = MethodHandles.Lookup.IMPL_LOOKUP;
-            String className = getClassName(String.class);
+            lookup         = MethodHandles.Lookup.IMPL_LOOKUP;
+            var erasedArgs = erase(args);
+            var className  = getClassName(String.class);
 
             byte[] classBytes = ClassFile.of().build(ConstantUtils.binaryNameToDesc(className),
                     new Consumer<ClassBuilder>() {
@@ -1100,14 +1113,14 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
                                 .withMethodBody(METHOD_NAME,
-                                        ConstantUtils.methodTypeDesc(args),
+                                        ConstantUtils.methodTypeDesc(erasedArgs),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE | ClassFile.ACC_STATIC,
-                                        generateMethod(constants, args));
+                                        generateMethod(constants, erasedArgs));
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                         .defineClass(true, null);
-                return lookup.findStatic(hiddenClass, METHOD_NAME, args);
+                return lookup.findStatic(hiddenClass, METHOD_NAME, erasedArgs);
             } catch (Exception e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
