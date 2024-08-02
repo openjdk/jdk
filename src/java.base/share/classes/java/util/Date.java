@@ -1012,7 +1012,7 @@ public class Date
      * <li>{@code mm} is the minute within the hour ({@code 00} through
      *     {@code 59}), as two decimal digits.
      * <li>{@code ss} is the second within the minute ({@code 00} through
-     *     {@code 61}, as two decimal digits.
+     *     {@code 61}), as two decimal digits.
      * <li>{@code zzz} is the time zone (and may reflect daylight saving
      *     time). Standard time zone abbreviations include those
      *     recognized by the method {@code parse}. If time zone
