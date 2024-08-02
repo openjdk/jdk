@@ -515,9 +515,9 @@ java/lang/management/MemoryMXBean/Pending.java                  8158837 generic-
 java/lang/management/MemoryMXBean/PendingAllGC.sh               8158837 generic-all
 java/lang/management/ThreadMXBean/ThreadMXBeanStateTest.java    8247426 generic-all
 
-sun/management/jdp/JdpDefaultsTest.java                         8241865,8308807 linux-aarch64,macosx-all,aix-ppc64
-sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8241865,8308807 macosx-all,aix-ppc64
-sun/management/jdp/JdpSpecificAddressTest.java                  8241865,8308807 macosx-all,aix-ppc64
+sun/management/jdp/JdpDefaultsTest.java                         8308807 aix-ppc64
+sun/management/jdp/JdpJmxRemoteDynamicPortTest.java             8308807 aix-ppc64
+sun/management/jdp/JdpSpecificAddressTest.java                  8308807 aix-ppc64
 sun/management/jdp/JdpOffTest.java                              8308807 aix-ppc64
 
 ############################################################################
@@ -606,7 +606,6 @@ sun/security/smartcardio/TestExclusive.java                     8039280 generic-
 sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-all
 sun/security/smartcardio/TestPresent.java                       8039280 generic-all
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
-com/sun/crypto/provider/Cipher/DES/PerformanceTest.java         8039280 generic-all
 com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic-all
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
@@ -614,7 +613,7 @@ com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
 
-sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183,8333317 generic-all
+sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
 ############################################################################
 

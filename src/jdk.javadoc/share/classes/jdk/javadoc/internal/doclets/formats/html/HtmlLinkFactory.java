@@ -43,17 +43,18 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A factory that returns a link given the information about it.
@@ -377,14 +378,14 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(TagName.WBR));
+                links.add(new HtmlTree(HtmlTag.WBR));
             }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(new HtmlTree(TagName.WBR));
+                    links.add(new HtmlTree(HtmlTag.WBR));
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }

@@ -395,7 +395,14 @@ const class TypePtr *MachNode::adr_type() const {
     // 32-bit unscaled narrow oop can be the base of any address expression
     t = t->make_ptr();
   }
-  if (t->isa_intptr_t() && offset != 0 && offset != Type::OffsetBot) {
+
+  if (t->isa_intptr_t() &&
+#if !defined(AARCH64)
+      // AArch64 supports the addressing mode:
+      // [base, 0], in which [base] is converted from a long value
+      offset != 0 &&
+#endif
+      offset != Type::OffsetBot) {
     // We cannot assert that the offset does not look oop-ish here.
     // Depending on the heap layout the cardmark base could land
     // inside some oopish region.  It definitely does for Win2K.

@@ -76,7 +76,7 @@ public sealed interface ClassSignature
                                     Signature.ClassTypeSig superclassSignature,
                                     Signature.ClassTypeSig... superinterfaceSignatures) {
         return new SignaturesImpl.ClassSignatureImpl(
-                requireNonNull(typeParameters),
+                List.copyOf(requireNonNull(typeParameters)),
                 requireNonNull(superclassSignature),
                 List.of(superinterfaceSignatures));
     }
