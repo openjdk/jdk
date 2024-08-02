@@ -36,17 +36,18 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -1101,6 +1102,16 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
 
+        public static final RuntimeVisibleAnnotationsAttribute STABLE_ANNOTATION = RuntimeVisibleAnnotationsAttribute.of(
+                Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/Stable;")));
+
+        private static final Consumer<FieldBuilder> STATIC_STABLE_FIELD_BUILDER = new Consumer<FieldBuilder>() {
+            public void accept(FieldBuilder fb) {
+                fb.withFlags(ClassFile.ACC_FINAL)
+                        .with(STABLE_ANNOTATION);
+            }
+        };
+
         static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
                 ReferencedKeyMap.create(true, true,
                         new Supplier<>() {
@@ -1148,9 +1159,9 @@ public final class StringConcatFactory {
                         @Override
                         public void accept(ClassBuilder clb) {
                             clb.withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
-                                .withField(LENGTH, CD_int, ClassFile.ACC_FINAL)
-                                .withField(CODER, CD_byte, ClassFile.ACC_FINAL)
-                                .withField(CONSTANTS, CD_Array_String, ClassFile.ACC_FINAL)
+                                .withField(LENGTH, CD_int, STATIC_STABLE_FIELD_BUILDER)
+                                .withField(CODER, CD_byte, STATIC_STABLE_FIELD_BUILDER)
+                                .withField(CONSTANTS, CD_Array_String, STATIC_STABLE_FIELD_BUILDER)
                                 .withMethodBody("<init>",
                                         ARRAY_STRING_TO_VOID,
                                         ClassFile.ACC_PRIVATE,
