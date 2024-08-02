@@ -448,9 +448,10 @@ public final class KDF {
      *     the object describing the inputs to the derivation function
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters or {@code null}
-     *     in cases where an exception is not thrown but a value cannot be
-     *     returned
+     *     KDF output and according to the derivation parameters. Rather than
+     *     permitting a {@code null} return value here, implementations will
+     *     handle cases where a value cannot be returned by throwing an
+     *     appropriate {@code Exception}.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is
@@ -486,9 +487,10 @@ public final class KDF {
      *     the object describing the inputs to the derivation function
      *
      * @return a byte array corresponding to a key built from the
-     *     KDF output and according to the derivation parameters or {@code null}
-     *     in cases where an exception is not thrown but a value cannot be
-     *     returned
+     *     KDF output and according to the derivation parameters. Rather than
+     *     permitting a {@code null} return value here, implementations will
+     *     handle cases where a value cannot be returned by throwing an
+     *     appropriate {@code Exception}.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is

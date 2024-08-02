@@ -216,9 +216,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the salt
-         * but the actual value of the salt is not yet available.
-         * <p>
          * An implementation should concatenate the salt into a single value
          * once all components are available.
          *
@@ -247,10 +244,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
          * <p>
-         * This supports the use-case where a label can be applied to the salt
-         * but the actual value of the salt is not yet available. An
-         * implementation should concatenate the salt into a single value once
-         * all components are available.
+         * An implementation should concatenate the salt into a single value
+         * once all components are available.
          *
          * @param salt
          *     the salt value

@@ -84,9 +84,10 @@ public abstract class KDFSpi {
      *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters or {@code null}
-     *     in cases where an exception is not thrown but a value cannot be
-     *     returned
+     *     KDF output and according to the derivation parameters.
+     *     Implementations must not return a {@code null} value here. Instead,
+     *     they must throw an appropriate {@code Exception} if a value cannot
+     *     be returned.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is
@@ -109,9 +110,10 @@ public abstract class KDFSpi {
      *     derivation parameters
      *
      * @return a byte array corresponding to a key built from the
-     *     KDF output and according to the derivation parameters or {@code null}
-     *     in cases where an exception is not thrown but a value cannot be
-     *     returned
+     *     KDF output and according to the derivation parameters.
+     *     Implementations must not return a {@code null} value here. Instead,
+     *     they must throw an appropriate {@code Exception} if a value cannot
+     *     be returned.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code kdfParameterSpec} is
