@@ -1266,14 +1266,15 @@ public final class StringConcatFactory {
 
                     int paramCount = args.parameterCount();
 
-                    // Compute parameter and local string variable slots
-                    int   paramSlotsTotalSize = 1;
+
+                    // Compute parameter variable slots
+                    int   nextSlot = 1;
                     int[] paramSlots          = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         Class<?> cl = args.parameterType(i);
                         TypeKind kind = TypeKind.from(cl);
-                        paramSlots[i] = paramSlotsTotalSize;
-                        paramSlotsTotalSize += kind.slotSize();
+                        paramSlots[i] = nextSlot;
+                        nextSlot += kind.slotSize();
 
                         /*
                          * Stringify by storing String variants in
@@ -1310,8 +1311,9 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    int lengthCoderSlot = paramSlotsTotalSize;
-                    int bufSlot         = paramSlotsTotalSize + 2;
+
+                    int lengthCoderSlot = nextSlot;
+                    int bufSlot         = nextSlot + 2;
 
                     /*
                      * Store init index :
@@ -1322,9 +1324,8 @@ public final class StringConcatFactory {
                      */
                     cb.aload(0)
                       .getfield(concatClass, CODER, CD_byte)
-                      .istore(lengthCoderSlot)
-                      .lload(lengthCoderSlot)
-                      .ldc(32)
+                      .i2l()
+                      .ldc(32L)
                       .lshl()
                       .aload(0)
                       .getfield(concatClass, LENGTH, CD_int)
