@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,31 +23,28 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.taglets;
-
-import java.util.EnumSet;
-
-import javax.lang.model.element.Element;
-
-import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.SummaryTree;
-
-import jdk.javadoc.doclet.Taglet.Location;
-import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.html.Content;
+package jdk.javadoc.internal.html;
 
 /**
- * A taglet that represents the {@code {@summary}} tag.
+ * A type-safe wrapper around a {@code String}, for use as an "id"
+ * in {@code HtmlTree} objects.
+ *
+ * @see HtmlTree#setId(HtmlId)
  */
-public class SummaryTaglet extends BaseTaglet {
-
-    SummaryTaglet(HtmlConfiguration config) {
-        super(config, DocTree.Kind.SUMMARY, true, EnumSet.allOf(Location.class));
+public interface HtmlId {
+    /**
+     * Creates an id with the given name.
+     *
+     * @param name the name
+     * @return the id
+     */
+    static HtmlId of(String name) {
+        assert name.indexOf(' ') == -1;
+        return () -> name;
     }
 
-    @Override
-    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter tagletWriter) {
-        return tagletWriter.commentTagsToOutput(holder, tag, ((SummaryTree)tag).getSummary(),
-                tagletWriter.context.isFirstSentence);
-    }
+    /**
+     * {@return the name of the id}
+     */
+    String name();
 }
