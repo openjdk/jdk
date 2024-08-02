@@ -100,6 +100,7 @@ When fully realized, first-class support for "at-most-once" sematics would fill 
 | non-`final`    | [0, ∞)   | Anywhere                          | no                | yes                      |
 | `final`        | 1[^1]    | Constructor or static initializer | yes               | no[^1]                   |
 | "at-most-once" | [0, 1]   | Anywhere                          | yes, after update | yes, but only one "wins" |
+
 [^1] See [JLS 17.5](https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.5)
 
 _Table 1: properties of mutable, immutable, and at-most-once variables_
