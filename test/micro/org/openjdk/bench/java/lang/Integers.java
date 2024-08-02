@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,27 @@ public class Integers {
     public void toStringBig(Blackhole bh) {
         for (int i : intsBig) {
             bh.consume(Integer.toString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringTiny(Blackhole bh) {
+        for (int i : intsTiny) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringSmall(Blackhole bh) {
+        for (int i : intsSmall) {
+            bh.consume(Integer.toHexString(i));
+        }
+    }
+
+    @Benchmark
+    public void toHexStringBig(Blackhole bh) {
+        for (int i : intsBig) {
+            bh.consume(Integer.toHexString(i));
         }
     }
 
