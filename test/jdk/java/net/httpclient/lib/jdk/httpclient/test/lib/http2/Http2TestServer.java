@@ -62,6 +62,8 @@ public class Http2TestServer implements AutoCloseable {
     final Set<Http2TestServerConnection> connections;
     final Properties properties;
     final String name;
+    // request approver which takes the server connection instance and the incoming request path
+    // as inputs
     private volatile BiPredicate<Http2TestServerConnection, String> newRequestApprover;
 
     private static ThreadFactory defaultThreadFac =
