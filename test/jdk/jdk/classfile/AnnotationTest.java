@@ -100,7 +100,7 @@ class AnnotationTest {
                         return fail();
                     assertEquals(c.resolvedValue(),
                                  constants.get(evp.name().stringValue()).getKey());
-                    assertEquals(c.poolEntry().constantValue(),
+                    assertEquals(c.constant().constantValue(),
                                  constants.get(evp.name().stringValue()).getValue());
                     break;
                 case "cl":
@@ -119,7 +119,7 @@ class AnnotationTest {
                     if (!(evp.value() instanceof AnnotationValue.OfArray arr))
                         return fail();
                     List<AnnotationValue> values = arr.values();
-                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).poolEntry().constantValue()).collect(toSet()),
+                    assertEquals(values.stream().map(v -> ((AnnotationValue.OfConstant) v).constant().constantValue()).collect(toSet()),
                                  Set.of(1, 1.0f, "1"));
                     break;
                 default:
