@@ -1351,9 +1351,9 @@ public final class StringConcatFactory {
                       .ladd();
 
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
-                        int paramSlot = paramSlots[i];
+                        var cl        = args.parameterType(i);
+                        var kind      = TypeKind.from(cl);
+                        var paramSlot = paramSlots[i];
 
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1366,7 +1366,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = MIX_char;
                         } else {
                             methodTypeDesc = MIX_String;
-                            kind = TypeKind.from(String.class);
+                            kind           = TypeKind.from(String.class);
                         }
                         cb.loadLocal(kind, paramSlot)
                           .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
@@ -1401,9 +1401,9 @@ public final class StringConcatFactory {
                      */
                     cb.lload(lengthCoderSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        int paramSlot = paramSlots[i];
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
+                        var paramSlot = paramSlots[i];
+                        var cl        = args.parameterType(i);
+                        var kind      = TypeKind.from(cl);
 
                         MethodTypeDesc methodTypeDesc;
                         if (cl == byte.class || cl == short.class || cl == int.class) {
@@ -1416,7 +1416,7 @@ public final class StringConcatFactory {
                             methodTypeDesc = PREPEND_char;
                         } else {
                             methodTypeDesc = PREPEND_String;
-                            kind = TypeKind.from(String.class);
+                            kind           = TypeKind.from(String.class);
                         }
                         cb.aload(bufSlot)
                           .loadLocal(kind, paramSlot)
