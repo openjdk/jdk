@@ -40,6 +40,7 @@ import jdk.test.lib.net.URIBuilder;
  *          number of retries.
  * @library ../lib/ /test/lib
  * @modules java.base/sun.security.util
+ * @requires vm.debug != true & vm.compiler2.enabled
  * @run main Timeout
  */
 
@@ -113,7 +114,7 @@ public class Timeout extends DNSTestBase {
             }
             throw new RuntimeException(
                     "Failed: timeout in " + elapsedTime.toMillis()
-                            + " ms, expected" + expectedTime.toMillis() + "ms");
+                            + "ms, expected " + expectedTime.toMillis() + "ms");
         }
 
         return super.handleException(e);
