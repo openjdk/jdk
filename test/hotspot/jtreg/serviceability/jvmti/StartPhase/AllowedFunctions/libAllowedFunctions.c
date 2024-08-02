@@ -348,7 +348,6 @@ static void JNICALL
 ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     static const jint EVENTS_LIMIT = 2;
     static       jint event_no = 0;
-    jthread cur_thread = get_cur_thread(jvmti);
     jvmtiPhase phase;
     intptr_t exp_val = 777;
     intptr_t act_val;
@@ -361,14 +360,17 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
 
     get_phase(jvmti, &phase);
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE) {
-        printf("  ## Error: unexpected phase: %d, expected: %d or %d\n",
-               phase, JVMTI_PHASE_START, JVMTI_PHASE_LIVE);
-
+        if (phase != JVMTI_PHASE_DEAD) {
+            printf("  ## Error: unexpected phase: %d, expected: %d or %d or %d\n",
+                   phase, JVMTI_PHASE_START, JVMTI_PHASE_LIVE, JVMTI_PHASE_DEAD);
+            result = FAILED;
+        }
         err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
         check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
         return;
     }
     if (phase == JVMTI_PHASE_START && event_no < EVENTS_LIMIT) {
+        jthread cur_thread = get_cur_thread(jvmti);
         printf("\nClassPrepare event during the start phase: #%d\n", event_no);
         // Test the JVMTI class functions during the start phase
         test_class_functions(jvmti, env, thread, klass);
