@@ -48,6 +48,7 @@ extern "C" {
 
 static jint result = PASSED;
 static jrawMonitorID event_mon = NULL;
+static jboolean is_vm_dead = JNI_FALSE;
 
 static jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved);
 
@@ -338,6 +339,7 @@ VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
     err  = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
     check_jvmti_error(jvmti, "VMDeath event: Failed in RawMonitorEnter", err);
 
+    is_vm_dead = JNI_TRUE;
     printf("VMDeath event\n");
 
     err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
@@ -358,13 +360,17 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     err = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
     check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorEnter", err);
 
+    if (is_vm_dead == JNI_TRUE) {
+        printf("\nIgnoring ClassPrepare event during the dead phase\n");
+        err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
+        check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
+        return;
+    }
     get_phase(jvmti, &phase);
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE) {
-        if (phase != JVMTI_PHASE_DEAD) {
-            printf("  ## Error: unexpected phase: %d, expected: %d or %d or %d\n",
-                   phase, JVMTI_PHASE_START, JVMTI_PHASE_LIVE, JVMTI_PHASE_DEAD);
-            result = FAILED;
-        }
+        printf("  ## Error: unexpected phase: %d, expected: %d or %d\n",
+               phase, JVMTI_PHASE_START, JVMTI_PHASE_LIVE);
+        result = FAILED;
         err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
         check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
         return;
