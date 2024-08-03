@@ -25,6 +25,8 @@
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.security.DEREncodable;
+import java.security.Key;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.interfaces.*;
 import java.util.ArrayList;
