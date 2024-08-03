@@ -360,7 +360,7 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     err = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
     check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorEnter", err);
 
-    if (is_vm_dead == JNI_TRUE) {
+    if (is_vm_dead) {
         printf("\nIgnoring ClassPrepare event during the dead phase\n");
         err = (*jvmti)->RawMonitorExit(jvmti, event_mon);
         check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorExit", err);
