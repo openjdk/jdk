@@ -29,7 +29,6 @@ import jdk.internal.access.SharedSecrets;
 import sun.security.util.KeyUtil;
 
 import java.io.IOException;
-import java.security.DEREncodable;
 import java.util.Arrays;
 
 /**

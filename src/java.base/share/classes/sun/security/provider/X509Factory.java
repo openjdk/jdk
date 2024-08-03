@@ -558,11 +558,11 @@ public class X509Factory extends CertificateFactorySpi {
             readBERInternal(is, bout, c);
             return bout.toByteArray();
         } else {
-            PEMRecord pem = Pem.readPEM(is, (c == '-' ? true : false));
-            if (pem == null) {
-                return null;
-            }
             try {
+                PEMRecord pem = Pem.readPEM(is, (c == '-' ? true : false));
+                if (pem == null) {
+                    return null;
+                }
                 return Base64.getDecoder().decode(pem.pem());
             } catch (IllegalArgumentException e) {
                 throw new IOException(e);

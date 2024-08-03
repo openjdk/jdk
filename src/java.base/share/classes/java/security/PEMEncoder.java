@@ -42,9 +42,9 @@ import java.security.cert.Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * PEMEncoder is an immutable Privacy-Enhanced Mail (PEM) encoding class.
@@ -84,18 +84,24 @@ public final class PEMEncoder {
     // Singleton instance of PEMEncoder
     private static final PEMEncoder PEM_ENCODER = new PEMEncoder(null);
 
-    // If non-null, encoder is configured for encryption
-    private Cipher cipher = null;
-    private final char[] password;
+    // Stores the password for an encrypted encoder that isn't setup yet.
+    private PBEKeySpec keySpec;
+    // Stores the key after the encoder is ready to encrypt.  The prevents
+    // repeated SecretKeyFactory calls if the encoder is used on multiple keys.
+    private SecretKey key;
+    // Makes SecretKeyFactory generation thread-safe
+    private final ReentrantLock lock;
+
     private static Base64.Encoder b64Encoder;
 
     /**
      * Instantiate a new PEMEncoder for Encrypted Private Keys.
      *
-     * @param pwd is the password to generate the Cipher key with.
+     * @param pbe contains the password spec used for encryption.
      */
-    private PEMEncoder(char[] pwd) {
-        password = pwd;
+    private PEMEncoder(PBEKeySpec pbe) {
+        keySpec = pbe;
+        lock = new ReentrantLock();
     }
 
     /**
@@ -162,7 +168,7 @@ public final class PEMEncoder {
             case X509EncodedKeySpec x -> build(null, x.getEncoded());
             case PKCS8EncodedKeySpec p -> build(p.getEncoded(), null);
             case EncryptedPrivateKeyInfo epki -> {
-                if (password != null) {
+                if (keySpec != null) {
                     throw new IllegalArgumentException("encrypt was " +
                         "incorrectly used");
                 }
@@ -233,8 +239,8 @@ public final class PEMEncoder {
      * @throws NullPointerException if password is null.
      */
     public PEMEncoder withEncryption(char[] password) {
-        char[] pwd = password.clone();
-        return new PEMEncoder(pwd);
+        // PBEKeySpec clones the password
+        return new PEMEncoder(new PBEKeySpec(password));
     }
 
     /**
@@ -242,41 +248,58 @@ public final class PEMEncoder {
      */
     private String build(byte[] privateBytes, byte[] publicBytes) {
         DerOutputStream out = new DerOutputStream();
+        Cipher cipher;
 
-        // Encrypted PKCS8
-        if (password != null) {
+        // If `spec` is non-null, this is the first time the encrypted encoder
+        // has been called.  Generate the SecretKey from the given PBESpec that
+        // contains the password and store it in the class variable 'key'
+        if (keySpec != null) {
+            // Locking as this needs to be thread-safe
+            lock.lock();
+            if (key == null) {
+                try {
+                    key = SecretKeyFactory.getInstance(Pem.DEFAULT_ALGO).
+                        generateSecret(keySpec);
+                    keySpec.clearPassword();
+                    keySpec = null;
+                } catch (GeneralSecurityException e) {
+                    throw new SecurityException("Security property " +
+                        "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                        "valid algorithm.  Operation cannot be performed.", e);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                lock.unlock();
+            }
+        }
+
+        // If `key` is non-null, this is an encoder ready to encrypt.
+        if (key != null) {
             if (privateBytes == null || publicBytes != null) {
                 throw new IllegalArgumentException("Can only encrypt a " +
                     "PrivateKey.");
             }
 
-            // PBEKeySpec clones the password array
-            PBEKeySpec spec = new PBEKeySpec(password);
-            Arrays.fill(password, (char)0x0);
-
-            if (cipher == null) {
-                try {
-                    SecretKeyFactory factory;
-                    factory = SecretKeyFactory.getInstance(Pem.DEFAULT_ALGO);
-                    cipher = Cipher.getInstance(Pem.DEFAULT_ALGO);
-                    cipher.init(Cipher.ENCRYPT_MODE, factory.generateSecret(spec));
-                } catch (GeneralSecurityException e) {
-                    throw new SecurityException("Security property " +
-                        "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
-                        "valid algorithm.", e);
-                }
+            try {
+                cipher = Cipher.getInstance(Pem.DEFAULT_ALGO);
+                cipher.init(Cipher.ENCRYPT_MODE, key);
+            } catch (GeneralSecurityException e) {
+                throw new SecurityException("Security property " +
+                    "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
+                    "valid algorithm.  Operation cannot be performed.", e);
             }
 
             new AlgorithmId(Pem.getPBEID(Pem.DEFAULT_ALGO),
                 cipher.getParameters()).encode(out);
+
             try {
                 out.putOctetString(cipher.doFinal(privateBytes));
+                return pemEncoded(new PEMRecord(PEMRecord.ENCRYPTED_PRIVATE_KEY,
+                    DerValue.wrap(DerValue.tag_Sequence, out).toByteArray()));
             } catch (GeneralSecurityException e) {
                 throw new IllegalArgumentException(e);
             }
-
-            return pemEncoded(new PEMRecord(PEMRecord.ENCRYPTED_PRIVATE_KEY,
-                DerValue.wrap(DerValue.tag_Sequence, out).toByteArray()));
         }
 
         // X509 only

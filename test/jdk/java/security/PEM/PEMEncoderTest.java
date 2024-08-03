@@ -25,7 +25,8 @@
 
 /*
  * @test
- * @summary Testing PEM decoding
+ * @bug 8298420
+ * @summary Testing basic PEM API encoding
  * @enablePreview
  * @modules java.base/sun.security.util
  */
@@ -63,9 +64,6 @@ public class PEMEncoderTest {
         System.out.println("New instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
 
-        //System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
-        //keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
-
         keymap = generateObjKeyMap(PEMCerts.encryptedList);
         System.out.println("Same instance Encoder match test:");
         keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encoder));
@@ -73,6 +71,9 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
+        System.out.println("Same instance encrypted Encoder test:");
+        PEMEncoder encEncoder = encoder.withEncryption("fish".toCharArray());
+        keymap.keySet().stream().forEach(key -> testSameEncryptor(key, encEncoder));
         try {
             encoder.withEncryption(null);
         } catch (Exception e) {
@@ -80,11 +81,6 @@ public class PEMEncoderTest {
                 throw new Exception("Should have been a NullPointerException thrown");
             }
         }
-
-//  One can't use EKPI with an encrypted encoder.
-//        System.out.println("Same instance Encoder and withEnc test:");
-//        PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
-//        keymap.keySet().stream().forEach(key -> testEncryptedMatch(key, encEncoder));
     }
 
     static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
@@ -140,9 +136,24 @@ public class PEMEncoderTest {
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
             encoder.withEncryption(
-                (entry.password() != null ? entry.password() :
-                    "fish".toCharArray()))
+                    (entry.password() != null ? entry.password() :
+                        "fish".toCharArray()))
                 .encodeToString(keymap.get(key));
+        } catch (RuntimeException e) {
+            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+        }
+
+        System.out.println("PASS: " + entry.name());
+    }
+
+    /*
+     Test cannot verify PEM was the same as known PEM because we have no
+     public access to the AlgoritmID.params and PBES2Parameters.
+     */
+    static void testSameEncryptor(String key, PEMEncoder encoder) {
+        PEMCerts.Entry entry = PEMCerts.getEntry(key);
+        try {
+            encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
             throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
         }

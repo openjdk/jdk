@@ -33,8 +33,8 @@
  * @run main PKCS8Test
  */
 
-import java.io.IOException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.HexFormat;
 
@@ -127,7 +127,7 @@ public class PKCS8Test {
         original[4] = (byte) newVersion;     // the version inside DER
         try {
             PKCS8Key.parseKey(original);
-        } catch (IOException e) {
+        } catch (InvalidKeyException e) {
             throw new RuntimeException(e);
         }
     }

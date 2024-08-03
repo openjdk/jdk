@@ -29,6 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
+import sun.security.util.PEMRecord;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;

@@ -29,8 +29,9 @@ import sun.security.x509.AlgorithmId;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
-import java.security.PEMRecord;
+import java.security.PrivilegedAction;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Base64;
@@ -46,7 +47,11 @@ public class Pem {
     // Default algorithm from jdk.epkcs8.defaultAlgorithm in java.security
     public static final String DEFAULT_ALGO;
     static {
-        DEFAULT_ALGO = Security.getProperty("jdk.epkcs8.defaultAlgorithm");
+        @SuppressWarnings("removal")
+        String d = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () ->
+                Security.getProperty("jdk.epkcs8.defaultAlgorithm"));
+        DEFAULT_ALGO = d;
     }
 
     /**
@@ -55,11 +60,10 @@ public class Pem {
      * @param input the input string, according to RFC 1421, can only contain
      *              characters in the base-64 alphabet and whitespaces.
      * @return the decoded bytes
-     * @throws java.io.IOException if input is invalid
      */
     public static byte[] decode(String input) {
-        byte[] src = input.replaceAll("\\s+", "")
-            .getBytes(StandardCharsets.ISO_8859_1);
+        byte[] src = input.replaceAll("\\s+", "").
+            getBytes(StandardCharsets.ISO_8859_1);
             return Base64.getDecoder().decode(src);
     }
 
@@ -86,7 +90,10 @@ public class Pem {
 
     /**
      * Read the PEM text and return it in it's three components:  header,
-     * base64, and footer
+     * base64, and footer.
+     *
+     * The method will leave the stream after reading the end of line of the
+     * footer or end of file
      * @param is The pem data
      * @param shortHeader if true, the hyphen length is 4 because the first
      *                    hyphen is assumed to have been read.
@@ -94,11 +101,11 @@ public class Pem {
      * @throws IOException on read errors
      */
     public static PEMRecord readPEM(InputStream is, boolean shortHeader)
-        throws IOException{
+        throws IOException {
         Objects.requireNonNull(is);
 
         int hyphen = (shortHeader ? 1 : 0);
-        int endchar = 0;
+        int eol = 0;
 
         ByteArrayOutputStream os = new ByteArrayOutputStream(6);
         // Find starting hyphens
@@ -152,18 +159,19 @@ public class Pem {
 
         // Determine the line break using the char after the last hyphen
         switch (c = is.read()) {
-            case WS -> {} // skip char
+            case WS -> {} // skip whitespace
             case '\r' -> {
                 c = is.read();
                 if (c == '\n') {
-                    endchar = '\n';
+                    eol = '\n';
                 } else {
-                    endchar = '\r';
+                    eol = '\r';
                     sb.append((char) c);
                 }
             }
-            case '\n' -> endchar = '\n';
-            default -> sb.append((char) c);
+            case '\n' -> eol = '\n';
+            default ->
+                throw new IllegalArgumentException("No EOL character found");
         }
 
         // Read data until we find the first footer hyphen.
@@ -172,7 +180,7 @@ public class Pem {
                 case -1 ->
                     throw new IllegalArgumentException("Incomplete header");
                 case '-' -> hyphen++;
-                case 9, '\n', '\r', WS -> {} // skip char
+                case WS, '\t', '\n', '\r' -> {} // skip whitespace, tab, etc
                 default -> sb.append((char) c);
             }
         } while (hyphen == 0);
@@ -215,13 +223,10 @@ public class Pem {
             }
         } while (hyphen < 5);
 
-        if (endchar != 0) {
-            while ((c = is.read()) != endchar && c != -1 && c != '\r' &&
-                c != WS) {
-                throw new IllegalArgumentException("Invalid PEM format:  " +
-                    "No end of line char found in footer:  0x" +
-                    HexFormat.of().toHexDigits((byte) c));
-            }
+        while ((c = is.read()) != eol && c != -1 && c != '\r' && c != WS) {
+            throw new IllegalArgumentException("Invalid PEM format:  " +
+                "No EOL char found in footer:  0x" +
+                HexFormat.of().toHexDigits((byte) c));
         }
 
         sb.append("-----");
@@ -231,11 +236,12 @@ public class Pem {
             throw new IOException("Illegal footer: " + footer);
         }
 
+        // Verify the object type in the header and the footer are the same.
         String headerType = header.substring(11, header.length() - 5);
         String footerType = footer.substring(9, footer.length() - 5);
         if (!headerType.equals(footerType)) {
             throw new IOException("Header and footer do not match: " +
-                header + " " + footer);
+                headerType + " " + footerType);
         }
 
         // If there was data before finding the 5 dashes of the PEM header,
