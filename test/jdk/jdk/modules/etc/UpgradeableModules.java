@@ -45,7 +45,8 @@ public class UpgradeableModules {
     private static final List<String> UPGRADEABLE_MODULES =
         List.of("java.compiler",
                 "jdk.graal.compiler",
-                "jdk.graal.compiler.management");
+                "jdk.graal.compiler.management",
+                "jdk.jsobject");
 
 
     public static void main(String... args) {
