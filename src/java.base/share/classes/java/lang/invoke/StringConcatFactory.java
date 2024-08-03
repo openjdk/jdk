@@ -36,11 +36,14 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.Label;
+import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
@@ -1096,6 +1099,8 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
+        static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
+
         private static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cb) {
@@ -1160,10 +1165,17 @@ public final class StringConcatFactory {
                                         MTD_INIT,
                                         ClassFile.ACC_PRIVATE,
                                         CONSTRUCTOR_BUILDER)
-                                .withMethodBody(METHOD_NAME,
+                                .withMethod(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(concatArgs),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE,
-                                        generateConcatMethod(concatClass, concatArgs));
+                                        new Consumer<MethodBuilder>() {
+                                            public void accept(MethodBuilder mb) {
+                                                if (concatArgs.parameterCount() < 6) {
+                                                    mb.with(FORCE_INLINE);
+                                                }
+                                                mb.withCode(generateConcatMethod(concatClass, concatArgs));
+                                            }
+                                        });
                     }});
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)

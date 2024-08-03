@@ -40,13 +40,11 @@ import java.lang.invoke.MethodType;
  * combinators there.
  */
 final class StringConcatHelper {
-
-
-    static class StringConcatBase {
+    static abstract class StringConcatBase {
         @Stable final String[] constants;
-        @Stable final int length;
-        @Stable final byte coder;
-        StringConcatBase(String[] constants) {
+        final int length;
+        final byte coder;
+        protected StringConcatBase(String[] constants) {
             int length = 0;
             byte coder = String.LATIN1;
             this.constants = constants;
