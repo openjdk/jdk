@@ -28,7 +28,6 @@ package java.lang;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -40,25 +39,6 @@ import java.lang.invoke.MethodType;
  * combinators there.
  */
 final class StringConcatHelper {
-
-
-    static class StringConcatBase {
-        @Stable final String[] constants;
-        @Stable final int length;
-        @Stable final byte coder;
-        StringConcatBase(String[] constants) {
-            int length = 0;
-            byte coder = String.LATIN1;
-            this.constants = constants;
-            for (String c : constants) {
-                length += c.length();
-                coder |= c.coder();
-            }
-            this.length = length;
-            this.coder = coder;
-        }
-    }
-
     private StringConcatHelper() {
         // no instantiation
     }
