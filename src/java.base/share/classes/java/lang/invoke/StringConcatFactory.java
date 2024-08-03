@@ -1084,6 +1084,7 @@ public final class StringConcatFactory {
         static final MethodTypeDesc MTD_int_boolean      = MethodTypeDesc.of(CD_int, CD_boolean);
         static final MethodTypeDesc MTD_int_int       = MethodTypeDesc.of(CD_int, CD_int);
         static final MethodTypeDesc MTD_int_long      = MethodTypeDesc.of(CD_int, CD_long);
+        static final MethodTypeDesc MTD_int_String    = MethodTypeDesc.of(CD_int, CD_String);
         static final MethodTypeDesc MTD_String_float  = MethodTypeDesc.of(CD_String, CD_float);
         static final MethodTypeDesc MTD_String_double = MethodTypeDesc.of(CD_String, CD_double);
         static final MethodTypeDesc MTD_String_Object = MethodTypeDesc.of(CD_String, CD_Object);
@@ -1266,9 +1267,14 @@ public final class StringConcatFactory {
                         nextSlot     += TypeKind.from(args.parameterType(i)).slotSize();
                     }
 
+                    int maybyUTF16ParamCount = 0;
                     for (int i = 0; i < paramCount; i++) {
-                        if (needStringOf(args.parameterType(i))) {
+                        var cl = args.parameterType(i);
+                        if (needStringOf(cl)) {
                             stringSlots[i] = nextSlot++;
+                        }
+                        if (maybyUTF16(cl)) {
+                            maybyUTF16ParamCount++;
                         }
                     }
 
@@ -1293,50 +1299,15 @@ public final class StringConcatFactory {
                       .getfield(concatClass, "constants", CD_Array_String)
                       .astore(constantsSlot);
 
+                    /*
+                     * strN = toString(argN);
+                     * ...
+                     * str1 = stringOf(arg1);
+                     * str0 = stringOf(arg0);
+                     */
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        var cl   = args.parameterType(i);
-                        var kind = TypeKind.from(cl);
-                        if (cl == int.class) {
-                            /*
-                             * length = DecimalDigits.stringSize(argN) + length;
-                             */
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(CD_DecimalDigits, "stringSize", MTD_int_int)
-                              .iload(lengthSlot)
-                              .iadd()
-                              .istore(lengthSlot);
-                        } else if (cl == long.class) {
-                            /*
-                             * length = DecimalDigits.stringSize(argN) + length;
-                             */
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(CD_DecimalDigits, "stringSize", MTD_int_long)
-                              .iload(lengthSlot)
-                              .iadd()
-                              .istore(lengthSlot);
-                        } else if (cl == boolean.class) {
-                            /*
-                             * length = (argN ? 4 : 5) + length;
-                             */
-                            cb.loadLocal(kind, paramSlots[i])
-                               .invokestatic(CD_StringConcatHelper, "stringSize", MTD_int_boolean)
-                               .iload(lengthSlot)
-                               .iadd()
-                               .istore(lengthSlot);
-                        } else if (cl == char.class) {
-                            /*
-                             * length += 1;
-                             */
-                            cb.iinc(lengthSlot, 1);
-                            /*
-                             * coder = StringConcatHelper.stringCoder(argN) | coder;
-                             */
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char)
-                              .iload(coderSlot)
-                              .ior()
-                              .istore(coderSlot);
-                        } else {
+                        var cl = args.parameterType(i);
+                        if (needStringOf(cl)) {
                             ClassDesc classDesc;
                             MethodTypeDesc methodTypeDesc;
                             String methodName;
@@ -1353,51 +1324,88 @@ public final class StringConcatFactory {
                                 methodName = "stringOf";
                                 methodTypeDesc = MTD_String_Object;
                             }
+                            cb.loadLocal(TypeKind.from(cl), paramSlots[i])
+                              .invokestatic(classDesc, methodName, methodTypeDesc)
+                              .astore(stringSlots[i]);
+                        }
+                    }
 
-                            cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(classDesc, methodName, methodTypeDesc);
-                            if (maybyUTF16(cl)) {
-                                /*
-                                 * coder = str.coder() | length;
-                                 */
-                                cb.dup()
-                                  .invokevirtual(CD_String, "coder", MTD_byte)
-                                  .iload(coderSlot)
-                                  .ior()
-                                  .istore(coderSlot);
+                    if (maybyUTF16ParamCount > 0) {
+                        /*
+                         * coder = StringConcatHelper.stringCoder(argN) | ... | coder;
+                         */
+                        cb.iload(coderSlot);
+                        for (int i = paramCount - 1; i >= 0; i--) {
+                            var cl = args.parameterType(i);
+                            var kind = TypeKind.from(cl);
+
+                            if (!maybyUTF16(cl)) {
+                                continue;
                             }
-                            /*
-                             * length = str.length() + length;
-                             */
-                            cb.dup()
-                              .invokevirtual(CD_String, "length", MTD_int)
-                              .iload(lengthSlot)
-                              .iadd()
-                              .istore(lengthSlot);
 
-                            /*
-                             * store to argsN
-                             */
-                            cb.astore(stringSlots[i]);
+                            if (cl == char.class) {
+                                cb.loadLocal(kind, paramSlots[i])
+                                  .invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char)
+                                  .ior();
+                            } else if (needStringOf(cl)) {
+                                cb.loadLocal(kind, stringSlots[i])
+                                  .invokevirtual(CD_String, "coder", MTD_byte)
+                                  .ior();
+                            }
+                        }
+                        cb.istore(coderSlot);
+                    }
+
+                    /*
+                     * length = DecimalDigits.stringSize(argN) + ... + DecimalDigits.stringSize(arg1) + str0.length();
+                     */
+                    cb.iload(lengthSlot);
+                    for (int i = paramCount - 1; i >= 0; i--) {
+                        var cl   = args.parameterType(i);
+                        var kind = TypeKind.from(cl);
+                        if (cl == char.class) {
+                            cb.iconst_1()
+                              .iadd();
+                        } else {
+                            ClassDesc classDesc;
+                            MethodTypeDesc methodTypeDesc;
+                            if (cl == int.class) {
+                                classDesc = CD_DecimalDigits;
+                                methodTypeDesc = MTD_int_int;
+                                cb.loadLocal(kind, paramSlots[i]);
+                            } else if (cl == long.class) {
+                                classDesc = CD_DecimalDigits;
+                                methodTypeDesc = MTD_int_long;
+                                cb.loadLocal(kind, paramSlots[i]);
+                            } else if (cl == boolean.class) {
+                                classDesc = CD_StringConcatHelper;
+                                methodTypeDesc = MTD_int_boolean;
+                                cb.loadLocal(kind, paramSlots[i]);
+                            } else {
+                                classDesc = CD_StringConcatHelper;
+                                methodTypeDesc = MTD_int_String;
+                                cb.loadLocal(kind, stringSlots[i]);
+                            }
+                            cb.invokestatic(classDesc, "stringSize", methodTypeDesc)
+                              .iadd();
                         }
                     }
 
                     /*
                      * length -= constants[paranCount].length();
                      */
-                    cb.iload(lengthSlot)
-                      .aload(constantsSlot)
+                    cb.aload(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
                       .invokevirtual(CD_String, "length", MTD_int)
                       .isub()
                       .istore(lengthSlot);
 
-//                    /*
-//                     * Allocate buffer :
-//                     *
-//                     *  buf = StringConcatHelper.newArrayWithSuffix(constants[paranCount], length, coder)
-//                     */
+                    /*
+                     * Allocate buffer :
+                     *
+                     *  buf = StringConcatHelper.newArrayWithSuffix(constants[paranCount], length, coder)
+                     */
                     cb.aload(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
@@ -1405,13 +1413,13 @@ public final class StringConcatFactory {
                       .iload(coderSlot)
                       .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", MTD_NEW_ARRAY_SUFFIX)
                       .astore(bufSlot);
-//
-//                    /*
-//                     * length = StringConcatHelper.prepend(length, coder, buf, argN, constants[N]);
-//                     * ...
-//                     * length = StringConcatHelper.prepend(length, coder, buf, arg1, constants[0]);
-//                     * length = StringConcatHelper.prepend(length, coder, buf, arg0, constants[0]);
-//                     */
+
+                    /*
+                     * length = StringConcatHelper.prepend(length, coder, buf, argN, constants[N]);
+                     * ...
+                     * length = StringConcatHelper.prepend(length, coder, buf, arg1, constants[0]);
+                     * length = StringConcatHelper.prepend(length, coder, buf, arg0, constants[0]);
+                     */
                     cb.iload(lengthSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
                         int paramSlot = paramSlots[i];
@@ -1432,7 +1440,7 @@ public final class StringConcatFactory {
                             paramSlot = stringSlots[i];
                             kind = TypeKind.from(String.class);
                         }
-//
+
                         cb.iload(coderSlot)
                           .aload(bufSlot)
                           .loadLocal(kind, paramSlot)

@@ -402,6 +402,15 @@ final class StringConcatHelper {
     }
 
     /**
+     * return stirngSize of value
+     * @param value       value
+     * @return            value stirngSize
+     */
+    static int stringSize(String value) {
+        return value.length();
+    }
+
+    /**
      * Allocates an uninitialized byte array based on the length and coder
      * information, then prepends the given suffix string at the end of the
      * byte array before returning it. The calling code must adjust the
