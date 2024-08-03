@@ -39,6 +39,7 @@ import sun.invoke.util.Wrapper;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
 import java.lang.classfile.TypeKind;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -1066,46 +1067,43 @@ public final class StringConcatFactory {
      */
     private static final class SimpleStringBuilderStrategy {
         static final String METHOD_NAME = "concat";
-        static final String LENGTH = "length";
-        static final String CODER = "coder";
-        static final String CONSTANTS = "constants";
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_DecimalDigits = ClassDesc.ofDescriptor("Ljdk/internal/util/DecimalDigits;");
         static final ClassDesc CD_StringConcatBase = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
         static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
-        static final MethodTypeDesc ARRAY_STRING_TO_VOID = MethodTypeDesc.of(CD_void, CD_Array_String);
-        static final MethodTypeDesc FLOAT_TO_STRING  = MethodTypeDesc.of(CD_String, CD_float);
-        static final MethodTypeDesc DOUBLE_TO_STRING = MethodTypeDesc.of(CD_String, CD_double);
-        static final MethodTypeDesc OBJECT_TO_STRING = MethodTypeDesc.of(CD_String, CD_Object);
 
-        static final MethodTypeDesc NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_long);
-        static final MethodTypeDesc NEW_STRING       = MethodTypeDesc.of(CD_String, CD_Array_byte, CD_long);
+        static final MethodTypeDesc MTD_byte_char     = MethodTypeDesc.of(CD_byte, CD_char);
+        static final MethodTypeDesc MTD_byte          = MethodTypeDesc.of(CD_byte);
+        static final MethodTypeDesc MTD_int           = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_int_int       = MethodTypeDesc.of(CD_int, CD_int);
+        static final MethodTypeDesc MTD_int_long      = MethodTypeDesc.of(CD_int, CD_long);
+        static final MethodTypeDesc MTD_String_float  = MethodTypeDesc.of(CD_String, CD_float);
+        static final MethodTypeDesc MTD_String_double = MethodTypeDesc.of(CD_String, CD_double);
+        static final MethodTypeDesc MTD_String_Object = MethodTypeDesc.of(CD_String, CD_Object);
 
-        static final MethodTypeDesc MTD_int     = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_GET_BYTES   = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_int, CD_byte);
+        static final MethodTypeDesc MTD_INIT        = MethodTypeDesc.of(CD_void, CD_Array_String);
+        static final MethodTypeDesc MTD_NEW_ARRAY   = MethodTypeDesc.of(CD_Array_byte, CD_int);
+        static final MethodTypeDesc MTD_STRING_INIT = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_byte);
 
-        static final MethodTypeDesc MIX_int     = MethodTypeDesc.of(CD_long, CD_long, CD_int);
-        static final MethodTypeDesc MIX_long    = MethodTypeDesc.of(CD_long, CD_long, CD_long);
-        static final MethodTypeDesc MIX_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_boolean);
-        static final MethodTypeDesc MIX_char    = MethodTypeDesc.of(CD_long, CD_long, CD_char);
-        static final MethodTypeDesc MIX_String  = MethodTypeDesc.of(CD_long, CD_long, CD_String);
-
-        static final MethodTypeDesc PREPEND_int     = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_int, CD_String);
-        static final MethodTypeDesc PREPEND_long    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_long, CD_String);
-        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_boolean, CD_String);
-        static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_char, CD_String);
-        static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_long, CD_long, CD_Array_byte, CD_String, CD_String);
+        static final MethodTypeDesc APPEND_int     = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_int, CD_String);
+        static final MethodTypeDesc APPEND_long    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_int, CD_String);
+        static final MethodTypeDesc APPEND_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String);
+        static final MethodTypeDesc APPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
+        static final MethodTypeDesc APPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
         private static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cb) {
                 int thisSlot = cb.receiverSlot();
                 int constantsSlot = cb.parameterSlot(0);
-                cb.aload(thisSlot);
-                cb.aload(constantsSlot);
-                cb.invokespecial(CD_StringConcatBase, INIT_NAME, ARRAY_STRING_TO_VOID, false);
-                cb.return_();
+                cb.aload(thisSlot)
+                  .aload(constantsSlot)
+                  .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
+                  .return_();
             }
         };
 
@@ -1158,10 +1156,9 @@ public final class StringConcatFactory {
                             clb.withSuperclass(CD_StringConcatBase)
                                 .withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
                                 .withMethodBody("<init>",
-                                        ARRAY_STRING_TO_VOID,
+                                        MTD_INIT,
                                         ClassFile.ACC_PRIVATE,
-                                        CONSTRUCTOR_BUILDER
-                                )
+                                        CONSTRUCTOR_BUILDER)
                                 .withMethodBody(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(concatArgs),
                                         ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE,
@@ -1202,33 +1199,41 @@ public final class StringConcatFactory {
          *       super(constants);
          *   }
          *   String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4, float arg5, double arg6, Object arg7) {
-         *     long lengthCoder = this.length + (this.coder << 32L);
+         *     int length = this.length();
+         *     int coder = this.coder();
+         *     String[] constants = this.constants;
          *
          *     // String arg
          *     arg4 = stringOf(arg4);
+         *     arg5 = stringOf(arg5);
+         *     arg6 = stringOf(arg6);
+         *     arg7 = stringOf(arg7);
          *
          *     // Types other than byte/short/int/long/boolean/String require a local variable to store
-         *     String str5 = stringOf(arg5);
-         *     String str6 = stringOf(arg6);
-         *     String str7 = stringOf(arg7);
+         *     arg5 stringOf(arg5);
+         *     arg5 stringOf(arg6);
+         *     arg = stringOf(arg7);
          *
-         *     lengthCoder = mix(mix(mix(mix(
-         *                   mix(mix(mix(mix(lengthCoder,
-         *                       str7), str6), str5), arg4),
-         *                       arg3), arg2), arg1), arg0);
+         *     length += DecimalDigits.stringSize(arg0);
+         *     length += DecimalDigits.stringSize(arg1);
+         *     length += arg2 ? 4 : 5;
+         *     length ++; // char
+         *     length += arg4.length() + arg5.length() + arg6.length() + arg7.length();
          *
-         *     String suffix = constant[8];
-         *     lengthCoder -= suffix.length();
-         *     byte[] buf = newArray(suffix, lengthCoder);
+         *     coder |= arg4.coder() | arg7.coder(); // arg5 and arg6 is not maybeUTF16
          *
-         *     lengthCoder = prepend(prepend(prepend(prepend(
-         *                   prepend(prepend(prepend(prepend(lengthCoder,
+         *     byte[] buf = newArray(length << coder);
+         *
+         *     constants[0].getBytes(buf, 0, coder);
+         *     length = constants[0].length();
+         *     length = apppend(apppend(apppend(apppend(
+         *                   apppend(apppend(apppend(apppend(length,
          *                        buf, str7, constant[7]), buf, str6, constant[6]),
          *                        buf, str5, constant[5]), buf, arg4, constant[4]),
          *                        buf, arg3, constant[3]), buf, arg2, constant[2]),
          *                        buf, arg1, constant[1]), buf, arg0, constant[0]);
          *
-         *     return newArray(buf, lengthCoder);
+         *     return new String(buf, coder);
          * }
          * </pre></blockquote>
          */
@@ -1239,158 +1244,235 @@ public final class StringConcatFactory {
                     int paramCount = args.parameterCount();
 
                     // Compute parameter variable slots
-                    int   nextSlot = 1;
-                    int[] paramSlots          = new int[paramCount];
+                    int thisSloat = 0,
+                        nextSlot  = 1;
+                    int[] paramSlots  = new int[paramCount],
+                          sizeSlots   = new int[paramCount],
+                          stringSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
-                        Class<?> cl = args.parameterType(i);
-                        TypeKind kind = TypeKind.from(cl);
                         paramSlots[i] = nextSlot;
-                        nextSlot += kind.slotSize();
+                        nextSlot     += TypeKind.from(args.parameterType(i)).slotSize();
+                    }
 
-                        /*
-                         * Stringify by storing String variants in
-                         * repurposed argument slots:
-                         *
-                         * arg0 = Float.toString(args0);
-                         * arg1 = Double.toString(arg1);
-                         * ...
-                         * argN = StringConcatHelper.stringOf(argN);
-                         *
-                         *
-                         */
+                    for (int i = 0; i < paramCount; i++) {
+                        var cl = args.parameterType(i);
+
+                        // If the type is int/long, use a local variable to save the size.
+                        if (cl == int.class || cl == long.class) {
+                            sizeSlots[i] = nextSlot++;
+                        }
                         if (needStringOf(cl)) {
+                            stringSlots[i] = nextSlot++;
+                        }
+                    }
+
+                    int lengthSlot    = nextSlot;
+                    int coderSlot     = nextSlot + 1;
+                    int bufSlot       = nextSlot + 2;
+                    int constantsSlot = nextSlot + 3;
+
+                    /*
+                     * Store init length and coder :
+                     *  int length         = this.length();
+                     *  int coder          = this.coder();
+                     *  String[] constants = this.constants;
+                     */
+                    cb.aload(thisSloat)
+                      .getfield(concatClass, "length", CD_int)
+                      .istore(lengthSlot);
+                    cb.aload(thisSloat)
+                      .getfield(concatClass, "coder", CD_byte)
+                      .istore(coderSlot);
+                    cb.aload(thisSloat)
+                      .getfield(concatClass, "constants", CD_Array_String)
+                      .astore(constantsSlot);
+
+                    for (int i = 0; i < paramCount; i++) {
+                        var cl   = args.parameterType(i);
+                        var kind = TypeKind.from(cl);
+                        if (cl == int.class) {
+                            /*
+                             * sizeN = DecimalDigits.stringSize(argN);
+                             * length = sizeN + length;
+                             */
+                            cb.loadLocal(kind, paramSlots[i])
+                              .invokestatic(CD_DecimalDigits, "stringSize", MTD_int_int)
+                              .dup()
+                              .istore(sizeSlots[i])
+                              .iload(lengthSlot)
+                              .iadd()
+                              .istore(lengthSlot);
+                        } else if (cl == long.class) {
+                            /*
+                             * sizeN = DecimalDigits.stringSize(argN);
+                             * length = sizeN + length;
+                             */
+                            cb.loadLocal(kind, paramSlots[i])
+                              .invokestatic(CD_DecimalDigits, "stringSize", MTD_int_long)
+                              .dup()
+                              .istore(sizeSlots[i])
+                              .iload(lengthSlot)
+                              .iadd()
+                              .istore(lengthSlot);
+                        } else if (cl == boolean.class) {
+                            /*
+                             * length = (argN ? 4 : 5) + length;
+                             */
+                            Label L0 = cb.newLabel(), L1 = cb.newLabel();
+                            cb.iload(paramSlots[i])
+                              .ifeq(L0)
+                              .ldc(5)
+                              .goto_(L1)
+                              .labelBinding(L0)
+                              .ldc(4)
+                              .labelBinding(L1)
+                              .iload(lengthSlot)
+                              .iadd()
+                              .istore(lengthSlot);
+                        } else if (cl == char.class) {
+                            /*
+                             * length += 1;
+                             */
+                            cb.iinc(lengthSlot, 1);
+                            /*
+                             * coder = StringConcatHelper.stringCoder(argN) | coder;
+                             */
+                            cb.loadLocal(kind, paramSlots[i])
+                              .invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char)
+                              .iload(coderSlot)
+                              .ior()
+                              .istore(coderSlot)
+                            ;
+                        } else {
                             ClassDesc classDesc;
                             MethodTypeDesc methodTypeDesc;
                             String methodName;
                             if (cl == float.class) {
                                 classDesc = CD_Float;
                                 methodName = "toString";
-                                methodTypeDesc = FLOAT_TO_STRING;
+                                methodTypeDesc = MTD_String_float;
                             } else if (cl == double.class) {
                                 classDesc = CD_Double;
                                 methodName = "toString";
-                                methodTypeDesc = DOUBLE_TO_STRING;
+                                methodTypeDesc = MTD_String_double;
                             } else {
                                 classDesc = CD_StringConcatHelper;
                                 methodName = "stringOf";
-                                methodTypeDesc = OBJECT_TO_STRING;
+                                methodTypeDesc = MTD_String_Object;
                             }
 
                             cb.loadLocal(kind, paramSlots[i])
-                              .invokestatic(classDesc, methodName, methodTypeDesc)
-                              .astore(paramSlots[i]);
+                              .invokestatic(classDesc, methodName, methodTypeDesc);
+                            if (maybyUTF16(cl)) {
+                                /*
+                                 * coder = str.coder() | length;
+                                 */
+                                cb.dup()
+                                  .invokevirtual(CD_String, "coder", MTD_byte)
+                                  .iload(coderSlot)
+                                  .ior()
+                                  .istore(coderSlot);
+                            }
+                            /*
+                             * length = str.length() + length;
+                             */
+                            cb.dup()
+                              .invokevirtual(CD_String, "length", MTD_int)
+                              .iload(lengthSlot)
+                              .iadd()
+                              .istore(lengthSlot);
+
+                            /*
+                             * store to argsN
+                             */
+                            cb.astore(stringSlots[i]);
                         }
                     }
-
-
-                    int lengthCoderSlot = nextSlot;
-                    int bufSlot         = nextSlot + 2;
-                    int constantsSlot   = nextSlot + 3;
-
-                    /*
-                     * Store init index :
-                     *
-                     *  lengthCoder = mix(mix(mix(mix(initalIengthCoder, argN), ..., arg2), arg1), 0);
-                     *  ...
-                     *
-                     */
-                    cb.aload(0)
-                      .getfield(concatClass, CODER, CD_byte)
-                      .i2l()
-                      .ldc(32)
-                      .lshl()
-                      .aload(0)
-                      .getfield(concatClass, LENGTH, CD_int)
-                      .i2l()
-                      .ladd();
-
-                    for (int i = paramCount - 1; i >= 0; i--) {
-                        var cl        = args.parameterType(i);
-                        var kind      = TypeKind.from(cl);
-                        var paramSlot = paramSlots[i];
-
-                        MethodTypeDesc methodTypeDesc;
-                        if (cl == byte.class || cl == short.class || cl == int.class) {
-                            methodTypeDesc = MIX_int;
-                        } else if (cl == long.class) {
-                            methodTypeDesc = MIX_long;
-                        } else if (cl == boolean.class) {
-                            methodTypeDesc = MIX_boolean;
-                        } else if (cl == char.class) {
-                            methodTypeDesc = MIX_char;
-                        } else {
-                            methodTypeDesc = MIX_String;
-                            kind           = TypeKind.from(String.class);
-                        }
-                        cb.loadLocal(kind, paramSlot)
-                          .invokestatic(CD_StringConcatHelper, "mix", methodTypeDesc);
-                    }
-
-                    // lengthCoder = lengthCoder - suffix.length()
-                    cb.aload(0)
-                      .getfield(concatClass, CONSTANTS, CD_Array_String)
-                      .astore(constantsSlot)
-                      .aload(constantsSlot)
-                      .ldc(paramCount)
-                      .aaload()
-                      .invokevirtual(CD_String, LENGTH, MTD_int)
-                      .i2l()
-                      .lsub()
-                      .lstore(lengthCoderSlot);
 
                     /*
                      * Allocate buffer :
-                     *  buf = StringConcatHelper.newArray(suffix, lengthCoder)
+                     *  buf = StringConcatHelper.newArray(length << coder)
                      */
-                    cb.aload(constantsSlot)
-                      .ldc(paramCount)
-                      .aaload()
-                      .lload(lengthCoderSlot)
-                      .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", NEW_ARRAY_SUFFIX)
+                    cb.iload(lengthSlot)
+                      .iload(coderSlot)
+                      .ishl()
+                      .invokestatic(CD_StringConcatHelper, "newArray", MTD_NEW_ARRAY)
                       .astore(bufSlot);
 
                     /*
-                     * prepend arguments :
-                     *  lengthCoder = prepend(prepend(lengthCoder, buf, argN, constantN), ...), buf, arg0, constant0)
+                     * Append prefix and init length
+                     *  constants[0].getBytes(buf, 0, coder);
+                     *  length = constants[0].length();
                      */
-                    cb.lload(lengthCoderSlot);
-                    for (int i = paramCount - 1; i >= 0; i--) {
-                        var paramSlot = paramSlots[i];
+                    cb.aload(constantsSlot)
+                       .ldc(0)
+                       .aaload()
+                       .dup()
+                       .aload(bufSlot)
+                       .ldc(0)
+                       .iload(coderSlot)
+                       .invokevirtual(CD_String, "getBytes", MTD_GET_BYTES)
+                       .invokevirtual(CD_String, "length", MTD_int);
+
+                    /*
+                     * if (
+                     * length = StringConcatHelper.append(length, coder, buf, argN, constants[N + 1]);
+                     *
+                     * length = StringConcatHelper.append(length, coder, buf, argN, constants[N + 1]);
+                     */
+                    for (int i = 0; i < paramCount; i++) {
+                        int paramSlot = paramSlots[i];
                         var cl        = args.parameterType(i);
                         var kind      = TypeKind.from(cl);
-
                         MethodTypeDesc methodTypeDesc;
-                        if (cl == byte.class || cl == short.class || cl == int.class) {
-                            methodTypeDesc = PREPEND_int;
+                        if (cl == int.class) {
+                            methodTypeDesc = APPEND_int;
                         } else if (cl == long.class) {
-                            methodTypeDesc = PREPEND_long;
+                            methodTypeDesc = APPEND_long;
                         } else if (cl == boolean.class) {
-                            methodTypeDesc = PREPEND_boolean;
+                            methodTypeDesc = APPEND_boolean;
                         } else if (cl == char.class) {
-                            methodTypeDesc = PREPEND_char;
+                            methodTypeDesc = APPEND_char;
                         } else {
-                            methodTypeDesc = PREPEND_String;
-                            kind           = TypeKind.from(String.class);
+                            methodTypeDesc = APPEND_String;
+                            paramSlot = stringSlots[i];
+                            kind = TypeKind.from(String.class);
                         }
-                        cb.aload(bufSlot)
-                          .loadLocal(kind, paramSlot)
-                          .aload(constantsSlot)
-                          .ldc(i)
-                          .aaload()
-                          .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
-                    }
-                    cb.lstore(lengthCoderSlot);
 
-                    // return StringConcatHelper.newString(buf, lengthCoder));
-                    cb.aload(bufSlot)
-                      .lload(lengthCoderSlot)
-                      .invokestatic(CD_StringConcatHelper, "newString", NEW_STRING)
+                        cb.iload(coderSlot)
+                          .aload(bufSlot)
+                          .loadLocal(kind, paramSlot);
+
+                        if (cl == int.class || cl == long.class) {
+                            cb.iload(sizeSlots[i]);
+                        }
+
+                        // suffix
+                        cb.aload(constantsSlot)
+                           .ldc(i + 1)
+                           .aaload();
+
+                        cb.invokestatic(CD_StringConcatHelper, "append", methodTypeDesc);
+                    }
+                    cb.istore(lengthSlot);
+
+                    // return new String(buf, coder);
+                    cb.new_(CD_String)
+                      .dup()
+                      .aload(bufSlot)
+                      .iload(coderSlot)
+                      .invokespecial(CD_String, "<init>", MTD_STRING_INIT)
                       .areturn();
                 }
 
                 static boolean needStringOf(Class<?> cl) {
-                    return cl != byte.class && cl != short.class   && cl != int.class
-                        && cl != long.class && cl != boolean.class && cl != char.class;
+                    return cl != int.class && cl != long.class && cl != boolean.class && cl != char.class;
+                }
+
+                static boolean maybyUTF16(Class<?> cl) {
+                    return cl == char.class || (!cl.isPrimitive()
+                        && cl != Byte.class && cl != Short.class && cl != Integer.class
+                        && cl != Long.class && cl != Boolean.class);
                 }
             };
         }

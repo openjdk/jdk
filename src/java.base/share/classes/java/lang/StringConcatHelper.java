@@ -43,9 +43,9 @@ final class StringConcatHelper {
 
 
     static class StringConcatBase {
-        @Stable String[] constants;
-        @Stable int length;
-        @Stable byte coder;
+        @Stable final String[] constants;
+        @Stable final int length;
+        @Stable final byte coder;
         StringConcatBase(String[] constants) {
             int length = 0;
             byte coder = String.LATIN1;
@@ -459,4 +459,144 @@ final class StringConcatHelper {
         }
     }
 
+    /**
+     * Return the coder for the character.
+     * @param value character
+     * @return      coder
+     */
+    static byte stringCoder(char value) {
+        return StringLatin1.canEncode(value) ? String.LATIN1 : String.UTF16;
+    }
+
+    /**
+     * append the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param index     final char index in the buffer
+     * @param coder     coder of the buffer
+     * @param buf       buffer to append to
+     * @param value     boolean value to encode
+     * @return          updated index
+     */
+    static int append(int index, byte coder, byte[] buf, boolean value, String suffix) {
+        if (coder == String.LATIN1) {
+            if (value) {
+                buf[index] = 't';
+                buf[index + 1] = 'r';
+                buf[index + 2] = 'u';
+                buf[index + 3] = 'e';
+                index += 4;
+            } else {
+                buf[index] = 'f';
+                buf[index + 1] = 'a';
+                buf[index + 2] = 'l';
+                buf[index + 3] = 's';
+                buf[index + 4] = 'e';
+                index += 5;
+            }
+        } else {
+            if (value) {
+                StringUTF16.putChar(buf, index, 't');
+                StringUTF16.putChar(buf, index + 1, 'r');
+                StringUTF16.putChar(buf, index + 2, 'u');
+                StringUTF16.putChar(buf, index + 3, 'e');
+                index += 4;
+            } else {
+                StringUTF16.putChar(buf, index, 'f');
+                StringUTF16.putChar(buf, index + 1, 'a');
+                StringUTF16.putChar(buf, index + 2, 'l');
+                StringUTF16.putChar(buf, index + 3, 's');
+                StringUTF16.putChar(buf, index + 4, 'e');
+                index += 5;
+            }
+        }
+        suffix.getBytes(buf, index, coder);
+        return index + suffix.length();
+    }
+
+    /**
+     * append the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param index     final char index in the buffer
+     * @param coder     coder of the buffer
+     * @param buf       buffer to append to
+     * @param value     char value to encode
+     * @return          updated index
+     */
+    static int append(int index, byte coder, byte[] buf, char value, String suffix) {
+        if (coder == String.LATIN1) {
+            buf[index] = (byte) value;
+        } else {
+            StringUTF16.putChar(buf, index, value);
+        }
+        suffix.getBytes(buf, ++index, coder);
+        return index + suffix.length();
+    }
+
+    /**
+     * append the value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param index     final char index in the buffer
+     * @param coder     coder of the buffer
+     * @param buf       buffer to append to
+     * @param value     String value
+     * @param size      stringSize of value
+     * @return          updated index
+     */
+    static int append(int index, byte coder, byte[] buf, String value, String suffix) {
+        if (coder == String.LATIN1) {
+            value.getBytes(buf, index, String.LATIN1);
+        } else {
+            value.getBytes(buf, index, String.UTF16);
+        }
+        index += value.length();
+        suffix.getBytes(buf, index, coder);
+        return index + suffix.length();
+    }
+
+    /**
+     * append the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param index     final char index in the buffer
+     * @param coder     coder of the buffer
+     * @param buf       buffer to append to
+     * @param value     int value to encode
+     * @param size      stringSize of value
+     * @return          updated index
+     */
+    static int append(int index, byte coder, byte[] buf, int value, int size, String suffix) {
+        index += size;
+        if (coder == String.LATIN1) {
+            StringLatin1.getChars(value, index, buf);
+        } else {
+            StringUTF16.getChars(value, index, buf);
+        }
+        suffix.getBytes(buf, index, coder);
+        return index + suffix.length();
+    }
+
+    /**
+     * append the stringly representation of value into buffer,
+     * given the coder and final index. Index is measured in chars, not in bytes!
+     *
+     * @param index     final char index in the buffer
+     * @param coder     coder of the buffer
+     * @param buf       buffer to append to
+     * @param value     long value to encode
+     * @param size      stringSize of value
+     * @return          updated index
+     */
+    static int append(int index, byte coder, byte[] buf, long value, int size, String suffix) {
+        index += size;
+        if (coder == String.LATIN1) {
+            StringLatin1.getChars(value, index, buf);
+        } else {
+            StringUTF16.getChars(value, index, buf);
+        }
+        suffix.getBytes(buf, index, coder);
+        return index + suffix.length();
+    }
 }
