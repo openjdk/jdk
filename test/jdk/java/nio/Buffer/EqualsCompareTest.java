@@ -42,7 +42,6 @@ import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +50,7 @@ import java.util.function.LongFunction;
 import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
@@ -728,10 +728,8 @@ public class EqualsCompareTest {
         byte[] bytes = "hello world".getBytes(UTF_8);
         Path path = Files.createTempFile("", "");
         Files.write(path, bytes);
-        try (FileChannel fc = FileChannel.open(path, StandardOpenOption.READ,
-            StandardOpenOption.DELETE_ON_CLOSE)) {
-            MappedByteBuffer one =
-                fc.map(FileChannel.MapMode.READ_ONLY, 0, bytes.length);
+        try (FileChannel fc = FileChannel.open(path, READ, DELETE_ON_CLOSE)) {
+            MappedByteBuffer one = fc.map(FileChannel.MapMode.READ_ONLY, 0, bytes.length);
             ByteBuffer two = ByteBuffer.wrap(bytes);
             Assert.assertEquals(one, two);
             Assert.assertEquals(one.hashCode(), two.hashCode());
