@@ -214,3 +214,4 @@ public class DemoModule extends JPanel {
 
     void updateDragEnabled(boolean dragEnabled) {}
 }
+
