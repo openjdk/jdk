@@ -446,10 +446,6 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
-    byte initStringCoder();
-
-    byte stringCoder(String str);
-
     /**
      * Join strings
      */
