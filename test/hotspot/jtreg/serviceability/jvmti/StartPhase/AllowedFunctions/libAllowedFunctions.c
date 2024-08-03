@@ -356,7 +356,7 @@ ClassPrepare(jvmtiEnv *jvmti, JNIEnv *env, jthread thread, jclass klass) {
     jvmtiError err;
 
     // Block VMDeath event and other ClassPrepare events while this callback is executed.
-    // Sync with VMDeath event guards against JVMTI_ERROR WRONG_PHASE.
+    // Sync with VMDeath event and check for is_vm_dead guard against JVMTI_ERROR WRONG_PHASE.
     err = (*jvmti)->RawMonitorEnter(jvmti, event_mon);
     check_jvmti_error(jvmti, "ClassPrepare event: Failed in RawMonitorEnter", err);
 
