@@ -1267,14 +1267,14 @@ public final class StringConcatFactory {
                         nextSlot     += TypeKind.from(args.parameterType(i)).slotSize();
                     }
 
-                    int maybyUTF16ParamCount = 0;
+                    int maybeUTF16ParamCount = 0;
                     for (int i = 0; i < paramCount; i++) {
                         var cl = args.parameterType(i);
                         if (needStringOf(cl)) {
                             stringSlots[i] = nextSlot++;
                         }
-                        if (maybyUTF16(cl)) {
-                            maybyUTF16ParamCount++;
+                        if (maybeUTF16(cl)) {
+                            maybeUTF16ParamCount++;
                         }
                     }
 
@@ -1322,14 +1322,14 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    if (maybyUTF16ParamCount > 0) {
+                    if (maybeUTF16ParamCount > 0) {
                         /*
                          * coder = StringConcatHelper.stringCoder(argN) | ... | coder;
                          */
                         cb.iload(coderSlot);
                         for (int i = paramCount - 1; i >= 0; i--) {
                             var cl = args.parameterType(i);
-                            if (!maybyUTF16(cl)) {
+                            if (!maybeUTF16(cl)) {
                                 continue;
                             }
                             var kind = TypeKind.from(cl);
@@ -1445,7 +1445,7 @@ public final class StringConcatFactory {
                     return cl != int.class && cl != long.class && cl != boolean.class && cl != char.class;
                 }
 
-                static boolean maybyUTF16(Class<?> cl) {
+                static boolean maybeUTF16(Class<?> cl) {
                     return cl == char.class || (!cl.isPrimitive()
                         && cl != Byte.class && cl != Short.class && cl != Integer.class
                         && cl != Long.class && cl != Boolean.class);
