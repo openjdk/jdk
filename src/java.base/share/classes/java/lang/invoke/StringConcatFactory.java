@@ -1331,49 +1331,40 @@ public final class StringConcatFactory {
          *      String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4,
          *          float arg5, double arg6, Object arg7
          *      ) {
-         *          int length = this.length();
-         *          int coder = this.coder();
-         *          String[] constants = this.constants;
-         *
-         *          // String arg
-         *          arg4 = stringOf(arg4);
-         *          arg5 = stringOf(arg5);
-         *          arg6 = stringOf(arg6);
-         *          arg7 = stringOf(arg7);
-         *
          *          // Types other than byte/short/int/long/boolean/String require a local variable to store
-         *          arg5 stringOf(arg5);
-         *          arg5 stringOf(arg6);
-         *          arg = stringOf(arg7);
+         *          String str4 = stringOf(arg4);
+         *          String str5 = stringOf(arg5);
+         *          String str6 = stringOf(arg6);
+         *          String str7 = stringOf(arg7);
          *
-         *          coder  = coder(this.coder, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-         *          length = length(this.length, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-         *
+         *          int coder  = coder(this.coder, arg0, arg1, arg2, arg3, str4, str5, str6, str7);
+         *          int length = length(this.length, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+         *          String[] constants = this.constants;
          *          byte[] buf = newArrayWithSuffix(constants[paramCount], length. coder);
          *
-         *          prepend(length, coder, buf, constants, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+         *          prepend(length, coder, buf, constants, arg0, arg1, arg2, arg3, str4, str5, str6, str7);
          *
          *          return new String(buf, coder);
          *      }
          *
          *      static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
          *                       String arg4, String arg5, String arg6, String arg7) {
-         *          return length | stringSize(arg0) | stringSize(arg1) | stringSize(arg2) | stringSize(arg4)
-         *                    | stringSize(arg5) | stringSize(arg6) | stringSize(arg7);
+         *          return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + stringSize(arg4)
+         *                    + stringSize(arg5) + stringSize(arg6) + stringSize(arg7);
          *      }
          *
-         *      static int cocder(int coder, char arg3, String arg4, String arg5, String arg6, String arg7) {
-         *          return coder | stringCoder(arg3) | arg4.coder() | arg5.coder() | arg6.coder() | arg7.coder();
+         *      static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         *          return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
          *      }
          *
          *      static int prepend(int length, int coder, byte[] buf, String[] constants,
          *                     int arg0, long arg1, boolean arg2, char arg3,
-         *                     String arg4, String arg5, String arg6, String arg7) {
+         *                     String str4, String str6, String str6, String str7) {
          *          // StringConcatHelper.prepend
          *          return prepend(prepend(prepend(prepend(
          *                  prepend(apppend(prepend(prepend(length,
          *                       buf, str7, constant[7]), buf, str6, constant[6]),
-         *                       buf, str5, constant[5]), buf, arg4, constant[4]),
+         *                       buf, str5, constant[5]), buf, str4, constant[4]),
          *                       buf, arg3, constant[3]), buf, arg2, constant[2]),
          *                       buf, arg1, constant[1]), buf, arg0, constant[0]);
          *      }
@@ -1416,22 +1407,6 @@ public final class StringConcatFactory {
                         constantsSlot = nextSlot + 3;
 
                     /*
-                     * Store init length and coder :
-                     *  int length         = this.length();
-                     *  int coder          = this.coder();
-                     *  String[] constants = this.constants;
-                     */
-                    cb.aload(thisSlot)
-                      .getfield(concatClass, "length", CD_int)
-                      .istore(lengthSlot)
-                      .aload(thisSlot)
-                      .getfield(concatClass, "coder", CD_byte)
-                      .istore(coderSlot)
-                      .aload(thisSlot)
-                      .getfield(concatClass, "constants", CD_Array_String)
-                      .astore(constantsSlot);
-
-                    /*
                      * strN = toString(argN);
                      * ...
                      * str1 = stringOf(arg1);
@@ -1454,11 +1429,12 @@ public final class StringConcatFactory {
                         }
                     }
 
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "coder", CD_byte);
                     if (maybeUTF16ParamCount > 0) {
                         /*
-                         * coder = StringConcatHelper.stringCoder(argN) | ... | coder;
+                         * coder = coder(this.coder, arg0, arg1, ... argN);
                          */
-                        cb.iload(coderSlot);
                         for (int i = 0; i < paramCount; i++) {
                             var cl = args.parameterType(i);
                             if (cl == char.class) {
@@ -1467,11 +1443,15 @@ public final class StringConcatFactory {
                                 cb.aload(stringSlots[i]);
                             }
                         }
-                        cb.invokestatic(concatClass, "coder", ConstantUtils.methodTypeDesc(coderArgs))
-                          .istore(coderSlot);
+                        cb.invokestatic(concatClass, "coder", ConstantUtils.methodTypeDesc(coderArgs));
                     }
+                    cb.istore(coderSlot);
 
-                    cb.iload(lengthSlot);
+                    /*
+                     * length = length(this.length, arg0, arg1, ..., argN);
+                     */
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "length", CD_int);
                     for (int i = 0; i < paramCount; i++) {
                         var cl   = args.parameterType(i);
                         int paramSlot = paramSlots[i];
@@ -1484,9 +1464,13 @@ public final class StringConcatFactory {
                     cb.invokestatic(concatClass, "length", ConstantUtils.methodTypeDesc(lengthArgs));
 
                     /*
+                     * String[] constants = this.constants;
                      * length -= constants[paranCount].length();
                      */
-                    cb.aload(constantsSlot)
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "constants", CD_Array_String)
+                      .dup()
+                      .astore(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
                       .invokevirtual(CD_String, "length", MTD_int)
@@ -1496,7 +1480,7 @@ public final class StringConcatFactory {
                     /*
                      * Allocate buffer :
                      *
-                     *  buf = StringConcatHelper.newArrayWithSuffix(constants[paranCount], length, coder)
+                     *  buf = newArrayWithSuffix(constants[paranCount], length, coder)
                      */
                     cb.aload(constantsSlot)
                       .ldc(paramCount)
@@ -1594,7 +1578,7 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     /*
-                     * return coder | argN.coder() | ... | arg1.coder() + arg0.coder();
+                     * return coder | argN.coder() | ... | arg1.coder() | arg0.coder();
                      */
                     int coderSlot = 0;
                     cb.iload(coderSlot);
