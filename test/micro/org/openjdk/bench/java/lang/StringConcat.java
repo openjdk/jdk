@@ -149,6 +149,36 @@ public class StringConcat {
     }
 
     @Benchmark
+    public String concatConstStringConst() {
+        return "string" + stringValue + "string";
+    }
+
+    @Benchmark
+    public String concatConstIntConst() {
+        return "string" + intValue + "string";
+    }
+
+    @Benchmark
+    public String concatConstIntegerConst() {
+        return "string" + integerValue + "string";
+    }
+
+    @Benchmark
+    public String concatConstFloatConst() {
+        return "string" + floatValue + "string";
+    }
+
+    @Benchmark
+    public String concatConstObjectConst() {
+        return "string" + objectValue + "string";
+    }
+
+    @Benchmark
+    public String concatConstBooleanConst() {
+        return "string" + booleanValue + "string";
+    }
+
+    @Benchmark
     public String concatMix4String() {
         // Investigate "profile pollution" between shared LFs that might eliminate some JIT optimizations
         String s1 = "string" + stringValue + stringValue + stringValue + stringValue;

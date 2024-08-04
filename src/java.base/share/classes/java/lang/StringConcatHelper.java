@@ -41,7 +41,7 @@ import java.lang.invoke.MethodType;
  * combinators there.
  */
 final class StringConcatHelper {
-    static abstract class StringConcatBase {
+    static class StringConcatBase {
         @Stable final String[] constants;
         final int length;
         final byte coder;
@@ -55,6 +55,75 @@ final class StringConcatHelper {
             }
             this.length = length;
             this.coder = coder;
+        }
+
+        @ForceInline
+        private String concat0(String value) {
+            int length = this.length + value.length();
+            byte coder = (byte) (this.coder | value.coder());
+            byte[] buf = newArray(length << coder);
+            String prefix = constants[0];
+            prefix.getBytes(buf, 0, coder);
+            value.getBytes(buf, prefix.length(), coder);
+            constants[1].getBytes(buf, prefix.length() + value.length(), coder);
+            return new String(buf, coder);
+        }
+
+        @ForceInline
+        private final String concat(boolean value) {
+            int length = this.length + stringSize(value);
+            String suffix = constants[1];
+            length -= suffix.length();
+            byte[] buf = newArrayWithSuffix(suffix, length, coder);
+            prepend(length, coder, buf, value, constants[0]);
+            return new String(buf, coder);
+        }
+
+        @ForceInline
+        private final String concat(char value) {
+            int length = this.length + 1;
+            byte coder = (byte) (this.coder | stringCoder(value));
+            String suffix = constants[1];
+            length -= suffix.length();
+            byte[] buf = newArrayWithSuffix(suffix, length, coder);
+            prepend(length, coder, buf, value, constants[0]);
+            return new String(buf, coder);
+        }
+
+        @ForceInline
+        private final String concat(int value) {
+            int length = this.length + stringSize(value);
+            String suffix = constants[1];
+            length -= suffix.length();
+            byte[] buf = newArrayWithSuffix(suffix, length, coder);
+            prepend(length, coder, buf, value, constants[0]);
+            return new String(buf, coder);
+        }
+
+        @ForceInline
+        private final String concat(long value) {
+            int length = this.length + stringSize(value);
+            String suffix = constants[1];
+            length -= suffix.length();
+            byte[] buf = newArrayWithSuffix(suffix, length, coder);
+            prepend(length, coder, buf, value, constants[0]);
+            return new String(buf, coder);
+        }
+
+        @ForceInline
+        private final String concat(Object value) {
+            String str = stringOf(value);
+            return concat0(stringOf(value));
+        }
+
+        @ForceInline
+        private final String concat(float value) {
+            return concat0(Float.toString(value));
+        }
+
+        @ForceInline
+        private final String concat(double value) {
+            return concat0(Double.toString(value));
         }
     }
 
