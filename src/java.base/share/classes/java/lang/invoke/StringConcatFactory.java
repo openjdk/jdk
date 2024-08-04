@@ -1430,7 +1430,6 @@ public final class StringConcatFactory {
                           .aaload()
                           .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
-                    cb.istore(lengthSlot);
 
                     // return new String(buf, coder);
                     cb.new_(CD_String)
