@@ -392,6 +392,23 @@ final class StringConcatHelper {
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    static String stringOf(float value) {
+        return Float.toString(value);
+    }
+
+    static String stringOf(double value) {
+        return Double.toString(value);
+    }
+
+    /**
+     * return stirngSize of value
+     * @param value       value
+     * @return            1
+     */
+    static int stringSize(char value) {
+        return 1;
+    }
+
     /**
      * return stirngSize of value
      * @param value       value
@@ -404,7 +421,25 @@ final class StringConcatHelper {
     /**
      * return stirngSize of value
      * @param value       value
-     * @return            value stirngSize
+     * @return            stirngSize of value
+     */
+    static int stringSize(int value) {
+        return DecimalDigits.stringSize(value);
+    }
+
+    /**
+     * return stirngSize of value
+     * @param value       value
+     * @return            stirngSize of value
+     */
+    static int stringSize(long value) {
+        return DecimalDigits.stringSize(value);
+    }
+
+    /**
+     * return stirngSize of value
+     * @param value       value
+     * @return            stirngSize of value
      */
     static int stringSize(String value) {
         return value.length();
