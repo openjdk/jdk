@@ -66,7 +66,7 @@ public final class BufferedMethodBuilder
         this.context = context;
         this.name = nameInfo;
         this.desc = typeInfo;
-        this.flags = AccessFlags.ofMethod(flags);
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.METHOD, flags);
         this.original = original;
     }
 
@@ -156,7 +156,7 @@ public final class BufferedMethodBuilder
             extends AbstractUnboundModel<MethodElement>
             implements MethodModel, MethodInfo {
         public Model() {
-            super(elements);
+            super(BufferedMethodBuilder.this.elements);
         }
 
         @Override

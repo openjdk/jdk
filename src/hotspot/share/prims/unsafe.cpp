@@ -652,7 +652,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
 
   jbyte *body;
   char *utfName = nullptr;
-  jclass result = 0;
+  jclass result = nullptr;
   char buf[128];
 
   assert(data != nullptr, "Class bytes must not be null");
@@ -665,7 +665,7 @@ static jclass Unsafe_DefineClass_impl(JNIEnv *env, jstring name, jbyteArray data
   body = NEW_C_HEAP_ARRAY_RETURN_NULL(jbyte, length, mtInternal);
   if (body == nullptr) {
     throw_new(env, "java/lang/OutOfMemoryError");
-    return 0;
+    return nullptr;
   }
 
   env->GetByteArrayRegion(data, offset, length, body);
