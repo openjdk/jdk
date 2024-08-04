@@ -1130,20 +1130,31 @@ public final class StringConcatFactory {
 
         private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
 
-        private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
-            lookup = MethodHandles.Lookup.IMPL_LOOKUP;
-            String className = "java.lang.String$$StringConcat";
-            MethodType erasedArgs = args.erase().changeReturnType(String.class);
-            for (int i = 0; i < erasedArgs.parameterCount(); i++) {
-                Class<?> cl = erasedArgs.parameterType(i);
+        private static MethodType erasedArgs(MethodType args) {
+            int parameterCount = args.parameterCount();
+            Class<?>[] paramTypes = new Class<?>[parameterCount];
+            boolean changed = false;
+            for (int i = 0; i < parameterCount; i++) {
+                Class<?> cl = args.parameterType(i);
                 // Use int as the logical type for subword integral types
                 // (byte and short). char and boolean require special
                 // handling so don't change the logical type of those
                 if (cl == byte.class || cl == short.class) {
-                    erasedArgs = erasedArgs.changeParameterType(i, int.class);
+                    cl = int.class;
+                    changed = true;
+                } else if (cl != Object.class && !cl.isPrimitive()) {
+                    cl = Object.class;
+                    changed = true;
                 }
+                paramTypes[i] = cl;
             }
-            final MethodType concatArgs = erasedArgs;
+            return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
+        }
+
+        private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
+            lookup = MethodHandles.Lookup.IMPL_LOOKUP;
+            String className = "java.lang.String$$StringConcat";
+            final MethodType concatArgs = erasedArgs(args);
             var weakConstructorHandle = CACHE.get(concatArgs);
             if (weakConstructorHandle != null) {
                 MethodHandlePair handlePair = weakConstructorHandle.get();
