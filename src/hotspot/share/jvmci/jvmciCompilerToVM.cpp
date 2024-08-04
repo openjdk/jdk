@@ -424,7 +424,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject 
 
 C2V_VMENTRY_NULL(jobject, getConstantPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass_or_method), jboolean is_klass))
   ConstantPool* cp = nullptr;
-  if (UNPACK_PAIR(address, klass_or_method) == 0) {
+  if (UNPACK_PAIR(address, klass_or_method) == nullptr) {
     JVMCI_THROW_NULL(NullPointerException);
   }
   if (!is_klass) {
@@ -1098,7 +1098,7 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getMaxCallTargetOffset, (JNIEnv* env, jobject, jlong addr))
   address target_addr = (address) addr;
-  if (target_addr != 0x0) {
+  if (target_addr != nullptr) {
     int64_t off_low = (int64_t)target_addr - ((int64_t)CodeCache::low_bound() + sizeof(int));
     int64_t off_high = (int64_t)target_addr - ((int64_t)CodeCache::high_bound() + sizeof(int));
     return MAX2(ABS(off_low), ABS(off_high));

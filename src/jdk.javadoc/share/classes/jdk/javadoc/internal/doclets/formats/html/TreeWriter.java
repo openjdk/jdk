@@ -29,15 +29,16 @@ import java.util.SortedSet;
 
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
 
 /**
  * Generate Class Hierarchy page for all the Classes in this run.  Use
@@ -78,8 +79,8 @@ public class TreeWriter extends AbstractTreeWriter {
         HtmlTree body = getBody();
         Content headContent = contents.hierarchyForAllPackages;
         var heading = HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, headContent);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, headContent);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         Content mainContent = new ContentBuilder();
         mainContent.add(div);
         addPackageTreeLinks(mainContent);
@@ -105,10 +106,10 @@ public class TreeWriter extends AbstractTreeWriter {
             return;
         }
         if (!classesOnly) {
-            var span = HtmlTree.SPAN(HtmlStyle.packageHierarchyLabel,
+            var span = HtmlTree.SPAN(HtmlStyles.packageHierarchyLabel,
                     contents.packageHierarchies);
             content.add(span);
-            var ul = HtmlTree.UL(HtmlStyle.horizontal).addStyle(HtmlStyle.contentsList);
+            var ul = HtmlTree.UL(HtmlStyles.horizontal).addStyle(HtmlStyles.contentsList);
             int i = 0;
             for (PackageElement pkg : packages) {
                 // If the package name length is 0 or if -nodeprecated option

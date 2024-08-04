@@ -28,7 +28,6 @@
  * @run junit BuilderBlockTest
  */
 import java.io.IOException;
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
@@ -53,6 +52,8 @@ import helpers.ByteArrayClassLoader;
 import jdk.internal.classfile.impl.LabelImpl;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.CD_int;
 import static java.lang.constant.ConstantDescs.CD_void;
 
@@ -116,7 +117,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThen(xxb -> xxb.iconst_1().ireturn())
                                                     .iconst_2()
@@ -135,7 +136,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThenElse(xxb -> xxb.iconst_1().ireturn(),
                                                                 xxb -> xxb.iconst_2().ireturn())));
@@ -153,7 +154,7 @@ class BuilderBlockTest {
         ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
@@ -173,7 +174,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                          AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(xb -> xb.iload(0)
                                                     .ifThenElse(xxb -> xxb.iconst_1().istore(2),
                                                                 xxb -> xxb.iconst_2().istore(2))
@@ -193,7 +194,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> xb.iload(0)
                             .ifThenElse(xxb -> xxb.iconst_1().istore(2).goto_(xxb.breakLabel()),
                                     xxb -> xxb.iconst_2().istore(2).goto_(xxb.breakLabel()))
@@ -212,7 +213,7 @@ class BuilderBlockTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb ->
                             xb.iload(0)
                             .iload(1)
@@ -237,7 +238,7 @@ class BuilderBlockTest {
         ClassFile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
+                    ACC_PUBLIC | ACC_STATIC,
                     mb -> mb.withCode(xb -> {
                         xb.iload(0);
                         xb.iload(1);
