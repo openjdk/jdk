@@ -67,7 +67,6 @@ class VirtualMemoryTrackerWithTree : AllStatic {
 
  private:
   static RegionsTree* _tree;
-  static NativeCallStackStorage* _ncs_storage;
 
 };
 

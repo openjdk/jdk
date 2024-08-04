@@ -37,7 +37,7 @@
 // For example, the state may go from released memory to committed memory,
 // or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
-class VMATree : public AnyObj {
+class VMATree : public CHeapObj<mtNMT> {
   friend class NMTVMATreeTest;
   friend class VMTWithVMATreeTest;
   // A position in memory.

@@ -147,6 +147,31 @@ public:
     test(0.0f);
   }
 
+  void sorted_list_performance_test() {
+    int n = 100;
+    auto sort_list_insert = [&](int n) {
+      const size_t page_size = 1024;
+      MemTracker::record_virtual_memory_reserve((address) 1000UL, n * page_size, CALLER_PC, mtTest);
+      double st = os::elapsedTime();
+      for (int i = 0; i < n; i++) {
+        int a = os::random() % n;
+        MemTracker::record_virtual_memory_commit((address) (1000UL + a * 100), page_size - 128, CALLER_PC);
+      }
+      double d = os::elapsedTime() - st;
+      MemTracker::record_virtual_memory_release((address) 1000UL, n * page_size);
+      return d;
+    };
+    const int N1 = 1000;
+    const int N2 = 10000;
+    const int ratio = N2 / N1;
+    const int n_sqr = ratio * ratio;
+
+    double d1 = sort_list_insert(N1);
+    double d2 = sort_list_insert(N2);
+    tty->print_cr("SLL d1: %lf, d2: %lf, d2/d1: %lf", d1, d2, d2 / d1);
+    EXPECT_LT((int)(d2 / d1), n_sqr);
+
+  }
   void upsert_performance_test() {
     auto n_upsert = [&](int n) {
       TreapCHeap<int, int, Cmp> treap;
@@ -345,6 +370,7 @@ TEST_VM_F(NMTTreapTest, TestClosestLeq) {
 TEST_VM_F(NMTTreapTest, performance) {
   this->remove_performance_test();
   this->upsert_performance_test();
+  this->sorted_list_performance_test();
 }
 #ifdef ASSERT
 

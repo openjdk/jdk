@@ -365,7 +365,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   }
 }
 
-TEST_VM_F(NMTVMATreeTest, SummaryAccounting_dup) {
+TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
   Tree tree;
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
   VMATree::SummaryDiff diff1 = tree.reserve_mapping(1200, 100, rd);

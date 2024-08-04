@@ -32,7 +32,7 @@ RegionsTree* VirtualMemoryTrackerWithTree::_tree;
 bool VirtualMemoryTrackerWithTree::initialize(NMT_TrackingLevel level) {
   assert(_tree == nullptr, "only call once");
   if (level >= NMT_summary) {
-    _tree = new (std::nothrow, mtNMT) RegionsTree(level == NMT_detail);
+    _tree = new RegionsTree(level == NMT_detail);
     return (_tree != nullptr);
   }
   return true;
@@ -99,20 +99,23 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
 }
 
 void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff) {
+  int64_t r, c;
+  size_t reserved, committed;
+  MEMFLAGS flag = mtNone;
+  auto print_err = [&](const char* str) {
+    log_debug(nmt)("summary mismatch, at %s, for %s,"
+                    " diff-reserved: " SSIZE_FORMAT
+                    " diff-committed: " SSIZE_FORMAT
+                    " vms-reserved: "  SIZE_FORMAT
+                    " vms-committed: " SIZE_FORMAT,
+                    str, NMTUtil::flag_to_name(flag), r, c, reserved, committed);
+  };
   for (int i = 0; i < mt_number_of_types; i++) {
-    auto r = diff.flag[i].reserve;
-    auto c = diff.flag[i].commit;
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    size_t reserved = VirtualMemorySummary::as_snapshot()->by_type(flag)->reserved();
-    size_t committed = VirtualMemorySummary::as_snapshot()->by_type(flag)->committed();
-    auto print_err = [&](const char* str) {
-      log_debug(nmt)("summary mismatch, at %s, for %s,"
-                      " diff-reserved: " SSIZE_FORMAT
-                      " diff-committed: " SSIZE_FORMAT
-                      " vms-reserved: "  SIZE_FORMAT
-                      " vms-committed: " SIZE_FORMAT,
-                      str, NMTUtil::flag_to_name(flag), r, c, reserved, committed);
-    };
+    r = diff.flag[i].reserve;
+    c = diff.flag[i].commit;
+    flag = NMTUtil::index_to_flag(i);
+    reserved = VirtualMemorySummary::as_snapshot()->by_type(flag)->reserved();
+    committed = VirtualMemorySummary::as_snapshot()->by_type(flag)->committed();
     if (r != 0) {
       if (r > 0)
         VirtualMemorySummary::record_reserved_memory(r, flag);
