@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1329,7 +1329,7 @@ void PerfMemory::attach(int vmid, char** addrp, size_t* sizep, TRAPS) {
 //
 void PerfMemory::detach(char* addr, size_t bytes) {
 
-  assert(addr != 0, "address sanity check");
+  assert(addr != nullptr, "address sanity check");
   assert(bytes > 0, "capacity sanity check");
 
   if (PerfMemory::contains(addr) || PerfMemory::contains(addr + bytes - 1)) {
