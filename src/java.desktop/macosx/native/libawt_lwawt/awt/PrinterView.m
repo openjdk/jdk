@@ -34,6 +34,7 @@
 
 static jclass sjc_CPrinterJob = NULL;
 static jclass sjc_PAbortEx = NULL;
+static bool printLoopExit = false;
 #define GET_CPRINTERJOB_CLASS() (sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob");
 #define GET_CPRINTERJOB_CLASS_RETURN(ret) GET_CLASS_RETURN(sjc_CPrinterJob, "sun/lwawt/macosx/CPrinterJob", ret);
 #define GET_PRINERABORTEXCEPTION_CLASS(ret) GET_CLASS_RETURN(sjc_PAbortEx, "java/awt/print/PrinterAbortException", ret);
@@ -262,10 +263,12 @@ static jclass sjc_PAbortEx = NULL;
     DECLARE_METHOD_RETURN(jm_cancelCheck, sjc_CPrinterJob, "cancelCheck", "()Z", NO);
 
     BOOL b = (*env)->CallBooleanMethod(env, fPrinterJob, jm_cancelCheck); // AWT_THREADING Safe (known object)
-    CHECK_EXCEPTION();
     if (b) {
         GET_PRINERABORTEXCEPTION_CLASS(b);
         (*env)->ThrowNew(env, sjc_PAbortEx, "Printer Job cancelled");
+        printLoopExit = true;
+    } else {
+        CHECK_EXCEPTION();
     }
     return b;
 }
@@ -275,9 +278,11 @@ static jclass sjc_PAbortEx = NULL;
 {
     AWT_ASSERT_NOT_APPKIT_THREAD;
 
-    DECLARE_METHOD(jf_completePrintLoop, sjc_CPrinterJob, "completePrintLoop", "()V");
-    (*env)->CallVoidMethod(env, fPrinterJob, jf_completePrintLoop);
-    CHECK_EXCEPTION();
+    if (!printLoopExit) {
+        DECLARE_METHOD(jf_completePrintLoop, sjc_CPrinterJob, "completePrintLoop", "()V");
+        (*env)->CallVoidMethod(env, fPrinterJob, jf_completePrintLoop);
+        CHECK_EXCEPTION();
+    }
 
     // Clean up after ourselves
     // Can't put these into -dealloc since that happens (potentially) after the JNIEnv is stale
