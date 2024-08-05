@@ -1242,7 +1242,7 @@ class Http2Connection  {
                 // any streams with an stream id higher than the last processed stream
                 // can be retried (on a new connection). we close the exchange as unprocessed
                 // to facilitate the retrying.
-                client2.client().theExecutor().execute(exchange::closeAsUnprocessed);
+                client2.client().theExecutor().ensureExecutedAsync(exchange::closeAsUnprocessed);
                 numClosed.incrementAndGet();
             }
         });

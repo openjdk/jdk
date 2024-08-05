@@ -62,9 +62,9 @@ public class Http2TestServer implements AutoCloseable {
     final Set<Http2TestServerConnection> connections;
     final Properties properties;
     final String name;
-    // request approver which takes the server connection instance and the incoming request path
+    // request approver which takes the server connection key and the incoming request path
     // as inputs
-    private volatile BiPredicate<Http2TestServerConnection, String> newRequestApprover;
+    private volatile BiPredicate<String, String> newRequestApprover;
 
     private static ThreadFactory defaultThreadFac =
         (Runnable r) -> {
@@ -291,18 +291,12 @@ public class Http2TestServer implements AutoCloseable {
         return serverName;
     }
 
-    public void setRequestApprover(final BiPredicate<Http2TestServerConnection, String> approver) {
+    public void setRequestApprover(final BiPredicate<String, String> approver) {
         this.newRequestApprover = approver;
     }
 
-    public boolean shouldProcessNewHTTPRequest(final Http2TestServerConnection serverConn,
-                                               final String reqPath) {
-        final BiPredicate<Http2TestServerConnection, String> approver = this.newRequestApprover;
-        if (approver == null) {
-            // by the default the server will process new requests
-            return true;
-        }
-        return approver.test(serverConn, reqPath);
+    BiPredicate<String, String> getRequestApprover() {
+        return this.newRequestApprover;
     }
 
     private synchronized void putConnection(InetSocketAddress addr, Http2TestServerConnection c) {
