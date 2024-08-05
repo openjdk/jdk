@@ -73,12 +73,8 @@ public interface Http2TestExchange {
     CompletableFuture<Long> sendPing();
 
     /**
-     * {@return a string that identifies the underlying connection for this exchange}
-     * @apiNote
-     * This connection key can be useful to figure out whether two exchanges
-     * were performed on the same underlying connection.
+     * {@return the identification of the connection on which this exchange is being
+     * processed}
      */
-    default String getConnectionKey() {
-        return "{local=%s, remote=%s}".formatted(getLocalAddress(), getRemoteAddress());
-    }
+    String getConnectionKey();
 }

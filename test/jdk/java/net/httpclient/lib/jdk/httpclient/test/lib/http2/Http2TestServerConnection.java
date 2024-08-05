@@ -80,10 +80,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static jdk.internal.net.http.frame.ErrorFrame.REFUSED_STREAM;
 import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
 
 /**
@@ -240,18 +242,25 @@ public class Http2TestServerConnection {
         return ping.response();
     }
 
-    // public, to allow for usage in tests
-    public void sendGoAway(final int error) throws IOException {
+    private void sendGoAway(final int error) throws IOException {
         int maxProcessedStreamId = maxProcessedRequestStreamId.get();
         if (maxProcessedStreamId == -1) {
             maxProcessedStreamId = 0;
         }
+        boolean send = false;
         int currentGoAwayReqStrmId = goAwayRequestStreamId.get();
-        while (currentGoAwayReqStrmId != -1 && maxProcessedStreamId < currentGoAwayReqStrmId) {
+        // update the last processed stream id and send a goaway frame if the new last processed
+        // stream id is lesser than the last processed stream id sent in
+        // a previous goaway frame (if any)
+        while (currentGoAwayReqStrmId == -1 || maxProcessedStreamId < currentGoAwayReqStrmId) {
             if (goAwayRequestStreamId.compareAndSet(currentGoAwayReqStrmId, maxProcessedStreamId)) {
+                send = true;
                 break;
             }
             currentGoAwayReqStrmId = goAwayRequestStreamId.get();
+        }
+        if (!send) {
+            return;
         }
         final GoAwayFrame frame = new GoAwayFrame(maxProcessedStreamId, error);
         outputQ.put(frame);
@@ -631,10 +640,11 @@ public class Http2TestServerConnection {
         headersBuilder.setHeader(":path", path);
 
         // skip processing the request if configured to do so
-        if (!server.shouldProcessNewHTTPRequest(this, path)) {
-            System.err.println("Rejecting HTTP request on primordial stream (==1) of connection "
-                    + this + ", request headers: " + headersBuilder.toString());
-            // just return back and consider the request unprocessed
+        final String connKey = connectionKey();
+        if (!shouldProcessNewHTTPRequest(connKey, path)) {
+            System.err.println("Rejecting primordial stream 1 and sending GOAWAY" +
+                    " on server connection " + connKey + ", for request: " + path);
+            sendGoAway(ErrorFrame.NO_ERROR);
             return;
         }
         Queue q = new Queue(sentinel);
@@ -649,6 +659,18 @@ public class Http2TestServerConnection {
         exec.submit(() -> {
             handleRequest(headers, q, 1, true /*complete request has been read*/);
         });
+    }
+
+    private boolean shouldProcessNewHTTPRequest(final String serverConnKey, final String reqPath) {
+        final BiPredicate<String, String> approver = this.server.getRequestApprover();
+        if (approver == null) {
+            return true; // process the request
+        }
+        return approver.test(serverConnKey, reqPath);
+    }
+
+    final String connectionKey() {
+        return this.server.getAddress() + "->" + this.socket.getRemoteSocketAddress();
     }
 
     // all other streams created here
@@ -694,11 +716,13 @@ public class Http2TestServerConnection {
         }
 
         // skip processing the request if the server is configured to do so
+        final String connKey = connectionKey();
         final String path = headers.firstValue(":path").orElse("");
-        if (!server.shouldProcessNewHTTPRequest(this, path)) {
-            System.err.println("Rejecting HTTP request on stream " + streamid
-                    + " of connection " + this + ", request headers: " + headers);
-            // just return back and consider the request unprocessed
+        if (!shouldProcessNewHTTPRequest(connKey, path)) {
+            System.err.println("Rejecting stream " + streamid
+                    + " and sending GOAWAY on server connection "
+                    + connKey + ", for request: " + path);
+            sendGoAway(ErrorFrame.NO_ERROR);
             return;
         }
         Queue q = new Queue(sentinel);
@@ -805,6 +829,8 @@ public class Http2TestServerConnection {
             while (!stopping) {
                 Http2Frame frame = readFrameImpl();
                 if (frame == null) {
+                    System.err.println("EOF reached on connection " + connectionKey()
+                            + ", will no longer accept incoming frames");
                     closeIncoming();
                     return;
                 }
@@ -828,6 +854,17 @@ public class Http2TestServerConnection {
                             // TODO: close connection
                             continue;
                         } else {
+                            final int streamId = frame.streamid();
+                            final int finalProcessedStreamId = goAwayRequestStreamId.get();
+                            // if we already sent a goaway, then don't create new streams with
+                            // higher stream ids.
+                            if (finalProcessedStreamId != -1 && streamId > finalProcessedStreamId) {
+                                System.err.println(connectionKey() + " resetting stream " + streamId
+                                        + " as REFUSED_STREAM");
+                                final ResetFrame rst = new ResetFrame(streamId, REFUSED_STREAM);
+                                outputQ.put(rst);
+                                continue;
+                            }
                             createStream((HeadersFrame) frame);
                         }
                     } else {

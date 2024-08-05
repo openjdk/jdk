@@ -29,7 +29,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -42,11 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLContext;
 
-import jdk.httpclient.test.lib.http2.Http2Handler;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestServerConnection;
-import jdk.internal.net.http.frame.ErrorFrame;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestHandler;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
@@ -64,13 +61,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @summary verify that the HttpClient correctly handles incoming GOAWAY frames and
  *          retries any unprocessed requests on a new connection
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  * @run junit H2GoAwayTest
  */
 public class H2GoAwayTest {
     private static final String REQ_PATH = "/test";
-    private static Http2TestServer server;
+    private static HttpTestServer server;
     private static String REQ_URI_BASE;
     private static SSLContext sslCtx;
 
@@ -78,7 +75,7 @@ public class H2GoAwayTest {
     static void beforeAll() throws Exception {
         sslCtx = new SimpleSSLContext().get();
         assertNotNull(sslCtx, "SSLContext couldn't be created");
-        server = new Http2TestServer("localhost", true, sslCtx);
+        server = HttpTestServer.create(HTTP_2, sslCtx);
         server.addHandler(new Handler(), REQ_PATH);
         server.start();
         System.out.println("Server started at " + server.getAddress());
@@ -104,13 +101,13 @@ public class H2GoAwayTest {
      */
     @Test
     public void testSequential() throws Exception {
-        final RequestApprover reqApprover = new RequestApprover();
+        final LimitedPerConnRequestApprover reqApprover = new LimitedPerConnRequestApprover();
         server.setRequestApprover(reqApprover::allowNewRequest);
         try (final HttpClient client = HttpClient.newBuilder().version(HTTP_2)
                 .sslContext(sslCtx).build()) {
             final String[] reqMethods = {"HEAD", "GET", "POST"};
             for (final String reqMethod : reqMethods) {
-                final int numReqs = RequestApprover.MAX_REQS_PER_CONN + 3;
+                final int numReqs = LimitedPerConnRequestApprover.MAX_REQS_PER_CONN + 3;
                 final Set<String> connectionKeys = new LinkedHashSet<>();
                 for (int i = 1; i <= numReqs; i++) {
                     final URI reqURI = new URI(REQ_URI_BASE + "?seq&" + reqMethod + "=" + i);
@@ -154,16 +151,8 @@ public class H2GoAwayTest {
             for (final String reqMethod : reqMethods) {
                 final int maxAllowedReqs = 2;
                 final int numReqs = maxAllowedReqs + 3; // 3 more requests than max allowed
-                // create a random set of request paths that will be allowed to be processed
-                // on the server
-                final Set<String> allowedReqPaths = new HashSet<>();
-                while (allowedReqPaths.size() < maxAllowedReqs) {
-                    final int rnd = random.nextInt(1, numReqs + 1);
-                    final String reqPath = REQ_PATH + "?sync&" + reqMethod + "=" + rnd;
-                    allowedReqPaths.add(reqPath);
-                }
                 // configure the approver
-                final OnlyAllowSpecificPaths reqApprover = new OnlyAllowSpecificPaths(allowedReqPaths);
+                final LimitedRequestApprover reqApprover = new LimitedRequestApprover(maxAllowedReqs);
                 server.setRequestApprover(reqApprover::allowNewRequest);
                 try {
                     int numSuccess = 0;
@@ -176,7 +165,7 @@ public class H2GoAwayTest {
                                 .method(reqMethod, HttpRequest.BodyPublishers.noBody())
                                 .build();
                         System.out.println("initiating request " + req);
-                        if (allowedReqPaths.contains(REQ_PATH + reqQueryPart)) {
+                        if (i <= maxAllowedReqs) {
                             // expected to successfully complete
                             numSuccess++;
                             final HttpResponse<String> resp = client.send(req, BodyHandlers.ofString());
@@ -228,16 +217,8 @@ public class H2GoAwayTest {
             for (final String reqMethod : reqMethods) {
                 final int maxAllowedReqs = 2;
                 final int numReqs = maxAllowedReqs + 3; // 3 more requests than max allowed
-                // create a random set of request paths that will be allowed to be processed
-                // on the server
-                final Set<String> allowedReqPaths = new HashSet<>();
-                while (allowedReqPaths.size() < maxAllowedReqs) {
-                    final int rnd = random.nextInt(1, numReqs + 1);
-                    final String reqPath = REQ_PATH + "?async&" + reqMethod + "=" + rnd;
-                    allowedReqPaths.add(reqPath);
-                }
                 // configure the approver
-                final OnlyAllowSpecificPaths reqApprover = new OnlyAllowSpecificPaths(allowedReqPaths);
+                final LimitedRequestApprover reqApprover = new LimitedRequestApprover(maxAllowedReqs);
                 server.setRequestApprover(reqApprover::allowNewRequest);
                 try {
                     final List<Future<HttpResponse<String>>> futures = new ArrayList<>();
@@ -255,7 +236,10 @@ public class H2GoAwayTest {
                     int numFailed = 0;
                     int numSuccess = 0;
                     for (int i = 1; i <= numReqs; i++) {
+                        final String reqQueryPart = "?async&" + reqMethod + "=" + i;
                         try {
+                            System.out.println("waiting response of request "
+                                    + REQ_URI_BASE + reqQueryPart);
                             final HttpResponse<String> resp = futures.get(i - 1).get();
                             numSuccess++;
                             final String respBody = resp.body();
@@ -276,8 +260,7 @@ public class H2GoAwayTest {
                             }
                             numFailed++; // failed due to the right reason
                             System.out.println("received expected failure: " + ioe
-                                    + ", for request "
-                                    + REQ_URI_BASE + "?async&" + reqMethod + "=" + i);
+                                    + ", for request " + REQ_URI_BASE + reqQueryPart);
                         }
                     }
                     // verify the correct number of requests succeeded/failed
@@ -290,47 +273,36 @@ public class H2GoAwayTest {
         }
     }
 
-    // only allows requests with certain paths to be processed, irrespective of which
-    // server connection is serving them. requests which don't match the allowed
-    // paths will not be processed and a GOAWAY frame will be sent.
-    private static final class OnlyAllowSpecificPaths {
-        private final Set<String> allowedReqPaths;
+    // only allows fixed number of requests, irrespective of which server connection handles
+    // it. requests that are rejected will either be sent a GOAWAY on the connection
+    // or a RST_FRAME with a REFUSED_STREAM on the stream
+    private static final class LimitedRequestApprover {
+        private final int maxAllowedReqs;
+        private final AtomicInteger numApproved = new AtomicInteger();
 
-        private OnlyAllowSpecificPaths(final Set<String> allowedReqPaths) {
-            this.allowedReqPaths = Set.copyOf(allowedReqPaths);
+        private LimitedRequestApprover(final int maxAllowedReqs) {
+            this.maxAllowedReqs = maxAllowedReqs;
         }
 
-        public boolean allowNewRequest(final Http2TestServerConnection serverConn,
+        public boolean allowNewRequest(final String serverConnKey,
                                        final String reqPath) {
-            if (allowedReqPaths.contains(reqPath)) {
-                // allowed
-                return true;
-            }
-            System.out.println("sending GOAWAY on server connection " + serverConn
-                    + " for request: " + reqPath);
-            try {
-                serverConn.sendGoAway(ErrorFrame.NO_ERROR);
-            } catch (IOException e) {
-                System.err.println("Failed to send GOAWAY on server connection: "
-                        + serverConn + ", request: " + reqPath + ", due to: " + e);
-                e.printStackTrace();
-            }
-            return false;
+            final int approved = numApproved.incrementAndGet();
+            return approved <= maxAllowedReqs;
         }
     }
 
-    // allows a certain number of requests per server connection, before sending a GOAWAY
-    // for any subsequent requests on that connection
-    private static final class RequestApprover {
+    // allows a certain number of requests per server connection.
+    // requests that are rejected will either be sent a GOAWAY on the connection
+    // or a RST_FRAME with a REFUSED_STREAM on the stream
+    private static final class LimitedPerConnRequestApprover {
         private static final int MAX_REQS_PER_CONN = 6;
-        private final Map<Http2TestServerConnection, AtomicInteger> numApproved =
+        private final Map<String, AtomicInteger> numApproved =
                 new ConcurrentHashMap<>();
-        private final Map<Http2TestServerConnection, AtomicInteger> numDisapproved =
+        private final Map<String, AtomicInteger> numDisapproved =
                 new ConcurrentHashMap<>();
 
-        public boolean allowNewRequest(final Http2TestServerConnection serverConn,
-                                       final String reqPath) {
-            final AtomicInteger approved = numApproved.computeIfAbsent(serverConn,
+        public boolean allowNewRequest(final String serverConnKey, final String reqPath) {
+            final AtomicInteger approved = numApproved.computeIfAbsent(serverConnKey,
                     (k) -> new AtomicInteger());
             int curr = approved.get();
             while (curr < MAX_REQS_PER_CONN) {
@@ -339,30 +311,22 @@ public class H2GoAwayTest {
                 }
                 curr = approved.get();
             }
-            final AtomicInteger disapproved = numDisapproved.computeIfAbsent(serverConn,
+            final AtomicInteger disapproved = numDisapproved.computeIfAbsent(serverConnKey,
                     (k) -> new AtomicInteger());
             final int numUnprocessed = disapproved.incrementAndGet();
             System.out.println(approved.get() + " processed, "
-                    + numUnprocessed + " unprocessed requests so far," +
-                    " sending GOAWAY on connection " + serverConn);
-            try {
-                serverConn.sendGoAway(ErrorFrame.NO_ERROR);
-            } catch (IOException e) {
-                System.err.println("Failed to send GOAWAY on server connection: "
-                        + serverConn + ", due to: " + e);
-                e.printStackTrace();
-            }
+                    + numUnprocessed + " unprocessed requests on connection " + serverConnKey);
             return false;
         }
     }
 
-    private static final class Handler implements Http2Handler {
+    private static final class Handler implements HttpTestHandler {
 
         @Override
-        public void handle(final Http2TestExchange exchange) throws IOException {
+        public void handle(final HttpTestExchange exchange) throws IOException {
             final String connectionKey = exchange.getConnectionKey();
-            System.out.println(connectionKey + " responding to request: "
-                    + exchange.getRequestURI());
+            System.out.println("responding to request: " + exchange.getRequestURI()
+                    + " on connection " + connectionKey);
             final byte[] response = connectionKey.getBytes(UTF_8);
             exchange.sendResponseHeaders(200, response.length);
             try (final OutputStream os = exchange.getResponseBody()) {
