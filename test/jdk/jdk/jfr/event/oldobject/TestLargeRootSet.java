@@ -38,7 +38,6 @@ import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordedObject;
 import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.internal.test.WhiteBox;
-import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
@@ -46,6 +45,7 @@ import jdk.test.lib.jfr.Events;
  * @test
  * @key jfr
  * @requires vm.hasJFR
+ * @requires vm.gc != "Shenandoah"
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -XX:TLABSize=2k jdk.jfr.event.oldobject.TestLargeRootSet
@@ -75,22 +75,6 @@ public class TestLargeRootSet {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
         WhiteBox.setSkipBFS(true);
-
-        // OldObjectSample might be skipped if GC is running shortly after
-        // the allocations. Try with a few backoff intervals to let GC finish
-        // before we stop the recording. This currently affects Shenandoah only.
-        // There is no reason to wait unconditionally, if GC can manage with
-        // a short backoff.
-        for (int power = 0; power < 13; power++) {
-            if (tryWith(1 << power)) {
-                return;
-            }
-        }
-
-        Asserts.fail("No events");
-    }
-
-    public static boolean tryWith(int backoff) throws Exception {
         HashMap<Object, Node> leaks = new HashMap<>();
         try (Recording r = new Recording()) {
             r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
@@ -102,19 +86,15 @@ public class TestLargeRootSet {
                 node.right.value = new Leak();
                 leaks.put(i, node);
             }
-
-            Thread.sleep(backoff);
-
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
+            Events.hasEvents(events);
             for (RecordedEvent e : events) {
                 RecordedClass type = e.getValue("object.type");
                 if (type.getName().equals(Leak.class.getName())) {
-                    return true;
+                    return;
                 }
             }
         }
-
-        return false;
     }
 }
