@@ -1132,6 +1132,9 @@ public final class StringConcatFactory {
 
         private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
 
+        /**
+         * The parameter types are normalized into five types: int,long,boolean,char,Object
+         */
         private static MethodType erasedArgs(MethodType args) {
             int parameterCount = args.parameterCount();
             Class<?>[] paramTypes = new Class<?>[parameterCount];
@@ -1153,18 +1156,23 @@ public final class StringConcatFactory {
             return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
         }
 
+        /**
+         * Construct the MethodType of the prepend method, The parameters only support 5 types:
+         * int/long/char/boolean/String. Not int/long/char/boolean type, use String type<p>
+         *
+         * The following is an example of the generated target code:
+         * <blockquote><pre>
+         *  int prepend(int length, byte coder, byte[] buff,  String[] constants
+         *      int arg0, long arg1, boolean arg2, char arg3, String arg5)
+         * </pre></blockquote>
+         */
         private static MethodType prependArgs(MethodType args) {
             int parameterCount = args.parameterCount();
             Class<?>[] paramTypes = new Class<?>[parameterCount + 4];
-
-            int lengthSlot    = 0,
-                coderSlot     = 1,
-                bufSlot       = 2,
-                constantsSlot = 3;
-            paramTypes[lengthSlot   ] = int.class;
-            paramTypes[coderSlot    ] = byte.class;
-            paramTypes[bufSlot      ] = byte[].class;
-            paramTypes[constantsSlot] = String[].class;
+            paramTypes[0] = int.class;      // length
+            paramTypes[1] = byte.class;     // coder
+            paramTypes[2] = byte[].class;   // buff
+            paramTypes[3] = String[].class; // constants
 
             for (int i = 0; i < parameterCount; i++) {
                 var cl = args.parameterType(i);
@@ -1176,21 +1184,30 @@ public final class StringConcatFactory {
             return MethodType.methodType(int.class, paramTypes);
         }
 
+        /**
+         * Construct the MethodType of the coder method,
+         * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
+         */
         private static MethodType coderArgs(MethodType args) {
             int parameterCount = args.parameterCount();
             List<Class<?>> paramTypes = new ArrayList<>();
-            paramTypes.add(int.class);
+            paramTypes.add(int.class); // init coder
             for (int i = 0; i < parameterCount; i++) {
                 var cl = args.parameterType(i);
-                if (cl == char.class) {
+                if(maybeUTF16(cl)){
+                    if (cl != char.class) {
+                        cl = String.class;
+                    }
                     paramTypes.add(cl);
-                } else if(needStringOf(cl) && maybeUTF16(cl)){
-                    paramTypes.add(String.class);
                 }
             }
             return MethodType.methodType(int.class, paramTypes.toArray(new Class<?>[0]));
         }
 
+        /**
+         * Construct the MethodType of the length method,
+         * The first parameter is the initialized length, Only parameter types that can be UTF16 are added.
+         */
         private static MethodType lengthArgs(MethodType args) {
             int parameterCount = args.parameterCount();
             var paramTypes = new Class<?>[parameterCount + 1];
@@ -1236,7 +1253,6 @@ public final class StringConcatFactory {
             var coderArgs   = coderArgs(concatArgs);
             var prependArgs = prependArgs(concatArgs);
 
-            int maybeUTF16ParamCount = maybeUTF16ParameterCount(args);
             byte[] classBytes = ClassFile.of().build(concatClass,
                     new Consumer<ClassBuilder>() {
                         int forceInlineThreshold = 16;
@@ -1282,7 +1298,7 @@ public final class StringConcatFactory {
                                                 mb.withCode(generateConcatMethod(concatClass, concatArgs, lengthArgs, coderArgs, prependArgs));
                                             }
                                         });
-                            if (maybeUTF16ParamCount > 0) {
+                            if (parameterMaybeUTF16(args)) {
                                 clb.withMethod("coder",
                                         ConstantUtils.methodTypeDesc(coderArgs),
                                         ClassFile.ACC_STATIC | ClassFile.ACC_PRIVATE,
@@ -1393,7 +1409,6 @@ public final class StringConcatFactory {
                         nextSlot     += TypeKind.from(args.parameterType(i)).slotSize();
                     }
 
-                    int maybeUTF16ParamCount = maybeUTF16ParameterCount(args);
                     for (int i = 0; i < paramCount; i++) {
                         var cl = args.parameterType(i);
                         if (needStringOf(cl)) {
@@ -1429,18 +1444,20 @@ public final class StringConcatFactory {
                         }
                     }
 
+                    /*
+                     * coder = coder(this.coder, arg0, arg1, ... argN);
+                     */
                     cb.aload(thisSlot)
                       .getfield(concatClass, "coder", CD_byte);
-                    if (maybeUTF16ParamCount > 0) {
-                        /*
-                         * coder = coder(this.coder, arg0, arg1, ... argN);
-                         */
+                    if (parameterMaybeUTF16(args)) {
                         for (int i = 0; i < paramCount; i++) {
                             var cl = args.parameterType(i);
-                            if (cl == char.class) {
-                                cb.loadLocal(TypeKind.from(cl), paramSlots[i]);
-                            } else if (needStringOf(cl) && maybeUTF16(cl)) {
-                                cb.aload(stringSlots[i]);
+                            if (maybeUTF16(cl)) {
+                                if (cl == char.class) {
+                                    cb.loadLocal(TypeKind.from(cl), paramSlots[i]);
+                                } else {
+                                    cb.aload(stringSlots[i]);
+                                }
                             }
                         }
                         cb.invokestatic(concatClass, "coder", ConstantUtils.methodTypeDesc(coderArgs));
@@ -1518,26 +1535,6 @@ public final class StringConcatFactory {
                       .areturn();
                 }
             };
-        }
-
-        static boolean needStringOf(Class<?> cl) {
-            return cl != int.class && cl != long.class && cl != boolean.class && cl != char.class;
-        }
-
-        static boolean maybeUTF16(Class<?> cl) {
-            return cl == char.class || (!cl.isPrimitive()
-                    && cl != Byte.class && cl != Short.class && cl != Integer.class
-                    && cl != Long.class && cl != Boolean.class);
-        }
-
-        static int maybeUTF16ParameterCount(MethodType args) {
-            int count = 0;
-            for (int i = 0; i < args.parameterCount(); i++) {
-                if (maybeUTF16(args.parameterType(i))) {
-                    count++;
-                }
-            }
-            return count;
         }
 
         private static Consumer<CodeBuilder> generateLengthMethod(MethodType lengthArgs) {
@@ -1656,6 +1653,25 @@ public final class StringConcatFactory {
                     cb.ireturn();
                 }
             };
+        }
+
+        static boolean needStringOf(Class<?> cl) {
+            return cl != int.class && cl != long.class && cl != boolean.class && cl != char.class;
+        }
+
+        static boolean maybeUTF16(Class<?> cl) {
+            return cl == char.class || (!cl.isPrimitive()
+                    && cl != Byte.class && cl != Short.class && cl != Integer.class
+                    && cl != Long.class && cl != Boolean.class);
+        }
+
+        static boolean parameterMaybeUTF16(MethodType args) {
+            for (int i = 0; i < args.parameterCount(); i++) {
+                if (maybeUTF16(args.parameterType(i))) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
