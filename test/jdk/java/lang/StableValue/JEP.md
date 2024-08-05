@@ -178,7 +178,7 @@ called *only once*. This brings us to the introduction of _cached functions_.
 
 ### Caching functions
 
-So far, we have talked about the fundamental features of StableValue as s securely
+So far, we have talked about the fundamental features of StableValue as a securely
 wrapped stable value holder. However, it has become apparent, stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
