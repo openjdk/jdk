@@ -189,7 +189,7 @@ public class ConcurrentSkipListSet<E>
      * contains more than {@code Integer.MAX_VALUE} elements, it
      * returns {@code Integer.MAX_VALUE}.
      *
-     * It is possible for the size to change during execution of this method,
+     * <p>It is possible for the size to change during execution of this method,
      * in which case the returned result will be inaccurate.
      * Thus, this method is typically not very useful in concurrent applications.
      *
