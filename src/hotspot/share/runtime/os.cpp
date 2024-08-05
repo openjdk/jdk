@@ -1024,7 +1024,7 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
 
   // highlight_address should be within the printed range
   if (highlight_address != nullptr) {
-    if (highlight_address < start || highlight_address > end) {
+    if (highlight_address < start || highlight_address >= end) {
       highlight_address = nullptr;
     }
   }
@@ -1045,16 +1045,11 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
   while (p < end) {
     if (cols == 0) {
       // highlight start of line if address of interest is located there
-      if (highlight_address != nullptr && highlight_address == p) {
-        st->print("=>" PTR_FORMAT ":   ", p2i(logical_p));
-      } else {
-        // keep for now old formatting intact
-        if (highlight_address != nullptr) {
-          st->print("  " PTR_FORMAT ":   ", p2i(logical_p));
-        } else {
-          st->print(PTR_FORMAT ":   ", p2i(logical_p));
-        }
-      }
+      bool should_highlight = false;
+      if (highlight_address == p) should_highlight = true;
+      const char* const prefix =
+        (highlight_address != nullptr) ? (should_highlight ? "=>" : "  ") : "";
+      st->print("%s" PTR_FORMAT ":   ", prefix, p2i(logical_p));
     }
     print_hex_location(st, p, unitsize, ascii_form);
     p += unitsize;
