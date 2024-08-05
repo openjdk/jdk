@@ -30,12 +30,11 @@
 
 class RegionsTree : public VMATree {
  private:
-  NativeCallStackStorage* _ncs_storage;
+  NativeCallStackStorage _ncs_storage;
 
  public:
-  RegionsTree(bool with_storage) : VMATree() {
-   _ncs_storage = new (mtNMT) NativeCallStackStorage(with_storage);
-  }
+  RegionsTree(bool with_storage) : VMATree() , _ncs_storage(with_storage) { }
+
 
   void find_reserved_region(address addr, ReservedMemoryRegion* result, bool with_trace = false);
 
@@ -103,7 +102,7 @@ class RegionsTree : public VMATree {
         if (prev->is_committed_begin()) {
           comm_size += curr->distance_from(prev);
           if (!curr->is_committed_begin()) {
-            auto st = curr->stack(_ncs_storage);
+            auto st = curr->stack(&_ncs_storage);
             *cmr = CommittedMemoryRegion((address)base, comm_size, st);
             comm_size = 0;
             prev = nullptr;
@@ -203,10 +202,10 @@ class RegionsTree : public VMATree {
   }
 
   inline RegionData make_region_data(const NativeCallStack& ncs, MEMFLAGS flag) {
-    return RegionData(_ncs_storage->push(ncs), flag);
+    return RegionData(_ncs_storage.push(ncs), flag);
   }
   inline const NativeCallStack stack(NodeHelper* node) {
-    return _ncs_storage->get(node->val().out.stack());
+    return _ncs_storage.get(node->val().out.stack());
   }
 };
 

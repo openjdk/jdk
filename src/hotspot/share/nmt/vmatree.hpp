@@ -54,6 +54,8 @@ public:
     }
   };
 
+  // Bit fields view: bit 0 for Reserved, bit 1 for Committed.
+  // Setting a region as Committed preserves the Reserved state.
   enum class StateType : uint8_t { Reserved = 1, Committed = 3, Released = 0, COUNT = 3 };
 
 private:
