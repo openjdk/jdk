@@ -40,7 +40,6 @@ import java.lang.classfile.Annotation;
 import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
-import java.lang.classfile.Label;
 import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
@@ -1084,7 +1083,6 @@ public final class StringConcatFactory {
         static final MethodTypeDesc MTD_byte          = MethodTypeDesc.of(CD_byte);
         static final MethodTypeDesc MTD_int           = MethodTypeDesc.of(CD_int);
         static final MethodTypeDesc MTD_int_boolean   = MethodTypeDesc.of(CD_int, CD_boolean);
-        static final MethodTypeDesc MTD_int_char      = MethodTypeDesc.of(CD_int, CD_char);
         static final MethodTypeDesc MTD_int_int       = MethodTypeDesc.of(CD_int, CD_int);
         static final MethodTypeDesc MTD_int_long      = MethodTypeDesc.of(CD_int, CD_long);
         static final MethodTypeDesc MTD_int_String    = MethodTypeDesc.of(CD_int, CD_String);
@@ -1105,6 +1103,7 @@ public final class StringConcatFactory {
 
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
+        static final MethodType CONSTRUCTOR_METHOD_TYPE = MethodType.methodType(void.class, String[].class);
         private static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cb) {
@@ -1315,10 +1314,10 @@ public final class StringConcatFactory {
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                                         .defineClass(true, null);
-                var constructorHandle = lookup.findConstructor(hiddenClass, MethodType.methodType(void.class, String[].class));
-                var instance = hiddenClass.cast(constructorHandle.invoke(constants));
+                var constructorHandle = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
                 var handle = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
                 CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructorHandle, handle)));
+                var instance = hiddenClass.cast(constructorHandle.invoke(constants));
                 return handle.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
@@ -1365,7 +1364,7 @@ public final class StringConcatFactory {
          *
          *      static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
          *                       String arg4, String arg5, String arg6, String arg7) {
-         *          return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + stringSize(arg4)
+         *          return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + 1 + stringSize(arg4)
          *                    + stringSize(arg5) + stringSize(arg6) + stringSize(arg7);
          *      }
          *
@@ -1397,10 +1396,9 @@ public final class StringConcatFactory {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    int paramCount = args.parameterCount();
-
                     // Compute parameter variable slots
-                    int thisSlot  = 0,
+                    int paramCount = args.parameterCount(),
+                        thisSlot  = 0,
                         nextSlot  = 1;
                     int[] paramSlots  = new int[paramCount],
                           stringSlots = new int[paramCount];
@@ -1419,9 +1417,14 @@ public final class StringConcatFactory {
                     int lengthSlot    = nextSlot,
                         coderSlot     = nextSlot + 1,
                         bufSlot       = nextSlot + 2,
-                        constantsSlot = nextSlot + 3;
+                        constantsSlot = nextSlot + 3,
+                        suffixSlot    = nextSlot + 4;
 
                     /*
+                     * Types other than int/long/char/boolean require local variables to store the result of stringOf.
+                     *
+                     * stringSlots stores the slots of parameters relative to local variables
+                     *
                      * strN = toString(argN);
                      * ...
                      * str1 = stringOf(arg1);
@@ -1470,7 +1473,7 @@ public final class StringConcatFactory {
                     cb.aload(thisSlot)
                       .getfield(concatClass, "length", CD_int);
                     for (int i = 0; i < paramCount; i++) {
-                        var cl   = args.parameterType(i);
+                        var cl        = args.parameterType(i);
                         int paramSlot = paramSlots[i];
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
@@ -1482,7 +1485,8 @@ public final class StringConcatFactory {
 
                     /*
                      * String[] constants = this.constants;
-                     * length -= constants[paranCount].length();
+                     * suffix = constants[paranCount];
+                     * length -= suffix.length();
                      */
                     cb.aload(thisSlot)
                       .getfield(concatClass, "constants", CD_Array_String)
@@ -1490,6 +1494,8 @@ public final class StringConcatFactory {
                       .astore(constantsSlot)
                       .ldc(paramCount)
                       .aaload()
+                      .dup()
+                      .astore(suffixSlot)
                       .invokevirtual(CD_String, "length", MTD_int)
                       .isub()
                       .istore(lengthSlot);
@@ -1497,11 +1503,9 @@ public final class StringConcatFactory {
                     /*
                      * Allocate buffer :
                      *
-                     *  buf = newArrayWithSuffix(constants[paranCount], length, coder)
+                     *  buf = newArrayWithSuffix(suffix, length, coder)
                      */
-                    cb.aload(constantsSlot)
-                      .ldc(paramCount)
-                      .aaload()
+                    cb.aload(suffixSlot)
                       .iload(lengthSlot)
                       .iload(coderSlot)
                       .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", MTD_NEW_ARRAY_SUFFIX)
@@ -1537,6 +1541,21 @@ public final class StringConcatFactory {
             };
         }
 
+        /**
+         * Generate coder method method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.stringSize;
+         *
+         * static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
+         *                  String arg4, String arg5, String arg6, String arg7) {
+         *     return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + 1 + stringSize(arg4)
+         *               + stringSize(arg5) + stringSize(arg6) + stringSize(arg7);
+         * }
+         * </pre></blockquote>
+         */
         private static Consumer<CodeBuilder> generateLengthMethod(MethodType lengthArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
@@ -1549,20 +1568,22 @@ public final class StringConcatFactory {
                         var cl   = lengthArgs.parameterType(i);
                         var kind = TypeKind.from(cl);
                         MethodTypeDesc methodTypeDesc;
-                        if (cl == int.class) {
-                            methodTypeDesc = MTD_int_int;
-                        } else if (cl == long.class) {
-                            methodTypeDesc = MTD_int_long;
-                        } else if (cl == char.class) {
-                            methodTypeDesc = MTD_int_char;
-                        } else if (cl == boolean.class) {
-                            methodTypeDesc = MTD_int_boolean;
+                        if (cl == char.class) {
+                            cb.iconst_1();
                         } else {
-                            methodTypeDesc = MTD_int_String;
+                            if (cl == int.class) {
+                                methodTypeDesc = MTD_int_int;
+                            } else if (cl == long.class) {
+                                methodTypeDesc = MTD_int_long;
+                            } else if (cl == boolean.class) {
+                                methodTypeDesc = MTD_int_boolean;
+                            } else {
+                                methodTypeDesc = MTD_int_String;
+                            }
+                            cb.loadLocal(kind, nextSlot)
+                              .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                         }
-                        cb.loadLocal(kind, nextSlot)
-                           .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc)
-                           .iadd();
+                        cb.iadd();
                         nextSlot += kind.slotSize();
                     }
                     cb.ireturn();
@@ -1570,12 +1591,25 @@ public final class StringConcatFactory {
             };
         }
 
+        /**
+         * Generate coder method method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.stringCoder;
+         *
+         * static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         *     return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
+         * }
+         * </pre></blockquote>
+         */
         private static Consumer<CodeBuilder> generateCoderMethod(MethodType coderArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
                     /*
-                     * return coder | argN.coder() | ... | arg1.coder() | arg0.coder();
+                     * return coder | stringCoder(argN) | ... | arg1.coder() | arg0.coder();
                      */
                     int coderSlot = 0;
                     cb.iload(coderSlot);
@@ -1595,14 +1629,34 @@ public final class StringConcatFactory {
             };
         }
 
+        /**
+         * Generate prepend method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.prepend;
+         *
+         * static int prepend(int length, int coder, byte[] buf, String[] constants,
+         *                int arg0, long arg1, boolean arg2, char arg3,
+         *                String str4, String str6, String str6, String str7) {
+         *
+         *     return prepend(prepend(prepend(prepend(
+         *             prepend(prepend(prepend(prepend(length,
+         *                  buf, str7, constant[7]), buf, str6, constant[6]),
+         *                  buf, str5, constant[5]), buf, str4, constant[4]),
+         *                  buf, arg3, constant[3]), buf, arg2, constant[2]),
+         *                  buf, arg1, constant[1]), buf, arg0, constant[0]);
+         * }
+         * </pre></blockquote>
+         */
         private static Consumer<CodeBuilder> generatePrependMethod(MethodType args) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    int paramCount = args.parameterCount();
-
                     // Compute parameter variable slots
-                    int lengthSlot    = 0,
+                    int paramCount    = args.parameterCount(),
+                        lengthSlot    = 0,
                         coderSlot     = 1,
                         bufSlot       = 2,
                         constantsSlot = 3,
@@ -1625,9 +1679,10 @@ public final class StringConcatFactory {
                     cb.iload(lengthSlot);
                     for (int i = paramCount - 1; i >= 0; i--) {
                         int paramSlot = paramSlots[i];
-                        var cl = args.parameterType(i);
-                        var kind = TypeKind.from(cl);
+                        var cl        = args.parameterType(i);
+                        var kind      = TypeKind.from(cl);
 
+                        // There are only 5 types of parameters: int, long, boolean, char, String
                         MethodTypeDesc methodTypeDesc;
                         if (cl == int.class) {
                             methodTypeDesc = PREPEND_int;

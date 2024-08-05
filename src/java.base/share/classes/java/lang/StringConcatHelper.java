@@ -473,15 +473,6 @@ final class StringConcatHelper {
     /**
      * return stirngSize of value
      * @param value       value
-     * @return            1
-     */
-    static int stringSize(char value) {
-        return 1;
-    }
-
-    /**
-     * return stirngSize of value
-     * @param value       value
      * @return            if ture 4, false 5
      */
     static int stringSize(boolean value) {
