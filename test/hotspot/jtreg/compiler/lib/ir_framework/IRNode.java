@@ -2233,6 +2233,21 @@ public class IRNode {
         machOnlyNameRegex(X86_TESTL_REG, "testL_reg");
     }
 
+    public static final String X86_CMOVEL_IMM01 = PREFIX + "X86_CMOVEL_IMM01" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01, "cmovL_imm_01");
+    }
+
+    public static final String X86_CMOVEL_IMM01U = PREFIX + "X86_CMOVEL_IMM01U" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01U, "cmovL_imm_01U");
+    }
+
+    public static final String X86_CMOVEL_IMM01UCF = PREFIX + "X86_CMOVEL_IMM01UCF" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_CMOVEL_IMM01UCF, "cmovL_imm_01UCF");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
