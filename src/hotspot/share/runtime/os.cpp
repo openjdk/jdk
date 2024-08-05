@@ -1022,11 +1022,8 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
   assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
          is_power_of_2(bytes_per_line), "invalid bytes_per_line");
 
-  // highlight_address should be within the printed range
   if (highlight_address != nullptr) {
-    if (highlight_address < start || highlight_address >= end) {
-      highlight_address = nullptr;
-    }
+    assert(highlight_address >= start && highlight_address < end, "address %p to highlight not in range %p - %p", highlight_address, start, end);
   }
 
   start = align_down(start, unitsize);
