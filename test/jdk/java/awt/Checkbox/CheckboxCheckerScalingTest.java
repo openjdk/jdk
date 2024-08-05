@@ -28,11 +28,8 @@ import java.awt.Rectangle;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 
 import javax.swing.SwingUtilities;
-import javax.imageio.ImageIO;
 
 /*
  * @test
@@ -82,12 +79,6 @@ public class CheckboxCheckerScalingTest {
             });
 
             if (!checkmarkFound) {
-                try {
-                    ImageIO.write(imageAfterChecked, "png",
-                            new File("imageAfterChecked.png"));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
                 throw new RuntimeException(" Checkmark not scaled");
             }
             System.out.println("Test Passed");
