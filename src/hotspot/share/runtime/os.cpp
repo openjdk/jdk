@@ -1023,7 +1023,8 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
          is_power_of_2(bytes_per_line), "invalid bytes_per_line");
 
   if (highlight_address != nullptr) {
-    assert(highlight_address >= start && highlight_address < end, "address %p to highlight not in range %p - %p", highlight_address, start, end);
+    assert(highlight_address >= start && highlight_address < end,
+           "address %p to highlight not in range %p - %p", highlight_address, start, end);
   }
 
   start = align_down(start, unitsize);
@@ -1041,9 +1042,9 @@ void os::print_hex_dump(outputStream* st, const_address start, const_address end
   // Print out the addresses as if we were starting from logical_start.
   while (p < end) {
     if (cols == 0) {
-      // highlight start of line if address of interest is located there
+      // highlight start of line if address of interest is located in the line
       bool should_highlight = false;
-      if (highlight_address == p) should_highlight = true;
+      if (highlight_address >= p && highlight_address < p + cols_per_line) should_highlight = true;
       const char* const prefix =
         (highlight_address != nullptr) ? (should_highlight ? "=>" : "  ") : "";
       st->print("%s" PTR_FORMAT ":   ", prefix, p2i(logical_p));
