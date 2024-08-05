@@ -29,7 +29,7 @@
 
 // These header files are included in at least 130 C++ files, as of
 // measurements made in November 2018. This list excludes files named
-// *.include.hpp, since including them decreased build performance.
+// *.inline.hpp, since including them decreased build performance.
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
