@@ -106,7 +106,11 @@ public class CoreReflectionFactory implements GenericsFactory {
     }
 
     public TypeVariable<?> findTypeVariable(String name){
-        return getScope().lookup(name);
+        TypeVariable<?> variable = getScope().lookup(name);
+        if (variable == null) {
+            throw new TypeNotPresentException(name, null);
+        }
+        return variable;
     }
 
     public Type makeNamedType(String name){
