@@ -5112,7 +5112,8 @@ class StubGenerator: public StubCodeGenerator {
    *
    * NOTE: each field will occupy a single vector register group
    */
-  void base64_vector_decode_round(Register src, Register dst, Register codec, Register size, Register failedIdx,
+  void base64_vector_decode_round(Register src, Register dst, Register codec,
+                    Register size, Register stepSrc, Register stepDst, Register failedIdx,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3, VectorRegister inputV4,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3,
@@ -5124,8 +5125,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vlseg4e8_v(inputV1, src);
 
     // src = src + register_group_len_bytes * 4
-    __ slli(t0, size, 2);
-    __ add(src, src, t0);
+    __ add(src, src, stepSrc);
 
     // decoding
     //   1. indexed load: vr(4) => vr(4)
@@ -5162,13 +5162,12 @@ class StubGenerator: public StubCodeGenerator {
     Label NoFailure;
     __ mv(t0, -1);
     __ beq(failedIdx, t0, NoFailure);
-    __ mv(size, failedIdx);
+    __ slli(stepDst, failedIdx, 1);
+    __ add(stepDst, failedIdx, stepDst);
     __ BIND(NoFailure);
 
     // dst = dst + register_group_len_bytes * 3
-    __ slli(t0, size, 1);
-    __ add(t0, t0, size);
-    __ add(dst, dst, t0);
+    __ add(dst, dst, stepDst);
   }
 
   /**
@@ -5226,6 +5225,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "decodeBlock");
     address start = __ pc();
+    __ enter();
 
     Register src    = c_rarg0;
     Register soff   = c_rarg1;
@@ -5235,19 +5235,15 @@ class StubGenerator: public StubCodeGenerator {
     Register isURL  = c_rarg5;
 
     // isMIME = c_rarg6, which is not used in this code.
-    Register codec = c_rarg6;
+    Register codec     = c_rarg6;
     Register dstBackup = c_rarg7;
-    Register length = x31; // t6, total length of src data in bytes
-
-    RegSet saved_regs;
-    __ push_reg(saved_regs, sp);
+    Register length    = x28;     // t3, total length of src data in bytes
 
     Label Exit;
     Label ProcessData;
 
-    __ sub(length, send, soff);
     // length should be multiple of 4
-    __ srli(length, length, 2);
+    __ sub(length, send, soff);
     // real src/dst to process data
     __ add(src, src, soff);
     __ add(dst, dst, doff);
@@ -5262,30 +5258,37 @@ class StubGenerator: public StubCodeGenerator {
 
     // vector version
     if (UseRVV) {
-      Label ProcessM1, ProcessM2, ScalarEntry;
+      Label ProcessM1, ProcessM2, ProcessScalar;
 
       Register failedIdx = soff;
-      // register group length in bytes
-      Register limitM1 = send;
-      Register limitM2 = doff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+      Register size      = x29;   // t4
 
-      __ mv(limitM1, MaxVectorSize);
-      __ slli(limitM2, limitM1, 1);
-      __ blt(length, limitM1, ScalarEntry);
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 4);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 3);
 
-      // loop
+      // vector version
       __ BIND(ProcessM2);
       {
         __ mv(failedIdx, 0);
-        __ blt(length, limitM2, ProcessM1);
 
-        base64_vector_decode_round(src, dst, codec, limitM2, failedIdx,
+        __ blt(length, stepSrcM1, ProcessScalar);
+
+        __ blt(length, stepSrcM2, ProcessM1);
+
+        base64_vector_decode_round(src, dst, codec,
+                      size, stepSrcM2, stepDst, failedIdx,
                       v2, v4, v6, v8,      // inputs
                       v10, v12, v14, v16,  // indexes
                       v18, v20, v22,       // outputs
                       Assembler::m2);
-        __ sub(length, length, limitM2);
+        __ sub(length, length, stepSrcM2);
 
+        // error check
         __ mv(t1, -1);
         __ beq(failedIdx, t1, ProcessM2);
         __ j(Exit);
@@ -5293,37 +5296,40 @@ class StubGenerator: public StubCodeGenerator {
         __ BIND(ProcessM1);
         {
           __ mv(failedIdx, 0);
-          __ blt(length, limitM1, ScalarEntry);
 
-          base64_vector_decode_round(src, dst, codec, limitM1, failedIdx,
+          __ srli(size, size, 1);
+          __ srli(stepDst, stepDst, 1);
+          base64_vector_decode_round(src, dst, codec,
+                        size, stepSrcM1, stepDst, failedIdx,
                         v1, v2, v3, v4,      // inputs
                         v5, v6, v7, v8,      // indexes
                         v9, v10, v11,        // outputs
                         Assembler::m1);
-          __ sub(length, length, limitM1);
+          __ sub(length, length, stepSrcM1);
 
+          // error check
           __ mv(t1, -1);
           __ bne(failedIdx, t1, Exit);
         }
       }
 
-      __ BIND(ScalarEntry);
+      __ BIND(ProcessScalar);
     }
-
 
     // scalar version
     {
+      Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
+      Register combined32Bits = x29; // t5
+      Register step = x30;  // t4
+
+      __ mv(step, 4);
+      __ blt(length, step, Exit);
+
       Label ScalarLoop;
-
-      __ beqz(length, Exit);
-
       __ BIND(ScalarLoop);
       {
         // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
         // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
-
-        Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
-        Register combined32Bits = x30; // t5
 
         // load 4 bytes encoded src data
         __ lbu(byte0, Address(src, 0));
@@ -5359,19 +5365,17 @@ class StubGenerator: public StubCodeGenerator {
         __ sb(byte1, Address(dst, 1));
         __ sb(combined32Bits, Address(dst, 2));
 
-        // loop
-        __ sub(length, length, 1);
+        __ sub(length, length, step);
         __ addi(dst, dst, 3);
-        __ bnez(length, ScalarLoop);
-
-        __ j(Exit);
+        // loop back
+        __ bge(length, step, ScalarLoop);
       }
     }
 
     __ BIND(Exit);
     __ sub(c_rarg0, dst, dstBackup);
 
-    __ pop_reg(saved_regs, sp);
+    __ leave();
     __ ret();
 
     return (address) start;
