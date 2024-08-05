@@ -100,19 +100,34 @@ public class SaslBasic {
                     || lastClientToken[19] != 0) {
                 throw new Exception("maximum size for auth must be 0");
             }
-            verifyWrapNotAllowed(sc, ss);
+            testWrapUnwrapNoSecLayer(sc, ss);
         } else {
-            byte[] hello = "hello".getBytes();
-            token = sc.wrap(hello, 0, hello.length);
-            token = ss.unwrap(token, 0, token.length);
-            if (!Arrays.equals(hello, token)) {
-                throw new Exception("Message altered");
-            }
+            testWrapUnwrapWithSecLayer(sc, ss);
         }
     }
 
-    private static void verifyWrapNotAllowed(SaslClient sc, SaslServer ss) throws Exception {
-        // try to use security layer
+    private static void testWrapUnwrapWithSecLayer(SaslClient sc, SaslServer ss) throws Exception {
+        byte[] token;
+        byte[] hello = "hello".getBytes();
+
+        // test client wrap and server unwrap
+        token = sc.wrap(hello, 0, hello.length);
+        token = ss.unwrap(token, 0, token.length);
+
+        if (!Arrays.equals(hello, token)) {
+            throw new Exception("Client message altered");
+        }
+
+        // test server wrap and client unwrap
+        token = ss.wrap(hello, 0, hello.length);
+        token = sc.unwrap(token, 0, token.length);
+
+        if (!Arrays.equals(hello, token)) {
+            throw new Exception("Server message altered");
+        }
+    }
+
+    private static void testWrapUnwrapNoSecLayer(SaslClient sc, SaslServer ss) throws Exception {
         byte[] clntBuf = new byte[]{0, 1, 2, 3};
         byte[] srvBuf = new byte[]{10, 11, 12, 13};
         String expectedError = "No security layer negotiated";
@@ -120,7 +135,7 @@ public class SaslBasic {
         try {
             sc.wrap(clntBuf, 0, clntBuf.length);
             throw new Exception(
-                    "clnt wrap should not be allowed w/no security layer");
+                    "client wrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
         }
@@ -128,7 +143,7 @@ public class SaslBasic {
         try {
             ss.wrap(srvBuf, 0, srvBuf.length);
             throw new Exception(
-                    "srv wrap should not be allowed w/no security layer");
+                    "server wrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
         }
@@ -136,7 +151,7 @@ public class SaslBasic {
         try {
             sc.unwrap(clntBuf, 0, clntBuf.length);
             throw new Exception(
-                    "clnt unwrap should not be allowed w/no security layer");
+                    "client unwrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
         }
@@ -144,7 +159,7 @@ public class SaslBasic {
         try {
             ss.unwrap(srvBuf, 0, srvBuf.length);
             throw new Exception(
-                    "srv unwrap should not be allowed w/no security layer");
+                    "server unwrap should not be allowed w/no security layer");
         } catch (IllegalStateException e) {
             assertEquals(expectedError, e.getMessage());
         }
