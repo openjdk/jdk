@@ -882,8 +882,11 @@ public class JOptionPane extends JComponent implements Accessible
         dialog.dispose();
 
         Object        selectedValue = pane.getValue();
-        parentComponent.revalidate();
-        parentComponent.repaint();
+
+        if (parentComponent != null) {
+            parentComponent.revalidate();
+            parentComponent.repaint();
+        }
 
         if(selectedValue == null)
             return CLOSED_OPTION;
