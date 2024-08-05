@@ -399,32 +399,32 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 //      superclass checks on its own thread to catch class circularity and
 //      to avoid deadlock.
 //
-// resolve_super_or_fail adds a LOAD_SUPER placeholder to the placeholder table before calling
-// resolve_instance_class_or_null. ClassCircularityError is detected when a LOAD_SUPER or LOAD_INSTANCE
+// resolve_with_circularity_detection adds a DETECT_CIRCULARITY placeholder to the placeholder table before calling
+// resolve_instance_class_or_null. ClassCircularityError is detected when a DETECT_CIRCULARITY or LOAD_INSTANCE
 // placeholder for the same thread, class, classloader is found.
 // This can be seen with logging option: -Xlog:class+load+placeholders=debug.
 //
-InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
-                                                       Symbol* super_name,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       bool is_superclass,
-                                                       TRAPS) {
+InstanceKlass* SystemDictionary::resolve_with_circularity_detection(Symbol* class_name,
+                                                                    Symbol* next_name,
+                                                                    Handle class_loader,
+                                                                    Handle protection_domain,
+                                                                    bool is_superclass,
+                                                                    TRAPS) {
 
-  assert(super_name != nullptr, "null superclass for resolving");
-  assert(!Signature::is_array(super_name), "invalid superclass name");
+  assert(next_name != nullptr, "null superclass for resolving");
+  assert(!Signature::is_array(next_name), "invalid superclass name");
 #if INCLUDE_CDS
   if (CDSConfig::is_dumping_static_archive()) {
     // Special processing for handling UNREGISTERED shared classes.
     InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
-                           super_name, is_superclass);
+                           next_name, is_superclass);
     if (k) {
       return k;
     }
   }
 #endif // INCLUDE_CDS
 
-  // If klass is already loaded, just return the superclass or superinterface.
+  // If class_name is already loaded, just return the superclass or superinterface.
   // Make sure there's a placeholder for the class_name before resolving.
   // This is used as a claim that this thread is currently loading superclass/classloader
   // and for ClassCircularity checks.
@@ -439,28 +439,27 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
     InstanceKlass* klassk = dictionary->find_class(THREAD, class_name);
     InstanceKlass* quicksuperk;
     // To support parallel loading: if class is done loading, just return the superclass
-    // if the super_name matches class->super()->name() and if the class loaders match.
-    // Otherwise, a LinkageError will be thrown later.
+    // if the next_name matches class->super()->name() and if the class loaders match.
     if (klassk != nullptr && is_superclass &&
-        ((quicksuperk = klassk->java_super()) != nullptr) &&
-         ((quicksuperk->name() == super_name) &&
-            (quicksuperk->class_loader() == class_loader()))) {
-           return quicksuperk;
+       ((quicksuperk = klassk->java_super()) != nullptr) &&
+       ((quicksuperk->name() == next_name) &&
+         (quicksuperk->class_loader() == class_loader()))) {
+      return quicksuperk;
     } else {
       // Must check ClassCircularity before checking if superclass is already loaded.
       PlaceholderEntry* probe = PlaceholderTable::get_entry(class_name, loader_data);
-      if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::LOAD_SUPER)) {
+      if (probe && probe->check_seen_thread(THREAD, PlaceholderTable::DETECT_CIRCULARITY)) {
           log_circularity_error(class_name, probe);
           throw_circularity_error = true;
       }
     }
 
     if (!throw_circularity_error) {
-      // Be careful not to exit resolve_super without removing this placeholder.
+      // Be careful not to exit resolve_with_circularity_detection without removing this placeholder.
       PlaceholderEntry* newprobe = PlaceholderTable::find_and_add(class_name,
                                                                   loader_data,
-                                                                  PlaceholderTable::LOAD_SUPER,
-                                                                  super_name, THREAD);
+                                                                  PlaceholderTable::DETECT_CIRCULARITY,
+                                                                  next_name, THREAD);
     }
   }
 
@@ -471,7 +470,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
 
   // Resolve the superclass or superinterface, check results on return
   InstanceKlass* superk =
-    SystemDictionary::resolve_instance_class_or_null(super_name,
+    SystemDictionary::resolve_instance_class_or_null(next_name,
                                                      class_loader,
                                                      protection_domain,
                                                      THREAD);
@@ -479,13 +478,13 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   // Clean up placeholder entry.
   {
     MutexLocker mu(THREAD, SystemDictionary_lock);
-    PlaceholderTable::find_and_remove(class_name, loader_data, PlaceholderTable::LOAD_SUPER, THREAD);
+    PlaceholderTable::find_and_remove(class_name, loader_data, PlaceholderTable::DETECT_CIRCULARITY, THREAD);
     SystemDictionary_lock->notify_all();
   }
 
   // Check for pending exception or null superk, and throw exception
   if (HAS_PENDING_EXCEPTION || superk == nullptr) {
-    handle_resolution_exception(super_name, true, CHECK_NULL);
+    handle_resolution_exception(next_name, true, CHECK_NULL);
   }
 
   return superk;
@@ -502,13 +501,15 @@ static void handle_parallel_super_load(Symbol* name,
                                        Handle class_loader,
                                        Handle protection_domain, TRAPS) {
 
-  // superk is not used; resolve_super_or_fail is called for circularity check only.
-  Klass* superk = SystemDictionary::resolve_super_or_fail(name,
-                                                          superclassname,
-                                                          class_loader,
-                                                          protection_domain,
-                                                          true,
-                                                          CHECK);
+  // The result superk is not used; resolve_with_circularity_detection is called for circularity check only.
+  // This passes true to is_superclass even though it might not be the super class in order to perform the
+  // optimization anyway.
+  Klass* superk = SystemDictionary::resolve_with_circularity_detection(name,
+                                                                       superclassname,
+                                                                       class_loader,
+                                                                       protection_domain,
+                                                                       true,
+                                                                       CHECK);
 }
 
 // Bootstrap and non-parallel capable class loaders use the LOAD_INSTANCE placeholder to
@@ -536,7 +537,7 @@ static InstanceKlass* handle_parallel_loading(JavaThread* current,
       // Wait until the first thread has finished loading this class. Also wait until all the
       // threads trying to load its superclass have removed their placeholders.
       while (oldprobe != nullptr &&
-             (oldprobe->instance_load_in_progress() || oldprobe->super_load_in_progress())) {
+             (oldprobe->instance_load_in_progress() || oldprobe->circularity_detection_in_progress())) {
 
         // LOAD_INSTANCE placeholders are used to implement parallel capable class loading
         // for the bootclass loader.
@@ -575,8 +576,9 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
                                                                 Handle protection_domain,
                                                                 TRAPS) {
   // name must be in the form of "java/lang/Object" -- cannot be "Ljava/lang/Object;"
+  DEBUG_ONLY(ResourceMark rm(THREAD));
   assert(name != nullptr && !Signature::is_array(name) &&
-         !Signature::has_envelope(name), "invalid class name");
+         !Signature::has_envelope(name), "invalid class name: %s", name == nullptr ? "nullptr" : name->as_C_string());
 
   EventClassLoad class_load_start_event;
 
@@ -607,7 +609,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   Handle lockObject = get_loader_lock_or_null(class_loader);
   ObjectLocker ol(lockObject, THREAD);
 
-  bool super_load_in_progress  = false;
+  bool circularity_detection_in_progress  = false;
   InstanceKlass* loaded_class = nullptr;
   SymbolHandle superclassname; // Keep alive while loading in parallel thread.
 
@@ -625,9 +627,9 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
       loaded_class = check;
     } else {
       PlaceholderEntry* placeholder = PlaceholderTable::get_entry(name, loader_data);
-      if (placeholder != nullptr && placeholder->super_load_in_progress()) {
-         super_load_in_progress = true;
-         superclassname = placeholder->supername();
+      if (placeholder != nullptr && placeholder->circularity_detection_in_progress()) {
+         circularity_detection_in_progress = true;
+         superclassname = placeholder->next_klass_name();
          assert(superclassname != nullptr, "superclass has to have a name");
       }
     }
@@ -635,7 +637,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
 
   // If the class is in the placeholder table with super_class set,
   // handle superclass loading in progress.
-  if (super_load_in_progress) {
+  if (circularity_detection_in_progress) {
     handle_parallel_super_load(name, superclassname,
                                class_loader,
                                protection_domain,
@@ -1052,8 +1054,8 @@ bool SystemDictionary::check_shared_class_super_type(InstanceKlass* klass, Insta
     }
   }
 
-  Klass *found = resolve_super_or_fail(klass->name(), super_type->name(),
-                                       class_loader, protection_domain, is_superclass, CHECK_0);
+  Klass *found = resolve_with_circularity_detection(klass->name(), super_type->name(),
+                                                    class_loader, protection_domain, is_superclass, CHECK_0);
   if (found == super_type) {
     return true;
   } else {

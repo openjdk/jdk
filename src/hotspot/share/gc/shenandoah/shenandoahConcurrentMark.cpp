@@ -71,22 +71,14 @@ public:
 class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
-  OopClosure* const _cl;
 
 public:
-  ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset, OopClosure* cl) :
-    _satb_qset(satb_qset),
-    _cl(cl)  {}
+  explicit ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset) :
+    _satb_qset(satb_qset) {}
 
-  void do_thread(Thread* thread) {
+  void do_thread(Thread* thread) override {
     // Transfer any partial buffer to the qset for completed buffer processing.
     _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-    if (thread->is_Java_thread()) {
-      if (_cl != nullptr) {
-        ResourceMark rm;
-        thread->oops_do(_cl, nullptr);
-      }
-    }
   }
 };
 
@@ -118,9 +110,7 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahMarkRefsClosure<GENERATION> mark_cl(q, rp);
-      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set,
-                                               ShenandoahIUBarrier ? &mark_cl : nullptr);
+      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,

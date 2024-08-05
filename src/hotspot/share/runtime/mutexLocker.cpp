@@ -235,13 +235,8 @@ void mutex_init() {
 
   MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
-  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);      // used for service thread operations
-
-  if (UseNotificationThread) {
-    MUTEX_DEFN(Notification_lock             , PaddedMonitor, service);  // used for notification thread operations
-  } else {
-    Notification_lock = Service_lock;
-  }
+  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
+  MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
