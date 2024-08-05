@@ -20,25 +20,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.lang.instrument.Instrumentation;
+import java.security.ProtectionDomain;
+import jdk.test.lib.thread.VThreadPinner;
 
 /*
  * @test
  * @summary javaagent + tracePinnedThreads will cause jvm crash/ run into deadlock when the virtual thread is pinned
  * @library /test/lib
  * @requires vm.continuations
+ * @requires vm.jvmti
  * @modules java.base/java.lang:+open
- * @build TestPinCaseWithCFLH
-* @run driver jdk.test.lib.util.JavaAgentBuilder
- *      TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
+ * @compile TestPinCaseWithCFLH.java
+ * @run driver jdk.test.lib.util.JavaAgentBuilder
+ *             TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
  * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1
  *       -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED
  *       -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
-import java.lang.instrument.ClassFileTransformer;
-import java.lang.instrument.IllegalClassFormatException;
-import java.lang.instrument.Instrumentation;
-import java.security.ProtectionDomain;
-import jdk.test.lib.thread.VThreadPinner;
 
 public class TestPinCaseWithCFLH {
 
