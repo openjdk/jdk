@@ -59,7 +59,7 @@ import java.util.stream.IntStream;
 @OperationsPerInvocation(2)
 public class CustomClassBenchmark {
 
-    private static final Set<Integer> SET = IntStream.range(0, 1024).boxed().collect(Collectors.toSet());
+    private static final Set<Integer> SET = IntStream.range(0, 64).boxed().collect(Collectors.toSet());
     private static final Predicate<Integer> EVEN = i -> i % 2 == 0;
     private static final Integer VALUE = (Integer) 42;
     private static final Integer VALUE2 = (Integer) 13;

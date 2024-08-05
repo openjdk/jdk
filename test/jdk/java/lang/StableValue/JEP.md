@@ -29,7 +29,7 @@ However, one important and simpler case of constrained mutation is that of a fie
 
 #### An example: memoization
 
-Constrained mutation is essential to reliably cache the result of an expensive method call, so that it can be reused several times throughout the lifetime of an application (this technique is also known as [memoization](https://en.wikipedia.org/wiki/Memoization)). A nearly ubiquitous example of such an expensive method call is that to obtain a logger object through which an application's events can be reported. Obtaining a logger often entails expensive operations, such as reading and parsing configuration data, or prepare the backing storage where logging events will be recorded. Since these operations are expensive, an application will typically want to move them as much *forward in time* as possible: after all, an application might never need to log an event, so why paying the cost for this expensive initialization? Moreover, as some of these operation results in side effects - such as the creation of files and folders - it is crucial that they are executed _at most once_.
+Constrained mutation is essential to reliably cache the result of an expensive method call, so that it can be reused several times throughout the lifetime of an application (this technique is also known as [memoization](https://en.wikipedia.org/wiki/Memoization)). A nearly ubiquitous example of such an expensive method call is that to obtain a logger object through which an application's events can be reported. Obtaining a logger often entails expensive operations, such as reading and parsing configuration data, or preparing the backing storage where logging events will be recorded. Since these operations are expensive, an application will typically want to move them as much *forward in time* as possible: after all, an application might never need to log an event, so why pay the cost for this expensive initialization? Moreover, as some of these operations result in side effects - such as the creation of files and folders - it is crucial that they are executed _at most once_.
 
 Combining mutable fields and encapsulation is a common way to approximate at-most-once update semantics. Consider the following example, where a logger object is created in the `Application::getLogger` method:
 
@@ -51,13 +51,13 @@ As the `logger` field is private, the only way for clients to access it is to ca
 
 Unfortunately, the above solution does not work in a multithreaded environment. For instance, updates to the `logger` field made by one thread may not be immediately visible to other threads. This condition might result in multiple concurrent calls to the `Logger::create` method, thereby violating the "at-most-once" update guarantee.
 
-##### Thread-safety with double-checked locking
+##### Thread safety with double-checked locking
 
 One possible way to achieve thread safety would be to serialize access to the `Application::getLogger` method - i.e. by marking that method as `synchronized`. However, doing so has a performance cost, as multiple threads cannot concurrently obtain the application's logger object, even *long after* this object has been computed, and safely stored in the `logger` field. In other words, using  `synchronized` amounts at applying a *permanent* performance tax on *all* logger accesses, in the rare event that a race occurs during the initial update of the `logger` field.
 
-A more efficient solution is the so-called [class holder idiom](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), which achieves thread-safe "at-most-once" update guarantees by leaning on the lazy semantics of class initialization. However, for this approach to work correctly, the memoized data should be `static`, which is not the case here.
+A more efficient solution is the so-called [class holder idiom](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), which achieves thread safe "at-most-once" update guarantees by leaning on the lazy semantics of class initialization. However, for this approach to work correctly, the memoized data should be `static`, which is not the case here.
 
-In order to achieve thread-safety without compromising performance, developers often resorts to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking):
+In order to achieve thread safety without compromising performance, developers often resort to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking):
 
 ```
 class Application {
@@ -90,11 +90,11 @@ Unfortunately, double-checked locking has several inherent design flaws:
 * *lack of optimizations* - as the `logger` field is updated at most once, one might expect the JVM to optimize access to this field accordingly, e.g. by [constant-folding](https://en.wikipedia.org/wiki/Constant_folding) access to an already-initialized `logger` field. Unfortunately, since `logger` is just a plan mutable field, the JVM cannot trust the field to never be updated again. As such, access to at-most-once fields, when realized with double-checked locking is not as efficient as it could be.
 * *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to even more complex solutions using where at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error-prone, and should be avoided at all costs.
 
-##### At-most-once as a first class concept
+##### At-most-once as a first-class concept
 
 At-most-once semantics is unquestionably critical to implement important use cases such as caches and memoized functions. Unfortunately, existing workarounds, such as double-checked locking, cannot be considered adequate replacements for *first-class* "at-most-once" support. What we are missing is a way to *promise* that a variable will be initialized by the time it is used, with a value that is computed at most once, and *safely* across multiple threads. Such a mechanism would give the Java runtime maximum opportunity to stage and optimize its computation, thus avoiding the penalties that plague the workarounds shown above. Moreover, such a mechanism should gracefully scale to handle *collections* of "at-most-once" variables, while retaining efficient computer resource management.
 
-When fully realized, first-class support for "at-most-once" sematics would fill an important gap between mutable and immutable fields, as shown in the table below:
+When fully realized, first-class support for "at-most-once" semantics would fill an important gap between mutable and immutable fields, as shown in the table below:
 
 
 | Storage kind   | #Updates | Code update location              | Constant folding  | Concurrent updates       |
@@ -105,7 +105,7 @@ When fully realized, first-class support for "at-most-once" sematics would fill 
 
 [1]: https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.5 (JSL 17.5)
 
-_Table 1: properties of mutable, immutable, and at-most-once variables_
+_Table 1: Shows the properties of mutable, immutable, and at-most-once variables_
 
 ## Description
 
@@ -162,7 +162,7 @@ Null-averse applications can also use `StableValue<Optional<V>>`.
 
 When retrieving values, `StableValue` instances holding reference values can be faster
 than reference values managed via double-checked-idiom constructs as stable values rely
-on explicit memory barriers needed only during the single store operation rather than performing
+on explicit memory barriers needed only during the single, store operation rather than performing
 volatile access on each retrieval operation.
 
 In addition, stable values are eligible for constant folding optimizations by the JVM. In many
@@ -179,7 +179,7 @@ called *only once*. This brings us to the introduction of _cached functions_.
 ### Caching functions
 
 So far, we have talked about the fundamental features of StableValue as a securely
-wrapped stable value holder. However, it has become apparent, stable primitives are amenable
+wrapped stable value holder. However, it has become apparent, that stable primitives are amenable
 to composition with other constructs in order to create more high-level and powerful features.
 
 [Caching (or Memoized) functions](https://en.wikipedia.org/wiki/Memoization) are functions where the output for a
@@ -373,11 +373,11 @@ logger("com.company.Foo").log(Level.DEBUG, ...);
 ```
 
 In the example above, only two input values were used. However, this concept allows declaring a
-large number of stable values which can be easily retrieved using arbitrarily, but pre-specified,
+large number of stable values that can be easily retrieved using arbitrarily, but pre-specified,
 keys in a resource-efficient and performant way. For example, high-performance, non-evicting caches
 may now be easily and reliably realized.
 
-Analogue to a lazy list, the lazy map guarantees the function provided at map creation
+Analog to a lazy list, the lazy map guarantees the function provided at map creation
 (used to lazily compute the map values) is invoked at most once per key (absent any Exceptions),
 even though used from several threads.
 
