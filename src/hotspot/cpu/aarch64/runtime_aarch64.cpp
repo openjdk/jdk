@@ -95,7 +95,6 @@ void OptoRuntime::generate_uncommon_trap_blob() {
   // Call C code.  Need thread but NOT official VM entry
   // crud.  We cannot block on this call, no GC can happen.  Call should
   // capture callee-saved registers as well as return values.
-  // Thread is in rdi already.
   //
   // UnrollBlock* uncommon_trap(JavaThread* thread, jint unloaded_class_index);
   //
