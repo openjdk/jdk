@@ -40,7 +40,6 @@ import jdk.test.lib.thread.VThreadPinner;
  *       -Djdk.tracePinnedThreads=full --enable-native-access=ALL-UNNAMED
  *       -javaagent:TestPinCaseWithCFLH.jar TestPinCaseWithCFLH
  */
-
 public class TestPinCaseWithCFLH {
 
     public static class TestClassFileTransformer implements ClassFileTransformer {
