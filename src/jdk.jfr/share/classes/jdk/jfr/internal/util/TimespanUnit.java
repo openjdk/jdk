@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,45 +22,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.jfr.internal.util;
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+import java.util.concurrent.TimeUnit;
 
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Objects;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
-
-/**
- * Class for generating a comment for HTML pages of javadoc output.
- */
-public class Comment extends Content {
-
-    private final String commentText;
-
-    /**
-     * Constructor to construct a Comment object.
-     *
-     * @param comment comment text for the comment
-     */
-    public Comment(String comment) {
-        commentText = Objects.requireNonNull(comment);
+public enum TimespanUnit {
+    NANOSECONDS ("ns",  TimeUnit.NANOSECONDS, 1000),
+    MICROSECONDS("us", TimeUnit.MICROSECONDS, 1000),
+    MILLISECONDS("ms", TimeUnit.MILLISECONDS, 1000),
+    SECONDS     ("s",       TimeUnit.SECONDS,   60),
+    MINUTES     ("m",       TimeUnit.MINUTES,   60),
+    HOURS       ("h",         TimeUnit.HOURS,   24),
+    DAYS        ("d",          TimeUnit.DAYS,    7);
+    public final String text;
+    public final long nanos;
+    public final int size;
+    private final TimeUnit timeUnit;
+    TimespanUnit(String text, TimeUnit tu, int size) {
+        this.text = text;
+        this.nanos = tu.toNanos(1);
+        this.size = size;
+        this.timeUnit = tu;
     }
 
-    @Override
-    public boolean isEmpty() {
-        return commentText.isEmpty();
+    public long toNanos(long value) {
+        return timeUnit.toNanos(value);
     }
 
-    @Override
-    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
-        if (!atNewline) {
-            out.write(newline);
+    public static TimespanUnit fromText(String text) {
+        for (TimespanUnit tu : values()) {
+            // Case-sensitive by design
+            if (tu.text.equals(text)) {
+                return tu;
+            }
         }
-        out.write("<!-- ");
-        out.write(commentText.replace("\n", newline));
-        out.write(" -->");
-        out.write(newline);
-        return true;
+        return null;
     }
 }

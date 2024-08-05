@@ -436,7 +436,6 @@ Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToNative:     return vmSymbols::linkToNative_name();
   default:
     fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
-    return 0;
   }
 }
 
@@ -449,7 +448,6 @@ Bytecodes::Code MethodHandles::signature_polymorphic_intrinsic_bytecode(vmIntrin
     case vmIntrinsics::_invokeBasic:     return Bytecodes::_invokehandle;
     default:
       fatal("unexpected id: (%d) %s", (uint)id, vmIntrinsics::name_at(id));
-      return Bytecodes::_illegal;
   }
 }
 
@@ -463,7 +461,6 @@ int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToInterface:  return JVM_REF_invokeInterface;
   default:
     fatal("unexpected intrinsic id: %d %s", vmIntrinsics::as_int(iid), vmIntrinsics::name_at(iid));
-    return 0;
   }
 }
 
@@ -1363,6 +1360,18 @@ JVM_ENTRY(jobject, MH_invokeExact_UOE(JNIEnv* env, jobject mh, jobjectArray args
 }
 JVM_END
 
+/**
+ * Throws a java/lang/UnsupportedOperationException unconditionally.
+ * This is required by the specification of VarHandle.{access-mode} if
+ * invoked directly.
+ */
+JVM_ENTRY(jobject, VH_UOE(JNIEnv* env, jobject vh, jobjectArray args)) {
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "VarHandle access mode methods cannot be invoked reflectively");
+  return nullptr;
+}
+JVM_END
+
+
 /// JVM_RegisterMethodHandleMethods
 
 #define LANG "Ljava/lang/"
@@ -1402,6 +1411,40 @@ static JNINativeMethod MH_methods[] = {
   {CC "invoke",                    CC "([" OBJ ")" OBJ,                       FN_PTR(MH_invoke_UOE)},
   {CC "invokeExact",               CC "([" OBJ ")" OBJ,                       FN_PTR(MH_invokeExact_UOE)}
 };
+static JNINativeMethod VH_methods[] = {
+  // UnsupportedOperationException throwers
+  {CC "get",                        CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "set",                        CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getVolatile",                CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setVolatile",                CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getAcquire",                 CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setRelease",                 CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "getOpaque",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "setOpaque",                  CC "([" OBJ ")V",       FN_PTR(VH_UOE)},
+  {CC "compareAndSet",              CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "compareAndExchange",         CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "compareAndExchangeAcquire",  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "compareAndExchangeRelease",  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetPlain",     CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSet",          CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetAcquire",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "weakCompareAndSetRelease",   CC "([" OBJ ")Z",       FN_PTR(VH_UOE)},
+  {CC "getAndSet",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndSetAcquire",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndSetRelease",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndAdd",                  CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndAddAcquire",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndAddRelease",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOr",            CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOrAcquire",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseOrRelease",     CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAnd",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAndAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseAndRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXor",           CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXorAcquire",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)},
+  {CC "getAndBitwiseXorRelease",    CC "([" OBJ ")" OBJ,    FN_PTR(VH_UOE)}
+};
 
 /**
  * This one function is exported, used by NativeLookup.
@@ -1409,9 +1452,12 @@ static JNINativeMethod MH_methods[] = {
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
   assert(!MethodHandles::enabled(), "must not be enabled");
   assert(vmClasses::MethodHandle_klass() != nullptr, "should be present");
+  assert(vmClasses::VarHandle_klass() != nullptr, "should be present");
 
-  oop mirror = vmClasses::MethodHandle_klass()->java_mirror();
-  jclass MH_class = (jclass) JNIHandles::make_local(THREAD, mirror);
+  oop mh_mirror = vmClasses::MethodHandle_klass()->java_mirror();
+  oop vh_mirror = vmClasses::VarHandle_klass()->java_mirror();
+  jclass MH_class = (jclass) JNIHandles::make_local(THREAD, mh_mirror);
+  jclass VH_class = (jclass) JNIHandles::make_local(THREAD, vh_mirror);
 
   {
     ThreadToNativeFromVM ttnfv(thread);
@@ -1423,6 +1469,10 @@ JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) 
     status = env->RegisterNatives(MH_class, MH_methods, sizeof(MH_methods)/sizeof(JNINativeMethod));
     guarantee(status == JNI_OK && !env->ExceptionOccurred(),
               "register java.lang.invoke.MethodHandle natives");
+
+    status = env->RegisterNatives(VH_class, VH_methods, sizeof(VH_methods)/sizeof(JNINativeMethod));
+    guarantee(status == JNI_OK && !env->ExceptionOccurred(),
+              "register java.lang.invoke.VarHandle natives");
   }
 
   log_debug(methodhandles, indy)("MethodHandle support loaded (using LambdaForms)");

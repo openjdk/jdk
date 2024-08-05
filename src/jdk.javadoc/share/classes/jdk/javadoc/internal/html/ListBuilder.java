@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -31,8 +31,6 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A utility class for building nested HTML lists. This class is implemented as a
