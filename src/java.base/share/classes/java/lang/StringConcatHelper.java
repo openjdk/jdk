@@ -473,7 +473,7 @@ final class StringConcatHelper {
     /**
      * return stirngSize of value
      * @param value       value
-     * @return            if ture 4, false 5
+     * @return            4 if true; 5 if false
      */
     static int stringSize(boolean value) {
         return value ? 4 : 5;
