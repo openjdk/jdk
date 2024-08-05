@@ -268,13 +268,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   return blob;
 }
 
-static intptr_t offset_to_codecache(char* ptr) {
-  intptr_t offset = ((uintptr_t)ptr < (uintptr_t)CodeCache::low_bound()) ?
-    ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) :
-    ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
-  return offset;
-}
-
+#ifdef AARCH64 // for now compiler code buffers allocation in C heap in is supported for ARM only
 static BufferBlob* malloc_buffer_blob(unsigned size) {
   // CodeBuffers in CodeCache are aligned to segment size with offset
   // need to preserve this alignment to avoid "copy must preserve alignment" assert on realocation
@@ -285,8 +279,16 @@ static BufferBlob* malloc_buffer_blob(unsigned size) {
   *((char**)ptr) = buf; // store pointer to a buffer to release it later
   return (BufferBlob*)(ptr + bufferblob_offset);
 }
+static intptr_t offset_to_codecache(char* ptr) {
+  intptr_t offset = ((uintptr_t)ptr < (uintptr_t)CodeCache::low_bound()) ?
+    ((intptr_t)CodeCache::low_bound() - (intptr_t)ptr) :
+    ((intptr_t)ptr - (intptr_t)CodeCache::high_bound());
+  return offset;
+}
+#endif
 
 void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache) throw() {
+#ifdef AARCH64
   if (!alloc_in_codecache) {
     BufferBlob* blob = malloc_buffer_blob(size);
     if (StressCodeBuffers) { // temporary code for testing purposes only
@@ -299,6 +301,7 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool alloc_in_codecache)
     }
     return blob;
   }
+#endif
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 

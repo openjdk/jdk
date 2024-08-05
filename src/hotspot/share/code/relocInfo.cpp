@@ -368,7 +368,7 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   // The enhanced use of pd_call_destination sorts this all out.
   address orig_addr = old_addr_for(addr(), src, dest);
   address callee    = pd_call_destination(orig_addr);
-
+#ifdef AARCH64
   bool is_pc_relative = NativeInstruction::is_pc_relative_at(addr());
   bool move_into_codecache = CodeCache::contains(addr()) && !CodeCache::contains(orig_addr);
   bool has_trampoline = (addr() == callee) || (NativeCall::is_call_at(addr()) && nativeCall_at(addr())->get_trampoline());
@@ -379,7 +379,7 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
     uintptr_t delta = (intptr_t)CodeCache::low_bound() - section_start;
     callee += delta;
   }
-
+#endif
   // Reassert the callee address, this time in the new copy of the code.
   pd_set_call_destination(callee);
 }
