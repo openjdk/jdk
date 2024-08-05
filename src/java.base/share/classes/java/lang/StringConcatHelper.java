@@ -629,6 +629,8 @@ final class StringConcatHelper {
                 buf[index + 3] = 's';
                 buf[index + 4] = 'e';
             }
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
         } else {
             if (value) {
                 index -= 4;
@@ -644,9 +646,9 @@ final class StringConcatHelper {
                 StringUTF16.putChar(buf, index + 3, 's');
                 StringUTF16.putChar(buf, index + 4, 'e');
             }
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
         }
-        index -= prefix.length();
-        prefix.getBytes(buf, index, coder);
         return index;
     }
 
@@ -664,11 +666,13 @@ final class StringConcatHelper {
     static int prepend(int index, byte coder, byte[] buf, char value, String prefix) {
         if (coder == String.LATIN1) {
             buf[--index] = (byte) (value & 0xFF);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
         } else {
             StringUTF16.putChar(buf, --index, value);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
         }
-        index -= prefix.length();
-        prefix.getBytes(buf, index, coder);
         return index;
     }
 
@@ -686,11 +690,13 @@ final class StringConcatHelper {
     static int prepend(int index, byte coder, byte[] buf, int value, String prefix) {
         if (coder == String.LATIN1) {
             index = StringLatin1.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
         } else {
             index = StringUTF16.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
         }
-        index -= prefix.length();
-        prefix.getBytes(buf, index, coder);
         return index;
     }
 
@@ -708,11 +714,13 @@ final class StringConcatHelper {
     static int prepend(int index, byte coder, byte[] buf, long value, String prefix) {
         if (coder == String.LATIN1) {
             index = StringLatin1.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
         } else {
             index = StringUTF16.getChars(value, index, buf);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
         }
-        index -= prefix.length();
-        prefix.getBytes(buf, index, coder);
         return index;
     }
 
@@ -729,9 +737,15 @@ final class StringConcatHelper {
      */
     static int prepend(int index, byte coder, byte[] buf, String value, String prefix) {
         index -= value.length();
-        value.getBytes(buf, index, coder);
-        index -= prefix.length();
-        prefix.getBytes(buf, index, coder);
+        if (coder == String.LATIN1) {
+            value.getBytes(buf, index, String.LATIN1);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.LATIN1);
+        } else {
+            value.getBytes(buf, index, String.UTF16);
+            index -= prefix.length();
+            prefix.getBytes(buf, index, String.UTF16);
+        }
         return index;
     }
 }
