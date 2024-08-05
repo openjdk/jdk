@@ -713,8 +713,8 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
   // replace the target with a fake local one to have a limited offset.
   // This offset will be fixed in a process of relocation code to a final
   // destination within the code cache.
-  if (!CodeCache::contains(pc())) {
-    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+  intptr_t delta = CodeCache::contains(pc()) ? 0 : (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+  if (delta) {
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -722,7 +722,7 @@ void MacroAssembler::far_call(Address entry, Register tmp) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
-    adrp(tmp, entry, offset);
+    adrp(tmp, entry, offset, delta);
     add(tmp, tmp, offset);
     blr(tmp);
   } else {
@@ -741,9 +741,8 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
 
   bool far_target = target_needs_far_branch(entry.target());
 
-  if (!CodeCache::contains(pc())) {
-    intptr_t delta = (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
-    intptr_t offset = (intptr_t)pc() - (intptr_t)code_section()->start();
+  intptr_t delta = CodeCache::contains(pc()) ? 0 : (intptr_t)CodeCache::low_bound() - (intptr_t)code_section()->start();
+  if (delta != 0) {
     entry = RuntimeAddress(entry.target() - delta);
   }
 
@@ -751,7 +750,7 @@ int MacroAssembler::far_jump(Address entry, Register tmp) {
     uint64_t offset;
     // We can use ADRP here because we know that the total size of
     // the code cache cannot exceed 2Gb (ADRP limit is 4GB).
-    adrp(tmp, entry, offset);
+    adrp(tmp, entry, offset, delta);
     add(tmp, tmp, offset);
     br(tmp);
   } else {
@@ -5441,11 +5440,11 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
   return mark;
 }
 
-void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset) {
+void MacroAssembler::adrp(Register reg1, const Address &dest, uint64_t &byte_offset, int64_t delta) {
   relocInfo::relocType rtype = dest.rspec().reloc()->type();
   uint64_t low_page = (uint64_t)CodeCache::low_bound() >> 12;
   uint64_t high_page = (uint64_t)(CodeCache::high_bound()-1) >> 12;
-  uint64_t dest_page = (uint64_t)dest.target() >> 12;
+  uint64_t dest_page = (uint64_t)(dest.target() + delta) >> 12; // check the maximum distance to the real target.
   int64_t offset_low = dest_page - low_page;
   int64_t offset_high = dest_page - high_page;
 

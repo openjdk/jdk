@@ -1377,7 +1377,7 @@ public:
   void sub(Register Rd, Register Rn, RegisterOrConstant decrement);
   void subw(Register Rd, Register Rn, RegisterOrConstant decrement);
 
-  void adrp(Register reg1, const Address &dest, uint64_t &byte_offset);
+  void adrp(Register reg1, const Address &dest, uint64_t &byte_offset, int64_t delta = 0);
 
   void tableswitch(Register index, jint lowbound, jint highbound,
                    Label &jumptable, Label &jumptable_end, int stride = 1) {
