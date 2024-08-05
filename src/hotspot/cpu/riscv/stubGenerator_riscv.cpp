@@ -5111,21 +5111,20 @@ class StubGenerator: public StubCodeGenerator {
    *
    * NOTE: each field will occupy a vector register group
    */
-  void base64_vector_encode_round(Register src, Register dst, Register codec, Register step,
+  void base64_vector_encode_round(Register src, Register dst, Register codec,
+                    Register vlenb, Register stepSrc, Register stepDst,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
                     Assembler::LMUL lmul) {
     // set vector register type/len
-    __ vsetvli(x0, step, Assembler::e8, lmul);
+    __ vsetvli(x0, vlenb, Assembler::e8, lmul);
 
     // segmented load src into v registers: mem(src) => vr(3)
     __ vlseg3e8_v(inputV1, src);
 
     // src = src + register_group_len_bytes * 3
-    __ slli(t0, step, 1);
-    __ add(t0, t0, step);
-    __ add(src, src, t0);
+    __ add(src, src, stepSrc);
 
     // encoding
     //   1. compute index into lookup table: vr(3) => vr(4)
@@ -5154,8 +5153,7 @@ class StubGenerator: public StubCodeGenerator {
     __ vsseg4e8_v(outputV1, dst);
 
     // dst = dst + register_group_len_bytes * 4
-    __ slli(t0, step, 2);
-    __ add(dst, dst, t0);
+    __ add(dst, dst, stepDst);
   }
 
   /**
@@ -5170,7 +5168,7 @@ class StubGenerator: public StubCodeGenerator {
    *  c_rarg5   - isURL, Base64 or URL character set
    */
   address generate_base64_encodeBlock() {
-    static const char toBase64[64] = {
+    alignas(64) static const char toBase64[64] = {
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
       'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
       'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -5178,7 +5176,7 @@ class StubGenerator: public StubCodeGenerator {
       '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
     };
 
-    static const char toBase64URL[64] = {
+    alignas(64) static const char toBase64URL[64] = {
       'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
       'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
       'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
@@ -5189,26 +5187,22 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "encodeBlock");
     address start = __ pc();
+    __ enter();
 
-    Register src = c_rarg0;
-    Register soff = c_rarg1;
-    Register send = c_rarg2;
-    Register dst = c_rarg3;
-    Register doff = c_rarg4;
-    Register isURL = c_rarg5;
+    Register src    = c_rarg0;
+    Register soff   = c_rarg1;
+    Register send   = c_rarg2;
+    Register dst    = c_rarg3;
+    Register doff   = c_rarg4;
+    Register isURL  = c_rarg5;
 
-    Register codec = c_rarg6;
+    Register codec  = c_rarg6;
     Register length = c_rarg7; // total length of src data in bytes
 
     Label ProcessData, Exit, Greater;
 
-    RegSet saved_regs;
-    __ push_reg(saved_regs, sp);
-
     // length should be multiple of 3
     __ sub(length, send, soff);
-    __ mv(t0, 3);
-    __ div(length, length, t0);
     // real src/dst to process data
     __ add(src, src, soff);
     __ add(dst, dst, doff);
@@ -5223,44 +5217,52 @@ class StubGenerator: public StubCodeGenerator {
     if (UseRVV) {
       Label ProcessM2, ProcessM1, ProcessScalar;
 
-      Register tmp1 = x28; // t3
-      Register tmp2 = x29; // t4
-      Register limitM1 = x30; // t5
-      Register limitM2 = x31; // t6
+      Register vlenb     = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
 
-      __ mv(limitM1, MaxVectorSize);
-      __ slli(limitM2, limitM1, 1);
+      __ mv(vlenb, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 3);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 4);
 
       __ BIND(ProcessM2);
-      __ blt(length, limitM1, ProcessScalar);
+      __ blt(length, stepSrcM1, ProcessScalar);
 
-      __ blt(length, limitM2, ProcessM1);
+      __ blt(length, stepSrcM2, ProcessM1);
 
-      base64_vector_encode_round(src, dst, codec, limitM2,
+      base64_vector_encode_round(src, dst, codec,
+                    vlenb, stepSrcM2, stepDst,
                     v2, v4, v6,         // inputs
                     v8, v10, v12, v14,  // indexes
                     v16, v18, v20, v22, // outputs
                     Assembler::m2);
 
-      __ sub(length, length, limitM2);
+      __ sub(length, length, stepSrcM2);
       __ j(ProcessM2);
 
       __ BIND(ProcessM1);
-      base64_vector_encode_round(src, dst, codec, limitM1,
+      __ srli(vlenb, vlenb, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_encode_round(src, dst, codec,
+                    vlenb, stepSrcM1, stepDst,
                     v1, v2, v3,         // inputs
                     v4, v5, v6, v7,     // indexes
                     v8, v9, v10, v11,   // outputs
                     Assembler::m1);
-      __ sub(length, length, limitM1);
+      __ sub(length, length, stepSrcM1);
       __ BIND(ProcessScalar);
     }
 
     // scalar version
     {
       Register byte1 = soff, byte0 = send, byte2 = doff;
-      Register combined24Bits = x28;
+      Register combined24Bits = isURL;
+      Register step = x28;
 
-      __ beqz(length, Exit);
+      __ mv(step, 3);
+      __ blt(length, step, Exit);
 
       Label ScalarLoop;
       __ BIND(ScalarLoop);
@@ -5306,15 +5308,16 @@ class StubGenerator: public StubCodeGenerator {
         __ sb(byte2, Address(dst, 2));
         __ sb(combined24Bits, Address(dst, 3));
 
-        __ sub(length, length, 1);
+        __ sub(length, length, 3);
         __ addi(dst, dst, 4);
         // loop back
-        __ bgtz(length, ScalarLoop);
+        __ bge(length, step, ScalarLoop);
       }
     }
 
     __ BIND(Exit);
-    __ pop_reg(saved_regs, sp);
+
+    __ leave();
     __ ret();
 
     return (address) start;
@@ -6216,6 +6219,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     if (UseBASE64Intrinsics) {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
+
     if (UseAdler32Intrinsics) {
       StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
