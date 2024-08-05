@@ -22,6 +22,7 @@
  */
 
 import java.awt.Checkbox;
+import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -68,11 +69,14 @@ public class CheckboxCheckerScalingTest {
                 Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
                 imageAfterChecked = robot.createScreenCapture(rect);
 
-                int sampleRGB = imageAfterChecked.getRGB(0,0);
-                for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
-                    for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
-                        if (sampleRGB != imageAfterChecked.getRGB(i, j)) {
-                            checkmarkFound = true;
+                Color blackColor = new Color(51, 51, 51);
+                check: {
+                    for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
+                        for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
+                            if (blackColor.getRGB() == imageAfterChecked.getRGB(i, j)) {
+                                checkmarkFound = true;
+                                break check;
+                            }
                         }
                     }
                 }
