@@ -61,8 +61,17 @@ public:
   size_t heap_roots_offset() const { return _heap_roots_offset; }
 };
 
+class ArchiveHeapWriterConsts : AllStatic {
+public:
+  // The minimum region size of all collectors that are supported by CDS.
+  // Currently only G1 is supported. G1's region size depends on -Xmx,
+  // but can never be smaller than 1 * M.
+  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
+  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
+};
+
 #if INCLUDE_CDS_JAVA_HEAP
-class ArchiveHeapWriter : AllStatic {
+class ArchiveHeapWriter : ArchiveHeapWriterConsts {
   // ArchiveHeapWriter manipulates three types of addresses:
   //
   //     "source" vs "buffered" vs "requested"
@@ -111,12 +120,6 @@ class ArchiveHeapWriter : AllStatic {
 
 public:
   static const intptr_t NOCOOPS_REQUESTED_BASE = 0x10000000;
-
-  // The minimum region size of all collectors that are supported by CDS.
-  // Currently only G1 is supported. G1's region size depends on -Xmx,
-  // but can never be smaller than 1 * M.
-  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
-  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
 
 private:
   class EmbeddedOopRelocator;

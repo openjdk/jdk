@@ -2520,7 +2520,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
   // point to deal with case when Shenandoah runs with smaller regions.
   // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
-  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriterConsts::MIN_GC_REGION_ALIGNMENT) {
     return nullptr;
   }
 
