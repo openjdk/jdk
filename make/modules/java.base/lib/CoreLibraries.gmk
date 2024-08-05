@@ -54,7 +54,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     NAME := java, \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := \
-        libnio/ch, \
+        libjava/nio/ch, \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     java_props_md.c_CFLAGS := \
@@ -68,7 +68,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
         -framework CoreServices \
         -framework Foundation \
         -framework SystemConfiguration, \
-    LIBS_windows := advapi32.lib ole32.lib shell32.lib version.lib mswsock.lib ws2_32.lib, \
+    LIBS_windows := advapi32.lib mswsock.lib ole32.lib shell32.lib version.lib ws2_32.lib, \
 ))
 
 TARGETS += $(BUILD_LIBJAVA)
