@@ -23,14 +23,28 @@
 
 package org.openjdk.bench.java.lang.stable;
 
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring custom stable value types
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -43,146 +57,86 @@ import java.util.function.Supplier;
         "-XX:PerMethodTrapLimit=0"})
 @Threads(Threads.MAX)   // Benchmark under contention
 @OperationsPerInvocation(2)
-public class StableValueBenchmark {
+public class CustomClassBenchmark {
 
-    private static final int VALUE = 42;
-    private static final int VALUE2 = 23;
+    private static final Set<Integer> SET = IntStream.range(0, 1024).boxed().collect(Collectors.toSet());
+    private static final Predicate<Integer> EVEN = i -> i % 2 == 0;
+    private static final Integer VALUE = (Integer) 42;
+    private static final Integer VALUE2 = (Integer) 13;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
-    private static final StableValue<Integer> DCL = init(StableValue.newInstance(), VALUE);
-    private static final StableValue<Integer> DCL2 = init(StableValue.newInstance(), VALUE2);
-    private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
-    private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
-    private static final Holder HOLDER = new Holder(VALUE);
-    private static final Holder HOLDER2 = new Holder(VALUE2);
+    private static final Predicate<Integer> PREDICATE = cachingPredicate(SET, EVEN);
+    private static final Predicate<Integer> PREDICATE2 = cachingPredicate(SET, EVEN);
 
-    private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
-    private final StableValue<Integer> stableNull = StableValue.newInstance();
-    private final StableValue<Integer> stableNull2 = StableValue.newInstance();
-    private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
-    private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
-    private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
-    private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
-    private final Supplier<Integer> supplier = () -> VALUE;
-    private final Supplier<Integer> supplier2 = () -> VALUE2;
+    private final Predicate<Integer> predicate = cachingPredicate(SET, EVEN);
+    private final Predicate<Integer> predicate2 = cachingPredicate(SET, EVEN);
 
-
-    @Setup
-    public void setup() {
-        stableNull.trySet(null);
-        stableNull2.trySet(VALUE2);
-        // Create pollution
-        int sum = 0;
-        for (int i = 0; i < 500_000; i++) {
-            final int v = i;
-            Dcl<Integer> dclX = new Dcl<>(() -> v);
-            sum += dclX.get();
-            StableValue<Integer> stableX = StableValue.newInstance();
-            stableX.trySet(i);
-            sum += stableX.orElseThrow();
-        }
-        System.out.println("sum = " + sum);
+    @Benchmark
+    public boolean predicate() {
+        return predicate.test(VALUE) ^ predicate2.test(VALUE2);
     }
 
     @Benchmark
-    public int atomic() {
-        return atomic.get() + atomic2.get();
+    public boolean staticPredicate() {
+        return PREDICATE.test(VALUE) ^ PREDICATE2.test(VALUE2);
     }
 
-    @Benchmark
-    public int dcl() {
-        return dcl.get() + dcl2.get();
+    //Benchmark                             Mode  Cnt  Score   Error  Units
+    //CustomClassBenchmark.predicate        avgt   10  7.470 ? 0.432  ns/op
+    //CustomClassBenchmark.staticPredicate  avgt   10  6.650 ? 0.453  ns/op
+    static <T> Predicate<T> cachingPredicate(Set<? extends T> inputs, Predicate<? super T> original) {
+        Function<T, Boolean> delegate = StableValue.newCachingFunction(inputs, (T t) -> Boolean.valueOf(original.test(t)), null);
+        return delegate::apply;
     }
 
-    @Benchmark
-    public int stable() {
-        return stable.orElseThrow() + stable2.orElseThrow();
-    }
+    // This is slow for some reason
+    //Benchmark                             Mode  Cnt  Score   Error  Units
+    //CustomClassBenchmark.predicate        avgt   10  7.732 ? 0.793  ns/op
+    //CustomClassBenchmark.staticPredicate  avgt   10  6.485 ? 0.325  ns/op
+    record CachingPredicate2<T>(Function<T, Boolean> delegate) implements Predicate<T> {
 
-    @Benchmark
-    public int stableNull() {
-        return (stableNull.orElseThrow() == null ? VALUE : VALUE2) + (stableNull2.orElseThrow() == null ? VALUE : VALUE2);
-    }
-
-    // Reference case
-    @Benchmark
-    public int refSupplier() {
-        return supplier.get() + supplier2.get();
-    }
-
-    @Benchmark
-    public int staticAtomic() {
-        return ATOMIC.get() + ATOMIC2.get();
-    }
-
-    @Benchmark
-    public int staticDcl() {
-        return DCL.orElseThrow() + DCL2.orElseThrow();
-    }
-
-    @Benchmark
-    public int staticHolder() {
-        return HOLDER.get() + HOLDER2.get();
-    }
-
-    @Benchmark
-    public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
-    }
-
-
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
-    }
-
-    // The VM should be able to constant-fold the value given in the constructor
-    // because StableValue fields have a special meaning.
-    private static final class Holder {
-
-        private final StableValue<Integer> delegate = StableValue.newInstance();
-
-        Holder(int value) {
-            delegate.setOrThrow(value);
-        }
-
-        int get() {
-            return delegate.orElseThrow();
-        }
-
-    }
-
-    // Handles null values
-    private static class Dcl<V> implements Supplier<V> {
-
-        private final Supplier<V> supplier;
-
-        private volatile V value;
-        private boolean bound;
-
-        public Dcl(Supplier<V> supplier) {
-            this.supplier = supplier;
+        public CachingPredicate2(Set<? extends T> inputs, Predicate<T> original) {
+            this(StableValue.newCachingFunction(inputs, (T t) -> Boolean.valueOf(original.test(t)), null));
         }
 
         @Override
-        public V get() {
-            V v = value;
-            if (v == null) {
-                if (!bound) {
-                    synchronized (this) {
-                        v = value;
-                        if (v == null) {
-                            if (!bound) {
-                                value = v = supplier.get();
-                                bound = true;
-                            }
-                        }
-                    }
-                }
+        public boolean test(T t) {
+            return delegate.apply(t);
+        }
+
+    }
+
+
+    //Benchmark                             Mode  Cnt  Score   Error  Units
+    //CustomClassBenchmark.predicate        avgt   10  3.079 ? 0.037  ns/op
+    //CustomClassBenchmark.staticPredicate  avgt   10  2.770 ? 0.508  ns/op
+    record CachingPredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
+                               Predicate<T> original) implements Predicate<T> {
+
+        public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
+            this(inputs.stream()
+                            .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance())),
+                    original
+            );
+        }
+
+        @Override
+        public boolean test(T t) {
+            final StableValue<Boolean> stable = delegate.get(t);
+            if (stable == null) {
+                throw new IllegalArgumentException(t.toString());
+
             }
-            return v;
+            if (stable.isSet()) {
+                return stable.isSet();
+            }
+            synchronized (this) {
+                if (stable.isSet()) {
+                    return stable.isSet();
+                }
+                final Boolean r = (Boolean) original.test(t);
+                stable.setOrThrow(r);
+                return r;
+            }
         }
     }
 

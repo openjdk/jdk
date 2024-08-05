@@ -37,8 +37,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 final class JepTest {
 
@@ -243,6 +245,37 @@ final class JepTest {
             // 3. Access the cached element with as-declared-final performance
             //    (evaluation made before the first access)
             String msg = ERROR_FUNCTION.apply(2);
+        }
+    }
+
+    record CachingPredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
+                               Predicate<T> original) implements Predicate<T> {
+
+        public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
+            this(inputs.stream()
+                    .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance())),
+                    original
+            );
+        }
+
+        @Override
+        public boolean test(T t) {
+            final StableValue<Boolean> stable = delegate.get(t);
+            if (stable == null) {
+                throw new IllegalArgumentException(t.toString());
+
+            }
+            if (stable.isSet()) {
+                return stable.isSet();
+            }
+            synchronized (this) {
+                if (stable.isSet()) {
+                    return stable.isSet();
+                }
+                final Boolean r = (Boolean) original.test(t);
+                stable.setOrThrow(r);
+                return r;
+            }
         }
     }
 

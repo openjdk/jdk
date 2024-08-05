@@ -128,7 +128,7 @@ public final class StableValueUtil {
         return memoized;
     }
 
-    public static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,
+    public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
                                                     Function<? super T, ? extends R> original,
                                                     ThreadFactory factory) {
 

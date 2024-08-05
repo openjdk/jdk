@@ -61,41 +61,41 @@ import java.util.function.Supplier;
  * involving stable values:
  * <ul>
  *     <li>
- * A <em>cached</em> (also called "memoized") Supplier, where a given {@code original}
+ * A <em>caching</em> (also called "memoized") Supplier, where a given {@code original}
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
  * environment, can be created like this:
  * {@snippet lang = java :
- *     Supplier<T> cached = StableValue.newCachingSupplier(original, null);
+ *     Supplier<T> cache = StableValue.newCachingSupplier(original, null);
  * }
- * The cached supplier can also be computed by a fresh background thread if a
+ * The caching supplier can also be computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
  * {@snippet lang = java :
- *     Supplier<T> cached = StableValue.newCachingSupplier(original, Thread.ofVirtual().factory());
+ *     Supplier<T> cache = StableValue.newCachingSupplier(original, Thread.ofVirtual().factory());
  * }
  *     </li>
  *
  *     <li>
- * A cached (also called "memoized") IntFunction, for the allowed given {@code size}
+ * A caching (also called "memoized") IntFunction, for the allowed given {@code size}
  * input values {@code [0, size)} and where the given {@code original} IntFunction is
  * guaranteed to be successfully invoked at most once per inout index even in a
  * multithreaded environment, can be created like this:
  * {@snippet lang = java:
- *     IntFunction<R> cached = StableValue.newCachingIntFunction(size, original, null);
+ *     IntFunction<R> cache = StableValue.newCachingIntFunction(size, original, null);
  *}
- * Just like a cached supplier, a thread factory can be provided as a second parameter
+ * Just like a caching supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
  *     </li>
  *
  *     <li>
- * A cached (also called "memoized") Function, for the given set of allowed {@code inputs}
+ * A caching (also called "memoized") Function, for the given set of allowed {@code inputs}
  * and where the given {@code original} function is guaranteed to be successfully invoked
  * at most once per input value even in a multithreaded environment, can be created like
  * this:
  * {@snippet lang = java :
- *    Function<T, R> cached = StableValue.newCachingFunction(inputs, original, null);
+ *    Function<T, R> cache = StableValue.newCachingFunction(inputs, original, null);
  * }
- * Just like a cached supplier, a thread factory can be provided as a second parameter
+ * Just like a caching supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
  * background threads.
  *     </li>
@@ -329,7 +329,7 @@ public sealed interface StableValue<T>
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
-    static <T, R> Function<T, R> newCachingFunction(Set<T> inputs,
+    static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
                                                     Function<? super T, ? extends R> original,
                                                     ThreadFactory factory) {
         Objects.requireNonNull(inputs);

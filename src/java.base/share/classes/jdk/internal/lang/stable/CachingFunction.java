@@ -34,7 +34,7 @@ import java.util.function.Function;
 // Note: It would be possible to just use `LazyMap::get` with some additional logic
 // instead of this class but explicitly providing a class like this provides better
 // debug capability, exception handling, and may provide better performance.
-public record CachingFunction<T, R>(Map<T, StableValueImpl<R>> values,
+public record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
                                     Function<? super T, ? extends R> original) implements Function<T, R> {
     @ForceInline
     @Override
@@ -91,7 +91,7 @@ public record CachingFunction<T, R>(Map<T, StableValueImpl<R>> values,
         return sb.toString();
     }
 
-    public static <T, R> CachingFunction<T, R> of(Set<T> inputs,
+    public static <T, R> CachingFunction<T, R> of(Set<? extends T> inputs,
                                                   Function<? super T, ? extends R> original) {
         return new CachingFunction<>(StableValueUtil.ofMap(inputs), original);
     }
