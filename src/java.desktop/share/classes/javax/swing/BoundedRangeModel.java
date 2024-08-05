@@ -40,7 +40,7 @@ import javax.swing.event.*;
  * range is <code>value,value+extent</code>.  The inner range
  * must lie within the outer one, i.e. <code>value</code> must be
  * less than or equal to <code>maximum</code> and <code>value+extent</code>
- * must greater than or equal to <code>minimum</code>, and <code>maximum</code>
+ * must be greater than or equal to <code>minimum</code>, and <code>maximum</code>
  * must be greater than or equal to <code>minimum</code>.
  * There are a few features of this model that one might find a little
  * surprising.  These quirks exist for the convenience of the
