@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributeMapper;
 import java.lang.classfile.Attributes;
 import java.lang.classfile.BootstrapMethodEntry;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation;
@@ -93,9 +92,11 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import jdk.internal.access.SharedSecrets;
+
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
-        implements Attribute<T> {
+        implements Attribute<T>, Util.Writable {
     protected final AttributeMapper<T> mapper;
 
     public UnboundAttribute(AttributeMapper<T> mapper) {
@@ -114,7 +115,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         mapper.writeAttribute(buf, (T) this);
     }
 
@@ -628,7 +629,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeInvisibleParameterAnnotations());
-            this.elements = List.copyOf(elements);
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
@@ -752,7 +759,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
     public record UnboundTypeAnnotation(TargetInfo targetInfo,
                                         List<TypePathComponent> targetPath,
                                         Utf8Entry className,
-                                        List<AnnotationElement> elements) implements TypeAnnotation {
+                                        List<AnnotationElement> elements) implements TypeAnnotation, Util.Writable {
 
         public UnboundTypeAnnotation(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                                      Utf8Entry className, List<AnnotationElement> elements) {
@@ -769,8 +776,8 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
 
         @Override
-        public void writeTo(BufWriter buf) {
-            LabelContext lr = ((BufWriterImpl) buf).labelContext();
+        public void writeTo(BufWriterImpl buf) {
+            LabelContext lr = buf.labelContext();
             // target_type
             buf.writeU1(targetInfo.targetType().targetTypeValue());
 
@@ -818,7 +825,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             buf.writeU2(elements.size());
             for (AnnotationElement pair : elements()) {
                 buf.writeIndex(pair.name());
-                pair.value().writeTo(buf);
+                AnnotationReader.writeAnnotationValue(buf, pair.value());
             }
         }
     }
@@ -904,10 +911,10 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             super(mapper);
         }
 
-        public abstract void writeBody(BufWriter b);
+        public abstract void writeBody(BufWriterImpl b);
 
         @Override
-        public void writeTo(BufWriter b) {
+        public void writeTo(BufWriterImpl b) {
             b.writeIndex(b.constantPool().utf8Entry(mapper.name()));
             b.writeInt(0);
             int start = b.size();

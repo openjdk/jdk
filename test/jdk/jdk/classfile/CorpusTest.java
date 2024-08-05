@@ -31,12 +31,15 @@
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
 import helpers.Transforms;
+import jdk.internal.classfile.impl.BufWriterImpl;
+import jdk.internal.classfile.impl.Util;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import java.io.ByteArrayInputStream;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.util.*;
 
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -85,7 +88,7 @@ class CorpusTest {
             switch (coe) {
                 case LineNumber ln -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.lineNumberTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
                         b.writeU2(curPc);
                         b.writeU2(ln.line());
@@ -93,16 +96,16 @@ class CorpusTest {
                 });
                 case LocalVariable lv -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lv.writeTo(b);
+                        Util.writeLocalVariable(b, lv);
                     }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.localVariableTypeTable()) {
                     @Override
-                    public void writeBody(BufWriter b) {
+                    public void writeBody(BufWriterImpl b) {
                         b.writeU2(1);
-                        lvt.writeTo(b);
+                        Util.writeLocalVariable(b, lvt);
                     }
                 });
                 default -> cob.with(coe);
@@ -220,9 +223,11 @@ class CorpusTest {
             var m1 = itStack.next();
             var m2 = itNoStack.next();
             var text1 = m1.methodName().stringValue() + m1.methodType().stringValue() + ": "
-                      + m1.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m1.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             var text2 = m2.methodName().stringValue() + m2.methodType().stringValue() + ": "
-                      + m2.code().map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
+                      + m2.code().map(CodeAttribute.class::cast)
+                                 .map(c -> c.maxLocals() + " / " + c.maxStack()).orElse("-");
             assertEquals(text1, text2);
         }
         assertFalse(itNoStack.hasNext());
