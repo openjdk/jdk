@@ -61,8 +61,8 @@ public class TestPinCaseWithCFLH {
         Thread t1 = Thread.ofVirtual().name("vthread-1").start(() -> {
             VThreadPinner.runPinned(() -> {
                 try {
-                    // try yield, will pin, 
-                    // javaagent + tracePinnedThreads should not lead to crash 
+                    // try yield, will pin,
+                    // javaagent + tracePinnedThreads should not lead to crash
                     // (because of the class `PinnedThreadPrinter`)
                     Thread.sleep(500);
                 } catch (Exception e) {
