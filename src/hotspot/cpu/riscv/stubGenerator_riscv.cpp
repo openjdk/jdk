@@ -5112,13 +5112,13 @@ class StubGenerator: public StubCodeGenerator {
    * NOTE: each field will occupy a vector register group
    */
   void base64_vector_encode_round(Register src, Register dst, Register codec,
-                    Register vlenb, Register stepSrc, Register stepDst,
+                    Register size, Register stepSrc, Register stepDst,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
                     Assembler::LMUL lmul) {
     // set vector register type/len
-    __ vsetvli(x0, vlenb, Assembler::e8, lmul);
+    __ vsetvli(x0, size, Assembler::e8, lmul);
 
     // segmented load src into v registers: mem(src) => vr(3)
     __ vlseg3e8_v(inputV1, src);
@@ -5217,12 +5217,12 @@ class StubGenerator: public StubCodeGenerator {
     if (UseRVV) {
       Label ProcessM2, ProcessM1, ProcessScalar;
 
-      Register vlenb     = soff;
+      Register size      = soff;
       Register stepSrcM1 = send;
       Register stepSrcM2 = doff;
       Register stepDst   = isURL;
 
-      __ mv(vlenb, MaxVectorSize * 2);
+      __ mv(size, MaxVectorSize * 2);
       __ mv(stepSrcM1, MaxVectorSize * 3);
       __ slli(stepSrcM2, stepSrcM1, 1);
       __ mv(stepDst, MaxVectorSize * 2 * 4);
@@ -5233,7 +5233,7 @@ class StubGenerator: public StubCodeGenerator {
       __ blt(length, stepSrcM2, ProcessM1);
 
       base64_vector_encode_round(src, dst, codec,
-                    vlenb, stepSrcM2, stepDst,
+                    size, stepSrcM2, stepDst,
                     v2, v4, v6,         // inputs
                     v8, v10, v12, v14,  // indexes
                     v16, v18, v20, v22, // outputs
@@ -5243,10 +5243,10 @@ class StubGenerator: public StubCodeGenerator {
       __ j(ProcessM2);
 
       __ BIND(ProcessM1);
-      __ srli(vlenb, vlenb, 1);
+      __ srli(size, size, 1);
       __ srli(stepDst, stepDst, 1);
       base64_vector_encode_round(src, dst, codec,
-                    vlenb, stepSrcM1, stepDst,
+                    size, stepSrcM1, stepDst,
                     v1, v2, v3,         // inputs
                     v4, v5, v6, v7,     // indexes
                     v8, v9, v10, v11,   // outputs
