@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,25 +23,28 @@
  * questions.
  */
 
-package jdk.jfr.event.gc.collection;
-import jdk.test.lib.jfr.GCHelper;
+package jdk.javadoc.internal.html;
 
 /**
- * @test
- * @key jfr
- * @requires vm.hasJFR
+ * A type-safe wrapper around a {@code String}, for use as an "id"
+ * in {@code HtmlTree} objects.
  *
- * @requires vm.gc == "Parallel" | vm.gc == null
- * @library /test/lib /test/jdk
- *
- * @run driver jdk.jfr.event.gc.collection.TestGCCauseWithParallelOld
+ * @see HtmlTree#setId(HtmlId)
  */
-public class TestGCCauseWithParallelOld {
-    public static void main(String[] args) throws Exception {
-        String testID = "ParallelOld";
-        String[] vmFlags = {"-XX:+UseParallelGC"};
-        String[] gcNames = {GCHelper.gcParallelScavenge, GCHelper.gcParallelOld};
-        String[] gcCauses = {"Allocation Failure", "System.gc()", "GCLocker Initiated GC"};
-        GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
+public interface HtmlId {
+    /**
+     * Creates an id with the given name.
+     *
+     * @param name the name
+     * @return the id
+     */
+    static HtmlId of(String name) {
+        assert name.indexOf(' ') == -1;
+        return () -> name;
     }
+
+    /**
+     * {@return the name of the id}
+     */
+    String name();
 }

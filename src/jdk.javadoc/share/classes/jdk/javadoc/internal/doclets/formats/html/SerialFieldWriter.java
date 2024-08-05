@@ -35,11 +35,12 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate serialized form for serializable fields.
@@ -53,15 +54,15 @@ public class SerialFieldWriter extends FieldWriter {
     }
 
     protected Content getSerializableFieldsHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
     protected Content getFieldsContentHeader() {
-        return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
+        return new HtmlTree(HtmlTag.LI).setStyle(HtmlStyles.blockList);
     }
 
     protected Content getSerializableFields(String heading, Content source) {
-        var section = HtmlTree.SECTION(HtmlStyle.detail);
+        var section = HtmlTree.SECTION(HtmlStyles.detail);
         if (!source.isEmpty()) {
             Content headingContent = Text.of(heading);
             var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
@@ -75,7 +76,7 @@ public class SerialFieldWriter extends FieldWriter {
         Content nameContent = Text.of(fieldName);
         var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         content.add(heading);
-        var pre = new HtmlTree(TagName.PRE);
+        var pre = new HtmlTree(HtmlTag.PRE);
         Content fieldContent = writer.getLink(new HtmlLinkInfo(
                 configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS, fieldType));
         pre.add(fieldContent);
@@ -122,7 +123,7 @@ public class SerialFieldWriter extends FieldWriter {
             Content serialFieldContent = writer.commentTagsToContent(field,
                     description,
                     new TagletWriter.Context(false, false));
-            var div = HtmlTree.DIV(HtmlStyle.block, serialFieldContent);
+            var div = HtmlTree.DIV(HtmlStyles.block, serialFieldContent);
             content.add(div);
         }
     }
@@ -136,7 +137,7 @@ public class SerialFieldWriter extends FieldWriter {
     protected void addMemberTags(VariableElement field, Content content) {
         Content tagContent = writer.getBlockTagOutput(field);
         if (!tagContent.isEmpty()) {
-            var dl = HtmlTree.DL(HtmlStyle.notes);
+            var dl = HtmlTree.DL(HtmlStyles.notes);
             dl.add(tagContent);
             content.add(dl);
         }
