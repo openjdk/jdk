@@ -475,7 +475,7 @@ Handle java_lang_String::externalize_classname(Symbol* java_name, TRAPS) {
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
   jchar* result = as_unicode_string_or_null(java_string, length);
   if (result == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
   }
   return result;
 }
