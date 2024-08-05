@@ -471,7 +471,7 @@ final class StringConcatHelper {
     }
 
     /**
-     * return stirngSize of value
+     * return stringSize of value
      * @param value       value
      * @return            4 if true; 5 if false
      */
@@ -480,27 +480,27 @@ final class StringConcatHelper {
     }
 
     /**
-     * return stirngSize of value
+     * return stringSize of value
      * @param value       value
-     * @return            stirngSize of value
+     * @return            stringSize of value
      */
     static int stringSize(int value) {
         return DecimalDigits.stringSize(value);
     }
 
     /**
-     * return stirngSize of value
+     * return stringSize of value
      * @param value       value
-     * @return            stirngSize of value
+     * @return            stringSize of value
      */
     static int stringSize(long value) {
         return DecimalDigits.stringSize(value);
     }
 
     /**
-     * return stirngSize of value
+     * return stringSize of value
      * @param value       value
-     * @return            stirngSize of value
+     * @return            stringSize of value
      */
     static int stringSize(String value) {
         return value.length();
