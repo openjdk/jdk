@@ -57,13 +57,13 @@ public class ComponentEventTest {
     private static final int DELAY = 500;
     private static Robot robot;
     private static Component[] components;
-    private volatile static boolean componentHidden;
-    private volatile static boolean componentShown;
-    private volatile static boolean componentMoved;
-    private volatile static boolean componentResized;
-    private volatile static Point compAt;
-    private volatile static Dimension compSize;
-    private volatile static java.util.List<ComponentEvent> events =
+    private static volatile boolean componentHidden;
+    private static volatile boolean componentShown;
+    private static volatile boolean componentMoved;
+    private static volatile boolean componentResized;
+    private static volatile Point compAt;
+    private static volatile Dimension compSize;
+    private static final java.util.Collection<ComponentEvent> events =
         Collections.synchronizedList(new ArrayList<ComponentEvent>());
 
     private static final ComponentListener componentListener =
@@ -153,8 +153,8 @@ public class ComponentEventTest {
         throws InvocationTargetException, InterruptedException {
 
         EventQueue.invokeAndWait(() -> {
-            compAt = components[0].getLocationOnScreen();
-            compSize = components[0].getSize();
+            compAt = components[9].getLocationOnScreen();
+            compSize = components[9].getSize();
         });
 
         robot.mouseMove(compAt.x + compSize.width / 2,
@@ -172,9 +172,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
 
         resetValues();
-        EventQueue.invokeAndWait(() -> {
-            frame.setExtendedState(Frame.ICONIFIED);
-        });
+        EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.ICONIFIED));
 
         robot.delay(DELAY);
         if (componentShown || componentHidden || componentMoved
@@ -183,9 +181,7 @@ public class ComponentEventTest {
         }
 
         resetValues();
-        EventQueue.invokeAndWait(() -> {
-            frame.setExtendedState(Frame.NORMAL);
-        });
+        EventQueue.invokeAndWait(() -> frame.setExtendedState(Frame.NORMAL));
 
         robot.delay(DELAY);
         if (componentShown || componentHidden) {
@@ -195,8 +191,10 @@ public class ComponentEventTest {
 
     private static void printErrEvents(String errorMsg) {
         System.err.print("Events triggered are: ");
-        for (int j = 0; j < events.size(); j++) {
-            System.err.print(events.get(j) + "; ");
+        synchronized (events) {
+            for (ComponentEvent event : events) {
+                System.err.print(event + "; ");
+            }
         }
         System.err.println();
         throw new RuntimeException("FAIL: " + errorMsg);
@@ -206,6 +204,8 @@ public class ComponentEventTest {
         throws InvocationTargetException, InterruptedException {
 
         Component currentComponent = components[i];
+        System.out
+            .println("Component " + currentComponent + "is enabled " + enable);
 
         EventQueue.invokeAndWait(() -> {
             currentComponent.setEnabled(enable);
@@ -287,7 +287,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentResized) {
             throw new RuntimeException("FAIL: ComponentResized not triggered "
-                + "when size increase for " + components[i].getClass());
+                + "when size increases for " + components[i].getClass());
         }
 
         resetValues();
@@ -300,7 +300,7 @@ public class ComponentEventTest {
         robot.delay(DELAY);
         if (!componentResized) {
             throw new RuntimeException("FAIL: ComponentResized not triggered "
-                + "when size decrease for " + components[i].getClass());
+                + "when size decreases for " + components[i].getClass());
         }
     }
 
