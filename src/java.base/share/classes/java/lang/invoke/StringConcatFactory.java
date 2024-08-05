@@ -1193,7 +1193,7 @@ public final class StringConcatFactory {
             paramTypes.add(int.class); // init coder
             for (int i = 0; i < parameterCount; i++) {
                 var cl = args.parameterType(i);
-                if(maybeUTF16(cl)){
+                if (maybeUTF16(cl)) {
                     if (cl != char.class) {
                         cl = String.class;
                     }
