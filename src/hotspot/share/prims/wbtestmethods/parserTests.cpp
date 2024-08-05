@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,14 @@ static void fill_in_parser(DCmdParser* parser, oop argument)
      } else {
       parser->add_dcmd_option(argument);
      }
+   } else if (strcmp(type, "FILE") == 0) {
+      DCmdArgument<char*>* argument =
+          new DCmdArgument<char*>(name, desc, "FILE", mandatory);
+      if (isarg) {
+        parser->add_dcmd_argument(argument);
+      } else {
+        parser->add_dcmd_option(argument);
+      }
    }
 }
 

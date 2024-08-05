@@ -34,6 +34,8 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Util;
@@ -73,7 +75,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(int flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**
@@ -82,7 +84,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(AccessFlag... flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**

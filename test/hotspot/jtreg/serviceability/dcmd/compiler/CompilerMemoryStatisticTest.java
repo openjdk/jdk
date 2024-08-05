@@ -47,9 +47,9 @@ public class CompilerMemoryStatisticTest {
         out.shouldHaveExitValue(0);
 
         // Looks like this:
-        // total     NA        RA        result  #nodes  time    type  #rc thread              method
-        // 211488    66440     77624     ok      13      0.057   c2    2   0x00007fb49428db70  compiler/print/CompileCommandPrintMemStat$TestMain::method1(()V)
+        // total     Others    RA        HA        NA        result  #nodes  limit   time    type  #rc thread             method
+        // 1898600   853176    750872    0         294552    ok      934     -       1.501   c2    1   0x00007f4ec00d3330 java/lang/String::replace((CC)Ljava/lang/String;)
         out.shouldMatch("total.*method");
-        out.shouldMatch("\\d+ +\\d+ +\\d+ +\\S+ +\\d+.*java.*\\(.*\\)");
+        out.shouldMatch("\\d+ +(\\d+ +){4}\\S+ +\\d+.*java.*\\(.*\\)");
     }
 }

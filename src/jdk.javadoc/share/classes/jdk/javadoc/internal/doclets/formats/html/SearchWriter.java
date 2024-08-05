@@ -27,15 +27,16 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generates the search landing page for the generated API documentation.
@@ -79,7 +80,7 @@ public class SearchWriter extends HtmlDocletWriter {
             helpSection = HtmlTree.P(contents.getContent("doclet.search.help_page_info", helpLink));
         }
 
-        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title,
+        contentTree.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title,
                         contents.getContent("doclet.search.main_heading")))
                 .add(HtmlTree.DIV(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlId.of("page-search-input"))
                                 .put(HtmlAttr.PLACEHOLDER, resources.getText("doclet.search_placeholder"))
@@ -88,31 +89,31 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlId.of("page-search-reset"))
                                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"))
                                 .put(HtmlAttr.STYLE, "margin: 6px;"))
-                        .add(HtmlTree.DETAILS(HtmlStyle.pageSearchDetails)
+                        .add(HtmlTree.DETAILS(HtmlStyles.pageSearchDetails)
                                 .add(HtmlTree.SUMMARY(contents.getContent("doclet.search.show_more"))
                                         .setId(HtmlId.of("page-search-expand")))))
-                .add(HtmlTree.DIV(HtmlStyle.pageSearchInfo, helpSection)
+                .add(HtmlTree.DIV(HtmlStyles.pageSearchInfo, helpSection)
                         .add(HtmlTree.P(contents.getContent("doclet.search.keyboard_info")))
                         .add(HtmlTree.P(contents.getContent("doclet.search.browser_info")))
                         .add(HtmlTree.SPAN(Text.of("link"))
                                 .setId(HtmlId.of("page-search-link")))
-                        .add(new HtmlTree(TagName.BUTTON)
-                                .add(new HtmlTree(TagName.IMG)
+                        .add(new HtmlTree(HtmlTag.BUTTON)
+                                .add(new HtmlTree(HtmlTag.IMG)
                                         .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
                                                                      .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                         .put(HtmlAttr.ALT, copyUrlText))
                                 .add(HtmlTree.SPAN(Text.of(copyText))
                                         .put(HtmlAttr.DATA_COPIED, copiedText))
-                                .addStyle(HtmlStyle.copy)
+                                .addStyle(HtmlStyles.copy)
                                 .put(HtmlAttr.ARIA_LABEL, copyUrlText)
                                 .setId(HtmlId.of("page-search-copy")))
                         .add(HtmlTree.P(HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("search-redirect")))
                                 .add(HtmlTree.LABEL("search-redirect",
                                         contents.getContent("doclet.search.redirect")))))
-                .add(new HtmlTree(TagName.P)
+                .add(new HtmlTree(HtmlTag.P)
                         .setId(HtmlId.of("page-search-notify"))
                         .add(contents.getContent("doclet.search.loading")))
-                .add(HtmlTree.DIV(new HtmlTree(TagName.DIV)
+                .add(HtmlTree.DIV(new HtmlTree(HtmlTag.DIV)
                                 .setId(HtmlId.of("result-container"))
                                 .addUnchecked(Text.EMPTY))
                         .setId(HtmlId.of("result-section"))
