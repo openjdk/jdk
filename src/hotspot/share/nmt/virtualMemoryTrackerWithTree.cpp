@@ -99,7 +99,7 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
 }
 
 void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff) {
-  int64_t r, c;
+  VMATree::SingleDiff::delta reserve_delta, commit_delta;
   size_t reserved, committed;
   MEMFLAGS flag = mtNone;
   auto print_err = [&](const char* str) {
@@ -108,34 +108,34 @@ void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff)
                     " diff-committed: " SSIZE_FORMAT
                     " vms-reserved: "  SIZE_FORMAT
                     " vms-committed: " SIZE_FORMAT,
-                    str, NMTUtil::flag_to_name(flag), r, c, reserved, committed);
+                    str, NMTUtil::flag_to_name(flag), reserve_delta, commit_delta, reserved, committed);
   };
   for (int i = 0; i < mt_number_of_types; i++) {
-    r = diff.flag[i].reserve;
-    c = diff.flag[i].commit;
+    reserve_delta = diff.flag[i].reserve;
+    commit_delta = diff.flag[i].commit;
     flag = NMTUtil::index_to_flag(i);
     reserved = VirtualMemorySummary::as_snapshot()->by_type(flag)->reserved();
     committed = VirtualMemorySummary::as_snapshot()->by_type(flag)->committed();
-    if (r != 0) {
-      if (r > 0)
-        VirtualMemorySummary::record_reserved_memory(r, flag);
+    if (reserve_delta != 0) {
+      if (reserve_delta > 0)
+        VirtualMemorySummary::record_reserved_memory(reserve_delta, flag);
       else {
-        if ((size_t)-r <= reserved)
-          VirtualMemorySummary::record_released_memory(-r, flag);
+        if ((size_t)-reserve_delta <= reserved)
+          VirtualMemorySummary::record_released_memory(-reserve_delta, flag);
         else
           print_err("release");
       }
     }
-    if (c != 0) {
-      if (c > 0) {
-        if ((size_t)c <= reserved)
-          VirtualMemorySummary::record_committed_memory(c, flag);
+    if (commit_delta != 0) {
+      if (commit_delta > 0) {
+        if ((size_t)commit_delta <= reserved)
+          VirtualMemorySummary::record_committed_memory(commit_delta, flag);
         else
           print_err("commit");
       }
       else {
-        if ((size_t)-c <= reserved && (size_t)-c <= committed)
-          VirtualMemorySummary::record_uncommitted_memory(-c, flag);
+        if ((size_t)-commit_delta <= reserved && (size_t)-commit_delta <= committed)
+          VirtualMemorySummary::record_uncommitted_memory(-commit_delta, flag);
         else
           print_err("uncommit");
       }

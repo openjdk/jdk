@@ -67,7 +67,6 @@ class VirtualMemoryTrackerWithTree : AllStatic {
 
  private:
   static RegionsTree* _tree;
-
 };
 
 #endif // NMT_VIRTUALMEMORYTRACKERWITHTREE_HPP
