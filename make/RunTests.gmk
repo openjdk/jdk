@@ -841,15 +841,15 @@ define SetupRunJtregTestBody
   JTREG_AUTO_TIMEOUT_FACTOR := 4
 
   ifneq ($$(findstring -Xcomp, $$(JTREG_ALL_OPTIONS)), )
-    JTREG_AUTO_PROBLEM_LISTS := $$(JTREG_AUTO_PROBLEM_LISTS) ProblemList-Xcomp.txt
-    JTREG_AUTO_TIMEOUT_FACTOR ?= 10
+    JTREG_AUTO_PROBLEM_LISTS += ProblemList-Xcomp.txt
+    JTREG_AUTO_TIMEOUT_FACTOR := 10
   endif
 
   ifneq ($$(findstring -XX:+UseZGC, $$(JTREG_ALL_OPTIONS)), )
     ifneq ($$(findstring -XX:-ZGenerational, $$(JTREG_ALL_OPTIONS)), )
-      JTREG_AUTO_PROBLEM_LISTS := $$(JTREG_AUTO_PROBLEM_LISTS) ProblemList-zgc.txt
+      JTREG_AUTO_PROBLEM_LISTS += ProblemList-zgc.txt
     else
-      JTREG_AUTO_PROBLEM_LISTS := $$(JTREG_AUTO_PROBLEM_LISTS) ProblemList-generational-zgc.txt
+      JTREG_AUTO_PROBLEM_LISTS += ProblemList-generational-zgc.txt
     endif
   endif
 
