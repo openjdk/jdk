@@ -28,7 +28,6 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -52,32 +51,33 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(value = 2, jvmArgsAppend = {
-        "--enable-preview",
+        "--enable-preview"
         // Prevent the use of uncommon traps
-        "-XX:PerMethodTrapLimit=0"})
+//        ,"-XX:PerMethodTrapLimit=0"
+})
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(2)
-public class CustomClassBenchmark {
+//@OperationsPerInvocation(2)
+public class CustomCachingPredicateBenchmark {
 
     private static final Set<Integer> SET = IntStream.range(0, 64).boxed().collect(Collectors.toSet());
     private static final Predicate<Integer> EVEN = i -> i % 2 == 0;
-    private static final Integer VALUE = (Integer) 42;
-    private static final Integer VALUE2 = (Integer) 13;
+    private static final Integer VALUE = 42;
+    private static final Integer VALUE2 = 13;
 
-    private static final Predicate<Integer> PREDICATE = cachingPredicate(SET, EVEN);
-    private static final Predicate<Integer> PREDICATE2 = cachingPredicate(SET, EVEN);
+    private static final Predicate<Integer> PREDICATE = new CachingPredicate<>(SET, EVEN);
+    private static final Predicate<Integer> PREDICATE2 = new CachingPredicate<>(SET, EVEN);
 
-    private final Predicate<Integer> predicate = cachingPredicate(SET, EVEN);
-    private final Predicate<Integer> predicate2 = cachingPredicate(SET, EVEN);
+    private final Predicate<Integer> predicate = new CachingPredicate<>(SET, EVEN);
+    private final Predicate<Integer> predicate2 = new CachingPredicate<>(SET, EVEN);
 
     @Benchmark
     public boolean predicate() {
-        return predicate.test(VALUE) ^ predicate2.test(VALUE2);
+        return predicate.test(VALUE);
     }
 
     @Benchmark
     public boolean staticPredicate() {
-        return PREDICATE.test(VALUE) ^ PREDICATE2.test(VALUE2);
+        return PREDICATE.test(VALUE);
     }
 
     //Benchmark                             Mode  Cnt  Score   Error  Units
@@ -133,7 +133,7 @@ public class CustomClassBenchmark {
                 if (stable.isSet()) {
                     return stable.isSet();
                 }
-                final Boolean r = (Boolean) original.test(t);
+                final boolean r = original.test(t);
                 stable.setOrThrow(r);
                 return r;
             }
