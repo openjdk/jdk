@@ -23,14 +23,12 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * Class for generating raw HTML content to be added to HTML pages of javadoc output.
@@ -147,8 +145,8 @@ public class RawHtml extends Content {
         Matcher m = tag.matcher(rawHtmlContent);
         while (m.find()) {
             try {
-                var tn = TagName.of(m.group("tag"));
-                if (!tn.phrasingContent) {
+                var tn = HtmlTag.of(m.group("tag"));
+                if (tn.blockType != HtmlTag.BlockType.INLINE) {
                     return false;
                 }
             } catch (IllegalArgumentException e) {
