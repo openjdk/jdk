@@ -224,7 +224,7 @@ public:
     size_t rs_unused_mem_sz = hrrs->unused_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
 
-    if (r->is_young() && hrrs->has_group_cardset()) {
+    if (r->is_young()) {
       uint num_young  =  G1CollectedHeap::heap()->young_regions_count();
       occupied_cards /= num_young;
       rs_unused_mem_sz /= num_young;
