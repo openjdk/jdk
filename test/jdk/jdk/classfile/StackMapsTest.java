@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,23 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618
+ * @bug 8305990 8320222 8320618 8335475
  * @build testdata.*
  * @run junit StackMapsTest
  */
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
@@ -221,7 +226,7 @@ class StackMapsTest {
         var actualVersion = cc.parse(StackMapsTest.class.getResourceAsStream("/testdata/Pattern1.class").readAllBytes());
 
         //test transformation to class version 49 with removal of StackMapTable attributes
-        var version49 = cc.parse(cc.transform(
+        var version49 = cc.parse(cc.transformClass(
                                     actualVersion,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(49, 0)))));
@@ -229,7 +234,7 @@ class StackMapsTest {
                                 .walk().anyMatch(n -> n.name().equals("stack map frames")));
 
         //test transformation to class version 50 with re-generation of StackMapTable attributes
-         assertEmpty(cc.verify(cc.transform(
+         assertEmpty(cc.verify(cc.transformClass(
                                     version49,
                                     ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL)
                                                   .andThen(ClassTransform.endHandler(clb -> clb.withVersion(50, 0))))));
@@ -238,7 +243,7 @@ class StackMapsTest {
     @Test
     void testInvalidAALOADStack() {
         ClassFile.of().build(ClassDesc.of("Test"), clb
-                -> clb.withMethodBody("test", ConstantDescs.MTD_void, 0, cob
+                -> clb.withMethodBody("test", MTD_void, 0, cob
                         -> cob.bipush(10)
                               .anewarray(ConstantDescs.CD_Object)
                               .lconst_1() //long on stack caused NPE, see 8320618
@@ -266,7 +271,7 @@ class StackMapsTest {
 //                                                   classModel.superclass().ifPresent(cb::withSuperclass);
 //                                                   cb.withInterfaces(classModel.interfaces());
 //                                                   cb.withVersion(classModel.majorVersion(), classModel.minorVersion());
-                                                   classModel.forEachElement(cb);
+                                                   classModel.forEach(cb);
                                                });
 
         //then verify transformed bytecode
@@ -311,5 +316,29 @@ class StackMapsTest {
                                            cb.labelBinding(target);
                                            cb.pop();
                                        })));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testEmptyCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var bytes = cf.build(ClassDesc.of("Test"), clb -> clb
+            .withMethodBody("a", MTD_void, ACC_STATIC, CodeBuilder::return_)
+            .withMethodBody("b", MTD_void, 0, CodeBuilder::return_)
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var name = method.methodName();
+            var code = (CodeAttribute) method.code().orElseThrow();
+            if (name.equalsString("a")) {
+                assertEquals(0, code.maxLocals()); // static method
+                assertEquals(0, code.maxStack());
+            } else {
+                assertTrue(name.equalsString("b"));
+                assertEquals(1, code.maxLocals()); // instance method
+                assertEquals(0, code.maxStack());
+            }
+        }
     }
 }

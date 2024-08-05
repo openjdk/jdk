@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -457,7 +458,7 @@ public final class Long extends Number
      * @return  a string representation of the argument in base&nbsp;10.
      */
     public static String toString(long i) {
-        int size = stringSize(i);
+        int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[size];
             StringLatin1.getChars(i, size, buf);
@@ -485,32 +486,6 @@ public final class Long extends Number
      */
     public static String toUnsignedString(long i) {
         return toUnsignedString(i, 10);
-    }
-
-    /**
-     * Returns the string representation size for a given long value.
-     *
-     * @param x long value
-     * @return string size
-     *
-     * @implNote There are other ways to compute this: e.g. binary search,
-     * but values are biased heavily towards zero, and therefore linear search
-     * wins. The iteration results are also routinely inlined in the generated
-     * code after loop unrolling.
-     */
-    static int stringSize(long x) {
-        int d = 1;
-        if (x >= 0) {
-            d = 0;
-            x = -x;
-        }
-        long p = -10;
-        for (int i = 1; i < 19; i++) {
-            if (x > p)
-                return i + d;
-            p = 10 * p;
-        }
-        return 19 + d;
     }
 
     /**

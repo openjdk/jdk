@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ PERF_ENTRY(jobject, Perf_Attach(JNIEnv *env, jobject unused, int vmid))
 
   PerfWrapper("Perf_Attach");
 
-  char* address = 0;
+  char* address = nullptr;
   size_t capacity = 0;
 
   // attach to the PerfData memory region for the specified VM
@@ -90,7 +90,7 @@ PERF_ENTRY(void, Perf_Detach(JNIEnv *env, jobject unused, jobject buffer))
     return;
   }
 
-  void* address = 0;
+  void* address = nullptr;
   jlong capacity = 0;
 
   // get buffer address and capacity

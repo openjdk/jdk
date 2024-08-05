@@ -129,7 +129,7 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // is done by clients of this interface.)
 
 void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
-  HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
+  G1HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
 }
 
 void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
@@ -162,7 +162,7 @@ G1HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
 // Private methods.
 
 G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
-                                          HeapRegionType type,
+                                          G1HeapRegionType type,
                                           bool do_expand,
                                           uint node_index) {
   assert(!is_humongous(word_size) || word_size <= G1HeapRegion::GrainWords,
@@ -710,7 +710,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
   ShouldNotReachHere();
 }
 
-class PostCompactionPrinterClosure: public HeapRegionClosure {
+class PostCompactionPrinterClosure: public G1HeapRegionClosure {
 public:
   bool do_heap_region(G1HeapRegion* hr) {
     assert(!hr->is_young(), "not expecting to find young regions");
@@ -1070,7 +1070,7 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
   _verifier->verify_region_sets_optional();
 }
 
-class OldRegionSetChecker : public HeapRegionSetChecker {
+class OldRegionSetChecker : public G1HeapRegionSetChecker {
 public:
   void check_mt_safety() {
     // Master Old Set MT safety protocol:
@@ -1098,7 +1098,7 @@ public:
   const char* get_description() { return "Old Regions"; }
 };
 
-class HumongousRegionSetChecker : public HeapRegionSetChecker {
+class HumongousRegionSetChecker : public G1HeapRegionSetChecker {
 public:
   void check_mt_safety() {
     // Humongous Set MT safety protocol:
@@ -1352,9 +1352,9 @@ jint G1CollectedHeap::initialize() {
   guarantee(G1HeapRegion::CardsPerRegion < max_cards_per_region,
             "too many cards per region");
 
-  HeapRegionRemSet::initialize(_reserved);
+  G1HeapRegionRemSet::initialize(_reserved);
 
-  FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
+  G1FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
@@ -1536,7 +1536,7 @@ size_t G1CollectedHeap::used_unlocked() const {
   return _summary_bytes_used;
 }
 
-class SumUsedClosure: public HeapRegionClosure {
+class SumUsedClosure: public G1HeapRegionClosure {
   size_t _used;
 public:
   SumUsedClosure() : _used(0) {}
@@ -1887,7 +1887,7 @@ bool G1CollectedHeap::is_in(const void* p) const {
 
 // Iterates an ObjectClosure over all objects within a G1HeapRegion.
 
-class IterateObjectClosureRegionClosure: public HeapRegionClosure {
+class IterateObjectClosureRegionClosure: public G1HeapRegionClosure {
   ObjectClosure* _cl;
 public:
   IterateObjectClosureRegionClosure(ObjectClosure* cl) : _cl(cl) {}
@@ -1907,7 +1907,7 @@ void G1CollectedHeap::object_iterate(ObjectClosure* cl) {
 class G1ParallelObjectIterator : public ParallelObjectIteratorImpl {
 private:
   G1CollectedHeap*  _heap;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
 
 public:
   G1ParallelObjectIterator(uint thread_num) :
@@ -1923,7 +1923,7 @@ ParallelObjectIteratorImpl* G1CollectedHeap::parallel_object_iterator(uint threa
   return new G1ParallelObjectIterator(thread_num);
 }
 
-void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id, HeapRegionClaimer* claimer) {
+void G1CollectedHeap::object_iterate_parallel(ObjectClosure* cl, uint worker_id, G1HeapRegionClaimer* claimer) {
   IterateObjectClosureRegionClosure blk(cl);
   heap_region_par_iterate_from_worker_offset(&blk, claimer, worker_id);
 }
@@ -1932,43 +1932,43 @@ void G1CollectedHeap::keep_alive(oop obj) {
   G1BarrierSet::enqueue_preloaded(obj);
 }
 
-void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
+void G1CollectedHeap::heap_region_iterate(G1HeapRegionClosure* cl) const {
   _hrm.iterate(cl);
 }
 
-void G1CollectedHeap::heap_region_iterate(HeapRegionIndexClosure* cl) const {
+void G1CollectedHeap::heap_region_iterate(G1HeapRegionIndexClosure* cl) const {
   _hrm.iterate(cl);
 }
 
-void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(HeapRegionClosure* cl,
-                                                                 HeapRegionClaimer *hrclaimer,
+void G1CollectedHeap::heap_region_par_iterate_from_worker_offset(G1HeapRegionClosure* cl,
+                                                                 G1HeapRegionClaimer *hrclaimer,
                                                                  uint worker_id) const {
   _hrm.par_iterate(cl, hrclaimer, hrclaimer->offset_for_worker(worker_id));
 }
 
-void G1CollectedHeap::heap_region_par_iterate_from_start(HeapRegionClosure* cl,
-                                                         HeapRegionClaimer *hrclaimer) const {
+void G1CollectedHeap::heap_region_par_iterate_from_start(G1HeapRegionClosure* cl,
+                                                         G1HeapRegionClaimer *hrclaimer) const {
   _hrm.par_iterate(cl, hrclaimer, 0);
 }
 
-void G1CollectedHeap::collection_set_iterate_all(HeapRegionClosure* cl) {
+void G1CollectedHeap::collection_set_iterate_all(G1HeapRegionClosure* cl) {
   _collection_set.iterate(cl);
 }
 
-void G1CollectedHeap::collection_set_par_iterate_all(HeapRegionClosure* cl,
-                                                     HeapRegionClaimer* hr_claimer,
+void G1CollectedHeap::collection_set_par_iterate_all(G1HeapRegionClosure* cl,
+                                                     G1HeapRegionClaimer* hr_claimer,
                                                      uint worker_id) {
   _collection_set.par_iterate(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::collection_set_iterate_increment_from(HeapRegionClosure *cl,
-                                                            HeapRegionClaimer* hr_claimer,
+void G1CollectedHeap::collection_set_iterate_increment_from(G1HeapRegionClosure *cl,
+                                                            G1HeapRegionClaimer* hr_claimer,
                                                             uint worker_id) {
   _collection_set.iterate_incremental_part_from(cl, hr_claimer, worker_id);
 }
 
-void G1CollectedHeap::par_iterate_regions_array(HeapRegionClosure* cl,
-                                                HeapRegionClaimer* hr_claimer,
+void G1CollectedHeap::par_iterate_regions_array(G1HeapRegionClosure* cl,
+                                                G1HeapRegionClaimer* hr_claimer,
                                                 const uint regions[],
                                                 size_t length,
                                                 uint worker_id) const {
@@ -2046,10 +2046,10 @@ bool G1CollectedHeap::supports_concurrent_gc_breakpoints() const {
   return true;
 }
 
-class PrintRegionClosure: public HeapRegionClosure {
+class G1PrintRegionClosure: public G1HeapRegionClosure {
   outputStream* _st;
 public:
-  PrintRegionClosure(outputStream* st) : _st(st) {}
+  G1PrintRegionClosure(outputStream* st) : _st(st) {}
   bool do_heap_region(G1HeapRegion* r) {
     r->print_on(_st);
     return false;
@@ -2121,7 +2121,7 @@ void G1CollectedHeap::print_regions_on(outputStream* st) const {
                "CS=collection set, F=free, "
                "TAMS=top-at-mark-start, "
                "PB=parsable bottom");
-  PrintRegionClosure blk(st);
+  G1PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
 
@@ -2281,14 +2281,14 @@ void G1CollectedHeap::start_concurrent_cycle(bool concurrent_operation_is_full_m
 bool G1CollectedHeap::is_potential_eager_reclaim_candidate(G1HeapRegion* r) const {
   // We don't nominate objects with many remembered set entries, on
   // the assumption that such objects are likely still live.
-  HeapRegionRemSet* rem_set = r->rem_set();
+  G1HeapRegionRemSet* rem_set = r->rem_set();
 
   return rem_set->occupancy_less_or_equal_than(G1EagerReclaimRemSetThreshold);
 }
 
 #ifndef PRODUCT
 void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
-  class VerifyRegionAttrRemSet : public HeapRegionClosure {
+  class VerifyRegionAttrRemSet : public G1HeapRegionClosure {
   public:
     virtual bool do_heap_region(G1HeapRegion* r) {
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -2334,16 +2334,6 @@ void G1CollectedHeap::start_new_collection_set() {
   // We redo the verification but now wrt to the new CSet which
   // has just got initialized after the previous CSet was freed.
   _cm->verify_no_collection_set_oops();
-}
-
-G1HeapVerifier::G1VerifyType G1CollectedHeap::young_collection_verify_type() const {
-  if (collector_state()->in_concurrent_start_gc()) {
-    return G1HeapVerifier::G1VerifyConcurrentStart;
-  } else if (collector_state()->in_young_only_phase()) {
-    return G1HeapVerifier::G1VerifyYoungNormal;
-  } else {
-    return G1HeapVerifier::G1VerifyMixed;
-  }
 }
 
 void G1CollectedHeap::verify_before_young_collection(G1HeapVerifier::G1VerifyType type) {
@@ -2538,9 +2528,9 @@ void G1CollectedHeap::unload_classes_and_code(const char* description, BoolObjec
 }
 
 class G1BulkUnregisterNMethodTask : public WorkerTask {
-  HeapRegionClaimer _hrclaimer;
+  G1HeapRegionClaimer _hrclaimer;
 
-  class UnregisterNMethodsHeapRegionClosure : public HeapRegionClosure {
+  class UnregisterNMethodsHeapRegionClosure : public G1HeapRegionClosure {
   public:
 
     bool do_heap_region(G1HeapRegion* hr) {
@@ -2614,7 +2604,7 @@ void G1CollectedHeap::clear_bitmap_for_region(G1HeapRegion* hr) {
   concurrent_mark()->clear_bitmap_for_region(hr);
 }
 
-void G1CollectedHeap::free_region(G1HeapRegion* hr, FreeRegionList* free_list) {
+void G1CollectedHeap::free_region(G1HeapRegion* hr, G1FreeRegionList* free_list) {
   assert(!hr->is_free(), "the region should not be free");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
@@ -2636,7 +2626,7 @@ void G1CollectedHeap::retain_region(G1HeapRegion* hr) {
 }
 
 void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,
-                                            FreeRegionList* free_list) {
+                                            G1FreeRegionList* free_list) {
   assert(hr->is_humongous(), "this is only for humongous regions");
   hr->clear_humongous();
   free_region(hr, free_list);
@@ -2652,7 +2642,7 @@ void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
 
 }
 
-void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
+void G1CollectedHeap::prepend_to_freelist(G1FreeRegionList* list) {
   assert(list != nullptr, "list can't be null");
   if (!list->is_empty()) {
     MutexLocker x(FreeList_lock, Mutex::_no_safepoint_check_flag);
@@ -2678,7 +2668,7 @@ void G1CollectedHeap::rebuild_free_region_list() {
   phase_times()->record_total_rebuild_freelist_time_ms((Ticks::now() - start).seconds() * 1000.0);
 }
 
-class G1AbandonCollectionSetClosure : public HeapRegionClosure {
+class G1AbandonCollectionSetClosure : public G1HeapRegionClosure {
 public:
   virtual bool do_heap_region(G1HeapRegion* r) {
     assert(r->in_collection_set(), "Region %u must have been in collection set", r->hrm_index());
@@ -2707,7 +2697,7 @@ void G1CollectedHeap::set_region_short_lived_locked(G1HeapRegion* hr) {
 
 #ifdef ASSERT
 
-class NoYoungRegionsClosure: public HeapRegionClosure {
+class NoYoungRegionsClosure: public G1HeapRegionClosure {
 private:
   bool _success;
 public:
@@ -2768,22 +2758,22 @@ void G1CollectedHeap::set_used(size_t bytes) {
   _summary_bytes_used = bytes;
 }
 
-class RebuildRegionSetsClosure : public HeapRegionClosure {
+class RebuildRegionSetsClosure : public G1HeapRegionClosure {
 private:
   bool _free_list_only;
 
-  HeapRegionSet* _old_set;
-  HeapRegionSet* _humongous_set;
+  G1HeapRegionSet* _old_set;
+  G1HeapRegionSet* _humongous_set;
 
-  HeapRegionManager* _hrm;
+  G1HeapRegionManager* _hrm;
 
   size_t _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           HeapRegionSet* old_set,
-                           HeapRegionSet* humongous_set,
-                           HeapRegionManager* hrm) :
+                           G1HeapRegionSet* old_set,
+                           G1HeapRegionSet* humongous_set,
+                           G1HeapRegionManager* hrm) :
     _free_list_only(free_list_only), _old_set(old_set),
     _humongous_set(humongous_set), _hrm(hrm), _total_used(0) {
     assert(_hrm->num_free_regions() == 0, "pre-condition");
@@ -2849,7 +2839,7 @@ G1HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
   bool should_allocate = policy()->should_allocate_mutator_region();
   if (should_allocate) {
     G1HeapRegion* new_alloc_region = new_region(word_size,
-                                                HeapRegionType::Eden,
+                                                G1HeapRegionType::Eden,
                                                 false /* do_expand */,
                                                 node_index);
     if (new_alloc_region != nullptr) {
@@ -2895,11 +2885,11 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
     return nullptr;
   }
 
-  HeapRegionType type;
+  G1HeapRegionType type;
   if (dest.is_young()) {
-    type = HeapRegionType::Survivor;
+    type = G1HeapRegionType::Survivor;
   } else {
-    type = HeapRegionType::Old;
+    type = G1HeapRegionType::Old;
   }
 
   G1HeapRegion* new_alloc_region = new_region(word_size,
@@ -2939,20 +2929,6 @@ void G1CollectedHeap::retire_gc_alloc_region(G1HeapRegion* alloc_region,
     _cm->add_root_region(alloc_region);
   }
   G1HeapRegionPrinter::retire(alloc_region);
-}
-
-G1HeapRegion* G1CollectedHeap::alloc_highest_free_region() {
-  bool expanded = false;
-  uint index = _hrm.find_highest_free(&expanded);
-
-  if (index != G1_NO_HRM_INDEX) {
-    if (expanded) {
-      log_debug(gc, ergo, heap)("Attempt heap expansion (requested address range outside heap bounds). region size: " SIZE_FORMAT "B",
-                                G1HeapRegion::GrainWords * HeapWordSize);
-    }
-    return _hrm.allocate_free_regions_starting_at(index, 1);
-  }
-  return nullptr;
 }
 
 void G1CollectedHeap::mark_evac_failure_object(uint worker_id, const oop obj, size_t obj_size) const {

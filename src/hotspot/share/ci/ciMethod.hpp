@@ -360,6 +360,7 @@ class ciMethod : public ciMetadata {
   bool is_unboxing_method() const;
   bool is_vector_method() const;
   bool is_object_initializer() const;
+  bool is_scoped() const;
 
   bool can_be_statically_bound(ciInstanceKlass* context) const;
 

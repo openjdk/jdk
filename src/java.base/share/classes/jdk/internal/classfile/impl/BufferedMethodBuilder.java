@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -32,7 +33,6 @@ import java.util.function.Consumer;
 
 import java.lang.classfile.AccessFlags;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeModel;
@@ -44,7 +44,7 @@ import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class BufferedMethodBuilder
-        implements TerminalMethodBuilder, MethodInfo {
+        implements TerminalMethodBuilder {
     private final List<MethodElement> elements;
     private final SplitConstantPool constantPool;
     private final ClassFileImpl context;
@@ -59,31 +59,35 @@ public final class BufferedMethodBuilder
                                  ClassFileImpl context,
                                  Utf8Entry nameInfo,
                                  Utf8Entry typeInfo,
+                                 int flags,
                                  MethodModel original) {
         this.elements = new ArrayList<>();
         this.constantPool = constantPool;
         this.context = context;
         this.name = nameInfo;
         this.desc = typeInfo;
-        this.flags = AccessFlags.ofMethod();
+        this.flags = new AccessFlagsImpl(AccessFlag.Location.METHOD, flags);
         this.original = original;
     }
 
     @Override
     public MethodBuilder with(MethodElement element) {
         elements.add(element);
-        if (element instanceof AccessFlags f) this.flags = f;
+        if (element instanceof AccessFlags f) this.flags = checkFlags(f);
         return this;
+    }
+
+    private AccessFlags checkFlags(AccessFlags updated) {
+        boolean wasStatic = updated.has(AccessFlag.STATIC);
+        boolean isStatic = flags.has(AccessFlag.STATIC);
+        if (wasStatic != isStatic)
+            throw new IllegalArgumentException("Cannot change ACC_STATIC flag of method");
+        return updated;
     }
 
     @Override
     public ConstantPoolBuilder constantPool() {
         return constantPool;
-    }
-
-    @Override
-    public Optional<MethodModel> original() {
-        return Optional.ofNullable(original);
     }
 
     @Override
@@ -152,7 +156,7 @@ public final class BufferedMethodBuilder
             extends AbstractUnboundModel<MethodElement>
             implements MethodModel, MethodInfo {
         public Model() {
-            super(elements);
+            super(BufferedMethodBuilder.this.elements);
         }
 
         @Override
@@ -162,7 +166,7 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<ClassModel> parent() {
-            return original().flatMap(MethodModel::parent);
+            return Optional.empty();
         }
 
         @Override
@@ -192,7 +196,11 @@ public final class BufferedMethodBuilder
 
         @Override
         public Optional<CodeModel> code() {
-            throw new UnsupportedOperationException("nyi");
+            return elements.stream().<CodeModel>mapMulti((e, sink) -> {
+                if (e instanceof CodeModel cm) {
+                    sink.accept(cm);
+                }
+            }).findFirst();
         }
 
         @Override
@@ -200,16 +208,9 @@ public final class BufferedMethodBuilder
             builder.withMethod(methodName(), methodType(), methodFlags(), new Consumer<>() {
                 @Override
                 public void accept(MethodBuilder mb) {
-                    forEachElement(mb);
+                    forEach(mb);
                 }
             });
-        }
-
-        @Override
-        public void writeTo(BufWriter buf) {
-            DirectMethodBuilder mb = new DirectMethodBuilder(constantPool, context, name, desc, methodFlags(), null);
-            elements.forEach(mb);
-            mb.writeTo(buf);
         }
 
         @Override

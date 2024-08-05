@@ -33,9 +33,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -45,10 +47,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.HtmlId;
 
 /**
  * Centralized constants and factory methods for HTML ids.
@@ -594,5 +596,36 @@ public class HtmlIds {
             idValue = idValue + counter;
         }
         return HtmlId.of(idValue);
+    }
+
+    /**
+     * Returns an id for a snippet.
+     *
+     * @param e the element in whose documentation the snippet appears
+     * @param snippetIds the set of snippet ids already generated
+     * @return a unique id for the snippet
+     */
+    public HtmlId forSnippet(Element e, Set<String> snippetIds) {
+        String id = "snippet-";
+        ElementKind kind = e.getKind();
+        if (kind == ElementKind.PACKAGE) {
+            id += forPackage((PackageElement) e).name();
+        } else if (kind.isDeclaredType()) {
+            id += forClass((TypeElement) e).name();
+        } else if (kind.isExecutable()) {
+            id += forMember((ExecutableElement) e).getFirst().name();
+        } else if (kind.isField()) {
+            id += forMember((VariableElement) e).name();
+        } else if (kind == ElementKind.MODULE) {
+            id += ((ModuleElement) e).getQualifiedName();
+        } else {
+            // while utterly unexpected, we shouldn't fail
+            id += "unknown-element";
+        }
+        int counter = 1;
+        while (!snippetIds.add(id + counter)) {
+            counter++;
+        }
+        return HtmlId.of(id + counter);
     }
 }

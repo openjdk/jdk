@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -664,7 +664,7 @@ JVMCI::CodeInstallResult CodeInstaller::install_runtime_stub(CodeBlob*& cb,
   GrowableArray<RuntimeStub*> *stubs_to_free = nullptr;
 #ifdef ASSERT
   const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.forceRuntimeStubAllocFail");
-  if (val != nullptr && strstr(name , val) != 0) {
+  if (val != nullptr && strstr(name , val) != nullptr) {
     stubs_to_free = new GrowableArray<RuntimeStub*>();
     JVMCI_event_1("forcing allocation of %s in code cache to fail", name);
   }

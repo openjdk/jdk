@@ -82,15 +82,19 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
-                <div class="table-header col-first">Constructor</div>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier</div>
+                <div class="table-header col-second">Constructor</div>
                 <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>&nbsp;</code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>&nbsp;&lt;T extends X&gt;<br></code></div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color">&nbsp;</div>
+                <div class="col-first even-row-color"><code>&nbsp;&lt;T extends Y&gt;<br></code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(Y)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
@@ -188,13 +192,16 @@ public class TestErasure extends JavadocTester {
                 <section class="constructor-summary" id="constructor-summary">
                 <h2>Constructor Summary</h2>
                 <div class="caption"><span>Constructors</span></div>
-                <div class="summary-table two-column-summary">
-                <div class="table-header col-first">Constructor</div>
+                <div class="summary-table three-column-summary">
+                <div class="table-header col-first">Modifier</div>
+                <div class="table-header col-second">Constructor</div>
                 <div class="table-header col-last">Description</div>
+                <div class="col-first even-row-color"><code>&nbsp;</code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a>\
                 <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
+                <div class="col-first odd-row-color"><code>&nbsp;&lt;T extends X&gt;<br></code></div>
                 <div class="col-constructor-name odd-row-color"><code>\
                 <a href="#%3Cinit%3E(X)" class="member-name-link">Foo</a><wbr>(T&nbsp;arg)</code></div>
                 <div class="col-last odd-row-color">&nbsp;</div>

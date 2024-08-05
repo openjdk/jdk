@@ -422,7 +422,7 @@ public class SwitchBootstraps {
             cb.pop();
             cb.aload(SELECTOR_OBJ);
             Label nonNullLabel = cb.newLabel();
-            cb.if_nonnull(nonNullLabel);
+            cb.ifnonnull(nonNullLabel);
             cb.iconst_m1();
             cb.ireturn();
             cb.labelBinding(nonNullLabel);

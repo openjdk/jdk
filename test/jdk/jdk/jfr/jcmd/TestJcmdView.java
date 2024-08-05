@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,7 @@ public class TestJcmdView {
     public static void main(String... args) throws Throwable {
         CountDownLatch jvmInformation = new CountDownLatch(1);
         CountDownLatch systemGC = new CountDownLatch(1);
+        CountDownLatch threadSleep = new CountDownLatch(1);
         CountDownLatch gcHeapSummary = new CountDownLatch(1);
         CountDownLatch oldCollection = new CountDownLatch(1);
         CountDownLatch garbageCollection = new CountDownLatch(1);
@@ -56,6 +57,7 @@ public class TestJcmdView {
             rs.setMaxSize(Long.MAX_VALUE);
             rs.enable("jdk.JVMInformation").with("period", "beginChunk");
             rs.enable("jdk.SystemGC");
+            rs.enable("jdk.ThreadSleep").withoutThreshold().withStackTrace();
             rs.enable("jdk.GCHeapSummary");
             rs.enable("jdk.GarbageCollection");
             rs.enable("jdk.OldGarbageCollection");
@@ -67,6 +69,11 @@ public class TestJcmdView {
             });
             rs.onEvent("jdk.SystemGC", e -> {
                 systemGC.countDown();
+                System.out.println(e);
+                storeLastTimestamp(e);
+            });
+            rs.onEvent("jdk.ThreadSleep", e -> {
+                threadSleep.countDown();
                 System.out.println(e);
                 storeLastTimestamp(e);
             });
@@ -90,9 +97,12 @@ public class TestJcmdView {
             System.gc();
             System.gc();
             System.gc();
+            // Emit thread sleep event
+            Thread.sleep(1);
             // Wait for them being in the repository
             jvmInformation.await();
             systemGC.await();
+            threadSleep.await();
             gcHeapSummary.await();
             oldCollection.await();
             // Wait for Instant.now() to advance 1 s past the last event timestamp.
@@ -160,13 +170,13 @@ public class TestJcmdView {
 
     private static void testEventType() throws Throwable {
         OutputAnalyzer output = JcmdHelper.jcmd(
-             "JFR.view", "verbose=true", "width=300", "cell-height=100", "SystemGC");
+             "JFR.view", "verbose=true", "width=300", "cell-height=100", "ThreadSleep");
         // Verify title
-        output.shouldContain("System GC");
+        output.shouldContain("Thread Sleep");
         // Verify headings
-        output.shouldContain("Invoked Concurrent");
+        output.shouldContain("Sleep Time");
         // Verify verbose headings
-        output.shouldContain("invokedConcurrent");
+        output.shouldContain("time");
         // Verify thread value
         output.shouldContain(Thread.currentThread().getName());
         // Verify stack frame
