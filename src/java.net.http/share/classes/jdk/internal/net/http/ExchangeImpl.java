@@ -58,6 +58,10 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> exchange;
 
+    // this will be set to true only when the peer explicitly states (through a GOAWAY frame or
+    // a relevant error code in reset frame) that the corresponding stream (id) wasn't processed
+    private volatile boolean unprocessedByPeer;
+
     ExchangeImpl(Exchange<T> e) {
         // e == null means a http/2 pushed stream
         this.exchange = e;
@@ -266,10 +270,12 @@ abstract class ExchangeImpl<T> {
     // an Expect-Continue
     void expectContinueFailed(int rcode) { }
 
-    // This method returns false - every exchange is considered as processed by the peer,
-    // unless the peer explicitly states (through a GOAWAY frame) that the
-    // corresponding stream wasn't processed
-    boolean isUnprocessedByPeer() {
-        return false;
+    final boolean isUnprocessedByPeer() {
+        return this.unprocessedByPeer;
+    }
+
+    // Marks the exchange as unprocessed by the peer
+    final void markUnprocessedByPeer() {
+        this.unprocessedByPeer = true;
     }
 }
