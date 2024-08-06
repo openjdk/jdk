@@ -56,6 +56,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodType.methodType;
 
@@ -117,7 +118,6 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 9
  */
 public final class StringConcatFactory {
-
     private static final int HIGH_ARITY_THRESHOLD;
 
     static {
@@ -1073,9 +1073,10 @@ public final class StringConcatFactory {
         static final String METHOD_NAME = "concat";
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
+
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_DecimalDigits = ClassDesc.ofDescriptor("Ljdk/internal/util/DecimalDigits;");
-        static final ClassDesc CD_StringConcatBase = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
+        static final ClassDesc CD_DecimalDigits      = ClassDesc.ofDescriptor("Ljdk/internal/util/DecimalDigits;");
+        static final ClassDesc CD_StringConcatBase   = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
         static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
 
@@ -1101,14 +1102,18 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
+        static final int FORCE_INLINE_THRESHOLD = 16;
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
-        static final MethodType CONSTRUCTOR_METHOD_TYPE = MethodType.methodType(void.class, String[].class);
-        private static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
+        static final MethodType CONSTRUCTOR_METHOD_TYPE        = MethodType.methodType(void.class, String[].class);
+        static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
             @Override
             public void accept(CodeBuilder cb) {
-                int thisSlot = cb.receiverSlot();
-                int constantsSlot = cb.parameterSlot(0);
+                /*
+                 * super(constantsSlot);
+                 */
+                int thisSlot      = 0,
+                    constantsSlot = 1;
                 cb.aload(thisSlot)
                   .aload(constantsSlot)
                   .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
@@ -1226,7 +1231,6 @@ public final class StringConcatFactory {
             String className = "java.lang.String$$StringConcat";
             final MethodType concatArgs = erasedArgs(args);
 
-
             // 1 argment use built-in method
             int paramCount  = args.parameterCount();
             var concatClass = ConstantUtils.binaryNameToDesc(className);
@@ -1254,19 +1258,16 @@ public final class StringConcatFactory {
 
             byte[] classBytes = ClassFile.of().build(concatClass,
                     new Consumer<ClassBuilder>() {
-                        int forceInlineThreshold = 16;
-                        boolean forceInline = concatArgs.parameterCount() < forceInlineThreshold;
+                        final boolean forceInline = concatArgs.parameterCount() < FORCE_INLINE_THRESHOLD;
+
                         @Override
                         public void accept(ClassBuilder clb) {
                             clb.withSuperclass(CD_StringConcatBase)
-                                .withFlags(ClassFile.ACC_FINAL | ClassFile.ACC_SUPER | ClassFile.ACC_SYNTHETIC)
-                                .withMethodBody(INIT_NAME,
-                                        MTD_INIT,
-                                        ClassFile.ACC_PRIVATE,
-                                        CONSTRUCTOR_BUILDER)
+                                .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
+                                .withMethodBody(INIT_NAME, MTD_INIT, ACC_PRIVATE, CONSTRUCTOR_BUILDER)
                                 .withMethod("length",
                                         ConstantUtils.methodTypeDesc(lengthArgs),
-                                        ClassFile.ACC_STATIC | ClassFile.ACC_PRIVATE,
+                                        ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
                                                 if (forceInline) {
@@ -1277,7 +1278,7 @@ public final class StringConcatFactory {
                                         })
                                 .withMethod("prepend",
                                         ConstantUtils.methodTypeDesc(prependArgs),
-                                        ClassFile.ACC_STATIC | ClassFile.ACC_PRIVATE,
+                                        ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
                                                 if (forceInline) {
@@ -1288,19 +1289,25 @@ public final class StringConcatFactory {
                                         })
                                 .withMethod(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(concatArgs),
-                                        ClassFile.ACC_FINAL | ClassFile.ACC_PRIVATE,
+                                        ACC_FINAL | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
                                                 if (forceInline) {
                                                     mb.with(FORCE_INLINE);
                                                 }
-                                                mb.withCode(generateConcatMethod(concatClass, concatArgs, lengthArgs, coderArgs, prependArgs));
+                                                mb.withCode(generateConcatMethod(
+                                                        concatClass,
+                                                        concatArgs,
+                                                        lengthArgs,
+                                                        coderArgs,
+                                                        prependArgs));
                                             }
                                         });
+
                             if (parameterMaybeUTF16(concatArgs)) {
                                 clb.withMethod("coder",
                                         ConstantUtils.methodTypeDesc(coderArgs),
-                                        ClassFile.ACC_STATIC | ClassFile.ACC_PRIVATE,
+                                        ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
                                                 if (forceInline) {
@@ -1374,7 +1381,7 @@ public final class StringConcatFactory {
          *
          *      static int prepend(int length, int coder, byte[] buf, String[] constants,
          *                     int arg0, long arg1, boolean arg2, char arg3,
-         *                     String str4, String str6, String str6, String str7) {
+         *                     String str4, String str5, String str6, String str7) {
          *          // StringConcatHelper.prepend
          *          return prepend(prepend(prepend(prepend(
          *                  prepend(apppend(prepend(prepend(length,
@@ -1485,7 +1492,7 @@ public final class StringConcatFactory {
 
                     /*
                      * String[] constants = this.constants;
-                     * suffix = constants[paranCount];
+                     * suffix  = constants[paranCount];
                      * length -= suffix.length();
                      */
                     cb.aload(thisSlot)
@@ -1639,7 +1646,7 @@ public final class StringConcatFactory {
          *
          * static int prepend(int length, int coder, byte[] buf, String[] constants,
          *                int arg0, long arg1, boolean arg2, char arg3,
-         *                String str4, String str6, String str6, String str7) {
+         *                String str4, String str5, String str6, String str7) {
          *
          *     return prepend(prepend(prepend(prepend(
          *             prepend(prepend(prepend(prepend(length,
