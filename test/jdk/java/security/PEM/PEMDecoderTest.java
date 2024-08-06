@@ -48,17 +48,17 @@ public class PEMDecoderTest {
 
     public static void main(String[] args) throws IOException {
         System.out.println("Decoder test:");
-        PEMCerts.entryList.stream().forEach(entry -> test(entry));
+        PEMCerts.entryList.forEach(PEMDecoderTest::test);
         System.out.println("Decoder test returning DEREncodable class:");
-        PEMCerts.entryList.stream().forEach(entry -> test(entry, DEREncodable.class));
+        PEMCerts.entryList.forEach(entry -> test(entry, DEREncodable.class));
         System.out.println("Decoder test with encrypted PEM:");
-        PEMCerts.encryptedList.stream().forEach(entry -> testEncrypted(entry));
+        PEMCerts.encryptedList.forEach(PEMDecoderTest::testEncrypted);
         System.out.println("Decoder test with OAS:");
         testTwoKeys();
         System.out.println("Decoder test RSA PEM setting RSAKey.class returned:");
         test(PEMCerts.getEntry("privpem"), RSAKey.class);
         System.out.println("Decoder test failures:");
-        PEMCerts.failureEntryList.stream().forEach(entry -> testFailure(entry));
+        PEMCerts.failureEntryList.forEach(PEMDecoderTest::testFailure);
         System.out.println("Decoder test ECpriv PEM asking for ECPublicKey.class returned:");
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class);
         System.out.println("Decoder test RSApriv PEM setting P8EKS.class returned:");
@@ -73,9 +73,34 @@ public class PEMDecoderTest {
         testClass(PEMCerts.getEntry("oasrfc8410"), PrivateKey.class, true);
         testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
         System.out.println("Decoder test encEdECkey:");
-        testFailure(new PEMCerts.Entry("pubecpem-no",
-            PEMCerts.makeNoCRLF(PEMCerts.pubecpem), PublicKey.class,
-            null));
+        testFailure(PEMCerts.pubecpem.makeNoCRLF("pubecpem-no"));
+
+        // PEMRecord tests
+        test(PEMCerts.ecCSR);
+
+        DEREncodable result = test(PEMCerts.ecCSRWithData);
+        if (result instanceof PEMRecord rec) {
+            if (PEMCerts.preData.compareTo(new String(rec.preData())) != 0) {
+                System.err.println("expected: " + PEMCerts.preData);
+                System.err.println("received: " + new String(rec.preData()));
+                throw new AssertionError("ecCSRWithData preData wrong");
+            }
+            if (rec.pem().lastIndexOf("F") > rec.pem().length() - 5) {
+                System.err.println("received: " + rec.pem());
+                throw new AssertionError("ecCSRWithData: " +
+                    "End of PEM data has an unexpected character");
+            }
+        } else {
+            throw new AssertionError("ecCSRWithData didn't return a PEMRecord");
+        }
+
+        result = PEMDecoder.of().decode(PEMCerts.pubecpem.pem(), PEMRecord.class);
+        if (!(result instanceof PEMRecord)) {
+            throw new AssertionError("pubecpem didn't return a PEMRecord");
+        }
+        if (((PEMRecord) result).id().compareTo(PEMRecord.PUBLIC_KEY) != 0) {
+            throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
+        }
     }
 
     static void testFailure(PEMCerts.Entry entry) {
@@ -96,14 +121,14 @@ public class PEMDecoderTest {
         }
     }
 
-    static void testEncrypted(PEMCerts.Entry entry) {
+    static DEREncodable testEncrypted(PEMCerts.Entry entry) {
         PEMDecoder decoder = PEMDecoder.of();
         if (!Objects.equals(entry.clazz(), EncryptedPrivateKeyInfo.class)) {
             decoder = decoder.withDecryption(entry.password());
         }
 
         try {
-            test(entry.pem(), entry.clazz(), decoder);
+            return test(entry.pem(), entry.clazz(), decoder);
         } catch (Exception | AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
                 "):  " + e.getMessage(), e);
@@ -111,15 +136,16 @@ public class PEMDecoderTest {
     }
 
     // Change the Entry to use the given class as the expected class returned
-    static void test(PEMCerts.Entry entry, Class c) {
-        test(entry.newEntry(entry, c));
+    static DEREncodable test(PEMCerts.Entry entry, Class c) {
+        return test(entry.newClass(c));
     }
 
     // Run test with a given Entry
-    static void test(PEMCerts.Entry entry) {
+    static DEREncodable test(PEMCerts.Entry entry) {
         try {
-            test(entry.pem(), entry.clazz(), PEMDecoder.of());
+            DEREncodable r = test(entry.pem(), entry.clazz(), PEMDecoder.of());
             System.out.println("PASS (" + entry.name() + ")");
+            return r;
         } catch (Exception | AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
                 "):  " + e.getMessage(), e);
@@ -153,19 +179,19 @@ public class PEMDecoderTest {
      * Perform the decoding test with the given decoder, on the given pem, and
      * expect the clazz to be returned.
      */
-    static void test(String pem, Class clazz, PEMDecoder decoder) throws IOException {
+    static DEREncodable test(String pem, Class clazz, PEMDecoder decoder) throws IOException {
         var pk = decoder.decode(pem);
 
         // Check that clazz matches what pk returned.
         if (pk.getClass().equals(clazz)) {
-            return;
+            return pk;
         }
 
         // Search interfaces and inheritance to find a match with clazz
         List<Class> list = getInterfaceList(pk.getClass());
         for (Class cc : list) {
             if (cc != null && cc.equals(clazz)) {
-                return;
+                return pk;
             }
         }
 
@@ -178,8 +204,8 @@ public class PEMDecoderTest {
     static void testTwoKeys() throws IOException {
         PublicKey p1, p2;
         PEMDecoder pd = PEMDecoder.of();
-        p1 = pd.decode(PEMCerts.pubrsapem, RSAPublicKey.class);
-        p2 = pd.decode(PEMCerts.pubrsapem, RSAPublicKey.class);
+        p1 = pd.decode(PEMCerts.pubrsapem.pem(), RSAPublicKey.class);
+        p2 = pd.decode(PEMCerts.pubrsapem.pem(), RSAPublicKey.class);
         if (!Arrays.equals(p1.getEncoded(), p2.getEncoded())) {
             System.err.println("These two should have matched:");
             System.err.println(hex.parseHex(new String(p1.getEncoded())));

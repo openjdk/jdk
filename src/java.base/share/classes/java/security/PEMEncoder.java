@@ -168,10 +168,6 @@ public final class PEMEncoder {
             case X509EncodedKeySpec x -> build(null, x.getEncoded());
             case PKCS8EncodedKeySpec p -> build(p.getEncoded(), null);
             case EncryptedPrivateKeyInfo epki -> {
-                if (keySpec != null) {
-                    throw new IllegalArgumentException("encrypt was " +
-                        "incorrectly used");
-                }
                 try {
                     yield pemEncoded(new PEMRecord(
                         PEMRecord.ENCRYPTED_PRIVATE_KEY, epki.getEncoded()));

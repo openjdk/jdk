@@ -28,14 +28,16 @@ package java.security;
 import java.nio.charset.StandardCharsets;
 
 /**
- * A Record for PEM
+ * PEMRecord stores input read by a {@link PEMDecoder} or can be used to
+ * construct PEM encodings that does not come from a {@link DEREncodable}
+ * object.
  *
  * @param id      The PEM header and footer value that identifies the data.
  * @param pem     The Base64 encoded data only in byte[] format
- * @param preData Data that came before the PEM header.  This is only useful
+ * @param leadingData Data that came before the PEM header.  This is only useful
  *                for reading from a File or IO stream
  */
-public record PEMRecord(String id, String pem, byte[] preData)
+public record PEMRecord(String id, String pem, byte[] leadingData)
     implements DEREncodable {
 
     public static final String CERTIFICATE_REQUEST = "CERTIFICATE REQUEST";
@@ -57,7 +59,27 @@ public record PEMRecord(String id, String pem, byte[] preData)
     public static final String PRIVATE_KEY = "PRIVATE KEY";
 
     /**
-     * Instance with no preData.
+     * Instantiates a new Pem record.
+     *
+     * @param id      The PEM header and footer value that identifies the data.
+     * @param pem     The Base64 encoded data only in byte[] format
+     * @param leadingData Data that came before the PEM header.  This is only useful
+     *                for reading from a File or IO stream.
+     */
+    public PEMRecord(String id, String pem, byte[] leadingData) {
+        if (id.startsWith("-----")) {
+            // decode id in the
+            this.id = id.substring(11, id.lastIndexOf('-') - 4);
+        } else {
+            this.id = id;
+        }
+
+        this.pem = pem;
+        this.leadingData = leadingData;
+    }
+
+    /**
+     * Instance with no leadingData.
      *
      * @param id  The PEM header and footer value that identifies the data.
      * @param pem The Base64 encoded data only.
@@ -74,25 +96,5 @@ public record PEMRecord(String id, String pem, byte[] preData)
      */
     public PEMRecord(String id, byte[] pem) {
         this(id, new String(pem, StandardCharsets.ISO_8859_1), null);
-    }
-
-    /**
-     * Instantiates a new Pem record.
-     *
-     * @param id      The PEM header and footer value that identifies the data.
-     * @param pem     The Base64 encoded data only in byte[] format
-     * @param preData Data that came before the PEM header.  This is only useful
-     *                for reading from a File or IO stream.
-     */
-    public PEMRecord(String id, String pem, byte[] preData) {
-        if (id.startsWith("-----")) {
-            // decode id in the
-            this.id = id.substring(11, id.lastIndexOf('-') - 4);
-        } else {
-            this.id = id;
-        }
-        
-        this.pem = pem;
-        this.preData = preData;
     }
 }

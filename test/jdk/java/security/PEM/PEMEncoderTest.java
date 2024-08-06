@@ -31,6 +31,7 @@
  * @modules java.base/sun.security.util
  */
 
+import sun.security.util.DerValue;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
@@ -140,7 +141,7 @@ public class PEMEncoderTest {
                         "fish".toCharArray()))
                 .encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+            throw new AssertionError("Encrypted encoder failed with " + entry.name(), e);
         }
 
         System.out.println("PASS: " + entry.name());
@@ -165,11 +166,11 @@ public class PEMEncoderTest {
         String result;
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
-            PrivateKey akey = (PrivateKey) keymap.get(key);
+            PrivateKey pkey = (PrivateKey) keymap.get(key);
             EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(entry.pem(),
                 EncryptedPrivateKeyInfo.class);
             if (entry.password() != null) {
-                EncryptedPrivateKeyInfo.encryptKey(akey, entry.password(),
+                EncryptedPrivateKeyInfo.encryptKey(pkey, entry.password(),
                     Pem.DEFAULT_ALGO,
                     ekpi.getAlgParameters().getParameterSpec(PBEParameterSpec.class),
                     null);

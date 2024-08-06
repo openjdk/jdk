@@ -173,9 +173,9 @@ public final class PEMDecoder {
                     yield kf.generatePrivate(
                         RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(pem.pem())));
                 }
-                default ->
-                    throw new IllegalArgumentException("Unsupported type or " +
-                        "not properly formatted PEM");
+                default -> {
+                    yield pem;
+                }
             };
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException(e);
