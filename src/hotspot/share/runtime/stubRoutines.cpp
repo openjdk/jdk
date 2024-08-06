@@ -197,6 +197,7 @@ JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
+address StubRoutines::_upcall_stub_load_target = nullptr;
 
 address StubRoutines::_lookup_secondary_supers_table_slow_path_stub = nullptr;
 address StubRoutines::_lookup_secondary_supers_table_stubs[Klass::SECONDARY_SUPERS_TABLE_SIZE] = { nullptr };

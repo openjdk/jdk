@@ -265,16 +265,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ get_vm_result(j_rarg0, xthread);
   __ block_comment("} receiver ");
 
-  __ load_heap_oop(xmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
-  __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
-  __ load_heap_oop(xmethod, Address(xmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
-  __ access_load_at(T_ADDRESS, IN_HEAP, xmethod,
-                    Address(xmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
-                    noreg, noreg);
-  __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
-
   __ push_cont_fastpath(xthread);
 
+  __ get_vm_result_2(xmethod, xthread);
   __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
   __ jalr(t0);
 

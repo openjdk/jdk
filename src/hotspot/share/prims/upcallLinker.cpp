@@ -22,7 +22,7 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -108,7 +108,8 @@ JavaThread* UpcallLinker::on_entry(UpcallStub::FrameData* context, jobject recei
   debug_only(thread->inc_java_call_counter());
   thread->set_active_handles(context->new_handles);     // install new handle block and reset Java frame linkage
 
-  thread->set_vm_result(JNIHandles::resolve(receiver));
+  // load receiver and target Method* for stub to use
+  StubRoutines::upcall_stub_load_target()(receiver, thread);
 
   return thread;
 }

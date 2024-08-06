@@ -221,15 +221,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ get_vm_result(Z_ARG1);
   __ block_comment("} receiver");
 
-  __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
-                   noreg, noreg, IS_NOT_NULL);
-  __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
-                   noreg, noreg, IS_NOT_NULL);
-  __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_MemberName::method_offset()),
-                   noreg, noreg, IS_NOT_NULL);
-  __ z_lg(Z_method, Address(Z_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
-  __ z_stg(Z_method, Address(Z_thread, in_bytes(JavaThread::callee_target_offset())));
-
+  __ get_vm_result_2(Z_method);
   __ z_lg(call_target_address, Address(Z_method, in_bytes(Method::from_compiled_offset())));
   __ call(call_target_address);
 

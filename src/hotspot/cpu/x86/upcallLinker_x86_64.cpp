@@ -301,17 +301,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ get_vm_result(j_rarg0, r15_thread);
   __ block_comment("} receiver ");
 
-  // Load target method from receiver
-  __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
-  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
-  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
-  __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
-                    Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
-                    noreg, noreg);
-  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
-
   __ push_cont_fastpath();
 
+  __ get_vm_result_2(rbx, r15_thread);
   __ call(Address(rbx, Method::from_compiled_offset()));
 
   __ pop_cont_fastpath();
