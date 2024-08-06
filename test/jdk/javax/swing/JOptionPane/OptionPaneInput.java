@@ -63,7 +63,7 @@ public class OptionPaneInput {
         t = new JTextField();
         f.add(c);
 
-        t.addActionListener(e->{
+        t.addActionListener(e -> {
             String text = t.getText();
             Graphics2D g2 = (Graphics2D)(c.getGraphics());
             g2.setColor(Color.BLACK);
