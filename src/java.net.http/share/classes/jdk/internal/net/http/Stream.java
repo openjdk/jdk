@@ -163,9 +163,6 @@ class Stream<T> extends ExchangeImpl<T> {
 
     // Only accessed in all method calls from incoming(), no need for volatile
     private boolean endStreamSeen;
-    // this will be set to true only when the peer explicitly states (through a GOAWAY frame)
-    // that the corresponding stream (id) wasn't processed
-    private volatile boolean unprocessedByPeer;
 
     @Override
     HttpConnection connection() {
@@ -649,7 +646,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     // A REFUSED_STREAM error code implies that the stream wasn't processed by the
                     // peer and the client is free to retry the request afresh.
                     // Here we arrange for the request to be retried.
-                    this.unprocessedByPeer = true;
+                    markUnprocessedByPeer();
                     errorRef.compareAndSet(null, new IOException("request not processed by peer"));
                     if (debug.on()) {
                         debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
@@ -1696,7 +1693,7 @@ class Stream<T> extends ExchangeImpl<T> {
      */
     void closeAsUnprocessed() {
         // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
-        this.unprocessedByPeer = true;
+        markUnprocessedByPeer();
         this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
         if (debug.on()) {
             debug.log("closing " + this.request + " as unprocessed by peer");
@@ -1704,11 +1701,6 @@ class Stream<T> extends ExchangeImpl<T> {
         // close the exchange and complete the response CF exceptionally
         close();
         completeResponseExceptionally(this.errorRef.get());
-    }
-
-    @Override
-    boolean isUnprocessedByPeer() {
-        return this.unprocessedByPeer;
     }
 
     private class HeadersConsumer extends ValidatingHeadersConsumer {
