@@ -173,12 +173,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   {
     __ enter();
-    RuntimeAddress target(slow_case_addr);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ jalr(t0, offset);
-    });
+    __ rt_call(slow_case_addr);
     __ leave();
     __ ret();
   }
