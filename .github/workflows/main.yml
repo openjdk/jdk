@@ -363,26 +363,23 @@ jobs:
       - test-windows-x64
 
     steps:
-        # Hack to get hold of the api environment variables that are only defined for actions
-      - name: 'Get API configuration'
-        id: api
-        uses: actions/github-script@v7
-        with:
-          script: 'return { url: process.env["ACTIONS_RUNTIME_URL"], token: process.env["ACTIONS_RUNTIME_TOKEN"] }'
-
       - name: 'Remove bundle artifacts'
         run: |
           # Find and remove all bundle artifacts
-          ALL_ARTIFACT_URLS="$(curl -s \
-              -H 'Accept: application/json;api-version=6.0-preview' \
-              -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
-              '${{ fromJson(steps.api.outputs.result).url }}_apis/pipelines/workflows/${{ github.run_id }}/artifacts?api-version=6.0-preview')"
-          BUNDLE_ARTIFACT_URLS="$(echo "$ALL_ARTIFACT_URLS" | jq -r -c '.value | map(select(.name|startswith("bundles-"))) | .[].url')"
-          for url in $BUNDLE_ARTIFACT_URLS; do
-            echo "Removing $url"
-            curl -s \
-                -H 'Accept: application/json;api-version=6.0-preview' \
-                -H 'Authorization: Bearer ${{ fromJson(steps.api.outputs.result).token }}' \
-                -X DELETE "$url" \
+          # See: https://docs.github.com/en/rest/actions/artifacts?apiVersion=2022-11-28
+          ALL_ARTIFACT_IDS="$(curl -sL \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'Authorization: Bearer ${{ github.token }}' \
+              -H 'X-GitHub-Api-Version: 2022-11-28' \
+              '${{ github.api_url }}/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts')"
+          BUNDLE_ARTIFACT_IDS="$(echo "$ALL_ARTIFACT_IDS" | jq -r -c '.artifacts | map(select(.name|startswith("bundles-"))) | .[].id')"
+          for id in $BUNDLE_ARTIFACT_IDS; do
+            echo "Removing $id"
+            curl -sL \
+                -X DELETE \
+                -H 'Accept: application/vnd.github+json' \
+                -H 'Authorization: Bearer ${{ github.token }}' \
+                -H 'X-GitHub-Api-Version: 2022-11-28' \
+                "${{ github.api_url }}/repos/${{ github.repository }}/actions/artifacts/$id" \
             || echo "Failed to remove bundle"
           done

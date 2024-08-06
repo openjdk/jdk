@@ -84,8 +84,8 @@ reg_def R0      ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()         ); // zr
 reg_def R0_H    ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()->next() );
 reg_def R1      ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()         ); // ra
 reg_def R1_H    ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()->next() );
-reg_def R2      ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()         ); // sp
-reg_def R2_H    ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()->next() );
+reg_def R2      ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()         ); // sp
+reg_def R2_H    ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()->next() );
 reg_def R3      ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()         ); // gp
 reg_def R3_H    ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()->next() );
 reg_def R4      ( NS,  NS,  Op_RegI, 4,  x4->as_VMReg()         ); // tp
