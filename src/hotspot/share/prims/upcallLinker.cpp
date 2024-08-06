@@ -138,10 +138,9 @@ void UpcallLinker::on_exit(UpcallStub::FrameData* context) {
 }
 
 void UpcallLinker::handle_uncaught_exception(oop exception) {
-  ResourceMark rm;
-  // Based on CATCH macro
   tty->print_cr("Uncaught exception:");
-  exception->print();
+  Handle exception_h(Thread::current(), exception);
+  java_lang_Throwable::print_stack_trace(exception_h, tty);
   ShouldNotReachHere();
 }
 
