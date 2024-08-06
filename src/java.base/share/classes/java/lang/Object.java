@@ -122,9 +122,9 @@ public class Object {
      * in the context of {@linkplain java.util##CollectionsFramework
      * collections}.
      *
-     * As as a quality of implementation concern, a particular
-     * implementation of this method may or may not support generating
-     * hash codes for cyclic data structures.
+     * As a quality of implementation concern, an implementation of
+     * this method may or may not support generating hash codes for
+     * cyclic data structures.
      *
      * @apiNote
      * The {@link java.util.Objects#hash(Object...) hash} and {@link
