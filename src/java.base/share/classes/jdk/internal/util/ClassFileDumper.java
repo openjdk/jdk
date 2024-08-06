@@ -25,7 +25,6 @@
 package jdk.internal.util;
 
 import jdk.internal.misc.VM;
-import sun.security.action.GetPropertyAction;
 
 import java.io.IOException;
 import java.nio.file.Files;
