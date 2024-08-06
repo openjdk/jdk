@@ -221,7 +221,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ get_vm_result(Z_ARG1);
   __ block_comment("} receiver");
 
-  __ load_heap_oop(Z_method, Address(recv, java_lang_invoke_MethodHandle::form_offset()),
+  __ load_heap_oop(Z_method, Address(Z_ARG1, java_lang_invoke_MethodHandle::form_offset()),
                    noreg, noreg, IS_NOT_NULL);
   __ load_heap_oop(Z_method, Address(Z_method, java_lang_invoke_LambdaForm::vmentry_offset()),
                    noreg, noreg, IS_NOT_NULL);

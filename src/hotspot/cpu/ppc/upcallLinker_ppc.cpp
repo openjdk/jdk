@@ -242,11 +242,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ block_comment("} receiver ");
 
   __ load_heap_oop(R19_method, java_lang_invoke_MethodHandle::form_offset(), R3_ARG1,
-                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+                   R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
   __ load_heap_oop(R19_method, java_lang_invoke_LambdaForm::vmentry_offset(), R19_method,
-                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+                   R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
   __ load_heap_oop(R19_method, java_lang_invoke_MemberName::method_offset(), R19_method,
-                   R22_tmp2, R23_tmp3, preservation_level, IS_NOT_NULL);
+                   R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
   __ ld(R19_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), R19_method);
   __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread);
 
