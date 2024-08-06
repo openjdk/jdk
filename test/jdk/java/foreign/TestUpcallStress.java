@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
+ * @requires jdk.foreign.linker != "FALLBACK"
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
+ * @bug 8337753
  *
- * @run testng/othervm/timeout=1000000000
+ * @run testng/othervm/timeout=3200
  *   -Xcheck:jni
  *   -XX:+IgnoreUnrecognizedVMOptions
  *   -XX:-VerifyDependencies
@@ -87,6 +88,8 @@ public class TestUpcallStress extends TestUpcallBase {
                 }
             });
         }
+        // This shutdownNow is 'wrong', since it doesn't wait for tasks to terminate,
+        // but it seems to be the only way to reproduce the race of JDK-8337753
         executor.shutdownNow();
     }
 }
