@@ -1580,7 +1580,8 @@ public final class StringConcatFactory {
                             cb.loadLocal(kind, cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                         }
-                        cb.iadd();
+                        cb.iadd()
+                          .invokestatic(CD_StringConcatHelper, "checkOverflow", MTD_int_int);
                     }
                     cb.ireturn();
                 }

@@ -748,4 +748,18 @@ final class StringConcatHelper {
         }
         return index;
     }
+
+    /**
+     * Check for overflow, throw exception on overflow.
+     *
+     * @param value
+     * @return the given parameter value, if valid
+     */
+    @ForceInline
+    static int checkOverflow(int value) {
+        if (value >= 0) {
+            return value;
+        }
+        throw new OutOfMemoryError("Overflow: String length out of range");
+    }
 }
