@@ -96,14 +96,36 @@ At-most-once semantics is unquestionably critical to implement important use cas
 
 When fully realized, first-class support for "at-most-once" semantics would fill an important gap between mutable and immutable fields, as shown in the table below:
 
-
-| Storage kind   | #Updates | Code update location              | Constant folding  | Concurrent updates       |
-| -------------- |----------| --------------------------------- | ----------------- |--------------------------|
-| non-`final`    | [0, ∞)   | Anywhere                          | no                | yes                      |
-| `final`        | 1 [1]    | Constructor or static initializer | yes               | no [1]                   |
-| "at-most-once" | [0, 1]   | Anywhere                          | yes, after update | yes, but only one "wins" |
-
-[1]: https://docs.oracle.com/javase/specs/jls/se11/html/jls-17.html#jls-17.5 (JSL 17.5)
+<table>
+  <tr>
+    <th>Storage kind</th>
+    <th>#Updates</th>
+    <th>Core update location</th>
+    <th>Constant folding</th>
+    <th>Concurrent updates</th>
+  </tr>
+  <tr>
+    <td>non-final</td>
+    <td>[-, ∞)</td>
+    <td>Anywhere</td>
+    <td>no</td>
+    <td>yes</td>
+  </tr>
+  <tr>
+    <td>final</td>
+    <td>1</td>
+    <td>Constructor or static initializer</td>
+    <td>yes</td>
+    <td>no</td>
+  </tr>
+  <tr>
+    <td>"at-most-once"</td>
+    <td>[0, 1]</td>
+    <td>Anywhere</td>
+    <td>yes, after update</td>
+    <td>yes, but only one "wins"</td>
+  </tr>
+</table>
 
 _Table 1: Shows the properties of mutable, immutable, and at-most-once variables_
 
