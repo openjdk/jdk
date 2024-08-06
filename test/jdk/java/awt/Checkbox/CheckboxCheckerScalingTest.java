@@ -24,8 +24,8 @@
 import java.awt.Checkbox;
 import java.awt.Color;
 import java.awt.Frame;
-import java.awt.Rectangle;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
 
@@ -79,7 +79,7 @@ public class CheckboxCheckerScalingTest {
             });
 
             if (!checkmarkFound) {
-                throw new RuntimeException(" Checkmark not scaled");
+                throw new RuntimeException("Checkmark not scaled");
             }
             System.out.println("Test Passed");
         } finally {
