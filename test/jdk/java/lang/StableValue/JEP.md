@@ -96,7 +96,16 @@ At-most-once semantics is unquestionably critical to implement important use cas
 
 When fully realized, first-class support for "at-most-once" semantics would fill an important gap between mutable and immutable fields, as shown in the table below:
 
-<table>
+<style>
+  .storage-kinds {
+    table, th, td {
+      border: 1px solid black;
+      border-collapse: collapse;
+      text-align: center;
+    }
+  }
+</style>
+<table class="storage-kinds">
   <tr>
     <th>Storage kind</th>
     <th>#Updates</th>
