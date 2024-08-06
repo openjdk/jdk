@@ -1173,60 +1173,57 @@ public final class StringConcatFactory {
          *      int arg0, long arg1, boolean arg2, char arg3, String arg5)
          * </pre></blockquote>
          */
-        private static MethodType prependArgs(MethodType concatArgs) {
+        private static MethodTypeDesc prependArgs(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
-            var paramTypes = new Class<?>[parameterCount + 4];
-            paramTypes[0] = int.class;      // length
-            paramTypes[1] = byte.class;     // coder
-            paramTypes[2] = byte[].class;   // buff
-            paramTypes[3] = String[].class; // constants
+            var paramTypes = new ClassDesc[parameterCount + 4];
+            paramTypes[0] = CD_int;          // length
+            paramTypes[1] = CD_byte;         // coder
+            paramTypes[2] = CD_Array_byte;   // buff
+            paramTypes[3] = CD_Array_String; // constants
 
             for (int i = 0; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
                 if (cl != String.class && needStringOf(cl)) {
                     cl = String.class;
                 }
-                paramTypes[i + 4] = cl;
+                paramTypes[i + 4] = ConstantUtils.classDesc(cl);
             }
-            return MethodType.methodType(int.class, paramTypes);
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         /**
          * Construct the MethodType of the coder method,
          * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
          */
-        private static MethodType coderArgs(MethodType concatArgs) {
+        private static MethodTypeDesc coderArgs(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
-            List<Class<?>> paramTypes = new ArrayList<>();
-            paramTypes.add(int.class); // init coder
+            List<ClassDesc> paramTypes = new ArrayList<>();
+            paramTypes.add(CD_int); // init coder
             for (int i = 0; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
                 if (maybeUTF16(cl)) {
-                    if (cl != char.class) {
-                        cl = String.class;
-                    }
-                    paramTypes.add(cl);
+                    paramTypes.add(cl == char.class ? CD_char : CD_String);
                 }
             }
-            return MethodType.methodType(int.class, paramTypes.toArray(new Class<?>[0]));
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         /**
          * Construct the MethodType of the length method,
          * The first parameter is the initialized length, Only parameter types that can be UTF16 are added.
          */
-        private static MethodType lengthArgs(MethodType concatArgs) {
+        private static MethodTypeDesc lengthArgs(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
-            var paramTypes = new Class<?>[parameterCount + 1];
-            paramTypes[0] = int.class;
+            var paramTypes = new ClassDesc[parameterCount + 1];
+            paramTypes[0] = CD_int;
             for (int i = 0; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
                 if (needStringOf(cl)) {
                     cl = String.class;
                 }
-                paramTypes[i + 1] = cl;
+                paramTypes[i + 1] = ConstantUtils.classDesc(cl);
             }
-            return MethodType.methodType(int.class, paramTypes);
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
@@ -1255,9 +1252,9 @@ public final class StringConcatFactory {
                     }
                 }
             }
-            MethodType lengthArgs  = lengthArgs(concatArgs),
-                       coderArgs   = coderArgs(concatArgs),
-                       prependArgs = prependArgs(concatArgs);
+            MethodTypeDesc lengthArgs  = lengthArgs(concatArgs),
+                           coderArgs   = coderArgs(concatArgs),
+                           prependArgs = prependArgs(concatArgs);
 
             byte[] classBytes = ClassFile.of().build(concatClass,
                     new Consumer<ClassBuilder>() {
@@ -1269,7 +1266,7 @@ public final class StringConcatFactory {
                                 .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
                                 .withMethodBody(INIT_NAME, MTD_INIT, ACC_PRIVATE, CONSTRUCTOR_BUILDER)
                                 .withMethod("length",
-                                        ConstantUtils.methodTypeDesc(lengthArgs),
+                                        lengthArgs,
                                         ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
@@ -1280,7 +1277,7 @@ public final class StringConcatFactory {
                                             }
                                         })
                                 .withMethod("prepend",
-                                        ConstantUtils.methodTypeDesc(prependArgs),
+                                        prependArgs,
                                         ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
@@ -1309,7 +1306,7 @@ public final class StringConcatFactory {
 
                             if (parameterMaybeUTF16(concatArgs)) {
                                 clb.withMethod("coder",
-                                        ConstantUtils.methodTypeDesc(coderArgs),
+                                        coderArgs,
                                         ACC_STATIC | ACC_PRIVATE,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
@@ -1397,21 +1394,21 @@ public final class StringConcatFactory {
          * </pre></blockquote>
          */
         private static Consumer<CodeBuilder> generateConcatMethod(
-                ClassDesc  concatClass,
-                MethodType args,
-                MethodType lengthArgs,
-                MethodType coderArgs,
-                MethodType prependArgs
+                ClassDesc      concatClass,
+                MethodType     concatArgs,
+                MethodTypeDesc lengthArgs,
+                MethodTypeDesc coderArgs,
+                MethodTypeDesc prependArgs
         ) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int paramCount = args.parameterCount();
+                    int paramCount = concatArgs.parameterCount();
                     int thisSlot = cb.receiverSlot();
                     int[] stringSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
-                        var cl = args.parameterType(i);
+                        var cl = concatArgs.parameterType(i);
                         if (needStringOf(cl)) {
                             stringSlots[i] = cb.allocateLocal(TypeKind.from(String.class));
                         }
@@ -1434,7 +1431,7 @@ public final class StringConcatFactory {
                      * str0 = stringOf(arg0);
                      */
                     for (int i = paramCount - 1; i >= 0; i--) {
-                        var cl = args.parameterType(i);
+                        var cl = concatArgs.parameterType(i);
                         if (needStringOf(cl)) {
                             MethodTypeDesc methodTypeDesc;
                             if (cl == float.class) {
@@ -1455,9 +1452,9 @@ public final class StringConcatFactory {
                      */
                     cb.aload(thisSlot)
                       .getfield(concatClass, "coder", CD_byte);
-                    if (parameterMaybeUTF16(args)) {
+                    if (parameterMaybeUTF16(concatArgs)) {
                         for (int i = 0; i < paramCount; i++) {
-                            var cl = args.parameterType(i);
+                            var cl = concatArgs.parameterType(i);
                             if (maybeUTF16(cl)) {
                                 if (cl == char.class) {
                                     cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
@@ -1466,7 +1463,7 @@ public final class StringConcatFactory {
                                 }
                             }
                         }
-                        cb.invokestatic(concatClass, "coder", ConstantUtils.methodTypeDesc(coderArgs));
+                        cb.invokestatic(concatClass, "coder", coderArgs);
                     }
                     cb.istore(coderSlot);
 
@@ -1476,7 +1473,7 @@ public final class StringConcatFactory {
                     cb.aload(thisSlot)
                       .getfield(concatClass, "length", CD_int);
                     for (int i = 0; i < paramCount; i++) {
-                        var cl        = args.parameterType(i);
+                        var cl        = concatArgs.parameterType(i);
                         int paramSlot = cb.parameterSlot(i);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
@@ -1484,7 +1481,7 @@ public final class StringConcatFactory {
                         }
                         cb.loadLocal(TypeKind.from(cl), paramSlot);
                     }
-                    cb.invokestatic(concatClass, "length", ConstantUtils.methodTypeDesc(lengthArgs));
+                    cb.invokestatic(concatClass, "length", lengthArgs);
 
                     /*
                      * String[] constants = this.constants;
@@ -1522,7 +1519,7 @@ public final class StringConcatFactory {
                       .aload(bufSlot)
                       .aload(constantsSlot);
                     for (int i = 0; i < paramCount; i++) {
-                        var cl = args.parameterType(i);
+                        var cl = concatArgs.parameterType(i);
                         int paramSlot = cb.parameterSlot(i);
                         var kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
@@ -1531,7 +1528,7 @@ public final class StringConcatFactory {
                         }
                         cb.loadLocal(kind, paramSlot);
                     }
-                    cb.invokestatic(concatClass, "prepend", ConstantUtils.methodTypeDesc(prependArgs));
+                    cb.invokestatic(concatClass, "prepend", prependArgs);
 
                     // return new String(buf, coder);
                     cb.new_(CD_String)
@@ -1559,7 +1556,7 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateLengthMethod(MethodType lengthArgs) {
+        private static Consumer<CodeBuilder> generateLengthMethod(MethodTypeDesc lengthArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
@@ -1568,14 +1565,14 @@ public final class StringConcatFactory {
                         var cl   = lengthArgs.parameterType(i);
                         var kind = TypeKind.from(cl);
                         MethodTypeDesc methodTypeDesc;
-                        if (cl == char.class) {
+                        if (cl == CD_char) {
                             cb.iconst_1();
                         } else {
-                            if (cl == int.class) {
+                            if (cl == CD_int) {
                                 methodTypeDesc = MTD_int_int;
-                            } else if (cl == long.class) {
+                            } else if (cl == CD_long) {
                                 methodTypeDesc = MTD_int_long;
-                            } else if (cl == boolean.class) {
+                            } else if (cl == CD_boolean) {
                                 methodTypeDesc = MTD_int_boolean;
                             } else {
                                 methodTypeDesc = MTD_int_String;
@@ -1603,7 +1600,7 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generateCoderMethod(MethodType coderArgs) {
+        private static Consumer<CodeBuilder> generateCoderMethod(MethodTypeDesc coderArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
@@ -1614,7 +1611,7 @@ public final class StringConcatFactory {
                     for (int i = 1; i < coderArgs.parameterCount(); i++) {
                         var cl = coderArgs.parameterType(i);
                         cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
-                        if (cl == char.class) {
+                        if (cl == CD_char) {
                             cb.invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char);
                         } else {
                             cb.invokevirtual(CD_String, "coder", MTD_byte);
@@ -1647,7 +1644,7 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generatePrependMethod(MethodType prependArgs) {
+        private static Consumer<CodeBuilder> generatePrependMethod(MethodTypeDesc prependArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
@@ -1672,13 +1669,13 @@ public final class StringConcatFactory {
 
                         // There are only 5 types of parameters: int, long, boolean, char, String
                         MethodTypeDesc methodTypeDesc;
-                        if (cl == int.class) {
+                        if (cl == CD_int) {
                             methodTypeDesc = PREPEND_int;
-                        } else if (cl == long.class) {
+                        } else if (cl == CD_long) {
                             methodTypeDesc = PREPEND_long;
-                        } else if (cl == boolean.class) {
+                        } else if (cl == CD_boolean) {
                             methodTypeDesc = PREPEND_boolean;
-                        } else if (cl == char.class) {
+                        } else if (cl == CD_char) {
                             methodTypeDesc = PREPEND_char;
                         } else {
                             kind = TypeKind.from(String.class);
