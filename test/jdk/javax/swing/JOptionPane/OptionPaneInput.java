@@ -72,7 +72,7 @@ public class OptionPaneInput {
             g2.dispose();
         });
 
-        f.setSize(300,100);
+        f.setSize(300, 100);
         PassFailJFrame.addTestWindow(f);
         PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.HORIZONTAL);
         f.setVisible(true);
