@@ -2151,7 +2151,7 @@ Node* GraphKit::uncommon_trap(int trap_request,
   kill_dead_locals();
 
   // Now insert the uncommon trap subroutine call
-  address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
+  address call_addr = OptoRuntime::uncommon_trap_blob()->entry_point();
   const TypePtr* no_memory_effects = nullptr;
   // Pass the index of the class to be loaded
   Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON |
