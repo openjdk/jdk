@@ -103,6 +103,12 @@ When fully realized, first-class support for "at-most-once" semantics would fill
       border-collapse: collapse;
       text-align: center;
     }
+    tr:nth-child(3) {
+       background-color: #f2f2f2;
+    }
+    th {
+       background-color: #f2f2f2;
+    }
   }
 </style>
 <table class="storage-kinds">
@@ -114,29 +120,29 @@ When fully realized, first-class support for "at-most-once" semantics would fill
     <th>Concurrent updates</th>
   </tr>
   <tr>
-    <td>non-final</td>
-    <td>[-, ∞)</td>
+    <td>Mutable (non-final)</td>
+    <td>[0, ∞)</td>
     <td>Anywhere</td>
-    <td>no</td>
-    <td>yes</td>
+    <td>No</td>
+    <td>Yes</td>
   </tr>
   <tr>
-    <td>final</td>
-    <td>1</td>
-    <td>Constructor or static initializer</td>
-    <td>yes</td>
-    <td>no</td>
-  </tr>
-  <tr>
-    <td>"at-most-once"</td>
+    <td>"At-most-once"</td>
     <td>[0, 1]</td>
     <td>Anywhere</td>
-    <td>yes, after update</td>
-    <td>yes, but only one "wins"</td>
+    <td>Yes, after update</td>
+    <td>Yes, but only one "wins"</td>
+  </tr>
+  <tr>
+    <td>Immutable (final)</td>
+    <td>1</td>
+    <td>Constructor or static initializer</td>
+    <td>Yes</td>
+    <td>No</td>
   </tr>
 </table>
 
-_Table 1: Shows the properties of mutable, immutable, and at-most-once variables_
+_Table 1: Shows the properties of mutable, at-most-once, and immutable variables._
 
 ## Description
 
