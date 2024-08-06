@@ -119,10 +119,14 @@ import static java.lang.invoke.MethodType.methodType;
  */
 public final class StringConcatFactory {
     private static final int HIGH_ARITY_THRESHOLD;
+    private static final int FORCE_INLINE_THRESHOLD;
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
         HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 20;
+
+        String inlineThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.inlineThreshold");
+        FORCE_INLINE_THRESHOLD = inlineThreshold != null ? Integer.parseInt(inlineThreshold) : 16;
     }
 
     /**
@@ -1102,7 +1106,6 @@ public final class StringConcatFactory {
         static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
         static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
-        static final int FORCE_INLINE_THRESHOLD = 16;
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
         static final MethodType CONSTRUCTOR_METHOD_TYPE        = MethodType.methodType(void.class, String[].class);
