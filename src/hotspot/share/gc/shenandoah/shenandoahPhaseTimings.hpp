@@ -217,13 +217,13 @@ private:
   ShenandoahWorkerData* worker_data(Phase phase, ParPhase par_phase);
   Phase worker_par_phase(Phase phase, ParPhase par_phase);
 
-  void set_cycle_data(Phase phase, double time, bool should_aggregate_cycles=false);
+  void set_cycle_data(Phase phase, double time, bool should_aggregate = false);
   static double uninitialized() { return -1; }
 
 public:
   ShenandoahPhaseTimings(uint max_workers);
 
-  void record_phase_time(Phase phase, double time, bool should_aggregate_cycles=false);
+  void record_phase_time(Phase phase, double time, bool should_aggregate = false);
 
   void record_workers_start(Phase phase);
   void record_workers_end(Phase phase);
