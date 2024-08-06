@@ -154,7 +154,8 @@ JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobje
   // Fill in the signature array, for the calling-convention call.
   const int total_out_args = java_lang_invoke_MethodType::ptype_slot_count(type) + 1; // +1 for receiver
 
-  TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(type, true);
+  bool create_new = true;
+  TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(type, create_new);
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_out_args);
   BasicType ret_type;
   {
