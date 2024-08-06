@@ -365,7 +365,7 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
   }
 
   // Should be convertible to colorless oop
-  assert_is_valid(to_zaddress(obj));
+  check_is_valid_zaddress(obj);
 
   zpointer* const addr = (zpointer*)obj->base();
   const size_t length = (size_t)obj->length();

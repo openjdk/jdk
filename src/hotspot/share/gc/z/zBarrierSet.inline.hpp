@@ -430,7 +430,7 @@ public:
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
-  assert_is_valid(to_zaddress(src));
+  check_is_valid_zaddress(src);
 
   if (dst->is_objArray()) {
     // Cloning an object array is similar to performing array copy.

@@ -47,7 +47,7 @@
 
 template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
 inline void ZMark::mark_object(zaddress addr) {
-  assert(!ZVerifyOops || oopDesc::is_oop(to_oop(addr)), "Should be oop");
+  assert_is_oop(addr);
 
   ZPage* const page = _page_table->get(addr);
   if (page->is_allocating()) {

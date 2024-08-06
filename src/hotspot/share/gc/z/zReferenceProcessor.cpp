@@ -143,7 +143,7 @@ bool ZReferenceProcessor::is_inactive(zaddress reference, oop referent, Referenc
     return !is_null(reference_next(reference));
   } else {
     // Verification
-    (void)to_zaddress(referent);
+    check_is_valid_zaddress(referent);
 
     // A non-FinalReference is inactive if the referent is null. The referent can only
     // be null if the application called Reference.enqueue() or Reference.clear().

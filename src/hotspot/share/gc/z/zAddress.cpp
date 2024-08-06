@@ -93,9 +93,7 @@ static void initialize_check_oop_function() {
 #ifdef CHECK_UNHANDLED_OOPS
   if (ZVerifyOops) {
     // Enable extra verification of usages of oops in oopsHierarchy.hpp
-    check_oop_function = [](oopDesc* obj) {
-      (void)to_zaddress(obj);
-    };
+    check_oop_function = &check_is_valid_zaddress;
   }
 #endif
 }
