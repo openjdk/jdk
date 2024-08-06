@@ -104,6 +104,11 @@ public abstract class HttpRequest {
      *
      * <p> Concrete instances of this class and its subclasses are immutable.
      *
+     * @implNote
+     * In this version, the {@code Config} interface is sealed and only allows
+     * one implementation: {@link H3DiscoveryConfig}. However, it could be
+     * extended in the future to support additional implementations.
+     *
      * @since TBD
      */
     public sealed interface Config permits H3DiscoveryConfig {
@@ -234,7 +239,7 @@ public abstract class HttpRequest {
          *          the exchange will be established as per {@link
          *          H3DiscoveryConfig#HTTP_3_ANY}.</li>
          *     <li> Otherwise, if no request preferred version is explicitly provided
-         *          and the {@linkplain HttpClient.Builder#version(Version)  HttpClient
+         *          and the {@linkplain HttpClient.Builder#version(Version) HttpClient
          *          preferred version} is {@linkplain HttpClient.Version#HTTP_3 HTTP/3},
          *          the exchange will be established as per {@link
          *          H3DiscoveryConfig#HTTP_3_ALT_SVC}.</li>
