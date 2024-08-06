@@ -149,36 +149,29 @@ JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobje
   ResourceMark rm(THREAD);
   Handle mh_h(THREAD, JNIHandles::resolve(mh));
   jobject mh_j = JNIHandles::make_global(mh_h);
+  oop type = java_lang_invoke_MethodHandle::type(mh_h());
 
-  oop lform = java_lang_invoke_MethodHandle::form(mh_h());
-  oop vmentry = java_lang_invoke_LambdaForm::vmentry(lform);
-  Method* entry = java_lang_invoke_MemberName::vmtarget(vmentry);
-  const methodHandle mh_entry(THREAD, entry);
-
-  assert(entry->method_holder()->is_initialized(), "no clinit barrier");
-  CompilationPolicy::compile_if_required(mh_entry, CHECK_0);
-
-  assert(entry->is_static(), "static only");
   // Fill in the signature array, for the calling-convention call.
-  const int total_out_args = entry->size_of_parameters();
-  assert(total_out_args > 0, "receiver arg");
+  const int total_out_args = java_lang_invoke_MethodType::ptype_slot_count(type) + 1; // +1 for receiver
 
+  TempNewSymbol signature = java_lang_invoke_MethodType::as_signature(type, true);
   BasicType* out_sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_out_args);
   BasicType ret_type;
   {
     int i = 0;
-    SignatureStream ss(entry->signature());
+    out_sig_bt[i++] = T_OBJECT; // receiver MH
+    SignatureStream ss(signature);
     for (; !ss.at_return_type(); ss.next()) {
       out_sig_bt[i++] = ss.type();  // Collect remaining bits of signature
       if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
         out_sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
     }
-    assert(i == total_out_args, "");
+    assert(i == total_out_args, "%d != %d", i, total_out_args);
     ret_type = ss.type();
   }
 
   return (jlong) UpcallLinker::make_upcall_stub(
-    mh_j, entry, out_sig_bt, total_out_args, ret_type,
+    mh_j, signature, out_sig_bt, total_out_args, ret_type,
     abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
 JVM_END
 

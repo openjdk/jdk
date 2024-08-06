@@ -24,7 +24,7 @@
 #include "precompiled.hpp"
 #include "prims/upcallLinker.hpp"
 
-address UpcallLinker::make_upcall_stub(jobject mh, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject mh, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
