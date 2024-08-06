@@ -387,7 +387,7 @@ public final class StringConcatFactory {
             }
 
             if (mh == null) {
-                mh = SimpleStringBuilderStrategy.generate(lookup, concatType, constantStrings);
+                mh = InlineHiddenClassStrategy.generate(lookup, concatType, constantStrings);
             }
             mh = mh.viewAsType(concatType, true);
 
@@ -1064,12 +1064,12 @@ public final class StringConcatFactory {
     }
 
     /**
-     * Bytecode StringBuilder strategy.
+     * Bytecode strategy.
      *
      * <p>This strategy emits StringBuilder chains as similar as possible
      * to what javac would. No exact sizing of parameters or estimates.
      */
-    private static final class SimpleStringBuilderStrategy {
+    private static final class InlineHiddenClassStrategy {
         static final String METHOD_NAME = "concat";
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
@@ -1130,7 +1130,7 @@ public final class StringConcatFactory {
                             }
                         });
 
-        private SimpleStringBuilderStrategy() {
+        private InlineHiddenClassStrategy() {
             // no instantiation
         }
 
