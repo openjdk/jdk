@@ -326,7 +326,7 @@ public class TestFramework {
 
     /**
      * Add test classes to boot classpath. This adds all classes found on path {@link jdk.test.lib.Utils#TEST_CLASSES}
-     * to the boot classpath with "-Xbootclasspath/a". This is useful when trying to run tests with @Stable annotations.
+     * to the boot classpath with "-Xbootclasspath/a". This is useful when trying to run tests in a privileged mode.
      */
     public TestFramework addTestClassesToBootClassPath() {
         this.testClassesOnBootClassPath = true;

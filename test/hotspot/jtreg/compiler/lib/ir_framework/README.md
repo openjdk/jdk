@@ -157,8 +157,8 @@ The framework allows the use of additional compiler control annotations for help
 - [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
-### 2.5 IR Tests with `@Stable` annotation
-To run tests with `@Stable` annotations, one need to add the test classes to the boot classpath. This can easily be achieved by calling `TestFramework.addTestClassesToBootClassPath()` on the test framework object:
+### 2.5 IR Tests with Privileged Classes
+To run tests in a privileged mode (e.g. when using `@Stable`, `@Contended`, `@ReservedStackAccess` etc.), one need to add the test classes to the boot classpath. This can easily be achieved by calling `TestFramework.addTestClassesToBootClassPath()` on the test framework object:
 ```
 TestFramework testFramework = new TestFramework();
 testFramework
