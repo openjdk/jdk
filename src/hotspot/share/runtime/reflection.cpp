@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,7 +325,7 @@ static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
   assert(java_lang_Class::is_primitive(basic_type_mirror), "just checking");
   BasicType type = java_lang_Class::primitive_type(basic_type_mirror);
   if (type == T_VOID) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
   else {
     return Universe::typeArrayKlass(type);
@@ -334,10 +334,10 @@ static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
 
 arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
   if (element_mirror == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
   if (length < 0) {
-    THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
+    THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
     Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
@@ -345,7 +345,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
-      THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
   }
@@ -357,19 +357,19 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
   assert(TypeArrayKlass::cast(dim_array->klass())->element_type() == T_INT, "just checking");
 
   if (element_mirror == nullptr) {
-    THROW_0(vmSymbols::java_lang_NullPointerException());
+    THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
 
   int len = dim_array->length();
   if (len <= 0 || len > MAX_DIM) {
-    THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+    THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   jint dimensions[MAX_DIM];   // C array copy of intArrayOop
   for (int i = 0; i < len; i++) {
     int d = dim_array->int_at(i);
     if (d < 0) {
-      THROW_MSG_0(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", d));
+      THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", d));
     }
     dimensions[i] = d;
   }
@@ -383,7 +383,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     if (klass->is_array_klass()) {
       int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
-        THROW_0(vmSymbols::java_lang_IllegalArgumentException());
+        THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
       }
       dim += k_dim;
     }
@@ -977,11 +977,11 @@ static oop invoke(InstanceKlass* klass,
   } else {
     // check for null receiver
     if (receiver.is_null()) {
-      THROW_0(vmSymbols::java_lang_NullPointerException());
+      THROW_NULL(vmSymbols::java_lang_NullPointerException());
     }
     // Check class of receiver against class declaring method
     if (!receiver->is_a(klass)) {
-      THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "object is not an instance of declaring class");
+      THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "object is not an instance of declaring class");
     }
     // target klass is receiver's klass
     target_klass = receiver->klass();
@@ -1047,15 +1047,15 @@ static oop invoke(InstanceKlass* klass,
                                      reflected_method->name(),
                                      reflected_method->signature());
     ss.print("'");
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), ss.as_string());
   }
 
   assert(ptypes->is_objArray(), "just checking");
   int args_len = args.is_null() ? 0 : args->length();
   // Check number of arguments
   if (ptypes->length() != args_len) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                "wrong number of arguments");
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   "wrong number of arguments");
   }
 
   // Create object to contain parameters for the JavaCall
@@ -1085,14 +1085,14 @@ static oop invoke(InstanceKlass* klass,
         case T_FLOAT:       java_args.push_float(value.f);  break;
         case T_DOUBLE:      java_args.push_double(value.d); break;
         default:
-          THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "argument type mismatch");
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "argument type mismatch");
       }
     } else {
       if (arg != nullptr) {
         Klass* k = java_lang_Class::as_Klass(type_mirror);
         if (!arg->is_a(k)) {
-          THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-                      "argument type mismatch");
+          THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                         "argument type mismatch");
         }
       }
       Handle arg_handle(THREAD, arg);         // Create handle for argument
@@ -1148,7 +1148,7 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
   InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
 
@@ -1165,7 +1165,7 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
   InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
+    THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
   }
   methodHandle method(THREAD, m);
   assert(method->name() == vmSymbols::object_initializer_name(), "invalid constructor");
