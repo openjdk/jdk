@@ -215,7 +215,7 @@ public:
           break;
         } else {
           // nothing to do
-          assert(target == 0, "did not expect to relocate target for polling page load");
+          assert(target == nullptr, "did not expect to relocate target for polling page load");
         }
         break;
       }
