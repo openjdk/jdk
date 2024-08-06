@@ -1112,8 +1112,8 @@ public final class StringConcatFactory {
                 /*
                  * super(constantsSlot);
                  */
-                int thisSlot      = 0,
-                    constantsSlot = 1;
+                int thisSlot      = cb.receiverSlot(),
+                    constantsSlot = cb.parameterSlot(0);
                 cb.aload(thisSlot)
                   .aload(constantsSlot)
                   .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
@@ -1284,7 +1284,7 @@ public final class StringConcatFactory {
                                                 if (forceInline) {
                                                     mb.with(FORCE_INLINE);
                                                 }
-                                                mb.withCode(generatePrependMethod(concatArgs));
+                                                mb.withCode(generatePrependMethod(prependArgs));
                                             }
                                         })
                                 .withMethod(METHOD_NAME,
@@ -1404,28 +1404,21 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int paramCount = args.parameterCount(),
-                        thisSlot   = 0,
-                        nextSlot   = 1;
-                    int[] paramSlots  = new int[paramCount],
-                          stringSlots = new int[paramCount];
-                    for (int i = 0; i < paramCount; i++) {
-                        paramSlots[i] = nextSlot;
-                        nextSlot     += TypeKind.from(args.parameterType(i)).slotSize();
-                    }
-
+                    int paramCount = args.parameterCount();
+                    int thisSlot = cb.receiverSlot();
+                    int[] stringSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         var cl = args.parameterType(i);
                         if (needStringOf(cl)) {
-                            stringSlots[i] = nextSlot++;
+                            stringSlots[i] = cb.allocateLocal(TypeKind.from(String.class));
                         }
                     }
 
-                    int lengthSlot    = nextSlot,
-                        coderSlot     = nextSlot + 1,
-                        bufSlot       = nextSlot + 2,
-                        constantsSlot = nextSlot + 3,
-                        suffixSlot    = nextSlot + 4;
+                    int lengthSlot    = cb.allocateLocal(TypeKind.from(int.class)),
+                        coderSlot     = cb.allocateLocal(TypeKind.from(int.class)),
+                        bufSlot       = cb.allocateLocal(TypeKind.from(byte[].class)),
+                        constantsSlot = cb.allocateLocal(TypeKind.from(String[].class)),
+                        suffixSlot    = cb.allocateLocal(TypeKind.from(String.class));
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
@@ -1448,7 +1441,7 @@ public final class StringConcatFactory {
                             } else {
                                 methodTypeDesc = MTD_String_Object;
                             }
-                            cb.loadLocal(TypeKind.from(cl), paramSlots[i])
+                            cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
                         }
@@ -1464,7 +1457,7 @@ public final class StringConcatFactory {
                             var cl = args.parameterType(i);
                             if (maybeUTF16(cl)) {
                                 if (cl == char.class) {
-                                    cb.loadLocal(TypeKind.from(cl), paramSlots[i]);
+                                    cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
                                 } else {
                                     cb.aload(stringSlots[i]);
                                 }
@@ -1481,7 +1474,7 @@ public final class StringConcatFactory {
                       .getfield(concatClass, "length", CD_int);
                     for (int i = 0; i < paramCount; i++) {
                         var cl        = args.parameterType(i);
-                        int paramSlot = paramSlots[i];
+                        int paramSlot = cb.parameterSlot(i);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
                             cl = String.class;
@@ -1527,7 +1520,7 @@ public final class StringConcatFactory {
                       .aload(constantsSlot);
                     for (int i = 0; i < paramCount; i++) {
                         var cl = args.parameterType(i);
-                        int paramSlot = paramSlots[i];
+                        int paramSlot = cb.parameterSlot(i);
                         var kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
@@ -1567,11 +1560,8 @@ public final class StringConcatFactory {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    int paramCount = lengthArgs.parameterCount(),
-                        lengthSlot = 0,
-                        nextSlot   = 1;
-                    cb.iload(lengthSlot);
-                    for (int i = 1; i < paramCount; i++) {
+                    cb.iload(cb.parameterSlot(0)); // length
+                    for (int i = 1; i < lengthArgs.parameterCount(); i++) {
                         var cl   = lengthArgs.parameterType(i);
                         var kind = TypeKind.from(cl);
                         MethodTypeDesc methodTypeDesc;
@@ -1587,11 +1577,10 @@ public final class StringConcatFactory {
                             } else {
                                 methodTypeDesc = MTD_int_String;
                             }
-                            cb.loadLocal(kind, nextSlot)
+                            cb.loadLocal(kind, cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                         }
                         cb.iadd();
-                        nextSlot += kind.slotSize();
                     }
                     cb.ireturn();
                 }
@@ -1618,12 +1607,10 @@ public final class StringConcatFactory {
                     /*
                      * return coder | stringCoder(argN) | ... | arg1.coder() | arg0.coder();
                      */
-                    int coderSlot = 0;
-                    cb.iload(coderSlot);
+                    cb.iload(cb.parameterSlot(0)); // coder
                     for (int i = 1; i < coderArgs.parameterCount(); i++) {
                         var cl = coderArgs.parameterType(i);
-                        int paramSlot = i;
-                        cb.loadLocal(TypeKind.from(cl), paramSlot);
+                        cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
                         if (cl == char.class) {
                             cb.invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char);
                         } else {
@@ -1657,23 +1644,15 @@ public final class StringConcatFactory {
          * }
          * </pre></blockquote>
          */
-        private static Consumer<CodeBuilder> generatePrependMethod(MethodType args) {
+        private static Consumer<CodeBuilder> generatePrependMethod(MethodType prependArgs) {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int paramCount    = args.parameterCount(),
-                        lengthSlot    = 0,
+                    int lengthSlot    = 0,
                         coderSlot     = 1,
                         bufSlot       = 2,
-                        constantsSlot = 3,
-                        nextSlot      = 4;
-                    int[] paramSlots  = new int[paramCount];
-                    for (int i = 0; i < paramCount; i++) {
-                        paramSlots[i] = nextSlot;
-                        nextSlot     += (args.parameterType(i) == long.class ? 2 : 1);
-                    }
-
+                        constantsSlot = 3;
                     /*
                      * // StringConcatHelper.prepend
                      * return prepend(prepend(prepend(prepend(
@@ -1683,11 +1662,10 @@ public final class StringConcatFactory {
                      *              buf, arg3, constant[3]), buf, arg2, constant[2]),
                      *              buf, arg1, constant[1]), buf, arg0, constant[0]);
                      */
-                    cb.iload(lengthSlot);
-                    for (int i = paramCount - 1; i >= 0; i--) {
-                        int paramSlot = paramSlots[i];
-                        var cl        = args.parameterType(i);
-                        var kind      = TypeKind.from(cl);
+                    cb.iload(cb.parameterSlot(lengthSlot)); // length
+                    for (int i = prependArgs.parameterCount() - 1; i >= 4; i--) {
+                        var cl   = prependArgs.parameterType(i);
+                        var kind = TypeKind.from(cl);
 
                         // There are only 5 types of parameters: int, long, boolean, char, String
                         MethodTypeDesc methodTypeDesc;
@@ -1706,9 +1684,9 @@ public final class StringConcatFactory {
 
                         cb.iload(coderSlot)
                           .aload(bufSlot)
-                          .loadLocal(kind, paramSlot)
+                          .loadLocal(kind, cb.parameterSlot(i))
                           .aload(constantsSlot)
-                          .ldc(i)
+                          .ldc(i - 4)
                           .aaload()
                           .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
                     }
