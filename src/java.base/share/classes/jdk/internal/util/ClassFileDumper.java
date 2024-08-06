@@ -80,7 +80,7 @@ public final class ClassFileDumper {
     private final AtomicInteger counter = new AtomicInteger();
 
     private ClassFileDumper(String key, String path) {
-        String value = GetPropertyAction.privilegedGetProperty(key);
+        String value = VM.getSavedProperty(key);
         this.key = key;
         boolean enabled = value != null && value.isEmpty() ? true : Boolean.parseBoolean(value);
         if (enabled) {
