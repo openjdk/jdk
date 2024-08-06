@@ -1214,8 +1214,9 @@ class Http2Connection  {
         final long lastProcessedStream = frame.getLastStream();
         assert lastProcessedStream >= 0 : "unexpected last stream id: "
                 + lastProcessedStream + " in GOAWAY frame";
-        setFinalStream(); // don't allow any new streams on this connection
+
         markHalfClosedRemote();
+        setFinalStream(); // don't allow any new streams on this connection
         if (debug.on()) {
             debug.log("processing incoming GOAWAY with last processed stream id:%s in frame %s",
                     lastProcessedStream, frame);
