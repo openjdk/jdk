@@ -189,8 +189,8 @@ bool Klass::fallback_search_secondary_supers(const Klass* k, int index, uintx ro
   // when a null entry is found in the table, we maintain a bitmap
   // in which a 0 indicates missing entries.
 
-  // The check in search_secondary_supers guarantees there are 0s in
-  // the bitmap, so this loop eventually terminates.
+  // The check at the start of this function guarantees there are 0s
+  // in the bitmap, so this loop eventually terminates.
   while ((rotated_bitmap & 2) != 0) {
     if (++index == secondary_supers()->length()) {
       index = 0;
@@ -366,11 +366,9 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
     return uintx(1) << hash_slot;
   }
 
-  // For performance reasons we don't use a hashed table unless there
-  // are at least two empty slots in it. If there were only one empty
-  // slot it'd take a long time to create the table and the resulting
-  // search would be no faster than linear probing.
-  if (length > SECONDARY_SUPERS_TABLE_SIZE - 2) {
+  // Degenerate case: use linear search when we have too many classes
+  // to fit in an intx-sized bitmap.
+  if (length >= SECONDARY_SUPERS_TABLE_SIZE) {
     return SECONDARY_SUPERS_BITMAP_FULL;
   }
 
@@ -406,6 +404,7 @@ uintx Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
       }
     }
     assert(i == secondaries->length(), "mismatch");
+    postcond((int)population_count(bitmap) <= secondaries->length());
 
     return bitmap;
   }

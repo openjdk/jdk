@@ -98,10 +98,12 @@ inline bool Klass::lookup_secondary_supers_table(Klass* k) const {
   uint8_t slot = k->_hash_slot;
   uintx shifted_bitmap = bitmap << (highest_bit_number - slot);
 
+  precond((int)population_count(bitmap) <= secondary_supers()->length());
+
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  if ((shifted_bitmap >> highest_bit_number) == 0) {
+  if (((shifted_bitmap >> highest_bit_number) & 1) == 0) {
     return false;
   }
 
