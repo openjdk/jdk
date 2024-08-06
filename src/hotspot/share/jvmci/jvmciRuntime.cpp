@@ -2078,6 +2078,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        int compile_id,
                                                        bool has_monitors,
                                                        bool has_unsafe_access,
+                                                       bool has_scoped_access,
                                                        bool has_wide_vector,
                                                        JVMCIObject compiled_code,
                                                        JVMCIObject nmethod_mirror,
@@ -2183,7 +2184,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         nm->set_has_unsafe_access(has_unsafe_access);
         nm->set_has_wide_vectors(has_wide_vector);
         nm->set_has_monitors(has_monitors);
-        nm->set_has_scoped_access(true); // conservative
+        nm->set_has_scoped_access(has_scoped_access);
 
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");

@@ -4130,29 +4130,25 @@ void MacroAssembler::remove_frame(int framesize) {
 }
 
 void MacroAssembler::reserved_stack_check() {
-    // testing if reserved zone needs to be enabled
-    Label no_reserved_zone_enabling;
+  // testing if reserved zone needs to be enabled
+  Label no_reserved_zone_enabling;
 
-    ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
-    bltu(sp, t0, no_reserved_zone_enabling);
+  ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
+  bltu(sp, t0, no_reserved_zone_enabling);
 
-    enter();   // RA and FP are live.
-    mv(c_rarg0, xthread);
-    rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
-    leave();
+  enter();   // RA and FP are live.
+  mv(c_rarg0, xthread);
+  rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone));
+  leave();
 
-    // We have already removed our own frame.
-    // throw_delayed_StackOverflowError will think that it's been
-    // called by our caller.
-    RuntimeAddress target(StubRoutines::throw_delayed_StackOverflowError_entry());
-    relocate(target.rspec(), [&] {
-      int32_t offset;
-      movptr(t0, target.target(), offset);
-      jr(t0, offset);
-    });
-    should_not_reach_here();
+  // We have already removed our own frame.
+  // throw_delayed_StackOverflowError will think that it's been
+  // called by our caller.
+  la(t0, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+  jr(t0);
+  should_not_reach_here();
 
-    bind(no_reserved_zone_enabling);
+  bind(no_reserved_zone_enabling);
 }
 
 // Move the address of the polling page into dest.
