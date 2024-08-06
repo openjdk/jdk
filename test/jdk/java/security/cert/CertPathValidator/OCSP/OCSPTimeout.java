@@ -29,7 +29,7 @@
 
 /**
  * @test
- * @bug 8179502 8337826
+ * @bug 8179502
  * @summary Enhance OCSP, CRL and Certificate Fetch Timeouts
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.provider.certpath
