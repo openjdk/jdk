@@ -344,12 +344,18 @@ public class ConfigFileTest {
         String propsFilePath = System.getProperty(SECURITY_SET_PROP_FILE_PATH);
         if (propsFilePath != null) {
             String name = Path.of(propsFilePath).getFileName().toString();
-            Security.setProperty("include", propsFilePath);
+            String setPropInvokeRepr = "Security.setProperty(\"include\", " +
+                    "\"" + propsFilePath + "\")";
+            try {
+                Security.setProperty("include", propsFilePath);
+                throw new RuntimeException(setPropInvokeRepr + " was " +
+                        "expected to throw an IllegalArgumentException " +
+                        "exception.");
+            } catch (IllegalArgumentException expected) {}
             if (FilesManager.APPLIED_PROP_VALUE.equals(
                     Security.getProperty(name))) {
-                throw new RuntimeException("Security.setProperty" +
-                        "(\"include\", \"" + propsFilePath + "\") " +
-                        "has issued a file inclusion");
+                throw new RuntimeException(setPropInvokeRepr + " caused " +
+                        "a file inclusion.");
             }
         }
     }
