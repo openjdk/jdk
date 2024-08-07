@@ -73,6 +73,8 @@ public final class CPrinterJob extends RasterPrinterJob {
 
     private String outputBin = null;
 
+    private Throwable printerAbortExcpn;
+
     // This is the NSPrintInfo for this PrinterJob. Protect multi thread
     //  access to it. It is used by the pageDialog, jobDialog, and printLoop.
     //  This way the state of these items is shared across these calls.
@@ -247,7 +249,7 @@ public final class CPrinterJob extends RasterPrinterJob {
         }
     }
 
-    private void completePrintLoop() {
+    private void completePrintLoop(Throwable excpn)  {
         Runnable r = new Runnable() { public void run() {
             synchronized(this) {
                 performingPrinting = false;
@@ -256,6 +258,8 @@ public final class CPrinterJob extends RasterPrinterJob {
                 printingLoop.exit();
             }
         }};
+
+        printerAbortExcpn = excpn;
 
         if (onEventThread) {
             try { EventQueue.invokeAndWait(r); } catch (Exception e) { e.printStackTrace(); }
@@ -371,10 +375,11 @@ public final class CPrinterJob extends RasterPrinterJob {
 
                     try {
                         printLoop(true, firstPage, lastPage);
-                    } catch (PrinterAbortException pex) {
-                        throw pex;
                     } catch (Exception e) {
                         e.printStackTrace();
+                    }
+                    if (printerAbortExcpn != null) {
+                        throw (PrinterAbortException) printerAbortExcpn;
                     }
                 }
                 if (++loopi < prMembers.length) {
