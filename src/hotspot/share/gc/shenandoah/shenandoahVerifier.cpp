@@ -119,8 +119,8 @@ private:
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
 
-    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in(obj),
-              "oop must be in heap");
+    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in_bounds(obj),
+              "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
 
@@ -177,8 +177,8 @@ private:
     ShenandoahHeapRegion* fwd_reg = nullptr;
 
     if (obj != fwd) {
-      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in(fwd),
-             "Forwardee must be in heap");
+      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in_bounds(fwd),
+             "Forwardee must be in heap bounds");
       check(ShenandoahAsserts::_safe_oop, obj, !CompressedOops::is_null(fwd),
              "Forwardee is set");
       check(ShenandoahAsserts::_safe_oop, obj, is_object_aligned(fwd),
@@ -194,6 +194,9 @@ private:
              "Forwardee klass pointer must go to metaspace");
 
       fwd_reg = _heap->heap_region_containing(fwd);
+
+      check(ShenandoahAsserts::_safe_oop, obj, fwd_reg->is_active(),
+            "Forwardee should be in active region");
 
       // Verify that forwardee is not in the dead space:
       check(ShenandoahAsserts::_safe_oop, obj, !fwd_reg->is_humongous(),
