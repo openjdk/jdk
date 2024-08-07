@@ -1084,16 +1084,17 @@ public final class StringConcatFactory {
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
         static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
 
-        static final MethodTypeDesc MTD_byte_char     = MethodTypeDesc.of(CD_byte, CD_char);
-        static final MethodTypeDesc MTD_byte          = MethodTypeDesc.of(CD_byte);
-        static final MethodTypeDesc MTD_int           = MethodTypeDesc.of(CD_int);
-        static final MethodTypeDesc MTD_int_boolean   = MethodTypeDesc.of(CD_int, CD_boolean);
-        static final MethodTypeDesc MTD_int_int       = MethodTypeDesc.of(CD_int, CD_int);
-        static final MethodTypeDesc MTD_int_long      = MethodTypeDesc.of(CD_int, CD_long);
-        static final MethodTypeDesc MTD_int_String    = MethodTypeDesc.of(CD_int, CD_String);
-        static final MethodTypeDesc MTD_String_float  = MethodTypeDesc.of(CD_String, CD_float);
-        static final MethodTypeDesc MTD_String_double = MethodTypeDesc.of(CD_String, CD_double);
-        static final MethodTypeDesc MTD_String_Object = MethodTypeDesc.of(CD_String, CD_Object);
+        static final MethodTypeDesc MTD_byte_char       = MethodTypeDesc.of(CD_byte, CD_char);
+        static final MethodTypeDesc MTD_byte            = MethodTypeDesc.of(CD_byte);
+        static final MethodTypeDesc MTD_int             = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_boolean);
+        static final MethodTypeDesc MTD_int_int_char    = MethodTypeDesc.of(CD_int, CD_int, CD_char);
+        static final MethodTypeDesc MTD_int_int_int     = MethodTypeDesc.of(CD_int, CD_int, CD_int);
+        static final MethodTypeDesc MTD_int_int_long    = MethodTypeDesc.of(CD_int, CD_int, CD_long);
+        static final MethodTypeDesc MTD_int_int_String  = MethodTypeDesc.of(CD_int, CD_int, CD_String);
+        static final MethodTypeDesc MTD_String_float    = MethodTypeDesc.of(CD_String, CD_float);
+        static final MethodTypeDesc MTD_String_double   = MethodTypeDesc.of(CD_String, CD_double);
+        static final MethodTypeDesc MTD_String_Object   = MethodTypeDesc.of(CD_String, CD_Object);
 
         static final MethodTypeDesc MTD_GET_BYTES        = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_int, CD_byte);
         static final MethodTypeDesc MTD_INIT             = MethodTypeDesc.of(CD_void, CD_Array_String);
@@ -1551,8 +1552,7 @@ public final class StringConcatFactory {
          *
          * static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
          *                  String arg4, String arg5, String arg6, String arg7) {
-         *     return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + 1 + stringSize(arg4)
-         *               + stringSize(arg5) + stringSize(arg6) + stringSize(arg7);
+         *     return stringSize(stringSize(stringSize(length, arg0), arg1), ..., arg7);
          * }
          * </pre></blockquote>
          */
@@ -1563,25 +1563,20 @@ public final class StringConcatFactory {
                     cb.iload(cb.parameterSlot(0)); // length
                     for (int i = 1; i < lengthArgs.parameterCount(); i++) {
                         var cl   = lengthArgs.parameterType(i);
-                        var kind = TypeKind.from(cl);
                         MethodTypeDesc methodTypeDesc;
                         if (cl == CD_char) {
-                            cb.iconst_1();
+                            methodTypeDesc = MTD_int_int_char;
+                        } else if (cl == CD_int) {
+                            methodTypeDesc = MTD_int_int_int;
+                        } else if (cl == CD_long) {
+                            methodTypeDesc = MTD_int_int_long;
+                        } else if (cl == CD_boolean) {
+                            methodTypeDesc = MTD_int_int_boolean;
                         } else {
-                            if (cl == CD_int) {
-                                methodTypeDesc = MTD_int_int;
-                            } else if (cl == CD_long) {
-                                methodTypeDesc = MTD_int_long;
-                            } else if (cl == CD_boolean) {
-                                methodTypeDesc = MTD_int_boolean;
-                            } else {
-                                methodTypeDesc = MTD_int_String;
-                            }
-                            cb.loadLocal(kind, cb.parameterSlot(i))
-                              .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
+                            methodTypeDesc = MTD_int_int_String;
                         }
-                        cb.iadd()
-                          .invokestatic(CD_StringConcatHelper, "checkOverflow", MTD_int_int);
+                        cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
+                          .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
                     }
                     cb.ireturn();
                 }

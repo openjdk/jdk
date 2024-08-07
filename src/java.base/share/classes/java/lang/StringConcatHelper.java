@@ -59,7 +59,7 @@ final class StringConcatHelper {
 
         @ForceInline
         private String concat0(String value) {
-            int length = this.length + value.length();
+            int length = stringSize(this.length, value);
             byte coder = (byte) (this.coder | value.coder());
             byte[] buf = newArray(length << coder);
             String prefix = constants[0];
@@ -71,7 +71,7 @@ final class StringConcatHelper {
 
         @ForceInline
         private final String concat(boolean value) {
-            int length = this.length + stringSize(value);
+            int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
             byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -81,7 +81,7 @@ final class StringConcatHelper {
 
         @ForceInline
         private final String concat(char value) {
-            int length = this.length + 1;
+            int length = stringSize(this.length, value);
             byte coder = (byte) (this.coder | stringCoder(value));
             String suffix = constants[1];
             length -= suffix.length();
@@ -92,7 +92,7 @@ final class StringConcatHelper {
 
         @ForceInline
         private final String concat(int value) {
-            int length = this.length + stringSize(value);
+            int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
             byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -102,7 +102,7 @@ final class StringConcatHelper {
 
         @ForceInline
         private final String concat(long value) {
-            int length = this.length + stringSize(value);
+            int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
             byte[] buf = newArrayWithSuffix(suffix, length, coder);
@@ -471,39 +471,53 @@ final class StringConcatHelper {
     }
 
     /**
-     * return stringSize of value
-     * @param value       value
-     * @return            4 if true; 5 if false
+     * return add stringSize of value
+     * @param length      length
+     * @param value       value to add stringSize
+     * @return            new length
      */
-    static int stringSize(boolean value) {
-        return value ? 4 : 5;
+    static int stringSize(int length, char value) {
+        return checkOverflow(length + 1);
     }
 
     /**
-     * return stringSize of value
-     * @param value       value
-     * @return            stringSize of value
+     * return add stringSize of value
+     * @param length      length
+     * @param value       value to add stringSize
+     * @return            new length
      */
-    static int stringSize(int value) {
-        return DecimalDigits.stringSize(value);
+    static int stringSize(int length, boolean value) {
+        return checkOverflow(length + (value ? 4 : 5));
     }
 
     /**
-     * return stringSize of value
+     * return add stringSize of value
+     * @param length      length
      * @param value       value
-     * @return            stringSize of value
+     * @return            new length
      */
-    static int stringSize(long value) {
-        return DecimalDigits.stringSize(value);
+    static int stringSize(int length, int value) {
+        return checkOverflow(length + DecimalDigits.stringSize(value));
     }
 
     /**
-     * return stringSize of value
-     * @param value       value
-     * @return            stringSize of value
+     * return add stringSize of value
+     * @param length      length
+     * @param value       value to add stringSize
+     * @return            new length
      */
-    static int stringSize(String value) {
-        return value.length();
+    static int stringSize(int length, long value) {
+        return checkOverflow(length + DecimalDigits.stringSize(value));
+    }
+
+    /**
+     * return add stringSize of value
+     * @param length      length
+     * @param value       value to add stringSize
+     * @return            new length
+     */
+    static int stringSize(int length, String value) {
+        return checkOverflow(length + value.length());
     }
 
     /**
