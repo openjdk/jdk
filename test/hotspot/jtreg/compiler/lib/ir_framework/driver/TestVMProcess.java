@@ -34,6 +34,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -99,7 +100,7 @@ public class TestVMProcess {
         String bootClassPath = "-Xbootclasspath/a:.";
         if (testClassesOnBootClassPath) {
             // Add test classes themselves to boot classpath to make them privileged.
-            bootClassPath += ":" + Utils.TEST_CLASSES;
+            bootClassPath += File.pathSeparator + Utils.TEST_CLASSES;
         }
         cmds.add(bootClassPath);
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
