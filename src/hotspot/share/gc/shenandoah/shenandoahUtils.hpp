@@ -64,9 +64,9 @@ private:
 
   ShenandoahPhaseTimings* const         _timings;
   const ShenandoahPhaseTimings::Phase   _phase;
+  const bool _should_aggregate;
   ShenandoahPhaseTimings::Phase         _parent_phase;
   double _start;
-  bool _should_aggregate;
 
 public:
   ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase, bool should_aggregate = false);

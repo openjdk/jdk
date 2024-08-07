@@ -140,7 +140,7 @@ bool ShenandoahPhaseTimings::is_root_work_phase(Phase phase) {
 void ShenandoahPhaseTimings::set_cycle_data(Phase phase, double time, bool should_aggregate) {
   const double cycle_data = _cycle_data[phase];
   if (should_aggregate) {
-    _cycle_data[phase] = (cycle_data == uninitialized()) ? time :  cycle_data + time;
+    _cycle_data[phase] = (cycle_data == uninitialized()) ? time :  (cycle_data + time);
   } else {
 #ifdef ASSERT
     assert(cycle_data == uninitialized(), "Should not be set yet: %s, current value: %lf", phase_name(phase), cycle_data);
