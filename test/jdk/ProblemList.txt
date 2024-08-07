@@ -749,6 +749,8 @@ jdk/jfr/jvm/TestWaste.java                                      8282427 generic-
 
 # jdk_internal
 
+jdk/internal/util/ReferencedKeyTest.java                        8336926 linux-aarch64
+
 ############################################################################
 
 # jdk_jpackage
