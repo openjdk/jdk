@@ -23,12 +23,13 @@
 
 /*
  * @test
- * @bug      4927167 4974929 7010344 8025633 8081854 8182765 8187288 8261976
+ * @bug      4927167 4974929 6381729 7010344 8025633 8081854 8182765 8187288 8261976
  * @summary  When the type parameters are more than 10 characters in length,
  *           make sure there is a line break between type params and return type
  *           in member summary. Also, test for type parameter links in package-summary and
  *           class-use pages. The class/annotation pages should check for type
  *           parameter links in the class/annotation signature section when -linksource is set.
+ *           Verify that generic type parameters on constructors are documented.
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
  * @build    javadoc.tester.*
@@ -93,5 +94,26 @@ public class TestTypeParameters extends JavadocTester {
                     Test3.html#line-28">ClassUseTest3</a>&lt;T extends <a href="ParamTest2.html" tit\
                     le="class in pkg">ParamTest2</a>&lt;java.util.List&lt;? extends <a href="Foo4.ht\
                     ml" title="class in pkg">Foo4</a>&gt;&gt;&gt;""");
+    }
+
+    @Test
+    public void test3() {
+        javadoc("-d", "out-3",
+                "-Xdoclint:none",
+                "--no-platform-links",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("pkg/CtorTypeParam.html", true,
+                """
+                    <div class="col-first even-row-color"><code>&nbsp;&lt;T extends java.lang.Runnable&gt;<br></code></div>
+                    <div class="col-constructor-name even-row-color"><code>\
+                    <a href="#%3Cinit%3E()" class="member-name-link">CtorTypeParam</a>()</code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>""",
+                """
+                    <div class="member-signature"><span class="modifiers">public</span>\
+                    &nbsp;<span class="type-parameters">&lt;T extends java.lang.Runnable&gt;</span>\
+                    &nbsp;<span class="element-name">CtorTypeParam</span>()</div>""");
     }
 }

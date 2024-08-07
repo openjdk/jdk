@@ -32,7 +32,16 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public final class ValueParser {
-    private static final String INFINITY = "infinity";
+    public static final String INFINITY = "infinity";
+    public static final long MISSING = Long.MIN_VALUE;
+
+    public static long parseTimespanWithInfinity(String s, long defaultValue) {
+        try {
+            return parseTimespanWithInfinity(s);
+        } catch (NumberFormatException nfe) {
+            return defaultValue;
+        }
+    }
 
     public static long parseTimespanWithInfinity(String s) {
         if (INFINITY.equals(s)) {
@@ -42,26 +51,12 @@ public final class ValueParser {
     }
 
     public static long parseTimespan(String s) {
-        if (s.endsWith("ns")) {
-            return Long.parseLong(s.substring(0, s.length() - 2).trim());
-        }
-        if (s.endsWith("us")) {
-            return MICROSECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
-        }
-        if (s.endsWith("ms")) {
-            return MILLISECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 2).trim()));
-        }
-        if (s.endsWith("s")) {
-            return SECONDS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
-        }
-        if (s.endsWith("m")) {
-            return MINUTES.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
-        }
-        if (s.endsWith("h")) {
-            return HOURS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
-        }
-        if (s.endsWith("d")) {
-            return DAYS.toNanos(Long.parseLong(s.substring(0, s.length() - 1).trim()));
+        for (TimespanUnit unit : TimespanUnit.values()) {
+            String text = unit.text;
+            if (s.endsWith(text)) {
+                long value = Long.parseLong(s.substring(0, s.length() - text.length()).strip());
+                return unit.toNanos(value);
+            }
         }
 
         try {
