@@ -572,11 +572,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   return block_start_const(to(), p);
 }
 
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
-}
-
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
   // Set the desired survivor size to half the real survivor space
   size_t const survivor_capacity = to()->capacity() / HeapWordSize;
@@ -865,7 +860,7 @@ const char* DefNewGeneration::name() const {
   return "def new generation";
 }
 
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -875,8 +870,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 
