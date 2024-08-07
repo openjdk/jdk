@@ -73,6 +73,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
         counts = {IRNode.AND_VB, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];
