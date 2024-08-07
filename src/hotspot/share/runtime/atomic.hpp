@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1118,7 +1118,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   uint8_t canon_compare_value = compare_value;
   volatile uint32_t* aligned_dest
     = reinterpret_cast<volatile uint32_t*>(align_down(dest, sizeof(uint32_t)));
-  size_t offset = pointer_delta(dest, aligned_dest, 1);
+  uint32_t offset = checked_cast<uint32_t>(pointer_delta(dest, aligned_dest, 1));
 
   uint32_t idx = (Endian::NATIVE == Endian::BIG)
                    ? (sizeof(uint32_t) - 1 - offset)
