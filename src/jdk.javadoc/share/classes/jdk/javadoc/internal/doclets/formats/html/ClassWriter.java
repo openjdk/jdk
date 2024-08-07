@@ -156,11 +156,7 @@ public class ClassWriter extends SubWriterHolderWriter {
      * @param target the content to which the documentation will be added
      */
     protected void buildClassInfo(Content target) {
-<<<<<<< HEAD
         var c = new ContentBuilder();
-=======
-        Content c = HtmlTree.DIV(HtmlStyles.horizontalScroll);
->>>>>>> master
         buildParamInfo(c);
         buildSuperInterfacesInfo(c);
         buildImplementedInterfacesInfo(c);
@@ -169,8 +165,8 @@ public class ClassWriter extends SubWriterHolderWriter {
         buildInterfaceUsageInfo(c);
         buildNestedClassInfo(c);
         buildFunctionalInterfaceInfo(c);
-        c.add(new HtmlTree(TagName.HR));
-        var div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        c.add(new HtmlTree(HtmlTag.HR));
+        var div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         buildClassSignature(div);
         buildDeprecationInfo(div);
         buildClassDescription(div);
@@ -506,10 +502,6 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addClassSignature(Content classInfo) {
-<<<<<<< HEAD
-=======
-        classInfo.add(new HtmlTree(HtmlTag.HR));
->>>>>>> master
         classInfo.add(new Signatures.TypeSignature(typeElement, this)
                 .toContent());
     }
