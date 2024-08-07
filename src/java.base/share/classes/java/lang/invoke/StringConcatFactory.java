@@ -1254,7 +1254,7 @@ public final class StringConcatFactory {
                 }
             }
             MethodTypeDesc lengthArgs  = lengthArgs(concatArgs),
-                           coderArgs   = coderArgs(concatArgs),
+                           coderArgs   = parameterMaybeUTF16(concatArgs) ? coderArgs(concatArgs) : null,
                            prependArgs = prependArgs(concatArgs);
 
             byte[] classBytes = ClassFile.of().build(concatClass,
@@ -1305,7 +1305,7 @@ public final class StringConcatFactory {
                                             }
                                         });
 
-                            if (parameterMaybeUTF16(concatArgs)) {
+                            if (coderArgs != null) {
                                 clb.withMethod("coder",
                                         coderArgs,
                                         ACC_STATIC | ACC_PRIVATE,
@@ -1405,8 +1405,8 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int paramCount = concatArgs.parameterCount();
-                    int thisSlot = cb.receiverSlot();
+                    int   paramCount  = concatArgs.parameterCount();
+                    int   thisSlot    = cb.receiverSlot();
                     int[] stringSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
@@ -1426,12 +1426,12 @@ public final class StringConcatFactory {
                      *
                      * stringSlots stores the slots of parameters relative to local variables
                      *
-                     * strN = toString(argN);
-                     * ...
-                     * str1 = stringOf(arg1);
                      * str0 = stringOf(arg0);
+                     * str1 = stringOf(arg1);
+                     * ...
+                     * strN = toString(argN);
                      */
-                    for (int i = paramCount - 1; i >= 0; i--) {
+                    for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
                         if (needStringOf(cl)) {
                             MethodTypeDesc methodTypeDesc;
@@ -1453,7 +1453,7 @@ public final class StringConcatFactory {
                      */
                     cb.aload(thisSlot)
                       .getfield(concatClass, "coder", CD_byte);
-                    if (parameterMaybeUTF16(concatArgs)) {
+                    if (coderArgs != null) {
                         for (int i = 0; i < paramCount; i++) {
                             var cl = concatArgs.parameterType(i);
                             if (maybeUTF16(cl)) {
@@ -1562,7 +1562,7 @@ public final class StringConcatFactory {
                 public void accept(CodeBuilder cb) {
                     cb.iload(cb.parameterSlot(0)); // length
                     for (int i = 1; i < lengthArgs.parameterCount(); i++) {
-                        var cl   = lengthArgs.parameterType(i);
+                        var cl = lengthArgs.parameterType(i);
                         MethodTypeDesc methodTypeDesc;
                         if (cl == CD_char) {
                             methodTypeDesc = MTD_int_int_char;
