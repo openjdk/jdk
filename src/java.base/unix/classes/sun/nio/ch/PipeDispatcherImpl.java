@@ -23,13 +23,13 @@
  * questions.
  */
 
- package sun.nio.ch;
+package sun.nio.ch;
 
- import java.io.FileDescriptor;
- 
- class PipeDispatcherImpl extends FileDispatcherImpl {
-     PipeDispatcherImpl() {
-         super();
-     }
- }
- 
+import java.io.FileDescriptor;
+
+class PipeDispatcherImpl extends FileDispatcherImpl {
+    PipeDispatcherImpl() {
+        super();
+    }
+}
+
