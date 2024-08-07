@@ -77,9 +77,11 @@ public:
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
       // Unknown status for Reference.referent field. Do not touch it, it might be dead.
+      // Normally, barriers would prevent us from seeing the dead referents, but verifier
+      // runs with barriers disabled.
       _ref_mode = DO_FIELDS_EXCEPT_REFERENT;
     } else {
-      // Process everything.
+      // Otherwise do all fields.
       _ref_mode = DO_FIELDS;
     }
   }

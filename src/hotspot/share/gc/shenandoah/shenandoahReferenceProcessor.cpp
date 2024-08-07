@@ -83,22 +83,21 @@ static volatile T* reference_referent_addr(oop reference) {
   return (volatile T*)java_lang_ref_Reference::referent_addr_raw(reference);
 }
 
-// Raw referent. It can be dead. You cannot dereference it, only use for
-// bitmap checks and asserts.
-template <typename T>
-static oop reference_referent_raw(oop reference) {
-  T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
-  return coop_decode_raw(heap_oop);
-}
-
-// Special-case inlined CompressedOops::decode, which bypasses the in_heap check.
-// This is important for reference processor, because it can read a dead referent.
-inline oop coop_decode_raw(narrowOop v) {
+inline oop reference_coop_decode_raw(narrowOop v) {
   return CompressedOops::is_null(v) ? nullptr : CompressedOops::decode_raw(v);
 }
 
-inline oop coop_decode_raw(oop v) {
+inline oop reference_coop_decode_raw(oop v) {
   return v;
+}
+
+// Raw referent, it can be dead. You cannot dereference it, only use for nullptr
+// and bitmap checks. The decoding uses a special-case inlined CompressedOops::decode
+// method that bypasses normal oop-ness checks.
+template <typename T>
+static oop reference_referent_raw(oop reference) {
+  T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
+  return reference_coop_decode_raw(heap_oop);
 }
 
 static void reference_clear_referent(oop reference) {

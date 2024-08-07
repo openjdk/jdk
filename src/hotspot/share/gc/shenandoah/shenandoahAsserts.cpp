@@ -37,7 +37,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // should be in heap, in known committed region, within that region.
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_in_reserved(loc)) return;
+  if (!heap->is_in_bounds(loc)) return;
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
   if (r != nullptr && r->is_committed()) {
