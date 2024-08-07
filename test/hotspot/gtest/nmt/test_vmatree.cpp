@@ -186,23 +186,43 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 
 TEST_VM_F(NMTVMATreeTest, performance) {
   VMATree::RegionData rd{si[0], mtTest};
-  auto n_reserve = [&](int n) {
+  auto n_reserve_vmt = [&](int n) {
+    ThreadCritical tc;
     Tree tree;
     double st = os::elapsedTime();
     for (int i = 0; i < n; i++) {
-      int a = (os::random() % n) * 100;
-      tree.reserve_mapping(a * 100, 90, rd);
+      int64_t a = (os::random() % n) * 100;
+      VirtualMemoryTracker::add_reserved_region((address)(a + 1000UL), 90, CALLER_PC, mtTest);
     }
     double d = os::elapsedTime() - st;
     return d;
   };
-  const int N1 = 1000;
-  const int N2 = 10000;
 
-  double d1 = n_reserve(N1);
-  double d2 = n_reserve(N2);
-  tty->print_cr("d1: %lf, d2: %lf, d2/d1: %lf", d1, d2, d2 / d1);
-  EXPECT_LT((int)(d2 / d1), N2 / N1);
+  auto n_reserve_vmatree = [&](int n) {
+    Tree tree;
+    double st = os::elapsedTime();
+    for (int i = 0; i < n; i++) {
+      int a = (os::random() % n) * 100;
+      tree.reserve_mapping(a, 90, rd);
+    }
+    double d = os::elapsedTime() - st;
+    return d;
+  };
+
+  const int N = 10000;
+  const int REPEATS = 10;
+  double vmt_sum = 0;
+  double vma_sum = 0;
+  int unexpected_count = 0;
+  for ( int i = 0; i < REPEATS; i++) {
+    double vmt_dur = n_reserve_vmt(N);
+    double vma_dur = n_reserve_vmatree(N);
+    vmt_sum += vmt_dur;
+    vma_sum += vma_dur;
+    if (vmt_dur < vma_dur) unexpected_count++;
+  }
+  tty->print_cr("Unexp.Cnt: %d, VMT Avg.: %lf, VMATree Avg.: %lf, VMT/VMA : %lf", unexpected_count, vmt_sum / REPEATS, vma_sum / REPEATS, vmt_sum / vma_sum);
+  EXPECT_LT(unexpected_count, REPEATS / 2) << "VMT Avg: " << vmt_sum / REPEATS << "VMATree Avg: " << vma_sum / REPEATS;
 }
 
 // Low-level tests inspecting the state of the tree.

@@ -108,7 +108,7 @@ void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff)
                     " diff-committed: " SSIZE_FORMAT
                     " vms-reserved: "  SIZE_FORMAT
                     " vms-committed: " SIZE_FORMAT,
-                    str, NMTUtil::flag_to_name(flag), reserve_delta, commit_delta, reserved, committed);
+                    str, NMTUtil::flag_to_name(flag), (ssize_t)reserve_delta, (ssize_t)commit_delta, reserved, committed);
   };
   for (int i = 0; i < mt_number_of_types; i++) {
     reserve_delta = diff.flag[i].reserve;

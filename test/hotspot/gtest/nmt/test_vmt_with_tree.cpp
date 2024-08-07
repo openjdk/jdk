@@ -153,8 +153,8 @@ bool compare_diffs(SummaryDiff d1, SummaryDiff d2) {
     if (d1.flag[i].reserve != d2.flag[i].reserve) {
       log_debug(nmt)("compare diffs: reserve %s, Old " SSIZE_FORMAT " != New " SSIZE_FORMAT,
                     NMTUtil::flag_to_name(NMTUtil::index_to_flag(i)),
-                    d1.flag[i].reserve,
-                    d2.flag[i].reserve
+                    (ssize_t)d1.flag[i].reserve,
+                    (ssize_t)d2.flag[i].reserve
                     );
       result = false;
     }

@@ -70,7 +70,6 @@ class MemTracker : AllStatic {
     if (is_using_sorted_link_list())
       return VirtualMemoryTracker::walk_virtual_memory(walker);
     if (is_using_tree()) {
-      log_info(nmt)("called walk vmem");
       return VirtualMemoryTrackerWithTree::walk_virtual_memory(walker);
     }
     return false;
