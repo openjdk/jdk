@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CompileFramework {
-    private static final int JASM_COMPILE_TIMEOUT = 60;
+    private static final int COMPILE_TIMEOUT = 60;
     private static final boolean VERBOSE = Boolean.getBoolean("CompileFrameworkVerbose");
 
     private List<SourceCode> sourceCodes = new ArrayList<SourceCode>();
@@ -222,9 +222,10 @@ public class CompileFramework {
         int exitCode;
         try {
             Process process = builder.start();
-            boolean exited = process.waitFor(JASM_COMPILE_TIMEOUT, TimeUnit.SECONDS);
+            boolean exited = process.waitFor(COMPILE_TIMEOUT, TimeUnit.SECONDS);
             if (!exited) {
                 process.destroyForcibly();
+                System.out.println("Timeout: compile command: " + String.join(" ", command));
                 throw new InternalCompileFrameworkException("Process timeout: compilation took too long.");
             }
             output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
