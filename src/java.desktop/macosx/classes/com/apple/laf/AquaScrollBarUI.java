@@ -527,6 +527,12 @@ public class AquaScrollBarUI extends ScrollBarUI {
         }
 
         public void actionPerformed(final ActionEvent e) {
+            if (fTrackHighlight != Hit.NONE && !fTrackListener.fStillInTrack) {
+                fScrollTimer.stop();
+                fTrackHighlight = Hit.NONE;
+                fScrollBar.setValueIsAdjusting(false);
+                return;
+            }
             if (fUseBlockIncrement) {
                 Hit newPart = getPartHit(fTrackListener.fCurrentMouseX, fTrackListener.fCurrentMouseY);
 

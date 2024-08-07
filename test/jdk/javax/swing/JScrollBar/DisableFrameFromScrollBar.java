@@ -81,9 +81,6 @@ public class DisableFrameFromScrollBar {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
-            if (laf.getClassName().contains("Aqua")) {
-                continue;
-            }
             robot = new Robot();
             robot.setAutoDelay(100);
             try {
