@@ -44,7 +44,7 @@ import org.testng.annotations.Test;
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @run testng/othervm/timeout=180 Skip
- * @bug 8265891
+ * @bug 8337974
  * @summary Tests whether sun.nio.ch.ChannelInputStream.skip and
  *          sun.nio.ch.SocketInputStream.skip conform to the
  *          InputStream.skip specification
