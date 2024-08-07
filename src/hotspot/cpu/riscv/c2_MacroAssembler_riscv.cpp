@@ -165,6 +165,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   Register oop = objectReg;
   Register box = boxReg;
   Register disp_hdr = tmp1Reg;
+  Register owner_addr = tmp1Reg;
   Register tmp = tmp2Reg;
   Label object_has_monitor;
   // Finish fast lock successfully. MUST branch to with flag == 0
@@ -222,15 +223,31 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   j(unlocked);
 
   bind(notRecursive);
+  // Compute owner address.
+  la(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
+
+  // Set owner to null.
+  // Release to satisfy the JMM
+  membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  sd(zr, Address(owner_addr));
+  membar(StoreLoad);
+
+  // Check if the entry lists are empty.
   ld(t0, Address(tmp, ObjectMonitor::EntryList_offset()));
   ld(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(t0, t0, disp_hdr); // Will be 0 if both are 0.
-  bnez(t0, slow_path);
+  orr(t0, t0, disp_hdr);
+  beqz(t0, unlocked); // If so we are done.
 
-  // need a release store here
-  la(tmp, Address(tmp, ObjectMonitor::owner_offset()));
-  membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  sd(zr, Address(tmp)); // set unowned
+  // Check if there is a successor.
+  ld(t0, Address(tmp, ObjectMonitor::succ_offset()));
+  bnez(t0, unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  sd(tmp, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  mv(flag, 1);
+  j(slow_path);
 
   bind(unlocked);
   mv(flag, zr);
@@ -490,11 +507,16 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
     ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
     ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
     orr(t0, t0, tmp3_t);
-    beqz(t0, unlocked);
+    beqz(t0, unlocked);     // If so we are done.
 
-    // Check successor.
+    // Check if there is a successor.
     ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::succ_offset()));
-    bnez(tmp3_t, unlocked);
+    bnez(tmp3_t, unlocked); // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try
+    // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+    sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
+
     mv(flag, 1);
     j(slow_path);
   }

@@ -2661,7 +2661,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  Register temp, Register displaced_header, Register current_header) {
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
   assert_different_registers(oop, box, temp, displaced_header, current_header);
-  Label success, failure, object_has_monitor, notRecursive;
+  Label success, unlocked, failure, object_has_monitor, notRecursive;
 
   if (LockingMode == LM_LEGACY) {
     // Find the lock address and load the displaced header from the stack.
@@ -2722,13 +2722,35 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
   b(success);
 
   bind(notRecursive);
-  ld(temp,             in_bytes(ObjectMonitor::EntryList_offset()), current_header);
-  ld(displaced_header, in_bytes(ObjectMonitor::cxq_offset()), current_header);
-  orr(temp, temp, displaced_header); // Will be 0 if both are 0.
-  cmpdi(flag, temp, 0);
-  bne(flag, failure);
+  const Register temp2 = displaced_header;
+
+  // Set owner to null.
   release();
+  li(temp, 0);
   std(temp, in_bytes(ObjectMonitor::owner_offset()), current_header);
+  membar(StoreLoad);
+
+  // Check if the entry lists are empty.
+  ld(temp, in_bytes(ObjectMonitor::EntryList_offset()), current_header);
+  ld(temp2, in_bytes(ObjectMonitor::cxq_offset()), current_header);
+  orr(temp, temp, temp2);
+  cmpdi(flag, temp, 0);
+  beq(flag, success);  // If so we are done.
+
+  // Check if there is a successor.
+  ld(temp, in_bytes(ObjectMonitor::succ_offset()), current_header);
+  cmpdi(flag, temp, 0);
+  bne(flag, success);  // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try
+  // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+  std(current_header, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
+
+  crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
+  b(failure);
+
+  bind(unlocked);
+  crorc(flag, Assembler::equal, flag, Assembler::equal); // Set flag = EQ => fast path
 
   // flag == EQ indicates success, decrement held monitor count
   // flag == NE indicates failure
@@ -2965,8 +2987,6 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(not_recursive);
 
-    const Register t2 = tmp2;
-
     // Set owner to null.
     release();
     li(t, 0);
@@ -2975,22 +2995,27 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     // Check if the entry lists are empty.
     ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-    orr(t, t, t2);
+    ld(tmp2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
+    orr(t, t, tmp2);
     cmpdi(flag, t, 0);
-    beq(flag, unlocked);
+    beq(flag, unlocked); // If so we are done.
 
+    // Check if there is a successor.
     ld(t, in_bytes(ObjectMonitor::succ_offset()), monitor);
     cmpdi(flag, t, 0);
-    bne(flag, unlocked);
+    bne(flag, unlocked); // If so we are done.
 
-    crxor(flag, Assembler::equal, flag, Assembler::equal); // Fast Lock Flag = NE
+    // Save the monitor pointer in the current thread, so we can try
+    // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+    std(monitor, in_bytes(JavaThread::unlocked_inflated_monitor_offset()), R16_thread);
+
+    crxor(flag, Assembler::equal, flag, Assembler::equal); // Set flag = NE => slow path
     b(slow_path);
   }
 
   bind(unlocked);
   dec_held_monitor_count(t);
-  crorc(flag, Assembler::equal, flag, Assembler::equal); // Fast Lock Flag = EQ
+  crorc(flag, Assembler::equal, flag, Assembler::equal); // Set flag = EQ => fast path
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == EQ.

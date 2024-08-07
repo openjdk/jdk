@@ -150,10 +150,12 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   Register oop = objectReg;
   Register box = boxReg;
   Register disp_hdr = tmpReg;
+  Register owner_addr = tmpReg;
   Register tmp = tmp2Reg;
   Label cont;
   Label object_has_monitor;
   Label count, no_count;
+  Label unlocked;
 
   assert(LockingMode != LM_LIGHTWEIGHT, "lightweight locking should use fast_unlock_lightweight");
   assert_different_registers(oop, box, tmp, disp_hdr);
@@ -204,14 +206,38 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg, Registe
   b(cont);
 
   bind(notRecursive);
+
+  // Compute owner address.
+  lea(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
+
+  // Set owner to null.
+  // Release to satisfy the JMM
+  stlr(zr, owner_addr);
+  membar(StoreLoad);
+
+  // Check if the entry lists are empty.
   ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset()));
-  ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset()));
-  orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
-  cmp(rscratch1, zr); // Sets flags for result
-  cbnz(rscratch1, cont);
-  // need a release store here
-  lea(tmp, Address(tmp, ObjectMonitor::owner_offset()));
-  stlr(zr, tmp); // set unowned
+  ldr(tmpReg, Address(tmp, ObjectMonitor::cxq_offset()));
+  orr(rscratch1, rscratch1, tmpReg);
+  cmp(rscratch1, zr);
+  br(Assembler::EQ, cont);     // If so we are done.
+
+  // Check if there is a successor.
+  ldr(rscratch1, Address(tmp, ObjectMonitor::succ_offset()));
+  cmp(rscratch1, zr);
+  br(Assembler::NE, unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  str(tmp, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  cmp(zr, rthread); // Set Flag to NE => slow path
+  b(cont);
+
+  bind(unlocked);
+  cmp(zr, zr); // Set Flag to EQ => fast path
+
+  // Intentional fall-through
 
   bind(cont);
   // flag == EQ indicates success
@@ -450,18 +476,24 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     ldr(t3_t, Address(t1_monitor, ObjectMonitor::cxq_offset()));
     orr(rscratch1, rscratch1, t3_t);
     cmp(rscratch1, zr);
-    br(Assembler::EQ, unlocked);
+    br(Assembler::EQ, unlocked);  // If so we are done.
 
+    // Check if there is a successor.
     ldr(rscratch1, Address(t1_monitor, ObjectMonitor::succ_offset()));
     cmp(rscratch1, zr);
-    br(Assembler::NE, unlocked);
-    cmp(zr, rthread); // Set Flag to NE
+    br(Assembler::NE, unlocked);  // If so we are done.
+
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    str(t1_monitor, Address(rthread, JavaThread::unlocked_inflated_monitor_offset()));
+
+    cmp(zr, rthread); // Set Flag to NE => slow path
     b(slow_path);
   }
 
   bind(unlocked);
   decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
-  cmp(zr, zr); // Set Flags to EQ
+  cmp(zr, zr); // Set Flags to EQ => fast path
 
 #ifdef ASSERT
   // Check that unlocked label is reached with Flags == EQ.
