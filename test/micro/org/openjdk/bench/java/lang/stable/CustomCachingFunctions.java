@@ -23,8 +23,74 @@
 
 package org.openjdk.bench.java.lang.stable;
 
-public final class CachingFunctions {
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
+import java.util.function.IntSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
-    private CachingFunctions() {
+final class CustomCachingFunctions {
+
+    private CustomCachingFunctions() {}
+
+    record Pair<L, R>(L left, R right){}
+
+    static <T> Predicate<T> cachingPredicate(Set<? extends T> inputs,
+                                             Predicate<? super T> original) {
+
+        final Function<T, Boolean> delegate = StableValue.newCachingFunction(inputs, original::test, null);
+        return delegate::apply;
     }
+
+    static <T, U, R> BiFunction<T, U, R> cachingBiFunction(Set<Pair<T, U>> inputs,
+                                                           BiFunction<? super T, ? super U, ? extends R> original) {
+
+        final Map<T, Set<U>> tToUs = inputs.stream()
+                .collect(Collectors.groupingBy(Pair::left,
+                        Collectors.mapping(Pair::right, Collectors.toSet())));
+
+        // Map::copyOf is crucial!
+        final Map<T, Function<U, R>> map = Map.copyOf(tToUs.entrySet().stream()
+                .map(e -> Map.entry(e.getKey(), StableValue.<U, R>newCachingFunction(e.getValue(), (U u) -> original.apply(e.getKey(), u), null)))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+        return (T t, U u) -> {
+            final Function<U,R> function = map.get(t);
+            if (function != null) {
+                try {
+                    return function.apply(u);
+                } catch (IllegalArgumentException iae) {
+                    // The original function might throw
+                    throw new IllegalArgumentException(t.toString() + ", " + u.toString(), iae);
+                }
+            }
+            throw new IllegalArgumentException(t.toString() + ", " + u.toString());
+        };
+    }
+
+    static <T> BinaryOperator<T> cachingBinaryOperator(Set<Pair<T, T>> inputs,
+                                                       BinaryOperator<T> original) {
+
+        final BiFunction<T, T, T> biFunction = cachingBiFunction(inputs, original);
+        return biFunction::apply;
+    }
+
+    static <T> UnaryOperator<T> cachingUnaryOperator(Set<? extends T> inputs,
+                                                     UnaryOperator<T> original) {
+
+        final Function<T, T> function = StableValue.newCachingFunction(inputs, original, null);
+        return function::apply;
+
+    }
+
+    static IntSupplier cachingIntSupplier(IntSupplier original) {
+        final Supplier<Integer> delegate = StableValue.newCachingSupplier(original::getAsInt, null);
+        return delegate::get;
+    }
+
 }

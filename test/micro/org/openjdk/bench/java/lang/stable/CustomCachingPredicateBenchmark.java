@@ -37,10 +37,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import static org.openjdk.bench.java.lang.stable.CustomCachingFunctions.cachingPredicate;
 
 /**
  * Benchmark measuring custom stable value types
@@ -60,15 +63,16 @@ import java.util.stream.IntStream;
 public class CustomCachingPredicateBenchmark {
 
     private static final Set<Integer> SET = IntStream.range(0, 64).boxed().collect(Collectors.toSet());
-    private static final Predicate<Integer> EVEN = i -> i % 2 == 0;
+    private static final Predicate<Integer> EVEN = i -> {
+        // Slow down the original
+        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+        return i % 2 == 0;
+    };
+
     private static final Integer VALUE = 42;
-    private static final Integer VALUE2 = 13;
 
-    private static final Predicate<Integer> PREDICATE = new CachingPredicate<>(SET, EVEN);
-    private static final Predicate<Integer> PREDICATE2 = new CachingPredicate<>(SET, EVEN);
-
-    private final Predicate<Integer> predicate = new CachingPredicate<>(SET, EVEN);
-    private final Predicate<Integer> predicate2 = new CachingPredicate<>(SET, EVEN);
+    private static final Predicate<Integer> PREDICATE = cachingPredicate(SET, EVEN);
+    private final Predicate<Integer> predicate = cachingPredicate(SET, EVEN);
 
     @Benchmark
     public boolean predicate() {
@@ -80,35 +84,12 @@ public class CustomCachingPredicateBenchmark {
         return PREDICATE.test(VALUE);
     }
 
-    //Benchmark                             Mode  Cnt  Score   Error  Units
-    //CustomClassBenchmark.predicate        avgt   10  7.470 ? 0.432  ns/op
-    //CustomClassBenchmark.staticPredicate  avgt   10  6.650 ? 0.453  ns/op
-    static <T> Predicate<T> cachingPredicate(Set<? extends T> inputs, Predicate<? super T> original) {
-        Function<T, Boolean> delegate = StableValue.newCachingFunction(inputs, (T t) -> Boolean.valueOf(original.test(t)), null);
-        return delegate::apply;
-    }
 
-    // This is slow for some reason
-    //Benchmark                             Mode  Cnt  Score   Error  Units
-    //CustomClassBenchmark.predicate        avgt   10  7.732 ? 0.793  ns/op
-    //CustomClassBenchmark.staticPredicate  avgt   10  6.485 ? 0.325  ns/op
-    record CachingPredicate2<T>(Function<T, Boolean> delegate) implements Predicate<T> {
+    //Benchmark                                        Mode  Cnt  Score   Error  Units
+    //CustomCachingPredicateBenchmark.predicate        avgt   10  3.054 ? 0.155  ns/op
+    //CustomCachingPredicateBenchmark.staticPredicate  avgt   10  2.205 ? 0.361  ns/op
 
-        public CachingPredicate2(Set<? extends T> inputs, Predicate<T> original) {
-            this(StableValue.newCachingFunction(inputs, (T t) -> Boolean.valueOf(original.test(t)), null));
-        }
-
-        @Override
-        public boolean test(T t) {
-            return delegate.apply(t);
-        }
-
-    }
-
-
-    //Benchmark                             Mode  Cnt  Score   Error  Units
-    //CustomClassBenchmark.predicate        avgt   10  3.079 ? 0.037  ns/op
-    //CustomClassBenchmark.staticPredicate  avgt   10  2.770 ? 0.508  ns/op
+    // This is not constant foldable
     record CachingPredicate<T>(Map<? extends T, StableValue<Boolean>> delegate,
                                Predicate<T> original) implements Predicate<T> {
 
