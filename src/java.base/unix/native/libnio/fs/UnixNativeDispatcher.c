@@ -400,7 +400,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #if defined(__linux__)
     my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");
     if (my_statx_func != NULL) {
-        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
+        /* Verify if statx call is permitted */
+        struct my_statx statx_buf;
+        int err = statx_wrapper(-1, "", AT_EMPTY_PATH, 0, &statx_buf);
+        if (err == -1 && errno == EPERM) {
+            my_statx_func = NULL;
+        } else {
+            capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
+        }
     }
 #endif
 
