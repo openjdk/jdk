@@ -94,6 +94,12 @@ static void requireInHotSpot(const char* caller, JVMCI_TRAPS) {
   }
 }
 
+static void requireNotInHotSpot(const char* caller, JVMCI_TRAPS) {
+    if (JVMCIENV->is_hotspot()) {
+        JVMCI_THROW_MSG(IllegalStateException, err_msg("Cannot call %s from HotSpot", caller));
+    }
+}
+
 class JVMCITraceMark : public StackObj {
   const char* _msg;
  public:
@@ -418,7 +424,7 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaMethod, (JNIEnv* env, jobject, jobject 
 
 C2V_VMENTRY_NULL(jobject, getConstantPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass_or_method), jboolean is_klass))
   ConstantPool* cp = nullptr;
-  if (UNPACK_PAIR(address, klass_or_method) == 0) {
+  if (UNPACK_PAIR(address, klass_or_method) == nullptr) {
     JVMCI_THROW_NULL(NullPointerException);
   }
   if (!is_klass) {
@@ -702,6 +708,17 @@ C2V_VMENTRY_NULL(jobject, lookupJClass, (JNIEnv* env, jobject, jlong jclass_valu
     return JVMCIENV->get_jobject(result);
 C2V_END
 
+C2V_VMENTRY_0(jlong, getJObjectValue, (JNIEnv* env, jobject, jobject constant_jobject))
+    requireNotInHotSpot("getJObjectValue", JVMCI_CHECK_0);
+    if (!THREAD->has_last_Java_frame()) {
+        JVMCI_THROW_MSG_0(IllegalStateException, err_msg("Cannot call getJObjectValue without Java frame anchor"));
+    }
+    JVMCIObject constant = JVMCIENV->wrap(constant_jobject);
+    Handle constant_value = JVMCIENV->asConstant(constant, JVMCI_CHECK_0);
+    jobject jni_handle = JNIHandles::make_local(THREAD, constant_value());
+    return reinterpret_cast<jlong>(jni_handle);
+C2V_END
+
 C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   constantTag tag = cp->tag_at(index);
@@ -757,6 +774,35 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
       return JVMCIENV->get_jobject(result);
     }
   }
+#ifdef ASSERT
+  // Support for testing an OOME raised in a context where the current thread cannot call Java
+  // 1. Put -Dtest.jvmci.oome_in_lookupConstantInPool=<trace> on the command line to
+  //    discover possible values for step 2.
+  //    Example output:
+  //
+  //      CompilerToVM.lookupConstantInPool: "Overflow: String length out of range"{0x00000007ffeb2960}
+  //      CompilerToVM.lookupConstantInPool: "null"{0x00000007ffebdfe8}
+  //      CompilerToVM.lookupConstantInPool: "Maximum lock count exceeded"{0x00000007ffec4f90}
+  //      CompilerToVM.lookupConstantInPool: "Negative length"{0x00000007ffec4468}
+  //
+  // 2. Choose a value shown in step 1.
+  //    Example: -Dtest.jvmci.oome_in_lookupConstantInPool=Negative
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.oome_in_lookupConstantInPool");
+  if (val != nullptr) {
+    const char* str = obj->print_value_string();
+    if (strstr(val, "<trace>") != nullptr) {
+      tty->print_cr("CompilerToVM.lookupConstantInPool: %s", str);
+    } else if (strstr(str, val) != nullptr) {
+      Handle garbage;
+      while (true) {
+        // Trigger an OutOfMemoryError
+        objArrayOop next = oopFactory::new_objectArray(0x7FFFFFFF, CHECK_NULL);
+        next->obj_at_put(0, garbage());
+        garbage = Handle(THREAD, next);
+      }
+    }
+  }
+#endif
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
@@ -897,7 +943,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
     } else if (tag.is_symbol()) {
       symbol = cp->symbol_at(index);
     } else {
-      assert(cp->tag_at(index).is_unresolved_klass(), "wrong tag");
+      if (!tag.is_unresolved_klass()) {
+        JVMCI_THROW_MSG_NULL(InternalError, err_msg("Expected %d at index %d, got %d", JVM_CONSTANT_UnresolvedClassInError, index, tag.value()));
+      }
       symbol = cp->klass_name_at(index);
     }
   }
@@ -1050,7 +1098,7 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getMaxCallTargetOffset, (JNIEnv* env, jobject, jlong addr))
   address target_addr = (address) addr;
-  if (target_addr != 0x0) {
+  if (target_addr != nullptr) {
     int64_t off_low = (int64_t)target_addr - ((int64_t)CodeCache::low_bound() + sizeof(int));
     int64_t off_high = (int64_t)target_addr - ((int64_t)CodeCache::high_bound() + sizeof(int));
     return MAX2(ABS(off_low), ABS(off_high));
@@ -3223,6 +3271,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "shouldInlineMethod",                           CC "(" HS_METHOD2 ")Z",                                                               FN_PTR(shouldInlineMethod)},
   {CC "lookupType",                                   CC "(" STRING HS_KLASS2 "IZ)" HS_RESOLVED_TYPE,                                       FN_PTR(lookupType)},
   {CC "lookupJClass",                                 CC "(J)" HS_RESOLVED_TYPE,                                                            FN_PTR(lookupJClass)},
+  {CC "getJObjectValue",                              CC "(" OBJECTCONSTANT ")J",                                                           FN_PTR(getJObjectValue)},
   {CC "getArrayType",                                 CC "(C" HS_KLASS2 ")" HS_KLASS,                                                       FN_PTR(getArrayType)},
   {CC "lookupClass",                                  CC "(" CLASS ")" HS_RESOLVED_TYPE,                                                    FN_PTR(lookupClass)},
   {CC "lookupNameInPool",                             CC "(" HS_CONSTANT_POOL2 "II)" STRING,                                                FN_PTR(lookupNameInPool)},

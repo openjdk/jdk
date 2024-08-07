@@ -317,7 +317,7 @@ public abstract sealed class AbstractInstruction
             int pad = ap - (pos + 1);
             int low = code.classReader.readInt(ap + 4);
             int high = code.classReader.readInt(ap + 8);
-            if (high < low || high - low > code.codeLength >> 2) {
+            if (high < low || (long)high - low > code.codeLength >> 2) {
                 throw new IllegalArgumentException("Invalid tableswitch values low: " + low + " high: " + high);
             }
             int cnt = high - low + 1;
@@ -529,7 +529,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry className() {
             if (classEntry == null)
-                classEntry = code.classReader.readClassEntry(pos + 1);
+                classEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return classEntry;
         }
 
@@ -576,7 +576,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry componentType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -607,7 +607,7 @@ public abstract sealed class AbstractInstruction
 
         @Override
         public ClassEntry arrayType() {
-            return code.classReader.readClassEntry(pos + 1);
+            return code.classReader.readEntry(pos + 1, ClassEntry.class);
         }
 
         @Override
@@ -636,7 +636,7 @@ public abstract sealed class AbstractInstruction
         @Override
         public ClassEntry type() {
             if (typeEntry == null)
-                typeEntry = code.classReader.readClassEntry(pos + 1);
+                typeEntry = code.classReader.readEntry(pos + 1, ClassEntry.class);
             return typeEntry;
         }
 

@@ -258,6 +258,7 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+  ShenandoahHeapRegion** _trash_regions;
 
   // Mutator allocations are biased from left-to-right or from right-to-left based on which end of mutator range
   // is most likely to hold partially used regions.  In general, we want to finish consuming partially used

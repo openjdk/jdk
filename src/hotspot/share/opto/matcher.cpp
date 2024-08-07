@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1812,7 +1812,7 @@ MachNode *Matcher::ReduceInst( State *s, int rule, Node *&mem ) {
     ReduceInst_Interior( s, rule, mem, mach, 1 );
   } else {
     // Instruction chain rules are data-dependent on their inputs
-    mach->add_req(0);             // Set initial control to none
+    mach->add_req(nullptr);     // Set initial control to none
     ReduceInst_Chain_Rule( s, rule, mem, mach );
   }
 
@@ -2960,7 +2960,7 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     }
 
     if (call &&
-        call->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+        call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
       if (trtype->isa_int() && trtype->is_int()->is_con()) {
         jint tr_con = trtype->is_int()->get_con();

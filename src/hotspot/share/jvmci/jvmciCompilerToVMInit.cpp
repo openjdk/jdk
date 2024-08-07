@@ -114,6 +114,10 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+#ifdef X86
+int CompilerToVM::Data::L1_line_size;
+#endif
+
 size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
@@ -140,7 +144,7 @@ address CompilerToVM::Data::symbol_clinit;
 
 int CompilerToVM::Data::data_section_item_alignment;
 
-int* CompilerToVM::Data::_should_notify_object_alloc;
+JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
 
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
@@ -226,7 +230,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   data_section_item_alignment = relocInfo::addr_unit();
 
-  _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc;
+  JVMTI_ONLY( _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc; )
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
@@ -236,9 +240,13 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
+
+#ifdef X86
+  L1_line_size = VM_Version::L1_line_size();
+#endif
 
   vm_page_size = os::vm_page_size();
 
