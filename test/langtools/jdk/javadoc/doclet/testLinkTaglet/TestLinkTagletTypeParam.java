@@ -60,7 +60,7 @@ public class TestLinkTagletTypeParam extends JavadocTester {
                      *
                      * @see APND the second type parameter
                      */
-                    public class Test<F, APND extends Appendable> {      
+                    public class Test<F, APND extends Appendable> {
                         private Test() {}
                     }
                     """);
