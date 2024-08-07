@@ -310,8 +310,8 @@ inline bool ZPage::mark_object(zaddress addr, bool finalizable, bool& inc_live) 
   assert(is_relocatable(), "Invalid page state");
   assert(is_in(addr), "Invalid address");
 
-  // Verify the object
-  assert_is_oop_or_null(addr);
+  // Verify oop
+  assert_is_oop(addr);
 
   // Set mark bit
   const BitMap::idx_t index = bit_index(addr);
