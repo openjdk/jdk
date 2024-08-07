@@ -116,9 +116,9 @@ static void z_verify_oop_object(zaddress addr, zpointer o, void* p) {
   guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(o, p));
 }
 
-static void z_verify_root_oop_object(zaddress o, void* p) {
-  const oop obj = cast_to_oop(o);
-  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(o, p));
+static void z_verify_root_oop_object(zaddress addr, void* p) {
+  const oop obj = cast_to_oop(addr);
+  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(addr, p));
 }
 
 static void z_verify_old_oop(zpointer* p) {
