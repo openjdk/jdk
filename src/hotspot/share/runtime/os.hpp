@@ -546,7 +546,6 @@ class os: AllStatic {
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
   static size_t large_page_size();
-  static size_t large_page_init_decide_size();
   static bool   can_commit_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)

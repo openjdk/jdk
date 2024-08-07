@@ -758,7 +758,7 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
 
   // Verify that decided_large_page_size is greater than the default page size
   const size_t default_page_size = os::vm_page_size();
-  size_t decided_large_page_size = os::large_page_init_decide_size();
+  size_t decided_large_page_size = os::win32::large_page_init_decide_size();
   if (is_supported_windows_version) {
     EXPECT_GT(decided_large_page_size, default_page_size) << "Large page size should be greater than the default page size for LargePageSizeInBytes = 4 * min_size";
   }
@@ -799,7 +799,7 @@ TEST_VM(os_windows, large_page_init_decide_size) {
   FLAG_SET_CMDLINE(LargePageSizeInBytes, 0); // Reset to default
 
   // Test for large page support
-  size_t decided_size = os::large_page_init_decide_size();
+  size_t decided_size = os::win32::large_page_init_decide_size();
   size_t min_size = GetLargePageMinimum();
   if (is_supported_windows_version && min_size == 0) {
     EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 when large page is not supported by the processor";
@@ -808,14 +808,14 @@ TEST_VM(os_windows, large_page_init_decide_size) {
   // Scenario 1: Test with 2MB large page size
   if (min_size == 2 * M) {
     FLAG_SET_CMDLINE(LargePageSizeInBytes, 2 * M); // Set large page size to 2MB
-    decided_size = os::large_page_init_decide_size(); // Recalculate decided size
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
     EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page and OS reported size are both 2M";
   }
 
   // Scenario 2: Test with 1MB large page size
   if (is_supported_windows_version && min_size == 2 * M) {
     FLAG_SET_CMDLINE(LargePageSizeInBytes, 1 * M); // Set large page size to 1MB
-    decided_size = os::large_page_init_decide_size(); // Recalculate decided size
+    decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
     EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
   }
 
@@ -833,7 +833,7 @@ TEST_VM(os_windows, large_page_init_decide_size) {
   FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * min_size + 1);
 
   // Recalculate decided size
-  decided_size = os::large_page_init_decide_size();
+  decided_size = os::win32::large_page_init_decide_size();
 
   // Assert that the decided size defaults to minimum page size when LargePageSizeInBytes
   // is not a multiple of the minimum size, assuming conditions are always met

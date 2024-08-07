@@ -3307,7 +3307,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
   return p_buf;
 }
 
-size_t os::large_page_init_decide_size() {
+size_t os::win32::large_page_init_decide_size() {
   // print a warning if any large page related flag is specified on command line
   bool warn_on_failure = !FLAG_IS_DEFAULT(UseLargePages) ||
                          !FLAG_IS_DEFAULT(LargePageSizeInBytes);
@@ -3369,7 +3369,7 @@ void os::large_page_init() {
     return;
   }
 
-  _large_page_size = os::large_page_init_decide_size();
+  _large_page_size = os::win32::large_page_init_decide_size();
   const size_t default_page_size = os::vm_page_size();
   if (_large_page_size > default_page_size) {
 #if !defined(IA32)
