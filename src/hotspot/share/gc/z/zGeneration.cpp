@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,7 +299,7 @@ void ZGeneration::reset_statistics() {
   _page_allocator->reset_statistics(_id);
 }
 
-ssize_t ZGeneration::freed() const {
+size_t ZGeneration::freed() const {
   return _freed;
 }
 
@@ -448,7 +448,7 @@ public:
     _success = do_operation();
 
     // Update statistics
-    ZStatSample(ZSamplerJavaThreads, Threads::number_of_threads());
+    ZStatSample(ZSamplerJavaThreads, (uint64_t)Threads::number_of_threads());
   }
 
   virtual void doit_epilogue() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -583,7 +583,7 @@ void ZVerify::on_color_flip() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* const jt = jtiwh.next(); ) {
     const ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    for (int i = buffer->current(); i < (int)ZStoreBarrierBuffer::_buffer_length; ++i) {
+    for (size_t i = buffer->current(); i < ZStoreBarrierBuffer::_buffer_length; ++i) {
       volatile zpointer* const p = buffer->_buffer[i]._p;
       bool created = false;
       z_verify_store_barrier_buffer_table->put_if_absent(p, true, &created);

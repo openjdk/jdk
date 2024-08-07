@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public:
   // Statistics
   void reset_statistics();
   virtual bool should_record_stats() = 0;
-  ssize_t freed() const;
+  size_t freed() const;
   void increase_freed(size_t size);
   size_t promoted() const;
   void increase_promoted(size_t size);
