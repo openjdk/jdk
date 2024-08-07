@@ -639,7 +639,11 @@ static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
 
 size_t JfrRecorderService::flush() {
   size_t total_elements = flush_metadata(_chunkwriter);
-  total_elements += flush_storage(_storage, _chunkwriter);
+  const size_t storage_elements = flush_storage(_storage, _chunkwriter);
+  if (0 == storage_elements) {
+    return total_elements;
+  }
+  total_elements += storage_elements;
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
