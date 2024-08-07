@@ -135,7 +135,7 @@ static jlong as_long(LIR_Opr data) {
 Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
   if (addr->base()->is_illegal()) {
     assert(addr->index()->is_illegal(), "must be illegal too");
-    __ movptr(tmp, addr->disp());
+    __ movptr(tmp, (address)addr->disp());
     return Address(tmp, 0);
   }
 
@@ -1023,7 +1023,8 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       arrayOopDesc::base_offset_in_bytes(op->type()),
                       array_element_size(op->type()),
                       op->klass()->as_register(),
-                      *op->stub()->entry());
+                      *op->stub()->entry(),
+                      op->zero_array());
   }
   __ bind(*op->stub()->continuation());
 }
@@ -1345,7 +1346,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;
@@ -1606,7 +1607,22 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
 }
 
-void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) { Unimplemented(); }
+void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
+  assert(op->crc()->is_single_cpu(),  "crc must be register");
+  assert(op->val()->is_single_cpu(),  "byte value must be register");
+  assert(op->result_opr()->is_single_cpu(), "result must be register");
+  Register crc = op->crc()->as_register();
+  Register val = op->val()->as_register();
+  Register res = op->result_opr()->as_register();
+
+  assert_different_registers(val, crc, res);
+  __ la(res, ExternalAddress(StubRoutines::crc_table_addr()));
+
+  __ notr(crc, crc); // ~crc
+  __ zero_extend(crc, crc, 32);
+  __ update_byte_crc32(crc, val, res);
+  __ notr(res, crc); // ~crc
+}
 
 void LIR_Assembler::check_conflict(ciKlass* exact_klass, intptr_t current_klass,
                                    Register tmp, Label &next, Label &none,
@@ -1841,17 +1857,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
 
-  CodeBlob *cb = CodeCache::find_blob(dest);
-  if (cb != nullptr) {
-    __ far_call(RuntimeAddress(dest));
-  } else {
-    RuntimeAddress target(dest);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ movptr(t0, target.target(), offset);
-      __ jalr(x1, t0, offset);
-    });
-  }
+  __ rt_call(dest);
 
   if (info != nullptr) {
     add_call_info_here(info);

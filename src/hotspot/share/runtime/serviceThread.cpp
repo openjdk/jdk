@@ -33,6 +33,7 @@
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "memory/universe.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -80,10 +81,7 @@ static void cleanup_oopstorages() {
 
 void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
   while (true) {
-    bool sensors_changed = false;
     bool has_jvmti_events = false;
-    bool has_gc_notification_event = false;
-    bool has_dcmd_notification_event = false;
     bool stringtable_work = false;
     bool symboltable_work = false;
     bool finalizerservice_work = false;
@@ -95,6 +93,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     bool oop_handles_to_release = false;
     bool cldg_cleanup_work = false;
     bool jvmti_tagmap_work = false;
+    bool oopmap_cache_work = false;
     {
       // Need state transition ThreadBlockInVM so that this thread
       // will be handled by safepoint correctly when this thread is
@@ -111,10 +110,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       // only the first recognized bit of work, to avoid frequently true early
       // tests from potentially starving later work.  Hence the use of
       // arithmetic-or to combine results; we don't want short-circuiting.
-      while (((sensors_changed = (!UseNotificationThread && LowMemoryDetector::has_pending_requests())) |
-              (has_jvmti_events = _jvmti_service_queue.has_events()) |
-              (has_gc_notification_event = (!UseNotificationThread && GCNotifier::has_event())) |
-              (has_dcmd_notification_event = (!UseNotificationThread && DCmdFactory::has_pending_jmx_notification())) |
+      while (((has_jvmti_events = _jvmti_service_queue.has_events()) |
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
               (finalizerservice_work = FinalizerService::has_work()) |
@@ -124,7 +120,8 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (oopstorage_work = OopStorage::has_cleanup_work_and_reset()) |
               (oop_handles_to_release = JavaThread::has_oop_handles_to_release()) |
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
-              (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset())
+              (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset()) |
+              (oopmap_cache_work = OopMapCache::has_cleanup_work())
              ) == 0) {
         // Wait until notified that there is some work to do or timer expires.
         // Some cleanup requests don't notify the ServiceThread so work needs to be done at periodic intervals.
@@ -155,20 +152,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       _jvmti_event = nullptr;  // reset
     }
 
-    if (!UseNotificationThread) {
-      if (sensors_changed) {
-        LowMemoryDetector::process_sensor_changes(jt);
-      }
-
-      if(has_gc_notification_event) {
-        GCNotifier::sendNotification(CHECK);
-      }
-
-      if(has_dcmd_notification_event) {
-        DCmdFactory::send_notification(CHECK);
-      }
-    }
-
     if (resolved_method_table_work) {
       ResolvedMethodTable::do_concurrent_work(jt);
     }
@@ -195,6 +178,10 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
 
     if (jvmti_tagmap_work) {
       JvmtiTagMap::flush_all_object_free_events();
+    }
+
+    if (oopmap_cache_work) {
+      OopMapCache::cleanup();
     }
   }
 }

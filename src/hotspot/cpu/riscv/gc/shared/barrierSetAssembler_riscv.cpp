@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -211,21 +211,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm, Register obj,
   }
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register tmp1) {
-  assert(tmp1->is_valid(), "need temp reg");
-
-  __ ld(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
-  if (var_size_in_bytes->is_valid()) {
-    __ add(tmp1, tmp1, var_size_in_bytes);
-  } else {
-    __ add(tmp1, tmp1, con_size_in_bytes);
-  }
-  __ sd(tmp1, Address(xthread, in_bytes(JavaThread::allocated_bytes_offset())));
-}
-
 static volatile uint32_t _patching_epoch = 0;
 
 address BarrierSetAssembler::patching_epoch_addr() {
@@ -341,7 +326,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(t0, xmethod);
 
   // Is it a strong CLD?
-  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_offset()));
+  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_ref_count_offset()));
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?

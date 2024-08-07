@@ -264,6 +264,8 @@ class VM_Version : public Abstract_VM_Version {
   static uint32_t cpu_vector_length();
   static uint32_t _initial_vector_length;
 
+  static void common_initialize();
+
 #ifdef COMPILER2
   static void c2_initialize();
 #endif // COMPILER2
@@ -276,6 +278,8 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
+  constexpr static bool supports_secondary_supers_table() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
 

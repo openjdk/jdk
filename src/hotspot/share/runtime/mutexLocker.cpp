@@ -123,6 +123,8 @@ Monitor* JfrThreadSampler_lock        = nullptr;
 
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
+Mutex*   ExternalsRecorder_lock       = nullptr;
+
 Monitor* ContinuationRelativize_lock  = nullptr;
 
 Mutex*   Metaspace_lock               = nullptr;
@@ -233,13 +235,8 @@ void mutex_init() {
 
   MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
-  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);      // used for service thread operations
-
-  if (UseNotificationThread) {
-    MUTEX_DEFN(Notification_lock             , PaddedMonitor, service);  // used for notification thread operations
-  } else {
-    Notification_lock = Service_lock;
-  }
+  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
+  MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
@@ -327,6 +324,9 @@ void mutex_init() {
   MUTEX_DEFL(VtableStubs_lock               , PaddedMutex  , CompiledIC_lock);  // Also holds DumpTimeTable_lock
   MUTEX_DEFL(CodeCache_lock                 , PaddedMonitor, VtableStubs_lock);
   MUTEX_DEFL(NMethodState_lock              , PaddedMutex  , CodeCache_lock);
+
+  // tty_lock is held when printing nmethod and its relocations which use this lock.
+  MUTEX_DEFL(ExternalsRecorder_lock         , PaddedMutex  , tty_lock);
 
   MUTEX_DEFL(Threads_lock                   , PaddedMonitor, CompileThread_lock, true);
   MUTEX_DEFL(Compile_lock                   , PaddedMutex  , MethodCompileQueue_lock);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,7 +158,7 @@ import jdk.xml.internal.SecuritySupport;
  *
  * <h2>Property Precedence</h2>
  * The Catalog Features follow the
- * <a href="{@docRoot}/java.xml/module-summary.html#PP">Property Precedence</a>
+ * <a href="{@docRoot}/java.xml/module-summary.html#Conf_PP">Property Precedence</a>
  * as described in the module summary with regards to the priority with which
  * their values are retrieved from the various configuration sources such as the
  * <a href="{@docRoot}/java.xml/module-summary.html#Conf_CF">JAXP configuration file</a>,

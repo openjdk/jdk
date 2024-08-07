@@ -44,7 +44,7 @@ import java.util.Map;
 public class Html5Entities {
 
     private static final Map<String, String> NAMED_CHARACTER_REFERENCES = readEntities();
-    private static final String ENTITY_PATH = "/org/commonmark/internal/util/entities.txt";
+    private static final String ENTITY_PATH = "/jdk/internal/org/commonmark/internal/util/entities.txt";
 
     public static String entityToString(String input) {
         if (!input.startsWith("&") || !input.endsWith(";")) {

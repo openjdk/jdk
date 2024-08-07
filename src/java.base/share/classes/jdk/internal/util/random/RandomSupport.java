@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package jdk.internal.util.random;
 
-import java.lang.annotation.*;
-import java.math.BigInteger;
 import java.util.Objects;
-import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
@@ -53,49 +50,6 @@ import java.util.stream.StreamSupport;
  * @since 17
  */
 public class RandomSupport {
-    /**
-     * Annotation providing RandomGenerator properties.
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    public @interface RandomGeneratorProperties {
-        /**
-         * Name of algorithm.
-         */
-        String name();
-
-        /**
-         * Category of algorithm.
-         */
-        String group() default "Legacy";
-
-        /**
-         * Algorithm period defined as:
-         *
-         * BigInteger.ONE.shiftLeft(i)
-         *               .subtract(j)
-         *               .shiftLeft(k)
-         */
-        int i() default 0;
-        int j() default 0;
-        int k() default 0;
-
-        /**
-         * The equidistribution of the algorithm.
-         */
-        int equidistribution() default Integer.MAX_VALUE;
-
-        /**
-         * Is the algorithm based on entropy (true random.)
-         */
-        boolean isStochastic() default false;
-
-        /**
-         * Is the algorithm assisted by hardware (fast true random.)
-         */
-        boolean isHardware() default false;
-    }
-
     /*
      * Implementation Overview.
      *

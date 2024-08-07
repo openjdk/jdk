@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ ZLiveMap::ZLiveMap(uint32_t size)
     _segment_live_bits(0),
     _segment_claim_bits(0),
     _bitmap(bitmap_size(size, nsegments)),
-    _segment_shift(exact_log2(segment_size())) {}
+    _segment_shift(log2i_exact(segment_size())) {}
 
 void ZLiveMap::reset(ZGenerationId id) {
   ZGeneration* const generation = ZGeneration::generation(id);
@@ -130,6 +130,6 @@ void ZLiveMap::resize(uint32_t size) {
   const size_t new_bitmap_size = bitmap_size(size, nsegments);
   if (_bitmap.size() != new_bitmap_size) {
     _bitmap.reinitialize(new_bitmap_size, false /* clear */);
-    _segment_shift = exact_log2(segment_size());
+    _segment_shift = log2i_exact(segment_size());
   }
 }

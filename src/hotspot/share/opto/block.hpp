@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ class Block_Array : public ArenaObj {
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
   Arena *_arena;                // Arena to allocate in
+  ReallocMark _nesting;         // Safety checks for arena reallocation
 protected:
   Block **_blocks;
   void grow( uint i );          // Grow array node to fit
@@ -68,7 +69,7 @@ public:
   Block *operator[] ( uint i ) const // Lookup, or assert for not mapped
   { assert( i < Max(), "oob" ); return _blocks[i]; }
   // Extend the mapping: index i maps to Block *n.
-  void map( uint i, Block *n ) { if( i>=Max() ) grow(i); _blocks[i] = n; }
+  void map( uint i, Block *n ) { grow(i); _blocks[i] = n; }
   uint Max() const { debug_only(return _limit); return _size; }
 };
 
@@ -77,7 +78,9 @@ class Block_List : public Block_Array {
   friend class VMStructs;
 public:
   uint _cnt;
-  Block_List() : Block_Array(Thread::current()->resource_area()), _cnt(0) {}
+  Block_List() : Block_List(Thread::current()->resource_area()) { }
+  Block_List(Arena* a) : Block_Array(a), _cnt(0) { }
+
   void push( Block *b ) {  map(_cnt++,b); }
   Block *pop() { return _blocks[--_cnt]; }
   Block *rpop() { Block *b = _blocks[0]; _blocks[0]=_blocks[--_cnt]; return b;}
@@ -281,7 +284,7 @@ public:
       _succs(a),
       _num_succs(0),
       _pre_order(0),
-      _idom(0),
+      _idom(nullptr),
       _loop(nullptr),
       _reg_pressure(0),
       _ihrp_index(1),
@@ -655,7 +658,7 @@ class PhaseCFG : public Phase {
 class UnionFind : public ResourceObj {
   uint _cnt, _max;
   uint* _indices;
-  ReallocMark _nesting;  // assertion check for reallocations
+  ReallocMark _nesting; // Safety checks for arena reallocation
 public:
   UnionFind( uint max );
   void reset( uint max );  // Reset to identity map for [0..max]

@@ -945,7 +945,13 @@ public class Annotate {
         boolean fatalError = false;
 
         // Validate that there is a (and only 1) value method
-        Scope scope = targetContainerType.tsym.members();
+        Scope scope = null;
+        try {
+            scope = targetContainerType.tsym.members();
+        } catch (CompletionFailure ex) {
+            chk.completionError(pos, ex);
+            return null;
+        }
         int nr_value_elems = 0;
         boolean error = false;
         for(Symbol elm : scope.getSymbolsByName(names.value)) {
@@ -1165,6 +1171,15 @@ public class Annotate {
             }
             scan(tree.args);
             // the anonymous class instantiation if any will be visited separately.
+        }
+
+        @Override
+        public void visitErroneous(JCErroneous tree) {
+            if (tree.errs != null) {
+                for (JCTree err : tree.errs) {
+                    scan(err);
+                }
+            }
         }
     }
 

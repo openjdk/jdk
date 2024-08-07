@@ -102,10 +102,10 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
@@ -114,10 +114,10 @@ public:
   C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 
@@ -280,6 +280,8 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   virtual Node* atomic_add_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
   void pin_atomic_op(C2AtomicParseAccess& access) const;
+  void clone_in_runtime(PhaseMacroExpand* phase, ArrayCopyNode* ac,
+                        address call_addr, const char* call_name) const;
 
 public:
   // This is the entry-point for the backend to perform accesses through the Access API.

@@ -42,7 +42,6 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
@@ -433,12 +432,6 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
-
-    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -464,8 +457,6 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    int stringSize(long i);
 
     int getCharsLatin1(long i, int index, byte[] buf);
 
@@ -509,11 +500,6 @@ public interface JavaLangAccess {
      * current thread is a virtual thread then this method returns the carrier.
      */
     Thread currentCarrierThread();
-
-    /**
-     * Executes the given value returning task on the current carrier thread.
-     */
-    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
 
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.

@@ -63,7 +63,7 @@ public class DeoptReallocFailure {
         NoEscape[] noEscape = new NoEscape[45];
         noEscape[0] = new NoEscape();
         for (int i=0;i<1024*256;i++) {
-           root.array[i]= new Object[45];
+           root.array[i]= new Object[4500];
         }
         return noEscape[0].f1;
     }

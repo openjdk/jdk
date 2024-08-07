@@ -35,6 +35,7 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import static java.util.Locale.ROOT;
 
 public class Platform {
     public  static final String vmName      = privilegedGetProperty("java.vm.name");
@@ -134,7 +135,7 @@ public class Platform {
     }
 
     private static boolean isOs(String osname) {
-        return osName.toLowerCase().startsWith(osname.toLowerCase());
+        return osName.toLowerCase(ROOT).startsWith(osname.toLowerCase(ROOT));
     }
 
     public static String getOsName() {
@@ -175,15 +176,15 @@ public class Platform {
     }
 
     public static boolean isDebugBuild() {
-        return (jdkDebug.toLowerCase().contains("debug"));
+        return (jdkDebug.toLowerCase(ROOT).contains("debug"));
     }
 
     public static boolean isSlowDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("slowdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("slowdebug"));
     }
 
     public static boolean isFastDebugBuild() {
-        return (jdkDebug.toLowerCase().equals("fastdebug"));
+        return (jdkDebug.toLowerCase(ROOT).equals("fastdebug"));
     }
 
     public static String getVMVersion() {
@@ -350,8 +351,8 @@ public class Platform {
     }
 
     public static boolean isOracleLinux7() {
-        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
-                System.getProperty("os.version").toLowerCase().contains("el")) {
+        if (System.getProperty("os.name").toLowerCase(ROOT).contains("linux") &&
+                System.getProperty("os.version").toLowerCase(ROOT).contains("el")) {
             Pattern p = Pattern.compile("el(\\d+)");
             Matcher m = p.matcher(System.getProperty("os.version"));
             if (m.find()) {

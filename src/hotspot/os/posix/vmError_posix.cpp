@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "os_posix.hpp"
 #include "runtime/javaThread.hpp"
@@ -112,7 +113,7 @@ void VMError::install_secondary_signal_handler() {
 // and the offending address points into CDS archive.
 void VMError::check_failing_cds_access(outputStream* st, const void* siginfo) {
 #if INCLUDE_CDS
-  if (siginfo && UseSharedSpaces) {
+  if (siginfo && CDSConfig::is_using_archive()) {
     const siginfo_t* const si = (siginfo_t*)siginfo;
     if (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) {
       const void* const fault_addr = si->si_addr;
