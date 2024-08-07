@@ -161,8 +161,8 @@ bool compare_diffs(SummaryDiff d1, SummaryDiff d2) {
     if (d1.flag[i].commit != d2.flag[i].commit) {
       log_debug(nmt)("compare diffs: commit %s, Old " SSIZE_FORMAT " != New " SSIZE_FORMAT,
                     NMTUtil::flag_to_name(NMTUtil::index_to_flag(i)),
-                    d1.flag[i].commit,
-                    d2.flag[i].commit
+                    (ssize_t)d1.flag[i].commit,
+                    (ssize_t)d2.flag[i].commit
                     );
       result = false;
     }

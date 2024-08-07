@@ -187,15 +187,13 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 TEST_VM_F(NMTVMATreeTest, performance) {
   VMATree::RegionData rd{si[0], mtTest};
   auto n_reserve_vmt = [&](int n) {
-    ThreadCritical tc;
     Tree tree;
     double st = os::elapsedTime();
     for (int i = 0; i < n; i++) {
       int64_t a = (os::random() % n) * 100;
       VirtualMemoryTracker::add_reserved_region((address)(a + 1000UL), 90, CALLER_PC, mtTest);
     }
-    double d = os::elapsedTime() - st;
-    return d;
+    return os::elapsedTime() - st;
   };
 
   auto n_reserve_vmatree = [&](int n) {
@@ -205,12 +203,11 @@ TEST_VM_F(NMTVMATreeTest, performance) {
       int a = (os::random() % n) * 100;
       tree.reserve_mapping(a, 90, rd);
     }
-    double d = os::elapsedTime() - st;
-    return d;
+    return os::elapsedTime() - st;
   };
 
   const int N = 10000;
-  const int REPEATS = 10;
+  const int REPEATS = 50;
   double vmt_sum = 0;
   double vma_sum = 0;
   int unexpected_count = 0;
