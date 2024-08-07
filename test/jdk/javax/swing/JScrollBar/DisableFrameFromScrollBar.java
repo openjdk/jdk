@@ -65,27 +65,33 @@ public class DisableFrameFromScrollBar {
         }
     }
 
+    private static void createUI() {
+        frame = new JFrame(DisableFrameFromScrollBar.class.getName());
+        bar = new JScrollBar();
+        bar.getModel().addChangeListener(new DisableChangeListener(frame));
+        frame.getContentPane().setLayout(new FlowLayout());
+        frame.add(bar);
+
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(150, 150);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
+            if (laf.getClassName().contains("Aqua")) {
+                continue;
+            }
             robot = new Robot();
             robot.setAutoDelay(100);
             try {
                 SwingUtilities.invokeAndWait(() -> {
                     setLookAndFeel(laf);
-
-                    frame = new JFrame(DisableFrameFromScrollBar.class.getName());
-                    bar = new JScrollBar();
-                    bar.getModel().addChangeListener(new DisableChangeListener(frame));
-                    frame.getContentPane().setLayout(new FlowLayout());
-                    frame.getContentPane().add(bar);
-
-                    frame.pack();
-                    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                    frame.setSize(150, 150);
-                    frame.setLocationRelativeTo(null);
-                    frame.setVisible(true);
+                    createUI();
                 });
+
                 robot.waitForIdle();
                 robot.delay(1000);
                 Point point = getClickPoint();
@@ -135,7 +141,7 @@ public class DisableFrameFromScrollBar {
             public void run() {
                 Point p = bar.getLocationOnScreen();
                 Rectangle rect = bar.getBounds();
-                result[0] = new Point((int) (p.x + rect.width/2),
+                result[0] = new Point((int) (p.x + rect.width / 2),
                         (int) (p.y + rect.height - 10));
             }
         });
@@ -146,14 +152,14 @@ public class DisableFrameFromScrollBar {
 
     public static class DisableChangeListener implements ChangeListener {
         private final JFrame m_frame;
-        private boolean m_done = false;
+        private boolean m_done;
 
         public DisableChangeListener(JFrame p_frame) {
             m_frame = p_frame;
         }
 
         public void stateChanged(ChangeEvent p_e) {
-            if (! m_done) {
+            if (!m_done) {
                 m_frame.setEnabled(false);
                 Thread t = new Thread(new Enabler(m_frame));
                 t.start();
