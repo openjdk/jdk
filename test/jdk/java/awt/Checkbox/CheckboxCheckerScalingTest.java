@@ -23,13 +23,12 @@
 
 import java.awt.Checkbox;
 import java.awt.Color;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.image.BufferedImage;
-
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -50,7 +49,7 @@ public class CheckboxCheckerScalingTest {
         System.setProperty("sun.java2d.uiScale", "2");
         Robot robot = new Robot();
         try {
-            SwingUtilities.invokeAndWait(() -> {
+            EventQueue.invokeAndWait(() -> {
                 frame = new Frame("ComboBox checker scaling test");
                 checkbox = new Checkbox("one");
                 checkbox.setState(true);
@@ -61,7 +60,7 @@ public class CheckboxCheckerScalingTest {
 
             robot.waitForIdle();
             robot.delay(100);
-            SwingUtilities.invokeAndWait(() -> {
+            EventQueue.invokeAndWait(() -> {
                 Point point = checkbox.getLocationOnScreen();
                 Rectangle rect = new Rectangle(point.x + 5, point.y + 7, 8, 8);
                 imageAfterChecked = robot.createScreenCapture(rect);
@@ -83,7 +82,7 @@ public class CheckboxCheckerScalingTest {
             }
             System.out.println("Test Passed");
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
+            EventQueue.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
