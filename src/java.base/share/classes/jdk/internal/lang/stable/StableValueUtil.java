@@ -46,21 +46,16 @@ public final class StableValueUtil {
     }
 
     @ForceInline
-    static boolean safelyPublish(Object o, long offset, Object value) {
-
-        // Prevents reordering of store operations with other store operations.
-        // This means any stores made to a field prior to this point cannot be
-        // reordered with the following CAS operation of the reference to the field.
-
-        // In other words, if a loader (using plain memory semantics) can first observe
-        // a holder reference, any field updates in the holder reference made prior to
-        // this fence are guaranteed to be seen.
-        // See https://gee.cs.oswego.edu/dl/html/j9mm.html "Mixed Modes and Specializations",
-        // Doug Lea, 2018
-        UNSAFE.storeStoreFence();
-
-        // This upholds the invariant, a `@Stable` field is written to at most once.
+    static boolean cas(Object o, long offset, Object value) {
+        // This upholds the invariant, a `@Stable` field is written to at most once
+        // and implies release semantics.
         return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
+    }
+
+    @SuppressWarnings("unchecked")
+    @ForceInline
+    static <T> T getAcquire(Object o, long offset) {
+        return (T) UNSAFE.getReferenceAcquire(o, offset);
     }
 
     @ForceInline

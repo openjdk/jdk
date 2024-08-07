@@ -60,7 +60,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (value() != null) {
             return false;
         }
-        return StableValueUtil.safelyPublish(this, VALUE_OFFSET, value);
+        return StableValueUtil.cas(this, VALUE_OFFSET, value);
     }
 
     @ForceInline
@@ -94,7 +94,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         final T t = value();
         return t == this
                 ? 1
-                : Objects.hashCode(value());
+                : Objects.hashCode(t);
     }
 
     @Override
@@ -113,19 +113,9 @@ public final class StableValueImpl<T> implements StableValue<T> {
                 : "StableValue" + StableValueUtil.render(t);
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
-    // First, try to read the value using plain memory semantics.
-    // If not set, fall back to `volatile` memory semantics.
     public T value() {
-        final T t = valuePlain();
-        return t != null ? t : (T) StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
-    }
-
-    @ForceInline
-    private T valuePlain() {
-        // Appears to be faster than `(T) UNSAFE.getReference(this, VALUE_OFFSET)`
-        return value;
+        return StableValueUtil.getAcquire(this, VALUE_OFFSET);
     }
 
     // Factory

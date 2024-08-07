@@ -52,11 +52,10 @@ public final class CachingSupplier<T> implements Supplier<T> {
         this.original = original;
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
     public T get() {
-        T t = value;
+        T t = StableValueUtil.getAcquire(this, VALUE_OFFSET);
         if (value != null) {
             return StableValueUtil.unwrap(t);
         }
@@ -66,7 +65,7 @@ public final class CachingSupplier<T> implements Supplier<T> {
                 return StableValueUtil.unwrap(t);
             }
             t = original.get();
-            StableValueUtil.safelyPublish(this, VALUE_OFFSET, t);
+            StableValueUtil.cas(this, VALUE_OFFSET, t);
         }
         return t;
     }
@@ -77,8 +76,7 @@ public final class CachingSupplier<T> implements Supplier<T> {
 
     @Override
     public String toString() {
-        @SuppressWarnings("unchecked")
-        final T t = (T) StableValueUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+        final T t = StableValueUtil.getAcquire(this, VALUE_OFFSET);
         return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.render(t)) + ", original=" + original + "]";
     }
 

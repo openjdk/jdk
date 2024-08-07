@@ -29,8 +29,10 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 // Note: It would be possible to just use `LazyList::get` instead of this
 // class but explicitly providing a class like this provides better
@@ -64,13 +66,12 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
     @ForceInline
     @Override
     public R apply(int value) {
-        R r;
         try {
-            // Todo: Will the exception handling here impair performance?
-            r = (R) values[value];
+            Objects.checkIndex(value, values.length);
         } catch (IndexOutOfBoundsException e) {
             throw new IllegalArgumentException(e);
         }
+        R r = StableValueUtil.getAcquire(values, StableValueUtil.arrayOffset(value));
         if (r != null) {
             return StableValueUtil.unwrap(r);
         }
@@ -80,7 +81,7 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
                 return StableValueUtil.unwrap(r);
             }
             r = original.apply(value);
-            StableValueUtil.safelyPublish(values, StableValueUtil.arrayOffset(value), r);
+            StableValueUtil.cas(values, StableValueUtil.arrayOffset(value), r);
         }
         return r;
     }
@@ -97,7 +98,8 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
     }
 
     private String valuesAsString() {
-        return Arrays.stream(values, 0, values.length)
+        return IntStream.range(0, values.length)
+                .mapToObj(i -> StableValueUtil.getAcquire(values, StableValueUtil.arrayOffset(i)))
                 .map(v -> (v == this) ? "(this CachingIntFunction)" : StableValueUtil.render(v))
                 .collect(Collectors.joining(", "));
     }
