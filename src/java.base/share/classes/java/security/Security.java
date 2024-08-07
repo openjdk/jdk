@@ -80,7 +80,17 @@ public final class Security {
                         Debug.getInstance("properties");
 
     /* The java.security properties */
-    private static Properties props;
+    private static final Properties props = new Properties() {
+        @Override
+        public synchronized Object put(Object key, Object val) {
+            if (key instanceof String strKey && val instanceof String strVal &&
+                    SecPropLoader.isInclude(strKey)) {
+                SecPropLoader.loadInclude(strVal);
+                return null;
+            }
+            return super.put(key, val);
+        }
+    };
 
     /* cache a copy for recording purposes */
     private static Properties initialSecurityProperties;
@@ -115,10 +125,19 @@ public final class Security {
             return "include".equals(key);
         }
 
+        static void checkReservedKey(String key)
+                throws IllegalArgumentException {
+            if (isInclude(key)) {
+                throw new IllegalArgumentException("Key '" + key +
+                        "' is reserved and cannot be used as a " +
+                        "Security property name.");
+            }
+        }
+
         private static void loadMaster() {
             try {
                 loadFromPath(Path.of(StaticProperty.javaHome(), "conf",
-                        "security", "java.security"), LoadingMode.OVERRIDE);
+                        "security", "java.security"), LoadingMode.APPEND);
             } catch (IOException e) {
                 throw new InternalError("Error loading java.security file", e);
             }
@@ -210,26 +229,15 @@ public final class Security {
 
         private static void reset(LoadingMode mode) {
             if (mode == LoadingMode.OVERRIDE) {
-                if (sdebug != null && props != null) {
+                if (sdebug != null) {
                     sdebug.println(
                             "overriding other security properties files!");
                 }
-                props = new Properties() {
-                    @Override
-                    public synchronized Object put(Object key, Object val) {
-                        if (key instanceof String strKey &&
-                                val instanceof String strVal &&
-                                isInclude(strKey)) {
-                            loadInclude(strVal);
-                            return null;
-                        }
-                        return super.put(key, val);
-                    }
-                };
+                props.clear();
             }
         }
 
-        private static void loadInclude(String propFile) {
+        static void loadInclude(String propFile) {
             String expPropFile = PropertyExpander.expandNonStrict(propFile);
             if (sdebug != null) {
                 sdebug.println("processing include: '" + propFile + "'" +
@@ -856,17 +864,15 @@ public final class Security {
      *          denies
      *          access to retrieve the specified security property value
      * @throws  NullPointerException if key is {@code null}
+     * @throws  IllegalArgumentException if key is reserved and cannot be
+     *          used as a Security property name.
      *
      * @see #setProperty
      * @see java.security.SecurityPermission
      */
     public static String getProperty(String key) {
-        @SuppressWarnings("removal")
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new SecurityPermission("getProperty."+
-                                                      key));
-        }
+        SecPropLoader.checkReservedKey(key);
+        check("getProperty." + key);
         String name = props.getProperty(key);
         if (name != null)
             name = name.trim(); // could be a class name with trailing ws
@@ -898,10 +904,7 @@ public final class Security {
      * @see java.security.SecurityPermission
      */
     public static void setProperty(String key, String datum) {
-        if (SecPropLoader.isInclude(key)) {
-            throw new IllegalArgumentException("Key '" + key + "' is reserved" +
-                    " and cannot be used as a Security property name.");
-        }
+        SecPropLoader.checkReservedKey(key);
         check("setProperty." + key);
         props.put(key, datum);
         invalidateSMCache(key);  /* See below. */

@@ -349,14 +349,18 @@ public class ConfigFileTest {
             try {
                 Security.setProperty("include", propsFilePath);
                 throw new RuntimeException(setPropInvokeRepr + " was " +
-                        "expected to throw an IllegalArgumentException " +
-                        "exception.");
+                        "expected to throw IllegalArgumentException.");
             } catch (IllegalArgumentException expected) {}
             if (FilesManager.APPLIED_PROP_VALUE.equals(
                     Security.getProperty(name))) {
                 throw new RuntimeException(setPropInvokeRepr + " caused " +
                         "a file inclusion.");
             }
+            try {
+                Security.getProperty("include");
+                throw new RuntimeException("Security.getProperty(\"include\")" +
+                        " was expected to throw IllegalArgumentException.");
+            } catch (IllegalArgumentException expected) {}
         }
     }
 

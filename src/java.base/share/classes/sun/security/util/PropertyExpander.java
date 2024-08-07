@@ -69,7 +69,7 @@ public class PropertyExpander {
             return expand(value, false, key -> System.getProperty(key, ""));
         } catch (ExpandException e) {
             // should not happen
-            throw new RuntimeException("unexpected expansion error: when " +
+            throw new AssertionError("unexpected expansion error: when " +
                     "expansion is non-strict, undefined properties should " +
                     "be replaced by an empty string", e);
         }
