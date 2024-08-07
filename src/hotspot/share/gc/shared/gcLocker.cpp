@@ -41,25 +41,23 @@ unsigned int GCLocker::_total_collections = 0;
 
 // GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
 class GCLockerTimingDebugLogger : public StackObj {
-  private:
-    const char*  _log_message;
-    Ticks _start;
+  const char* _log_message;
+  Ticks _start;
 
-  public:
-    GCLockerTimingDebugLogger(const char* log_message) :
-      _log_message(log_message) {
-        assert(_log_message != nullptr, "GC locker debug message must be set.");
-        _start = Ticks::now();
-      }
+public:
+  GCLockerTimingDebugLogger(const char* log_message) : _log_message(log_message) {
+    assert(_log_message != nullptr, "GC locker debug message must be set.");
+    _start = Ticks::now();
+  }
 
-    ~GCLockerTimingDebugLogger() {
+  ~GCLockerTimingDebugLogger() {
+    Log(gc, jni) log;
+    if (log.is_debug()) {
+      ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
       const Tickspan elapsed_time = Ticks::now() - _start;
-      Log(gc, jni) log;
-      if (log.is_debug()) {
-        ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
-        log.debug("%s Resumed after " UINT64_FORMAT "ms. Thread \"%s\".", _log_message, elapsed_time.milliseconds(), Thread::current()->name());
-      }
+      log.debug("%s Resumed after " UINT64_FORMAT "ms. Thread \"%s\".", _log_message, elapsed_time.milliseconds(), Thread::current()->name());
     }
+  }
 };
 
 #ifdef ASSERT
