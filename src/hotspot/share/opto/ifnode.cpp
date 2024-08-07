@@ -1843,10 +1843,10 @@ void IfProjNode::pin_array_access_nodes(PhaseIterGVN* igvn) {
 #ifndef PRODUCT
 void IfNode::dump_spec(outputStream* st) const {
   switch (_assertion_predicate_type) {
-    case AssertionPredicateType::Init_value:
+    case AssertionPredicateType::InitValue:
       st->print("#Init Value Assertion Predicate  ");
       break;
-    case AssertionPredicateType::Last_value:
+    case AssertionPredicateType::LastValue:
       st->print("#Last Value Assertion Predicate  ");
       break;
     case AssertionPredicateType::None:

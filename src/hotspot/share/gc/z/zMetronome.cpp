@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ bool ZMetronome::wait_for_tick() {
   if (_nticks++ == 0) {
     // First tick, set start time
     const Ticks now = Ticks::now();
-    _start_ms = TimeHelper::counter_to_millis(now.value());
+    _start_ms = (uint64_t)TimeHelper::counter_to_millis(now.value());
   }
 
   MonitorLocker ml(&_monitor, Monitor::_no_safepoint_check_flag);
@@ -47,9 +47,9 @@ bool ZMetronome::wait_for_tick() {
     // We might wake up spuriously from wait, so always recalculate
     // the timeout after a wakeup to see if we need to wait again.
     const Ticks now = Ticks::now();
-    const uint64_t now_ms = TimeHelper::counter_to_millis(now.value());
+    const uint64_t now_ms = (uint64_t)TimeHelper::counter_to_millis(now.value());
     const uint64_t next_ms = _start_ms + (_interval_ms * _nticks);
-    const int64_t timeout_ms = next_ms - now_ms;
+    const int64_t timeout_ms = (int64_t)(next_ms - now_ms);
 
     if (timeout_ms > 0) {
       // Wait
@@ -57,7 +57,7 @@ bool ZMetronome::wait_for_tick() {
     } else {
       // Tick
       if (timeout_ms < 0) {
-        const uint64_t overslept = -timeout_ms;
+        const uint64_t overslept = (uint64_t)-timeout_ms;
         if (overslept > _interval_ms) {
           // Missed one or more ticks. Bump _nticks accordingly to
           // avoid firing a string of immediate ticks to make up
