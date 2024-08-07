@@ -455,7 +455,7 @@ public class JavacParser implements Parser {
         return syntaxError(pos, List.nil(), errorKey);
     }
 
-    protected JCErroneous syntaxError(int pos, List<JCTree> errs, Error errorKey) {
+    protected JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey) {
         setErrorEndPos(pos);
         JCErroneous err = F.at(pos).Erroneous(errs);
         reportSyntaxError(err, errorKey);
@@ -1400,7 +1400,8 @@ public class JavacParser implements Parser {
     protected JCExpression term3() {
         int pos = token.pos;
         JCExpression t;
-        List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
+        List<JCExpression> typeArgs = isMode(EXPR) || !isMode(TYPE) ? typeArgumentsOpt(EXPR)
+                                                                    : null;
         switch (token.kind) {
         case QUES:
             if (isMode(TYPE) && isMode(TYPEARG) && !isMode(NOPARAMS)) {
@@ -1728,6 +1729,13 @@ public class JavacParser implements Parser {
                 }
             }
             // Not reachable.
+        case LT:
+            if (isMode(TYPE) && !isMode(EXPR)) {
+                t = toP(F.at(token.pos).Ident(ident()));
+                t = typeArgumentsOpt(t);
+                break;
+            }
+            return illegal();
         default:
             return illegal();
         }
@@ -4733,6 +4741,12 @@ public class JavacParser implements Parser {
                 }
                 ignoreDanglingComments();   // no declaration with which dangling comments can be associated
                 return List.of(block(pos, mods.flags));
+            } else if (isDefiniteStatementStartToken()) {
+                int startPos = token.pos;
+                List<JCStatement> statements = blockStatement();
+                return List.of(syntaxError(startPos,
+                                           statements,
+                                           Errors.StatementNotExpected));
             } else {
                 return constructorOrMethodOrFieldDeclaration(mods, className, isInterface, isRecord, dc);
             }
@@ -4910,7 +4924,15 @@ public class JavacParser implements Parser {
                token.kind == INTERFACE ||
                token.kind == ENUM ||
                isRecordStart() && allowRecords;
-        }
+    }
+
+    private boolean isDefiniteStatementStartToken() {
+        return switch (token.kind) {
+            case IF, WHILE, DO, SWITCH, RETURN, TRY, FOR, ASSERT, BREAK,
+                 CONTINUE, THROW -> true;
+            default -> false;
+        };
+    }
 
     protected boolean isRecordStart() {
         if (token.kind == IDENTIFIER && token.name() == names.record && peekToken(TokenKind.IDENTIFIER)) {
