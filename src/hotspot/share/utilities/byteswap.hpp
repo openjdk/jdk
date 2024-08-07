@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_BYTESWAP_HPP
 
 #include "metaprogramming/enableIf.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cstddef>

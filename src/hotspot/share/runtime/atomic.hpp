@@ -1118,7 +1118,7 @@ inline T Atomic::CmpxchgByteUsingInt::operator()(T volatile* dest,
   uint8_t canon_compare_value = compare_value;
   volatile uint32_t* aligned_dest
     = reinterpret_cast<volatile uint32_t*>(align_down(dest, sizeof(uint32_t)));
-  uint32_t offset = checked_cast<uint32_t>(pointer_delta(dest, aligned_dest, 1));
+  uint32_t offset = pointer_delta_as_int(dest, aligned_dest);
 
   uint32_t idx = (Endian::NATIVE == Endian::BIG)
                    ? (sizeof(uint32_t) - 1 - offset)
