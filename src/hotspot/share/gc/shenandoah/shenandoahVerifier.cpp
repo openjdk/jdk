@@ -51,13 +51,6 @@ static bool is_instance_ref_klass(Klass* k) {
   return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
 }
 
-class ShenandoahIgnoreReferenceDiscoverer : public ReferenceDiscoverer {
-public:
-  virtual bool discover_reference(oop obj, ReferenceType type) {
-    return true;
-  }
-};
-
 class ShenandoahVerifyOopClosure : public BasicOopIterateClosure {
 private:
   const char* _phase;
@@ -68,6 +61,7 @@ private:
   ShenandoahLivenessData* _ld;
   void* _interior_loc;
   oop _loc;
+  ReferenceIterationMode _ref_mode;
 
 public:
   ShenandoahVerifyOopClosure(ShenandoahVerifierStack* stack, MarkBitMap* map, ShenandoahLivenessData* ld,
@@ -82,8 +76,16 @@ public:
     _loc(nullptr) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
-      set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
+      // Unknown status for Reference.referent field. Do not touch it, it might be dead.
+      _ref_mode = DO_FIELDS_EXCEPT_REFERENT;
+    } else {
+      // Process everything.
+      _ref_mode = DO_FIELDS;
     }
+  }
+
+  ReferenceIterationMode reference_iteration_mode() {
+    return _ref_mode;
   }
 
 private:
