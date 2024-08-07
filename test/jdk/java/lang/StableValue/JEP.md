@@ -131,7 +131,7 @@ When fully realized, first-class support for "at-most-once" semantics would fill
     <td>[0, 1]</td>
     <td>Anywhere</td>
     <td>Yes, after update</td>
-    <td>Yes, but only one "wins"</td>
+    <td>Yes, but only one thread "wins"</td>
   </tr>
   <tr>
     <td>Immutable (final)</td>
