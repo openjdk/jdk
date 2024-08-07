@@ -23,17 +23,42 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Objects;
 
 /**
- * Supported DOCTYPE declarations.
+ * Class for generating a comment for HTML pages of javadoc output.
  */
-public enum DocType {
-    HTML5("<!DOCTYPE HTML>");
+public class Comment extends Content {
 
-    public final String text;
+    private final String commentText;
 
-    DocType(String text) {
-        this.text = text;
+    /**
+     * Constructor to construct a Comment object.
+     *
+     * @param comment comment text for the comment
+     */
+    public Comment(String comment) {
+        commentText = Objects.requireNonNull(comment);
+    }
+
+    @Override
+    public boolean isEmpty() {
+        return commentText.isEmpty();
+    }
+
+    @Override
+    public boolean write(Writer out, String newline, boolean atNewline) throws IOException {
+        if (!atNewline) {
+            out.write(newline);
+        }
+        out.write("<!-- ");
+        out.write(commentText.replace("\n", newline));
+        out.write(" -->");
+        out.write(newline);
+        return true;
     }
 }
