@@ -128,7 +128,7 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
   return true;
 }
 
-bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
+bool MallocMemorySummary::category_limit_reached(MemType f, size_t s, size_t so_far, const malloclimit* limit) {
 
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
@@ -167,7 +167,7 @@ bool MallocTracker::initialize(NMT_TrackingLevel level) {
 }
 
 // Record a malloc memory allocation
-void* MallocTracker::record_malloc(void* malloc_base, size_t size, MEMFLAGS flags,
+void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemType flags,
   const NativeCallStack& stack)
 {
   assert(MemTracker::enabled(), "precondition");

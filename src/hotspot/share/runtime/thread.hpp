@@ -277,7 +277,7 @@ class Thread: public ThreadShadow {
                                                  // is waiting to lock
  public:
   // Constructor
-  Thread(MEMFLAGS flag = mtThread);
+  Thread(MemType flag = mtThread);
   virtual ~Thread() = 0;        // Thread is abstract.
 
   // Manage Thread::current()

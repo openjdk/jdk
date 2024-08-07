@@ -26,7 +26,7 @@
 #define SHARE_MEMORY_ALLOCATION_HPP
 
 #include "memory/allStatic.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -94,9 +94,9 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
 // NEW_C_HEAP_OBJ*
 // FREE_C_HEAP_OBJ
 //
-// char* AllocateHeap(size_t size, MEMFLAGS flags, const NativeCallStack& stack, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-// char* AllocateHeap(size_t size, MEMFLAGS flags, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-// char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* AllocateHeap(size_t size, MemType flags, const NativeCallStack& stack, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* AllocateHeap(size_t size, MemType flags, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
+// char* ReallocateHeap(char *old, size_t size, MemType flag, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 // void FreeHeap(void* p);
 //
 
@@ -106,16 +106,16 @@ class NativeCallStack;
 
 
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemType flags,
                    const NativeCallStack& stack,
                    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemType flags,
                    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
 char* ReallocateHeap(char *old,
                      size_t size,
-                     MEMFLAGS flag,
+                     MemType flag,
                      AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
 // handles null pointers
@@ -123,48 +123,48 @@ void FreeHeap(void* p);
 
 class CHeapObjBase {
  public:
-  ALWAYSINLINE void* operator new(size_t size, MEMFLAGS f) {
+  ALWAYSINLINE void* operator new(size_t size, MemType f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  MEMFLAGS f,
+                                  MemType f,
                                   const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  MEMFLAGS f,
+                                  MemType f,
                                   const std::nothrow_t&,
                                   const NativeCallStack& stack) throw() {
     return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
   ALWAYSINLINE void* operator new(size_t size,
-                                  MEMFLAGS f,
+                                  MemType f,
                                   const std::nothrow_t&) throw() {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
 
-  ALWAYSINLINE void* operator new[](size_t size, MEMFLAGS f) {
+  ALWAYSINLINE void* operator new[](size_t size, MemType f) {
     return AllocateHeap(size, f);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    MEMFLAGS f,
+                                    MemType f,
                                     const NativeCallStack& stack) {
     return AllocateHeap(size, f, stack);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    MEMFLAGS f,
+                                    MemType f,
                                     const std::nothrow_t&,
                                     const NativeCallStack& stack) throw() {
     return AllocateHeap(size, f, stack, AllocFailStrategy::RETURN_NULL);
   }
 
   ALWAYSINLINE void* operator new[](size_t size,
-                                    MEMFLAGS f,
+                                    MemType f,
                                     const std::nothrow_t&) throw() {
     return AllocateHeap(size, f, AllocFailStrategy::RETURN_NULL);
   }
@@ -174,7 +174,7 @@ class CHeapObjBase {
 };
 
 // Uses the implicitly static new and delete operators of CHeapObjBase
-template<MEMFLAGS F>
+template<MemType F>
 class CHeapObj {
  public:
   ALWAYSINLINE void* operator new(size_t size) {
@@ -439,10 +439,10 @@ protected:
 
  public:
   // CHeap allocations
-  void* operator new(size_t size, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, MEMFLAGS flags) throw() = delete;
-  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw();
-  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MEMFLAGS flags) throw() = delete;
+  void* operator new(size_t size, MemType flags) throw();
+  void* operator new [](size_t size, MemType flags) throw() = delete;
+  void* operator new(size_t size, const std::nothrow_t&  nothrow_constant, MemType flags) throw();
+  void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant, MemType flags) throw() = delete;
 
   // Arena allocations
   void* operator new(size_t size, Arena *arena);
@@ -568,8 +568,8 @@ class MmapArrayAllocator : public AllStatic {
   static size_t size_for(size_t length);
 
  public:
-  static E* allocate_or_null(size_t length, MEMFLAGS flags);
-  static E* allocate(size_t length, MEMFLAGS flags);
+  static E* allocate_or_null(size_t length, MemType flags);
+  static E* allocate(size_t length, MemType flags);
   static void free(E* addr, size_t length);
 };
 
@@ -579,8 +579,8 @@ class MallocArrayAllocator : public AllStatic {
  public:
   static size_t size_for(size_t length);
 
-  static E* allocate(size_t length, MEMFLAGS flags);
-  static E* reallocate(E* addr, size_t new_length, MEMFLAGS flags);
+  static E* allocate(size_t length, MemType flags);
+  static E* reallocate(E* addr, size_t new_length, MemType flags);
   static void free(E* addr);
 };
 

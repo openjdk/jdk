@@ -25,7 +25,7 @@
 #ifndef SHARE_UTILITIES_BITMAP_HPP
 #define SHARE_UTILITIES_BITMAP_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -642,15 +642,15 @@ class ResourceBitMap : public GrowableBitMap<ResourceBitMap> {
 // A BitMap with storage in the CHeap.
 class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   // NMT memory type
-  const MEMFLAGS _flags;
+  const MemType _flags;
 
   // Don't allow copy or assignment, to prevent the
   // allocated memory from leaking out to other instances.
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(), _flags(flags) {}
-  CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
+  explicit CHeapBitMap(MemType flags) : GrowableBitMap(), _flags(flags) {}
+  CHeapBitMap(idx_t size_in_bits, MemType flags, bool clear = true);
   ~CHeapBitMap();
 
   bm_word_t* allocate(idx_t size_in_words) const;

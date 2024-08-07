@@ -97,8 +97,8 @@ TEST(NMT, MallocLimitCategoryEnumNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS f = NMTUtil::index_to_flag(i);
-    if (f != MEMFLAGS::mtNone) {
+    MemType f = NMTUtil::index_to_flag(i);
+    if (f != MemType::mtNone) {
       expected.set_category_limit(f, (i + 1) * M, MallocLimitMode::trigger_fatal);
       option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::flag_to_enum_name(f), i + 1);
     }
@@ -110,8 +110,8 @@ TEST(NMT, MallocLimitAllCategoriesHaveHumanReadableNames) {
   MallocLimitSet expected;
   stringStream option;
   for (int i = 0; i < mt_number_of_types; i++) {
-    MEMFLAGS f = NMTUtil::index_to_flag(i);
-    if (f != MEMFLAGS::mtNone) {
+    MemType f = NMTUtil::index_to_flag(i);
+    if (f != MemType::mtNone) {
       expected.set_category_limit(f, (i + 1) * M, MallocLimitMode::trigger_fatal);
       option.print("%s%s:%dM", (i > 0 ? "," : ""), NMTUtil::flag_to_name(f), i + 1);
     }

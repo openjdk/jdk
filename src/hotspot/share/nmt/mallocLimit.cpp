@@ -25,7 +25,7 @@
 
 #include "precompiled.hpp"
 #include "nmt/mallocLimit.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "runtime/java.hpp"
 #include "runtime/globals.hpp"
@@ -80,7 +80,7 @@ public:
 
   // Check if string at position matches a category name.
   // Advances position on match.
-  bool match_category(MEMFLAGS* out) {
+  bool match_category(MemType* out) {
     if (eof()) {
       return false;
     }
@@ -90,7 +90,7 @@ public:
     }
     stringStream ss;
     ss.print("%.*s", (int)(end - _p), _p);
-    MEMFLAGS f = NMTUtil::string_to_flag(ss.base());
+    MemType f = NMTUtil::string_to_flag(ss.base());
     if (f != mtNone) {
       *out = f;
       _p = end;
@@ -131,7 +131,7 @@ void MallocLimitSet::set_global_limit(size_t s, MallocLimitMode flag) {
   _glob.sz = s; _glob.mode = flag;
 }
 
-void MallocLimitSet::set_category_limit(MEMFLAGS f, size_t s, MallocLimitMode flag) {
+void MallocLimitSet::set_category_limit(MemType f, size_t s, MallocLimitMode flag) {
   const int i = NMTUtil::flag_to_index(f);
   _cat[i].sz = s; _cat[i].mode = flag;
 }
@@ -187,7 +187,7 @@ bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
   // Category-specific form?
   else {
     while (!sst.eof()) {
-      MEMFLAGS f;
+      MemType f;
 
       // Match category, followed by :
       BAIL_UNLESS(sst.match_category(&f), "Expected category name");

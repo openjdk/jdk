@@ -292,7 +292,7 @@ size_t ReservedMemoryRegion::committed_size() const {
   return committed;
 }
 
-void ReservedMemoryRegion::set_flag(MEMFLAGS f) {
+void ReservedMemoryRegion::set_flag(MemType f) {
   assert((flag() == mtNone || flag() == f),
          "Overwrite memory type for region [" INTPTR_FORMAT "-" INTPTR_FORMAT "), %u->%u.",
          p2i(base()), p2i(end()), (unsigned)flag(), (unsigned)f);
@@ -334,7 +334,7 @@ bool VirtualMemoryTracker::initialize(NMT_TrackingLevel level) {
 }
 
 bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
-    const NativeCallStack& stack, MEMFLAGS flag) {
+    const NativeCallStack& stack, MemType flag) {
   assert(base_addr != nullptr, "Invalid address");
   assert(size > 0, "Invalid size");
   assert(_reserved_regions != nullptr, "Sanity check");
@@ -413,7 +413,7 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   }
 }
 
-void VirtualMemoryTracker::set_reserved_region_type(address addr, MEMFLAGS flag) {
+void VirtualMemoryTracker::set_reserved_region_type(address addr, MemType flag) {
   assert(addr != nullptr, "Invalid address");
   assert(_reserved_regions != nullptr, "Sanity check");
 
@@ -558,7 +558,7 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 // Given an existing memory mapping registered with NMT, split the mapping in
 //  two. The newly created two mappings will be registered under the call
 //  stack and the memory flags of the original section.
-bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
+bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size_t split, MemType flag, MemType split_flag) {
 
   ReservedMemoryRegion  rgn(addr, size);
   ReservedMemoryRegion* reserved_rgn = _reserved_regions->find(rgn);
@@ -567,7 +567,7 @@ bool VirtualMemoryTracker::split_reserved_region(address addr, size_t size, size
   assert(reserved_rgn->committed_size() == 0, "Splitting committed region?");
 
   NativeCallStack original_stack = *reserved_rgn->call_stack();
-  MEMFLAGS original_flags = reserved_rgn->flag();
+  MemType original_flags = reserved_rgn->flag();
 
   const char* name = reserved_rgn->flag_name();
   remove_released_region(reserved_rgn);

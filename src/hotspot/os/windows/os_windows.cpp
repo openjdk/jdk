@@ -3428,7 +3428,7 @@ char* os::replace_existing_mapping_with_file_mapping(char* base, size_t size, in
 // Multiple threads can race in this code but it's not possible to unmap small sections of
 // virtual space to get requested alignment, like posix-like os's.
 // Windows prevents multiple thread from remapping over each other so this loop is thread-safe.
-static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MEMFLAGS flag = mtNone) {
+static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int file_desc, MemType flag = mtNone) {
   assert(is_aligned(alignment, os::vm_allocation_granularity()),
       "Alignment must be a multiple of allocation granularity (page size)");
   assert(is_aligned(size, os::vm_allocation_granularity()),
@@ -3472,7 +3472,7 @@ char* os::reserve_memory_aligned(size_t size, size_t alignment, bool exec) {
   return map_or_reserve_memory_aligned(size, alignment, -1 /* file_desc */);
 }
 
-char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag) {
+char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MemType flag) {
   return map_or_reserve_memory_aligned(size, alignment, fd, flag);
 }
 

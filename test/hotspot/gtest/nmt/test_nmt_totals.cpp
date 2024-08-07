@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ TEST_VM(NMTNumbers, totals) {
   for (int i = 0; i < NUM_ALLOCS; i ++) {
     // spread over categories
     int category = i % (mt_number_of_types - 1);
-    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MEMFLAGS)category);
+    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemType)category);
   }
 
   const totals_t t2 = get_totals();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ template<
     class STORAGE,
     typename K, typename V,
     AnyObj::allocation_type ALLOC_TYPE,
-    MEMFLAGS MEM_TYPE,
+    MemType MEM_TYPE,
     unsigned (*HASH)  (K const&),
     bool     (*EQUALS)(K const&, K const&)
     >
@@ -364,7 +364,7 @@ template<
     typename K, typename V,
     unsigned SIZE = 256,
     AnyObj::allocation_type ALLOC_TYPE = AnyObj::RESOURCE_AREA,
-    MEMFLAGS MEM_TYPE = mtInternal,
+    MemType MEM_TYPE = mtInternal,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>
     >

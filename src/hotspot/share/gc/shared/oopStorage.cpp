@@ -127,7 +127,7 @@ OopStorage::ActiveArray::~ActiveArray() {
 }
 
 OopStorage::ActiveArray* OopStorage::ActiveArray::create(size_t size,
-                                                         MEMFLAGS memflags,
+                                                         MemType memflags,
                                                          AllocFailType alloc_fail) {
   size_t size_in_bytes = blocks_offset() + sizeof(Block*) * size;
   void* mem = NEW_C_HEAP_ARRAY3(char, size_in_bytes, memflags, CURRENT_PC, alloc_fail);
@@ -805,7 +805,7 @@ void OopStorage::release(const oop* const* ptrs, size_t size) {
   }
 }
 
-OopStorage* OopStorage::create(const char* name, MEMFLAGS memflags) {
+OopStorage* OopStorage::create(const char* name, MemType memflags) {
   return new (memflags) OopStorage(name, memflags);
 }
 
@@ -819,7 +819,7 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
   return new PaddedMutex(rank, name);
 }
 
-OopStorage::OopStorage(const char* name, MEMFLAGS memflags) :
+OopStorage::OopStorage(const char* name, MemType memflags) :
   _name(os::strdup(name)),
   _active_array(ActiveArray::create(initial_active_array_size, memflags)),
   _allocation_list(),
@@ -1030,7 +1030,7 @@ size_t OopStorage::total_memory_usage() const {
   return total_size;
 }
 
-MEMFLAGS OopStorage::memflags() const { return _memflags; }
+MemType OopStorage::memflags() const { return _memflags; }
 
 // Parallel iteration support
 

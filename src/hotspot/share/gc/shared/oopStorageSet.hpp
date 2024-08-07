@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_OOPSTORAGESET_HPP
 #define SHARE_GC_SHARED_OOPSTORAGESET_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -79,8 +79,8 @@ public:
   static OopStorage* storage(WeakId id) { return get_storage(id); }
   static OopStorage* storage(Id id) { return get_storage(id); }
 
-  static OopStorage* create_strong(const char* name, MEMFLAGS memflags);
-  static OopStorage* create_weak(const char* name, MEMFLAGS memflags);
+  static OopStorage* create_strong(const char* name, MemType memflags);
+  static OopStorage* create_weak(const char* name, MemType memflags);
 
   // Support iteration over the storage objects.
   template<typename StorageId> class Range;

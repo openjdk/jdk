@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
@@ -346,11 +346,11 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
   enum Type { Reserved, Committed, Free };
   struct Info {
     Type type;
-    MEMFLAGS flag;
+    MemType flag;
     NativeCallStack stack;
     Info() : type(Free), flag(mtNone), stack() {}
 
-    Info(Type type, NativeCallStack stack, MEMFLAGS flag)
+    Info(Type type, NativeCallStack stack, MemType flag)
     : type(type), flag(flag), stack(stack) {}
 
     bool eq(Info other) {
@@ -368,7 +368,7 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     }
   }
 
-  VMATree::SummaryDiff do_it(Type type, size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+  VMATree::SummaryDiff do_it(Type type, size_t start, size_t size, NativeCallStack stack, MemType flag) {
     assert(is_aligned(size, page_size) && is_aligned(start, page_size), "page alignment");
 
     VMATree::SummaryDiff diff;
@@ -401,11 +401,11 @@ struct SimpleVMATracker : public CHeapObj<mtTest> {
     return diff;
   }
 
-  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+  VMATree::SummaryDiff reserve(size_t start, size_t size, NativeCallStack stack, MemType flag) {
     return do_it(Reserved, start, size, stack, flag);
   }
 
-  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MEMFLAGS flag) {
+  VMATree::SummaryDiff commit(size_t start, size_t size, NativeCallStack stack, MemType flag) {
     return do_it(Committed, start, size, stack, flag);
   }
 
@@ -431,7 +431,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     make_stack(0xB),
   };
 
-  const MEMFLAGS candidate_flags[candidates_len_flags] = {
+  const MemType candidate_flags[candidates_len_flags] = {
     mtNMT,
     mtTest,
   };
@@ -455,7 +455,7 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     const size_t start = page_start * page_size;
     const size_t size = num_pages * page_size;
 
-    const MEMFLAGS flag = candidate_flags[os::random() % candidates_len_flags];
+    const MemType flag = candidate_flags[os::random() % candidates_len_flags];
     const NativeCallStack stack = candidate_stacks[os::random() % candidates_len_stacks];
 
     const NCS::StackIndex si = ncss.push(stack);

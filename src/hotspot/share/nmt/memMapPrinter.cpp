@@ -32,7 +32,7 @@
 #include "memory/allocation.hpp"
 #include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "nmt/memFlagBitmap.hpp"
 #include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
@@ -67,7 +67,7 @@
   f(mtTest,           "TEST", "JVM internal test mappings")
   //end
 
-static const char* get_shortname_for_nmt_flag(MEMFLAGS f) {
+static const char* get_shortname_for_nmt_flag(MemType f) {
 #define DO(flag, shortname, text) if (flag == f) return shortname;
   NMT_FLAGS_DO(DO)
 #undef DO
@@ -88,7 +88,7 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // structure would have, and it allows for faster iteration of ranges since more
   // of them fit into a cache line.
   Range* _ranges;
-  MEMFLAGS* _flags;
+  MemType* _flags;
   size_t _count, _capacity;
   mutable size_t _last;
 
@@ -101,7 +101,7 @@ public:
     ALLOW_C_FUNCTION(free, ::free(_flags);)
   }
 
-  bool add(const void* from, const void* to, MEMFLAGS f) {
+  bool add(const void* from, const void* to, MemType f) {
     // We rely on NMT regions being sorted by base
     assert(_count == 0 || (from >= _ranges[_count - 1].to), "NMT regions unordered?");
     // we can just fold two regions if they are adjacent and have the same flag.
@@ -114,7 +114,7 @@ public:
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
+      ALLOW_C_FUNCTION(realloc, _flags = (MemType*)::realloc(_flags, new_capacity * sizeof(MemType));)
       if (_ranges == nullptr || _flags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
@@ -250,7 +250,7 @@ bool MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
     const MemFlagBitmap flags = _nmt_info.lookup(vma_from, vma_to);
     if (flags.has_any()) {
       for (int i = 0; i < mt_number_of_types; i++) {
-        const MEMFLAGS flag = (MEMFLAGS)i;
+        const MemType flag = (MemType)i;
         if (flags.has_flag(flag)) {
           if (num_printed > 0) {
             _out->put(',');

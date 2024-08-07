@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_MEMFLAGS_HPP
-#define SHARE_NMT_MEMFLAGS_HPP
+#ifndef SHARE_NMT_MEMTYPE_HPP
+#define SHARE_NMT_MEMTYPE_HPP
 
 #include "utilities/globalDefinitions.hpp"
 
@@ -64,19 +64,19 @@
 #define MEMORY_TYPE_DECLARE_ENUM(type, human_readable) \
   type,
 
-enum class MEMFLAGS : uint8_t  {
+enum class MemType : uint8_t  {
   MEMORY_TYPES_DO(MEMORY_TYPE_DECLARE_ENUM)
   mt_number_of_types   // number of memory types (mtDontTrack
                        // is not included as validate type)
 };
 
 #define MEMORY_TYPE_SHORTNAME(type, human_readable) \
-  constexpr MEMFLAGS type = MEMFLAGS::type;
+  constexpr MemType type = MemType::type;
 
-// Generate short aliases for the enum values. E.g. mtGC instead of MEMFLAGS::mtGC.
+// Generate short aliases for the enum values. E.g. mtGC instead of MemType::mtGC.
 MEMORY_TYPES_DO(MEMORY_TYPE_SHORTNAME)
 
 // Make an int version of the sentinel end value.
-constexpr int mt_number_of_types = static_cast<int>(MEMFLAGS::mt_number_of_types);
+constexpr int mt_number_of_types = static_cast<int>(MemType::mt_number_of_types);
 
-#endif // SHARE_NMT_MEMFLAGS_HPP
+#endif // SHARE_NMT_MEMTYPE_HPP

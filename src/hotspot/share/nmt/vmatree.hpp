@@ -35,7 +35,7 @@
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
 // For example, the state may go from released memory to committed memory,
-// or from committed memory of a certain MEMFLAGS to committed memory of a different MEMFLAGS.
+// or from committed memory of a certain MemType to committed memory of a different MemType.
 // The set of points is stored in a balanced binary tree for efficient querying and updating.
 class VMATree {
   friend class NMTVMATreeTest;
@@ -69,11 +69,11 @@ public:
   // Each point has some stack and a flag associated with it.
   struct RegionData {
     const NativeCallStackStorage::StackIndex stack_idx;
-    const MEMFLAGS flag;
+    const MemType flag;
 
     RegionData() : stack_idx(), flag(mtNone) {}
 
-    RegionData(NativeCallStackStorage::StackIndex stack_idx, MEMFLAGS flag)
+    RegionData(NativeCallStackStorage::StackIndex stack_idx, MemType flag)
     : stack_idx(stack_idx), flag(flag) {}
 
     static bool equals(const RegionData& a, const RegionData& b) {
@@ -104,8 +104,8 @@ private:
       return static_cast<StateType>(type_flag[0]);
     }
 
-    MEMFLAGS flag() const {
-      return static_cast<MEMFLAGS>(type_flag[1]);
+    MemType flag() const {
+      return static_cast<MemType>(type_flag[1]);
     }
 
     RegionData regiondata() const {

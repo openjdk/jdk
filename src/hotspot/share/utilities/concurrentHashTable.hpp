@@ -40,7 +40,7 @@
 class Thread;
 class Mutex;
 
-template <typename CONFIG, MEMFLAGS F>
+template <typename CONFIG, MemType F>
 class ConcurrentHashTable : public CHeapObj<F> {
   typedef typename CONFIG::Value VALUE;
  private:
@@ -61,7 +61,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   TableStatistics statistics_calculate(Thread* thread, VALUE_SIZE_FUNC& vs_f);
 
   // This is the internal node structure.
-  // Only constructed with placement new from memory allocated with MEMFLAGS of
+  // Only constructed with placement new from memory allocated with MemType of
   // the InternalTable or user-defined memory.
   class Node {
    private:
@@ -100,7 +100,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
     }
   };
 
-  // Only constructed with placement new from an array allocated with MEMFLAGS
+  // Only constructed with placement new from an array allocated with MemType
   // of InternalTable.
   class Bucket {
    private:
