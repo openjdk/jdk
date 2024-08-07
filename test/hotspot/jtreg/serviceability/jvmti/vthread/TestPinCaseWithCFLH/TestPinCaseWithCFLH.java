@@ -34,7 +34,7 @@ import jdk.test.lib.thread.VThreadPinner;
  * @requires vm.jvmti
  * @modules java.base/java.lang:+open
  * @compile TestPinCaseWithCFLH.java
- * @build jdk.test.lib.thread.VThreadPinner
+ * @build jdk.test.lib.Utils
  * @run driver jdk.test.lib.util.JavaAgentBuilder
  *             TestPinCaseWithCFLH TestPinCaseWithCFLH.jar
  * @run main/othervm/timeout=100  -Djdk.virtualThreadScheduler.maxPoolSize=1
