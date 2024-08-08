@@ -197,10 +197,6 @@ thread, or concurrently, by multiple threads.
 A stable value may be set to `null` which then will be considered its set value.
 Null-averse applications can also use `StableValue<Optional<V>>`.
 
-When retrieving values, `StableValue` instances holding reference values can be faster
-than reference values managed via `volatile` double-checked-idiom constructs as stable values rely
-on less expensive memory semantics.
-
 In addition, stable values are eligible for constant folding optimizations by the JVM. In many
 ways, this is similar to the holder-class idiom in the sense it offers the same
 performance and constant-folding characteristics but, `StableValue` incurs a lower static
