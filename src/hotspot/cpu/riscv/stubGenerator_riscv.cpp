@@ -5238,8 +5238,7 @@ class StubGenerator: public StubCodeGenerator {
     Register dstBackup = c_rarg7;
     Register length    = x28;     // t3, total length of src data in bytes
 
-    Label Exit;
-    Label ProcessData;
+    Label ProcessData, Exit;
 
     // length should be multiple of 4
     __ sub(length, send, soff);
@@ -5271,46 +5270,43 @@ class StubGenerator: public StubCodeGenerator {
       __ mv(stepDst, MaxVectorSize * 2 * 3);
 
       // vector version
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
       __ BIND(ProcessM2);
-      {
-        __ mv(failedIdx, 0);
+      __ mv(failedIdx, 0);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst, failedIdx,
+                    v2, v4, v6, v8,      // inputs
+                    v10, v12, v14, v16,  // indexes
+                    v18, v20, v22,       // outputs
+                    Assembler::m2);
+      __ sub(length, length, stepSrcM2);
 
-        __ blt(length, stepSrcM1, ProcessScalar);
+      // error check
+      __ mv(t1, -1);
+      __ bne(failedIdx, t1, Exit);
 
-        __ blt(length, stepSrcM2, ProcessM1);
+      __ bge(length, stepSrcM2, ProcessM2);
 
-        base64_vector_decode_round(src, dst, codec,
-                      size, stepSrcM2, stepDst, failedIdx,
-                      v2, v4, v6, v8,      // inputs
-                      v10, v12, v14, v16,  // indexes
-                      v18, v20, v22,       // outputs
-                      Assembler::m2);
-        __ sub(length, length, stepSrcM2);
 
-        // error check
-        __ mv(t1, -1);
-        __ beq(failedIdx, t1, ProcessM2);
-        __ j(Exit);
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
 
-        __ BIND(ProcessM1);
-        {
-          __ mv(failedIdx, 0);
+      __ mv(failedIdx, 0);
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst, failedIdx,
+                    v1, v2, v3, v4,      // inputs
+                    v5, v6, v7, v8,      // indexes
+                    v9, v10, v11,        // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
 
-          __ srli(size, size, 1);
-          __ srli(stepDst, stepDst, 1);
-          base64_vector_decode_round(src, dst, codec,
-                        size, stepSrcM1, stepDst, failedIdx,
-                        v1, v2, v3, v4,      // inputs
-                        v5, v6, v7, v8,      // indexes
-                        v9, v10, v11,        // outputs
-                        Assembler::m1);
-          __ sub(length, length, stepSrcM1);
-
-          // error check
-          __ mv(t1, -1);
-          __ bne(failedIdx, t1, Exit);
-        }
-      }
+      // error check
+      __ mv(t1, -1);
+      __ bne(failedIdx, t1, Exit);
 
       __ BIND(ProcessScalar);
     }
@@ -5319,10 +5315,8 @@ class StubGenerator: public StubCodeGenerator {
     {
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
       Register combined32Bits = x29; // t5
-      Register step = x30;  // t4
 
-      __ mv(step, 4);
-      __ blt(length, step, Exit);
+      __ beqz(length, Exit);
 
       Label ScalarLoop;
       __ BIND(ScalarLoop);
@@ -5364,10 +5358,10 @@ class StubGenerator: public StubCodeGenerator {
         __ sb(byte1, Address(dst, 1));
         __ sb(combined32Bits, Address(dst, 2));
 
-        __ sub(length, length, step);
+        __ sub(length, length, 4);
         __ addi(dst, dst, 3);
         // loop back
-        __ bge(length, step, ScalarLoop);
+        __ bnez(length, ScalarLoop);
       }
     }
 
