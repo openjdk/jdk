@@ -7412,6 +7412,36 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // c_rarg0 = jobject receiver
+  // c_rarg1 = JavaThread* thread
+  address generate_upcall_stub_load_target() {
+    Register rmethod = c_rarg0;
+    Register rreceiver = c_rarg0;
+    Register rthread = c_rarg1;
+
+    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    address start = __ pc();
+    __ enter();
+
+    __ resolve_jobject(rreceiver, rscratch1, rscratch2);
+    __ str(rreceiver, Address(rthread, JavaThread::vm_result_offset()));
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, Address(rreceiver, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1, rscratch2);
+    __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
+                      Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+    __ str(rmethod, Address(rthread, JavaThread::vm_result_2_offset()));
+
+    __ leave();
+    __ ret(lr);
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -8477,6 +8507,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::aarch64::set_completed(); // Inidicate that arraycopy and zero_blocks stubs are generated
   }
