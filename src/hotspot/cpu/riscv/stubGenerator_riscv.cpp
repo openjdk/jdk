@@ -5199,7 +5199,7 @@ class StubGenerator: public StubCodeGenerator {
     Register codec  = c_rarg6;
     Register length = c_rarg7; // total length of src data in bytes
 
-    Label ProcessData, Exit, Greater;
+    Label ProcessData, Exit;
 
     // length should be multiple of 3
     __ sub(length, send, soff);
@@ -5227,11 +5227,9 @@ class StubGenerator: public StubCodeGenerator {
       __ slli(stepSrcM2, stepSrcM1, 1);
       __ mv(stepDst, MaxVectorSize * 2 * 4);
 
-      __ BIND(ProcessM2);
-      __ blt(length, stepSrcM1, ProcessScalar);
-
       __ blt(length, stepSrcM2, ProcessM1);
 
+      __ BIND(ProcessM2);
       base64_vector_encode_round(src, dst, codec,
                     size, stepSrcM2, stepDst,
                     v2, v4, v6,         // inputs
@@ -5240,9 +5238,11 @@ class StubGenerator: public StubCodeGenerator {
                     Assembler::m2);
 
       __ sub(length, length, stepSrcM2);
-      __ j(ProcessM2);
+      __ bge(length, stepSrcM2, ProcessM2);
 
       __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
       __ srli(size, size, 1);
       __ srli(stepDst, stepDst, 1);
       base64_vector_encode_round(src, dst, codec,
@@ -5252,6 +5252,7 @@ class StubGenerator: public StubCodeGenerator {
                     v8, v9, v10, v11,   // outputs
                     Assembler::m1);
       __ sub(length, length, stepSrcM1);
+
       __ BIND(ProcessScalar);
     }
 
@@ -5259,10 +5260,8 @@ class StubGenerator: public StubCodeGenerator {
     {
       Register byte1 = soff, byte0 = send, byte2 = doff;
       Register combined24Bits = isURL;
-      Register step = x28;
 
-      __ mv(step, 3);
-      __ blt(length, step, Exit);
+      __ beqz(length, Exit);
 
       Label ScalarLoop;
       __ BIND(ScalarLoop);
@@ -5311,7 +5310,7 @@ class StubGenerator: public StubCodeGenerator {
         __ sub(length, length, 3);
         __ addi(dst, dst, 4);
         // loop back
-        __ bge(length, step, ScalarLoop);
+        __ bnez(length, ScalarLoop);
       }
     }
 
