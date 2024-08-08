@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code ConstantValue} attribute {@jvms 4.7.2}, which can appear on
+ * Models the {@code ConstantValue} attribute JVMS {@jvms 4.7.2}, which can appear on
  * fields and indicates that the field's value is a constant.  Delivered as a
  * {@link java.lang.classfile.FieldElement} when traversing the elements of a
  * {@link java.lang.classfile.FieldModel}.

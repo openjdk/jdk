@@ -29,7 +29,7 @@ import java.lang.constant.ConstantDescs;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Describes the opcodes of the JVM instruction set, as described in {@jvms 6.5}.
+ * Describes the opcodes of the JVM instruction set, as described in JVMS {@jvms 6.5}.
  * As well as a number of pseudo-instructions that may be encountered when
  * traversing the instructions of a method.
  *

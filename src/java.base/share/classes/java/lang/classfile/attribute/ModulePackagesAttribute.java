@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code ModulePackages} attribute {@jvms 4.7.26}, which can
+ * Models the {@code ModulePackages} attribute JVMS {@jvms 4.7.26}, which can
  * appear on classes that represent module descriptors.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Record} attribute {@jvms 4.7.30}, which can
+ * Models the {@code Record} attribute JVMS {@jvms 4.7.30}, which can
  * appear on classes to indicate that this class is a record class.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

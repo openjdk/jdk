@@ -48,7 +48,7 @@ public sealed interface MethodHandleEntry
     }
 
     /**
-     * {@return the reference kind of this method handle {@jvms 4.4.8}}
+     * {@return the reference kind of this method handle JVMS {@jvms 4.4.8}}
      * @see java.lang.invoke.MethodHandleInfo
      */
     int kind();

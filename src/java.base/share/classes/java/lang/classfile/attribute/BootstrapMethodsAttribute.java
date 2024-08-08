@@ -35,7 +35,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code BootstrapMethods} attribute {@jvms 4.7.23}, which serves as
+ * Models the {@code BootstrapMethods} attribute JVMS {@jvms 4.7.23}, which serves as
  * an extension to the constant pool of a classfile.  Elements of the bootstrap
  * method table are accessed through {@link ConstantPool}.
  * <p>

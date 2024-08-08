@@ -30,7 +30,7 @@ import static java.util.Objects.requireNonNull;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the generic signature of a class file, as defined by {@jvms 4.7.9}.
+ * Models the generic signature of a class file, as defined by JVMS {@jvms 4.7.9}.
  *
  * @since 22
  */

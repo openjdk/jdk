@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Synthetic} attribute {@jvms 4.7.8}, which can appear on
+ * Models the {@code Synthetic} attribute JVMS {@jvms 4.7.8}, which can appear on
  * classes, methods, and fields.  Delivered as a  {@link ClassElement},
  * {@link MethodElement}, or  {@link FieldElement} when traversing the elements
  * of a corresponding model.
