@@ -205,7 +205,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * <p>
  * The HTTP/3 protocol is not selected by default, but can be enabled by setting
  * the {@linkplain Builder#version(Version) HttpClient preferred version} or the
- * {@linkplain HttpRequest.Builder#version(Version) HttpRequest version} to
+ * {@linkplain HttpRequest.Builder#version(Version) HttpRequest preferred version} to
  * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
  * actually used when HTTP/3 is enabled may depend on several factors.
  * {@linkplain HttpRequest.Builder#configure(Config) Configuration hints} can

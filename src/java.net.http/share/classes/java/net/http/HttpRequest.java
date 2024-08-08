@@ -118,22 +118,13 @@ public abstract class HttpRequest {
      * An enumeration of three pre-defined instances of {@link Config}
      * that can be used to help the {@link HttpClient} decide how an HTTP/3 exchange
      * should be established.
-     *
+     * Note that if neither the {@link Builder#version(Version) request preferred
+     * version} nor the {@link HttpClient.Builder#version(Version) HttpClient preferred
+     * version} is {@linkplain Version#HTTP_3 HTTP/3}, no HTTP/3 exchange will
+     * be established and the {@code H3DiscoveryConfig} is ignored.
      * @since TBD
      */
     public enum H3DiscoveryConfig implements Config {
-        /**
-         * This instructs the {@link HttpClient} to use its own implementation
-         * specific algorithm to find or establish a connection for the exchange.
-         * Typically, if no connection was previously established with the origin
-         * server defined by the request URI, the {@link HttpClient} implementation
-         * may attempt to establish both an HTTP/3-Quic connection and an HTTP
-         * connection through TCP at the authority present in the request URI,
-         * and use the first that succeeds. The exchange may then be carried out with
-         * any of the {@linkplain java.net.http.HttpClient.Version
-         * three HTTP protocol versions}, depending on which method succeeded first.
-         */
-        HTTP_3_ANY,
         /**
          * This instructs the {@link HttpClient} to only use the
          * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
@@ -145,10 +136,41 @@ public abstract class HttpRequest {
          */
         HTTP_3_ALT_SVC,
         /**
+         * This instructs the {@link HttpClient} to use its own implementation
+         * specific algorithm to find or establish a connection for the exchange.
+         * Typically, if no connection was previously established with the origin
+         * server defined by the request URI, the {@link HttpClient} implementation
+         * may attempt to establish both an HTTP/3-Quic connection and an HTTP
+         * connection through TCP at the authority present in the request URI,
+         * and use the first that succeeds. The exchange may then be carried out with
+         * any of the {@linkplain java.net.http.HttpClient.Version
+         * three HTTP protocol versions}, depending on which method succeeded first.
+         *
+         * @implNote
+         * If the {@link Builder#version(Version) request preferred version} is {@linkplain
+         * Version#HTTP_3 HTTP/3}, the {@code HttpClient} will first attempt to
+         * establish an HTTP/3 connection, before attempting a TLS connection over TCP.
+         * If, after an implementation specific timeout, no reply is obtained to the first
+         * initial Quic packet, the TLS/TCP connection will be attempted.
+         * <br> Otherwise, if no preferred version is configured on the {@code HttpRequest}
+         * and the {@link HttpClient.Builder#version(Version) HttpClient preferred
+         * version} is {@linkplain Version#HTTP_3 HTTP/3}, both connections will be attempted
+         * in parallel.
+         * <p>
+         * When attempting an HTTP/3 connection in this mode, the {@code HttpClient} will
+         * use any <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
+         * information it may have previously obtained from the origin server. If no
+         * such information is available, a direct HTTP/3 connection at the authority (host, port)
+         * present in the {@link #uri() request URI} will be attempted.
+         */
+        HTTP_3_ANY,
+        /**
          * This instructs the {@link HttpClient} to only attempt an HTTP/3 connection
          * with the origin server. The connection will only succeed if the origin server
          * is listening for incoming HTTP/3 Quic connection at the same authority (host, port)
-         * as defined in the request URI.
+         * as defined in the {@link #uri() request URI}. In this mode,
+         * <a href="https://www.rfc-editor.org/rfc/rfc7838">HTTP Alternative Services</a>
+         * are not used.
          */
         // TODO: may need to define what happens in case of redirects.
         HTTP_3_ONLY
