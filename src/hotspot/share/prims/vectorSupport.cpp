@@ -274,6 +274,26 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
+    case VECTOR_OP_UMIN: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:    return Op_UMinI;
+        case T_LONG:   return Op_UMinL;
+        default: fatal("MIN: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_UMAX: {
+      switch (bt) {
+        case T_BYTE:
+        case T_SHORT:
+        case T_INT:    return Op_UMaxI;
+        case T_LONG:   return Op_UMaxL;
+        default: fatal("MAX: %s", type2name(bt));
+      }
+      break;
+    }
     case VECTOR_OP_ABS: {
       switch (bt) {
         case T_BYTE:   // fall-through
@@ -333,6 +353,46 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
         case T_FLOAT:  return Op_SqrtF;
         case T_DOUBLE: return Op_SqrtD;
         default: fatal("SQRT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SATURATING_ADD: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:  return Op_SaturatingAddI;
+        case T_LONG: return Op_SaturatingAddL;
+        default: fatal("RSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SATURATING_SUB: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:  return Op_SaturatingSubI;
+        case T_LONG: return Op_SaturatingSubL;
+        default: fatal("RSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SATURATING_UADD: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:  return Op_SaturatingUAddI;
+        case T_LONG: return Op_SaturatingUAddL;
+        default: fatal("RSHIFT: %s", type2name(bt));
+      }
+      break;
+    }
+    case VECTOR_OP_SATURATING_USUB: {
+      switch (bt) {
+        case T_BYTE:   // fall-through
+        case T_SHORT:  // fall-through
+        case T_INT:  return Op_SaturatingUSubI;
+        case T_LONG: return Op_SaturatingUSubL;
+        default: fatal("RSHIFT: %s", type2name(bt));
       }
       break;
     }

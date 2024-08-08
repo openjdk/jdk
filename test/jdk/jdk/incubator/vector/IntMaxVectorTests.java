@@ -964,11 +964,35 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             })
     );
 
+    static final List<IntFunction<int[]>> INT_SATURATING_GENERATORS = List.of(
+            withToString("int[Integer.MIN_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MIN_VALUE));
+            }),
+            withToString("int[Integer.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MAX_VALUE));
+            }),
+            withToString("int[Integer.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MAX_VALUE - 100));
+            }),
+            withToString("int[Integer.MIN_VALUE + 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (int)(Integer.MIN_VALUE + 100));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<int[]>>> INT_GENERATOR_PAIRS =
         Stream.of(INT_GENERATORS.get(0)).
                 flatMap(fa -> INT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<int[]>>> INT_SATURATING_GENERATOR_PAIRS =
+        Stream.of(INT_GENERATORS.get(0)).
+                flatMap(fa -> INT_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     @DataProvider
@@ -990,8 +1014,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
     @DataProvider
+    public Object[][] intSaturatingBinaryOpProvider() {
+        return INT_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
     public Object[][] intIndexedOpProvider() {
         return INT_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] intSaturatingBinaryOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> INT_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
                 toArray(Object[][]::new);
     }
 
@@ -2979,6 +3018,252 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
 
         assertArraysEquals(r, a, b, IntMaxVectorTests::max);
+    }
+
+    static int UMIN(int a, int b) {
+        return (int)(Integer.umin(a, b));
+    }
+
+    @Test(dataProvider = "intBinaryOpProvider")
+    static void UMINIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMIN, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::UMIN);
+    }
+
+    @Test(dataProvider = "intBinaryOpMaskProvider")
+    static void UMINIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMIN, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::UMIN);
+    }
+
+    static int UMAX(int a, int b) {
+        return (int)(Integer.umax(a, b));
+    }
+
+    @Test(dataProvider = "intBinaryOpProvider")
+    static void UMAXIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMAX, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::UMAX);
+    }
+
+    @Test(dataProvider = "intBinaryOpMaskProvider")
+    static void UMAXIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.UMAX, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::UMAX);
+    }
+
+    static int SATURATING_ADD(int a, int b) {
+        return (int)(Integer.saturatingAdd(a, b));
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpProvider")
+    static void SATURATING_ADDIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_ADD, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::SATURATING_ADD);
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
+    static void SATURATING_ADDIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_ADD, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::SATURATING_ADD);
+    }
+
+    static int SATURATING_SUB(int a, int b) {
+        return (int)(Integer.saturatingSub(a, b));
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpProvider")
+    static void SATURATING_SUBIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_SUB, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::SATURATING_SUB);
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
+    static void SATURATING_SUBIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_SUB, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::SATURATING_SUB);
+    }
+
+    static int SATURATING_UADD(int a, int b) {
+        return (int)(Integer.saturatingUnsignedAdd(a, b));
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpProvider")
+    static void SATURATING_UADDIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_UADD, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::SATURATING_UADD);
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
+    static void SATURATING_UADDIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_UADD, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::SATURATING_UADD);
+    }
+
+    static int SATURATING_USUB(int a, int b) {
+        return (int)(Integer.saturatingUnsignedSub(a, b));
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpProvider")
+    static void SATURATING_USUBIntMaxVectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_USUB, bv).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, IntMaxVectorTests::SATURATING_USUB);
+    }
+
+    @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
+    static void SATURATING_USUBIntMaxVectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+                                          IntFunction<boolean[]> fm) {
+        int[] a = fa.apply(SPECIES.length());
+        int[] b = fb.apply(SPECIES.length());
+        int[] r = fr.apply(SPECIES.length());
+        boolean[] mask = fm.apply(SPECIES.length());
+        VectorMask<Integer> vmask = VectorMask.fromArray(SPECIES, mask, 0);
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < a.length; i += SPECIES.length()) {
+                IntVector av = IntVector.fromArray(SPECIES, a, i);
+                IntVector bv = IntVector.fromArray(SPECIES, b, i);
+                av.lanewise(VectorOperators.SATURATING_USUB, bv, vmask).intoArray(r, i);
+            }
+        }
+
+        assertArraysEquals(r, a, b, mask, IntMaxVectorTests::SATURATING_USUB);
     }
 
     @Test(dataProvider = "intBinaryOpProvider")

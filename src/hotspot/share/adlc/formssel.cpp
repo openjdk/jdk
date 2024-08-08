@@ -4336,7 +4336,7 @@ bool MatchRule::is_vector() const {
     "NegVF","NegVD","NegVI","NegVL",
     "SqrtVD","SqrtVF",
     "AndV" ,"XorV" ,"OrV",
-    "MaxV", "MinV",
+    "MaxV", "MinV", "UMinV", "UMaxV",
     "CompressV", "ExpandV", "CompressM", "CompressBitsV", "ExpandBitsV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",
@@ -4360,6 +4360,8 @@ bool MatchRule::is_vector() const {
     "VectorMaskWrapper","VectorMaskCmp","VectorReinterpret","LoadVectorMasked","StoreVectorMasked",
     "FmaVD","FmaVF","PopCountVI","PopCountVL","PopulateIndex","VectorLongToMask",
     "CountLeadingZerosV", "CountTrailingZerosV", "SignumVF", "SignumVD",
+    "SaturatingAddVB", "SaturatingAddVS", "SaturatingAddVI", "SaturatingAddVL",
+    "SaturatingSubVB", "SaturatingSubVS", "SaturatingSubVI", "SaturatingSubVL",
     // Next are vector mask ops.
     "MaskAll", "AndVMask", "OrVMask", "XorVMask", "VectorMaskCast",
     "RoundVF", "RoundVD",

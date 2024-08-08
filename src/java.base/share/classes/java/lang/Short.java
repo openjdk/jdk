@@ -75,6 +75,16 @@ public final class Short extends Number implements Comparable<Short>, Constable 
     public static final short   MAX_VALUE = 32767;
 
     /**
+     * A constant holding polarity(sign) mask used by saturating operations.
+     */
+    public static final short POLARITY_MASK_SHORT = (short)(1 << 15);
+
+    /**
+     * A constant holding maximum unsigned value used by saturating unsigned operations.
+     */
+    public static final short UNSIGNED_MAX = (short)0xFFFF;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code short}.
      */
@@ -608,6 +618,117 @@ public final class Short extends Number implements Comparable<Short>, Constable 
     public static long toUnsignedLong(short x) {
         return ((long) x) & 0xffffL;
     }
+
+    /**
+     * Based on the unsigned comparison returns the greater of two {@code short} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short umax(short a, short b) {
+        return compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the smaller of two {@code short} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short umin(short a, short b) {
+        return compareUnsigned(a, b) < 0 ? a : b;
+    }
+
+    /**
+     * Saturating addition of two {@code short} values,
+     * which returns a {@code Short.MIN_VALUE} in underflowing or
+     * {@code Short.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b} iff within {@code short} value range else delimiting {@code Short.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short saturatingAdd(short a, short b) {
+        int res = a + b;
+        if (res > Short.MAX_VALUE) {
+            return Short.MAX_VALUE;
+        } else if (res < Short.MIN_VALUE) {
+            return Short.MIN_VALUE;
+        } else {
+           return (short)res;
+        }
+    }
+
+    /**
+     * Saturating subtraction of two {@code short} values,
+     * which returns a {@code Short.MIN_VALUE} in underflowing or
+     * {@code Short.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the difference between {@code a} and {@code b} iff within {@code short} value range else delimiting {@code Short.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short saturatingSub(short a, short b) {
+        short res = (short)(a - b);
+        // Saturation occurs when result of computation over opposite polarity inputs exceeds the short
+        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
+        // comply with first argument polarity.
+        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_SHORT) == POLARITY_MASK_SHORT;
+        if (opposite_polarity_inputs && ((res & POLARITY_MASK_SHORT) != (a & POLARITY_MASK_SHORT))) {
+            return res < 0 ? Short.MAX_VALUE : Short.MIN_VALUE;
+        } else {
+            return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned addition of two {@code short} values,
+     * which returns a {@code Short.UNSIGNED_MAX} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Short.UNSIGNED_MAX} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short saturatingUnsignedAdd(short a, short b) {
+        short res = (short)(a + b);
+        boolean overflow = Short.compareUnsigned(res, (short)(a | b)) < 0;
+        if (overflow)  {
+           return Short.UNSIGNED_MAX;
+        } else {
+           return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned subtraction of two {@code short} values,
+     * which returns a zero in underflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static short saturatingUnsignedSub(short a, short b) {
+        if (Short.compareUnsigned(b, a) < 0) {
+            return (short)(a - b);
+        } else {
+            return 0;
+        }
+    }
+
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
     @java.io.Serial

@@ -88,6 +88,16 @@ public final class Long extends Number
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
     /**
+     * A constant holding polarity(sign) mask used by saturating operations.
+     */
+    public static final long POLARITY_MASK_LONG  = 1L << 63;
+
+    /**
+     * A constant holding maximum unsigned value used by saturating unsigned operations.
+     */
+    public static final long UNSIGNED_MAX = 0xFFFFFFFFFFFFFFFFL;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code long}.
      *
@@ -1933,6 +1943,116 @@ public final class Long extends Number
         maskPrefix = maskPrefix ^ (maskPrefix << 16);
         maskPrefix = maskPrefix ^ (maskPrefix << 32);
         return maskPrefix;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the greater of two {@code long} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long umax(long a, long b) {
+        return compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the smaller of two {@code long} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long umin(long a, long b) {
+        return compareUnsigned(a, b) < 0 ? a : b;
+    }
+
+    /**
+     * Saturating addition of two {@code long} values,
+     * which returns a {@code Long.MIN_VALUE} in underflowing or
+     * {@code Long.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b} iff within {@code long} value range else delimiting {@code Long.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long saturatingAdd(long a, long b) {
+        long res = a + b;
+        // Saturation occurs when result of computation over same polarity inputs exceeds the {@code long} value range.
+        boolean same_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == 0;
+        if (same_polarity_inputs && ((res & POLARITY_MASK_LONG) != (a & POLARITY_MASK_LONG))) {
+            return res < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        } else {
+            return res;
+        }
+    }
+
+    /**
+     * Saturating subtraction of two {@code long} values,
+     * which returns a {@code Long.MIN_VALUE} in underflowing or
+     * {@code Long.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the difference between {@code a} and {@code b} iff within {@code long} value range else delimiting {@code Long.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long saturatingSub(long a, long b) {
+        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == POLARITY_MASK_LONG;
+        long res = a - b;
+        // Saturation occurs when result of computation over opposite polarity inputs exceeds the long
+        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
+        // comply with first argument polarity.
+        if (opposite_polarity_inputs && ((res & POLARITY_MASK_LONG) != (a & POLARITY_MASK_LONG))) {
+            return res < 0 ? Long.MAX_VALUE : Long.MIN_VALUE;
+        } else {
+            return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned addition of two {@code long} values,
+     * which returns a {@code Long.UNSIGNED_MAX} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Long.UNSIGNED_MAX} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long saturatingUnsignedAdd(long a, long b) {
+        long res = a + b;
+        boolean overflow = Long.compareUnsigned(res, (a | b)) < 0;
+        if (overflow)  {
+           return Long.UNSIGNED_MAX;
+        } else {
+           return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned subtraction of two {@code long} values,
+     * which returns a zero in underflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static long saturatingUnsignedSub(long a, long b) {
+        if (Long.compareUnsigned(b, a) < 0) {
+           return a - b;
+        } else {
+           return 0;
+        }
     }
 
     /**

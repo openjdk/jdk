@@ -268,6 +268,42 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_SignumD:
     return Op_SignumVD;
 
+  case Op_UMinI:
+  case Op_UMinL:
+    switch(bt) {
+    case T_BYTE:
+    case T_SHORT:
+    case T_INT:
+    case T_LONG: return Op_UMinV;
+    default: return 0;
+    }
+  case Op_UMaxI:
+  case Op_UMaxL:
+    switch(bt) {
+    case T_BYTE:
+    case T_SHORT:
+    case T_INT:
+    case T_LONG: return Op_UMaxV;
+    default: return 0;
+    }
+  case Op_SaturatingAddI:
+  case Op_SaturatingUAddI:
+    switch (bt) {
+    case T_BYTE: return Op_SaturatingAddVB;
+    case T_SHORT: return Op_SaturatingAddVS;
+    case T_INT:  return Op_SaturatingAddVI;
+    case T_LONG: return Op_SaturatingAddVL;
+    default: return 0;
+    }
+  case Op_SaturatingSubI:
+  case Op_SaturatingUSubI:
+    switch (bt) {
+    case T_BYTE: return Op_SaturatingSubVB;
+    case T_SHORT: return Op_SaturatingSubVS;
+    case T_INT:  return Op_SaturatingSubVI;
+    case T_LONG: return Op_SaturatingSubVL;
+    default: return 0;
+    }
   default:
     assert(!VectorNode::is_convert_opcode(sopc),
            "Convert node %s should be processed by VectorCastNode::opcode()",
@@ -507,6 +543,18 @@ bool VectorNode::is_shift_opcode(int opc) {
   }
 }
 
+bool VectorNode::is_unsigned_opcode(int opc) {
+  switch (opc) {
+  case Op_SaturatingUAddI:
+  case Op_SaturatingUSubI:
+  case Op_SaturatingUSubL:
+  case Op_SaturatingUAddL:
+    return true;
+  default:
+    return false;
+  }
+}
+
 // Vector unsigned right shift for signed subword types behaves differently
 // from Java Spec. But when the shift amount is a constant not greater than
 // the number of sign extended bits, the unsigned right shift can be
@@ -667,7 +715,7 @@ VectorNode* VectorNode::make_mask_node(int vopc, Node* n1, Node* n2, uint vlen, 
 }
 
 // Make a vector node for binary operation
-VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask, bool is_var_shift) {
+VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, bool is_mask, bool is_var_shift, bool is_unsigned) {
   // This method should not be called for unimplemented vectors.
   guarantee(vopc > 0, "vopc must be > 0");
 
@@ -739,6 +787,9 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_RShiftVI: return new RShiftVINode(n1, n2, vt, is_var_shift);
   case Op_RShiftVL: return new RShiftVLNode(n1, n2, vt, is_var_shift);
 
+  case Op_UMinV: return new UMinVNode(n1, n2, vt);
+  case Op_UMaxV: return new UMaxVNode(n1, n2, vt);
+
   case Op_URShiftVB: return new URShiftVBNode(n1, n2, vt, is_var_shift);
   case Op_URShiftVS: return new URShiftVSNode(n1, n2, vt, is_var_shift);
   case Op_URShiftVI: return new URShiftVINode(n1, n2, vt, is_var_shift);
@@ -759,6 +810,16 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_ExpandBitsV: return new ExpandBitsVNode(n1, n2, vt);
   case Op_CountLeadingZerosV: return new CountLeadingZerosVNode(n1, vt);
   case Op_CountTrailingZerosV: return new CountTrailingZerosVNode(n1, vt);
+
+  case Op_SaturatingAddVB: return new SaturatingAddVBNode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingAddVS: return new SaturatingAddVSNode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingSubVB: return new SaturatingSubVBNode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingSubVS: return new SaturatingSubVSNode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingAddVI: return new SaturatingAddVINode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingAddVL: return new SaturatingAddVLNode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingSubVI: return new SaturatingSubVINode(n1, n2, vt, is_unsigned);
+  case Op_SaturatingSubVL: return new SaturatingSubVLNode(n1, n2, vt, is_unsigned);
+
   default:
     fatal("Missed vector creation for '%s'", NodeClassNames[vopc]);
     return nullptr;
