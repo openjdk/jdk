@@ -33,10 +33,10 @@
 #include "utilities/powerOfTwo.hpp"
 
 JVMFlag::Error AOTModeConstraintFunc(ccstr value, bool verbose) {
-  if (strcmp(value, "off") != 0 && 
-      strcmp(value, "record") != 0 && 
-      strcmp(value, "create") != 0 && 
-      strcmp(value, "auto") != 0 && 
+  if (strcmp(value, "off") != 0 &&
+      strcmp(value, "record") != 0 &&
+      strcmp(value, "create") != 0 &&
+      strcmp(value, "auto") != 0 &&
       strcmp(value, "on")) {
     JVMFlag::printError(verbose,
                         "Unrecognized value %s for AOTMode. Must be one of the following: "
