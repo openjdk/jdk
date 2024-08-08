@@ -1162,11 +1162,9 @@ parseOptions(char *options)
                 do_pause();
             }
         } else if (strcmp(buf, "datadump") == 0) {
-          // Allow enabling of JVMTI DATA_DUMP_REQUEST support.
-          // This is not a documented flag. This feature is only intended to be used
-          // by debug agent developers. It is advised that you launch the debuggee
-          // with -XX:+StartAttachListener. Otherwise the attach listener may fail to
-          // startup due to the Signal Dispatcher thread being suspended due to an event.
+          // Enable JVMTI DATA_DUMP_REQUEST support.
+          // This is not a documented flag. This feature is experimental and is only intended
+          // to be used by debug agent developers. See comment for cbDataDump() for more details.
           if ( !get_boolean(&str, &(gdata->jvmti_data_dump)) ) {
                 goto syntax_error;
             }
