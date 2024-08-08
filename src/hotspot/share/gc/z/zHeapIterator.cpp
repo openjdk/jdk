@@ -204,7 +204,7 @@ private:
     assert(ZCollectedHeap::heap()->is_in(p), "Should be in heap");
 
     if (VisitReferents) {
-      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, _base->field_offset(p));
+      return HeapAccess<AS_NO_KEEPALIVE | ON_UNKNOWN_OOP_REF>::oop_load_at(_base, (ptrdiff_t)_base->field_offset(p));
     }
 
     return HeapAccess<AS_NO_KEEPALIVE>::oop_load(p);
@@ -447,7 +447,7 @@ void ZHeapIterator::follow_array_chunk(const ZHeapIteratorContext& context, cons
   const objArrayOop obj = objArrayOop(array.obj());
   const int length = obj->length();
   const int start = array.index();
-  const int stride = MIN2<int>(length - start, ObjArrayMarkingStride);
+  const int stride = MIN2<int>(length - start, (int)ObjArrayMarkingStride);
   const int end = start + stride;
 
   // Push remaining array chunk first
