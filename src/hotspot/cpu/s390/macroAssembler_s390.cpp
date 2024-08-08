@@ -3361,12 +3361,35 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   bind(not_recursive);
 
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-  z_brne(done);
-  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-  z_brne(done);
+  NearLabel check_succ, set_eq_unlocked;
+
+  // Set owner to null.
   z_release();
-  z_stg(temp/*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  z_lghi(temp, 0);
+  z_stg(temp, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), currentHeader);
+  z_fence(); // membar(StoreLoad);
+
+  // Check if the entry lists are empty.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+  z_brne(check_succ);
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+  z_bre(done); // If so we are done.
+
+  bind(check_succ);
+
+  // Check if there is a successor.
+  load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)));
+  z_brne(set_eq_unlocked); // If so we are done.
+
+  // Save the monitor pointer in the current thread, so we can try to
+  // reacquire the lock in SharedRuntime::monitor_exit_helper().
+  z_stg(currentHeader, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
+
+  z_cr(currentHeader, Z_thread); // Set flag = NE
+  z_bru(done);
+
+  bind(set_eq_unlocked);
+  z_cr(temp, temp); // Set flag = EQ
 
   bind(done);
 
@@ -6085,25 +6108,35 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
 
     bind(not_recursive);
 
-    NearLabel not_ok;
+    NearLabel check_succ, set_eq_unlocked;
+
+    // Set owner to null.
+    z_release();
+    z_lghi(tmp2, 0);
+    z_stg(tmp2, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+    z_fence(); // membar(StoreLoad);
+
     // Check if the entry lists are empty.
     load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    z_brne(not_ok);
+    z_brne(check_succ);
     load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    z_brne(not_ok);
+    z_bre(unlocked); // If so we are done.
 
-    z_release();
-    z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+    bind(check_succ);
 
-    z_bru(unlocked); // CC = EQ here
+    // Check if there is a successor.
+    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)));
+    z_brne(set_eq_unlocked); // If so we are done.
 
-    bind(not_ok);
+    // Save the monitor pointer in the current thread, so we can try to
+    // reacquire the lock in SharedRuntime::monitor_exit_helper().
+    z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
-    // The owner may be anonymous, and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-    z_bru(slow_path); // CC = NE here
+    z_cr(monitor, Z_thread); // Set flag = NE
+    z_bru(slow_path);
+
+    bind(set_eq_unlocked);
+    z_cr(tmp2, tmp2); // Set flag = EQ
   }
 
   bind(unlocked);
