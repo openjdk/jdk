@@ -125,11 +125,13 @@ import java.util.function.Supplier;
  *
  * <h2 id="memory-consistency">Memory Consistency Properties</h2>
  * Actions on a presumptive holder value in a thread prior to calling a method that <i>sets</i>
- * the holder value are seen by any other thread that first <i>observes</i> a set holder value.
+ * the holder value are seen by any other thread that <i>observes</i> a set holder value.
  *
- * It should be noted that this does <i>not</i> form a proper
+ * More generally, the action of attempting to interact (i.e. via load or store operations)
+ * with a StableValue's holder value (e.g. via {@link StableValue#trySet} or
+ * {@link StableValue#orElseThrow()}) forms a
  * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happens-before</i></a>
- * relation because the stable value set/observe relation is not transitive.
+ * relation between any other attempt to interact with the StableValue's holder value.
  *
  * <h2 id="nullability">Nullability</h2>
  * Except for a StableValue's holder value itself, all method parameters must be
