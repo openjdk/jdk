@@ -6732,7 +6732,6 @@ void C2_MacroAssembler::saturating_unsigned_add_dq_evex(BasicType etype, XMMRegi
 //                                |
 //                                |
 //                               Res
-//TODO effect dst = TEMP
 void C2_MacroAssembler::saturating_unsigned_add_dq_avx(BasicType etype, XMMRegister dst, XMMRegister src1, XMMRegister src2,
                                                        XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                                        XMMRegister xtmp4, int vlen_enc) {
