@@ -1114,7 +1114,7 @@ public final class StringConcatFactory {
             @Override
             public void accept(CodeBuilder cb) {
                 /*
-                 * super(constantsSlot);
+                 * super(constants);
                  */
                 int thisSlot      = cb.receiverSlot(),
                     constantsSlot = cb.parameterSlot(0);
@@ -1141,7 +1141,7 @@ public final class StringConcatFactory {
         private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
 
         /**
-         * The parameter types are normalized into five types: int,long,boolean,char,Object
+         * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
          */
         private static MethodType erasedArgs(MethodType args) {
             int parameterCount = args.parameterCount();
@@ -1338,8 +1338,10 @@ public final class StringConcatFactory {
          * The following is an example of the generated target code:
          *
          * <blockquote><pre>
-         *  import static java.lang.StringConcatHelper.prepend;
          *  import static java.lang.StringConcatHelper.newArrayWithSuffix;
+         *  import static java.lang.StringConcatHelper.prepend;
+         *  import static java.lang.StringConcatHelper.stringCoder;
+         *  import static java.lang.StringConcatHelper.stringSize;
          *
          *  class StringConcat extends java.lang.StringConcatHelper.StringConcatBase {
          *      // super class defines
@@ -1372,8 +1374,8 @@ public final class StringConcatFactory {
          *
          *      static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
          *                       String arg4, String arg5, String arg6, String arg7) {
-         *          return length + stringSize(arg0) + stringSize(arg1) + stringSize(arg2) + 1 + stringSize(arg4)
-         *                    + stringSize(arg5) + stringSize(arg6) + stringSize(arg7);
+         *          return stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(
+         *                      length, arg0), arg1), arg2), arg3), arg4), arg5), arg6), arg7);
          *      }
          *
          *      static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
