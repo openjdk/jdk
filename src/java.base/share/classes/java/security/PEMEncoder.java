@@ -220,15 +220,15 @@ public final class PEMEncoder {
 
     /**
      * Returns a new immutable PEMEncoder instance configured to the default
-     * encrypt algorithm and a given password.
+     * encryption algorithm and a given password.
      *
      * <p> Only {@link PrivateKey} will be encrypted with this newly configured
      * instance.  Other {@link DEREncodable} classes that do not support
-     * encrypted PEM will cause encode() to throw an IOException.
+     * encrypted PEM will cause encode() to throw an IllegalArgumentException.
      *
      * <p> Default algorithm defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options
-     * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, char[], String,
+     * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, PBEKeySpec, String,
      * AlgorithmParameterSpec, Provider)} and use the returned object with
      * {@link #encode(DEREncodable)}.
      *
@@ -248,11 +248,12 @@ public final class PEMEncoder {
         DerOutputStream out = new DerOutputStream();
         Cipher cipher;
 
-        // If `spec` is non-null, this is the first time the encrypted encoder
-        // has been called.  Generate the SecretKey from the given PBESpec that
-        // contains the password and store it in the class variable 'key'
+        // If `keySpec` is non-null, then `key` hasn't been established.
+        // Setting a `key' prevents repeated key generations operations.
+        // withEncryption() is a configuration method and cannot throw an
+        // exception; therefore generation is delayed.
         if (keySpec != null) {
-            // Locking as this needs to be thread-safe
+            // For thread safety
             lock.lock();
             if (key == null) {
                 try {

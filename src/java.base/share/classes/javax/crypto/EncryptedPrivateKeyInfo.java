@@ -313,9 +313,9 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     }
 
     /**
-     * Returns an {@code EncryptedPrivateKeyInfo} from a given PrivateKey,
-     * password, and encryption options.  A valid password-based encryption
-     * (PBE) algorithm must be specified.  AlgorithmParameterSpec,
+     * Returns an {@code EncryptedPrivateKeyInfo} from a given PrivateKey.
+     * A valid password-based encryption (PBE) algorithm and a PBEKeySpec
+     * containing the password must be specified.  AlgorithmParameterSpec,
      * {@code params}, will use the provider default if {@code null} is
      * passed.  If {@code provider} is {@code null}, the provider will be
      * selected through the default configuration.
@@ -326,33 +326,30 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * Specification.
      *
      * @param key the PrivateKey object to encrypt.
-     * @param password the password used in the PBE encryption.
+     * @param keySpec PBEKeySpec containing the password
      * @param algorithm the algorithm to encrypt with.
      * @param params the AlgorithmParameterSpec to encrypt with.
      * @param provider the Provider that will perform the encryption
      * @return an EncryptedPrivateKeyInfo.
      * @throws IllegalArgumentException when arguments passed are incorrect.
      * @throws SecurityException on a cryptographic errors.
-     * @throws NullPointerException if {@code algorithm} is null.
+     * @throws NullPointerException if an argument passed in is unexpectedly null.
      *
      * @since 24
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
-        char[] password, String algorithm, AlgorithmParameterSpec params,
+        PBEKeySpec keySpec, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
 
-        AlgorithmId algid;
-        byte[] encryptedData;
-        Cipher cipher;
-
         Objects.requireNonNull(algorithm);
-        DerOutputStream out = new DerOutputStream();
+        Objects.requireNonNull(keySpec);
 
-        var spec = new PBEKeySpec(password);
+        Cipher cipher;
         SecretKey skey;
-        SecretKeyFactory factory;
+
         try {
+            SecretKeyFactory factory;
             if (provider == null) {
                 factory = SecretKeyFactory.getInstance(algorithm);
                 cipher = Cipher.getInstance(algorithm);
@@ -360,17 +357,21 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
                 factory = SecretKeyFactory.getInstance(algorithm, provider);
                 cipher = Cipher.getInstance(algorithm, provider);
             }
-            skey = factory.generateSecret(spec);
+            skey = factory.generateSecret(keySpec);
         } catch (NoSuchAlgorithmException | NoSuchPaddingException |
                  InvalidKeySpecException e) {
             throw new IllegalArgumentException(e);
         }
+
+        AlgorithmId algId;
+        byte[] encryptedData;
+        DerOutputStream out = new DerOutputStream();
         try {
             cipher.init(Cipher.ENCRYPT_MODE, skey, params);
             encryptedData = cipher.doFinal(key.getEncoded());
-            algid = new AlgorithmId(Pem.getPBEID(algorithm),
+            algId = new AlgorithmId(Pem.getPBEID(algorithm),
                 cipher.getParameters());
-            algid.encode(out);
+            algId.encode(out);
             out.putOctetString(encryptedData);
         } catch (InvalidAlgorithmParameterException |
                  IllegalBlockSizeException | BadPaddingException |
@@ -379,7 +380,7 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
         }
         return new EncryptedPrivateKeyInfo(
             DerValue.wrap(DerValue.tag_Sequence, out).toByteArray(),
-            encryptedData, algid, cipher.getParameters());
+            encryptedData, algId, cipher.getParameters());
     }
 
     /**
@@ -406,7 +407,8 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                 "valid algorithm.  Operation cannot be performed.");
         }
-        return encryptKey(key, password, Pem.DEFAULT_ALGO, null, null);
+        return encryptKey(key, new PBEKeySpec(password), Pem.DEFAULT_ALGO,
+            null, null);
     }
 
     /**
