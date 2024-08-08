@@ -306,6 +306,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uintx bitmap) {
   if (UseSecondarySupersTable && secondaries != nullptr) {
     uintx real_bitmap = compute_secondary_supers_bitmap(secondaries);
     assert(bitmap == real_bitmap, "must be");
+    assert(secondaries->length() >= (int)population_count(bitmap), "must be");
   }
 #endif
   _bitmap = bitmap;
@@ -789,6 +790,7 @@ void Klass::remove_java_mirror() {
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(is_shared(), "must be set");
+  assert(secondary_supers()->length() >= (int)population_count(_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm(THREAD);
