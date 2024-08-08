@@ -95,7 +95,7 @@ public class CustomCachingPredicateBenchmark {
 
         public CachingPredicate(Set<? extends T> inputs, Predicate<T> original) {
             this(inputs.stream()
-                            .collect(Collectors.toMap(Function.identity(), _ -> StableValue.newInstance())),
+                            .collect(Collectors.toUnmodifiableMap(Function.identity(), _ -> StableValue.newInstance())),
                     original
             );
         }
@@ -108,11 +108,11 @@ public class CustomCachingPredicateBenchmark {
 
             }
             if (stable.isSet()) {
-                return stable.isSet();
+                return stable.orElseThrow();
             }
             synchronized (this) {
                 if (stable.isSet()) {
-                    return stable.isSet();
+                    return stable.orElseThrow();
                 }
                 final boolean r = original.test(t);
                 stable.setOrThrow(r);

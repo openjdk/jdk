@@ -40,7 +40,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
     //
-    // This field is reflectively accessed via Unsafe using explicit memory semantics.
+    // This field is used directly and via Unsafe using explicit memory semantics.
     //
     // | Value          |  Meaning      |
     // | -------------- |  ------------ |

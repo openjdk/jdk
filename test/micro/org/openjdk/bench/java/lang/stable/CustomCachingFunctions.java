@@ -54,10 +54,10 @@ final class CustomCachingFunctions {
                 .collect(Collectors.groupingBy(Pair::left,
                         Collectors.mapping(Pair::right, Collectors.toSet())));
 
-        // Map::copyOf is crucial!
-        final Map<T, Function<U, R>> map = Map.copyOf(tToUs.entrySet().stream()
+        // Collectors.toUnmodifiableMap() is crucial!
+        final Map<T, Function<U, R>> map = tToUs.entrySet().stream()
                 .map(e -> Map.entry(e.getKey(), StableValue.<U, R>newCachingFunction(e.getValue(), (U u) -> original.apply(e.getKey(), u), null)))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return (T t, U u) -> {
             final Function<U,R> function = map.get(t);
