@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ TEST_VM(RegMask, iteration) {
 }
 
 TEST_VM(RegMask, Set_ALL) {
-  // Check that Set_All doesn't add bits outside of CHUNK_SIZE
+  // Check that Set_All doesn't add bits outside of rm.rm_size_bits()
   RegMask rm;
   rm.Set_All();
   ASSERT_TRUE(rm.Size() == rm.rm_size_bits());
