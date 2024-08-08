@@ -1211,12 +1211,12 @@ public final class StringConcatFactory {
 
         /**
          * Construct the MethodType of the length method,
-         * The first parameter is the initialized length, Only parameter types that can be UTF16 are added.
+         * The first parameter is the initialized length
          */
         private static MethodTypeDesc lengthArgs(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
             var paramTypes = new ClassDesc[parameterCount + 1];
-            paramTypes[0] = CD_int;
+            paramTypes[0] = CD_int; // init long
             for (int i = 0; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
                 if (needStringOf(cl)) {
