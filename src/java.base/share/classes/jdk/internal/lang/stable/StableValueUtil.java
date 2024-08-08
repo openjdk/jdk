@@ -30,32 +30,26 @@ public final class StableValueUtil {
     }
 
     // Unwraps null sentinel values into `null`
+    @SuppressWarnings("unchecked")
     @ForceInline
-    public static <T> T unwrap(T t) {
-        return t != nullSentinel() ? t : null;
+    public static <T> T unwrap(Object t) {
+        return t != nullSentinel() ? (T) t : null;
     }
 
     @SuppressWarnings("unchecked")
     @ForceInline
-    static <T> T nullSentinel() {
+    private static <T> T nullSentinel() {
         return (T) NULL_SENTINEL;
     }
 
-    static <T> String render(T t) {
+    static String render(Object t) {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
     @ForceInline
-    static boolean cas(Object o, long offset, Object value) {
+    static boolean wrapAndCas(Object o, long offset, Object value) {
         // This upholds the invariant, a `@Stable` field is written to at most once
-        // and implies release semantics.
         return UNSAFE.compareAndSetReference(o, offset, null, wrap(value));
-    }
-
-    @SuppressWarnings("unchecked")
-    @ForceInline
-    static <T> T getAcquire(Object o, long offset) {
-        return (T) UNSAFE.getReferenceAcquire(o, offset);
     }
 
     @ForceInline

@@ -41,12 +41,14 @@ import java.util.function.Supplier;
 public final class CachingSupplier<T> implements Supplier<T> {
 
     private static final long VALUE_OFFSET =
-            StableValueUtil.UNSAFE.objectFieldOffset(CachingSupplier.class, "value");
+            StableValueUtil.UNSAFE.objectFieldOffset(CachingSupplier.class, "wrappedValue");
 
+    @Stable
     private final Supplier<? extends T> original;
+    @Stable
     private final Object mutex = new Object();
     @Stable
-    private T value;
+    private volatile Object wrappedValue;
 
     public CachingSupplier(Supplier<? extends T> original) {
         this.original = original;
@@ -55,19 +57,19 @@ public final class CachingSupplier<T> implements Supplier<T> {
     @ForceInline
     @Override
     public T get() {
-        T t = StableValueUtil.getAcquire(this, VALUE_OFFSET);
-        if (value != null) {
+        Object t = wrappedValue;
+        if (t != null) {
             return StableValueUtil.unwrap(t);
         }
         synchronized (mutex) {
-            t = value;
+            t = wrappedValue;
             if (t != null) {
                 return StableValueUtil.unwrap(t);
             }
-            t = original.get();
-            StableValueUtil.cas(this, VALUE_OFFSET, t);
+            final T newValue = original.get();
+            StableValueUtil.wrapAndCas(this, VALUE_OFFSET, newValue);
+            return newValue;
         }
-        return t;
     }
 
     public static <T> CachingSupplier<T> of(Supplier<? extends T> original) {
@@ -76,7 +78,7 @@ public final class CachingSupplier<T> implements Supplier<T> {
 
     @Override
     public String toString() {
-        final T t = StableValueUtil.getAcquire(this, VALUE_OFFSET);
+        final Object t = wrappedValue;
         return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.render(t)) + ", original=" + original + "]";
     }
 

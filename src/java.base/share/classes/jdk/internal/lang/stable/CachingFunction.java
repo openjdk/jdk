@@ -43,19 +43,19 @@ public record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         if (stable == null) {
             throw new IllegalArgumentException("Input not allowed: " + value);
         }
-        R r = stable.value();
+        Object r = stable.wrappedValue();
         if (r != null) {
             return StableValueUtil.unwrap(r);
         }
         synchronized (stable) {
-            r = stable.value();
+            r = stable.wrappedValue();
             if (r != null) {
                 return StableValueUtil.unwrap(r);
             }
-            r = original.apply(value);
-            stable.setOrThrow(r);
+            final R newValue = original.apply(value);
+            stable.setOrThrow(newValue);
+            return newValue;
         }
-        return r;
     }
 
     @Override
@@ -79,7 +79,7 @@ public record CachingFunction<T, R>(Map<? extends T, StableValueImpl<R>> values,
         boolean first = true;
         for (var e:values.entrySet()) {
             if (first) { first = false; } else { sb.append(", "); };
-            final Object value = e.getValue().value();
+            final Object value = e.getValue().wrappedValue();
             sb.append(e.getKey()).append('=');
             if (value == this) {
                 sb.append("(this CachingFunction)");

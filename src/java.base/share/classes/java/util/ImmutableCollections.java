@@ -788,19 +788,24 @@ class ImmutableCollections {
         @Override
         public E get(int i) {
             final StableValueImpl<E> stable = backing.get(i);
-            E e = stable.value();
+            Object e = stable.wrappedValue();
             if (e != null) {
                 return StableValueUtil.unwrap(e);
             }
             synchronized (stable) {
-                e = stable.value();
+                e = stable.wrappedValue();
                 if (e != null) {
                     return StableValueUtil.unwrap(e);
                 }
-                e = mapper.apply(i);
-                stable.setOrThrow(e);
+                final E newValue = mapper.apply(i);
+                if (!stable.trySet(newValue)) {
+                    throw new IllegalStateException(
+                            "Cannot set the holder value for index " + i + " to " + e +
+                            " because a value of " + StableValueUtil.unwrap(stable.wrappedValue()) +
+                            " is alredy set.");
+                }
+                return newValue;
             }
-            return e;
         }
 
         @Override
@@ -1495,19 +1500,19 @@ class ImmutableCollections {
 
         @ForceInline
         V computeIfUnset(K key, StableValueImpl<V> stable) {
-            V v = stable.value();
+            Object v = stable.wrappedValue();
             if (v != null) {
                 return StableValueUtil.unwrap(v);
             }
             synchronized (stable) {
-                v = stable.value();
+                v = stable.wrappedValue();
                 if (v != null) {
                     return StableValueUtil.unwrap(v);
                 }
-                v = mapper.apply(key);
-                stable.setOrThrow(v);
+                final V newValue = mapper.apply(key);
+                stable.setOrThrow(newValue);
+                return newValue;
             }
-            return v;
         }
 
         @jdk.internal.ValueBased

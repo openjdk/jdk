@@ -35,7 +35,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Unsafe offsets for direct field access
     private static final long VALUE_OFFSET =
-            StableValueUtil.UNSAFE.objectFieldOffset(StableValueImpl.class, "value");
+            StableValueUtil.UNSAFE.objectFieldOffset(StableValueImpl.class, "wrappedValue");
 
     // Generally, fields annotated with `@Stable` are accessed by the JVM using special
     // memory semantics rules (see `parse.hpp` and `parse(1|2|3).cpp`).
@@ -49,24 +49,24 @@ public final class StableValueImpl<T> implements StableValue<T> {
     // | other          |  Set(other)   |
     //
     @Stable
-    private T value;
+    private volatile Object wrappedValue;
 
     // Only allow creation via the factory `StableValueImpl::newInstance`
     private StableValueImpl() {}
 
     @ForceInline
     @Override
-    public boolean trySet(T value) {
-        if (value() != null) {
+    public boolean trySet(T newValue) {
+        if (wrappedValue != null) {
             return false;
         }
-        return StableValueUtil.cas(this, VALUE_OFFSET, value);
+        return StableValueUtil.wrapAndCas(this, VALUE_OFFSET, newValue);
     }
 
     @ForceInline
     @Override
     public T orElseThrow() {
-        final T t = value();
+        final Object t = wrappedValue;
         if (t != null) {
             return StableValueUtil.unwrap(t);
         }
@@ -76,7 +76,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public T orElse(T other) {
-        final T t = value();
+        final Object t = wrappedValue;
         if (t != null) {
             return StableValueUtil.unwrap(t);
         }
@@ -86,12 +86,12 @@ public final class StableValueImpl<T> implements StableValue<T> {
     @ForceInline
     @Override
     public boolean isSet() {
-        return value() != null;
+        return wrappedValue != null;
     }
 
     @Override
     public int hashCode() {
-        final T t = value();
+        final Object t = wrappedValue;
         return t == this
                 ? 1
                 : Objects.hashCode(t);
@@ -102,20 +102,20 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return obj instanceof StableValueImpl<?> other &&
                 // Note that the returned `value()` will be `null` if the holder value
                 // is unset and `nullSentinel()` if the holder value is `null`.
-                Objects.equals(value(), other.value());
+                Objects.equals(wrappedValue, other.wrappedValue);
     }
 
     @Override
     public String toString() {
-        final T t = value();
+        final Object t = wrappedValue;
         return t == this
                 ? "(this StableValue)"
                 : "StableValue" + StableValueUtil.render(t);
     }
 
     @ForceInline
-    public T value() {
-        return StableValueUtil.getAcquire(this, VALUE_OFFSET);
+    public Object wrappedValue() {
+        return wrappedValue;
     }
 
     // Factory

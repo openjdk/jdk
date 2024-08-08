@@ -28,7 +28,6 @@ package jdk.internal.lang.stable;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
@@ -47,10 +46,12 @@ import java.util.stream.IntStream;
  */
 public final class CachingIntFunction<R> implements IntFunction<R> {
 
+    @Stable
     private final IntFunction<? extends R> original;
+    @Stable
     private final Object[] mutexes;
     @Stable
-    private final Object[] values;
+    private final Object[] wrappedValues;
 
     public CachingIntFunction(int size,
                               IntFunction<? extends R> original) {
@@ -59,31 +60,30 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
         for (int i = 0; i < size; i++) {
             mutexes[i] = new Object();
         }
-        this.values = new Object[size];
+        this.wrappedValues = new Object[size];
     }
 
-    @SuppressWarnings("unchecked")
     @ForceInline
     @Override
-    public R apply(int value) {
+    public R apply(int index) {
         try {
-            Objects.checkIndex(value, values.length);
+            Objects.checkIndex(index, wrappedValues.length);
         } catch (IndexOutOfBoundsException e) {
             throw new IllegalArgumentException(e);
         }
-        R r = StableValueUtil.getAcquire(values, StableValueUtil.arrayOffset(value));
+        Object r = wrappedValue(index);
         if (r != null) {
             return StableValueUtil.unwrap(r);
         }
-        synchronized (mutexes[value]) {
-            r = (R) values[value];
+        synchronized (mutexes[index]) {
+            r = wrappedValues[index];
             if (r != null) {
                 return StableValueUtil.unwrap(r);
             }
-            r = original.apply(value);
-            StableValueUtil.cas(values, StableValueUtil.arrayOffset(value), r);
+            final R newValue = original.apply(index);
+            StableValueUtil.wrapAndCas(wrappedValues, StableValueUtil.arrayOffset(index), newValue);
+            return newValue;
         }
-        return r;
     }
 
     public static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
@@ -98,10 +98,15 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
     }
 
     private String valuesAsString() {
-        return IntStream.range(0, values.length)
-                .mapToObj(i -> StableValueUtil.getAcquire(values, StableValueUtil.arrayOffset(i)))
+        return IntStream.range(0, wrappedValues.length)
+                .mapToObj(this::wrappedValue)
                 .map(v -> (v == this) ? "(this CachingIntFunction)" : StableValueUtil.render(v))
                 .collect(Collectors.joining(", "));
+    }
+
+    @ForceInline
+    private Object wrappedValue(int i) {
+        return StableValueUtil.UNSAFE.getReferenceVolatile(wrappedValues, StableValueUtil.arrayOffset(i));
     }
 
 }
