@@ -313,6 +313,25 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertSelectFromTwoVectorEquals(short[] r, short[] order, short[] a, short[] b, int vector_len) {
+        int i = 0, j = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    int idx = i + j;
+                    boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+                    int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            int idx = i + j;
+            boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+            int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " +  b[i + oidx]);
+        }
+    }
+
     static void assertSelectFromArraysEquals(short[] r, short[] a, short[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -978,6 +997,18 @@ public class Short64VectorTests extends AbstractVectorTest {
                 flatMap(pair -> SHORT_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<short[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("short[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (short)(RAND.nextInt(SPECIES.length() * 2)));
+            })
+    );
+
+    static final List<List<IntFunction<short[]>>> SHORT_GENERATOR_SELECT_FROM_TRIPLES =
+        SHORT_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] shortBinaryOpProvider() {
         return SHORT_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1002,6 +1033,12 @@ public class Short64VectorTests extends AbstractVectorTest {
     @DataProvider
     public Object[][] shortTernaryOpProvider() {
         return SHORT_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] shortSelectFromTwoVectorOpProvider() {
+        return SHORT_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -5753,6 +5790,24 @@ public class Short64VectorTests extends AbstractVectorTest {
         }
 
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
+    }
+
+    @Test(dataProvider = "shortSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorShort64VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb, IntFunction<short[]> fc) {
+        short[] a = fa.apply(SPECIES.length());
+        short[] b = fb.apply(SPECIES.length());
+        short[] idx = fc.apply(SPECIES.length());
+        short[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                ShortVector av = ShortVector.fromArray(SPECIES, a, i);
+                ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
+                ShortVector idxv = ShortVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
     }
 
     @Test(dataProvider = "shortUnaryOpSelectFromMaskProvider")

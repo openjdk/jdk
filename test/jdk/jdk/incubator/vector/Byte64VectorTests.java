@@ -313,6 +313,25 @@ public class Byte64VectorTests extends AbstractVectorTest {
         }
     }
 
+    static void assertSelectFromTwoVectorEquals(byte[] r, byte[] order, byte[] a, byte[] b, int vector_len) {
+        int i = 0, j = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    int idx = i + j;
+                    boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+                    int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            int idx = i + j;
+            boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+            int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " +  b[i + oidx]);
+        }
+    }
+
     static void assertSelectFromArraysEquals(byte[] r, byte[] a, byte[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -988,6 +1007,18 @@ public class Byte64VectorTests extends AbstractVectorTest {
                 flatMap(pair -> BYTE_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<byte[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("byte[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (byte)(RAND.nextInt(SPECIES.length() * 2)));
+            })
+    );
+
+    static final List<List<IntFunction<byte[]>>> BYTE_GENERATOR_SELECT_FROM_TRIPLES =
+        BYTE_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] byteBinaryOpProvider() {
         return BYTE_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1012,6 +1043,12 @@ public class Byte64VectorTests extends AbstractVectorTest {
     @DataProvider
     public Object[][] byteTernaryOpProvider() {
         return BYTE_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] byteSelectFromTwoVectorOpProvider() {
+        return BYTE_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -5773,6 +5810,24 @@ public class Byte64VectorTests extends AbstractVectorTest {
         }
 
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
+    }
+
+    @Test(dataProvider = "byteSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorByte64VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb, IntFunction<byte[]> fc) {
+        byte[] a = fa.apply(SPECIES.length());
+        byte[] b = fb.apply(SPECIES.length());
+        byte[] idx = fc.apply(SPECIES.length());
+        byte[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                ByteVector av = ByteVector.fromArray(SPECIES, a, i);
+                ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
+                ByteVector idxv = ByteVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
     }
 
     @Test(dataProvider = "byteUnaryOpSelectFromMaskProvider")

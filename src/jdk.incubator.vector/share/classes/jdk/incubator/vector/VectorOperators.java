@@ -563,6 +563,7 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Associative OR = assoc("OR", "|", VectorSupport.VECTOR_OP_OR, VO_NOFP+VO_ASSOC);
     /*package-private*/ /** Version of OR which works on float and double too. */
     static final Associative OR_UNCHECKED = assoc("OR_UNCHECKED", "|", VectorSupport.VECTOR_OP_OR, VO_ASSOC+VO_PRIVATE);
+
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
 

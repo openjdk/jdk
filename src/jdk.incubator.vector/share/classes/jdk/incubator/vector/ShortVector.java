@@ -2569,6 +2569,33 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return v.rearrange(this.toShuffle(), m);
     }
 
+    private static
+    IndexOutOfBoundsException checkIndexFailed(Vector<?> vix, int length) {
+        String msg = String.format("Range check failed: vector %s out of bounds for length %d", vix, length);
+        return new IndexOutOfBoundsException(msg);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
+
+    /*package-private*/
+    @ForceInline
+    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
+        int twovectorlen = length() * 2;
+        if (this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
+            throw checkIndexFailed(this, twovectorlen);
+        }
+        return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), this, v1, v2,
+            (vec1, vec2, vec3) -> {
+                return vec2.rearrange(vec1.toShuffle(), vec3);
+            }
+        );
+    }
+
     /// Ternary operations
 
     /**
