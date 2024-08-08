@@ -1335,9 +1335,10 @@ static void JNICALL
 cbDataDump(jvmtiEnv *jvmti_env)
 {
     tty_message("Debug Agent Data Dump");
-    tty_message("=====================");
+    tty_message("=== START DUMP ===");
     threadControl_dumpAllThreads();
     eventHandler_dumpAllHandlers(JNI_TRUE);
+    tty_message("=== END DUMP ===");
 }
 
 /**
