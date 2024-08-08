@@ -744,7 +744,6 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 
 # jdk_jfr
 
-jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
 jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
 jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
