@@ -679,9 +679,9 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         // Keep in odd list
         odd = aux->next_ptr();
       } else {
-        DEBUG_ONLY(fatal("Cannot resize table: Node hash code has changed possibly due to corruption of the contents."
-                         " Node hash code changed from " SIZE_FORMAT " to " SIZE_FORMAT, aux->saved_hash(), aux_hash));
-        fatal("Cannot resize table: Node hash code has changed possibly due to corruption of the contents.");
+        const char* msg = "Cannot resize table: Node hash code has changed possibly due to corruption of the contents.";
+        DEBUG_ONLY(fatal("%s Node hash code changed from " SIZE_FORMAT " to " SIZE_FORMAT, msg, aux->saved_hash(), aux_hash);)
+        NOT_DEBUG(fatal("%s", msg);)
       }
     }
     aux = aux_next;
