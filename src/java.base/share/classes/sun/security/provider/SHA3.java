@@ -25,14 +25,13 @@
 
 package sun.security.provider;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
-import java.nio.ByteOrder;
 import java.security.ProviderException;
 import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import static sun.security.provider.ByteArrayAccess.b2lLittle;
+import static sun.security.provider.ByteArrayAccess.l2bLittle;
 
 /**
  * This class implements the Secure Hash Algorithm SHA-3 developed by
@@ -68,9 +67,11 @@ abstract class SHA3 extends DigestBase {
     private final byte suffix;
     private long[] state = new long[DM*DM];
 
-    static final VarHandle asLittleEndian
-            = MethodHandles.byteArrayViewVarHandle(long[].class,
-            ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
+    // The following two arrays are allocated to size WIDTH bytes, but we only
+    // ever use the first blockSize bytes of them (for bytes <-> long conversions)
+    private byte[] byteState = new byte[WIDTH];
+    private long[] longBuf = new long[DM*DM];
+    private int squeezeOffset = -1;
 
     /**
      * Creates a new SHA-3 object.
@@ -95,12 +96,21 @@ abstract class SHA3 extends DigestBase {
 
     @IntrinsicCandidate
     private void implCompress0(byte[] b, int ofs) {
+        b2lLittle(b, ofs, longBuf, 0, blockSize);
         for (int i = 0; i < blockSize / 8; i++) {
-            state[i] ^= (long) asLittleEndian.get(b, ofs);
-            ofs += 8;
+            state[i] ^= longBuf[i];
         }
 
         keccak();
+    }
+
+    void finishAbsorb() {
+        int numOfPadding =
+            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % buffer.length));
+        if (numOfPadding < 1) {
+            throw new ProviderException("Incorrect pad size: " + numOfPadding);
+        }
+        implCompress(buffer, 0);
     }
 
     /**
@@ -108,43 +118,84 @@ abstract class SHA3 extends DigestBase {
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
-        byte[] byteState = new byte[8];
-        int numOfPadding =
-            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % blockSize));
-        if (numOfPadding < 1) {
-            throw new ProviderException("Incorrect pad size: " + numOfPadding);
+        if (engineGetDigestLength() == 0) {
+            // this is an XOF, so the digest() call is illegal
+            throw new ProviderException("Calling digest() is not allowed in an XOF");
         }
-        implCompress(buffer, 0);
-        int availableBytes = blockSize; // i.e. buffer.length
+
+        finishAbsorb();
+
+        int availableBytes = blockSize;
         int numBytes = engineGetDigestLength();
+
         while (numBytes > availableBytes) {
-            for (int i = 0; i < availableBytes / 8 ; i++) {
-                asLittleEndian.set(out, ofs, state[i]);
-                ofs += 8;
-            }
+            l2bLittle(state, 0, out, ofs, availableBytes);
             numBytes -= availableBytes;
+            ofs += availableBytes;
             keccak();
         }
         int numLongs = (numBytes + 7) / 8;
+        l2bLittle(state, 0, byteState, 0, numLongs * 8);
+        System.arraycopy(byteState, 0, out, ofs, numBytes);
+    }
 
-        for (int i = 0; i < numLongs - 1; i++) {
-            asLittleEndian.set(out, ofs, state[i]);
-            ofs += 8;
+    void implSqueeze(byte[]output, int offset, int numBytes) {
+        if (engineGetDigestLength() != 0) {
+            // this is not an XOF, so the squeeze() call is illegal
+            throw new ProviderException("Squeezing is only allowed in XOF mode");
         }
-        if (numBytes == numLongs * 8) {
-            asLittleEndian.set(out, ofs, state[numLongs - 1]);
+
+        if (squeezeOffset == -1) {
+            finishAbsorb();
+            squeezeOffset = 0;
+        }
+        int availableBytes = blockSize - squeezeOffset;
+        while (numBytes > availableBytes) {
+            if (squeezeOffset == 0) { // and therefore numBytes > blockSize
+                l2bLittle(state, 0, output, offset, blockSize);
+            } else {
+                int longOffset = squeezeOffset / 8;
+                l2bLittle(state, longOffset, byteState,
+                    longOffset * 8, blockSize - longOffset * 8);
+                System.arraycopy(byteState, squeezeOffset, output, offset, availableBytes);
+                squeezeOffset = 0;
+            }
+            numBytes -= availableBytes;
+            offset += availableBytes;
+            availableBytes = blockSize;
+            keccak();
+        }
+        if ((squeezeOffset % 8 == 0) && (numBytes % 8 == 0)) {
+            l2bLittle(state, squeezeOffset / 8, output, offset, numBytes);
         } else {
-            asLittleEndian.set(byteState, 0, state[numLongs - 1]);
-            System.arraycopy(byteState, 0,
-                    out, ofs, numBytes - (numLongs - 1) * 8);
+            int longOffset = squeezeOffset / 8;
+            int longsToConvert =
+                ((squeezeOffset + numBytes - longOffset * 8) + 7 ) / 8;
+            l2bLittle(state, longOffset,
+                byteState, longOffset * 8, longsToConvert * 8);
+            System.arraycopy(byteState, squeezeOffset, output, offset, numBytes);
+        }
+        squeezeOffset += numBytes;
+        if (squeezeOffset == blockSize) {
+            squeezeOffset = 0;
+            keccak();
         }
     }
+
+    byte[] implSqueeze(int numBytes) {
+        byte[] result = new byte[numBytes];
+        implSqueeze(result, 0, numBytes);
+        return result;
+    }
+
+
 
     /**
      * Resets the internal state to start a new hash.
      */
     void implReset() {
         Arrays.fill(state, 0L);
+        squeezeOffset = -1;
     }
 
     /**
@@ -178,7 +229,7 @@ abstract class SHA3 extends DigestBase {
         a15 = state[15]; a16 = state[16]; a17 = state[17]; a18 = state[18]; a19 = state[19];
         a20 = state[20]; a21 = state[21]; a22 = state[22]; a23 = state[23]; a24 = state[24];
 
-        // process the lanes through step mappings
+        // process the state through step mappings
         for (int ir = 0; ir < NR; ir++) {
             // Step mapping Theta as defined in section 3.2.1.
             long c0 = a0^a5^a10^a15^a20;

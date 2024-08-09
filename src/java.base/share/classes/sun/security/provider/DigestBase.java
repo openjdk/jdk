@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,10 @@ abstract class DigestBase extends MessageDigestSpi implements Cloneable {
             System.arraycopy(b, ofs, buffer, 0, len);
             bufOfs = len;
         }
+    }
+
+    protected final void engineUpdate(byte[] buf) {
+        engineUpdate(buf, 0, buf.length);
     }
 
     // compress complete blocks
