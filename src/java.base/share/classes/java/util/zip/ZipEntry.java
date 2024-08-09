@@ -59,7 +59,16 @@ public class ZipEntry implements ZipConstants, Cloneable {
     int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
-    int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
+
+    /**
+     *  External file attributes when processing Unix-compatible files.
+     *  Contains file type (4 bits), setuid, setgid, sticky, POSIX permissions (9 bits).
+     *
+     *  While this field is not accessible to users, it allows conserving
+     *  the external file attributes when processing ZIP file entries.
+     */
+    int externalFileAttributes = -1;
+
     /**
      * Compression method for uncompressed entries.
      */

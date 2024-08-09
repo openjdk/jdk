@@ -696,8 +696,8 @@ public class ZipFile implements ZipConstants, Closeable {
         e.csize = CENSIZ(cen, pos);
         e.method = CENHOW(cen, pos);
         if (CENVEM_FA(cen, pos) == FILE_ATTRIBUTES_UNIX) {
-            // read all bits in this field, including sym link attributes
-            e.externalFileAttributes = CENATX_PERMS(cen, pos) & 0xFFFF;
+            // Read the 16 Unix-related bits of the 'external file attributes' field
+            e.externalFileAttributes = CENATX_UNIX(cen, pos);
         }
 
         if (elen != 0) {
