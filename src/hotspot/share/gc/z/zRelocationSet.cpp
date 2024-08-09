@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public:
     : ZTask("ZRelocationSetInstallTask"),
       _allocator(allocator),
       _forwardings(nullptr),
-      _nforwardings(selector->selected_small()->length() + selector->selected_medium()->length()),
+      _nforwardings((size_t)selector->selected_small()->length() + (size_t)selector->selected_medium()->length()),
       _small(selector->selected_small()),
       _medium(selector->selected_medium()),
       _small_iter(selector->selected_small()),
@@ -113,7 +113,7 @@ public:
     for (size_t page_index; _small_iter.next_index(&page_index);) {
       ZPage* page = _small->at(int(page_index));
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, to_age(page));
-      install_small(forwarding, _medium->length() + page_index);
+      install_small(forwarding, (size_t)_medium->length() + page_index);
 
       SuspendibleThreadSet::yield();
     }
