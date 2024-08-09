@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class AddOptionsPluginTest {
 
     private static final String PROP = "add.options.plugin.test";
     private static final String VALUE = "xyzzy";
-    private static final String OPTS = "-D" + PROP + "=" + VALUE;
+    private static final String OPTS = String.format("--enable-preview -D%s=%s", PROP, VALUE);
 
     public static void main(String[] args) throws Throwable {
 
@@ -65,9 +65,9 @@ public class AddOptionsPluginTest {
                                      + (System.getProperty("os.name").startsWith("Windows")
                                         ? ".exe" : ""));
         var oa = ProcessTools.executeProcess(launcher.toString(),
-                                             "-XshowSettings:properties", "--version");
+                                             "-Xlog:arguments=info", "-XshowSettings:properties", "--version");
         oa.stderrShouldMatch("^ +" + PROP + " = " + VALUE + "$");
-
+        oa.stdoutShouldContain("--enable-preview");
     }
 
 }
