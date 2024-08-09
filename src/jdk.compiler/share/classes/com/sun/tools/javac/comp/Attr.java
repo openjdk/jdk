@@ -50,6 +50,8 @@ import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
 import com.sun.tools.javac.comp.MatchBindingsComputer.MatchBindings;
+import com.sun.tools.javac.comp.Resolve.InvalidSymbolError;
+import com.sun.tools.javac.comp.Resolve.RefBeforeCtorCalledError;
 import com.sun.tools.javac.jvm.*;
 
 import static com.sun.tools.javac.resources.CompilerProperties.Fragments.Diamond;
@@ -2588,8 +2590,7 @@ public class Attr extends JCTree.Visitor {
                     } else if (methName == names._super) {
                         // qualifier omitted; check for existence
                         // of an appropriate implicit qualifier.
-                        rs.resolveImplicitThis(tree.meth.pos(),
-                                               localEnv, site, true);
+                        checkNewInnerClass(tree.meth.pos(), localEnv, site);
                     }
                 } else if (tree.meth.hasTag(SELECT)) {
                     log.error(tree.meth.pos(),
@@ -2796,11 +2797,9 @@ public class Attr extends JCTree.Visitor {
                     log.error(tree.encl.pos(), Errors.QualifiedNewOfStaticClass(clazztype.tsym));
                 }
             }
-        } else if (!clazztype.tsym.isInterface() &&
-                   (clazztype.tsym.flags_field & NOOUTERTHIS) == 0 &&
-                   clazztype.getEnclosingType().hasTag(CLASS)) {
+        } else {
             // Check for the existence of an apropos outer instance
-            rs.resolveImplicitThis(tree.pos(), env, clazztype);
+            checkNewInnerClass(tree.pos(), env, clazztype);
         }
 
         // Attribute constructor arguments.
@@ -3063,6 +3062,23 @@ public class Attr extends JCTree.Visitor {
                             diags.fragment(Fragments.CantApplyDiamond1(Fragments.Diamond(tsym), details)));
                 }
             };
+        }
+
+        void checkNewInnerClass(DiagnosticPosition pos, Env<AttrContext> env, Type type) {
+            boolean isLocal = type.tsym.owner.kind == MTH;
+            if ((type.tsym.flags() & (INTERFACE | ENUM | RECORD)) != 0 ||
+                    (!isLocal && !type.tsym.isInner())) {
+                // nothing to check
+                return;
+            }
+            Symbol res = isLocal ?
+                    rs.findLocalClassOwner(env, type.tsym) :
+                    rs.findSelfContaining(pos, env, type.getEnclosingType().tsym, names._this);
+            if (res.exists()) {
+                rs.accessBase(res, pos, env.enclClass.sym.type, names._this, true);
+            } else {
+                log.error(pos, Errors.EnclClassRequired(type.tsym));
+            }
         }
 
     /** Make an attributed null check tree.
@@ -3673,7 +3689,6 @@ public class Attr extends JCTree.Visitor {
                 boolean targetError;
                 switch (refSym.kind) {
                     case ABSENT_MTH:
-                    case MISSING_ENCL:
                         targetError = false;
                         break;
                     case WRONG_MTH:
@@ -3724,11 +3739,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             if (!env.info.attributionMode.isSpeculative && that.getMode() == JCMemberReference.ReferenceMode.NEW) {
-                Type enclosingType = exprType.getEnclosingType();
-                if (enclosingType != null && enclosingType.hasTag(CLASS)) {
-                    // Check for the existence of an appropriate outer instance
-                    rs.resolveImplicitThis(that.pos(), env, exprType);
-                }
+                checkNewInnerClass(that.pos(), env, exprType);
             }
 
             if (resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {

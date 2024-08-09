@@ -3,7 +3,7 @@
  * @bug 4689058
  * @summary unverifiable code for implicit outer in super constructor call
  *
- * @compile/fail/ref=NewBeforeOuterConstructed2.out -XDrawDiagnostics  NewBeforeOuterConstructed2.java
+ * @compile NewBeforeOuterConstructed2.java
  */
 
 public class NewBeforeOuterConstructed2 {
