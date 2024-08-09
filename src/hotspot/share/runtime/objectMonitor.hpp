@@ -218,6 +218,7 @@ private:
   static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
   static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize contentions_offset() { return byte_offset_of(ObjectMonitor, _contentions); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -336,6 +337,10 @@ private:
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
 
+  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
+
+  TryLockResult  TryLock(JavaThread* current);
+
   void      print() const;
 #ifdef ASSERT
   void      print_debug_style_on(outputStream* st) const;
@@ -353,11 +358,6 @@ private:
   void      EnterI(JavaThread* current);
   void      ReenterI(JavaThread* current, ObjectWaiter* current_node);
   void      UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* current_node);
-
-
-  enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
-
-  TryLockResult  TryLock(JavaThread* current);
 
   bool      TrySpin(JavaThread* current);
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);

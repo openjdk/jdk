@@ -65,6 +65,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/objectMonitor.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -1907,6 +1908,29 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   assert(JavaThread::current() == current, "invariant");
   // Exit must be non-blocking, and therefore no exceptions can be thrown.
   ExceptionMark em(current);
+
+  // Check if C2_MacroAssembler::fast_unlock() or
+  // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
+  // monitor before going slow path.
+  ObjectMonitor* m = current->unlocked_inflated_monitor();
+  if (m != nullptr) {
+    current->clear_unlocked_inflated_monitor();
+    // We need to reacquire the lock before we can call ObjectSynchronizer::exit().
+    if (m->TryLock(current) != ObjectMonitor::TryLockResult::Success) {
+      // Some other thread acquired the lock (or the monitor was
+      // deflated). Either way we are done.
+      current->inc_held_monitor_count(-1);
+      return;
+    }
+#ifdef ASSERT
+    markWord mark = obj->mark();
+    assert(mark.has_monitor(), "Must have a monitor");
+    ObjectMonitor* mon = mark.monitor();
+    assert(m == mon, "invariant");
+    assert(mon->object()->mark() == mark, "invariant");
+#endif
+  }
+
   // The object could become unlocked through a JNI call, which we have no other checks for.
   // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
   if (obj->is_unlocked()) {
