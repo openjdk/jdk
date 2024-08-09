@@ -51,23 +51,38 @@ public class TestFieldInformation {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
+        // OldObjectSample might be skipped if GC is running shortly after
+        // the allocations. Try with a few backoff intervals to let GC finish
+        // before we stop the recording. This currently affects Shenandoah only.
+        // There is no reason to wait unconditionally, if GC can manage with
+        // a short backoff.
+        for (int power = 0; power < 13; power++) {
+            if (tryWith(1 << power)) {
+                return;
+            }
+        }
+
+        Asserts.fail("Could not find old object with field 'testField'");
+    }
+
+    public static boolean tryWith(int backoff) throws Exception {
         try (Recording recording = new Recording()) {
             recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
             recording.start();
 
             addToTestField();
 
+            Thread.sleep(backoff);
+
             recording.stop();
 
             List<RecordedEvent> events = Events.fromRecording(recording);
-            Events.hasEvents(events);
             for (RecordedEvent e : events) {
                 if (hasValidField(e)) {
-                    return;
+                    return true;
                 }
             }
-            System.out.println(events);
-            Asserts.fail("Could not find old object with field 'testField'");
+            return false;
         }
     }
 

@@ -39,6 +39,9 @@ class PathToGcRootsOperation : public OldObjectVMOperation {
   const bool _emit_all;
   const bool _skip_bfs;
 
+  // Checks if VM is in safe state to perform this operation.
+  bool is_safe();
+
  public:
   PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs);
   virtual void doit();

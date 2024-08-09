@@ -47,6 +47,10 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#if INCLUDE_SHENANDOAHGC
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#endif
 
 PathToGcRootsOperation::PathToGcRootsOperation(ObjectSampler* sampler, EdgeStore* edge_store, int64_t cutoff, bool emit_all, bool skip_bfs) :
   _sampler(sampler),_edge_store(edge_store), _cutoff_ticks(cutoff), _emit_all(emit_all), _skip_bfs(skip_bfs) {}
@@ -82,6 +86,12 @@ static void log_edge_queue_summary(const EdgeQueue& edge_queue) {
 void PathToGcRootsOperation::doit() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(_cutoff_ticks > 0, "invariant");
+
+  // Return immediately if VM is not safe.
+  if (!is_safe()) {
+    log_info(jfr)("VM is not in safe state to perform path to GC roots operation, skipping");
+    return;
+  }
 
   // The bitset used for marking is dimensioned as a function of the heap size
   JFRBitSet mark_bits;
@@ -128,4 +138,18 @@ void PathToGcRootsOperation::doit() {
   // Emit old objects including their reference chains as events
   EventEmitter emitter(GranularTimer::start_time(), GranularTimer::end_time());
   emitter.write_events(_sampler, _edge_store, _emit_all);
+}
+
+bool PathToGcRootsOperation::is_safe() {
+#if INCLUDE_SHENANDOAHGC
+  if (UseShenandoahGC) {
+    // This operation uses mark words to track objects. While the operation
+    // would restore the mark words after completion, it would interact with
+    // mark word uses by Shenandoah itself. This is a problem if we hit the op
+    // when Shenandoah has forwarded objects, which means it uses mark words
+    // to carry GC metadata.
+    return !ShenandoahHeap::heap()->has_forwarded_objects();
+  }
+#endif
+  return true;
 }
