@@ -112,6 +112,9 @@ private:
       return RegionData{sidx, flag()};
     }
 
+    void set_flag(MEMFLAGS flag) {
+      type_flag[1] = (uint8_t)flag;
+    }
     const NativeCallStackStorage::StackIndex stack() const {
      return sidx;
     }
@@ -165,16 +168,37 @@ public:
         flag[i] = SingleDiff{0, 0};
       }
     }
+    SummaryDiff(int invalid_amount) {
+      for (int i = 0; i < mt_number_of_types; i++) {
+        flag[i] = SingleDiff{invalid_amount, invalid_amount};
+      }
+    }
+
+    bool is_valid(int invalid_amount = -1) {
+      for (int i = 0; i < mt_number_of_types; i++) {
+        if (flag[i].reserve != invalid_amount)
+          return true;
+        if (flag[i].commit != invalid_amount)
+          return true;
+      }
+      return false;
+    }
   };
 
-  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata);
+ private:
+  SummaryDiff register_mapping(position A, position B, StateType state, const RegionData& metadata, bool copy_flag = false);
 
+ public:
   SummaryDiff reserve_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Reserved, metadata);
+    return register_mapping(from, from + sz, StateType::Reserved, metadata, false);
   }
 
-  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata) {
-    return register_mapping(from, from + sz, StateType::Committed, metadata);
+  SummaryDiff commit_mapping(position from, position sz, const RegionData& metadata, bool copy_flag = false) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, copy_flag);
+  }
+
+  SummaryDiff uncommit_mapping(position from, position sz, const RegionData& metadata) {
+    return register_mapping(from, from + sz, StateType::Committed, metadata, true);
   }
 
   SummaryDiff release_mapping(position from, position sz) {
