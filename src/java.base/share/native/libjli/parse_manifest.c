@@ -140,6 +140,88 @@ readAt(int fd, jlong pos, unsigned int count, void *buf) {
             && read(fd, buf, count) == (jlong) count);
 }
 
+/*
+ * Reads size and offset fields from a zip64 extended information extra field.
+ *
+ * If one of the corresponding central directory fields is too small to hold the
+ * required data, the information will be in the zip64 extended information
+ * record.
+ *
+ * The disk number field is only used to validate the size of the zip64 extended
+ * information record.
+ *
+ * See APPNOTE.TXT 4.5.3.
+ */
+static jboolean
+read_zip64_ext(Byte *p, jlong *cenlen, jlong *censiz, jlong *cenoff,
+               unsigned short cendsk) {
+  short headerId = ZIPEXT_HDR(p);
+  if (headerId != ZIP64_EXTID) {
+    return JNI_FALSE;
+  }
+  short headerSize = ZIPEXT_SIZ(p);
+  short expectedSize =
+      (*cenlen == ZIP64_MAGICVAL ? 8 : 0) +
+      (*censiz == ZIP64_MAGICVAL ? 8 : 0) +
+      (*cenoff == ZIP64_MAGICVAL ? 8 : 0) +
+      (cendsk == ZIP64_MAGICCOUNT ? 4 : 0);
+  if (headerSize != expectedSize) {
+    return JNI_FALSE;
+  }
+  jlong offset = 4;
+  if (*cenlen == ZIP64_MAGICVAL) {
+    *cenlen = LL(p, offset);
+    offset += 8;
+  }
+  if (*censiz == ZIP64_MAGICVAL) {
+    *censiz = LL(p, offset);
+    offset += 8;
+  }
+  if (*cenoff == ZIP64_MAGICVAL) {
+    *cenoff = LL(p, offset);
+  }
+  return JNI_TRUE;
+}
+
+/*
+ * Validates the associated LOC headers for a CEN entry, with support for
+ * reading the LOC offset using the zip64 extended information extra field.
+ */
+static jboolean
+validate_lochdr(int fd, jlong censtart, jlong base_offset, Byte *cenhdr) {
+  Byte lochdr[LOCHDR];
+  jlong cenlen = CENLEN(cenhdr);
+  jlong censiz = CENSIZ(cenhdr);
+  jlong cenoff = CENOFF(cenhdr);
+  jlong cenext = CENEXT(cenhdr);
+  // cenoff is the only value stored in the zip64 extended info that is used
+  // below, so if it fits in 32 bits we don't need to read the extra fields.
+  if (cenoff == ZIP64_MAGICVAL && cenext > 0) {
+    Byte p[ZIP64_EXTMAXLEN];
+    // The extra fields start after the fixed-size central directory
+    // header and the variable-length file name.
+    jlong start = censtart + CENHDR + CENNAM(cenhdr);
+    jlong offset = 0;
+    // Scan the extra fields for zip64 extra info, see APPNOTE.TXT 4.5
+    while (offset < cenext) {
+      if (!readAt(fd, start + offset, ZIP64_EXTMAXLEN, p)) {
+        return JNI_FALSE;
+      }
+      short headerId = ZIPEXT_HDR(p);
+      short headerSize = ZIPEXT_SIZ(p);
+      if (headerId == ZIP64_EXTID) {
+        if (!read_zip64_ext(p, &cenlen, &censiz, &cenoff, CENDSK(cenhdr))) {
+          return JNI_FALSE;
+        }
+        break;
+      }
+      offset += 4 + headerSize;
+    }
+  }
+  return readAt(fd, base_offset + cenoff, LOCHDR, lochdr)
+      && LOCSIG_AT(lochdr)
+      && CENNAM(cenhdr) == LOCNAM(lochdr);
+}
 
 /*
  * Tells whether given header values (obtained from either ZIP64 or
@@ -150,7 +232,6 @@ static jboolean
 is_valid_end_header(int fd, jlong endpos,
                     jlong censiz, jlong cenoff, jlong entries) {
     Byte cenhdr[CENHDR];
-    Byte lochdr[LOCHDR];
     // Expected offset of the first central directory header
     jlong censtart = endpos - censiz;
     // Expected position within the file that offsets are relative to
@@ -161,9 +242,7 @@ is_valid_end_header(int fd, jlong endpos,
          // Central directory must come directly before the end header.
          (readAt(fd, censtart, CENHDR, cenhdr)
           && CENSIG_AT(cenhdr)
-          && readAt(fd, base_offset + CENOFF(cenhdr), LOCHDR, lochdr)
-          && LOCSIG_AT(lochdr)
-          && CENNAM(cenhdr) == LOCNAM(lochdr)));
+          && validate_lochdr(fd, censtart, base_offset, cenhdr)));
 }
 
 /*
@@ -418,7 +497,33 @@ find_file(int fd, zentry *entry, const char *file_name)
          */
         if ((size_t)CENNAM(p) == JLI_StrLen(file_name) &&
           memcmp((p + CENHDR), file_name, JLI_StrLen(file_name)) == 0) {
-            if (JLI_Lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (jlong)0) {
+            jlong cenlen = CENLEN(p);
+            jlong censiz = CENSIZ(p);
+            jlong cenoff = CENOFF(p);
+            jlong cenext = CENEXT(p);
+            if ((cenlen == ZIP64_MAGICVAL
+                  || censiz == ZIP64_MAGICVAL
+                  || cenoff == ZIP64_MAGICVAL)
+                && cenext > 0) {
+              // The extra fields start after the fixed-size central directory
+              // header and the variable-length file name.
+              Byte *base = p + CENHDR + CENNAM(p);
+              jlong offset = 0;
+              // Scan the extra fields for zip64 extra info, see APPNOTE.TXT 4.5
+              while (offset < cenext) {
+                short headerId = ZIPEXT_HDR(base + offset);
+                short headerSize = ZIPEXT_SIZ(base + offset);
+                if (headerId == ZIP64_EXTID) {
+                  if (!read_zip64_ext(base + offset, &cenlen, &censiz, &cenoff, CENDSK(p))) {
+                    free(buffer);
+                    return (-1);
+                  }
+                  break;
+                }
+                offset += 4 + headerSize;
+              }
+            }
+            if (JLI_Lseek(fd, base_offset + cenoff, SEEK_SET) < (jlong)0) {
                 free(buffer);
                 return (-1);
             }
@@ -430,9 +535,9 @@ find_file(int fd, zentry *entry, const char *file_name)
                 free(buffer);
                 return (-1);
             }
-            entry->isize = CENLEN(p);
-            entry->csize = CENSIZ(p);
-            entry->offset = base_offset + CENOFF(p) + LOCHDR +
+            entry->isize = cenlen;
+            entry->csize = censiz;
+            entry->offset = base_offset + cenoff + LOCHDR +
                 LOCNAM(locbuf) + LOCEXT(locbuf);
             entry->how = CENHOW(p);
             free(buffer);
