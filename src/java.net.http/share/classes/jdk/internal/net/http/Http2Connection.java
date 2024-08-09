@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -358,6 +360,7 @@ class Http2Connection  {
     private final String key; // for HttpClientImpl.connections map
     private final FramesDecoder framesDecoder;
     private final FramesEncoder framesEncoder = new FramesEncoder();
+    private final AtomicLong lastProcessedStreamInGoAway = new AtomicLong(-1);
 
     /**
      * Send Window controller for both connection and stream windows.
@@ -725,7 +728,9 @@ class Http2Connection  {
 
     void close() {
         if (markHalfClosedLocal()) {
-            if (connection.channel().isOpen()) {
+            // we send a GOAWAY frame only if the remote side hasn't already indicated
+            // the intention to close the connection by previously sending a GOAWAY of its own
+            if (connection.channel().isOpen() && !isMarked(closedState, HALF_CLOSED_REMOTE)) {
                 Log.logTrace("Closing HTTP/2 connection: to {0}", connection.address());
                 GoAwayFrame f = new GoAwayFrame(0,
                         ErrorFrame.NO_ERROR,
@@ -1205,13 +1210,46 @@ class Http2Connection  {
         sendUnorderedFrame(frame);
     }
 
-    private void handleGoAway(GoAwayFrame frame)
-        throws IOException
-    {
-        if (markHalfClosedLRemote()) {
-            shutdown(new IOException(
-                    connection.channel().getLocalAddress()
-                            + ": GOAWAY received"));
+    private void handleGoAway(final GoAwayFrame frame) {
+        final long lastProcessedStream = frame.getLastStream();
+        assert lastProcessedStream >= 0 : "unexpected last stream id: "
+                + lastProcessedStream + " in GOAWAY frame";
+
+        markHalfClosedRemote();
+        setFinalStream(); // don't allow any new streams on this connection
+        if (debug.on()) {
+            debug.log("processing incoming GOAWAY with last processed stream id:%s in frame %s",
+                    lastProcessedStream, frame);
+        }
+        // see if this connection has previously received a GOAWAY from the peer and if yes
+        // then check if this new last processed stream id is lesser than the previous
+        // known last processed stream id. Only update the last processed stream id if the new
+        // one is lesser than the previous one.
+        long prevLastProcessed = lastProcessedStreamInGoAway.get();
+        while (prevLastProcessed == -1 || lastProcessedStream < prevLastProcessed) {
+            if (lastProcessedStreamInGoAway.compareAndSet(prevLastProcessed,
+                    lastProcessedStream)) {
+                break;
+            }
+            prevLastProcessed = lastProcessedStreamInGoAway.get();
+        }
+        handlePeerUnprocessedStreams(lastProcessedStreamInGoAway.get());
+    }
+
+    private void handlePeerUnprocessedStreams(final long lastProcessedStream) {
+        final AtomicInteger numClosed = new AtomicInteger(); // atomic merely to allow usage within lambda
+        streams.forEach((id, exchange) -> {
+            if (id > lastProcessedStream) {
+                // any streams with an stream id higher than the last processed stream
+                // can be retried (on a new connection). we close the exchange as unprocessed
+                // to facilitate the retrying.
+                client2.client().theExecutor().ensureExecutedAsync(exchange::closeAsUnprocessed);
+                numClosed.incrementAndGet();
+            }
+        });
+        if (debug.on()) {
+            debug.log(numClosed.get() + " stream(s), with id greater than " + lastProcessedStream
+                    + ", will be closed as unprocessed");
         }
     }
 
@@ -1745,7 +1783,7 @@ class Http2Connection  {
         return markClosedState(HALF_CLOSED_LOCAL);
     }
 
-    private boolean markHalfClosedLRemote() {
+    private boolean markHalfClosedRemote() {
         return markClosedState(HALF_CLOSED_REMOTE);
     }
 
