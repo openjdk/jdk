@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,19 +71,19 @@ class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
     }
 
     public int getConstructorSlot(Constructor<?> c) {
-        return c.getSlot();
+        return c.slot;
     }
 
     public String getConstructorSignature(Constructor<?> c) {
-        return c.getSignature();
+        return c.signature;
     }
 
     public byte[] getConstructorAnnotations(Constructor<?> c) {
-        return c.getRawAnnotations();
+        return c.annotations;
     }
 
     public byte[] getConstructorParameterAnnotations(Constructor<?> c) {
-        return c.getRawParameterAnnotations();
+        return c.parameterAnnotations;
     }
 
     public byte[] getExecutableTypeAnnotationBytes(Executable ex) {
@@ -91,11 +91,11 @@ class ReflectAccess implements jdk.internal.access.JavaLangReflectAccess {
     }
 
     public Class<?>[] getExecutableSharedParameterTypes(Executable ex) {
-        return ex.getSharedParameterTypes();
+        return ex.parameterTypes;
     }
 
     public Class<?>[] getExecutableSharedExceptionTypes(Executable ex) {
-        return ex.getSharedExceptionTypes();
+        return ex.exceptionTypes;
     }
 
     //

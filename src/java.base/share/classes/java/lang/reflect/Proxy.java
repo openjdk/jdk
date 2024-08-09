@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -729,8 +729,8 @@ public class Proxy implements java.io.Serializable {
                 for (Method m : intf.getMethods()) {
                     if (!Modifier.isStatic(m.getModifiers())) {
                         addElementType(types, m.getReturnType());
-                        addElementTypes(types, m.getSharedParameterTypes());
-                        addElementTypes(types, m.getSharedExceptionTypes());
+                        addElementTypes(types, m.parameterTypes);
+                        addElementTypes(types, m.exceptionTypes);
                     }
                 }
             }
@@ -1254,7 +1254,7 @@ public class Proxy implements java.io.Serializable {
                         // check if this method is the resolved method if referenced from
                         // this proxy interface (i.e. this method is not implemented
                         // by any other superinterface)
-                        Method m = proxyIntf.getMethod(method.getName(), method.getSharedParameterTypes());
+                        Method m = proxyIntf.getMethod(method.getName(), method.parameterTypes);
                         if (m.getDeclaringClass() == declaringClass) {
                             return proxyIntf;
                         }
