@@ -72,7 +72,7 @@ size_t ShenandoahSimpleBitMap::count_trailing_ones(idx_t last_idx) const {
   uintx element_bits = _bitmap[array_idx];
   uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
   // All ones from bit 0 to the_bit
-  uintx mask = right_n_bits(bit_number + 1);
+  uintx mask = u_right_n_bits(bit_number + 1);
   size_t counted_ones = 0;
   while ((element_bits & mask) == mask) {
     // All bits numbered <= bit_number are set
@@ -164,7 +164,7 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
   uintx bit_number = beg & right_n_bits(LogBitsPerWord);
   uintx element_bits = _bitmap[array_idx];
   if (bit_number > 0) {
-    uintx mask_out = right_n_bits(bit_number);
+    uintx mask_out = u_right_n_bits(bit_number);
     element_bits &= ~mask_out;
   }
 
@@ -224,7 +224,7 @@ idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, idx_t e
       element_bits = _bitmap[array_idx];
       bit_number = beg & right_n_bits(LogBitsPerWord);
       if (bit_number > 0) {
-        size_t mask_out = right_n_bits(bit_number);
+        size_t mask_out = u_right_n_bits(bit_number);
         element_bits &= ~mask_out;
       }
     }
