@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -38,14 +38,14 @@
 #include "oops/klass.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-ClassPrelinker::ClassesTable* ClassPrelinker::_processed_classes = nullptr;
-ClassPrelinker::ClassesTable* ClassPrelinker::_vm_classes = nullptr;
+AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
+AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_vm_classes = nullptr;
 
-bool ClassPrelinker::is_vm_class(InstanceKlass* ik) {
+bool AOTConstantPoolResolver::is_vm_class(InstanceKlass* ik) {
   return (_vm_classes->get(ik) != nullptr);
 }
 
-void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
+void AOTConstantPoolResolver::add_one_vm_class(InstanceKlass* ik) {
   bool created;
   _vm_classes->put_if_absent(ik, &created);
   if (created) {
@@ -60,7 +60,7 @@ void ClassPrelinker::add_one_vm_class(InstanceKlass* ik) {
   }
 }
 
-void ClassPrelinker::initialize() {
+void AOTConstantPoolResolver::initialize() {
   assert(_vm_classes == nullptr, "must be");
   _vm_classes = new (mtClass)ClassesTable();
   _processed_classes = new (mtClass)ClassesTable();
@@ -69,7 +69,7 @@ void ClassPrelinker::initialize() {
   }
 }
 
-void ClassPrelinker::dispose() {
+void AOTConstantPoolResolver::dispose() {
   assert(_vm_classes != nullptr, "must be");
   delete _vm_classes;
   delete _processed_classes;
@@ -81,7 +81,7 @@ void ClassPrelinker::dispose() {
 // the same information at both dump time and run time. This is a
 // necessary (but not sufficient) condition for pre-resolving cp_index
 // during CDS archive assembly.
-bool ClassPrelinker::is_resolution_deterministic(ConstantPool* cp, int cp_index) {
+bool AOTConstantPoolResolver::is_resolution_deterministic(ConstantPool* cp, int cp_index) {
   assert(!is_in_archivebuilder_buffer(cp), "sanity");
 
   if (cp->tag_at(cp_index).is_klass()) {
@@ -116,7 +116,7 @@ bool ClassPrelinker::is_resolution_deterministic(ConstantPool* cp, int cp_index)
   }
 }
 
-bool ClassPrelinker::is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class) {
+bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class) {
   assert(!is_in_archivebuilder_buffer(cp_holder), "sanity");
   assert(!is_in_archivebuilder_buffer(resolved_class), "sanity");
 
@@ -157,7 +157,7 @@ bool ClassPrelinker::is_class_resolution_deterministic(InstanceKlass* cp_holder,
   return false;
 }
 
-void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
+void AOTConstantPoolResolver::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
   if (!ik->is_linked()) {
     return;
   }
@@ -179,7 +179,7 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
 }
 
 // This works only for the boot/platform/app loaders
-Klass* ClassPrelinker::find_loaded_class(Thread* current, oop class_loader, Symbol* name) {
+Klass* AOTConstantPoolResolver::find_loaded_class(Thread* current, oop class_loader, Symbol* name) {
   HandleMark hm(current);
   Handle h_loader(current, class_loader);
   Klass* k = SystemDictionary::find_instance_or_array_klass(current, name,
@@ -202,13 +202,13 @@ Klass* ClassPrelinker::find_loaded_class(Thread* current, oop class_loader, Symb
   return nullptr;
 }
 
-Klass* ClassPrelinker::find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index) {
+Klass* AOTConstantPoolResolver::find_loaded_class(Thread* current, ConstantPool* cp, int class_cp_index) {
   Symbol* name = cp->klass_name_at(class_cp_index);
   return find_loaded_class(current, cp->pool_holder()->class_loader(), name);
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-void ClassPrelinker::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) {
+void AOTConstantPoolResolver::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) {
   if (CDSConfig::is_dumping_heap()) {
     int cache_index = cp->cp_to_object_index(cp_index);
     ConstantPool::string_at_impl(cp, cp_index, cache_index, CHECK);
@@ -216,7 +216,7 @@ void ClassPrelinker::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) 
 }
 #endif
 
-void ClassPrelinker::preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
+void AOTConstantPoolResolver::preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
   if (!SystemDictionaryShared::is_builtin_loader(ik->class_loader_data())) {
     return;
   }
@@ -245,7 +245,7 @@ void ClassPrelinker::preresolve_class_cp_entries(JavaThread* current, InstanceKl
   }
 }
 
-void ClassPrelinker::preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
+void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list) {
   JavaThread* THREAD = current;
   constantPoolHandle cp(THREAD, ik->constants());
   if (cp->cache() == nullptr) {
@@ -280,7 +280,7 @@ void ClassPrelinker::preresolve_field_and_method_cp_entries(JavaThread* current,
   }
 }
 
-void ClassPrelinker::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
+void AOTConstantPoolResolver::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecodes::Code bc, int raw_index,
                                            GrowableArray<bool>* preresolve_list, TRAPS) {
   methodHandle mh(THREAD, m);
   constantPoolHandle cp(THREAD, ik->constants());
@@ -335,7 +335,7 @@ void ClassPrelinker::maybe_resolve_fmi_ref(InstanceKlass* ik, Method* m, Bytecod
 }
 
 #ifdef ASSERT
-bool ClassPrelinker::is_in_archivebuilder_buffer(address p) {
+bool AOTConstantPoolResolver::is_in_archivebuilder_buffer(address p) {
   if (!Thread::current()->is_VM_thread() || ArchiveBuilder::current() == nullptr) {
     return false;
   } else {

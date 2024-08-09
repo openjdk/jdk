@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/classPrelinker.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -422,7 +422,7 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
     bool archived = false;
     bool resolved = rfi->is_resolved(Bytecodes::_getfield)  ||
                     rfi->is_resolved(Bytecodes::_putfield);
-    if (resolved && ClassPrelinker::is_resolution_deterministic(src_cp, cp_index)) {
+    if (resolved && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
       rfi->mark_and_relocate();
       archived = true;
     } else {
@@ -523,7 +523,7 @@ bool ConstantPoolCache::can_archive_resolved_method(ResolvedMethodEntry* method_
   ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(constant_pool());
   assert(src_cp->tag_at(cp_index).is_method() || src_cp->tag_at(cp_index).is_interface_method(), "sanity");
 
-  if (!ClassPrelinker::is_resolution_deterministic(src_cp, cp_index)) {
+  if (!AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
     return false;
   }
 
