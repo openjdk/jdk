@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,22 +58,142 @@ public class StringFormat {
 
     @Benchmark
     public String stringFormat() {
-        return "%s".formatted(s);
+        return "0123456789 %s".formatted(s);
     }
 
     @Benchmark
-    public String stringIntFormat() {
-        return "%s %d".formatted(s, i);
+    public String stringFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s".formatted(s);
     }
 
     @Benchmark
     public String widthStringFormat() {
-        return "%3s".formatted(s);
+        return "0123456789 %3s".formatted(s);
+    }
+
+    @Benchmark
+    public String widthStringFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %3s".formatted(s);
     }
 
     @Benchmark
     public String widthStringIntFormat() {
-        return "%3s %d".formatted(s, i);
+        return "0123456789 %3s %d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String widthStringIntFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %3s %d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String lineFormat() {
+        return "0123456789 %n".formatted(i);
+    }
+
+    @Benchmark
+    public String lineFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %n".formatted(i);
+    }
+
+    @Benchmark
+    public String intFormat() {
+        return "0123456789 %d".formatted(i);
+    }
+
+    @Benchmark
+    public String intFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d".formatted(i);
+    }
+
+    @Benchmark
+    public String intIntFormat() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d %d".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intIntFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d %d".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intHexFormat() {
+        return "0123456789 is %d %x".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intHexFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d : %x".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intHexUFormat() {
+        return "0123456789 is %d %X".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intHexUFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d : %X".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intOctalFormat() {
+        return "0123456789 is %d %o".formatted(i, i);
+    }
+
+    @Benchmark
+    public String intOctalFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %d : %o".formatted(i, i);
+    }
+
+    @Benchmark
+    public String stringIntFormat() {
+        return "0123456789 %s : %d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s : %d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntRFormat() {
+        return "0123456789 %s : %d 0123456789".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntRFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s : %d \u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringWidthIntFormat() {
+        return "0123456789 %s : %3d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringWidthIntFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s : %3d".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntHexFormat() {
+        return "0123456789 %s : %x".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntHexUFormat() {
+        return "0123456789 %s : %x".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntOctalFormat() {
+        return "0123456789 %s : %o".formatted(s, i);
+    }
+
+    @Benchmark
+    public String stringIntOctalFormatUtf16() {
+        return "\u3007\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d %s : %o".formatted(s, i);
     }
 
     @Benchmark
