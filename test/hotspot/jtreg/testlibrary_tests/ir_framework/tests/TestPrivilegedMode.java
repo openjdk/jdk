@@ -32,6 +32,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test
  * @requires vm.flagless
+ * @requires vm.debug == true
  * @summary Test that IR framework successfully adds test class to boot classpath in order to run in privileged mode.
  * @modules java.base/jdk.internal.vm.annotation
  * @library /test/lib /
