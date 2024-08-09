@@ -44,9 +44,10 @@ class OopMapSet;
 enum class CodeBlobType {
   MethodNonProfiled   = 0,    // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
   MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
-  NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
-  All                 = 3,    // All types (No code cache segmentation)
-  NumTypes            = 4     // Number of CodeBlobTypes
+  NonNMethod          = 2,    // Non-nmethods like Adapters and Runtime Stubs
+  NonExecutable       = 3,    // Non-executable buffers like blobs for compiler scratch data
+  All                 = 4,    // All types (No code cache segmentation)
+  NumTypes            = 5     // Number of CodeBlobTypes
 };
 
 // CodeBlob - superclass for all entries in the CodeCache.
@@ -58,6 +59,7 @@ enum class CodeBlobType {
 //    AdapterBlob        : Used to hold C2I/I2C adapters
 //    VtableBlob         : Used for holding vtable chunks
 //    MethodHandlesAdapterBlob : Used to hold MethodHandles adapters
+//    CompilerScratchBlob : A temporary blob used by compiler
 //   RuntimeStub         : Call to VM runtime methods
 //   SingletonBlob       : Super-class for all blobs that exist in only one instance
 //    DeoptimizationBlob : Used for deoptimization
@@ -299,6 +301,7 @@ class WhiteBox;
 
 class BufferBlob: public RuntimeBlob {
   friend class VMStructs;
+  friend class CompilerScratchBlob;
   friend class AdapterBlob;
   friend class VtableBlob;
   friend class MethodHandlesAdapterBlob;
@@ -326,6 +329,18 @@ class BufferBlob: public RuntimeBlob {
   void print_value_on(outputStream* st) const override;
 };
 
+
+//----------------------------------------------------------------------------------------------------
+// CompilerScratchBlob: used for compiler scratch buffer
+
+class CompilerScratchBlob: public BufferBlob {
+private:
+  CompilerScratchBlob(const char* name, uint buffer_size);
+  void* operator new(size_t s, unsigned size) throw();
+
+public:
+  static CompilerScratchBlob* create(const char* name, uint buffer_size);
+};
 
 //----------------------------------------------------------------------------------------------------
 // AdapterBlob: used to hold C2I/I2C adapters
