@@ -28,6 +28,33 @@
 # Properties in this file are typically parsed only once. If any of the
 # properties are modified, applications should be restarted to ensure the
 # changes are properly reflected.
+#
+# The special "include" property can be defined one or multiple times with
+# a filesystem path value. The effect of each definition is to include a
+# referred security properties file inline, adding all its properties.
+# Security properties defined before an include statement may be overridden
+# by properties in the included file, if their names match. Conversely,
+# properties defined after an include statement may override properties in
+# the included file.
+#
+# Included files, as well as files pointed to by java.security.properties,
+# can include other files recursively. Paths may be absolute or relative.
+# Each relative path is resolved against the base file containing its
+# "include" definition, if local. Paths may contain system properties for
+# expansion in the form of ${system.property}. If a system property does
+# not have a value, it expands to the empty string.
+#
+# An error will be thrown if a file cannot be included. This may happen
+# if the file cannot be resolved, does not exist, is a directory, there are
+# insufficient permissions to read it, it is recursively included more than
+# once, or for any other reason. For a secure JDK configuration, it is
+# important to review OS write permissions assigned to any file included.
+#
+# Examples:
+#   1) include ${java.home}/conf/security/extra.security
+#   2) include extra.security
+#   3) include ${java.home}/conf/security/profile${SecurityProfile}.security
+#
 
 # In this file, various security properties are set for use by
 # java.security classes. This is where users can statically register
