@@ -338,6 +338,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_fma(vmIntrinsics::ID id);
   bool inline_character_compare(vmIntrinsics::ID id);
   bool inline_fp_min_max(vmIntrinsics::ID id);
+  bool inline_long_min_max(vmIntrinsics::ID id);
   bool inline_galoisCounterMode_AESCrypt();
   Node* inline_galoisCounterMode_AESCrypt_predicate();
 

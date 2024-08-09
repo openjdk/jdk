@@ -699,6 +699,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_minD_strict:
       return inline_fp_min_max(intrinsic_id());
 
+  case vmIntrinsicID::_maxL:
+  case vmIntrinsicID::_minL:
+    return inline_long_min_max(intrinsic_id());
+
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
   case vmIntrinsics::_VectorBinaryOp:
@@ -8229,6 +8233,27 @@ bool LibraryCallKit::inline_fp_min_max(vmIntrinsics::ID id) {
   default:
     fatal_unexpected_iid(id);
     break;
+  }
+  set_result(_gvn.transform(n));
+  return true;
+}
+
+//------------------------------inline_long_min_max------------------------------
+bool LibraryCallKit::inline_long_min_max(vmIntrinsics::ID id) {
+  assert(callee()->signature()->size() == 4, "minL/maxL has 2 parameters of size 2 each.");
+  Node *a = argument(0);
+  Node *b = argument(2);
+  Node *n = nullptr;
+  switch (id) {
+    case vmIntrinsics::_minL:
+      n = new MinLNode(_gvn.C, a, b);
+      break;
+    case vmIntrinsics::_maxL:
+      n = new MaxLNode(_gvn.C, a, b);
+      break;
+    default:
+      fatal_unexpected_iid(id);
+      break;
   }
   set_result(_gvn.transform(n));
   return true;
