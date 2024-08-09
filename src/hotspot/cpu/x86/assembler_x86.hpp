@@ -2818,6 +2818,7 @@ private:
   void vinserti32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
   void vinserti32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
 
   // vinsertf forms
   void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
@@ -2867,6 +2868,7 @@ private:
   void vbroadcastsd(XMMRegister dst, XMMRegister src, int vector_len);
   void vbroadcastsd(XMMRegister dst, Address src, int vector_len);
   void vbroadcastf128(XMMRegister dst, Address src, int vector_len);
+  void evbroadcastf64x2(XMMRegister dst, Address src, int vector_len);
 
   // gpr sourced byte/word/dword/qword replicate
   void evpbroadcastb(XMMRegister dst, Register src, int vector_len);
