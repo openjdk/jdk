@@ -65,6 +65,7 @@ class ConcurrentHashTable : public CHeapObj<F> {
   // the InternalTable or user-defined memory.
   class Node {
    private:
+    DEBUG_ONLY(size_t _saved_hash);
     Node * volatile _next;
     VALUE _value;
    public:
@@ -77,6 +78,10 @@ class ConcurrentHashTable : public CHeapObj<F> {
     Node* next() const;
     void set_next(Node* node)         { _next = node; }
     Node* const volatile * next_ptr() { return &_next; }
+#ifdef ASSERT
+    size_t saved_hash() const         { return _saved_hash; }
+    void set_saved_hash(size_t hash)  { _saved_hash = hash; }
+#endif
 
     VALUE* value()                    { return &_value; }
 
