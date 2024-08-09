@@ -450,6 +450,15 @@ public final class Constructor<T> extends Executable {
      * <p>If the constructor completes normally, returns the newly
      * created and initialized instance.
      *
+     * @apiNote
+     * {@link Throwable}s thrown by the constructor, including {@link
+     * Error}s, are wrapped in {@link InvocationTargetException}s.
+     * The wrapped throwable should be handled; ignoring the wrapped
+     * throwable, such as passing the {@link InvocationTargetException}
+     * as the cause to construct a new throwable, may fail in cases
+     * like {@link OutOfMemoryError} or {@link StackOverflowError}.
+     * The JVM may throw new errors that hide the original ones.
+     *
      * @param initargs array of objects to be passed as arguments to
      * the constructor call; values of primitive types are wrapped in
      * a wrapper object of the appropriate type (e.g. a {@code float}
@@ -471,7 +480,7 @@ public final class Constructor<T> extends Executable {
      * @throws    InstantiationException    if the class that declares the
      *              underlying constructor represents an abstract class.
      * @throws    InvocationTargetException if the underlying constructor
-     *              throws an exception.
+     *              throws any {@link Throwable}.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
      */
