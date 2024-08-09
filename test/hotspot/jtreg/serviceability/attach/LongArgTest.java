@@ -27,6 +27,7 @@
  * @bug 8334168
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
+ * @build jdk.test.lib.Utils jdk.test.lib.apps.LingeredApp
  * @run main LongArgTest
  */
 
