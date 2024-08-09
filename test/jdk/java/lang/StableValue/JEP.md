@@ -232,7 +232,7 @@ class Foo {
 
     // 1. Centrally declare a caching supplier and define how it should be computed
     private static final Supplier<Logger> LOGGER =
-            StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo"), null);
+            StableValue.newCachingSupplier( () -> Logger.getLogger("com.company.Foo"));
 
     static Logger logger() {
         // 2. Access the cached value with as-declared-final performance
@@ -243,9 +243,6 @@ class Foo {
     logger().log(Level.DEBUG, ...);
 }
 ```
-
-Note: the last `null` parameter signifies an optional thread factory that will be explained at the end
-of this chapter.
 
 In the example above, the original `Supplier` provided is invoked at most once per loading of the containing
 class `Foo` (`Foo`, in turn, can be loaded at most once into any given `ClassLoader`) and it is backed
@@ -261,7 +258,7 @@ class CachedNum {
 
     // 1. Centrally declare a caching IntFunction backed by a list of StableValue elements
     private static final IntFunction<Logger> LOGGERS =
-            StableValue.newCachingIntFunction(2, CachedNum::fromNumber, null);
+            StableValue.newCachingIntFunction(2, CachedNum::fromNumber);
 
     // 2. Define a function that is to be called the first
     //    time a particular message number is referenced
@@ -281,8 +278,6 @@ class CachedNum {
     logger.log(Level.DEBUG, ...);
 }
 ```
-
-Note: Again, the last null parameter signifies an optional thread factory that will be explained at the end of this chapter.
 
 As can be seen, manually mapping numbers to strings is a bit tedious. This brings us to the most general caching function
 variant provided is a caching `Function` which, for example,  can make sure `Logger::getLogger` in one of the first examples
@@ -323,7 +318,7 @@ to write such constructs in a few lines.
 
 #### Background threads
 
-As noted above, the caching-returning factories in the Stable Values API offers an optional
+The caching-returning factory overloads in the Stable Values API offers an optional
 tailing thread factory parameter from which new value-computing background threads will be created:
 
 ```
