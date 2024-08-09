@@ -1400,8 +1400,7 @@ public class JavacParser implements Parser {
     protected JCExpression term3() {
         int pos = token.pos;
         JCExpression t;
-        List<JCExpression> typeArgs = isMode(EXPR) || !isMode(TYPE) ? typeArgumentsOpt(EXPR)
-                                                                    : null;
+        List<JCExpression> typeArgs = typeArgumentsOpt(EXPR);
         switch (token.kind) {
         case QUES:
             if (isMode(TYPE) && isMode(TYPEARG) && !isMode(NOPARAMS)) {
@@ -1729,13 +1728,6 @@ public class JavacParser implements Parser {
                 }
             }
             // Not reachable.
-        case LT:
-            if (isMode(TYPE) && !isMode(EXPR)) {
-                t = toP(F.at(token.pos).Ident(ident()));
-                t = typeArgumentsOpt(t);
-                break;
-            }
-            return illegal();
         default:
             return illegal();
         }
