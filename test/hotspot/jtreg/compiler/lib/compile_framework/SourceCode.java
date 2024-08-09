@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package compiler.lib.compile_framework;
+
+/**
+ * This class represents the source code of a specific class.
+ */
+public class SourceCode {
+    enum Kind { JAVA, JASM };
+
+    public final String className;
+    public final String code;
+    public final Kind kind;
+
+    public SourceCode(String className, String code, Kind kind) {
+        this.className = className;
+        this.code = code;
+        this.kind = kind;
+    }
+
+    public static SourceCode newJavaSourceCode(String className, String code) {
+        return new SourceCode(className, code, Kind.JAVA);
+    }
+
+    public static SourceCode newJasmSourceCode(String className, String code) {
+        return new SourceCode(className, code, Kind.JASM);
+    }
+
+    public String fileExtension() {
+        return this.kind.name().toLowerCase();
+    }
+
+    public String filePathName() {
+        StringBuilder builder = new StringBuilder();
+        String extension = this.kind.name().toLowerCase();
+        builder.append(this.className.replace('.','/')).append(".").append(extension);
+        return builder.toString();
+    }
+}
