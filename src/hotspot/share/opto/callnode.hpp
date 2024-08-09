@@ -156,8 +156,8 @@ class RethrowNode : public Node {
 // Pop stack frame and jump to StubRoutines::forward_exception_entry()
 class ForwardExceptionNode : public ReturnNode {
 public:
-  ForwardExceptionNode( Node *cntrl, Node *i_o, Node *memory, Node *frameptr, Node *retadr)
-    : ReturnNode( TypeFunc::Parms, cntrl, i_o, memory, frameptr, retadr ) {
+  ForwardExceptionNode(Node* cntrl, Node* i_o, Node* memory, Node* frameptr, Node* retadr)
+    : ReturnNode(TypeFunc::Parms, cntrl, i_o, memory, frameptr, retadr) {
   }
 
   virtual int Opcode() const;
