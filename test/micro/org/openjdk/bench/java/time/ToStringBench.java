@@ -121,4 +121,11 @@ public class ToStringBench {
             bh.consume(localTime.toString());
         }
     }
+
+    @Benchmark
+    public void instantToString(Blackhole bh) {
+        for (Instant instant : INSTANTS) {
+            bh.consume(instant.toString());
+        }
+    }
 }
