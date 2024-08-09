@@ -105,7 +105,7 @@ final class CachingFunctionTest {
         final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
         Function<Integer, Function<?, ?>> cached = StableValue.newCachingFunction(INPUTS, _ -> ref.get(), null);
         ref.set(cached);
-        cached.apply(0);
+        cached.apply(VALUE);
         String toString = cached.toString();
         assertTrue(toString.contains("(this CachingFunction)"));
         assertDoesNotThrow(cached::hashCode);
