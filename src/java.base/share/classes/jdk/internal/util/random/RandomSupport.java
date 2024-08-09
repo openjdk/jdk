@@ -1163,10 +1163,10 @@ public class RandomSupport {
             // This is the fast path (occurring more than 98% of the time).  Make an early exit.
             return DoubleZigguratTables.exponentialX[(int)i] * (U1 >>> 1);
         }
-        // We didn't use the upper part of U1 after all.  We'll probably be able to use it later.
         if (maxValue <= DoubleZigguratTables.exponentialX0) {
-            return DoubleZigguratTables.exponentialX0;
+            return maxValue;
         }
+        // We didn't use the upper part of U1 after all.  We'll probably be able to use it later.
         final long maxExtraMinus1;
         if (maxValue >= Math.nextDown(MAX_EXPONENTIAL)) {
             maxExtraMinus1 = Long.MAX_VALUE;

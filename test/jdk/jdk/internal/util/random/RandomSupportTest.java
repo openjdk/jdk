@@ -29,6 +29,7 @@ public class RandomSupportTest {
     public void testNextExponentialSoftCapped() {
         for (double max = 1.0; max < 20.0; max++) {
             WorstCaseRandomGenerator rng = new WorstCaseRandomGenerator();
+            System.out.println("got " + val + " for max " + max);
             assertTrue(RandomSupport.computeNextExponentialSoftCapped(rng, max) >= max);
         }
     }
