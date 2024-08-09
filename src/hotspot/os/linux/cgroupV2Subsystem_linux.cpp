@@ -264,6 +264,26 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
+void CgroupV2Controller::set_subsystem_path(char* cgroup_path) {
+  if (_path != nullptr) {
+    os::free(_path);
+  }
+  _path = construct_path(_mount_path, cgroup_path);
+}
+
+bool CgroupV2MemoryController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+bool CgroupV2CpuController::needs_hierarchy_adjustment() {
+  return reader()->needs_hierarchy_adjustment();
+}
+
+// For cgv2 we only need hierarchy walk if the cgroup path isn't '/' (root)
+bool CgroupV2Controller::needs_hierarchy_adjustment() {
+  return strcmp(_cgroup_path, "/") != 0;
+}
+
 void CgroupV2MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
   jlong swap_current = memory_swap_current_value(reader());
   jlong swap_limit = memory_swap_limit_value(reader());

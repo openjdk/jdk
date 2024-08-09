@@ -54,6 +54,7 @@ requires.properties= \
     sun.arch.data.model \
     vm.simpleArch \
     vm.bits \
+    vm.cgroup.tools \
     vm.flightRecorder \
     vm.gc.G1 \
     vm.gc.Serial \
