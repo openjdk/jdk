@@ -483,12 +483,14 @@ HeapDumpDCmd::HeapDumpDCmd(outputStream* output, bool heap) :
            "BOOLEAN", false, "false"),
   _parallel("-parallel", "Number of parallel threads to use for heap dump. The VM "
                           "will try to use the specified number of threads, but might use fewer.",
-            "INT", false, "1") {
+            "INT", false, "1"),
+  _redact("-redact", "Redact heap dump by setting primitives to zero", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_all);
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_gzip);
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_parallel);
+  _dcmdparser.add_dcmd_option(&_redact);
 }
 
 void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
@@ -520,7 +522,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   // This helps reduces the amount of unreachable objects in the dump
   // and makes it easier to browse.
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
-  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), (uint)parallel);
+  dumper.dump(_filename.value(), output(), (int) level, _overwrite.value(), _redact.value(), (uint)parallel);
 }
 
 ClassHistogramDCmd::ClassHistogramDCmd(outputStream* output, bool heap) :
