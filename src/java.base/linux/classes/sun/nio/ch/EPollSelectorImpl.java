@@ -50,7 +50,7 @@ import static sun.nio.ch.EPoll.EPOLL_CTL_MOD;
 class EPollSelectorImpl extends SelectorImpl {
 
     // maximum number of events to poll in one call to epoll_wait
-    private static final int NUM_EPOLLEVENTS = Math.min(IOUtil.fdLimit(), 1024);
+    private static final int NUM_EPOLLEVENTS = Math.min(NIOUtil.fdLimit(), 1024);
 
     // epoll file descriptor
     private final int epfd;
@@ -80,7 +80,7 @@ class EPollSelectorImpl extends SelectorImpl {
 
         try {
             this.eventfd = new EventFD();
-            IOUtil.configureBlocking(IOUtil.newFD(eventfd.efd()), false);
+            NIOUtil.configureBlocking(NIOUtil.newFD(eventfd.efd()), false);
         } catch (IOException ioe) {
             EPoll.freePollArray(pollArrayAddress);
             FileDispatcherImpl.closeIntFD(epfd);

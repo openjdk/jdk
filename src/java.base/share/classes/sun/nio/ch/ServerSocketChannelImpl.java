@@ -494,7 +494,7 @@ class ServerSocketChannelImpl
     {
         try {
             // newly accepted socket is initially in blocking mode
-            IOUtil.configureBlocking(newfd, true);
+            NIOUtil.configureBlocking(newfd, true);
 
             // check permitted to accept connections from the remote address
             if (isNetSocket()) {
@@ -531,7 +531,7 @@ class ServerSocketChannelImpl
             ensureOpen();
             // do nothing if virtual thread has forced the socket to be non-blocking
             if (!forcedNonBlocking) {
-                IOUtil.configureBlocking(fd, block);
+                NIOUtil.configureBlocking(fd, block);
             }
         }
     }
@@ -545,7 +545,7 @@ class ServerSocketChannelImpl
         synchronized (stateLock) {
             // do nothing if virtual thread has forced the socket to be non-blocking
             if (!forcedNonBlocking && isOpen()) {
-                IOUtil.configureBlocking(fd, block);
+                NIOUtil.configureBlocking(fd, block);
                 return true;
             } else {
                 return false;
@@ -561,7 +561,7 @@ class ServerSocketChannelImpl
         if (!forcedNonBlocking && Thread.currentThread().isVirtual()) {
             synchronized (stateLock) {
                 ensureOpen();
-                IOUtil.configureBlocking(fd, false);
+                NIOUtil.configureBlocking(fd, false);
                 forcedNonBlocking = true;
             }
         }

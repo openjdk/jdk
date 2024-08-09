@@ -83,7 +83,7 @@ class KQueueSelectorImpl extends SelectorImpl {
         this.pollArrayAddress = KQueue.allocatePollArray(MAX_KEVENTS);
 
         try {
-            long fds = IOUtil.makePipe(false);
+            long fds = NIOUtil.makePipe(false);
             this.fd0 = (int) (fds >>> 32);
             this.fd1 = (int) fds;
         } catch (IOException ioe) {
@@ -289,7 +289,7 @@ class KQueueSelectorImpl extends SelectorImpl {
         synchronized (interruptLock) {
             if (!interruptTriggered) {
                 try {
-                    IOUtil.write1(fd1, (byte)0);
+                    NIOUtil.write1(fd1, (byte)0);
                 } catch (IOException ioe) {
                     throw new InternalError(ioe);
                 }
@@ -301,7 +301,7 @@ class KQueueSelectorImpl extends SelectorImpl {
 
     private void clearInterrupt() throws IOException {
         synchronized (interruptLock) {
-            IOUtil.drain(fd0);
+            NIOUtil.drain(fd0);
             interruptTriggered = false;
         }
     }

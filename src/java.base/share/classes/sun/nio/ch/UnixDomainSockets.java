@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class UnixDomainSockets {
     }
 
     static FileDescriptor socket() throws IOException {
-        return IOUtil.newFD(socket0());
+        return NIOUtil.newFD(socket0());
     }
 
     static void bind(FileDescriptor fd, Path addr) throws IOException {
@@ -185,7 +185,7 @@ class UnixDomainSockets {
 
     static {
         // Load all required native libs
-        IOUtil.load();
+        NIOUtil.load();
         supported = init();
     }
 }

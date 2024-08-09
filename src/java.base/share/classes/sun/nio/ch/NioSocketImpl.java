@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,7 +212,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         if (!nonBlocking
             && (timed || Thread.currentThread().isVirtual())) {
             assert readLock.isHeldByCurrentThread() || writeLock.isHeldByCurrentThread();
-            IOUtil.configureBlocking(fd, false);
+            NIOUtil.configureBlocking(fd, false);
             nonBlocking = true;
         }
     }
@@ -763,7 +763,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
         InetSocketAddress localAddress;
         try {
             localAddress = Net.localAddress(newfd);
-            IOUtil.configureBlocking(newfd, true);
+            NIOUtil.configureBlocking(newfd, true);
         } catch (IOException ioe) {
             nd.close(newfd);
             throw ioe;

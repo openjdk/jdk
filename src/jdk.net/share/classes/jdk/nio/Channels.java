@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.nio.channels.spi.SelectorProvider;
 import java.util.Objects;
 
 import sun.nio.ch.IOUtil;
+import sun.nio.ch.NIOUtil;
 import sun.nio.ch.Net;
 import sun.nio.ch.SelChImpl;
 import sun.nio.ch.SelectionKeyImpl;
@@ -248,7 +249,7 @@ public final class Channels {
 
         @Override
         protected void implConfigureBlocking(boolean block) throws IOException {
-            IOUtil.configureBlocking(fd, block);
+            NIOUtil.configureBlocking(fd, block);
         }
 
         @Override

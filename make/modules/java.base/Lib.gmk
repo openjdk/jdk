@@ -44,6 +44,8 @@ include lib/CoreLibraries.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
     OPTIMIZATION := LOW, \
+    EXTRA_HEADER_DIRS := \
+        libjava/nio/ch, \
     DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
@@ -74,6 +76,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
     OPTIMIZATION := HIGH, \
     EXTRA_HEADER_DIRS := \
+        libjava/nio/ch \
         libnio/ch \
         libnio/fs \
         libjvm, \
