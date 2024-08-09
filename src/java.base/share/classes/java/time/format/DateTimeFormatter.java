@@ -1875,9 +1875,7 @@ public final class DateTimeFormatter {
      * @throws DateTimeException if an error occurs during formatting
      */
     public String format(TemporalAccessor temporal) {
-        StringBuilder buf = new StringBuilder(32);
-        formatTo(temporal, buf);
-        return buf.toString();
+        return printerParser.format(temporal, this);
     }
 
     //-----------------------------------------------------------------------
@@ -2004,15 +2002,7 @@ public final class DateTimeFormatter {
      * @throws DateTimeParseException if unable to parse the requested result
      */
     public <T> T parse(CharSequence text, TemporalQuery<T> query) {
-        Objects.requireNonNull(text, "text");
-        Objects.requireNonNull(query, "query");
-        try {
-            return parseResolved0(text, null).query(query);
-        } catch (DateTimeParseException ex) {
-            throw ex;
-        } catch (RuntimeException ex) {
-            throw createError(text, ex);
-        }
+        return printerParser.parse(text, this, query);
     }
 
     /**
@@ -2069,7 +2059,7 @@ public final class DateTimeFormatter {
         }
     }
 
-    private DateTimeParseException createError(CharSequence text, RuntimeException ex) {
+    DateTimeParseException createError(CharSequence text, RuntimeException ex) {
         String abbr;
         if (text.length() > 64) {
             abbr = text.subSequence(0, 64).toString() + "...";
@@ -2093,7 +2083,7 @@ public final class DateTimeFormatter {
      * @throws DateTimeException if an error occurs while resolving the date or time
      * @throws IndexOutOfBoundsException if the position is invalid
      */
-    private TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
+    TemporalAccessor parseResolved0(final CharSequence text, final ParsePosition position) {
         ParsePosition pos = (position != null ? position : new ParsePosition(0));
         DateTimeParseContext context = parseUnresolved0(text, pos);
         if (context == null || pos.getErrorIndex() >= 0 || (position == null && pos.getIndex() < text.length())) {
