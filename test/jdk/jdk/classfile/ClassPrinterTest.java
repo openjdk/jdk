@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ class ClassPrinterTest {
                         RuntimeInvisibleTypeAnnotationsAttribute.of(
                                 TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                                   List.of(TypeAnnotation.TypePathComponent.WILDCARD),
-                                                  ClassDesc.of("Boo"), List.of()))))))
+                                                  Annotation.of(ClassDesc.of("Boo"), List.of())))))))
                 .with(RuntimeInvisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.of("Phoo"), AnnotationElement.ofFloat("flfl", 2),  AnnotationElement.ofFloat("frfl", 3))))
                 .with(PermittedSubclassesAttribute.ofSymbols(ClassDesc.of("Boo"), ClassDesc.of("Phoo")))
                 .withField("f", ConstantDescs.CD_String, fb -> fb
@@ -100,7 +100,7 @@ class ClassPrinterTest {
                                 tryb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
                                         TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                                 List.of(TypeAnnotation.TypePathComponent.WILDCARD),
-                                                ClassDesc.of("Boo"), List.of())));
+                                                Annotation.of(ClassDesc.of("Boo"), List.of()))));
                                 tryb.invokedynamic(DynamicCallSiteDesc.of(
                                         MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of("Phoo"), "phee", MethodTypeDesc.of(ClassDesc.of("Boo"))),
                                         "intfMethod",
@@ -115,7 +115,7 @@ class ClassPrinterTest {
                             .with(RuntimeVisibleTypeAnnotationsAttribute.of(
                                     TypeAnnotation.of(TypeAnnotation.TargetInfo.ofField(),
                                           List.of(TypeAnnotation.TypePathComponent.ARRAY),
-                                          ClassDesc.of("Fee"), List.of(AnnotationElement.ofBoolean("yes", false)))))
+                                          Annotation.of(ClassDesc.of("Fee"), List.of(AnnotationElement.ofBoolean("yes", false))))))
                         ))));
     }
 

@@ -215,7 +215,7 @@ public class AnonymousClassTest {
         int offset = info instanceof TypeAnnotation.OffsetTarget offsetInfo? cAttr.labelToBci(offsetInfo.target()): -1;
         String name;
         try {
-            name = annotation.classSymbol().descriptorString();
+            name = annotation.annotation().classSymbol().descriptorString();
         } catch (Exception e) {
             throw new AssertionError(e);
         }
@@ -227,7 +227,7 @@ public class AnonymousClassTest {
         return String.format(
                 "@%s(%s) %s, offset=%d, location=%s",
                 name,
-                annotationValueDebugString(cm, annotation),
+                annotationValueDebugString(cm, annotation.annotation()),
                 info.targetType(),
                 offset,
                 location);

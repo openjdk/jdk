@@ -828,7 +828,7 @@ public record ClassRecord(
                     ann.targetInfo().targetType().targetTypeValue(),
                     TargetInfoRecord.ofTargetInfo(ann.targetInfo(), lr, code),
                     ann.targetPath().stream().map(tpc -> TypePathRecord.ofTypePathComponent(tpc)).collect(toSet()),
-                    AnnotationRecord.ofAnnotation(ann));
+                    AnnotationRecord.ofAnnotation(ann.annotation()));
         }
 
         public interface TargetInfoRecord {

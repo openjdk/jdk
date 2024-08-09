@@ -179,8 +179,7 @@ class RebuildingTransformation {
         return annotations.stream().map(ta -> TypeAnnotation.of(
                         transformTargetInfo(ta.targetInfo(), cob, labels),
                         ta.targetPath().stream().map(tpc -> TypeAnnotation.TypePathComponent.of(tpc.typePathKind(), tpc.typeArgumentIndex())).toList(),
-                        ta.classSymbol(),
-                        ta.elements().stream().map(ae -> AnnotationElement.of(ae.name().stringValue(), transformAnnotationValue(ae.value()))).toList())).toArray(TypeAnnotation[]::new);
+                        transformAnnotation(ta.annotation()))).toArray(TypeAnnotation[]::new);
     }
 
     static TypeAnnotation.TargetInfo transformTargetInfo(TypeAnnotation.TargetInfo ti, CodeBuilder cob, HashMap<Label, Label> labels) {
