@@ -1,8 +1,8 @@
 /*
  * @test
  * @bug 8326227
- * @modules java.base/jdk.internal.util.random
  * @summary Verify that RandomSupport methods behave as specified
+ * @modules java.base/jdk.internal.util.random
  * @run junit RandomSupportTest
  */
 
@@ -27,7 +27,7 @@ public class RandomSupportTest {
     }
     @Test
     public void testNextExponentialSoftCapped() {
-        for (double max = 1.0; max < 10.0; max++) {
+        for (double max = 1.0; max < 20.0; max++) {
             WorstCaseRandomGenerator rng = new WorstCaseRandomGenerator();
             assertTrue(RandomSupport.computeNextExponentialSoftCapped(rng, max) >= max);
         }
