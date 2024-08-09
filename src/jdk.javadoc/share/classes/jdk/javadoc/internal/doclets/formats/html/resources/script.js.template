@@ -232,6 +232,20 @@ document.addEventListener("readystatechange", (e) => {
 });
 document.addEventListener("DOMContentLoaded", function(e) {
     setTopMargin();
+    // Reset animation for type parameter target highlight
+    document.querySelectorAll("a").forEach((link) => {
+        link.addEventListener("click", (e) => {
+            const href = e.currentTarget.getAttribute("href");
+            if (href && href.startsWith("#") && href.indexOf("type-param-") > -1) {
+                const target = document.getElementById(decodeURI(href.substring(1)));
+                if (target) {
+                    target.style.animation = "none";
+                    void target.offsetHeight;
+                    target.style.removeProperty("animation");
+                }
+            }
+        })
+    });
     // Make sure current element is visible in breadcrumb navigation on small displays
     const subnav = document.querySelector("ol.sub-nav-list");
     if (subnav && subnav.lastElementChild) {
@@ -286,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     });
     var expanded = false;
     var windowWidth;
-    function collapse() {
+    function collapse(e) {
         if (expanded) {
             mainnav.removeAttribute("style");
             if (toc) {
@@ -336,7 +350,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
-            var id = hdr.getAttribute("id") || hdr.parentElement.getAttribute("id")
+            var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")
                 || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
             if (id) {
                 var template = document.createElement('template');

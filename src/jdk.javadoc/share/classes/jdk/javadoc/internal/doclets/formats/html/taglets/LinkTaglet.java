@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public class LinkTaglet extends BaseTaglet {
                 return htmlWriter.getPackageLink(refPackage, labelContent, refFragment);
             } else {
                 // @see is not referencing an included class, module or package. Check for cross-links.
-                String refModuleName =  ch.getReferencedModuleName(refSignature);
+                String refModuleName = ch.getReferencedModuleName(refSignature);
                 DocLink elementCrossLink = (refPackage != null) ? htmlWriter.getCrossPackageLink(refPackage) :
                         (config.extern.isModule(refModuleName))
                                 ? htmlWriter.getCrossModuleLink(utils.elementUtils.getModuleElement(refModuleName))
@@ -190,11 +190,27 @@ public class LinkTaglet extends BaseTaglet {
                     if (!config.isDocLintReferenceGroupEnabled()) {
                         reportWarning.accept(
                                 "doclet.link.see.reference_not_found",
-                                new Object[] { refSignature});
+                                new Object[] {refSignature});
                     }
                     return htmlWriter.invalidTagOutput(resources.getText("doclet.link.see.reference_invalid"),
-                            Optional.of(labelContent.isEmpty() ? text: labelContent));
+                            Optional.of(labelContent.isEmpty() ? text : labelContent));
                 }
+            }
+        } else if (utils.isTypeParameterElement(ref)) {
+            // This is a type parameter of a generic class, method or constructor
+            if (labelContent.isEmpty()) {
+                labelContent = plainOrCode(isPlain, Text.of(utils.getSimpleName(ref)));
+            }
+            if (refMem == null) {
+                return htmlWriter.getLink(
+                        new HtmlLinkInfo(config, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS, ref.asType())
+                                .label(labelContent));
+            } else {
+                // HtmlLinkFactory does not render type parameters of generic methods as links, so instead of
+                // teaching it how to do it (making the code even more complex) just create the link directly.
+                return htmlWriter.getLink(new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, refClass)
+                        .fragment(config.htmlIds.forTypeParam(ref.getSimpleName().toString(), refMem).name())
+                        .label((labelContent)));
             }
         } else if (refFragment == null) {
             // Must be a class reference since refClass is not null and refFragment is null.
