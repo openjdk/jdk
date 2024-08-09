@@ -43,7 +43,7 @@ final class CustomCachingFunctions {
     static <T> Predicate<T> cachingPredicate(Set<? extends T> inputs,
                                              Predicate<? super T> original) {
 
-        final Function<T, Boolean> delegate = StableValue.newCachingFunction(inputs, original::test, null);
+        final Function<T, Boolean> delegate = StableValue.newCachingFunction(inputs, original::test);
         return delegate::apply;
     }
 
@@ -56,7 +56,7 @@ final class CustomCachingFunctions {
 
         // Collectors.toUnmodifiableMap() is crucial!
         final Map<T, Function<U, R>> map = tToUs.entrySet().stream()
-                .map(e -> Map.entry(e.getKey(), StableValue.<U, R>newCachingFunction(e.getValue(), (U u) -> original.apply(e.getKey(), u), null)))
+                .map(e -> Map.entry(e.getKey(), StableValue.<U, R>newCachingFunction(e.getValue(), (U u) -> original.apply(e.getKey(), u))))
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return (T t, U u) -> {
@@ -83,13 +83,13 @@ final class CustomCachingFunctions {
     static <T> UnaryOperator<T> cachingUnaryOperator(Set<? extends T> inputs,
                                                      UnaryOperator<T> original) {
 
-        final Function<T, T> function = StableValue.newCachingFunction(inputs, original, null);
+        final Function<T, T> function = StableValue.newCachingFunction(inputs, original);
         return function::apply;
 
     }
 
     static IntSupplier cachingIntSupplier(IntSupplier original) {
-        final Supplier<Integer> delegate = StableValue.newCachingSupplier(original::getAsInt, null);
+        final Supplier<Integer> delegate = StableValue.newCachingSupplier(original::getAsInt);
         return delegate::get;
     }
 

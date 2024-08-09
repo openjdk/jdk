@@ -65,7 +65,7 @@ import java.util.function.Supplier;
  * Supplier is guaranteed to be successfully invoked at most once even in a multithreaded
  * environment, can be created like this:
  * {@snippet lang = java :
- *     Supplier<T> cache = StableValue.newCachingSupplier(original, null);
+ *     Supplier<T> cache = StableValue.newCachingSupplier(original);
  * }
  * The caching supplier can also be computed by a fresh background thread if a
  * thread factory is provided as a second parameter as shown here:
@@ -80,7 +80,7 @@ import java.util.function.Supplier;
  * guaranteed to be successfully invoked at most once per inout index even in a
  * multithreaded environment, can be created like this:
  * {@snippet lang = java:
- *     IntFunction<R> cache = StableValue.newCachingIntFunction(size, original, null);
+ *     IntFunction<R> cache = StableValue.newCachingIntFunction(size, original);
  *}
  * Just like a caching supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
@@ -93,7 +93,7 @@ import java.util.function.Supplier;
  * at most once per input value even in a multithreaded environment, can be created like
  * this:
  * {@snippet lang = java :
- *    Function<T, R> cache = StableValue.newCachingFunction(inputs, original, null);
+ *    Function<T, R> cache = StableValue.newCachingFunction(inputs, original);
  * }
  * Just like a caching supplier, a thread factory can be provided as a second parameter
  * allowing all the values for the allowed input values to be computed by distinct
@@ -219,8 +219,35 @@ public sealed interface StableValue<T>
      * {@return a new caching, thread-safe, stable, lazily computed
      * {@linkplain Supplier supplier} that records the value of the provided
      * {@code original} supplier upon being first accessed via
-     * {@linkplain Supplier#get() Supplier::get}, or optionally via a background thread
-     * created from the provided {@code factory} (if non-null)}
+     * {@linkplain Supplier#get() Supplier::get}}
+     * <p>
+     * The provided {@code original} supplier is guaranteed to be successfully invoked
+     * at most once even in a multi-threaded environment. Competing threads invoking the
+     * {@linkplain Supplier#get() Supplier::get} method when a value is already under
+     * computation will block until a value is computed or an exception is thrown by the
+     * computing thread.
+     * <p>
+     * If the {@code original} Supplier invokes the returned Supplier recursively,
+     * a StackOverflowError will be thrown when the returned
+     * Supplier's {@linkplain Supplier#get() Supplier::get} method is invoked.
+     * <p>
+     * If the provided {@code original} supplier throws an exception, it is relayed
+     * to the initial caller.
+     *
+     * @param original supplier used to compute a memoized value
+     * @param <T>      the type of results supplied by the returned supplier
+     */
+    static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original) {
+        Objects.requireNonNull(original);
+        return StableValueUtil.newCachingSupplier(original, null);
+    }
+
+    /**
+     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@linkplain Supplier supplier} that records the value of the provided
+     * {@code original} supplier upon being first accessed via
+     * {@linkplain Supplier#get() Supplier::get}, or via a background thread
+     * created from the provided {@code factory}}
      * <p>
      * The provided {@code original} supplier is guaranteed to be successfully invoked
      * at most once even in a multi-threaded environment. Competing threads invoking the
@@ -239,16 +266,14 @@ public sealed interface StableValue<T>
      * exception handler}.
      *
      * @param original supplier used to compute a memoized value
-     * @param factory  an optional factory that, if non-null, will be used to create
-     *                 a background thread that will attempt to compute the memoized
-     *                 value. If the factory is {@code null}, no background thread will
-     *                 be created.
+     * @param factory  a factory that will be used to create a background thread that will
+     *                 attempt to compute the memoized value.
      * @param <T>      the type of results supplied by the returned supplier
      */
     static <T> Supplier<T> newCachingSupplier(Supplier<? extends T> original,
                                               ThreadFactory factory) {
         Objects.requireNonNull(original);
-        // `factory` is nullable
+        Objects.requireNonNull(factory);
         return StableValueUtil.newCachingSupplier(original, factory);
     }
 
@@ -256,7 +281,40 @@ public sealed interface StableValue<T>
      * {@return a new caching, thread-safe, stable, lazily computed
      * {@link IntFunction } that, for each allowed input, records the values of the
      * provided {@code original} IntFunction upon being first accessed via
-     * {@linkplain IntFunction#apply(int) IntFunction::apply}, or optionally via background
+     * {@linkplain IntFunction#apply(int) IntFunction::apply}}
+     * <p>
+     * The provided {@code original} IntFunction is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain IntFunction#apply(int) IntFunction::apply} method
+     * when a value is already under computation will block until a value is computed or
+     * an exception is thrown by the computing thread.
+     * <p>
+     * If the {@code original} IntFunction invokes the returned IntFunction recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * IntFunction's {@linkplain IntFunction#apply(int) IntFunction::apply} method is
+     * invoked.
+     * <p>
+     * If the provided {@code original} IntFunction throws an exception, it is relayed
+     * to the initial caller.
+     *
+     * @param size     the size of the allowed inputs in {@code [0, size)}
+     * @param original IntFunction used to compute a memoized value
+     * @param <R>      the type of results delivered by the returned IntFunction
+     */
+    static <R> IntFunction<R> newCachingIntFunction(int size,
+                                                    IntFunction<? extends R> original) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        Objects.requireNonNull(original);
+        return StableValueUtil.newCachingIntFunction(size, original, null);
+    }
+
+    /**
+     * {@return a new caching, thread-safe, stable, lazily computed
+     * {@link IntFunction } that, for each allowed input, records the values of the
+     * provided {@code original} IntFunction upon being first accessed via
+     * {@linkplain IntFunction#apply(int) IntFunction::apply}, or via background
      * threads created from the provided {@code factory} (if non-null)}
      * <p>
      * The provided {@code original} IntFunction is guaranteed to be successfully invoked
@@ -280,20 +338,18 @@ public sealed interface StableValue<T>
      *
      * @param size     the size of the allowed inputs in {@code [0, size)}
      * @param original IntFunction used to compute a memoized value
-     * @param factory  an optional factory that, if non-null, will be used to create
-     *                 {@code size} background threads that will attempt to compute all
-     *                 the memoized values. If the provided factory is {@code null}, no
-     *                 background threads will be created.
+     * @param factory  a factory that will be used to create {@code size} background
+     *                 threads that will attempt to compute all the memoized values.
      * @param <R>      the type of results delivered by the returned IntFunction
      */
     static <R> IntFunction<R> newCachingIntFunction(int size,
                                                     IntFunction<? extends R> original,
                                                     ThreadFactory factory) {
         if (size < 0) {
-            throw new IllegalStateException();
+            throw new IllegalArgumentException();
         }
         Objects.requireNonNull(original);
-        // `factory` is nullable
+        Objects.requireNonNull(factory);
         return StableValueUtil.newCachingIntFunction(size, original, factory);
     }
 
@@ -324,10 +380,45 @@ public sealed interface StableValue<T>
      *
      * @param inputs   the set of allowed input values
      * @param original Function used to compute a memoized value
-     * @param factory  an optional factory that, if non-null, will be used to create
-     *                 {@code size} background threads that will attempt to compute the
-     *                 memoized values. If the provided factory is {@code null}, no
-     *                 background threads will be created.
+     * @param <T>      the type of the input to the returned Function
+     * @param <R>      the type of results delivered by the returned Function
+     */
+    static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
+                                                    Function<? super T, ? extends R> original) {
+        Objects.requireNonNull(inputs);
+        Objects.requireNonNull(original);
+        return StableValueUtil.newCachingFunction(inputs, original, null);
+    }
+
+    /**
+     * {@return a new caching, thread-safe, stable, lazily computed {@link Function}
+     * that, for each allowed input in the given set of {@code inputs}, records the
+     * values of the provided {@code original} Function upon being first accessed via
+     * {@linkplain Function#apply(Object) Function::apply}, or via background
+     * threads created from the provided {@code factory} (if non-null)}
+     * <p>
+     * The provided {@code original} Function is guaranteed to be successfully invoked
+     * at most once per allowed input, even in a multi-threaded environment. Competing
+     * threads invoking the {@linkplain Function#apply(Object) Function::apply} method
+     * when a value is already under computation will block until a value is computed or
+     * an exception is thrown by the computing thread.
+     * <p>
+     * If the {@code original} Function invokes the returned Function recursively
+     * for a particular input value, a StackOverflowError will be thrown when the returned
+     * Function's {@linkplain Function#apply(Object) Function::apply} method is invoked.
+     * <p>
+     * If the provided {@code original} Function throws an exception, it is relayed
+     * to the initial caller. If the memoized Function is computed by a background
+     * thread, exceptions from the provided {@code original} Function will be relayed to
+     * the background thread's {@linkplain Thread#getUncaughtExceptionHandler() uncaught
+     * exception handler}.
+     * <p>
+     * The order in which background threads are started is unspecified.
+     *
+     * @param inputs   the set of allowed input values
+     * @param original Function used to compute a memoized value
+     * @param factory  a factory that will be used to create {@code size} background
+     *                 threads that will attempt to compute the memoized values.
      * @param <T>      the type of the input to the returned Function
      * @param <R>      the type of results delivered by the returned Function
      */
@@ -336,7 +427,7 @@ public sealed interface StableValue<T>
                                                     ThreadFactory factory) {
         Objects.requireNonNull(inputs);
         Objects.requireNonNull(original);
-        // `factory` is nullable
+        Objects.requireNonNull(factory);
         return StableValueUtil.newCachingFunction(inputs, original, factory);
     }
 

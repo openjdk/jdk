@@ -62,10 +62,10 @@ public class CachingFunctionBenchmark {
     private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
 
     private static final Map<Integer, Integer> STABLE = StableValue.lazyMap(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.newCachingFunction(SET, Function.identity(), null);
+    private static final Function<Integer, Integer> FUNCTION = StableValue.newCachingFunction(SET, Function.identity());
 
     private final Map<Integer, Integer> stable = StableValue.lazyMap(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.newCachingFunction(SET, Function.identity(), null);
+    private final Function<Integer, Integer> function = StableValue.newCachingFunction(SET, Function.identity());
 
     @Benchmark
     public int stable() {

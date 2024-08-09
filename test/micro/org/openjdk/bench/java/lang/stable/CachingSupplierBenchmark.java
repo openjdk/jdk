@@ -59,13 +59,13 @@ public class CachingSupplierBenchmark {
 
     private static final StableValue<Integer> STABLE = init(StableValue.newInstance(), VALUE);
     private static final StableValue<Integer> STABLE2 = init(StableValue.newInstance(), VALUE2);
-    private static final Supplier<Integer> SUPPLIER = StableValue.newCachingSupplier(() -> VALUE, null);
-    private static final Supplier<Integer> SUPPLIER2 = StableValue.newCachingSupplier(() -> VALUE, null);
+    private static final Supplier<Integer> SUPPLIER = StableValue.newCachingSupplier(() -> VALUE);
+    private static final Supplier<Integer> SUPPLIER2 = StableValue.newCachingSupplier(() -> VALUE);
 
     private final StableValue<Integer> stable = init(StableValue.newInstance(), VALUE);
     private final StableValue<Integer> stable2 = init(StableValue.newInstance(), VALUE2);
-    private final Supplier<Integer> supplier = StableValue.newCachingSupplier(() -> VALUE, null);
-    private final Supplier<Integer> supplier2 = StableValue.newCachingSupplier(() -> VALUE2, null);
+    private final Supplier<Integer> supplier = StableValue.newCachingSupplier(() -> VALUE);
+    private final Supplier<Integer> supplier2 = StableValue.newCachingSupplier(() -> VALUE2);
 
     @Benchmark
     public int stable() {

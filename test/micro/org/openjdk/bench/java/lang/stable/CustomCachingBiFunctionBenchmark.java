@@ -121,7 +121,7 @@ public class CustomCachingBiFunctionBenchmark {
 
     // Pair seams to not work that well...
     static <T, U, R> BiFunction<T, U, R> cachingBiFunction2(Set<Pair<T, U>> inputs, BiFunction<T, U, R> original) {
-        final Function<Pair<T, U>, R> delegate = StableValue.newCachingFunction(inputs, p -> original.apply(p.left(), p.right()), null);
+        final Function<Pair<T, U>, R> delegate = StableValue.newCachingFunction(inputs, p -> original.apply(p.left(), p.right()));
         return (T t, U u) -> delegate.apply(new Pair<>(t, u));
     }
 
@@ -132,7 +132,7 @@ public class CustomCachingBiFunctionBenchmark {
     record CachingBiFunction2<T, U, R>(Function<Pair<? extends T, ? extends U>, R> delegate) implements BiFunction<T, U, R> {
 
         public CachingBiFunction2(Set<Pair<? extends T, ? extends U>> inputs, BiFunction<T, U, R> original) {
-            this(StableValue.newCachingFunction(inputs, (Pair<? extends T, ? extends U> p) -> original.apply(p.left(), p.right()), null));
+            this(StableValue.newCachingFunction(inputs, (Pair<? extends T, ? extends U> p) -> original.apply(p.left(), p.right())));
         }
 
         @Override
@@ -253,7 +253,7 @@ public class CustomCachingBiFunctionBenchmark {
 
             @SuppressWarnings("unchecked")
             Map<T, Function<U, R>> copy = Map.ofEntries(map.entrySet().stream()
-                    .map(e -> Map.entry(e.getKey(), StableValue.newCachingFunction( e.getValue().keySet(), (U u) -> original.apply(e.getKey(), u) ,null)))
+                    .map(e -> Map.entry(e.getKey(), StableValue.newCachingFunction( e.getValue().keySet(), (U u) -> original.apply(e.getKey(), u))))
                     .toArray(Map.Entry[]::new));
 
             return copy;

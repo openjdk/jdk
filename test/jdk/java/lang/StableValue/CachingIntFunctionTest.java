@@ -44,6 +44,15 @@ final class CachingIntFunctionTest {
     private static final IntFunction<Integer> MAPPER = i -> i;
 
     @Test
+    void factoryInvariants() {
+        assertThrows(IllegalArgumentException.class, () -> StableValue.newCachingIntFunction(-1, MAPPER));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, null));
+        assertThrows(IllegalArgumentException.class, () -> StableValue.newCachingIntFunction(-1, MAPPER, Thread.ofVirtual().factory()));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, null, Thread.ofVirtual().factory()));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingIntFunction(SIZE, MAPPER, null));
+    }
+
+    @Test
     void basic() {
         basic(MAPPER);
         basic(i -> null);
@@ -51,7 +60,7 @@ final class CachingIntFunctionTest {
 
     void basic(IntFunction<Integer> mapper) {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(mapper);
-        var cached = StableValue.newCachingIntFunction(SIZE, cif, null);
+        var cached = StableValue.newCachingIntFunction(SIZE, cif);
         assertEquals("CachingIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
         assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
@@ -88,7 +97,7 @@ final class CachingIntFunctionTest {
         StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.newCachingIntFunction(SIZE, cif, null);
+        var cached = StableValue.newCachingIntFunction(SIZE, cif);
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(1));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(1));
@@ -99,7 +108,7 @@ final class CachingIntFunctionTest {
     @Test
     void circular() {
         final AtomicReference<IntFunction<?>> ref = new AtomicReference<>();
-        IntFunction<IntFunction<?>> cached = StableValue.newCachingIntFunction(SIZE, _ -> ref.get(), null);
+        IntFunction<IntFunction<?>> cached = StableValue.newCachingIntFunction(SIZE, _ -> ref.get());
         ref.set(cached);
         cached.apply(0);
         String toString = cached.toString();
@@ -110,15 +119,15 @@ final class CachingIntFunctionTest {
 
     @Test
     void equality() {
-        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER, null);
-        IntFunction<Integer> f1 = StableValue.newCachingIntFunction(8, MAPPER, null);
+        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER);
+        IntFunction<Integer> f1 = StableValue.newCachingIntFunction(8, MAPPER);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER, null);
+        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.apply(4);
         assertEquals(System.identityHashCode(f0), f0.hashCode());

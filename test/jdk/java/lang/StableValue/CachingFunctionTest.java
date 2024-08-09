@@ -45,6 +45,15 @@ final class CachingFunctionTest {
     private static final Function<Integer, Integer> MAPPER = Function.identity();
 
     @Test
+    void factoryInvariants() {
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(null, MAPPER));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(INPUTS, null));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(null, MAPPER, Thread.ofVirtual().factory()));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(INPUTS, null, Thread.ofVirtual().factory()));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingFunction(INPUTS, MAPPER, null));
+    }
+
+    @Test
     void basic() {
         basic(MAPPER);
         basic(_ -> null);
@@ -52,7 +61,7 @@ final class CachingFunctionTest {
 
     void basic(Function<Integer, Integer> mapper) {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(mapper);
-        var cached = StableValue.newCachingFunction(INPUTS, cif, null);
+        var cached = StableValue.newCachingFunction(INPUTS, cif);
         assertEquals(mapper.apply(VALUE), cached.apply(VALUE));
         assertEquals(1, cif.cnt());
         assertEquals(mapper.apply(VALUE), cached.apply(VALUE));
@@ -88,7 +97,7 @@ final class CachingFunctionTest {
         StableTestUtil.CountingFunction<Integer, Integer> cif = new StableTestUtil.CountingFunction<>(_ -> {
             throw new UnsupportedOperationException();
         });
-        var cached = StableValue.newCachingFunction(INPUTS, cif, null);
+        var cached = StableValue.newCachingFunction(INPUTS, cif);
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(VALUE));
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> cached.apply(VALUE));
@@ -103,7 +112,7 @@ final class CachingFunctionTest {
     @Test
     void circular() {
         final AtomicReference<Function<?, ?>> ref = new AtomicReference<>();
-        Function<Integer, Function<?, ?>> cached = StableValue.newCachingFunction(INPUTS, _ -> ref.get(), null);
+        Function<Integer, Function<?, ?>> cached = StableValue.newCachingFunction(INPUTS, _ -> ref.get());
         ref.set(cached);
         cached.apply(VALUE);
         String toString = cached.toString();
@@ -115,15 +124,15 @@ final class CachingFunctionTest {
     @Test
     void equality() {
         Function<Integer, Integer> mapper = Function.identity();
-        Function<Integer, Integer> f0 = StableValue.newCachingFunction(INPUTS, mapper, null);
-        Function<Integer, Integer> f1 = StableValue.newCachingFunction(INPUTS, mapper, null);
+        Function<Integer, Integer> f0 = StableValue.newCachingFunction(INPUTS, mapper);
+        Function<Integer, Integer> f1 = StableValue.newCachingFunction(INPUTS, mapper);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Function<Integer, Integer> f0 = StableValue.newCachingFunction(INPUTS, Function.identity(), null);
+        Function<Integer, Integer> f0 = StableValue.newCachingFunction(INPUTS, Function.identity());
         assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.apply(VALUE);
         assertEquals(System.identityHashCode(f0), f0.hashCode());
