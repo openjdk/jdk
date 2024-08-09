@@ -86,7 +86,7 @@ static verify_byte_codes_fn_t verify_byte_codes_fn() {
 
   void *lib_handle = nullptr;
   // Load verify dll
-  if (vm_is_statically_linked()) {
+  if (is_vm_statically_linked()) {
     lib_handle = os::get_default_process_handle();
   } else {
     char buffer[JVM_MAXPATHLEN];

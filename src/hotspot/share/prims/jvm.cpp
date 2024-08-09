@@ -3449,7 +3449,7 @@ JVM_LEAF(jboolean, JVM_IsForeignLinkerSupported(void))
 JVM_END
 
 JVM_ENTRY_NO_ENV(jboolean, JVM_IsStaticallyLinked(void))
-  return vm_is_statically_linked();
+  return is_vm_statically_linked();
 JVM_END
 
 // String support ///////////////////////////////////////////////////////////////////////////

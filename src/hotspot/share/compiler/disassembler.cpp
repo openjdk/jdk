@@ -787,7 +787,7 @@ bool Disassembler::load_library(outputStream* st) {
   int jvm_offset = -1;
   int lib_offset = -1;
 
-  if (vm_is_statically_linked()) {
+  if (is_vm_statically_linked()) {
     char* p = strrchr(buf, '/');
     *p = '\0';
     strcat(p, "/lib/");

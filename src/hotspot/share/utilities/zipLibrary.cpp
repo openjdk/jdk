@@ -60,7 +60,7 @@ static inline bool not_loaded() {
 }
 
 static void* dll_lookup(const char* name, const char* path, bool vm_exit_on_failure) {
-  if (vm_is_statically_linked()) {
+  if (is_vm_statically_linked()) {
     return os::lookup_function(name);
   }
 
@@ -92,7 +92,7 @@ static void load_zip_library(bool vm_exit_on_failure) {
   assert(!is_loaded(), "should not load zip library twice");
   char path[JVM_MAXPATHLEN];
 
-  if (vm_is_statically_linked()) {
+  if (is_vm_statically_linked()) {
     _zip_handle = os::get_default_process_handle();
   } else {
     // Load the libzip shared library and lookup the needed functions.

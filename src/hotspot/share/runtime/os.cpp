@@ -512,7 +512,7 @@ static void* _native_java_library = nullptr;
 
 void* os::native_java_library() {
   if (_native_java_library == nullptr) {
-    if (vm_is_statically_linked()) {
+    if (is_vm_statically_linked()) {
       _native_java_library = get_default_process_handle();
       return _native_java_library;
     }

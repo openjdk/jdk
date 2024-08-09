@@ -29,7 +29,7 @@
 // object files, depending on if we are going to build a static or a dynamic
 // library.
 
-bool vm_is_statically_linked(void) {
+bool is_vm_statically_linked(void) {
 #ifdef STATIC_BUILD
   return JNI_TRUE;
 #else
