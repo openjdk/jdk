@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
-template <class T, MEMFLAGS F> class ChunkedList : public CHeapObj<F> {
+template <class T, MemType F> class ChunkedList : public CHeapObj<F> {
   template <class U> friend class TestChunkedList;
 
   static const size_t BufferSize = 64;

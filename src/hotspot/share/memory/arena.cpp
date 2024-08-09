@@ -222,7 +222,7 @@ void Chunk::next_chop(Chunk* k) {
   k->_next = nullptr;
 }
 
-Arena::Arena(MEMFLAGS flag, Tag tag, size_t init_size) :
+Arena::Arena(MemType flag, Tag tag, size_t init_size) :
   _flags(flag), _tag(tag),
   _size_in_bytes(0),
   _first(nullptr), _chunk(nullptr),

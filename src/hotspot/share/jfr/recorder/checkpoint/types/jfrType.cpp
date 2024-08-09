@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,7 @@ void NMTTypeConstant::serialize(JfrCheckpointWriter& writer) {
   writer.write_count(mt_number_of_types);
   for (int i = 0; i < mt_number_of_types; ++i) {
     writer.write_key(i);
-    MEMFLAGS flag = NMTUtil::index_to_flag(i);
+    MemType flag = NMTUtil::index_to_flag(i);
     writer.write(NMTUtil::flag_to_name(flag));
   }
 }

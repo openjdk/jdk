@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* ar
   return arena->Amalloc(byte_size);
 }
 
-void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MEMFLAGS memflags) {
+void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MemType memflags) {
   assert(max >= 0, "integer overflow");
   size_t byte_size = element_size * (size_t) max;
 

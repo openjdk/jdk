@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,7 @@ class NMTPreInit : public AllStatic {
   }
 
   // Just a wrapper for os::malloc to avoid including os.hpp here.
-  static void* do_os_malloc(size_t size, MEMFLAGS memflags);
+  static void* do_os_malloc(size_t size, MemType memflags);
 
 public:
 
@@ -283,7 +283,7 @@ public:
   // Called from os::realloc.
   // Returns true if reallocation was handled here; in that case,
   // *rc contains the return address.
-  static bool handle_realloc(void** rc, void* old_p, size_t new_size, MEMFLAGS memflags) {
+  static bool handle_realloc(void** rc, void* old_p, size_t new_size, MemType memflags) {
     if (old_p == nullptr) {                  // realloc(null, n)
       return handle_malloc(rc, new_size);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,7 @@
 
 #include "nmt/mallocTracker.inline.hpp"
 
-inline bool MemTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
+inline bool MemTracker::check_exceeds_limit(size_t s, MemType f) {
   if (!enabled()) {
     return false;
   }

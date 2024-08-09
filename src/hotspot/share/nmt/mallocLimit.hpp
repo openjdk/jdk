@@ -27,7 +27,7 @@
 #define SHARE_SERVICES_MALLOCLIMIT_HPP
 
 #include "memory/allStatic.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -54,10 +54,10 @@ public:
   bool parse_malloclimit_option(const char* optionstring, const char** err);
 
   void set_global_limit(size_t s, MallocLimitMode flag);
-  void set_category_limit(MEMFLAGS f, size_t s, MallocLimitMode flag);
+  void set_category_limit(MemType f, size_t s, MallocLimitMode flag);
 
   const malloclimit* global_limit() const             { return &_glob; }
-  const malloclimit* category_limit(MEMFLAGS f) const { return &_cat[(int)f]; }
+  const malloclimit* category_limit(MemType f) const { return &_cat[(int)f]; }
 
   void print_on(outputStream* st) const;
 };
@@ -69,7 +69,7 @@ class MallocLimitHandler : public AllStatic {
 public:
 
   static const malloclimit* global_limit()             { return _limits.global_limit(); }
-  static const malloclimit* category_limit(MEMFLAGS f) { return _limits.category_limit(f); }
+  static const malloclimit* category_limit(MemType f) { return _limits.category_limit(f); }
 
   static void initialize(const char* options);
   static void print_on(outputStream* st);

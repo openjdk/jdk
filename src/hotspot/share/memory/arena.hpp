@@ -107,7 +107,7 @@ public:
   static const char* tag_desc[static_cast<int>(Arena::Tag::tag_count)];
 
 private:
-  const MEMFLAGS _flags;        // Memory tracking flags
+  const MemType _flags;        // Memory tracking flags
   const Tag _tag;
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
@@ -138,7 +138,7 @@ protected:
  public:
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
-  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
+  Arena(MemType memflag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 
 // allocate using malloc; will fail if no memory available
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemType flags,
                    const NativeCallStack& stack,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
   char* p = (char*) os::malloc(size, flags, stack);
@@ -47,14 +47,14 @@ char* AllocateHeap(size_t size,
 }
 
 char* AllocateHeap(size_t size,
-                   MEMFLAGS flags,
+                   MemType flags,
                    AllocFailType alloc_failmode /* = AllocFailStrategy::EXIT_OOM*/) {
   return AllocateHeap(size, flags, CALLER_PC, alloc_failmode);
 }
 
 char* ReallocateHeap(char *old,
                      size_t size,
-                     MEMFLAGS flag,
+                     MemType flag,
                      AllocFailType alloc_failmode) {
   char* p = (char*) os::realloc(old, size, flag, CALLER_PC);
   if (p == nullptr && alloc_failmode == AllocFailStrategy::EXIT_OOM) {
@@ -117,14 +117,14 @@ void* AnyObj::operator new(size_t size, Arena *arena) {
   return res;
 }
 
-void* AnyObj::operator new(size_t size, MEMFLAGS flags) throw() {
+void* AnyObj::operator new(size_t size, MemType flags) throw() {
   address res = (address)AllocateHeap(size, flags, CALLER_PC);
   DEBUG_ONLY(set_allocation_type(res, C_HEAP);)
   return res;
 }
 
 void* AnyObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
-    MEMFLAGS flags) throw() {
+    MemType flags) throw() {
   // should only call this with std::nothrow, use other operator new() otherwise
     address res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res!= nullptr) set_allocation_type(res, C_HEAP);)

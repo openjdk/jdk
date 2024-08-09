@@ -28,7 +28,7 @@
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutex.hpp"
@@ -36,7 +36,7 @@
 
 class ShenandoahHeap;
 
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+template<class E, MemType F, unsigned int N = TASKQUEUE_SIZE>
 class BufferedOverflowTaskQueue: public OverflowTaskQueue<E, F, N>
 {
 public:
@@ -301,7 +301,7 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MEMFLAGS F>
+template <class T, MemType F>
 class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, F> {
 private:
   shenandoah_padding(0);
@@ -331,7 +331,7 @@ public:
   debug_only(uint get_reserved() const { return (uint)_reserved; })
 };
 
-template <class T, MEMFLAGS F>
+template <class T, MemType F>
 T* ParallelClaimableQueueSet<T, F>::claim_next() {
   jint size = (jint)GenericTaskQueueSet<T, F>::size();
 

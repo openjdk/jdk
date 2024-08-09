@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 OopStorage* OopStorageSet::_storages[all_count] = {};
 
-OopStorage* OopStorageSet::create_strong(const char* name, MEMFLAGS memflags) {
+OopStorage* OopStorageSet::create_strong(const char* name, MemType memflags) {
   static uint registered_strong = 0;
   assert(registered_strong < strong_count, "More registered strong storages than slots");
   OopStorage* storage = OopStorage::create(name, memflags);
@@ -39,7 +39,7 @@ OopStorage* OopStorageSet::create_strong(const char* name, MEMFLAGS memflags) {
   return storage;
 }
 
-OopStorage* OopStorageSet::create_weak(const char* name, MEMFLAGS memflags) {
+OopStorage* OopStorageSet::create_weak(const char* name, MemType memflags) {
   static uint registered_weak = 0;
   assert(registered_weak < weak_count, "More registered strong storages than slots");
   OopStorage* storage = OopStorage::create(name, memflags);

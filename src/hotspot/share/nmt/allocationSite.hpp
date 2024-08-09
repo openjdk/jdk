@@ -25,7 +25,7 @@
 #ifndef SHARE_NMT_ALLOCATIONSITE_HPP
 #define SHARE_NMT_ALLOCATIONSITE_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 // Allocation site represents a code path that makes a memory
@@ -33,9 +33,9 @@
 class AllocationSite {
  private:
   const NativeCallStack  _call_stack;
-  const MEMFLAGS         _flag;
+  const MemType         _flag;
  public:
-  AllocationSite(const NativeCallStack& stack, MEMFLAGS flag) : _call_stack(stack), _flag(flag) { }
+  AllocationSite(const NativeCallStack& stack, MemType flag) : _call_stack(stack), _flag(flag) { }
 
   bool equals(const NativeCallStack& stack) const {
     return _call_stack.equals(stack);
@@ -49,7 +49,7 @@ class AllocationSite {
     return &_call_stack;
   }
 
-  MEMFLAGS flag() const { return _flag; }
+  MemType flag() const { return _flag; }
 };
 
 #endif // SHARE_NMT_ALLOCATIONSITE_HPP

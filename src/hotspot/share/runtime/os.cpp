@@ -600,7 +600,7 @@ bool os::find_builtin_agent(JvmtiAgent* agent, const char *syms[],
 
 // --------------------- heap allocation utilities ---------------------
 
-char *os::strdup(const char *str, MEMFLAGS flags) {
+char *os::strdup(const char *str, MemType flags) {
   size_t size = strlen(str);
   char *dup_str = (char *)malloc(size + 1, flags);
   if (dup_str == nullptr) return nullptr;
@@ -608,7 +608,7 @@ char *os::strdup(const char *str, MEMFLAGS flags) {
   return dup_str;
 }
 
-char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
+char* os::strdup_check_oom(const char* str, MemType flags) {
   char* p = os::strdup(str, flags);
   if (p == nullptr) {
     vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
@@ -629,11 +629,11 @@ static void break_if_ptr_caught(void* ptr) {
 }
 #endif // ASSERT
 
-void* os::malloc(size_t size, MEMFLAGS flags) {
+void* os::malloc(size_t size, MemType flags) {
   return os::malloc(size, flags, CALLER_PC);
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::malloc(size_t size, MemType memflags, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -679,11 +679,11 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   return inner_ptr;
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
+void* os::realloc(void *memblock, size_t size, MemType flags) {
   return os::realloc(memblock, size, flags, CALLER_PC);
 }
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+void* os::realloc(void *memblock, size_t size, MemType memflags, const NativeCallStack& stack) {
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -1864,7 +1864,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
-char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
+char* os::reserve_memory(size_t bytes, bool executable, MemType flags) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve(result, bytes, CALLER_PC, flags);
@@ -1875,7 +1875,7 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MemType flag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
@@ -2228,7 +2228,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MemType flag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
@@ -2239,7 +2239,7 @@ char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MemType flag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
@@ -2249,7 +2249,7 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only,
-                           bool allow_exec, MEMFLAGS flags) {
+                           bool allow_exec, MemType flags) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);

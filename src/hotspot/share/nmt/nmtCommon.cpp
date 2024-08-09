@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,14 +87,14 @@ NMT_TrackingLevel NMTUtil::parse_tracking_level(const char* s) {
   return NMT_unknown;
 }
 
-MEMFLAGS NMTUtil::string_to_flag(const char* s) {
+MemType NMTUtil::string_to_flag(const char* s) {
   for (int i = 0; i < mt_number_of_types; i ++) {
     assert(::strlen(_strings[i].enum_s) > 2, "Sanity"); // should always start with "mt"
     if (::strcasecmp(_strings[i].human_readable, s) == 0 ||
         ::strcasecmp(_strings[i].enum_s, s) == 0 ||
         ::strcasecmp(_strings[i].enum_s + 2, s) == 0) // "mtXXX" -> match also "XXX" or "xxx"
     {
-      return (MEMFLAGS)i;
+      return (MemType)i;
     }
   }
   return mtNone;

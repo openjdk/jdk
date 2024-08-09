@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/globalCounter.inline.hpp"
 
-G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next, MEMFLAGS flag) :
+G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next, MemType flag) :
   _slot_size(slot_size),
   _num_slots(num_slots),
   _next(next),
@@ -41,7 +41,7 @@ G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next
 G1MonotonicArena::Segment* G1MonotonicArena::Segment::create_segment(uint slot_size,
                                                                      uint num_slots,
                                                                      Segment* next,
-                                                                     MEMFLAGS mem_flag) {
+                                                                     MemType mem_flag) {
   size_t block_size = size_in_bytes(slot_size, num_slots);
   char* alloc_block = NEW_C_HEAP_ARRAY(char, block_size, mem_flag);
   return new (alloc_block) Segment(slot_size, num_slots, next, mem_flag);

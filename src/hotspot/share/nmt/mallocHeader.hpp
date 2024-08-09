@@ -26,7 +26,7 @@
 #ifndef SHARE_NMT_MALLOCHEADER_HPP
 #define SHARE_NMT_MALLOCHEADER_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -92,7 +92,7 @@ class MallocHeader {
   NOT_LP64(uint32_t _alt_canary);
   const size_t _size;
   const uint32_t _mst_marker;
-  const MEMFLAGS _flags;
+  const MemType _flags;
   const uint8_t _unused;
   uint16_t _canary;
 
@@ -121,14 +121,14 @@ public:
   // Contains all of the necessary data to to deaccount block with NMT.
   struct FreeInfo {
     const size_t size;
-    const MEMFLAGS flags;
+    const MemType flags;
     const uint32_t mst_marker;
   };
 
-  inline MallocHeader(size_t size, MEMFLAGS flags, uint32_t mst_marker);
+  inline MallocHeader(size_t size, MemType flags, uint32_t mst_marker);
 
   inline size_t   size()  const { return _size; }
-  inline MEMFLAGS flags() const { return _flags; }
+  inline MemType flags() const { return _flags; }
   inline uint32_t mst_marker() const { return _mst_marker; }
 
   // Return the necessary data to deaccount the block with NMT.

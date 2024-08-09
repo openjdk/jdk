@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 // Returns true if allocating s bytes on f would trigger either global or the category limit
-inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
+inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MemType f) {
 
   // Note: checks are ordered to have as little impact as possible on the standard code path,
   // when MallocLimit is unset, resp. it is set but we have reached no limit yet.
@@ -64,7 +64,7 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
   return false;
 }
 
-inline bool MallocTracker::check_exceeds_limit(size_t s, MEMFLAGS f) {
+inline bool MallocTracker::check_exceeds_limit(size_t s, MemType f) {
   return MallocMemorySummary::check_exceeds_limit(s, f);
 }
 

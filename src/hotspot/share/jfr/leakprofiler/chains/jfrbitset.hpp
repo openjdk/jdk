@@ -25,7 +25,7 @@
 #ifndef SHARE_JFR_LEAKPROFILER_JFRBITSET_HPP
 #define SHARE_JFR_LEAKPROFILER_JFRBITSET_HPP
 
-#include "nmt/memflags.hpp"
+#include "nmt/memType.hpp"
 #include "utilities/objectBitSet.inline.hpp"
 
 typedef ObjectBitSet<mtTracing> JFRBitSet;

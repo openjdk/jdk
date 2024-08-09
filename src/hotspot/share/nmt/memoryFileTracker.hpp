@@ -66,7 +66,7 @@ public:
   MemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* file, size_t offset, size_t size, const NativeCallStack& stack,
-                       MEMFLAGS flag);
+                       MemType flag);
   void free_memory(MemoryFile* file, size_t offset, size_t size);
 
   MemoryFile* make_file(const char* descriptive_name);
@@ -96,7 +96,7 @@ public:
     static void free_file(MemoryFile* device);
 
     static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
-                                const NativeCallStack& stack, MEMFLAGS flag);
+                                const NativeCallStack& stack, MemType flag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);

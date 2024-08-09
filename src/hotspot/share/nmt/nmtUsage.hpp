@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ public:
 
   size_t total_reserved() const;
   size_t total_committed() const;
-  size_t reserved(MEMFLAGS flag) const;
-  size_t committed(MEMFLAGS flag) const;
+  size_t reserved(MemType flag) const;
+  size_t committed(MemType flag) const;
 };
 
 #endif // SHARE_NMT_NMTUSAGE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ void TaskQueueStats::reset() {
 
 // TaskQueueSuper collects functionality common to all GenericTaskQueue instances.
 
-template <unsigned int N, MEMFLAGS F>
+template <unsigned int N, MemType F>
 class TaskQueueSuper: public CHeapObj<F> {
 protected:
   // Internal type for indexing the queue; also used for the tag.
@@ -324,7 +324,7 @@ public:
 // practice of parallel programming (PPoPP 2013), 69-80
 //
 
-template <class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+template <class E, MemType F, unsigned int N = TASKQUEUE_SIZE>
 class GenericTaskQueue: public TaskQueueSuper<N, F> {
 protected:
   typedef typename TaskQueueSuper<N, F>::Age Age;
@@ -428,7 +428,7 @@ public:
 // Note that size() is not hidden--it returns the number of elements in the
 // TaskQueue, and does not include the size of the overflow stack.  This
 // simplifies replacement of GenericTaskQueues with OverflowTaskQueues.
-template<class E, MEMFLAGS F, unsigned int N = TASKQUEUE_SIZE>
+template<class E, MemType F, unsigned int N = TASKQUEUE_SIZE>
 class OverflowTaskQueue: public GenericTaskQueue<E, F, N>
 {
 public:
@@ -467,10 +467,10 @@ public:
   virtual uint tasks() const = 0;
 };
 
-template <MEMFLAGS F> class TaskQueueSetSuperImpl: public CHeapObj<F>, public TaskQueueSetSuper {
+template <MemType F> class TaskQueueSetSuperImpl: public CHeapObj<F>, public TaskQueueSetSuper {
 };
 
-template<class T, MEMFLAGS F>
+template<class T, MemType F>
 class GenericTaskQueueSet: public TaskQueueSetSuperImpl<F> {
 public:
   typedef typename T::element_type E;
@@ -518,20 +518,20 @@ public:
 #endif // TASKQUEUE_STATS
 };
 
-template<class T, MEMFLAGS F> void
+template<class T, MemType F> void
 GenericTaskQueueSet<T, F>::register_queue(uint i, T* q) {
   assert(i < _n, "index out of range.");
   _queues[i] = q;
 }
 
-template<class T, MEMFLAGS F> T*
+template<class T, MemType F> T*
 GenericTaskQueueSet<T, F>::queue(uint i) {
   assert(i < _n, "index out of range.");
   return _queues[i];
 }
 
 #ifdef ASSERT
-template<class T, MEMFLAGS F>
+template<class T, MemType F>
 void GenericTaskQueueSet<T, F>::assert_empty() const {
   for (uint j = 0; j < _n; j++) {
     _queues[j]->assert_empty();
@@ -539,7 +539,7 @@ void GenericTaskQueueSet<T, F>::assert_empty() const {
 }
 #endif // ASSERT
 
-template<class T, MEMFLAGS F>
+template<class T, MemType F>
 uint GenericTaskQueueSet<T, F>::tasks() const {
   uint n = 0;
   for (uint j = 0; j < _n; j++) {
