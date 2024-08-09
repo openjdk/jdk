@@ -147,7 +147,7 @@ julong os::free_memory() {
   return Bsd::available_memory();
 }
 
-// available here means free
+// available here means free.
 julong os::Bsd::available_memory() {
   uint64_t available = physical_memory() >> 2;
 #ifdef __APPLE__
