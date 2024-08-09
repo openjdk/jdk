@@ -34,11 +34,6 @@ typedef unsigned long UNSIGNED_JINT;
 
 #define MAXPATHLEN _MAX_PATH
 
-/* Needed on Windows because names seem to be hidden in stdio.h. */
-
-#define snprintf        _snprintf
-#define vsnprintf       _vsnprintf
-
 /* On little endian machines, convert java big endian numbers. */
 
 #define HOST_TO_JAVA_CHAR(x) (((x & 0xff) << 8) | ((x >> 8) & (0xff)))

@@ -33,12 +33,6 @@
  */
 
 #ifdef _WINDOWS
-// Disable CRT security warning against _snprintf
-#pragma warning (disable : 4996)
-
-#define snprintf  _snprintf
-#define vsnprintf _vsnprintf
-
 #include <windows.h>
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -318,7 +318,7 @@ void Win32AttachOperation::complete(jint result, bufferedStream* result_stream) 
     BOOL fSuccess;
 
     char msg[32];
-    _snprintf(msg, sizeof(msg), "%d\n", result);
+    os::snprintf(msg, sizeof(msg), "%d\n", result);
     msg[sizeof(msg) - 1] = '\0';
 
     fSuccess = write_pipe(hPipe, msg, (int)strlen(msg));

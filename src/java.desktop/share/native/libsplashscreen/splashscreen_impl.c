@@ -26,11 +26,6 @@
 #include "splashscreen_impl.h"
 #include "splashscreen_gfx_impl.h"
 #define BUFF_SIZE 1024
-#ifdef _MSC_VER
-# ifndef snprintf
-#       define snprintf _snprintf
-# endif
-#endif
 int splashIsVisible = 0;
 
 Splash *
