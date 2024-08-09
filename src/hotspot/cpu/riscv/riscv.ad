@@ -10617,6 +10617,22 @@ instruct TailjmpInd(iRegPNoSpNoFp jump_target, iRegP_R10 ex_oop)
   ins_pipe(pipe_class_call);
 %}
 
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "j forward_exception_stub\t#@ForwardException" %}
+
+  ins_encode %{
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  %}
+
+  ins_pipe(pipe_class_call);
+%}
+
 // Create exception oop: created by stack-crawling runtime code.
 // Created exception is now available to this handler, and is setup
 // just prior to jumping to this handler. No code emitted.

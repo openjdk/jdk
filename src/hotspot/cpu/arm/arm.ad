@@ -8953,6 +8953,20 @@ instruct tailjmpInd(IPRegP jump_target, RExceptionRegP ex_oop) %{
   ins_pipe(tail_call);
 %}
 
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+  ins_cost(CALL_COST);
+
+  format %{ "b    forward_exception_stub" %}
+  ins_encode %{
+    // OK to trash Rtemp, because Rtemp is used by stub
+    __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
+  %}
+  ins_pipe(tail_call);
+%}
+
 // Create exception oop: created by stack-crawling runtime code.
 // Created exception is now available to this handler, and is setup
 // just prior to jumping to this handler.  No code emitted.

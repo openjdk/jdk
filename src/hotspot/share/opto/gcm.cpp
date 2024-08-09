@@ -2031,6 +2031,7 @@ float Block::succ_prob(uint i) {
 
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -2084,6 +2085,7 @@ int Block::num_fall_throughs() {
   case Op_NeverBranch:
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -2129,6 +2131,7 @@ bool Block::succ_fall_through(uint i) {
   case Op_NeverBranch:
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
