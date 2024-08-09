@@ -34,7 +34,6 @@
 #include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
-/* #include "net_util.h" */
 #include "sun_nio_ch_IOUtil.h"
 
 /* field id for jlong 'handle' in java.io.FileDescriptor used for file fds */

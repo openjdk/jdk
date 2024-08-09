@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,10 @@ import java.net.spi.InetAddressResolver.LookupPolicy;
 
 public class NullCharInHostname {
     public static void main(String[] args) {
+        // Manually load the "net" library which is needed for Inet6AddressImpl.
+        // In normal scenarios this library is loaded automatically.
+        jdk.internal.loader.BootLoader.loadLibrary("net");
+
         var name = "foo\u0000bar";
         System.out.println("file.encoding = " + System.getProperty("file.encoding"));
         System.out.println("native.encoding = " + System.getProperty("native.encoding"));
