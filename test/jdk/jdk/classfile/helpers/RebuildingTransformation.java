@@ -165,9 +165,9 @@ class RebuildingTransformation {
             case AnnotationValue.OfDouble v -> AnnotationValue.of(v.doubleValue());
             case AnnotationValue.OfFloat v -> AnnotationValue.of(v.floatValue());
             case AnnotationValue.OfLong v -> AnnotationValue.of(v.longValue());
-            case AnnotationValue.OfInteger v -> AnnotationValue.of(v.intValue());
+            case AnnotationValue.OfInt v -> AnnotationValue.of(v.intValue());
             case AnnotationValue.OfShort v -> AnnotationValue.of(v.shortValue());
-            case AnnotationValue.OfCharacter v -> AnnotationValue.of(v.charValue());
+            case AnnotationValue.OfChar v -> AnnotationValue.of(v.charValue());
             case AnnotationValue.OfByte v -> AnnotationValue.of(v.byteValue());
             case AnnotationValue.OfBoolean v -> AnnotationValue.of(v.booleanValue());
             case AnnotationValue.OfClass oc -> AnnotationValue.of(oc.classSymbol());
