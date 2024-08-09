@@ -30,7 +30,7 @@
 #include "threadControl.h"
 #include "SDE.h"
 
-static jrawMonitorID stepLock;
+static DebugRawMonitor* stepLock;
 
 static jint
 getFrameCount(jthread thread)
@@ -694,7 +694,7 @@ done:
 void
 stepControl_initialize(void)
 {
-    stepLock = debugMonitorCreate("JDWP Step Handler Lock");
+    stepLock = debugMonitorCreate(stepLock_Rank, "JDWP Step Handler Lock");
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@
 #endif
 
 static jboolean vmInitialized;
-static jrawMonitorID initMonitor;
+static DebugRawMonitor* initMonitor;
 static jboolean initComplete;
 static jbyte currentSessionID;
 
@@ -667,8 +667,8 @@ initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei, EventInfo *opt
         EXIT_ERROR(error, "unable to clear JVMTI callbacks");
     }
 
-    commonRef_initialize();
     util_initialize(env);
+    commonRef_initialize();
     threadControl_initialize();
     stepControl_initialize();
     invoker_initialize();
@@ -676,7 +676,7 @@ initialize(JNIEnv *env, jthread thread, EventIndex triggering_ei, EventInfo *opt
     classTrack_initialize(env);
     debugLoop_initialize();
 
-    initMonitor = debugMonitorCreate("JDWP Initialization Monitor");
+    initMonitor = debugMonitorCreate(initMonitor_Rank, "JDWP Initialization Monitor");
 
 
     /*
@@ -995,6 +995,8 @@ parseOptions(char *options)
     gdata->includeVThreads = JNI_FALSE;
     gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
 
+    gdata->rankedMonitors = JNI_TRUE;
+
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
         options = "";
@@ -1097,6 +1099,17 @@ parseOptions(char *options)
             }
             currentTransport->timeout = atol(current);
             current += strlen(current) + 1;
+        } else if (strcmp(buf, "rankedMonitors") == 0) {
+            if (!get_tok(&str, current, (int)(end - current), ',')) {
+                goto syntax_error;
+            }
+            if (strcmp(current, "y") == 0) {
+                gdata->rankedMonitors = JNI_TRUE;
+            } else if (strcmp(current, "n") == 0) {
+                gdata->rankedMonitors = JNI_FALSE;
+            } else {
+                goto syntax_error;
+            }
         } else if (strcmp(buf, "includevirtualthreads") == 0) {
             if (!get_tok(&str, current, (int)(end - current), ',')) {
                 goto syntax_error;

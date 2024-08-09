@@ -30,12 +30,12 @@
 #include "outStream.h"
 #include "signature.h"
 
-static jrawMonitorID invokerLock;
+static DebugRawMonitor* invokerLock;
 
 void
 invoker_initialize(void)
 {
-    invokerLock = debugMonitorCreate("JDWP Invocation Lock");
+    invokerLock = debugMonitorCreate(invokerLock_Rank, "JDWP Invocation Lock");
 }
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,7 +404,7 @@ newCommonRef(JNIEnv *env, jobject ref)
 void
 commonRef_initialize(void)
 {
-    gdata->refLock = debugMonitorCreate("JDWP Reference Table Monitor");
+    gdata->refLock = debugMonitorCreate(refLock_Rank, "JDWP Reference Table Monitor");
     gdata->nextSeqNum = 1; /* 0 used for error indication */
     gdata->pinAllCount = 0;
     initializeObjectsByID(HASH_INIT_SIZE);
