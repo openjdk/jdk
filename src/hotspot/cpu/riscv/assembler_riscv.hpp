@@ -1147,6 +1147,10 @@ enum VTA {
   ta, // agnostic
 };
 
+static Assembler::LMUL vgrp_to_lmul(VectorRegisterGroup vgrp) {
+  return m2; // just for temporary demo
+}
+
 static Assembler::SEW elembytes_to_sew(int ebytes) {
   assert(ebytes > 0 && ebytes <= 8, "unsupported element size");
   return (Assembler::SEW) exact_log2(ebytes);
