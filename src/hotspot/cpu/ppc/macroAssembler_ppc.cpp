@@ -1326,6 +1326,7 @@ void MacroAssembler::call_VM_leaf_base(address entry_point) {
   BLOCK_COMMENT("} call_VM_leaf");
 }
 
+
 void MacroAssembler::call_VM(Register oop_result, address entry_point, bool check_exceptions) {
   call_VM_base(oop_result, noreg, entry_point, check_exceptions);
 }
@@ -1382,6 +1383,16 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register 
   call_VM_leaf(entry_point);
 }
 
+address MacroAssembler::call_c_runtime(address entry_point) {
+  BLOCK_COMMENT("call_c_runtime {");
+#if defined(ABI_ELFv2)
+  address return_addr = call_c(entry_point, relocInfo::none);
+#else
+  address return_addr = call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::none);
+#endif
+  BLOCK_COMMENT("} call_VM_leaf");
+  return return_addr;
+}
 // Check whether instruction is a read access to the polling page
 // which was emitted by load_from_polling_page(..).
 bool MacroAssembler::is_load_from_polling_page(int instruction, void* ucontext,
