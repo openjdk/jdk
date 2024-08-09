@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 @implementation CRobotKeyCodeMapping
 
 @synthesize javaToMacKeyMap;
+@synthesize modifierKeyToMaskMap;
 
 +(CRobotKeyCodeMapping *) sharedInstance {
     static CRobotKeyCodeMapping *instance = nil;
@@ -161,6 +162,15 @@
             [NSNumber numberWithInt : OSX_F20], [NSNumber numberWithInt : java_awt_event_KeyEvent_VK_F20],
 
             nil];
+
+        self.modifierKeyToMaskMap = [NSDictionary dictionaryWithObjectsAndKeys:
+            [NSNumber numberWithInt : kCGEventFlagMaskShift], [NSNumber numberWithInt : OSX_Shift],
+            [NSNumber numberWithInt : kCGEventFlagMaskControl], [NSNumber numberWithInt : OSX_Control],
+            [NSNumber numberWithInt : kCGEventFlagMaskAlternate], [NSNumber numberWithInt : OSX_Option],
+            [NSNumber numberWithInt : kCGEventFlagMaskCommand], [NSNumber numberWithInt : OSX_Command],
+            [NSNumber numberWithInt : kCGEventFlagMaskAlphaShift], [NSNumber numberWithInt : OSX_CapsLock],
+
+            nil];
     }
 
     return self;
@@ -168,6 +178,16 @@
 
 -(int) getOSXKeyCodeForJavaKey : (int) javaKey {
     id val = [javaToMacKeyMap objectForKey : [NSNumber numberWithInt : javaKey]];
+
+    if (nil != val) {
+        return [val intValue];
+    } else {
+        return OSX_Undefined;
+    }
+}
+
+-(int) getFlagMaskForCGKey : (int) cgKeyCode {
+    id val = [modifierKeyToMaskMap objectForKey : [NSNumber numberWithInt : cgKeyCode]];
 
     if (nil != val) {
         return [val intValue];

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,9 +148,11 @@ const static int OSX_Undefined                  = 0x7F;
 }
 
 @property (readwrite, retain) NSDictionary *javaToMacKeyMap;
+@property (readwrite, retain) NSDictionary *modifierKeyToMaskMap;
 
 + (CRobotKeyCodeMapping *)sharedInstance ;
 - (int)getOSXKeyCodeForJavaKey:(int) javaKey;
+- (int)getFlagMaskForCGKey:(int) cgKeyCode;
 
 @end
 
