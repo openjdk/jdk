@@ -985,15 +985,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Pass oop, not lock, in fast lock case. call_VM wants R1 though.
-      push(R1);
-      mov(R1, Robj);
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), R1);
-      pop(R1);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
     bind(done);
   }
 }

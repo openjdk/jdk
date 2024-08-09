@@ -1686,7 +1686,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(obj_reg, swap_reg, thread, lock_reg, slow_path_lock);
+      // Lacking registers and thread on x86_32. Always take slow path.
+      __ jmp(slow_path_lock);
     }
     __ bind(count_mon);
     __ inc_held_monitor_count();

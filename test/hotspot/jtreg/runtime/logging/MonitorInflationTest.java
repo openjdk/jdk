@@ -38,7 +38,7 @@ import jdk.test.lib.process.ProcessTools;
 public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("inflate(has_locker):");
+        output.shouldContain("inflate:");
         output.shouldContain("type='MonitorInflationTest$Waiter'");
         output.shouldContain("I've been waiting.");
         output.shouldHaveExitValue(0);
