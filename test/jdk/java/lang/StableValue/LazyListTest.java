@@ -235,9 +235,18 @@ final class LazyListTest {
 
     @Test
     void serializable() {
-        assertFalse(newList() instanceof Serializable);
-        assertFalse(newEmptyList() instanceof Serializable);
-        assertFalse(newList().subList(1, INDEX) instanceof Serializable);
+        serializable(newList());
+        serializable(newEmptyList());
+    }
+
+    void serializable(List<Integer> list) {
+        assertFalse(list instanceof Serializable);
+        if (list.size()>INDEX) {
+            assertFalse(newList().subList(1, INDEX) instanceof Serializable);
+        }
+        assertFalse(list.iterator() instanceof Serializable);
+        assertFalse(list.reversed() instanceof Serializable);
+        assertFalse(list.spliterator() instanceof Serializable);
     }
 
     @Test
@@ -249,12 +258,12 @@ final class LazyListTest {
 
     @Test
     void distinct() {
-        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(13);
-        assertEquals(13, list.size());
+        List<StableValueImpl<Integer>> list = StableValueUtil.ofList(SIZE);
+        assertEquals(SIZE, list.size());
         // Check, every StableValue is distinct
         Map<StableValue<Integer>, Boolean> idMap = new IdentityHashMap<>();
         list.forEach(e -> idMap.put(e, true));
-        assertEquals(13, idMap.size());
+        assertEquals(SIZE, idMap.size());
     }
 
     // Support constructs

@@ -39,6 +39,7 @@ import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -197,8 +198,15 @@ final class LazyMapTest {
 
     @Test
     void serializable() {
-        assertFalse(newMap() instanceof Serializable);
-        assertFalse(newEmptyMap() instanceof Serializable);
+        serializable(newMap());
+        serializable(newEmptyMap());
+    }
+
+    void serializable(Map<Integer, Integer> map) {
+        assertFalse(map instanceof Serializable);
+        assertFalse(map.entrySet() instanceof Serializable);
+        assertFalse(map.keySet() instanceof Serializable);
+        assertFalse(map.values() instanceof Serializable);
     }
 
     @Test

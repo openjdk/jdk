@@ -799,7 +799,8 @@ class ImmutableCollections {
                 }
                 final E newValue = mapper.apply(i);
                 if (!stable.trySet(newValue)) {
-                    throw new IllegalStateException(
+                    // This should never happen
+                    throw new InternalError(
                             "Cannot set the holder value for index " + i + " to " + e +
                             " because a value of " + StableValueUtil.unwrap(stable.wrappedValue()) +
                             " is alredy set.");
