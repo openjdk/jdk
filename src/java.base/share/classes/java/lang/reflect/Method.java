@@ -174,21 +174,6 @@ public final class Method extends Executable {
     }
 
     /**
-     * Make a copy of a leaf method.
-     */
-    Method leafCopy() {
-        if (this.root == null)
-            throw new IllegalArgumentException("Can only leafCopy a non-root Method");
-
-        Method res = new Method(clazz, name, parameterTypes, returnType,
-                exceptionTypes, modifiers, slot, signature,
-                annotations, parameterAnnotations, annotationDefault);
-        res.root = root;
-        res.methodAccessor = methodAccessor;
-        return res;
-    }
-
-    /**
      * @throws InaccessibleObjectException {@inheritDoc}
      * @throws SecurityException {@inheritDoc}
      */
