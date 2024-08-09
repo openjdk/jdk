@@ -67,6 +67,7 @@ public class DerValue {
 
     /** The tag class types */
     public static final byte TAG_UNIVERSAL = (byte)0x000;
+    public static final byte TAG_CONSTRUCT = (byte)0x020;
     public static final byte TAG_APPLICATION = (byte)0x040;
     public static final byte TAG_CONTEXT = (byte)0x080;
     public static final byte TAG_PRIVATE = (byte)0x0c0;
@@ -191,13 +192,13 @@ public class DerValue {
     public boolean isApplication()    { return ((tag & 0x0c0) == 0x040); }
 
     /**
-     * Returns true iff the CONTEXT SPECIFIC bit is set in the type tag.
+     * Returns true if the CONTEXT SPECIFIC bit is set in the type tag.
      * This is associated with the ASN.1 "DEFINED BY" syntax.
      */
     public boolean isContextSpecific() { return ((tag & 0x0c0) == 0x080); }
 
     /**
-     * Returns true iff the CONTEXT SPECIFIC TAG matches the passed tag.
+     * Returns true if the CONTEXT SPECIFIC TAG matches the passed tag.
      */
     public boolean isContextSpecific(byte cntxtTag) {
         if (!isContextSpecific()) {
@@ -208,11 +209,11 @@ public class DerValue {
 
     boolean isPrivate()        { return ((tag & 0x0c0) == 0x0c0); }
 
-    /** Returns true iff the CONSTRUCTED bit is set in the type tag. */
+    /** Returns true if the CONSTRUCTED bit is set in the type tag. */
     public boolean isConstructed()    { return ((tag & 0x020) == 0x020); }
 
     /**
-     * Returns true iff the CONSTRUCTED TAG matches the passed tag.
+     * Returns true if the CONSTRUCTED TAG matches the passed tag.
      */
     public boolean isConstructed(byte constructedTag) {
         if (!isConstructed()) {
