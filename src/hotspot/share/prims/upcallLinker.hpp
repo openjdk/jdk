@@ -37,7 +37,7 @@ private:
   static JavaThread* on_entry(UpcallStub::FrameData* context, jobject receiver);
   static void on_exit(UpcallStub::FrameData* context);
 public:
-  static address make_upcall_stub(jobject mh, Method* entry,
+  static address make_upcall_stub(jobject mh, Symbol* signature,
                                   BasicType* out_sig_bt, int total_out_args,
                                   BasicType ret_type,
                                   jobject jabi, jobject jconv,

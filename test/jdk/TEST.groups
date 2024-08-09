@@ -379,7 +379,8 @@ jdk_svc = \
 jdk_foreign = \
     java/foreign \
     jdk/internal/reflect/CallerSensitive/CheckCSMs.java \
-    -java/foreign/TestMatrix.java
+    -java/foreign/TestMatrix.java \
+    -java/foreign/TestUpcallStress.java
 
 jdk_vector = \
     jdk/incubator/vector

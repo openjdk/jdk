@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/upcallLinker.hpp"
@@ -117,7 +118,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
 static const int upcall_stub_code_base_size = 1024;
 static const int upcall_stub_size_per_arg = 16;
 
-address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
+address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
                                        BasicType* out_sig_bt, int total_out_args,
                                        BasicType ret_type,
                                        jobject jabi, jobject jconv,
@@ -264,11 +265,9 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ get_vm_result(j_rarg0, xthread);
   __ block_comment("} receiver ");
 
-  __ mov_metadata(xmethod, entry);
-  __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
-
   __ push_cont_fastpath(xthread);
 
+  __ get_vm_result_2(xmethod, xthread);
   __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
   __ jalr(t0);
 
@@ -338,7 +337,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
 #ifndef PRODUCT
   stringStream ss;
-  ss.print("upcall_stub_%s", entry->signature()->as_C_string());
+  ss.print("upcall_stub_%s", signature->as_C_string());
   const char *name = _masm->code_string(ss.as_string());
 #else // PRODUCT
   const char* name = "upcall_stub";
