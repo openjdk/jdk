@@ -24,9 +24,12 @@
  */
 
 #include "precompiled.hpp"
+#include "concurrentTestRunner.inline.hpp"
 #include "memory/arena.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
+#include "utilities/fastrand.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 #include "testutils.hpp"
@@ -380,5 +383,100 @@ TEST_VM(Arena, different_chunk_sizes) {
     Arena ar5(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
     Arena ar6(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
     Arena ar7(mtTest, Arena::Tag::tag_other, random_arena_chunk_size());
+  }
+}
+
+struct X : public TestRunnable {
+  static volatile unsigned result;
+  static FastRandom frand;
+  static size_t total_alloc_dur;
+  static size_t total_free_dur;
+
+  const int N = 1000;
+  const size_t K = 1024;
+  size_t chunks[10] = {32 * K, 16 * K, 8 * K, 4 * K, 2 * K, 1 * K, 512, 256, 128, 64};
+  typedef struct {
+    char* ptr;
+    size_t size;
+  } MemEntry;
+  void runUnitTest() const override {
+    ResourceMark rm;
+    double dur;
+    GrowableArray<MemEntry> entries(N);
+    for (int n = 0; n < N; n++) {
+      entries.push(MemEntry { nullptr, 0 });
+    }
+    size_t alloc_dur = 0;
+    size_t free_dur = 0;
+    int free_count = 0;
+    while (free_count < N) {
+      int i = frand.next() % N;
+      MemEntry& entry = entries.at(i);
+      bool do_alloc = entry.size == 0;
+      bool do_free = !do_alloc;
+
+      if (do_alloc) {
+        size_t size = chunks[i % 10];
+        dur = os::elapsedTime();
+        entry.ptr = NEW_RESOURCE_ARRAY(char, size);
+        entry.size = size;
+        alloc_dur += (os::elapsedTime() - dur) * 1000000;
+      }
+      if (do_free) {
+        if (entry.ptr != nullptr) {
+          dur = os::elapsedTime();
+          FREE_RESOURCE_ARRAY(char, entry.ptr, entry.size);
+          free_dur += (os::elapsedTime() - dur) * 1000000;
+          entry.ptr = nullptr;
+          free_count++;
+        }
+      }
+    }
+    Atomic::add(&total_alloc_dur, alloc_dur);
+    Atomic::add(&total_free_dur, free_dur);
+
+  }
+  static void report(const char *s) {
+    tty->print_cr("Total time, %s, alloc: " SIZE_FORMAT ", free: " SIZE_FORMAT, s,
+                  total_alloc_dur / 1000000,
+                  total_free_dur / 1000000);
+    total_alloc_dur = 0;
+    total_free_dur = 0;
+    Arena::report_usage();
+  }
+};
+
+ volatile unsigned X::result = 0;
+ FastRandom X::frand;
+ size_t X::total_alloc_dur = 0;
+ size_t X::total_free_dur = 0;
+
+
+TEST_VM(Arena, speed_and_memory_compare) {
+  X x;
+  ConcurrentTestRunner runner(&x, 100, 5000);
+  const int N = 5;
+  ssize_t rss[2][N];
+
+  for (bool pool : { false, true }) {
+    for (int i = 0; i < N; i++) {
+      Arena::use_pool = pool;
+
+      os::Linux::meminfo_t minfo_before;
+      os::Linux::query_process_memory_info(&minfo_before);
+
+      runner.run();
+
+      os::Linux::meminfo_t minfo_after;
+      os::Linux::query_process_memory_info(&minfo_after);
+
+      rss[pool ? 1 : 0][i] = minfo_after.vmrss - minfo_before.vmrss;
+
+      const char* pool_text = pool ? "with pool" : "  no pool";
+      X::report(pool_text);
+    }
+  }
+  for (int i = 0; i < N; i++) {
+    tty->print_cr("\nRSS(KB): no-pool= " SSIZE_FORMAT ", pool= " SSIZE_FORMAT ", diff=" SSIZE_FORMAT "\n", rss[0][i], rss[1][i], rss[0][i] - rss[1][i]);
   }
 }
