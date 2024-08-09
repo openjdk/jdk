@@ -2276,6 +2276,230 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
   }
 
+  void generate_rev8_pack2(const VectorRegister vtmp1, const VectorRegister vtmp2) {
+    __ vrev8_v(vtmp1, vtmp1);
+    __ vrev8_v(vtmp2, vtmp2);
+  }
+
+  void generate_rev8_pack4(const VectorRegister vtmp1, const VectorRegister vtmp2,
+                           const VectorRegister vtmp3, const VectorRegister vtmp4) {
+    generate_rev8_pack2(vtmp1, vtmp2);
+    generate_rev8_pack2(vtmp3, vtmp4);
+  }
+
+  void generate_vle32_pack2(const Register key, const VectorRegister vtmp1,
+                            const VectorRegister vtmp2) {
+    const int step = 16;
+    __ vle32_v(vtmp1, key);
+    __ addi(key, key, step);
+    __ vle32_v(vtmp2, key);
+    __ addi(key, key, step);
+  }
+
+  void generate_vle32_pack4(const Register key, const VectorRegister vtmp1,
+                            const VectorRegister vtmp2, const VectorRegister vtmp3,
+                            const VectorRegister vtmp4) {
+    generate_vle32_pack2(key, vtmp1, vtmp2);
+    generate_vle32_pack2(key, vtmp3, vtmp4);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_encryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_encryptBlock");
+
+    Label L_do44, L_do52, L_end;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    const VectorRegister res   = v19;
+    VectorRegister working_vregs[] = {
+      v4, v5, v6, v7, v8, v9, v10, v11,
+      v12, v13, v14, v15, v16, v17, v18
+    };
+
+    const VectorRegister vzero = v17;
+
+    address start = __ pc();
+    __ enter();
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+
+    __ mv(t2, 52);
+    __ blt(keylen, t2, L_do44);
+    __ beq(keylen, t2, L_do52);
+    // Else we fallthrough to the biggest case (256-bit key size)
+
+    for (int i = 0; i < 15; i++) {
+      __ vle32_v(working_vregs[i], key);
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, 16);
+    }
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < 14; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[14]);
+    __ j(L_end);
+
+  __ bind(L_do52);
+    for (int i = 0; i < 13; i++) {
+      __ vle32_v(working_vregs[i], key);
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, 16);
+    }
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < 12; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[12]);
+    __ j(L_end);
+
+  __ bind(L_do44);
+    for (int i = 0; i < 11; i++) {
+      __ vle32_v(working_vregs[i], key);
+      __ vrev8_v(working_vregs[i], working_vregs[i]);
+      __ addi(key, key, 16);
+    }
+
+    __ vxor_vv(res, res, working_vregs[0]);
+    for (int i = 1; i < 10; i++) {
+      __ vaesem_vv(res, working_vregs[i]);
+    }
+    __ vaesef_vv(res, working_vregs[10]);
+
+  __ bind(L_end);
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  void generate_aesdecrypt_round(const VectorRegister res, const VectorRegister vzero,
+                                 const VectorRegister vtmp1, const VectorRegister vtmp2,
+                                 const VectorRegister vtmp3, const VectorRegister vtmp4) {
+    __ vxor_vv(res, res, vtmp1);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp2);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp3);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp4);
+    __ vaesdm_vv(res, vzero);
+  }
+
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - source byte array address
+  //   c_rarg1   - destination byte array address
+  //   c_rarg2   - K (key) in little endian int array
+  //
+  address generate_aescrypt_decryptBlock() {
+    assert(UseAESIntrinsics, "need AES instructions (Zvkned extension) support");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "aescrypt_decryptBlock");
+    Label L_doLast;
+
+    const Register from        = c_rarg0;  // source array address
+    const Register to          = c_rarg1;  // destination array address
+    const Register key         = c_rarg2;  // key array address
+    const Register keylen      = c_rarg3;
+
+    const VectorRegister res   = v16;
+    const VectorRegister vtmp1 = v4;
+    const VectorRegister vtmp2 = v5;
+    const VectorRegister vtmp3 = v6;
+    const VectorRegister vtmp4 = v7;
+
+    const VectorRegister vzero = v17;
+    const VectorRegister vtemp = v18;
+
+    address start = __ pc();
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ lwu(keylen, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+
+    __ vsetivli(x0, 4, Assembler::e32, Assembler::m1);
+    __ vle32_v(res, from);
+    __ vmv_v_x(vzero, zr);
+    __ vle32_v(vtemp, key);
+    __ addi(key, key, 16);
+    // Note: the following function performs key += 4*16
+    generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
+
+    __ vrev8_v(vtemp, vtemp);
+    generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
+    generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
+
+    // Note: the following function performs key += 4*16
+    generate_vle32_pack4(key, vtmp1, vtmp2, vtmp3, vtmp4);
+    generate_rev8_pack4(vtmp1, vtmp2, vtmp3, vtmp4);
+    generate_aesdecrypt_round(res, vzero, vtmp1, vtmp2, vtmp3, vtmp4);
+
+    // Note: the following function performs key += 2*16
+    generate_vle32_pack2(key, vtmp1, vtmp2);
+    generate_rev8_pack2(vtmp1, vtmp2);
+
+    __ mv(t2, 44);
+    __ beq(keylen, t2, L_doLast);
+
+    __ vxor_vv(res, res, vtmp1);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp2);
+    __ vaesdm_vv(res, vzero);
+
+    // Note: the following function performs key += 2*16
+    generate_vle32_pack2(key, vtmp1, vtmp2);
+    generate_rev8_pack2(vtmp1, vtmp2);
+
+    __ mv(t2, 52);
+    __ beq(keylen, t2, L_doLast);
+
+    __ vxor_vv(res, res, vtmp1);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp2);
+    __ vaesdm_vv(res, vzero);
+
+    // Note: the following function performs key += 2*16
+    generate_vle32_pack2(key, vtmp1, vtmp2);
+    generate_rev8_pack2(vtmp1, vtmp2);
+
+    __ bind(L_doLast);
+
+    __ vxor_vv(res, res, vtmp1);
+    __ vaesdm_vv(res, vzero);
+    __ vxor_vv(res, res, vtmp2);
+    __ vaesdf_vv(res, vtemp);
+
+    __ vse32_v(res, to);
+    __ mv(c_rarg0, 0);
+
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // code for comparing 16 bytes of strings with same encoding
   void compare_string_16_bytes_same(Label &DIFF1, Label &DIFF2) {
     const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, tmp1 = x28, tmp2 = x29, tmp4 = x7, tmp5 = x31;
@@ -6178,6 +6402,11 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubCodeMark mark(this, "StubRoutines", "montgomerySquare");
       MontgomeryMultiplyGenerator g(_masm, /*squaring*/true);
       StubRoutines::_montgomerySquare = g.generate_square();
+    }
+
+    if (UseAESIntrinsics) {
+      StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
+      StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
     }
 
     if (UsePoly1305Intrinsics) {
