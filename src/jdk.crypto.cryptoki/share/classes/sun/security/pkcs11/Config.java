@@ -370,6 +370,10 @@ final class Config {
         return nssOptimizeSpace;
     }
 
+    Set<Long> getDisabledMechanisms() {
+        return disabledMechanisms;
+    }
+
     private static String expand(final String s) throws IOException {
         try {
             return PropertyExpander.expand(s);
