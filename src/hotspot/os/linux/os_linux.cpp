@@ -2299,12 +2299,6 @@ void os::Linux::print_system_memory_info(outputStream* st) {
 
   // some information regarding THPs; for details see
   // https://www.kernel.org/doc/Documentation/vm/transhuge.txt
-  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/enabled",
-                      "/sys/kernel/mm/transparent_hugepage/enabled", st);
-  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size",
-                      "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", st);
-  _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/shmem_enabled",
-                      "/sys/kernel/mm/transparent_hugepage/shmem_enabled", st);
   _print_ascii_file_h("/sys/kernel/mm/transparent_hugepage/defrag (defrag/compaction efforts parameter)",
                       "/sys/kernel/mm/transparent_hugepage/defrag", st);
 }
@@ -2545,8 +2539,8 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" UINT64_FORMAT "k free)",
             ((jlong)si.freeswap * si.mem_unit) >> 10);
   st->cr();
-  st->print("Page Sizes: ");
-  _page_sizes.print_on(st);
+  st->cr();
+  HugePages::print_on(st);
   st->cr();
 }
 
