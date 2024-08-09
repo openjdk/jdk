@@ -34,6 +34,7 @@ import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
+import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,11 +64,12 @@ public class TestVMProcess {
     private OutputAnalyzer oa;
     private String irEncoding;
 
-    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup) {
+    public TestVMProcess(List<String> additionalFlags, Class<?> testClass, Set<Class<?>> helperClasses, int defaultWarmup,
+                         boolean testClassesOnBootClassPath) {
         this.cmds = new ArrayList<>();
         TestFrameworkSocket socket = new TestFrameworkSocket();
         try (socket) {
-            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup);
+            prepareTestVMFlags(additionalFlags, socket, testClass, helperClasses, defaultWarmup, testClassesOnBootClassPath);
             start();
         }
         processSocketOutput(socket);
@@ -91,11 +93,16 @@ public class TestVMProcess {
     }
 
     private void prepareTestVMFlags(List<String> additionalFlags, TestFrameworkSocket socket, Class<?> testClass,
-                                    Set<Class<?>> helperClasses, int defaultWarmup) {
+                                    Set<Class<?>> helperClasses, int defaultWarmup, boolean testClassesOnBootClassPath) {
         // Set java.library.path so JNI tests which rely on jtreg nativepath setting work
         cmds.add("-Djava.library.path=" + Utils.TEST_NATIVE_PATH);
         // Need White Box access in test VM.
-        cmds.add("-Xbootclasspath/a:.");
+        String bootClassPath = "-Xbootclasspath/a:.";
+        if (testClassesOnBootClassPath) {
+            // Add test classes themselves to boot classpath to make them privileged.
+            bootClassPath += File.pathSeparator + Utils.TEST_CLASSES;
+        }
+        cmds.add(bootClassPath);
         cmds.add("-XX:+UnlockDiagnosticVMOptions");
         cmds.add("-XX:+WhiteBoxAPI");
         // Ignore CompileCommand flags which have an impact on the profiling information.
