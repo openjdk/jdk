@@ -1331,6 +1331,44 @@ cbVMDeath(jvmtiEnv *jvmti_env, JNIEnv *env)
 }
 
 /**
+ * Event callback for JVMTI_EVENT_DATA_DUMP_REQUEST
+ *
+ * This callback is made when a JVMTI data dump is requested. The common way of doing
+ * this is with "jcmd <pid> JVMTI.data_dump".
+ *
+ * Debug agent data dumps are experimental and only intended to be used by debug agent
+ * developers. Data dumps are disabled by default.
+ *
+ * This callback is enabled by launching the debug agent with datadump=y. The easiest
+ * way to enabled data dumps with debugger tests or when using jdb is to use the
+ * _JAVA_JDWP_OPTIONS export. The following works well when running tests:
+ *
+ *  make test TEST=<test> \
+ *    JTREG='JAVA_OPTIONS=-XX:+StartAttachListener;OPTIONS=-e:_JAVA_JDWP_OPTIONS=datadump=y'
+ *
+ * Data dumps may fail to happen due to the debug agent suspending all threads.
+ * This causes the Signal Dispatcher and Attach Listener threads to be suspended,
+ * which can cause issues with jcmd attaching. Running with -XX:+StartAttachListener can
+ * help, but in general it is best not to try a datadump when all threads are suspended.
+ *
+ * Data dumps are also risky when the debug agent is handling events or commands from
+ * the debugger, due to dumping data that is not lock protected. This can cause a
+ * crash.
+ *
+ * Data dumps are meant to aid with post mortem debugging (debugging after a
+ * problem has been detected), not for ongoing periodic data gathering.
+ */
+static void JNICALL
+cbDataDump(jvmtiEnv *jvmti_env)
+{
+    tty_message("Debug Agent Data Dump");
+    tty_message("=== START DUMP ===");
+    threadControl_dumpAllThreads();
+    eventHandler_dumpAllHandlers(JNI_TRUE);
+    tty_message("=== END DUMP ===");
+}
+
+/**
  * Delete this handler (do not delete permanent handlers):
  * Deinsert handler from active list,
  * make it inactive, and free it's memory
@@ -1518,6 +1556,19 @@ eventHandler_initialize(jbyte sessionID)
     if (error != JVMTI_ERROR_NONE) {
         EXIT_ERROR(error,"Can't enable garbage collection finish events");
     }
+
+    /*
+     * DATA_DUMP_REQUEST is special since it is not tied to any handlers or an EI,
+     * so it cannot be setup using threadControl_setEventMode(). Use JVMTI API directly.
+     */
+    if (gdata->jvmti_data_dump) {
+        error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventNotificationMode)
+                (gdata->jvmti, JVMTI_ENABLE, JVMTI_EVENT_DATA_DUMP_REQUEST, NULL);
+        if (error != JVMTI_ERROR_NONE) {
+            EXIT_ERROR(error,"Can't enable data dump request events");
+        }
+    }
+
     /*
      * Only enable vthread START and END events if we want to remember
      * vthreads when no debugger is connected.
@@ -1580,6 +1631,8 @@ eventHandler_initialize(jbyte sessionID)
     gdata->callbacks.VirtualThreadStart         = &cbVThreadStart;
     /* Event callback for JVMTI_EVENT_VIRTUAL_THREAD_END */
     gdata->callbacks.VirtualThreadEnd           = &cbVThreadEnd;
+    /* Event callback for JVMTI_EVENT_DATA_DUMP_REQUEST */
+    gdata->callbacks.DataDumpRequest = &cbDataDump;
 
     error = JVMTI_FUNC_PTR(gdata->jvmti,SetEventCallbacks)
                 (gdata->jvmti, &(gdata->callbacks), sizeof(gdata->callbacks));
@@ -1851,9 +1904,7 @@ eventHandler_installExternal(HandlerNode *node)
                           JNI_TRUE);
 }
 
-/***** debugging *****/
-
-#ifdef DEBUG
+/***** APIs for debugging the debug agent *****/
 
 void
 eventHandler_dumpAllHandlers(jboolean dumpPermanent)
@@ -1892,5 +1943,3 @@ eventHandler_dumpHandler(HandlerNode *node)
     tty_message("Handler for %s(%d)\n", eventIndex2EventName(node->ei), node->ei);
     eventFilter_dumpHandlerFilters(node);
 }
-
-#endif /* DEBUG */
