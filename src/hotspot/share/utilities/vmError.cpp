@@ -152,7 +152,7 @@ static char* next_OnError_command(char* buf, int buflen, const char** ptr) {
   const char * cmdend = cmd;
   while (*cmdend != '\0' && *cmdend != ';') cmdend++;
 
-  Arguments::copy_expand_pid(cmd, cmdend - cmd, buf, buflen);
+  Arguments::copy_expand_arguments(cmd, cmdend - cmd, buf, buflen);
 
   *ptr = (*cmdend == '\0' ? cmdend : cmdend + 1);
   return buf;
@@ -1536,7 +1536,7 @@ static int expand_and_open(const char* pattern, bool overwrite_existing, char* b
   } else {
     mode |= O_EXCL;
   }
-  if (Arguments::copy_expand_pid(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
+  if (Arguments::copy_expand_arguments(pattern, strlen(pattern), &buf[pos], buflen - pos)) {
     fd = open(buf, mode, 0666);
   }
   return fd;

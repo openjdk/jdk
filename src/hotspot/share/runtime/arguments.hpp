@@ -258,6 +258,9 @@ class Arguments : AllStatic {
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
 
+  // VM start time
+  static jlong _vm_start_time;
+
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
@@ -501,8 +504,12 @@ class Arguments : AllStatic {
   static void set_enable_preview() { _enable_preview = true; }
   static bool enable_preview() { return _enable_preview; }
 
-  // Utility: copies src into buf, replacing "%%" with "%" and "%p" with pid.
-  static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
+  // Records vm start time
+  static void set_vm_start_time(jlong time) { _vm_start_time = time; }
+  static jlong vm_start_time() { return _vm_start_time; }
+
+  // Utility: copies src into buf, replacing "%%" with "%", "%p" with pid and "%t" with timestamp
+  static bool copy_expand_arguments(const char* src, size_t srclen, char* buf, size_t buflen);
 
   static bool atojulong(const char *s, julong* result);
 

@@ -1793,7 +1793,7 @@ void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
     // Invocation outside of jcmd requires pid substitution.
-    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+    if (!Arguments::copy_expand_arguments(DEFAULT_PERFMAP_FILENAME,
                                     strlen(DEFAULT_PERFMAP_FILENAME),
                                     fname, JVM_MAXPATHLEN)) {
       st->print_cr("Warning: Not writing perf map as pid substitution failed.");

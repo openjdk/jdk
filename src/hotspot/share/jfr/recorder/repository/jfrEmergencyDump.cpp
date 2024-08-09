@@ -127,7 +127,7 @@ static const char* create_emergency_dump_path() {
     default:
       filename_fmt = vm_error_filename_fmt;
   }
-  const bool result = Arguments::copy_expand_pid(filename_fmt, strlen(filename_fmt), _path_buffer + path_len, JVM_MAXPATHLEN - path_len);
+  const bool result = Arguments::copy_expand_arguments(filename_fmt, strlen(filename_fmt), _path_buffer + path_len, JVM_MAXPATHLEN - path_len);
   return result ? _path_buffer : nullptr;
 }
 

@@ -191,7 +191,7 @@ template <> void DCmdArgument<char*>::parse_value(const char* str,
     // Use realloc as we may have a default set.
     if (strcmp(type(), "FILE") == 0) {
       _value = REALLOC_C_HEAP_ARRAY(char, _value, JVM_MAXPATHLEN, mtInternal);
-      if (!Arguments::copy_expand_pid(str, len, _value, JVM_MAXPATHLEN)) {
+      if (!Arguments::copy_expand_arguments(str, len, _value, JVM_MAXPATHLEN)) {
         stringStream error_msg;
         error_msg.print("File path invalid or too long: %s", str);
         THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), error_msg.base());

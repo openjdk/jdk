@@ -44,6 +44,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -2813,10 +2814,20 @@ void HeapDumper::dump_heap(bool oome) {
     }
     // If HeapDumpPath wasn't a file name then we append the default name
     if (use_default_filename) {
+      stringStream default_filename;
+      default_filename.print("%s%%p%s", dump_file_name, dump_file_ext);
       const size_t dlen = strlen(base_path);  // if heap dump dir specified
-      jio_snprintf(&base_path[dlen], sizeof(base_path)-dlen, "%s%d%s",
-                   dump_file_name, os::current_process_id(), dump_file_ext);
+      strncpy(&base_path[dlen], default_filename.base(), sizeof(base_path) - dlen);
     }
+
+    // Expand arguments in filename
+    char filepath[JVM_MAXPATHLEN];
+    if (!Arguments::copy_expand_arguments(base_path, strlen(base_path),
+                                          filepath, sizeof(filepath))) {
+      warning("Cannot expand arguments in filename %s", base_path);
+      return;
+    }
+    strncpy(base_path, filepath, sizeof(filepath));
     const size_t len = strlen(base_path) + 1;
     my_path = (char*)os::malloc(len, mtInternal);
     if (my_path == nullptr) {
