@@ -314,11 +314,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Returns an {@code EncryptedPrivateKeyInfo} from a given PrivateKey.
-     * A valid password-based encryption (PBE) algorithm and a PBEKeySpec
-     * containing the password must be specified.  AlgorithmParameterSpec,
-     * {@code params}, will use the provider default if {@code null} is
-     * passed.  If {@code provider} is {@code null}, the provider will be
-     * selected through the default configuration.
+     * A valid password-based encryption (PBE) algorithm and password must be
+     * specified.  AlgorithmParameterSpec, {@code params}, will use the
+     * provider default if {@code null} is passed.  If {@code provider} is
+     * {@code null}, the provider will be selected through the default
+     * provider list.
      * <p>
      * The PBE algorithm string format details can be found in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
@@ -326,10 +326,10 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      * Specification.
      *
      * @param key the PrivateKey object to encrypt.
-     * @param keySpec PBEKeySpec containing the password
-     * @param algorithm the algorithm to encrypt with.
-     * @param params the AlgorithmParameterSpec to encrypt with.
-     * @param provider the Provider that will perform the encryption
+     * @param password the password used for generating the PBE key.
+     * @param algorithm the PBE encryption algorithm.
+     * @param params the parameters used with the PBE encryption.
+     * @param provider the Provider that will perform the encryption.
      * @return an EncryptedPrivateKeyInfo.
      * @throws IllegalArgumentException when arguments passed are incorrect.
      * @throws SecurityException on a cryptographic errors.
@@ -339,12 +339,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
-        PBEKeySpec keySpec, String algorithm, AlgorithmParameterSpec params,
+        char[] password, String algorithm, AlgorithmParameterSpec params,
         Provider provider) {
 
+        PBEKeySpec keySpec = new PBEKeySpec(password);
         Objects.requireNonNull(algorithm);
-        Objects.requireNonNull(keySpec);
-
         Cipher cipher;
         SecretKey skey;
 
@@ -402,12 +401,13 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) {
+        char[] pass = password.clone();
         if (Pem.DEFAULT_ALGO == null || Pem.DEFAULT_ALGO.length() == 0) {
             throw new SecurityException("Security property " +
                 "\"jdk.epkcs8.defaultAlgorithm\" may not specify a " +
                 "valid algorithm.  Operation cannot be performed.");
         }
-        return encryptKey(key, new PBEKeySpec(password), Pem.DEFAULT_ALGO,
+        return encryptKey(key, pass, Pem.DEFAULT_ALGO,
             null, null);
     }
 
