@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,10 +166,10 @@ class AppImageBundler extends AbstractBundler {
             Path outputDirectory) throws PackagerException, IOException,
             ConfigException {
 
+        var app = ApplicationFromParams.APPLICATION.fetchFrom(params);
+
         boolean hasAppImage =
                 PREDEFINED_APP_IMAGE.fetchFrom(params) != null;
-        boolean hasRuntimeImage =
-                PREDEFINED_RUNTIME_IMAGE.fetchFrom(params) != null;
 
         Path rootDirectory = hasAppImage ?
                 PREDEFINED_APP_IMAGE.fetchFrom(params) :
@@ -177,13 +177,7 @@ class AppImageBundler extends AbstractBundler {
 
         AbstractAppImageBuilder appBuilder = appImageSupplier.apply(rootDirectory);
         if (!hasAppImage) {
-            if (!hasRuntimeImage) {
-                JLinkBundlerHelper.execute(params,
-                        appBuilder.getAppLayout().runtimeHomeDirectory());
-            } else {
-                StandardBundlerParam.copyPredefinedRuntimeImage(
-                        params, appBuilder.getAppLayout());
-            }
+            app.runtimeBuilder().createRuntime(appBuilder.getAppLayout());            
         }
 
         appBuilder.prepareApplicationFiles(params);

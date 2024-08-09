@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Map;
+import static jdk.jpackage.internal.Package.StandardPackageType.LinuxDeb;
+import static jdk.jpackage.internal.PackageFromParams.createBundlerParam;
 
+final class LinuxDebPackageFromParams {
 
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
+    private static LinuxDebPackage create(Map<String, ? super Object> params) throws ConfigException {
+        var pkg = LinuxPackageFromParams.create(params, LinuxDeb);
 
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
+        var maintainerEmail = MAINTAINER_EMAIL.fetchFrom(params);
 
-    @Override
-    public String toString() {
-        return getName();
+        return new LinuxDebPackage.Impl(pkg, maintainerEmail);
     }
 
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
-        }
-    }
+    static final BundlerParamInfo<LinuxDebPackage> PACKAGE = createBundlerParam(
+            LinuxDebPackageFromParams::create);
+
+    private static final BundlerParamInfo<String> MAINTAINER_EMAIL = new BundlerParamInfo<>(
+            Arguments.CLIOptions.LINUX_DEB_MAINTAINER.getId(),
+            String.class,
+            params -> "Unknown",
+            (s, p) -> s);
+
 }

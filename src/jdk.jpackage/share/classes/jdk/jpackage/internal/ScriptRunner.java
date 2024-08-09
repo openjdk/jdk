@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
-import static jdk.jpackage.internal.StandardBundlerParam.CONFIG_ROOT;
 
 /**
  * Runs custom script from resource directory.
@@ -75,12 +72,11 @@ class ScriptRunner {
         return this;
     }
 
-    public void run(Map<String, ? super Object> params) throws IOException {
-        String scriptName = String.format("%s-%s%s", APP_NAME.fetchFrom(params),
+    public void run(Workshop workshop, String name) throws IOException {
+        String scriptName = String.format("%s-%s%s", name,
                 scriptNameSuffix, scriptSuffix());
-        Path scriptPath = CONFIG_ROOT.fetchFrom(params).resolve(
-                scriptName);
-        createResource(null, params)
+        Path scriptPath = workshop.configDir().resolve(scriptName);
+        workshop.createResource(null)
                 .setCategory(I18N.getString(resourceCategoryId))
                 .saveToFile(scriptPath);
         if (!Files.exists(scriptPath)) {
@@ -98,6 +94,25 @@ class ScriptRunner {
         }
 
         Executor.of(pb).executeExpectSuccess();
+    }
+
+    public void run(Map<String, ? super Object> params) throws IOException {
+        run(new Workshop() {
+            @Override
+            public Path buildRoot() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public Path resourceDir() {
+                return StandardBundlerParam.RESOURCE_DIR.fetchFrom(params);
+            }
+
+            @Override
+            public Path configDir() {
+                return StandardBundlerParam.CONFIG_ROOT.fetchFrom(params);
+            }
+        }, StandardBundlerParam.APP_NAME.fetchFrom(params));
     }
 
     private static String shell() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
     private static final String TEMPLATE_APP_ICON ="JavaApp.ico";
 
     public static final BundlerParamInfo<Path> ICON_ICO =
-            new StandardBundlerParam<>(
+            new BundlerParamInfo<>(
             "icon.ico",
             Path.class,
             params -> {
@@ -60,8 +60,8 @@ public class WindowsAppImageBuilder extends AbstractAppImageBuilder {
             },
             (s, p) -> Path.of(s));
 
-    public static final StandardBundlerParam<Boolean> CONSOLE_HINT =
-            new StandardBundlerParam<>(
+    public static final BundlerParamInfo<Boolean> CONSOLE_HINT =
+            new BundlerParamInfo<>(
             Arguments.CLIOptions.WIN_CONSOLE_HINT.getId(),
             Boolean.class,
             params -> false,

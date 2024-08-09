@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,51 +30,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import static jdk.jpackage.internal.MacAppImageBuilder.MAC_CF_BUNDLE_IDENTIFIER;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.APP_NAME;
 
 /**
  * Helper to install launchers as services using "launchd".
  */
 public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
 
-    private MacLaunchersAsServices(PlatformPackage thePackage,
-            Map<String, Object> params) throws IOException {
-        super(thePackage, List.of(), params, li -> {
-            return new Launcher(thePackage, li.getName(), params);
+    private MacLaunchersAsServices(Workshop workshop, Package pkg) throws IOException {
+        super(workshop, pkg.app(), List.of(), launcher -> {
+            return new MacLauncherAsService(workshop, pkg, launcher);
         });
     }
 
     static ShellCustomAction create(Map<String, Object> params,
             Path outputDir) throws IOException {
-        if (StandardBundlerParam.isRuntimeInstaller(params)) {
+
+        // Order is important!
+        var pkg = PackageFromParams.PACKAGE.fetchFrom(params);
+        var workshop = WorkshopFromParams.WORKSHOP.fetchFrom(params);
+
+        if (pkg.isRuntimeInstaller()) {
             return null;
         }
-        return Optional.of(new MacLaunchersAsServices(new PlatformPackage() {
-            @Override
-            public String name() {
-                return MAC_CF_BUNDLE_IDENTIFIER.fetchFrom(params);
-            }
-
-            @Override
-            public Path sourceRoot() {
-                return outputDir;
-            }
-
-            @Override
-            public ApplicationLayout sourceApplicationLayout() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public ApplicationLayout installedApplicationLayout() {
-                return ApplicationLayout.macAppImage().resolveAt(Path.of(
-                        MacBaseInstallerBundler.getInstallDir(params, false),
-                        APP_NAME.fetchFrom(params) + ".app"));
-            }
-        }, params)).filter(Predicate.not(MacLaunchersAsServices::isEmpty)).orElse(
-                null);
+        return Optional.of(new MacLaunchersAsServices(workshop, pkg)).filter(Predicate.not(
+                MacLaunchersAsServices::isEmpty)).orElse(null);
     }
 
     public static Path getServicePListFileName(String packageName,
@@ -83,15 +62,13 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
         return Path.of(packageName + "-" + baseName + ".plist");
     }
 
-    private static class Launcher extends UnixLauncherAsService {
+    private static class MacLauncherAsService extends UnixLauncherAsService {
 
-        Launcher(PlatformPackage thePackage, String name,
-                Map<String, Object> mainParams) {
-            super(name, mainParams, createResource("launchd.plist.template",
-                    mainParams).setCategory(I18N.getString(
-                            "resource.launchd-plist-file")));
+        MacLauncherAsService(Workshop workshop, Package pkg, Launcher launcher) {
+            super(launcher, workshop.createResource("launchd.plist.template").setCategory(I18N
+                    .getString("resource.launchd-plist-file")));
 
-            plistFilename = getServicePListFileName(thePackage.name(), getName());
+            plistFilename = getServicePListFileName(pkg.packageName(), getName());
 
             // It is recommended to set value of "label" property in launchd
             // .plist file equal to the name of this .plist file without the suffix.
@@ -101,7 +78,7 @@ public final class MacLaunchersAsServices extends UnixLaunchersAsServices {
                     .setPublicName(plistFilename)
                     .addSubstitutionDataEntry("LABEL", label)
                     .addSubstitutionDataEntry("APPLICATION_LAUNCHER",
-                            thePackage.installedApplicationLayout().launchersDirectory().resolve(
+                            pkg.installedAppLayout().launchersDirectory().resolve(
                                     getName()).toString());
         }
 

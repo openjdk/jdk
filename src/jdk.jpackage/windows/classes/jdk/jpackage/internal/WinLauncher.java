@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,43 +22,45 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.jpackage.internal;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Map;
+import java.util.Set;
 
-
-/**
- * AbstractBundler
- *
- * This is the base class all bundlers extend from.
- * It contains methods and parameters common to all bundlers.
- * The concrete implementations are in the platform specific bundlers.
- */
-abstract class AbstractBundler implements Bundler {
-
-    static final BundlerParamInfo<Path> IMAGES_ROOT =
-            new BundlerParamInfo<>(
-            "imagesRoot",
-            Path.class,
-            params ->
-                StandardBundlerParam.TEMP_ROOT.fetchFrom(params).resolve("images"),
-            (s, p) -> null);
+interface WinLauncher extends Launcher {
 
     @Override
-    public String toString() {
-        return getName();
+    default Path executableName() {
+        return Path.of(name() + ".exe");
     }
 
-    @Override
-    public void cleanup(Map<String, ? super Object> params) {
-        try {
-            IOUtils.deleteRecursive(
-                    StandardBundlerParam.TEMP_ROOT.fetchFrom(params));
-        } catch (IOException e) {
-            Log.verbose(e.getMessage());
+    boolean isConsole();
+
+    enum WinShortcut {
+        WinShortcutDesktop,
+        WinShortcutStartMenu
+    }
+
+    Set<WinShortcut> shortcuts();
+
+    static class Impl extends Launcher.Proxy<Launcher> implements WinLauncher {
+        Impl(Launcher launcher, boolean isConsole, Set<WinShortcut> shortcuts) {
+            super(launcher);
+            this.isConsole = isConsole;
+            this.shortcuts = shortcuts;
         }
+
+        @Override
+        public boolean isConsole() {
+            return isConsole;
+        }
+
+        @Override
+        public Set<WinShortcut> shortcuts() {
+            return shortcuts;
+        }
+
+        private final boolean isConsole;
+        private final Set<WinShortcut> shortcuts;
     }
 }

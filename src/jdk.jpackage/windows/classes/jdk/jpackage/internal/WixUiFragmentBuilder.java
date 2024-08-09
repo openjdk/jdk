@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.IOUtils.XmlConsumer;
-import static jdk.jpackage.internal.OverridableResource.createResource;
-import static jdk.jpackage.internal.StandardBundlerParam.LICENSE_FILE;
 import jdk.jpackage.internal.WixAppImageFragmentBuilder.ShortcutsFolder;
 import jdk.jpackage.internal.WixToolset.WixToolsetType;
 
@@ -51,31 +48,27 @@ import jdk.jpackage.internal.WixToolset.WixToolsetType;
 final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
     @Override
-    void initFromParams(Map<String, ? super Object> params) {
-        super.initFromParams(params);
+    void initFromParams(Workshop workshop, WinMsiPackage pkg) {
+        super.initFromParams(workshop, pkg);
 
-        String licenseFile = LICENSE_FILE.fetchFrom(params);
+        Path licenseFile = pkg.licenseFile();
         withLicenseDlg = licenseFile != null;
         if (withLicenseDlg) {
-            Path licenseFileName = IOUtils.getFileName(Path.of(licenseFile));
+            Path licenseFileName = IOUtils.getFileName(licenseFile);
             Path destFile = getConfigRoot().resolve(licenseFileName);
             setWixVariable("JpLicenseRtf", destFile.toAbsolutePath().toString());
         }
 
-        withInstallDirChooserDlg = INSTALLDIR_CHOOSER.fetchFrom(params);
+        withInstallDirChooserDlg = pkg.withInstallDirChooser();
 
-        List<ShortcutsFolder> shortcutFolders = Stream.of(
-                ShortcutsFolder.values()).filter(shortcutFolder -> {
-            return shortcutFolder.requested(params)
-                    && SHORTCUT_PROMPT.fetchFrom(params);
-        }).toList();
+        var shortcutFolders = ShortcutsFolder.getForPackage(pkg);
 
         withShortcutPromptDlg = !shortcutFolders.isEmpty();
 
         customDialogs = new ArrayList<>();
 
         if (withShortcutPromptDlg) {
-            CustomDialog dialog = new CustomDialog(params, I18N.getString(
+            CustomDialog dialog = new CustomDialog(workshop::createResource, I18N.getString(
                     "resource.shortcutpromptdlg-wix-file"),
                     "ShortcutPromptDlg.wxs");
             for (var shortcutFolder : shortcutFolders) {
@@ -86,7 +79,7 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
         }
 
         if (withInstallDirChooserDlg) {
-            CustomDialog dialog = new CustomDialog(params, I18N.getString(
+            CustomDialog dialog = new CustomDialog(workshop::createResource, I18N.getString(
                     "resource.installdirnotemptydlg-wix-file"),
                     "InstallDirNotEmptyDlg.wxs");
             List<Dialog> dialogIds = getUI().dialogIdsSupplier.apply(this);
@@ -509,12 +502,12 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
 
     private final class CustomDialog {
 
-        CustomDialog(Map<String, ? super Object> params, String category,
+        CustomDialog(Function<String, OverridableResource> createResource, String category,
                 String wxsFileName) {
             this.wxsFileName = wxsFileName;
             this.wixVariables = new WixVariables();
 
-            addResource(createResource(wxsFileName, params).setCategory(category).setPublicName(
+            addResource(createResource.apply(wxsFileName).setCategory(category).setPublicName(
                     wxsFileName), wxsFileName);
         }
 
@@ -532,20 +525,4 @@ final class WixUiFragmentBuilder extends WixFragmentBuilder {
     private boolean withLicenseDlg;
     private boolean withCustomActionsDll = true;
     private List<CustomDialog> customDialogs;
-
-    private static final BundlerParamInfo<Boolean> INSTALLDIR_CHOOSER
-            = new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_DIR_CHOOSER.getId(),
-                    Boolean.class,
-                    params -> false,
-                    (s, p) -> Boolean.valueOf(s)
-            );
-
-    private static final StandardBundlerParam<Boolean> SHORTCUT_PROMPT
-            = new StandardBundlerParam<>(
-                    Arguments.CLIOptions.WIN_SHORTCUT_PROMPT.getId(),
-                    Boolean.class,
-                    params -> false,
-                    (s, p) -> Boolean.valueOf(s)
-            );
 }
