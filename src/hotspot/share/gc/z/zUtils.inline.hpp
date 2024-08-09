@@ -41,7 +41,7 @@ inline uintptr_t ZUtils::alloc_aligned_unfreeable(size_t alignment, size_t size)
 
   memset(aligned_addr, 0, size);
 
-  // Since free expects pointers returned by malloc, aligned_addr cannot be 
+  // Since free expects pointers returned by malloc, aligned_addr cannot be
   // freed since it is most likely not the same as addr after alignment.
   return (uintptr_t)aligned_addr;
 }
