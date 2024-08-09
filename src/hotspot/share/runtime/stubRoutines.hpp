@@ -496,11 +496,9 @@ class StubRoutines: AllStatic {
     return _upcall_stub_exception_handler;
   }
 
-  using UpcallLoadTarget = void (*)(jobject receiver, JavaThread* thread);
-
-  static UpcallLoadTarget upcall_stub_load_target() {
+  static address upcall_stub_load_target() {
     assert(_upcall_stub_load_target != nullptr, "not implemented");
-    return (UpcallLoadTarget) _upcall_stub_load_target;
+    return _upcall_stub_load_target;
   }
 
   static address lookup_secondary_supers_table_stub(u1 slot) {

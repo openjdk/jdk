@@ -3990,31 +3990,22 @@ address StubGenerator::generate_upcall_stub_exception_handler() {
 }
 
 // load Method* target of MethodHandle
-// c_rarg0 = jobject receiver
-// c_rarg1 = JavaThread* thread
+// j_rarg0 = jobject receiver
+// rbx = result
 address StubGenerator::generate_upcall_stub_load_target() {
-  Register rmethod = c_rarg0;
-  Register rreceiver = c_rarg0;
-  Register rthread = c_rarg1;
-
   StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
   address start = __ pc();
-  __ enter();
 
-  __ reinit_heapbase();
-  __ resolve_jobject(rreceiver, rthread, rscratch1);
-  __ movptr(Address(rthread, JavaThread::vm_result_offset()), rreceiver);
+  __ resolve_global_jobject(j_rarg0, r15_thread, rscratch1);
     // Load target method from receiver
-  __ load_heap_oop(rmethod, Address(rreceiver, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
-  __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
-  __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1);
-  __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
-                    Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+  __ load_heap_oop(rbx, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1);
+  __ load_heap_oop(rbx, Address(rbx, java_lang_invoke_MemberName::method_offset()), rscratch1);
+  __ access_load_at(T_ADDRESS, IN_HEAP, rbx,
+                    Address(rbx, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
                     noreg, noreg);
-  __ movptr(Address(rthread, JavaThread::callee_target_offset()), rmethod); // just in case callee is deoptimized
-  __ movptr(Address(rthread, JavaThread::vm_result_2_offset()), rmethod);
+  __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
 
-  __ leave();
   __ ret(0);
 
   return start;

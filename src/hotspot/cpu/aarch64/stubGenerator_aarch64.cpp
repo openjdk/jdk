@@ -7413,31 +7413,22 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // load Method* target of MethodHandle
-  // c_rarg0 = jobject receiver
-  // c_rarg1 = JavaThread* thread
+  // j_rarg0 = jobject receiver
+  // rmethod = result
   address generate_upcall_stub_load_target() {
-    Register rmethod = c_rarg0;
-    Register rreceiver = c_rarg0;
-    Register rthread = c_rarg1;
-
     StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
-    __ enter();
 
-    __ reinit_heapbase();
-    __ resolve_jobject(rreceiver, rscratch1, rscratch2);
-    __ str(rreceiver, Address(rthread, JavaThread::vm_result_offset()));
+    __ resolve_global_jobject(j_rarg0, rscratch1, rscratch2);
       // Load target method from receiver
-    __ load_heap_oop(rmethod, Address(rreceiver, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
+    __ load_heap_oop(rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), rscratch1, rscratch2);
     __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), rscratch1, rscratch2);
     __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), rscratch1, rscratch2);
     __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
                       Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
                       noreg, noreg);
     __ str(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
-    __ str(rmethod, Address(rthread, JavaThread::vm_result_2_offset()));
 
-    __ leave();
     __ ret(lr);
 
     return start;

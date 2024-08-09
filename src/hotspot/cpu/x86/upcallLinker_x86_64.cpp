@@ -297,13 +297,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, r15_thread);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // puts target Method* in rbx
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath();
 
-  __ get_vm_result_2(rbx, r15_thread);
   __ call(Address(rbx, Method::from_compiled_offset()));
 
   __ pop_cont_fastpath();

@@ -239,13 +239,14 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, rthread);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t)receiver);
+  __ ldr(rscratch1, RuntimeAddress(StubRoutines::upcall_stub_load_target()));
+  __ blr(rscratch1); // puts target Method* in rmethod
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath(rthread);
 
-  __ get_vm_result_2(rmethod, rthread);
   __ ldr(rscratch1, Address(rmethod, Method::from_compiled_offset()));
   __ blr(rscratch1);
 
