@@ -3740,6 +3740,13 @@ jint Arguments::apply_ergo() {
     }
   }
 
+  if (log_is_enabled(Info, perf, vmmutex)) {
+    if (!UsePerfData) {
+      warning("Disabling -Xlog:perf+vmmutex since UsePerfData is turned off.");
+      LogConfiguration::configure_stdout(LogLevel::Off, false, LOG_TAGS(perf, vmmutex));
+    }
+  }
+
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
       LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(valuebasedclasses));

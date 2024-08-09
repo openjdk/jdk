@@ -272,10 +272,11 @@ Mutex::~Mutex() {
   os::free(const_cast<char*>(_name));
 }
 
-Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr) {
+Mutex::Mutex(Rank rank, const char * name, bool allow_vm_block) : _owner(nullptr), _id(-1) {
   assert(os::mutex_init_done(), "Too early!");
   assert(name != nullptr, "Mutex requires a name");
   _name = os::strdup(name, mtInternal);
+  _id = MutexLocker::name2id(name);
 #ifdef ASSERT
   _allow_vm_block  = allow_vm_block;
   _rank            = rank;

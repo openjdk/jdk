@@ -69,6 +69,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/statSampler.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -360,6 +361,8 @@ void print_statistics() {
   ThreadsSMRSupport::log_statistics();
 
   ClassLoader::print_counters(tty);
+
+  MutexLockerImpl::print_counters_on(tty);
 }
 
 // Note: before_exit() can be executed only once, if more than one threads
