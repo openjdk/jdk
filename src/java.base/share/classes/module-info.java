@@ -301,7 +301,8 @@ module java.base {
         java.management,
         jdk.crypto.cryptoki,
         jdk.net,
-        jdk.sctp;
+        jdk.sctp,
+        jdk.zipfs;
     exports sun.nio.cs to
         jdk.charsets;
     exports sun.nio.fs to
