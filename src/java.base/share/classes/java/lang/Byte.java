@@ -76,6 +76,16 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     public static final byte   MAX_VALUE = 127;
 
     /**
+     * A constant holding polarity(sign) mask used by saturating operations.
+     */
+    public static final byte POLARITY_MASK_BYTE  = (byte)(1 << 7);
+
+    /**
+     * A constant holding maximum unsigned value used by saturating unsigned operations.
+     */
+    public static final byte UNSIGNED_MAX = (byte)0xFF;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code byte}.
      */
@@ -572,6 +582,116 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      */
     public static long toUnsignedLong(byte x) {
         return ((long) x) & 0xffL;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the greater of two {@code byte} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte umax(byte a, byte b) {
+        return compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the smaller of two {@code byte} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte umin(byte a, byte b) {
+        return compareUnsigned(a, b) < 0 ? a : b;
+    }
+
+    /**
+     * Saturating addition of two {@code byte} values,
+     * which returns a {@code Byte.MIN_VALUE} in underflowing or
+     * {@code Byte.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b} iff within {@code byte} value range else delimiting {@code Byte.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte saturatingAdd(byte a, byte b) {
+        int res = a + b;
+        if (res > Byte.MAX_VALUE) {
+            return Byte.MAX_VALUE;
+        } else if (res < Byte.MIN_VALUE) {
+            return Byte.MIN_VALUE;
+        } else {
+           return (byte)res;
+        }
+    }
+
+    /**
+     * Saturating subtraction of two {@code byte} values,
+     * which returns a {@code Byte.MIN_VALUE} in underflowing or
+     * {@code Byte.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the difference between {@code a} and {@code b} iff within {@code byte} value range else delimiting {@code Byte.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte saturatingSub(byte a, byte b) {
+        byte res = (byte)(a - b);
+        // Saturation occurs when result of computation over opposite polarity inputs exceeds the byte
+        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
+        // comply with first argument polarity.
+        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_BYTE) == POLARITY_MASK_BYTE;
+        if (opposite_polarity_inputs && ((res & POLARITY_MASK_BYTE) != (a & POLARITY_MASK_BYTE))) {
+            return res < 0 ? Byte.MAX_VALUE : Byte.MIN_VALUE;
+        } else {
+            return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned addition of two {@code byte} values,
+     * which returns a {@code Byte.UNSIGNED_MAX} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Byte.UNSIGNED_MAX} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte saturatingUnsignedAdd(byte a, byte b) {
+        byte res = (byte)(a + b);
+        boolean overflow = Byte.compareUnsigned(res, (byte)(a | b)) < 0;
+        if (overflow)  {
+           return Byte.UNSIGNED_MAX;
+        } else {
+           return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned subtraction of two {@code byte} values,
+     * which returns a zero in underflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static byte saturatingUnsignedSub(byte a, byte b) {
+        if (Byte.compareUnsigned(b, a) < 0) {
+            return (byte)(a - b);
+        } else {
+            return 0;
+        }
     }
 
 

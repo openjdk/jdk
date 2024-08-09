@@ -1124,11 +1124,35 @@ relativeError));
             })
     );
 
+    static final List<IntFunction<float[]>> FLOAT_SATURATING_GENERATORS = List.of(
+            withToString("float[Float.MIN_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(Float.MIN_VALUE));
+            }),
+            withToString("float[Float.MAX_VALUE]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(Float.MAX_VALUE));
+            }),
+            withToString("float[Float.MAX_VALUE - 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(Float.MAX_VALUE - 100));
+            }),
+            withToString("float[Float.MIN_VALUE + 100]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(Float.MIN_VALUE + 100));
+            })
+    );
+
     // Create combinations of pairs
     // @@@ Might be sensitive to order e.g. div by 0
     static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_PAIRS =
         Stream.of(FLOAT_GENERATORS.get(0)).
                 flatMap(fa -> FLOAT_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
+                collect(Collectors.toList());
+
+    static final List<List<IntFunction<float[]>>> FLOAT_SATURATING_GENERATOR_PAIRS =
+        Stream.of(FLOAT_GENERATORS.get(0)).
+                flatMap(fa -> FLOAT_SATURATING_GENERATORS.stream().skip(1).map(fb -> List.of(fa, fb))).
                 collect(Collectors.toList());
 
     @DataProvider
@@ -1150,8 +1174,23 @@ relativeError));
     }
 
     @DataProvider
+    public Object[][] floatSaturatingBinaryOpProvider() {
+        return FLOAT_SATURATING_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
     public Object[][] floatIndexedOpProvider() {
         return FLOAT_GENERATOR_PAIRS.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] floatSaturatingBinaryOpMaskProvider() {
+        return BOOLEAN_MASK_GENERATORS.stream().
+                flatMap(fm -> FLOAT_SATURATING_GENERATOR_PAIRS.stream().map(lfa -> {
+                    return Stream.concat(lfa.stream(), Stream.of(fm)).toArray();
+                })).
                 toArray(Object[][]::new);
     }
 

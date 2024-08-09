@@ -88,6 +88,16 @@ public final class Integer extends Number
     @Native public static final int   MAX_VALUE = 0x7fffffff;
 
     /**
+     * A constant holding polarity(sign) mask used by saturating operations.
+     */
+    public static final int POLARITY_MASK_INT  = 1 << 31;
+
+    /**
+     * A constant holding maximum unsigned value used by saturating unsigned operations.
+     */
+    public static final int UNSIGNED_MAX = 0xFFFFFFFF;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code int}.
      *
@@ -1982,6 +1992,117 @@ public final class Integer extends Number
      */
     public static int min(int a, int b) {
         return Math.min(a, b);
+    }
+
+    /**
+     * Based on the unsigned comparison returns the greater of two {@code int} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the greater of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static int umax(int a, int b) {
+        return compareUnsigned(a, b) > 0 ? a : b;
+    }
+
+    /**
+     * Based on the unsigned comparison returns the smaller of two {@code int} values.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the smaller of {@code a} and {@code b}
+     * @see java.util.function.BinaryOperator
+     * @since 1.8
+     */
+    public static int umin(int a, int b) {
+        return compareUnsigned(a, b) < 0 ? a : b;
+    }
+
+
+    /**
+     * Saturating addition of two {@code int} values,
+     * which returns an {@code Integer.MIN_VALUE} in underflowing or
+     * {@code Integer.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the sum of {@code a} and {@code b} iff within {@code int} value range else delimiting {@code Integer.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static int saturatingAdd(int a, int b) {
+        long res = (long)a + (long)b;
+        if (res > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        } else if (res < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        } else {
+            return (int)res;
+        }
+    }
+
+    /**
+     * Saturating subtraction of two {@code int} values,
+     * which returns an {@code Integer.MIN_VALUE} in underflowing or
+     * {@code Integer.MAX_VALUE} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the difference between {@code a} and {@code b} iff within {@code int} value range else delimiting {@code Integer.MIN_VALUE/MAX_VALUE} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static int saturatingSub(int a, int b) {
+        int res = a - b;
+        boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_INT) == POLARITY_MASK_INT;
+        // Saturation occurs when result of computation over opposite polarity inputs exceeds the int
+        // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
+        // comply with first argument polarity.
+        if (opposite_polarity_inputs && ((res & POLARITY_MASK_INT) != (a & POLARITY_MASK_INT))) {
+            return res < 0 ? Integer.MAX_VALUE : Integer.MIN_VALUE;
+        } else {
+            return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned addition of two {@code int} values,
+     * which returns a {@code Integer.UNSIGNED_MAX} in overflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned sum of {@code a} and {@code b} iff within unsigned value range else delimiting {@code Integer.UNSIGNED_MAX} value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static int saturatingUnsignedAdd(int a, int b) {
+        int res = a + b;
+        boolean overflow = Integer.compareUnsigned(res, (a | b)) < 0;
+        if (overflow)  {
+           return Integer.UNSIGNED_MAX;
+        } else {
+           return res;
+        }
+    }
+
+    /**
+     * Saturating unsigned subtraction of two {@code int} values,
+     * which returns a zero in underflowing scenario.
+     *
+     * @param a the first operand
+     * @param b the second operand
+     * @return the unsigned difference between {@code a} and {@code b} iff within unsigned value range else delimiting zero value.
+     * @see java.util.function.BinaryOperator
+     * @since 24
+     */
+    public static int saturatingUnsignedSub(int a, int b) {
+        if (Integer.compareUnsigned(b, a) < 0) {
+           return a - b;
+        } else {
+           return 0;
+        }
     }
 
     /**

@@ -563,8 +563,23 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Associative OR = assoc("OR", "|", VectorSupport.VECTOR_OP_OR, VO_NOFP+VO_ASSOC);
     /*package-private*/ /** Version of OR which works on float and double too. */
     static final Associative OR_UNCHECKED = assoc("OR_UNCHECKED", "|", VectorSupport.VECTOR_OP_OR, VO_ASSOC+VO_PRIVATE);
+
     /** Produce {@code a^b}.  Integral only. */
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
+
+    /** Produce {@code a [+] b}.  */
+    public static final Associative SATURATING_ADD = assoc("SATURATING_ADD", "+", VectorSupport.VECTOR_OP_SATURATING_ADD, VO_NOFP+VO_ASSOC);
+    /** Produce {@code a [u+] b}. */
+    public static final Associative SATURATING_UADD = assoc("SATURATING_UADD", "+", VectorSupport.VECTOR_OP_SATURATING_UADD, VO_NOFP+VO_ASSOC);
+    /** Produce {@code a [-] b}.  */
+    public static final Binary SATURATING_SUB = binary("SATURATING_SUB", "-", VectorSupport.VECTOR_OP_SATURATING_SUB, VO_NOFP);
+    /** Produce {@code a [u-] b}. */
+    public static final Binary SATURATING_USUB = binary("SATURATING_USUB", "-", VectorSupport.VECTOR_OP_SATURATING_USUB, VO_NOFP);
+    /** Produce {@code umin(a,b)}. */
+    public static final Associative UMIN = assoc("UMIN", "umin", VectorSupport.VECTOR_OP_UMIN, VO_NOFP+VO_ASSOC);
+    /** Produce {@code umax(a,b)}. */
+    public static final Associative UMAX = assoc("UMAX", "umax", VectorSupport.VECTOR_OP_UMAX, VO_NOFP+VO_ASSOC);
+
 
     /** Produce {@code a<<(n&(ESIZE*8-1))}.  Integral only. */
     public static final /*bitwise*/ Binary LSHL = binary("LSHL", "<<", VectorSupport.VECTOR_OP_LSHIFT, VO_SHIFT);

@@ -42,6 +42,8 @@ ternary_double_broadcast_masked="Ternary-Double-Broadcast-Masked-op"
 ternary_scalar="Ternary-Scalar-op"
 binary="Binary-op"
 binary_masked="Binary-Masked-op"
+saturating_binary="SaturatingBinary-op"
+saturating_binary_masked="SaturatingBinary-Masked-op"
 binary_broadcast="Binary-Broadcast-op"
 binary_broadcast_masked="Binary-Broadcast-Masked-op"
 binary_broadcast_long="Binary-Broadcast-Long-op"
@@ -310,6 +312,13 @@ function gen_binary_op {
   gen_op_tmpl $binary_masked "$@"
 }
 
+function gen_saturating_binary_op {
+  echo "Generating binary op $1 ($2)..."
+#  gen_op_tmpl $binary_scalar "$@"
+  gen_op_tmpl $saturating_binary "$@"
+  gen_op_tmpl $saturating_binary_masked "$@"
+}
+
 function gen_binary_op_no_masked {
   echo "Generating binary op $1 ($2)..."
 #  gen_op_tmpl $binary_scalar "$@"
@@ -459,6 +468,12 @@ gen_shift_cst_op  "ROL" "ROL_scalar(a, CONST_SHIFT)" "BITWISE"
 # Masked reductions.
 gen_binary_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_op_no_masked "MAX+max" "Math.max(a, b)"
+gen_binary_op "UMIN" "\$Wideboxtype\$.umin(a, b)" "BITWISE"
+gen_binary_op "UMAX" "\$Wideboxtype\$.umax(a, b)" "BITWISE"
+gen_saturating_binary_op "SATURATING_ADD" "\$Wideboxtype\$.saturatingAdd(a, b)" "BITWISE"
+gen_saturating_binary_op "SATURATING_SUB" "\$Wideboxtype\$.saturatingSub(a, b)" "BITWISE"
+gen_saturating_binary_op "SATURATING_UADD" "\$Wideboxtype\$.saturatingUnsignedAdd(a, b)" "BITWISE"
+gen_saturating_binary_op "SATURATING_USUB" "\$Wideboxtype\$.saturatingUnsignedSub(a, b)" "BITWISE"
 gen_binary_bcst_op_no_masked "MIN+min" "Math.min(a, b)"
 gen_binary_bcst_op_no_masked "MAX+max" "Math.max(a, b)"
 

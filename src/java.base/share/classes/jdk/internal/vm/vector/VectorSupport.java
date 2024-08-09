@@ -114,6 +114,13 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
+    public static final int VECTOR_OP_SATURATING_ADD  = 119;
+    public static final int VECTOR_OP_SATURATING_SUB  = 120;
+    public static final int VECTOR_OP_SATURATING_UADD = 121;
+    public static final int VECTOR_OP_SATURATING_USUB = 122;
+    public static final int VECTOR_OP_UMIN = 123;
+    public static final int VECTOR_OP_UMAX = 124;
+
     // See src/hotspot/share/opto/subnode.hpp
     //     struct BoolTest, and enclosed enum mask
     public static final int BT_eq = 0;  // 0000
@@ -381,6 +388,8 @@ public class VectorSupport {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v1, v2, m);
     }
+
+    /* ============================================================================ */
 
     /* ============================================================================ */
 

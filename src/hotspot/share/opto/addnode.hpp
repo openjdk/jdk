@@ -187,6 +187,72 @@ public:
   virtual uint match_edge(uint idx) const;
 };
 
+//------------------------------Saturating Operations ------------------------
+
+class SaturatingAddINode : public Node {
+public:
+  SaturatingAddINode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+class SaturatingAddLNode : public Node {
+public:
+  SaturatingAddLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+class SaturatingSubINode : public Node {
+public:
+  SaturatingSubINode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+class SaturatingSubLNode : public Node {
+public:
+  SaturatingSubLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+class SaturatingUAddINode : public Node {
+public:
+  SaturatingUAddINode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::UINT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+class SaturatingUAddLNode : public Node {
+public:
+  SaturatingUAddLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::ULONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+class SaturatingUSubINode : public Node {
+public:
+  SaturatingUSubINode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::UINT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+class SaturatingUSubLNode : public Node {
+public:
+  SaturatingUSubLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::ULONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
 //------------------------------OrINode----------------------------------------
 // Logically OR 2 integers.  Included with the ADD nodes because it inherits
 // all the behavior of addition on a ring.
@@ -333,6 +399,26 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
+//------------------------------UMaxINode---------------------------------------
+// Maximum of 2 unsigned integers.
+class UMaxINode : public Node {
+public:
+  UMaxINode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::UINT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
+//------------------------------UMinINode---------------------------------------
+// Minimum of 2 unsigned integers.
+class UMinINode : public Node {
+public:
+  UMinINode(Node* in1, Node* in2 ) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::UINT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
+};
+
 //------------------------------MaxLNode---------------------------------------
 // MAXimum of 2 longs.
 class MaxLNode : public MaxNode {
@@ -369,6 +455,26 @@ public:
   int min_opcode() const { return Op_MinL; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//------------------------------UMaxINode---------------------------------------
+// Maximum of 2 unsigned integers.
+class UMaxLNode : public Node {
+public:
+  UMaxLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::ULONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
+};
+
+//------------------------------UMinINode---------------------------------------
+// Minimum of 2 unsigned integers.
+class UMinLNode : public Node {
+public:
+  UMinLNode(Node* in1, Node* in2) : Node(in1,in2) {}
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeLong::ULONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------MaxFNode---------------------------------------
