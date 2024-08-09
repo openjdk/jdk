@@ -202,7 +202,7 @@ class FieldInfo {
   inline Symbol* lookup_symbol(int symbol_index) const;
 
   void print(outputStream* os, ConstantPool* cp);
-  void static print_from_growable_array(outputStream* os, GrowableArray<FieldInfo>* array, ConstantPool* cp);
+  void static print_from_growable_array(outputStream* os, GrowableArray<FieldInfo, int>* array, ConstantPool* cp);
 };
 
 class FieldInfoStream;
@@ -275,9 +275,9 @@ class FieldInfoStream : AllStatic {
   static int num_injected_java_fields(const Array<u1>* fis);
   static int num_total_fields(const Array<u1>* fis);
 
-  static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo>* fields, int java_fields, int injected_fields,
+  static Array<u1>* create_FieldInfoStream(GrowableArray<FieldInfo, int>* fields, int java_fields, int injected_fields,
                                                           ClassLoaderData* loader_data, TRAPS);
-  static GrowableArray<FieldInfo>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
+  static GrowableArray<FieldInfo, int>* create_FieldInfoArray(const Array<u1>* fis, int* java_fields_count, int* injected_fields_count);
   static void print_from_fieldinfo_stream(Array<u1>* fis, outputStream* os, ConstantPool* cp);
 };
 

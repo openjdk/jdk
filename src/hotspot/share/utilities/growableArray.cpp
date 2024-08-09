@@ -25,26 +25,23 @@
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/javaThread.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
 
-void* GrowableArrayResourceAllocator::allocate(int max, int elementSize) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = elementSize * (size_t) max;
+void* GrowableArrayResourceAllocator::allocate(size_t max, size_t elementSize) {
+  size_t byte_size = elementSize * max;
 
   return (void*)resource_allocate_bytes(byte_size);
 }
 
-void* GrowableArrayArenaAllocator::allocate(int max, int element_size, Arena* arena) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = element_size * (size_t) max;
+void* GrowableArrayArenaAllocator::allocate(size_t max, size_t element_size, Arena* arena) {
+  size_t byte_size = element_size * max;
 
   return arena->Amalloc(byte_size);
 }
 
-void* GrowableArrayCHeapAllocator::allocate(int max, int element_size, MEMFLAGS memflags) {
-  assert(max >= 0, "integer overflow");
-  size_t byte_size = element_size * (size_t) max;
+void* GrowableArrayCHeapAllocator::allocate(size_t max, size_t element_size, MEMFLAGS memflags) {
+  size_t byte_size = element_size * max;
 
   // memory type has to be specified for C heap allocation
   assert(memflags != mtNone, "memory type not specified for C heap object");
@@ -68,21 +65,6 @@ void GrowableArrayNestingCheck::on_resource_area_alloc() const {
   if (_nesting != Thread::current()->resource_area()->nesting()) {
     fatal("allocation bug: GrowableArray could grow within nested ResourceMark");
   }
-}
-
-void GrowableArrayMetadata::init_checks(const GrowableArrayBase* array) const {
-  // Stack allocated arrays support all three element allocation locations
-  if (array->allocated_on_stack_or_embedded()) {
-    return;
-  }
-
-  // Otherwise there's a strict one-to-one mapping
-  assert(on_C_heap() == array->allocated_on_C_heap(),
-         "growable array must be C heap allocated if elements are");
-  assert(on_resource_area() == array->allocated_on_res_area(),
-         "growable array must be resource allocated if elements are");
-  assert(on_arena() == array->allocated_on_arena(),
-         "growable array must be arena allocated if elements are");
 }
 
 void GrowableArrayMetadata::on_resource_area_alloc_check() const {

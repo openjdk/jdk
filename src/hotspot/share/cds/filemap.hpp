@@ -352,7 +352,7 @@ private:
   static FileMapInfo* _dynamic_archive_info;
   static bool _heap_pointers_need_patching;
   static bool _memory_mapping_failed;
-  static GrowableArray<const char*>* _non_existent_class_paths;
+  static GrowableArray<const char*, int>* _non_existent_class_paths;
 
 public:
   FileMapHeader *header() const       { return _header; }
@@ -544,14 +544,14 @@ public:
   char* skip_first_path_entry(const char* path) NOT_CDS_RETURN_(nullptr);
   int   num_paths(const char* path) NOT_CDS_RETURN_(0);
   bool  check_paths_existence(const char* paths) NOT_CDS_RETURN_(false);
-  GrowableArray<const char*>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(nullptr);
-  GrowableArray<const char*>* create_path_array(const char* path) NOT_CDS_RETURN_(nullptr);
+  GrowableArray<const char*, int>* create_dumptime_app_classpath_array() NOT_CDS_RETURN_(nullptr);
+  GrowableArray<const char*, int>* create_path_array(const char* path) NOT_CDS_RETURN_(nullptr);
   bool  classpath_failure(const char* msg, const char* name) NOT_CDS_RETURN_(false);
   unsigned int longest_common_app_classpath_prefix_len(int num_paths,
-                                                       GrowableArray<const char*>* rp_array)
+                                                       GrowableArray<const char*, int>* rp_array)
                                                        NOT_CDS_RETURN_(0);
   bool  check_paths(int shared_path_start_idx, int num_paths,
-                    GrowableArray<const char*>* rp_array,
+                    GrowableArray<const char*, int>* rp_array,
                     unsigned int dumptime_prefix_len,
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);

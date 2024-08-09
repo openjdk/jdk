@@ -38,7 +38,8 @@ class AutoBoxObjectValue;
 class ScopeValue;
 class compiledVFrame;
 
-template<class E> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 class DeoptimizationScope {
  private:
@@ -194,23 +195,23 @@ class Deoptimization : AllStatic {
 #if COMPILER2_OR_JVMCI
   // Deoptimize objects, that is reallocate and relock them, just before they
   // escape through JVMTI.  The given vframes cover one physical frame.
-  static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*>* chunk,
+  static bool deoptimize_objects_internal(JavaThread* thread, GrowableArray<compiledVFrame*, int>* chunk,
                                           bool& realloc_failures);
 
  public:
 
   // Support for restoring non-escaping objects
-  static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, TRAPS);
+  static bool realloc_objects(JavaThread* thread, frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*, int>* objects, TRAPS);
   static void reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type);
   static void reassign_object_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, objArrayOop obj);
-  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*>* objects, bool realloc_failures, bool skip_internal);
-  static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*>* monitors,
+  static void reassign_fields(frame* fr, RegisterMap* reg_map, GrowableArray<ScopeValue*, int>* objects, bool realloc_failures, bool skip_internal);
+  static bool relock_objects(JavaThread* thread, GrowableArray<MonitorInfo*, int>* monitors,
                              JavaThread* deoptee_thread, frame& fr, int exec_mode, bool realloc_failures);
   static void pop_frames_failed_reallocs(JavaThread* thread, vframeArray* array);
 #endif // COMPILER2_OR_JVMCI
 
   public:
-  static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*>* chunk, bool realloc_failures);
+  static vframeArray* create_vframeArray(JavaThread* thread, frame fr, RegisterMap *reg_map, GrowableArray<compiledVFrame*, int>* chunk, bool realloc_failures);
 
   // Interface used for unpacking deoptimized frames
 

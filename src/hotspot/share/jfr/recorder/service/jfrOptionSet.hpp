@@ -29,7 +29,7 @@
 #include "memory/allStatic.hpp"
 #include "utilities/exceptions.hpp"
 
-template <typename>
+template<typename E, typename Index>
 class GrowableArray;
 
 //
@@ -77,7 +77,7 @@ class JfrOptionSet : public AllStatic {
 
   static bool parse_flight_recorder_option(const JavaVMOption** option, char* delimiter);
   static bool parse_start_flight_recording_option(const JavaVMOption** option, char* delimiter);
-  static const GrowableArray<const char*>* start_flight_recording_options();
+  static const GrowableArray<const char*, int>* start_flight_recording_options();
   static void release_start_flight_recording_options();
 };
 

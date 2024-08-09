@@ -27,7 +27,7 @@
 #include "gc/z/zAddress.hpp"
 #include "utilities/bitMap.hpp"
 
-template <typename T> class GrowableArrayView;
+template <typename T, typename Index> class GrowableArrayView;
 class OopClosure;
 class ZForwarding;
 class ZForwardingTable;

@@ -31,7 +31,8 @@
 #include "utilities/growableArray.hpp"
 
 class MonitorInfo;
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 class jvmtiDeferredLocalVariable : public CHeapObj<mtCompiler> {
 
@@ -72,7 +73,7 @@ private:
   int       _bci;
   intptr_t* _id;
   int       _vframe_id;
-  GrowableArray<jvmtiDeferredLocalVariable*>* _locals;
+  GrowableArray<jvmtiDeferredLocalVariable*, int>* _locals;
   bool      _objects_are_deoptimized;
 
   void      update_value(StackValueCollection* locals, BasicType type, int index, jvalue value);
@@ -89,7 +90,7 @@ private:
 
   void      update_locals(StackValueCollection* locals);
   void      update_stack(StackValueCollection* locals);
-  void      update_monitors(GrowableArray<MonitorInfo*>* monitors);
+  void      update_monitors(GrowableArray<MonitorInfo*, int>* monitors);
   void      set_objs_are_deoptimized()      { _objects_are_deoptimized = true; }
 
   // Does the vframe match this jvmtiDeferredLocalVariableSet
@@ -116,7 +117,7 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
   int _relock_count_after_wait;
 
   // Deferred updates of locals, expressions, and monitors
-  GrowableArray<jvmtiDeferredLocalVariableSet*> _deferred_locals_updates;
+  GrowableArray<jvmtiDeferredLocalVariableSet*, int> _deferred_locals_updates;
 
   void inc_relock_count_after_wait() {
     _relock_count_after_wait++;
@@ -128,7 +129,7 @@ class JvmtiDeferredUpdates : public CHeapObj<mtCompiler> {
     return result;
   }
 
-  GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals() { return &_deferred_locals_updates; }
+  GrowableArray<jvmtiDeferredLocalVariableSet*, int>* deferred_locals() { return &_deferred_locals_updates; }
 
   JvmtiDeferredUpdates() :
     _relock_count_after_wait(0),
@@ -140,7 +141,7 @@ public:
 
   static void create_for(JavaThread* thread);
 
-  static GrowableArray<jvmtiDeferredLocalVariableSet*>* deferred_locals(JavaThread* jt) {
+  static GrowableArray<jvmtiDeferredLocalVariableSet*, int>* deferred_locals(JavaThread* jt) {
     return jt->deferred_updates() == nullptr ? nullptr : jt->deferred_updates()->deferred_locals();
   }
 

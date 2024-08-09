@@ -105,7 +105,7 @@ class ArrayKlass: public Klass {
     return static_cast<const ArrayKlass*>(k);
   }
 
-  GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+  GrowableArray<Klass*, int>* compute_secondary_supers(int num_extra_slots,
                                                   Array<InstanceKlass*>* transitive_interfaces);
 
   // Sizing

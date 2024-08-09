@@ -52,8 +52,9 @@
 // ALL FUNCTIONS IMPLEMENTING THIS DISPATCH ARE PREFIXED WITH "oop_"!
 
 // Forward declarations.
-template <class T> class Array;
-template <class T> class GrowableArray;
+template <typename T> class Array;
+template<typename T, typename Index>
+class GrowableArray;
 class ClassLoaderData;
 class fieldDescriptor;
 class klassVtable;
@@ -223,7 +224,7 @@ protected:
   void initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS);
 
   // klass-specific helper for initializing _secondary_supers
-  virtual GrowableArray<Klass*>* compute_secondary_supers(int num_extra_slots,
+  virtual GrowableArray<Klass*, int>* compute_secondary_supers(int num_extra_slots,
                                                           Array<InstanceKlass*>* transitive_interfaces);
 
   // java_super is the Java-level super type as specified by Class.getSuperClass.
@@ -392,14 +393,14 @@ protected:
 
  private:
   static uint8_t compute_hash_slot(Symbol* s);
-  static void  hash_insert(Klass* klass, GrowableArray<Klass*>* secondaries, uintx& bitmap);
+  static void  hash_insert(Klass* klass, GrowableArray<Klass*, int>* secondaries, uintx& bitmap);
   static uintx hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite);
 
  public:
   // Secondary supers table support
   static Array<Klass*>* pack_secondary_supers(ClassLoaderData* loader_data,
-                                              GrowableArray<Klass*>* primaries,
-                                              GrowableArray<Klass*>* secondaries,
+                                              GrowableArray<Klass*, int>* primaries,
+                                              GrowableArray<Klass*, int>* secondaries,
                                               uintx& bitmap,
                                               TRAPS);
 

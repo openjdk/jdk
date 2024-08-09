@@ -27,7 +27,9 @@
 
 #ifdef CHECK_UNHANDLED_OOPS
 
-// Detect unhanded oops in VM code
+#include "utilities/growableArray.hpp"
+
+// Detect unhandled oops in VM code
 
 // The design is that when an oop is declared on the stack as a local
 // variable, the oop is actually a C++ struct with constructor and
@@ -69,7 +71,7 @@ class UnhandledOops : public CHeapObj<mtThread> {
  private:
   Thread* _thread;
   int _level;
-  GrowableArray<UnhandledOopEntry> *_oop_list;
+  GrowableArray<UnhandledOopEntry, int>* _oop_list;
   void allow_unhandled_oop(oop* op);
   void clear_unhandled_oops();
   UnhandledOops(Thread* thread);

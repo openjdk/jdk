@@ -31,7 +31,7 @@
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 
-template <typename T>
+template<typename E, typename Index>
 class GrowableArray;
 
 // Composite callback/functor building block
@@ -203,9 +203,9 @@ class LeakPredicate<const Method*> {
 class JfrArtifactSet : public JfrCHeapObj {
  private:
   JfrSymbolTable* _symbol_table;
-  GrowableArray<const Klass*>* _klass_list;
-  GrowableArray<const Klass*>* _klass_loader_set;
-  GrowableArray<const Klass*>* _klass_loader_leakp_set;
+  GrowableArray<const Klass*, int>* _klass_list;
+  GrowableArray<const Klass*, int>* _klass_loader_set;
+  GrowableArray<const Klass*, int>* _klass_loader_leakp_set;
   size_t _total_count;
   bool _class_unload;
 
@@ -259,7 +259,7 @@ class JfrArtifactSet : public JfrCHeapObj {
 
  private:
   template <typename Functor>
-  bool iterate(Functor& functor, GrowableArray<const Klass*>* list) const {
+  bool iterate(Functor& functor, GrowableArray<const Klass*, int>* list) const {
     assert(list != nullptr, "invariant");
     for (int i = 0; i < list->length(); ++i) {
       if (!functor(list->at(i))) {

@@ -31,7 +31,8 @@
 #include "utilities/globalDefinitions.hpp"
 
 class nmethod;
-template <typename T> class GrowableArray;
+template<typename E, typename Index>
+class GrowableArray;
 
 class XNMethodDataOops {
 private:
@@ -40,10 +41,10 @@ private:
   const AttachedArray _immediates;
   const bool          _has_non_immediates;
 
-  XNMethodDataOops(const GrowableArray<oop*>& immediates, bool has_non_immediates);
+  XNMethodDataOops(const GrowableArray<oop*, int>& immediates, bool has_non_immediates);
 
 public:
-  static XNMethodDataOops* create(const GrowableArray<oop*>& immediates, bool has_non_immediates);
+  static XNMethodDataOops* create(const GrowableArray<oop*, int>& immediates, bool has_non_immediates);
   static void destroy(XNMethodDataOops* oops);
 
   size_t immediates_count() const;

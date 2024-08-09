@@ -117,7 +117,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         BasicType basicTargetType = createBasicType(cTypeName, false, false, false);
 
         // transfer fields from GrowableArrayBase to template instance
-        BasicType generic = lookupOrFail("GrowableArrayBase");
+        BasicType generic = lookupOrFail("GrowableArrayBase<int>");
         BasicType specific = lookupOrFail("GrowableArray<int>");
         basicTargetType.setSize(specific.getSize());
         Iterator fields = generic.getFields();

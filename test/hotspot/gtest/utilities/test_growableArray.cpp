@@ -26,19 +26,37 @@
 #include "utilities/growableArray.hpp"
 #include "unittest.hpp"
 
+// Utility for ripping out the Index type from GrowableArray types
+template<typename T>
+struct ExtractIndexType {
+  using Index = T;
+};
+
+// GrowableArray<E, Index>
+template<template<typename, typename> class GA, typename E, typename I>
+struct ExtractIndexType<GA<E, I>> {
+  using Index = I;
+};
+// GrowableArayCHeap<E, MEMFLAGS, Index>
+template<template<typename, MEMFLAGS, typename> class GAC, typename E, MEMFLAGS F, typename I>
+struct ExtractIndexType<GAC<E, F, I>> {
+  using Index = I;
+};
+
+template<typename Index>
 struct WithEmbeddedArray {
   // Array embedded in another class
-  GrowableArray<int> _a;
+  GrowableArray<int, Index> _a;
 
   // Resource allocated data array
   WithEmbeddedArray(int initial_max) : _a(initial_max) {}
   // Arena allocated data array
   WithEmbeddedArray(Arena* arena, int initial_max) : _a(arena, initial_max, 0, 0) {}
   // CHeap allocated data array
-  WithEmbeddedArray(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
+  WithEmbeddedArray<Index>(int initial_max, MEMFLAGS memflags) : _a(initial_max, memflags) {
     assert(memflags != mtNone, "test requirement");
   }
-  WithEmbeddedArray(const GrowableArray<int>& other) : _a(other) {}
+  WithEmbeddedArray(const GrowableArray<int, Index>& other) : _a(other) {}
 };
 
 // Test fixture to work with TEST_VM_F
@@ -109,6 +127,7 @@ protected:
 
   template <typename ArrayClass>
   static void test_iterator(ArrayClass* a) {
+    using Index = typename ExtractIndexType<ArrayClass>::Index;
     // Add elements
     for (int i = 0; i < 10; i++) {
       a->append(i);
@@ -116,7 +135,7 @@ protected:
 
     // Iterate
     int counter = 0;
-    for (GrowableArrayIterator<int> i = a->begin(); i != a->end(); ++i) {
+    for (GrowableArrayIterator<int, Index> i = a->begin(); i != a->end(); ++i) {
       ASSERT_EQ(*i, counter++);
     }
 
@@ -163,6 +182,7 @@ protected:
 
   template <typename ArrayClass>
   static void test_copy1(ArrayClass* a) {
+    using Index = typename ExtractIndexType<ArrayClass>::Index;
     ASSERT_EQ(a->length(), 1);
     ASSERT_EQ(a->at(0), 1);
 
@@ -170,7 +190,7 @@ protected:
 
     // Copy to stack
     {
-      GrowableArray<int> c(*a);
+      GrowableArray<int, Index> c(*a);
 
       ASSERT_EQ(c.length(), 1);
       ASSERT_EQ(c.at(0), 1);
@@ -178,7 +198,7 @@ protected:
 
     // Copy to embedded
     {
-      WithEmbeddedArray c(*a);
+      WithEmbeddedArray<Index> c(*a);
 
       ASSERT_EQ(c._a.length(), 1);
       ASSERT_EQ(c._a.at(0), 1);
@@ -187,6 +207,7 @@ protected:
 
   template <typename ArrayClass>
   static void test_assignment1(ArrayClass* a) {
+    using Index = typename ExtractIndexType<ArrayClass>::Index;
     ASSERT_EQ(a->length(), 1);
     ASSERT_EQ(a->at(0), 1);
 
@@ -195,7 +216,7 @@ protected:
     // Copy to embedded/resource
     {
       ResourceMark rm;
-      GrowableArray<int> c(1);
+      GrowableArray<int, Index> c(1);
       c = *a;
 
       ASSERT_EQ(c.length(), 1);
@@ -205,7 +226,7 @@ protected:
     // Copy to embedded/arena
     {
       Arena arena(mtTest);
-      GrowableArray<int> c(&arena, 1, 0, 0);
+      GrowableArray<int, Index> c(&arena, 1, 0, 0);
       c = *a;
 
       ASSERT_EQ(c.length(), 1);
@@ -215,7 +236,7 @@ protected:
     // Copy to embedded/resource
     {
       ResourceMark rm;
-      WithEmbeddedArray c(1);
+      WithEmbeddedArray<Index> c(1);
       c._a = *a;
 
       ASSERT_EQ(c._a.length(), 1);
@@ -225,7 +246,7 @@ protected:
     // Copy to embedded/arena
     {
       Arena arena(mtTest);
-      WithEmbeddedArray c(&arena, 1);
+      WithEmbeddedArray<Index> c(&arena, 1);
       c._a = *a;
 
       ASSERT_EQ(c._a.length(), 1);
@@ -332,12 +353,12 @@ protected:
     do_test(array, test);
   }
 
-  template <typename T>
+  template <typename Index, typename T>
   static void with_no_cheap_array(int max, ModifyEnum modify, T test) {
     // Resource/Resource allocated
     {
       ResourceMark rm;
-      GrowableArray<int>* a = new GrowableArray<int>(max);
+      GrowableArray<int, Index>* a = new GrowableArray<int, Index>(max);
       modify_and_test(a, modify, test);
     }
 
@@ -353,59 +374,64 @@ protected:
     // Stack/Resource allocated
     {
       ResourceMark rm;
-      GrowableArray<int> a(max);
+      GrowableArray<int, Index> a(max);
       modify_and_test(&a, modify, test);
     }
 
     // Stack/Arena allocated
     {
       Arena arena(mtTest);
-      GrowableArray<int> a(&arena, max, 0, 0);
+      GrowableArray<int, Index> a(&arena, max, 0, 0);
       modify_and_test(&a, modify, test);
     }
 
     // Embedded/Resource allocated
     {
       ResourceMark rm;
-      WithEmbeddedArray w(max);
+      WithEmbeddedArray<Index> w(max);
       modify_and_test(&w._a, modify, test);
     }
 
     // Embedded/Arena allocated
     {
       Arena arena(mtTest);
-      WithEmbeddedArray w(&arena, max);
+      WithEmbeddedArray<Index> w(&arena, max);
       modify_and_test(&w._a, modify, test);
     }
   }
 
+  template<typename Index>
   static void with_cheap_array(int max, ModifyEnum modify, TestEnum test) {
     // Resource/CHeap allocated
     //  Combination not supported
 
     // CHeap/CHeap allocated
     {
-      GrowableArray<int>* a = new (mtTest) GrowableArray<int>(max, mtTest);
+      GrowableArray<int, Index>* a = new (mtTest) GrowableArray<int, Index>(max, mtTest);
       modify_and_test(a, modify, test);
       delete a;
     }
 
     // Stack/CHeap allocated
     {
-      GrowableArray<int> a(max, mtTest);
+      GrowableArray<int, Index> a(max, mtTest);
       modify_and_test(&a, modify, test);
     }
 
     // Embedded/CHeap allocated
     {
-      WithEmbeddedArray w(max, mtTest);
+      WithEmbeddedArray<Index> w(max, mtTest);
       modify_and_test(&w._a, modify, test);
     }
   }
 
   static void with_all_types(int max, ModifyEnum modify, TestEnum test) {
-    with_no_cheap_array(max, modify, test);
-    with_cheap_array(max, modify, test);
+    with_no_cheap_array<int>(max, modify, test);
+    with_no_cheap_array<uint8_t>(max, modify, test);
+    with_no_cheap_array<uint64_t>(max, modify, test);
+    with_cheap_array<int>(max, modify, test);
+    with_cheap_array<uint8_t>(max, modify, test);
+    with_cheap_array<uint64_t>(max, modify, test);
   }
 
   static void with_all_types_empty(TestEnum test) {
@@ -432,7 +458,9 @@ protected:
   }
 
   static void with_no_cheap_array_append1(TestNoCHeapEnum test) {
-    with_no_cheap_array(Max0, Append1, test);
+    with_no_cheap_array<int>(Max0, Append1, test);
+    with_no_cheap_array<uint8_t>(Max0, Append1, test);
+    with_no_cheap_array<uint64_t>(Max0, Append1, test);
   }
 };
 
@@ -462,7 +490,7 @@ TEST_VM_F(GrowableArrayTest, assignment) {
 
 #ifdef ASSERT
 TEST_VM_F(GrowableArrayTest, where) {
-  WithEmbeddedArray s(1, mtTest);
+  WithEmbeddedArray<int> s(1, mtTest);
   ASSERT_FALSE(s._a.allocated_on_C_heap());
   ASSERT_TRUE(elements_on_C_heap(&s._a));
 
@@ -520,14 +548,14 @@ TEST_VM_F(GrowableArrayTest, where) {
   // Embedded/Resource allocated
   {
     ResourceMark rm;
-    WithEmbeddedArray w(0);
+    WithEmbeddedArray<int> w(0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_resource_area(&w._a));
   }
 
   // Embedded/CHeap allocated
   {
-    WithEmbeddedArray w(0, mtTest);
+    WithEmbeddedArray<int> w(0, mtTest);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_C_heap(&w._a));
   }
@@ -535,7 +563,7 @@ TEST_VM_F(GrowableArrayTest, where) {
   // Embedded/Arena allocated
   {
     Arena arena(mtTest);
-    WithEmbeddedArray w(&arena, 0);
+    WithEmbeddedArray<int> w(&arena, 0);
     ASSERT_TRUE(w._a.allocated_on_stack_or_embedded());
     ASSERT_TRUE(elements_on_arena(&w._a));
   }
@@ -543,15 +571,15 @@ TEST_VM_F(GrowableArrayTest, where) {
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, copy_with_embedded_cheap,
     "assert.!on_C_heap... failed: Copying of CHeap arrays not supported") {
-  WithEmbeddedArray s(1, mtTest);
+  WithEmbeddedArray<int> s(1, mtTest);
   // Intentionally asserts that copy of CHeap arrays are not allowed
-  WithEmbeddedArray c(s);
+  WithEmbeddedArray<int> c(s);
 }
 
 TEST_VM_ASSERT_MSG(GrowableArrayAssertingTest, assignment_with_embedded_cheap,
     "assert.!on_C_heap... failed: Assignment of CHeap arrays not supported") {
-  WithEmbeddedArray s(1, mtTest);
-  WithEmbeddedArray c(1, mtTest);
+  WithEmbeddedArray<int> s(1, mtTest);
+  WithEmbeddedArray<int> c(1, mtTest);
 
   // Intentionally asserts that assignment of CHeap arrays are not allowed
   c = s;

@@ -34,8 +34,6 @@
 #endif
 
 class ciMethod;
-template <typename>
-class GrowableArray;
 class Method;
 class EventCompilation;
 class EventCompilationFailure;

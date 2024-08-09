@@ -34,11 +34,12 @@
 class ArchiveBuilder;
 class ArchiveHeapInfo;
 class FileMapInfo;
+template<typename E, typename Index>
+class GrowableArray;
 class outputStream;
 class SerializeClosure;
 class StaticArchiveBuilder;
 
-template<class E> class GrowableArray;
 
 enum MapArchiveResult {
   MAP_ARCHIVE_SUCCESS,
