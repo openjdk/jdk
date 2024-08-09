@@ -5251,7 +5251,18 @@ public class Attr extends JCTree.Visitor {
 
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null) {
-            Env<AttrContext> errEnv = env.dup(env.tree, env.info.dup());
+            WriteableScope newScope = env.info.scope;
+
+            if (env.tree instanceof JCClassDecl) {
+                Symbol fakeOwner =
+                    new MethodSymbol(BLOCK, names.empty, null,
+                        env.info.scope.owner);
+                newScope = newScope.dupUnshared(fakeOwner);
+            }
+
+            Env<AttrContext> errEnv =
+                    env.dup(env.tree,
+                            env.info.dup(newScope));
             errEnv.info.returnResult = unknownExprInfo;
             for (JCTree err : tree.errs)
                 attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));
