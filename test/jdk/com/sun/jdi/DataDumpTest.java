@@ -49,7 +49,7 @@ import com.sun.jdi.request.ClassPrepareRequest;
  * @library /test/lib
  * @modules jdk.jdi
  * @build DataDumpTest
- * @run main/othervm/timeout=15 DataDumpTest
+ * @run driver DataDumpTest
  */
 
 class DataDumpTestTarg {
