@@ -375,7 +375,7 @@ java/awt/Modal/MultipleDialogs/MultipleDialogs3Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs4Test.java 8198665 macosx-all
 java/awt/Modal/MultipleDialogs/MultipleDialogs5Test.java 8198665 macosx-all
 java/awt/Mouse/EnterExitEvents/DragWindowOutOfFrameTest.java 8177326 macosx-all
-java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021 macosx-all
+java/awt/Mouse/EnterExitEvents/ResizingFrameTest.java 8005021,8332158 macosx-all,linux-x64
 java/awt/Mouse/EnterExitEvents/FullscreenEnterEventTest.java 8051455 macosx-all
 java/awt/Mouse/MouseModifiersUnitTest/MouseModifiersUnitTest_Standard.java 7124407,8302787  macosx-all,windows-all
 java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 8157170 macosx-all
@@ -472,6 +472,11 @@ java/awt/image/multiresolution/MultiResolutionJOptionPaneIconTest.java 8274106 m
 
 # This test fails on macOS 14
 java/awt/Choice/SelectNewItemTest/SelectNewItemTest.java 8324782 macosx-all
+
+# Wayland related
+
+java/awt/FullScreen/FullscreenWindowProps/FullscreenWindowProps.java 8280991 linux-x64
+java/awt/FullScreen/SetFullScreenTest.java 8332155 linux-x64
 
 ############################################################################
 
@@ -606,7 +611,6 @@ sun/security/smartcardio/TestExclusive.java                     8039280 generic-
 sun/security/smartcardio/TestMultiplePresent.java               8039280 generic-all
 sun/security/smartcardio/TestPresent.java                       8039280 generic-all
 sun/security/smartcardio/TestTransmit.java                      8039280 generic-all
-com/sun/security/auth/callback/TextCallbackHandler/Password.java 8039280 generic-all
 com/sun/security/sasl/gsskerb/AuthOnly.java                     8039280 generic-all
 com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-all
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
@@ -640,6 +644,7 @@ javax/sound/sampled/Clip/ClipFlushCrash.java 8308395 linux-x64
 # jdk_swing
 
 javax/swing/plaf/basic/BasicTextUI/8001470/bug8001470.java 8233177 linux-all,windows-all
+javax/swing/plaf/basic/BasicDirectoryModel/LoaderThreadCount.java 8333880 windows-all
 
 javax/swing/JFrame/MaximizeWindowTest.java 8321289 linux-all
 javax/swing/JWindow/ShapedAndTranslucentWindows/ShapedTranslucentPerPixelTranslucentGradient.java 8233582 linux-all
@@ -738,12 +743,8 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 
 # jdk_jfr
 
-jdk/jfr/event/compiler/TestCodeSweeper.java                     8225209 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
-jdk/jfr/startupargs/TestStartName.java                          8214685 windows-x64
-jdk/jfr/startupargs/TestStartDuration.java                      8214685 windows-x64
 jdk/jfr/jvm/TestWaste.java                                      8282427 generic-all
-jdk/jfr/api/consumer/recordingstream/TestOnEvent.java           8255404 linux-x64,linux-aarch64
 
 ############################################################################
 

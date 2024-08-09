@@ -40,6 +40,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.Platform;
+
 public class TestJcmdPIDSubstitution {
 
     private static final String FILENAME = "myfile%p";
@@ -47,8 +49,10 @@ public class TestJcmdPIDSubstitution {
     public static void main(String[] args) throws Exception {
         verifyOutputFilenames("Thread.dump_to_file", FILENAME);
         verifyOutputFilenames("GC.heap_dump", FILENAME);
-        verifyOutputFilenames("Compiler.perfmap", FILENAME);
-        verifyOutputFilenames("System.dump_map", "-F=%s".formatted(FILENAME));
+        if (Platform.isLinux()) {
+            verifyOutputFilenames("Compiler.perfmap", FILENAME);
+            verifyOutputFilenames("System.dump_map", "-F=%s".formatted(FILENAME));
+        }
     }
 
     private static void verifyOutputFilenames(String... args) throws Exception {

@@ -5949,7 +5949,7 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
     for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
       Node* obs = other_proj->fast_out(j);
       if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&
-          (obs->as_CallStaticJava()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
+          (obs->as_CallStaticJava()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point())) {
         return obs->as_CallStaticJava();
       }
     }

@@ -26,8 +26,8 @@
 /**
  * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
- * modifying Java class files, as specified in Chapter {@jvms 4} of the <cite>Java
- * Java Virtual Machine Specification</cite>.
+ * modifying Java class files, as specified in Chapter {@jvms 4} of the
+ * <cite>Java Virtual Machine Specification</cite>.
  *
  * <h2>Reading classfiles</h2>
  * The main class for reading classfiles is {@link java.lang.classfile.ClassModel}; we

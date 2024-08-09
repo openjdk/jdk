@@ -449,6 +449,10 @@ public:
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
 #ifndef PRODUCT
+  AssertionPredicateType assertion_predicate_type() const {
+    return _assertion_predicate_type;
+  }
+
   virtual void dump_spec(outputStream *st) const;
 #endif
 
