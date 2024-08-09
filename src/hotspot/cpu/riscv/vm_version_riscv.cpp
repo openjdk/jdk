@@ -265,6 +265,11 @@ void VM_Version::c2_initialize() {
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
 
+  // Base64
+  if (FLAG_IS_DEFAULT(UseBASE64Intrinsics)) {
+    FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
+  }
+
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
