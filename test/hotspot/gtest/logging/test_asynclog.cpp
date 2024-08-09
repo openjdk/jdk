@@ -24,20 +24,50 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "logTestFixture.hpp"
+#include "logTestUtils.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logFileOutput.hpp"
 #include "logging/logMessage.hpp"
-#include "logTestFixture.hpp"
-#include "logTestUtils.inline.hpp"
 #include "unittest.hpp"
 
 class AsyncLogTest : public LogTestFixture {
- public:
+public:
+  // msg is 128 bytes.
+  const char* large_message = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
   AsyncLogTest() {
-    if(!LogConfiguration::is_async_mode()) {
+    if (!LogConfiguration::is_async_mode()) {
       fprintf(stderr, "Warning: asynclog is OFF.\n");
     }
+  }
+  void test_asynclog_raw() {
+    Log(logging) logger;
+#define LOG_LEVEL(level, name) logger.name("1" #level);
+    LOG_LEVEL_LIST
+#undef LOG_LEVEL
+
+    LogTarget(Trace, logging) t;
+    LogTarget(Debug, logging) d;
+    EXPECT_FALSE(t.is_enabled());
+    EXPECT_TRUE(d.is_enabled());
+
+    d.print("AsyncLogTarget.print = %d", 1);
+    log_trace(logging)("log_trace-test");
+    log_debug(logging)("log_debug-test");
+  }
+
+  void test_asynclog_drop_messages() {
+    // Write more messages than available in buffer.
+    test_asynclog_ls(); // roughly 200 bytes.
+    const size_t msg_number = AsyncLogBufferSize / strlen(large_message);
+    LogMessage(logging) lm;
+    // + 5 to go past the buffer size, forcing it to drop the message.
+    for (size_t i = 0; i < (msg_number + 5); i++) {
+      lm.debug("%s", large_message);
+    }
+    lm.flush();
   }
 
   void test_asynclog_ls() {
@@ -52,41 +82,6 @@ class AsyncLogTest : public LogTestFixture {
     os->print("msg3\n");
     os->print_cr("logStream newline");
   }
-
-  void test_asynclog_raw() {
-    Log(logging) logger;
-#define LOG_LEVEL(level, name) logger.name("1" #level);
-LOG_LEVEL_LIST
-#undef LOG_LEVEL
-
-    LogTarget(Trace, logging) t;
-    LogTarget(Debug, logging) d;
-    EXPECT_FALSE(t.is_enabled());
-    EXPECT_TRUE(d.is_enabled());
-
-    d.print("AsyncLogTarget.print = %d", 1);
-    log_trace(logging)("log_trace-test");
-    log_debug(logging)("log_debug-test");
-  }
-
-  // Caveat: BufferUpdater is not MT-safe. We use it only for testing.
-  // We would observe missing loglines if we interleaved buffers.
-  // Emit all logs between constructor and destructor of BufferUpdater.
-  void test_asynclog_drop_messages() {
-    const size_t sz = 2000;
-
-    // shrink async buffer.
-    AsyncLogWriter::BufferUpdater saver(1024);
-    test_asynclog_ls(); // roughly 200 bytes.
-    LogMessage(logging) lm;
-
-    // write more messages than its capacity in burst
-    for (size_t i = 0; i < sz; ++i) {
-      lm.debug("a lot of log...");
-    }
-    lm.flush();
-  }
-
   // stdout/stderr support
   bool write_to_file(const std::string& output) {
     FILE* f = os::fopen(TestLogFileName, "w");
@@ -99,29 +94,59 @@ LOG_LEVEL_LIST
 
     return false;
   }
+  template<typename F>
+  void test_stdout_or_stderr(const char* mode, F get_captured_string) {
+
+    if (!set_log_config(mode, "logging=debug")) {
+      return;
+    }
+
+    bool async = AsyncLogWriter::instance() != nullptr;
+    if (async) {
+      test_asynclog_drop_messages();
+      AsyncLogWriter::flush();
+    } else {
+      test_asynclog_ls();
+    }
+
+    fflush(nullptr);
+    if (!write_to_file(get_captured_string())) {
+      return;
+    }
+
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
+
+    if (async) {
+      EXPECT_TRUE(
+          file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+    }
+  }
+  void test_room_for_flush() {
+    PlatformMonitor lock; // For statistics
+    CircularStringBuffer::StatisticsMap map;
+    CircularStringBuffer cb(map, lock, os::vm_page_size());
+    const size_t count = (cb.circular_mapping.size / (strlen(large_message)+1 + sizeof(CircularStringBuffer::Message))) - 1;
+    stringStream ss;
+    ss.print("file=%s", TestLogFileName);
+    LogFileOutput out(ss.freeze());
+    for (size_t i = 0; i < count; i++) {
+      cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    }
+    unsigned int* missing = map.get(&out);
+    EXPECT_TRUE(missing == nullptr);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    cb.enqueue_locked(large_message, strlen(large_message), &out, CircularStringBuffer::None);
+    missing = map.get(&out);
+    EXPECT_TRUE(missing !=nullptr && *missing > 0);
+    size_t old_tail = cb._tail;
+    cb.enqueue_locked(nullptr, 0, nullptr, CircularStringBuffer::None);
+    EXPECT_TRUE(cb._tail != old_tail);
+    unsigned int* new_missing = map.get(&out);
+    EXPECT_TRUE(new_missing != nullptr && *missing == *new_missing);
+  }
 };
-
-TEST_VM_F(AsyncLogTest, asynclog) {
-  set_log_config(TestLogFileName, "logging=debug");
-
-  test_asynclog_ls();
-  test_asynclog_raw();
-  AsyncLogWriter::flush();
-
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
-
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Debug"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Info"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Warning"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Error"));
-  EXPECT_FALSE(file_contains_substring(TestLogFileName, "1Trace")); // trace message is masked out
-
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "AsyncLogTarget.print = 1"));
-  EXPECT_FALSE(file_contains_substring(TestLogFileName, "log_trace-test")); // trace message is masked out
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "log_debug-test"));
-}
 
 TEST_VM_F(AsyncLogTest, logMessage) {
   set_log_config(TestLogFileName, "logging=debug");
@@ -144,7 +169,6 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   AsyncLogWriter::flush();
 
   ResourceMark rm;
-  LogMessageBuffer buffer;
   const char* strs[MULTI_LINES + 1];
   strs[MULTI_LINES] = nullptr;
   for (int i = 0; i < MULTI_LINES; ++i) {
@@ -157,156 +181,48 @@ TEST_VM_F(AsyncLogTest, logMessage) {
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "a noisy message from other logger"));
 }
 
-TEST_VM_F(AsyncLogTest, logBuffer) {
-  const auto Default = LogDecorations(LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(),
-                                      LogDecorators());
-  size_t len = strlen(TestLogFileName) + strlen(LogFileOutput::Prefix) + 1;
-  char* name = NEW_C_HEAP_ARRAY(char, len, mtLogging);
-  snprintf(name, len, "%s%s", LogFileOutput::Prefix, TestLogFileName);
+TEST_VM_F(AsyncLogTest, asynclog) {
+  set_log_config(TestLogFileName, "logging=debug");
 
-  LogFileStreamOutput* output = new LogFileOutput(name);
-  output->initialize(nullptr, nullptr);
-  auto buffer = new AsyncLogWriter::Buffer(1024);
+  test_asynclog_ls();
+  test_asynclog_raw();
+  AsyncLogWriter::flush();
 
-  int line = 0;
-  int written;
-  uintptr_t addr;
-  const uintptr_t mask = (uintptr_t)(sizeof(void*) - 1);
-  bool res;
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
-  res = buffer->push_back(output, Default, "a log line");
-  EXPECT_TRUE(res) << "first message should succeed.";
-  line++;
-  res = buffer->push_back(output, Default, "yet another");
-  EXPECT_TRUE(res) << "second message should succeed.";
-  line++;
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Debug"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Info"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Warning"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "1Error"));
+  EXPECT_FALSE(file_contains_substring(TestLogFileName, "1Trace")); // trace message is masked out
 
-  auto it = buffer->iterator();
-  EXPECT_TRUE(it.hasNext());
-  const AsyncLogWriter::Message* e = it.next();
-  addr = reinterpret_cast<uintptr_t>(e);
-  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1))); // returned vaue aligns on sizeof(pointer)
-  EXPECT_EQ(output, e->output());
-  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
-  EXPECT_STREQ("a log line", e->message());
-  written = e->output()->write_blocking(e->decorations(), e->message());
-  EXPECT_GT(written, 0);
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "AsyncLogTarget.print = 1"));
+  EXPECT_FALSE(
+      file_contains_substring(TestLogFileName, "log_trace-test")); // trace message is masked out
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "log_debug-test"));
+}
 
-  EXPECT_TRUE(it.hasNext());
-  e = it.next();
-  addr = reinterpret_cast<uintptr_t>(e);
-  EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
-  EXPECT_EQ(output, e->output());
-  EXPECT_EQ(0, memcmp(&Default, &e->decorations(), sizeof(LogDecorations)));
-  EXPECT_STREQ("yet another", e->message());
-  written = e->output()->write_blocking(e->decorations(), e->message());
-  EXPECT_GT(written, 0);
+TEST_VM_F(AsyncLogTest, stdoutOutput) {
+  testing::internal::CaptureStdout();
+  test_stdout_or_stderr("stdout", testing::internal::GetCapturedStdout);
+}
 
-  while (buffer->push_back(output, Default, "0123456789abcdef")) {
-    line++;
-  }
-
-  EXPECT_GT(line, 2);
-  while (it.hasNext()) {
-    e = it.next();
-    addr = reinterpret_cast<uintptr_t>(e);
-    EXPECT_EQ(0, (int)(addr & (sizeof(void*)-1)));
-    EXPECT_EQ(output, e->output());
-    EXPECT_STREQ("0123456789abcdef", e->message());
-    written = e->output()->write_blocking(e->decorations(), e->message());
-    EXPECT_GT(written, 0);
-    line--;
-  }
-  EXPECT_EQ(line, 2);
-
-  // last one, flush token. expect to succeed even buffer has been full.
-  buffer->push_flush_token();
-  EXPECT_TRUE(it.hasNext());
-  e = it.next();
-  EXPECT_EQ(e->output(), nullptr);
-  EXPECT_TRUE(e->is_token());
-  EXPECT_STREQ("", e->message());
-  EXPECT_FALSE(it.hasNext());
-
-  // reset buffer
-  buffer->reset();
-  EXPECT_FALSE(buffer->iterator().hasNext());
-
-  delete output; // close file
-  FREE_C_HEAP_ARRAY(char, name);
-
-  const char* strs[4];
-  strs[0] = "a log line";
-  strs[1] = "yet another";
-  strs[2] = "0123456789abcdef";
-  strs[3] = nullptr; // sentinel!
-  EXPECT_TRUE(file_contains_substrings_in_order(TestLogFileName, strs));
+TEST_VM_F(AsyncLogTest, stderrOutput) {
+  testing::internal::CaptureStderr();
+  test_stdout_or_stderr("stderr", testing::internal::GetCapturedStderr);
 }
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
   if (AsyncLogWriter::instance() == nullptr) {
     return;
   }
-
   set_log_config(TestLogFileName, "logging=debug");
   test_asynclog_drop_messages();
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
 }
 
-TEST_VM_F(AsyncLogTest, stdoutOutput) {
-  testing::internal::CaptureStdout();
-
-  if (!set_log_config("stdout", "logging=debug")) {
-    return;
-  }
-
-  bool async = AsyncLogWriter::instance() != nullptr;
-  if (async) {
-    test_asynclog_drop_messages();
-    AsyncLogWriter::flush();
-  } else {
-    test_asynclog_ls();
-  }
-
-  fflush(nullptr);
-  if (!write_to_file(testing::internal::GetCapturedStdout())) {
-    return;
-  }
-
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
-
-  if (async) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
-  }
-}
-
-TEST_VM_F(AsyncLogTest, stderrOutput) {
-  testing::internal::CaptureStderr();
-
-  if (!set_log_config("stderr", "logging=debug")) {
-    return;
-  }
-
-  bool async = AsyncLogWriter::instance() != nullptr;
-  if (async) {
-    test_asynclog_drop_messages();
-    AsyncLogWriter::flush();
-  } else {
-    test_asynclog_ls();
-  }
-
-  fflush(nullptr);
-  if (!write_to_file(testing::internal::GetCapturedStderr())) {
-    return;
-  }
-
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
-  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
-
-  if (async) {
-    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
-  }
+TEST_F(AsyncLogTest, CircularStringBufferAlwaysRoomForFlush) {
+  test_room_for_flush();
 }
