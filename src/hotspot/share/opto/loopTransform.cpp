@@ -1069,8 +1069,10 @@ bool IdealLoopTree::policy_unroll(PhaseIdealLoop *phase) {
   }
 
   if (phase->C->do_superword()) {
-    // Only attempt slp analysis when user controls do not prohibit it
-    if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
+    // TODO update comments
+    //// // Only attempt slp analysis when user controls do not prohibit it
+    //// if (!range_checks_present() && (LoopMaxUnroll > _local_loop_unroll_factor)) {
+    if (LoopMaxUnroll > _local_loop_unroll_factor) {
       // Once policy_slp_analysis succeeds, mark the loop with the
       // maximal unroll factor so that we minimize analysis passes
       if (future_unroll_cnt >= _local_loop_unroll_factor) {

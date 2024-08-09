@@ -163,6 +163,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_predicates() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::PREDICATES);
+  }
+
   bool is_trace_pointer_analysis() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -170,9 +174,12 @@ public:
 
   // Is the node in the basic block of the loop?
   // We only accept any nodes which have the loop head as their ctrl.
+  // TODO rename in_bb -> in_loop ???
   bool in_bb(const Node* n) const {
+    if (n == nullptr || n->outcnt() == 0) { return false; }
     const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
-    return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
+    return _phase->get_loop(ctrl)->head() == _cl;
+    //return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
   }
 
   // Check if the loop passes some basic preconditions for vectorization.
@@ -352,7 +359,8 @@ public:
   VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
     _vloop(vloop),
     _body(arena, vloop.estimated_body_length(), 0, nullptr),
-    _body_idx(vshared.node_idx_to_loop_body_idx()) {}
+    _body_idx(vshared.node_idx_to_loop_body_idx())
+    {}
 
   NONCOPYABLE(VLoopBody);
 
@@ -379,6 +387,8 @@ private:
   void set_bb_idx(Node* n, int i) {
     _body_idx.at_put_grow(n->_idx, i);
   }
+
+  void construct_data_ctrl_mapping(ResourceHashtable<Node*,GrowableArray<Node*>*>& data_nodes_for_ctrl) const;
 };
 
 // Submodule of VLoopAnalyzer.
@@ -610,6 +620,265 @@ public:
   };
 };
 
+// TODO desc
+// wrap (Bool literal)
+// negate
+// and
+// or
+//
+// Diamond:
+//    true
+// x   -   !x
+//  (x || !x) = true
+//
+// Nested diamond:
+//        true
+//    x          !x
+//    |   (!x && y)   (!x && !y)
+//    |        ... = !x
+//        ... = true
+// -> perfect diamonds only need "&&".
+// -> only need "||" if use goto? could forbid.
+//              true
+//         x           !x
+// (x && y) (x && !y)  !x
+//     |       ((x && !y) || !x)
+//        ... = true
+//
+// What about exits?
+// -> can be just "&&", but if inside branch, then region/phi requires "||".
+//
+// Maybe the DNF (disjunctive normal form, OR of AND) could be best?
+// But what do the papers do?
+//
+// One paper just creates normal and predicate nodes, and SLP's those.
+// A graph is perhaps the easiest - though I'm not sure how we can combine
+// both C2 and special predicate nodes.
+//
+// It would be nice to future-proof the design, and allow reduction/prefix sum
+// on predicates.
+// Wrapping everything in an extra graph has overheads, but unifies the design.
+//
+// Let's have some examples to play with.
+//
+// 1. Diamond
+//
+//   for () {
+//     x[i+0] = c0 ? a0 : b0;
+//     x[i+1] = c1 ? a1 : b1;
+//   }
+//
+//   CountedLoop
+//   if(c0) (true)
+//    |         |
+//   (c0)     (!c0)
+//   a0       b0
+//    |         |
+//   Region / Phi (c0, !c0) (true)
+//   ... (repeats)
+//
+//   C = [c0, c1]
+//   A = [a0, a1]
+//   B = [b0, b1]
+//   S = select(C, A, B)
+//   X = [x[i+0], x[i+1]]
+//
+// 2. Simple search loop
+//
+//  for () {
+//    if (c0) { break; }
+//    if (c1) { break; }
+//  }
+//
+//  CountedLoop
+//  if (c0) (true)
+//   |          |
+//  (c0)      (!c0)
+//   |        break
+//   |
+//  if (c1) (c0 && ...)
+//   |          |
+//  (c1)      (!c1)
+//   |        break
+//   |
+//  exit-check (c0 && c1 && ...)
+//
+//  C = [c0, c1]
+//  if (any(C)) { special-break; }
+//
+//  -> tricky here: all of C must be executable in parallel -> RC?
+//  -> Later C have dependency on earlier C! How can we break the dependencies?
+//
+//  3. Exit in nested Diamonds
+//
+//  for () {
+//    if (c0) {
+//      if (d0) {
+//        break;
+//      } else {
+//        x0 = a0;
+//      }
+//    } else {
+//      x0 = b0;
+//    }
+//  }
+//
+//  CountedLoop
+//  ...
+//  if (ci) (!(c0 && d0) && !(c1 && d1) && ...)
+//   |             |
+//  (!ci)         (ci)
+//   |             |
+//   |            if (di) (ci && !(c0 && d0) && ...)
+//   |             |            |
+//   |            (!di)        (di)
+//   |             |            |
+//   bi            ai          break;
+//   |             |
+//  Region / Phi (ci) (!(c0 && d0) && ... && !(ci && di))
+//
+//  A = [a0, a1]
+//  B = [b0, b1]
+//  C = [c0, c1]
+//  D = [d0, d1]
+//  Y = AND(C, D)
+//  if (any(Y)) { special-break; }
+//  S = select(C, A, B)
+//  X = [x0, x1]
+//
+//  -> Must be able to execute A, B, C, D in parallel.
+//  -> But later indices have dependency on earlier C and D values.
+//  -> Maybe we can remove some predicates / condition edges for some "safe" ops.
+//  -> We could define as "safe" anything that does not have side-effects.
+//  -> Load/Store do have side effects. Maybe not Load if we know it is range-checked.
+//  -> But we have to be careful that we do not remove the RC inside the loop - we may need a new annotation?
+//
+//  -> Merge points need to find "OR" of all paths.
+//     IDOM may be helpful here: take condition of IDOM, and find all paths to it.
+//     Without that, the number of paths explodes exponentially with the parallelism.
+//     Ah, I probably need the LCA of the merged paths.
+//
+//  -> We do need to do a reduction / prefix sum of conditions. But the pattern looks different
+//     to that of C2 nodes (e.g. we do not have an init condition/predicate).
+//  -> I think we need to try having predicates separately, and only if it is too complicated
+//     we should move to C2 nodes for it. Because we would also have to add the C2 nodes to the
+//     body etc, and that is also tricky.
+
+
+// TODO desc
+class VLoopPredicate : public ArenaObj {
+public:
+  VLoopPredicate() {}
+
+  NOT_PRODUCT( virtual void print() const = 0; )
+};
+
+class VLoopTruePredicate : public VLoopPredicate {
+public:
+  VLoopTruePredicate() {}
+
+  NOT_PRODUCT( virtual void print() const override { tty->print("True"); }; )
+};
+
+class VLoopLiteralPredicate : public VLoopPredicate {
+private:
+  BoolNode* _bol;
+
+public:
+  VLoopLiteralPredicate(BoolNode* bol) : _bol(bol) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Literal(%s %d)", _bol->Name(), _bol->_idx);
+  };
+#endif
+};
+
+class VLoopNegatePredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _predicate;
+
+public:
+  VLoopNegatePredicate(VLoopPredicate* predicate) : _predicate(predicate) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Not(");
+    _predicate->print();
+    tty->print(")");
+  };
+#endif
+};
+
+class VLoopAndPredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _in1;
+  VLoopPredicate* _in2;
+
+public:
+  VLoopAndPredicate(VLoopPredicate* in1, VLoopPredicate* in2) : _in1(in1), _in2(in2) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("And(");
+    _in1->print();
+    tty->print(", ");
+    _in2->print();
+    tty->print(")");
+  };
+#endif
+};
+
+class VLoopOrPredicate : public VLoopPredicate {
+private:
+  VLoopPredicate* _in1;
+  VLoopPredicate* _in2;
+
+public:
+  VLoopOrPredicate(VLoopPredicate* in1, VLoopPredicate* in2) : _in1(in1), _in2(in2) {}
+
+#ifndef PRODUCT
+  virtual void print() const override {
+    tty->print("Or(");
+    _in1->print();
+    tty->print(", ");
+    _in2->print();
+    tty->print(")");
+  };
+#endif
+};
+
+// Submodule of VLoopAnalyzer.
+// TODO desc
+class VLoopPredicates : public StackObj {
+private:
+  Arena*                   _arena; // TODO needed?
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+
+  GrowableArray<VLoopPredicate*> _predicates;
+
+public:
+  VLoopPredicates(Arena* arena,
+                  const VLoop& vloop,
+                  const VLoopBody& body) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _predicates(_arena,
+                vloop.estimated_body_length(),
+                vloop.estimated_body_length(),
+                nullptr) {}
+  NONCOPYABLE(VLoopPredicates);
+
+  void compute_predicates();
+  NOT_PRODUCT( void print() const; )
+
+private:
+  // We want to simplify the predicates as far as possible, and keep them unique.
+  // TODO
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -634,6 +903,7 @@ private:
   VLoopTypes           _types;
   VLoopVPointers       _vpointers;
   VLoopDependencyGraph _dependency_graph;
+  VLoopPredicates      _predicates;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
@@ -645,7 +915,8 @@ public:
     _body            (&_arena, vloop, vshared),
     _types           (&_arena, vloop, _body),
     _vpointers       (&_arena, vloop, _body),
-    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers)
+    _dependency_graph(&_arena, vloop, _body, _memory_slices, _vpointers),
+    _predicates      (&_arena, vloop, _body)
   {
     _success = setup_submodules();
   }
@@ -661,6 +932,7 @@ public:
   const VLoopTypes& types()                      const { return _types; }
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
+  const VLoopPredicates& predicates()            const { return _predicates; }
 
 private:
   bool setup_submodules();
