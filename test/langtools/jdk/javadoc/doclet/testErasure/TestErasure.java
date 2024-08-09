@@ -199,7 +199,7 @@ public class TestErasure extends JavadocTester {
                 <div class="col-first even-row-color"><code>&nbsp;</code></div>
                 <div class="col-constructor-name even-row-color"><code>\
                 <a href="#%3Cinit%3E(T)" class="member-name-link">Foo</a>\
-                <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
+                <wbr>(<a href="#type-param-T" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color">&nbsp;</div>
                 <div class="col-first odd-row-color"><code>&nbsp;&lt;T extends X&gt;<br></code></div>
                 <div class="col-constructor-name odd-row-color"><code>\
@@ -227,10 +227,10 @@ public class TestErasure extends JavadocTester {
         // methods
         checkOutput("Foo.html", true, """
                 <div class="col-first even-row-color method-summary-table method-summary-table-tab2 \
-                method-summary-table-tab3"><code>abstract <a href="Foo.html" title="type parameter in Foo">T</a></code></div>
+                method-summary-table-tab3"><code>abstract <a href="#type-param-T" title="type parameter in Foo">T</a></code></div>
                 <div class="col-second even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3"><code><a href="#m(T)" class="member-name-link">m</a>\
-                <wbr>(<a href="Foo.html" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
+                <wbr>(<a href="#type-param-T" title="type parameter in Foo">T</a>&nbsp;arg)</code></div>
                 <div class="col-last even-row-color method-summary-table method-summary-table-tab2 \
                 method-summary-table-tab3">&nbsp;</div>
                 <div class="col-first odd-row-color method-summary-table method-summary-table-tab2 \
