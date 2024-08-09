@@ -2631,6 +2631,90 @@ bool LibraryCallKit::inline_vector_extract() {
   return true;
 }
 
+
+// public static
+// <V extends Vector<E>,
+//  E>
+// V selectFromTwoVectorOp(Class<? extends V> vClass, Class<E> eClass, int length,
+//                         V v1, V v2, V v3,
+//                         SelectFromTwoVector<V> defaultImpl)
+bool LibraryCallKit::inline_vector_select_from_two_vectors() {
+  const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
+  const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+
+  if (vector_klass == nullptr || elem_klass == nullptr ||  vlen == nullptr ||
+      vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr ||
+      !vlen->is_con()) {
+    log_if_needed("  ** missing constant: vclass=%s etype=%s vlen=%s",
+                    NodeClassNames[argument(0)->Opcode()],
+                    NodeClassNames[argument(1)->Opcode()],
+                    NodeClassNames[argument(2)->Opcode()]);
+    return false; // not enough info for intrinsification
+  }
+
+  if (!is_klass_initialized(vector_klass)) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  if (!elem_type->is_primitive_type()) {
+    log_if_needed("  ** not a primitive bt=%d", elem_type->basic_type());
+    return false; // should be primitive type
+  }
+
+  int num_elem = vlen->get_con();
+  BasicType elem_bt = elem_type->basic_type();
+
+  if (!arch_supports_vector(Op_SelectFromTwoVector, num_elem, elem_bt, VecMaskNotUsed)) {
+    int opc = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_SUB, elem_bt);
+    int sopc = VectorNode::opcode(opc, elem_bt);
+    if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed)   ||
+        !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)     ||
+        !arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed) ||
+        (!is_integral_type(elem_bt) &&
+          ((elem_bt == T_FLOAT && !arch_supports_vector(Op_VectorCastF2X, num_elem, T_INT, VecMaskNotUsed))     ||
+           (elem_bt == T_DOUBLE && !arch_supports_vector(Op_VectorCastD2X, num_elem, T_LONG, VecMaskNotUsed)))) ||
+        !arch_supports_vector(sopc, num_elem, elem_bt, VecMaskNotUsed)) {
+      log_if_needed("  ** not supported: opc=%d vlen=%d etype=%s ismask=useload",
+                    Op_SelectFromTwoVector, num_elem, type2name(elem_bt));
+      return false; // not supported
+    }
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* opd1 = unbox_vector(argument(3), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(3)->Opcode()]);
+    return false;
+  }
+  Node* opd2 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  if (opd2 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(4)->Opcode()]);
+    return false;
+  }
+  Node* opd3 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+  if (opd3 == nullptr) {
+    log_if_needed("  ** unbox failed v1=%s",
+                  NodeClassNames[argument(5)->Opcode()]);
+    return false;
+  }
+
+  const TypeVect* vt = TypeVect::make(elem_bt, num_elem);
+  Node* operation = gvn().transform(VectorNode::make(Op_SelectFromTwoVector, opd1, opd2, opd3, vt));
+
+  // Wrap it up in VectorBox to keep object type information.
+  Node* vbox = box_vector(operation, vbox_type, elem_bt, num_elem);
+  set_result(vbox);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
 // public static
 // <V extends Vector<E>,
 //  M extends VectorMask<E>,

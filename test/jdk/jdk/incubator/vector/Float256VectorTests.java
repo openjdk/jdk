@@ -330,6 +330,25 @@ relativeError));
         }
     }
 
+    static void assertSelectFromTwoVectorEquals(float[] r, float[] order, float[] a, float[] b, int vector_len) {
+        int i = 0, j = 0;
+        try {
+            for (; i < a.length; i += vector_len) {
+                for (j = 0; j < vector_len; j++) {
+                    int idx = i + j;
+                    boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+                    int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+                    Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
+                }
+            }
+        } catch (AssertionError e) {
+            int idx = i + j;
+            boolean is_exceptional_idx = (int)order[idx] >= vector_len;
+            int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " +  b[i + oidx]);
+        }
+    }
+
     static void assertSelectFromArraysEquals(float[] r, float[] a, float[] order, int vector_len) {
         int i = 0, j = 0;
         try {
@@ -1143,6 +1162,18 @@ relativeError));
                 flatMap(pair -> FLOAT_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
                 collect(Collectors.toList());
 
+    static final List<IntFunction<float[]>> SELECT_FROM_INDEX_GENERATORS = List.of(
+            withToString("float[0..VECLEN*2)", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (float)(RAND.nextInt(SPECIES.length() * 2)));
+            })
+    );
+
+    static final List<List<IntFunction<float[]>>> FLOAT_GENERATOR_SELECT_FROM_TRIPLES =
+        FLOAT_GENERATOR_PAIRS.stream().
+                flatMap(pair -> SELECT_FROM_INDEX_GENERATORS.stream().map(f -> List.of(pair.get(0), pair.get(1), f))).
+                collect(Collectors.toList());
+
     @DataProvider
     public Object[][] floatBinaryOpProvider() {
         return FLOAT_GENERATOR_PAIRS.stream().map(List::toArray).
@@ -1167,6 +1198,12 @@ relativeError));
     @DataProvider
     public Object[][] floatTernaryOpProvider() {
         return FLOAT_GENERATOR_TRIPLES.stream().map(List::toArray).
+                toArray(Object[][]::new);
+    }
+
+    @DataProvider
+    public Object[][] floatSelectFromTwoVectorOpProvider() {
+        return FLOAT_GENERATOR_SELECT_FROM_TRIPLES.stream().map(List::toArray).
                 toArray(Object[][]::new);
     }
 
@@ -4809,6 +4846,24 @@ relativeError));
         }
 
         assertSelectFromArraysEquals(r, a, order, SPECIES.length());
+    }
+
+    @Test(dataProvider = "floatSelectFromTwoVectorOpProvider")
+    static void SelectFromTwoVectorFloat256VectorTests(IntFunction<float[]> fa, IntFunction<float[]> fb, IntFunction<float[]> fc) {
+        float[] a = fa.apply(SPECIES.length());
+        float[] b = fb.apply(SPECIES.length());
+        float[] idx = fc.apply(SPECIES.length());
+        float[] r = fr.apply(SPECIES.length());
+
+        for (int ic = 0; ic < INVOC_COUNT; ic++) {
+            for (int i = 0; i < idx.length; i += SPECIES.length()) {
+                FloatVector av = FloatVector.fromArray(SPECIES, a, i);
+                FloatVector bv = FloatVector.fromArray(SPECIES, b, i);
+                FloatVector idxv = FloatVector.fromArray(SPECIES, idx, i);
+                idxv.selectFrom(av, bv).intoArray(r, i);
+            }
+        }
+        assertSelectFromTwoVectorEquals(r, idx, a, b, SPECIES.length());
     }
 
     @Test(dataProvider = "floatUnaryOpSelectFromMaskProvider")

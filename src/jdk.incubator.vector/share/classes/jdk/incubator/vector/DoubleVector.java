@@ -2410,6 +2410,34 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return v.rearrange(this.toShuffle(), m);
     }
 
+    private static
+    IndexOutOfBoundsException checkIndexFailed(Vector<?> vix, int length) {
+        String msg = String.format("Range check failed: vector %s out of bounds for length %d", vix, length);
+        return new IndexOutOfBoundsException(msg);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2);
+
+    /*package-private*/
+    @ForceInline
+    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
+        int twovectorlen = length() * 2;
+        if (!this.test(VectorOperators.IS_FINITE).allTrue() ||
+            this.compare(VectorOperators.LT, 0).or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue()) {
+            throw checkIndexFailed(this, twovectorlen);
+        }
+        return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), this, v1, v2,
+            (vec1, vec2, vec3) -> {
+                return vec2.rearrange(vec1.toShuffle(), vec3);
+            }
+        );
+    }
+
     /// Ternary operations
 
 

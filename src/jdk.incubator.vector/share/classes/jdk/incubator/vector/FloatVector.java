@@ -2422,6 +2422,34 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return v.rearrange(this.toShuffle(), m);
     }
 
+    private static
+    IndexOutOfBoundsException checkIndexFailed(Vector<?> vix, int length) {
+        String msg = String.format("Range check failed: vector %s out of bounds for length %d", vix, length);
+        return new IndexOutOfBoundsException(msg);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
+
+    /*package-private*/
+    @ForceInline
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+        int twovectorlen = length() * 2;
+        if (!this.test(VectorOperators.IS_FINITE).allTrue() ||
+            this.compare(VectorOperators.LT, 0).or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue()) {
+            throw checkIndexFailed(this, twovectorlen);
+        }
+        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+            (vec1, vec2, vec3) -> {
+                return vec2.rearrange(vec1.toShuffle(), vec3);
+            }
+        );
+    }
+
     /// Ternary operations
 
 

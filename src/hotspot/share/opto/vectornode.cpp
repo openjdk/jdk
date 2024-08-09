@@ -781,6 +781,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, Node* n3, const TypeV
   switch (vopc) {
   case Op_FmaVD: return new FmaVDNode(n1, n2, n3, vt);
   case Op_FmaVF: return new FmaVFNode(n1, n2, n3, vt);
+  case Op_SelectFromTwoVector: return new SelectFromTwoVectorNode(n1, n2, n3, vt);
   case Op_SignumVD: return new SignumVDNode(n1, n2, n3, vt);
   case Op_SignumVF: return new SignumVFNode(n1, n2, n3, vt);
   default:
@@ -2081,6 +2082,108 @@ Node* VectorBlendNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+
+Node* SelectFromTwoVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  int num_elem = vect_type()->length();
+  BasicType elem_bt = vect_type()->element_basic_type();
+  if (Matcher::match_rule_supported_vector(Op_SelectFromTwoVector, num_elem, elem_bt)) {
+    return nullptr;
+  }
+  Node* index_vec = in(1);
+  Node* src1  = in(2);
+  Node* src2  = in(3);
+
+  // Lower the IR to constituents operations.
+  //   SelectFromTwoVectorNode =
+  //     (VectorBlend
+  //         (VectorRearrange SRC1, INDEX)
+  //         (VectorRearrange SRC2, NORM_INDEX)
+  //         MASK)
+  //
+  auto lane_count_type = [&]() {
+    switch(elem_bt) {
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_FLOAT:
+        return static_cast<const Type*>(TypeInt::make(num_elem));
+      case T_DOUBLE:
+      case T_LONG:
+        return static_cast<const Type*>(TypeLong::make(num_elem));
+      default:
+        fatal("Unsupported vectortype (%s)", type2name(elem_bt));
+        return static_cast<const Type*>(nullptr);
+    }
+  };
+
+  auto make_integral_index_vec = [&](Node* index_vec) {
+    switch(elem_bt) {
+      case T_FLOAT:
+        return phase->transform(new VectorCastF2XNode(index_vec, TypeVect::make(T_INT, num_elem)));
+      break;
+      case T_DOUBLE:
+        return phase->transform(new VectorCastD2XNode(index_vec, TypeVect::make(T_LONG, num_elem)));
+      break;
+      default:
+        return index_vec;
+    }
+  };
+
+  auto get_integal_type = [&](BasicType elem_bt) {
+    switch(elem_bt) {
+      case T_FLOAT:  return T_INT;
+      case T_DOUBLE: return T_LONG;
+      default: return elem_bt;
+    }
+  };
+
+  BasicType integral_elem_bt = get_integal_type(elem_bt);
+  int opc = VectorSupport::vop2ideal(VectorSupport::VECTOR_OP_SUB, integral_elem_bt);
+  int sopc = VectorNode::opcode(opc, integral_elem_bt);
+
+  BoolTest::mask pred = BoolTest::lt;
+  ConINode* pred_node = (ConINode*)phase->makecon(TypeInt::make(pred));
+  Node* lane_cnt = phase->makecon(lane_count_type());
+  Node* bcast_lane_cnt_vec = phase->transform(VectorNode::scalar2vector(lane_cnt, num_elem, Type::get_const_basic_type(integral_elem_bt), false));
+  Node* integral_index_vec = make_integral_index_vec(index_vec);
+
+  // Comparison over integral vectors weeds out emitting additional
+  // instructions for checking special floating point values.
+  const TypeVect* vmask_type = TypeVect::makemask(integral_elem_bt, num_elem);
+  Node* mask = phase->transform(new VectorMaskCmpNode(pred, integral_index_vec, bcast_lane_cnt_vec, pred_node, vmask_type));
+
+  vmask_type = TypeVect::makemask(elem_bt, num_elem);
+  mask = phase->transform(new VectorMaskCastNode(mask, vmask_type));
+
+  Node* p1 = phase->transform(new VectorRearrangeNode(src1, integral_index_vec));
+  Node* normalized_index_vec = phase->transform(VectorNode::make(sopc, integral_index_vec, bcast_lane_cnt_vec, vect_type()));
+  Node* p2 = phase->transform(new VectorRearrangeNode(src2, normalized_index_vec));
+
+  return new VectorBlendNode(p2, p1, mask);
+}
+
+Node* VectorRearrangeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  BasicType elem_bt = vect_type()->element_basic_type();
+  int num_elem = vect_type()->length();
+  if (in(2)->Opcode() != Op_VectorUnbox &&
+      in(2)->Opcode() != Op_VectorLoadShuffle &&
+      Matcher::match_rule_supported_vector(Op_VectorRearrange, num_elem, elem_bt) &&
+      Matcher::vector_indexes_needs_massaging(elem_bt, num_elem)) {
+    auto get_integal_type = [&](BasicType elem_bt) {
+      switch(elem_bt) {
+        case T_FLOAT:  return T_INT;
+        case T_DOUBLE: return T_LONG;
+        default: return elem_bt;
+      }
+    };
+    int cast_opc = VectorCastNode::opcode(-1, elem_bt, true);
+    Node* pack_shuf = phase->transform(VectorCastNode::make(cast_opc, in(2), T_BYTE, num_elem));
+    const TypeVect* newvt = TypeVect::make(get_integal_type(elem_bt), num_elem);
+    Node* unpack_shuf = phase->transform(new VectorLoadShuffleNode(pack_shuf, newvt));
+    return new VectorRearrangeNode(in(1), unpack_shuf);
+  }
+  return nullptr;
 }
 
 #ifndef PRODUCT

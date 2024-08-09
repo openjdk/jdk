@@ -212,6 +212,18 @@
     return BoolTest::lt;
   }
 
+  static bool vector_indexes_needs_massaging(BasicType ety, int vlen) {
+     switch(ety) {
+       default:
+         return false;
+       case T_SHORT:
+         return !VM_Version::supports_avx512bw();
+       case T_LONG:
+       case T_DOUBLE:
+         return !VM_Version::supports_avx512vl();
+     }
+  }
+
   // Returns pre-selection estimated size of a vector operation.
   // Currently, it's a rudimentary heuristic based on emitted code size for complex
   // IR nodes used by unroll policy. Idea is to constrain unrolling factor and prevent

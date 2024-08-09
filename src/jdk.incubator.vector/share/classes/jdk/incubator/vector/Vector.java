@@ -2766,6 +2766,30 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      */
     public abstract Vector<E> selectFrom(Vector<E> v);
 
+
+    /**
+     * Rearranges the lane elements of two vectors, selecting lanes
+     * under the control of a specific index vector (the current vector)
+     * holding indexes in valid index range of two vectors i.e. {@code [0, VLENGTH*2)}.
+     *
+     * This is a cross-lane operation that rearranges the lane
+     * elements of the two input vectors {@code v1} and a second vector {@code v2}).
+     *
+     * For each lane {@code N} of the index vector (the current vector), and
+     * for each lane source index {@code I=this.laneSource(N)} in the index vector,
+     * the output lane {@code N} obtains the value from the first vector at lane {@code I}
+     * if {@code I>=0 && I < VLENGTH}. Otherwise, index vector lane is used to index
+     * the <em>second</em> vector, at index {@code I-VLENGTH}.
+     *
+     * @param v1 the first input vector
+     * @param v2 the second input vector
+     * @return the rearrangement of lane elements of first and
+     *         the second input vector
+     * @throws IndexOutOfBoundsException if any invalid
+     *         source indexes are found in {@code this}
+     */
+    public abstract Vector<E> selectFrom(Vector<E> v1, Vector<E> v2);
+
     /**
      * Using index values stored in the lanes of this vector,
      * assemble values stored in second vector, under the control
