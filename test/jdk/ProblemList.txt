@@ -569,8 +569,6 @@ java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc6
 java/nio/channels/DatagramChannel/ManySourcesAndTargets.java    8264385 macosx-aarch64
 java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-all
 
-java/nio/file/Path/ToRealPath.java                              8315273 windows-all
-
 ############################################################################
 
 # jdk_rmi
