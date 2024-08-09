@@ -74,6 +74,14 @@ public class LingeredAppWithLock extends LingeredApp {
             }
         }
 
+        // Wait a short period of time so we can be sure the threads truly have moved
+        // to the required state and are now idle. See JDK-8313235.
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
         LingeredApp.main(args);
     }
  }
