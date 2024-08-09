@@ -70,6 +70,16 @@ import java.net.URI;
  */
 
 public abstract class HttpExchange implements AutoCloseable, Request {
+    /**
+     * Use in sendResponseHeaders() to signify no content in the response.
+     * @see #sendResponseHeaders(int, long)
+     *  */
+    public static final long NO_CONTENT = -1L;
+    /**
+     * Use in sendResponseHeaders() to signify an indeterminate response length.
+     * @see #sendResponseHeaders(int, long)
+     *  */
+    public static final long CHUNKED_CONTENT = 0L;
 
     /**
      * Constructor for subclasses to call.
@@ -199,8 +209,61 @@ public abstract class HttpExchange implements AutoCloseable, Request {
      *                       specified and no response body may be written.
      * @throws IOException   if the response headers have already been sent or an I/O error occurs
      * @see   HttpExchange#getResponseBody()
+     * @see   HttpExchange#CHUNKED_CONTENT
+     * @see   HttpExchange#NO_CONTENT
      */
     public abstract void sendResponseHeaders(int rCode, long responseLength) throws IOException;
+
+    /**
+     * Convenience method to send the response headers with no response body.
+     * The exchange is also closed.
+     * @param code the response code to send
+     * @throws IOException if the response headers have already been sent or an I/O error occurs
+     * @see HttpExchange#sendResponseHeaders(int, long)
+     */
+    public final void sendNoContentResponse(int code) throws IOException {
+        sendResponseHeaders(code,NO_CONTENT);
+    }
+    /**
+     * Convenience method to start sending a chunked response. The caller should write the response to
+     * the returned output stream, then close the output stream,
+     * @param code the response code to send
+     * @throws IOException if the response headers have already been sent or an I/O error occurs
+     * @return the stream to write the response to. the caller must close the stream.
+     * @see HttpExchange#sendResponseHeaders(int, long)
+     */
+    public final OutputStream beginChunkedResponse(int code) throws IOException {
+        sendResponseHeaders(code,CHUNKED_CONTENT);
+        return getResponseBody();
+    }
+    /**
+     * Convenience method to start sending a fixed length response. The caller should write the response to
+     * the returned output stream then close the stream. The number of bytes written to the stream must match
+     * the provided length.
+     * @param code the response code to send
+     * @param length the number of bytes that will be sent
+     * @throws IOException if the response headers have already been sent or an I/O error occurs
+     * @return the stream to write the response to. the caller must close the stream.
+     * @see HttpExchange#sendResponseHeaders(int, long)
+     */
+    public final OutputStream beginFixedLengthResponse(int code, long length) throws IOException {
+        sendResponseHeaders(code,length);
+        return getResponseBody();
+    }
+    /**
+     * Convenience method to send a response using a byte[] array. The output stream is automatically closed and no
+     * further writes are permitted.
+     * @param code the response code to send
+     * @param data the data to send
+     * @throws IOException if the response headers have already been sent or an I/O error occurs
+     * @see HttpExchange#sendResponseHeaders(int, long)
+     */
+    public final void sendResponse(int code,byte[] data) throws IOException {
+        sendResponseHeaders(code,data.length);
+        try (var os = getResponseBody()) {
+            os.write(data);
+        }
+    }
 
     /**
      * Returns the address of the remote entity invoking this request.
