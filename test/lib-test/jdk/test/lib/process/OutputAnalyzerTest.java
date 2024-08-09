@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,6 +242,31 @@ public class OutputAnalyzerTest {
                 }
             }
         }
-    }
 
+        // Multi lines
+        OutputAnalyzer multi = new OutputAnalyzer("""
+                first
+                second
+                third
+                fourth
+                fifth
+                """, "");
+        multi.shouldContainOrderedSequence();
+        multi.shouldContainOrderedSequence("first");
+        multi.shouldContainOrderedSequence("first", "third", "fifth");
+        multi.shouldContainOrderedSequence("fir", "ird", "fif");
+        multi.shouldContainOrderedSequence("second", "fourth");
+        try {
+            multi.shouldContainOrderedSequence("second", "first");
+            throw new RuntimeException("Should not succeed");
+        } catch (RuntimeException e) {
+            // good
+        }
+        try {
+            multi.shouldContainOrderedSequence("second", "sixth");
+            throw new RuntimeException("Should not succeed");
+        } catch (RuntimeException e) {
+            // good
+        }
+    }
 }

@@ -897,4 +897,25 @@ public final class OutputAnalyzer {
         shouldNotMatch(FATAL_ERROR_PAT);
     }
 
+    /**
+     * Verify that lines in the stdout and stderr contents of output buffer
+     * contains each item of strings, in the order they appear. Note that
+     * two items cannot appear in the same line.
+     *
+     * @param strings Strings that buffer should contain
+     * @throws RuntimeException If not all string are found
+     */
+    public OutputAnalyzer shouldContainOrderedSequence(String... strings) {
+        String[] lines = asLines().toArray(new String[0]);
+        int elementIndex = 0;
+        for (String line : lines) {
+            if (elementIndex < strings.length && line.contains(strings[elementIndex])) {
+                elementIndex++;
+            }
+        }
+        if (elementIndex != strings.length) {
+            throw new RuntimeException("Elements do not appear in the correct order.");
+        }
+        return this;
+    }
 }

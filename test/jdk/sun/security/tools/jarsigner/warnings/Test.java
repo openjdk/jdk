@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,6 @@ public abstract class Test {
     static final int BAD_EXTENDED_KEY_USAGE_EXIT_CODE = 8;
     static final int BAD_NETSCAPE_CERT_TYPE_EXIT_CODE = 8;
     static final int HAS_UNSIGNED_ENTRY_EXIT_CODE = 16;
-    static final int ALIAS_NOT_IN_STORE_EXIT_CODE = 32;
     static final int NOT_SIGNED_BY_ALIAS_EXIT_CODE = 32;
 
     protected void createAlias(String alias, String ... options)
