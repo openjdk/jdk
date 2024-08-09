@@ -141,12 +141,6 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
     warped = OptoReg::add(warped, C->out_preserve_stack_slots());
     if( warped >= _in_arg_limit )
       _in_arg_limit = OptoReg::add(warped, 1); // Bump max stack slot seen
-    if (!RegMask::can_represent_arg(warped)) {
-      // the compiler cannot represent this method's calling sequence
-      // Bailout. We do not have space to represent all arguments.
-      C->record_method_not_compilable("unsupported incoming calling sequence");
-      return OptoReg::Bad;
-    }
     return warped;
   }
   return OptoReg::as_OptoReg(reg);
@@ -228,6 +222,7 @@ void Matcher::match( ) {
   VMRegPair *vm_parm_regs  = NEW_RESOURCE_ARRAY( VMRegPair, argcnt );
   _parm_regs               = NEW_RESOURCE_ARRAY( OptoRegPair, argcnt );
   _calling_convention_mask = NEW_RESOURCE_ARRAY( RegMask, argcnt );
+  new(_calling_convention_mask) RegMask[argcnt];
   uint i;
   for( i = 0; i<argcnt; i++ ) {
     sig_bt[i] = domain->field_at(i+TypeFunc::Parms)->basic_type();
@@ -310,14 +305,6 @@ void Matcher::match( ) {
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).
   _out_arg_limit = OptoReg::add(_new_SP, C->out_preserve_stack_slots());
   assert( is_even(_out_arg_limit), "out_preserve must be even" );
-
-  if (!RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1))) {
-    // the compiler cannot represent this method's calling sequence
-    // Bailout. We do not have space to represent all arguments.
-    C->record_method_not_compilable("must be able to represent all call arguments in reg mask");
-  }
-
-  if (C->failing())  return;  // bailed out on incoming arg failure
 
   // ---------------
   // Collect roots of matcher trees.  Every node for which
@@ -441,6 +428,7 @@ void Matcher::match( ) {
 
 static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   RegMask *rms = NEW_RESOURCE_ARRAY( RegMask, size );
+  new(rms) RegMask[size];
   // Do all the pre-defined register masks
   rms[TypeFunc::Control  ] = RegMask::Empty;
   rms[TypeFunc::I_O      ] = RegMask::Empty;
@@ -540,14 +528,7 @@ void Matcher::init_first_stack_mask() {
     C->FIRST_STACK_mask().Insert(i);
   }
   // Add in all bits past the outgoing argument area
-  guarantee(RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1)),
-            "must be able to represent all call arguments in reg mask");
-  OptoReg::Name init = _out_arg_limit;
-  for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1)) {
-    C->FIRST_STACK_mask().Insert(i);
-  }
-  // Finally, set the "infinite stack" bit.
-  C->FIRST_STACK_mask().set_AllStack();
+  C->FIRST_STACK_mask().Set_All_From(_out_arg_limit);
 
   // Make spill masks.  Registers for their class, plus FIRST_STACK_mask.
   RegMask aligned_stack_mask = C->FIRST_STACK_mask();
@@ -970,14 +951,10 @@ void Matcher::init_spill_mask( Node *ret ) {
 
   // Start at OptoReg::stack0()
   STACK_ONLY_mask.Clear();
-  OptoReg::Name init = OptoReg::stack2reg(0);
   // STACK_ONLY_mask is all stack bits
-  OptoReg::Name i;
-  for (i = init; RegMask::can_represent(i); i = OptoReg::add(i,1))
-    STACK_ONLY_mask.Insert(i);
-  // Also set the "infinite stack" bit.
-  STACK_ONLY_mask.set_AllStack();
+  STACK_ONLY_mask.Set_All_From(OptoReg::stack2reg(0));
 
+  OptoReg::Name i;
   for (i = OptoReg::Name(0); i < OptoReg::Name(_last_Mach_Reg); i = OptoReg::add(i, 1)) {
     // Copy the register names over into the shared world.
     // SharedInfo::regName[i] = regName[i];
@@ -1256,11 +1233,6 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     // that is killed by the call.
     if( warped >= out_arg_limit_per_call )
       out_arg_limit_per_call = OptoReg::add(warped,1);
-    if (!RegMask::can_represent_arg(warped)) {
-      // Bailout. For example not enough space on stack for all arguments. Happens for methods with too many arguments.
-      C->record_method_not_compilable("unsupported calling sequence");
-      return OptoReg::Bad;
-    }
     return warped;
   }
   return OptoReg::as_OptoReg(reg);
@@ -1449,12 +1421,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     // this killed area.
     uint r_cnt = mcall->tf()->range()->cnt();
     MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
-    if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
-      // Bailout. We do not have space to represent all arguments.
-      C->record_method_not_compilable("unsupported outgoing calling sequence");
-    } else {
-      for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
-        proj->_rout.Insert(OptoReg::Name(i));
+    for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++) {
+      proj->_rout.Insert(OptoReg::Name(i));
     }
     if (proj->_rout.is_NotEmpty()) {
       push_projection(proj);
