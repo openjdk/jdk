@@ -72,7 +72,7 @@ PeriodicTask::PeriodicTask(size_t interval_time) :
   // Sanity check the interval time
   assert(_interval >= PeriodicTask::min_interval &&
          _interval %  PeriodicTask::interval_gran == 0,
-              "improper PeriodicTask interval time");
+              "improper PeriodicTask interval time: %zu", interval_time);
 }
 
 PeriodicTask::~PeriodicTask() {
