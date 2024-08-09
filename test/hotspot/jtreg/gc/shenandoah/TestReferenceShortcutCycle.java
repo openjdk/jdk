@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,19 @@ package gc.shenandoah;
  *      -Xbootclasspath/a:.
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=satb -XX:ShenandoahGarbageThreshold=100 -Xmx100m
+ *      gc.shenandoah.TestReferenceShortcutCycle
+ */
+
+/* @test id=generational-100
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @modules java.base
+ * @run main jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:ShenandoahGarbageThreshold=100 -Xmx100m
  *      gc.shenandoah.TestReferenceShortcutCycle
  */
 

@@ -51,6 +51,10 @@ private:
                                Register tmp1, Register tmp2,
                                MacroAssembler::PreservationLevel preservation_level);
 
+  void store_check(MacroAssembler* masm,
+                   Register base, RegisterOrConstant ind_or_offs,
+                   Register tmp);
+
   void load_reference_barrier_impl(MacroAssembler* masm, DecoratorSet decorators,
                                    Register base, RegisterOrConstant ind_or_offs,
                                    Register dst,
@@ -59,6 +63,10 @@ private:
 
   /* ==== Helper methods for barrier implementations ==== */
   void resolve_forward_pointer_not_null(MacroAssembler* masm, Register dst, Register tmp);
+
+  void gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
+                                        Register addr, Register count,
+                                        Register preserve);
 
 public:
   virtual NMethodPatchingType nmethod_patching_type() { return NMethodPatchingType::conc_data_patch; }
@@ -95,7 +103,11 @@ public:
 
   /* ==== Access api ==== */
   virtual void arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
-                          Register src, Register dst, Register count, Register preserve1, Register preserve2);
+                                  Register src, Register dst, Register count,
+                                  Register preserve1, Register preserve2);
+  virtual void arraycopy_epilogue(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
+                                  Register dst, Register count,
+                                  Register preserve);
 
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Register base, RegisterOrConstant ind_or_offs, Register val,

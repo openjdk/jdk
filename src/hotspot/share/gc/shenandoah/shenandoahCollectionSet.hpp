@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +34,14 @@
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;
+  friend class ShenandoahCollectionSetPreselector;
+
+  void establish_preselected(bool *preselected) {
+   assert(_preselected_regions == nullptr, "Over-writing");
+   _preselected_regions = preselected;
+  }
+  void abandon_preselected() { _preselected_regions = nullptr; }
+
 private:
   size_t const          _map_size;
   size_t const          _region_size_bytes_shift;
@@ -43,9 +52,27 @@ private:
 
   ShenandoahHeap* const _heap;
 
+  bool                  _has_old_regions;
   size_t                _garbage;
   size_t                _used;
+  size_t                _live;
   size_t                _region_count;
+
+  size_t                _young_bytes_to_evacuate;
+  size_t                _young_bytes_to_promote;
+  size_t                _old_bytes_to_evacuate;
+
+  // How many bytes of old garbage are present in a mixed collection set?
+  size_t                _old_garbage;
+
+  // Points to array identifying which tenure-age regions have been preselected
+  // for inclusion in collection set. This field is only valid during brief
+  // spans of time while collection set is being constructed.
+  bool*                 _preselected_regions;
+
+  // When a region having memory available to be allocated is added to the collection set, the region's available memory
+  // should be subtracted from what's available.
+  size_t                _young_available_bytes_collected;
 
   shenandoah_padding(0);
   volatile size_t       _current_index;
@@ -77,8 +104,31 @@ public:
 
   void print_on(outputStream* out) const;
 
-  size_t used()      const { return _used; }
-  size_t garbage()   const { return _garbage;   }
+  // It is not known how many of these bytes will be promoted.
+  inline size_t get_young_bytes_reserved_for_evacuation();
+  inline size_t get_old_bytes_reserved_for_evacuation();
+
+  inline size_t get_young_bytes_to_be_promoted();
+
+  size_t get_young_available_bytes_collected() { return _young_available_bytes_collected; }
+
+  inline size_t get_old_garbage();
+
+  bool is_preselected(size_t region_idx) {
+    assert(_preselected_regions != nullptr, "Missing etsablish after abandon");
+    return _preselected_regions[region_idx];
+  }
+
+  bool* preselected_regions() {
+    assert(_preselected_regions != nullptr, "Null ptr");
+    return _preselected_regions;
+  }
+
+  bool has_old_regions() const { return _has_old_regions; }
+  size_t used()          const { return _used; }
+  size_t live()          const { return _live; }
+  size_t garbage()       const { return _garbage; }
+
   void clear();
 
 private:

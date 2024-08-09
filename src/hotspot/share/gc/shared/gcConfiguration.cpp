@@ -32,6 +32,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 GCName GCConfiguration::young_collector() const {
   if (UseG1GC) {
@@ -42,6 +43,15 @@ GCName GCConfiguration::young_collector() const {
     return ParallelScavenge;
   }
 
+  if (UseShenandoahGC) {
+#if INCLUDE_SHENANDOAHGC
+    if (strcmp(ShenandoahGCMode, "generational") == 0) {
+      return Shenandoah;
+    }
+#endif
+    return NA;
+  }
+
   if (UseZGC) {
     if (ZGenerational) {
       return ZMinor;
@@ -49,11 +59,6 @@ GCName GCConfiguration::young_collector() const {
       return NA;
     }
   }
-
-  if (UseShenandoahGC) {
-    return NA;
-  }
-
   return DefNew;
 }
 
@@ -66,6 +71,10 @@ GCName GCConfiguration::old_collector() const {
     return ParallelOld;
   }
 
+  if (UseShenandoahGC) {
+    return Shenandoah;
+  }
+
   if (UseZGC) {
     if (ZGenerational) {
       return ZMajor;
@@ -73,11 +82,6 @@ GCName GCConfiguration::old_collector() const {
       return Z;
     }
   }
-
-  if (UseShenandoahGC) {
-    return Shenandoah;
-  }
-
   return SerialOld;
 }
 

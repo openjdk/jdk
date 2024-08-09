@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +59,24 @@ private:
   MarkBitMap* _verification_bit_map;
 public:
   typedef enum {
+    // Disable remembered set verification.
+    _verify_remembered_disable,
+
+    // Old objects should be registered and RS cards within *read-only* RS are dirty for all
+    // inter-generational pointers.
+    _verify_remembered_before_marking,
+
+    // Old objects should be registered and RS cards within *read-write* RS are dirty for all
+    // inter-generational pointers.
+    _verify_remembered_before_updating_references,
+
+    // Old objects should be registered and RS cards within *read-write* RS are dirty for all
+    // inter-generational pointers.
+    // TODO: This differs from the previous mode by update-watermark() vs top() end range?
+    _verify_remembered_after_full_gc
+  } VerifyRememberedSet;
+
+  typedef enum {
     // Disable marked objects verification.
     _verify_marked_disable,
 
@@ -69,7 +88,12 @@ public:
 
     // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
     // may be dangling after marking but before conc-weakrefs-processing.
-    _verify_marked_complete_except_references
+    _verify_marked_complete_except_references,
+
+    // Objects should be marked in "complete" bitmap, except j.l.r.Reference referents, which
+    // may be dangling after marking but before conc-weakrefs-processing. All SATB buffers must
+    // be empty.
+    _verify_marked_complete_satb_empty,
   } VerifyMarked;
 
   typedef enum {
@@ -123,6 +147,17 @@ public:
   } VerifyRegions;
 
   typedef enum {
+    // Disable size verification
+    _verify_size_disable,
+
+    // Enforce exact consistency
+    _verify_size_exact,
+
+    // Expect promote-in-place adjustments: padding inserted to temporarily prevent further allocation in regular regions
+    _verify_size_adjusted_for_padding
+  } VerifySize;
+
+  typedef enum {
     // Disable gc-state verification
     _verify_gcstate_disable,
 
@@ -136,7 +171,10 @@ public:
     _verify_gcstate_forwarded,
 
     // Evacuation is in progress, some objects are forwarded
-    _verify_gcstate_evacuation
+    _verify_gcstate_evacuation,
+
+    // Evacuation is done, some objects are forwarded, updating is in progress
+    _verify_gcstate_updating
   } VerifyGCState;
 
   struct VerifyOptions {
@@ -160,12 +198,14 @@ public:
   };
 
 private:
-  void verify_at_safepoint(const char *label,
+  void verify_at_safepoint(const char* label,
+                           VerifyRememberedSet remembered,
                            VerifyForwarded forwarded,
                            VerifyMarked marked,
                            VerifyCollectionSet cset,
                            VerifyLiveness liveness,
                            VerifyRegions regions,
+                           VerifySize sizeness,
                            VerifyGCState gcstate);
 
 public:
@@ -186,8 +226,17 @@ public:
 
   // Roots should only contain to-space oops
   void verify_roots_in_to_space();
-
   void verify_roots_no_forwarded();
+
+  // Check that generation usages are accurate before rebuilding free set
+  void verify_before_rebuilding_free_set();
+private:
+   void help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+                                    HeapWord* from, HeapWord* top, HeapWord* update_watermark, const char* message);
+
+  void verify_rem_set_before_mark();
+  void verify_rem_set_before_update_ref();
+  void verify_rem_set_after_full_gc();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

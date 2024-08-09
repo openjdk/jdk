@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +85,31 @@
  */
 
 /*
+ * @test id=generational
+ * @summary Acceptance tests: collector can deal with retained objects
+ * @requires vm.gc.Shenandoah
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahOOMDuringEvacALot -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ *
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahAllocFailureALot -XX:+ShenandoahVerify
+ *      TestRetainObjects
+ */
+
+/*
  * @test id=static
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
@@ -108,7 +134,7 @@
  * @summary Acceptance tests: collector can deal with retained objects
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=300 -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC
  *      -XX:-UseTLAB -XX:+ShenandoahVerify
  *      TestRetainObjects

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,27 @@
  */
 
 /*
- * @test
- * @summary Test that reference processing works with both parallel and non-parallel variants.
+ * @test id=rotation
  * @requires vm.gc.Shenandoah
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g                              TestParallelRefprocSanity
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g  -XX:-ParallelRefProcEnabled TestParallelRefprocSanity
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx1g -Xms1g  -XX:+ParallelRefProcEnabled TestParallelRefprocSanity
+ * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+ShenandoahRegionSampling
+ *      -Xlog:gc+region=trace:region-snapshots-%p.log::filesize=100,filecount=3
+ *      -XX:+UseShenandoahGC
+ *      TestShenandoahRegionLogging
  */
+import java.io.File;
 
-import java.lang.ref.*;
-
-public class TestParallelRefprocSanity {
-
-    static final long TARGET_MB = Long.getLong("target", 10_000); // 10 Gb allocation
-
-    static volatile Object sink;
-
+public class TestShenandoahRegionLogging {
     public static void main(String[] args) throws Exception {
-        long count = TARGET_MB * 1024 * 1024 / 32;
-        for (long c = 0; c < count; c++) {
-            sink = new WeakReference<Object>(new Object());
+        System.gc();
+
+        File directory = new File(".");
+        File[] files = directory.listFiles((dir, name) -> name.startsWith("region-snapshots"));
+
+        // Expect one or more log files when region logging is enabled
+        if (files.length == 0) {
+            throw new Error("Expected at least one log file for region sampling data.");
         }
     }
-
 }

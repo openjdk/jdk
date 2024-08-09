@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +26,10 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
+#include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
@@ -39,7 +41,6 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
-
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
@@ -138,6 +139,8 @@ protected:
   // establishes what is 'normal' for the application and is used as a
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
+
+  size_t min_free_threshold();
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP

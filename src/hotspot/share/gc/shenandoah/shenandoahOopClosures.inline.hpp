@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2015, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +33,7 @@
 
 template<class T, ShenandoahGenerationType GENERATION>
 inline void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 template<class T, ShenandoahGenerationType GENERATION>
