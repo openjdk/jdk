@@ -76,7 +76,11 @@ public class VerifyTranslations {
             if (!module.equals("jdk.localedata")) {
                 Matcher matcher = classesLocalePattern.matcher(line);
                 if (matcher.find()) {
-                    if (!VALID_TRANSLATION_SUFFIXES.contains(matcher.group(1))) {
+                    if (!VALID_TRANSLATION_SUFFIXES.contains(matcher.group(1)) &&
+                            // TODO: Find a better workaround for excluding jextract generated
+                            //       code like
+                            //       java.base/jdk/internal/natives/net/socket/generated/sockaddr_in.java
+                            !line.contains("/generated/")) {
                         System.out.println("Unsupported translation found in lib/modules: "
                                 + module + "/" + line.trim());
                         failed = true;
@@ -96,7 +100,11 @@ public class VerifyTranslations {
                 if (!name.startsWith("jdk.localedata")) {
                     Matcher matcher = sourceLocalePattern.matcher(name);
                     if (matcher.find()) {
-                        if (!VALID_TRANSLATION_SUFFIXES.contains(matcher.group(1))) {
+                        if (!VALID_TRANSLATION_SUFFIXES.contains(matcher.group(1)) &&
+                                // TODO: Find a better workaround for excluding jextract generated
+                                //       code like
+                                //       java.base/jdk/internal/natives/net/socket/generated/sockaddr_in.java
+                                !name.contains("/generated/")) {
                             System.out.println("Unsupported translation found in lib/src.zip: " + name);
                             failed = true;
                         }

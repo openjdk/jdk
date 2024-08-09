@@ -29,6 +29,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.UncheckedIOException;
+import java.lang.foreign.Arena;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.Cleaner.Cleanable;
@@ -114,6 +115,9 @@ class DatagramChannelImpl
     private final NativeSocketAddress targetSockAddr;
     private InetSocketAddress previousTarget;
     private int previousSockAddrLength;
+
+    // Shared arena that is used to allocate native memory
+    private final Arena arena = Arena.ofShared();
 
     // Cleaner to close file descriptor and free native socket address
     private final Cleanable cleaner;
@@ -210,8 +214,7 @@ class DatagramChannelImpl
             this.family = family;
             this.fd = fd = Net.socket(family, false);
             this.fdVal = IOUtil.fdVal(fd);
-
-            sockAddrs = NativeSocketAddress.allocate(3);
+            sockAddrs = NativeSocketAddress.allocate(3, arena);
             readLock.lock();
             try {
                 this.sourceSockAddr = sockAddrs[0];
@@ -224,13 +227,13 @@ class DatagramChannelImpl
             initialized = true;
         } finally {
             if (!initialized) {
-                if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
+                if (sockAddrs != null) NativeSocketAddress.freeAll(arena);
                 if (fd != null) nd.close(fd);
                 ResourceManager.afterUdpClose();
             }
         }
 
-        Runnable releaser = releaserFor(fd, sockAddrs);
+        Runnable releaser = releaserFor(fd, arena);
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
     }
 
@@ -251,7 +254,7 @@ class DatagramChannelImpl
             this.fd = fd;
             this.fdVal = IOUtil.fdVal(fd);
 
-            sockAddrs = NativeSocketAddress.allocate(3);
+            sockAddrs = NativeSocketAddress.allocate(3, arena);
             readLock.lock();
             try {
                 this.sourceSockAddr = sockAddrs[0];
@@ -264,13 +267,13 @@ class DatagramChannelImpl
             initialized = true;
         } finally {
             if (!initialized) {
-                if (sockAddrs != null) NativeSocketAddress.freeAll(sockAddrs);
+                if (sockAddrs != null) NativeSocketAddress.freeAll(arena);
                 nd.close(fd);
                 ResourceManager.afterUdpClose();
             }
         }
 
-        Runnable releaser = releaserFor(fd, sockAddrs);
+        Runnable releaser = releaserFor(fd, arena);
         this.cleaner = CleanerFactory.cleaner().register(this, releaser);
 
         synchronized (stateLock) {
@@ -2023,7 +2026,7 @@ class DatagramChannelImpl
     /**
      * Returns an action to release the given file descriptor and socket addresses.
      */
-    private static Runnable releaserFor(FileDescriptor fd, NativeSocketAddress... sockAddrs) {
+    private static Runnable releaserFor(FileDescriptor fd, Arena addrsArena) {
         return () -> {
             try {
                 nd.close(fd);
@@ -2032,7 +2035,7 @@ class DatagramChannelImpl
             } finally {
                 // decrement socket count and release memory
                 ResourceManager.afterUdpClose();
-                NativeSocketAddress.freeAll(sockAddrs);
+                NativeSocketAddress.freeAll(addrsArena);
             }
         };
     }
