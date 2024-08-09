@@ -31,7 +31,7 @@
 #include "gc/z/zCPU.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zNUMA.hpp"
-#include "gc/z/zUtils.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 
@@ -58,7 +58,7 @@ uintptr_t ZValueStorage<S>::alloc(size_t size) {
   // Allocate new block of memory
   const size_t block_alignment = offset;
   const size_t block_size = offset * S::count();
-  _top = ZUtils::alloc_aligned(block_alignment, block_size);
+  _top = ZUtils::alloc_aligned_unfreeable(block_alignment, block_size);
   _end = _top + offset;
 
   // Retry allocation

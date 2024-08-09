@@ -35,7 +35,7 @@
 #include "gc/z/zRelocationSetSelector.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTracer.inline.hpp"
-#include "gc/z/zUtils.hpp"
+#include "gc/z/zUtils.inline.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
@@ -364,7 +364,7 @@ void ZStatValue::initialize() {
 
   // Allocation aligned memory
   const size_t size = _cpu_offset * ZCPU::count();
-  _base = ZUtils::alloc_aligned(ZCacheLineSize, size);
+  _base = ZUtils::alloc_aligned_unfreeable(ZCacheLineSize, size);
 }
 
 const char* ZStatValue::group() const {
