@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,8 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> exchange;
 
+    volatile boolean expectTimeoutRaised;
+
     ExchangeImpl(Exchange<T> e) {
         // e == null means a http/2 pushed stream
         this.exchange = e;
@@ -65,6 +67,10 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> getExchange() {
         return exchange;
+    }
+
+    final void setExpectTimeoutRaised(boolean timeoutRaised) {
+        expectTimeoutRaised = timeoutRaised;
     }
 
     HttpClientImpl client() {

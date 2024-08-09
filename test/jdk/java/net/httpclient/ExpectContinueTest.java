@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
     Http2TestServer http2TestServer; // HTTP/2
 
     URI getUri, postUri, hangUri;
-    URI h2postUri, h2hangUri, h2endStreamUri, h2warmupURI;
+    URI h2postUri, h2forcePostUri, h2hangUri, h2endStreamUri, h2warmupURI;
 
     static PrintStream err = new PrintStream(System.err);
     static PrintStream out = new PrintStream(System.out);
@@ -99,6 +99,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
                 { postUri, 200, false, HTTP_1_1 },
                 { hangUri, 417, false, HTTP_1_1},
                 { h2postUri, 200, false, HTTP_2 },
+                { h2forcePostUri, 200, false, HTTP_2 },
                 { h2hangUri, 417, false, HTTP_2 },
                 { h2endStreamUri, 200, true, HTTP_2 }, // Error
         };
@@ -127,7 +128,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
             } catch (Exception e) {
                 testThrowable = e.getCause();
             }
-            verifyRequest(expectedStatusCode, resp, exceptionally, testThrowable);
+            verifyRequest(uri.getPath(), expectedStatusCode, resp, exceptionally, testThrowable);
         }
     }
 
@@ -149,17 +150,19 @@ public class ExpectContinueTest implements HttpServerAdapters {
         http2TestServer.setExchangeSupplier(ExpectContinueTestExchangeImpl::new);
         http2TestServer.addHandler(new GetHandler().toHttp2Handler(), "/http2/warmup");
         http2TestServer.addHandler(new PostHandler().toHttp2Handler(), "/http2/post");
+        http2TestServer.addHandler(new ForcePostHandlerHttp2().toHttp2Handler(), "/http2/forcePost");
         http2TestServer.addHandler(new PostHandlerCantContinue().toHttp2Handler(), "/http2/hang");
         http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/endStream");
 
         h2warmupURI = new URI("http://" + http2TestServer.serverAuthority() + "/http2/warmup");
         h2postUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/post");
+        h2forcePostUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/forcePost");
         h2hangUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/hang");
         h2endStreamUri = URI.create("http://" + http2TestServer.serverAuthority() + "/http2/endStream");
 
-        out.printf("HTTP/1.1 server listening at: %s", http1TestServer.serverAuthority());
-        out.printf("HTTP/1.1 hang server listening at: %s", hangUri.getRawAuthority());
-        out.printf("HTTP/2 clear server listening at: %s", http2TestServer.serverAuthority());
+        out.printf("HTTP/1.1 server listening at: %s %n", http1TestServer.serverAuthority());
+        out.printf("HTTP/1.1 hang server listening at: %s %n", hangUri.getRawAuthority());
+        out.printf("HTTP/2 clear server listening at: %s %n", http2TestServer.serverAuthority());
 
         http1TestServer.start();
         http1HangServer.start();
@@ -202,6 +205,18 @@ public class ExpectContinueTest implements HttpServerAdapters {
                 err.println("Server reading body");
                 is.readAllBytes();
                 err.println("Server send 200 (length=0)");
+                exchange.sendResponseHeaders(200, 0);
+            }
+        }
+    }
+
+    static class ForcePostHandlerHttp2 implements HttpTestHandler {
+        @Override
+        public void handle(HttpTestExchange exchange) throws IOException {
+            try (InputStream is = exchange.getRequestBody()) {
+                err.println("Server reading body inside the force Post");
+                is.readAllBytes();
+                err.println("Server send 200 (length=0) in the force post");
                 exchange.sendResponseHeaders(200, 0);
             }
         }
@@ -337,15 +352,18 @@ public class ExpectContinueTest implements HttpServerAdapters {
         }
     }
 
-    private void verifyRequest(int expectedStatusCode, HttpResponse<String> resp, boolean exceptionally, Throwable testThrowable) {
+    private void verifyRequest(String path, int expectedStatusCode, HttpResponse<String> resp, boolean exceptionally, Throwable testThrowable) {
+        if(!exceptionally){
+            err.printf("Response code %s received for path %s %n", resp.statusCode(), path);
+        }
         if (exceptionally && testThrowable != null) {
-            err.println(testThrowable);
+            err.println("Finished exceptionally Test throwable: " + testThrowable);
             assertEquals(IOException.class, testThrowable.getClass());
         } else if (exceptionally) {
             throw new TestException("Expected case to finish with an IOException but testException is null");
         } else if (resp != null) {
             assertEquals(resp.statusCode(), expectedStatusCode);
-            err.println("Request completed successfully");
+            err.println("Request completed successfully for path " + path);
             err.println("Response Headers: " + resp.headers());
             err.println("Response Status Code: " + resp.statusCode());
         }
