@@ -41,18 +41,26 @@ import static org.junit.jupiter.api.Assertions.*;
 final class CachingIntFunctionTest {
 
     private static final int SIZE = 2;
+    private static final IntFunction<Integer> MAPPER = i -> i;
 
     @Test
     void basic() {
-        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(i -> i);
+        basic(MAPPER);
+        basic(i -> null);
+    }
+
+    void basic(IntFunction<Integer> mapper) {
+        StableTestUtil.CountingIntFunction<Integer> cif = new StableTestUtil.CountingIntFunction<>(mapper);
         var cached = StableValue.newCachingIntFunction(SIZE, cif, null);
         assertEquals("CachingIntFunction[values=[.unset, .unset], original=" + cif + "]", cached.toString());
-        assertEquals(1, cached.apply(1));
+        assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals(1, cached.apply(1));
+        assertEquals(mapper.apply(1), cached.apply(1));
         assertEquals(1, cif.cnt());
-        assertEquals("CachingIntFunction[values=[.unset, [1]], original=" + cif + "]", cached.toString());
-        assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE + 1));
+        assertEquals("CachingIntFunction[values=[.unset, [" + mapper.apply(1) + "]], original=" + cif + "]", cached.toString());
+        assertThrows(IllegalArgumentException.class, () -> cached.apply(SIZE));
+        assertThrows(IllegalArgumentException.class, () -> cached.apply(-1));
+        assertThrows(IllegalArgumentException.class, () -> cached.apply(1_000_000));
     }
 
     @Test
@@ -67,7 +75,7 @@ final class CachingIntFunctionTest {
                 });
             }
         };
-        var cached = StableValue.newCachingIntFunction(SIZE, i -> i, factory);
+        var cached = StableValue.newCachingIntFunction(SIZE, MAPPER, factory);
         while (cnt.get() < 2) {
             Thread.onSpinWait();
         }
@@ -102,21 +110,18 @@ final class CachingIntFunctionTest {
 
     @Test
     void equality() {
-        IntFunction<Integer> mapper = i -> i;
-        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, mapper, null);
-        IntFunction<Integer> f1 = StableValue.newCachingIntFunction(8, mapper, null);
+        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER, null);
+        IntFunction<Integer> f1 = StableValue.newCachingIntFunction(8, MAPPER, null);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, i -> i, null);
-        int hBefore = f0.hashCode();
+        IntFunction<Integer> f0 = StableValue.newCachingIntFunction(8, MAPPER, null);
+        assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.apply(4);
-        int hAfter = f0.hashCode();
-        // hashCode() shall not change
-        assertEquals(hBefore, hAfter);
+        assertEquals(System.identityHashCode(f0), f0.hashCode());
     }
 
 }

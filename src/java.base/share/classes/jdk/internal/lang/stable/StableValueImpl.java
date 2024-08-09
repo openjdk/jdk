@@ -70,7 +70,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         if (t != null) {
             return StableValueUtil.unwrap(t);
         }
-        throw new NoSuchElementException("No value set");
+        throw new NoSuchElementException("No holder value set");
     }
 
     @ForceInline

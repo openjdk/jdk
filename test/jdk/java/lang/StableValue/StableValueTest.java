@@ -43,38 +43,52 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 final class StableValueTest {
 
+    private static final int VALUE = 42;
+    private static final int VALUE2 = 13;
+
     @Test
-    void unset() {
+    void trySet() {
+        trySet(VALUE);
+        trySet(null);
+    }
+
+    void trySet(Integer initial) {
         StableValue<Integer> stable = StableValue.newInstance();
-        assertNull(stable.orElse(null));
-        assertThrows(NoSuchElementException.class, stable::orElseThrow);
-        assertEquals("StableValue.unset", stable.toString());
-        assertTrue(stable.trySet(42));
+        assertTrue(stable.trySet(initial));
         assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(42));
-        assertFalse(stable.trySet(2));
+        assertFalse(stable.trySet(VALUE));
+        assertFalse(stable.trySet(VALUE2));
+        assertEquals(initial, stable.orElseThrow());
     }
 
     @Test
-    void setNull() {
+    void orElse() {
         StableValue<Integer> stable = StableValue.newInstance();
-        assertTrue(stable.trySet(null));
-        assertEquals("StableValue[null]", stable.toString());
-        assertNull(stable.orElse(13));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
+        assertEquals(VALUE, stable.orElse(VALUE));
+        stable.trySet(VALUE);
+        assertEquals(VALUE, stable.orElse(VALUE2));
     }
 
     @Test
-    void setNonNull() {
+    void orElseThrow() {
         StableValue<Integer> stable = StableValue.newInstance();
-        assertTrue(stable.trySet(42));
-        assertEquals("StableValue[42]", stable.toString());
-        assertEquals(42, stable.orElse(null));
-        assertFalse(stable.trySet(null));
-        assertFalse(stable.trySet(1));
-        assertThrows(IllegalStateException.class, () -> stable.setOrThrow(1));
-        assertEquals(42, stable.orElseThrow());
+        var e = assertThrows(NoSuchElementException.class, stable::orElseThrow);
+        assertEquals("No holder value set", e.getMessage());
+        stable.trySet(VALUE);
+        assertEquals(VALUE, stable.orElseThrow());
+    }
+
+    @Test
+    void isSet() {
+        isSet(VALUE);
+        isSet(null);
+   }
+
+    void isSet(Integer initial) {
+        StableValue<Integer> stable = StableValue.newInstance();
+        assertFalse(stable.isSet());
+        stable.trySet(initial);
+        assertTrue(stable.isSet());
     }
 
     @Test
@@ -101,7 +115,27 @@ final class StableValueTest {
     }
 
     @Test
-    void circular() {
+    void toStringUnset() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        assertEquals("StableValue.unset", stable.toString());
+    }
+
+    @Test
+    void toStringNull() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        assertTrue(stable.trySet(null));
+        assertEquals("StableValue[null]", stable.toString());
+    }
+
+    @Test
+    void toStringNonNull() {
+        StableValue<Integer> stable = StableValue.newInstance();
+        assertTrue(stable.trySet(VALUE));
+        assertEquals("StableValue[" + VALUE + "]", stable.toString());
+    }
+
+    @Test
+    void toStringCircular() {
         StableValue<StableValue<?>> stable = StableValue.newInstance();
         stable.trySet(stable);
         String toString = stable.toString();

@@ -58,8 +58,10 @@ final class StableValuesSafePublicationTest {
     }
 
     static final class Holder {
-        final int a;
-        final int b;
+        // These are non-final fields but should be seen
+        // fully initialized thanks to the HB properties of StableValue.
+        int a;
+        int b;
 
         Holder() {
             a = 1;

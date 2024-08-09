@@ -32,41 +32,44 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 final class CachingSupplierTest {
 
+    private static final Supplier<Integer> SUPPLIER = () -> 42;
+
     @Test
     void basic() {
-        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(() -> 42);
+        basic(SUPPLIER);
+        basic(() -> null);
+    }
+
+    void basic(Supplier<Integer> supplier) {
+        StableTestUtil.CountingSupplier<Integer> cs = new StableTestUtil.CountingSupplier<>(supplier);
         var cached = StableValue.newCachingSupplier(cs, null);
         assertEquals("CachingSupplier[value=.unset, original=" + cs + "]", cached.toString());
-        assertEquals(42, cached.get());
+        assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals(42, cached.get());
+        assertEquals(supplier.get(), cached.get());
         assertEquals(1, cs.cnt());
-        assertEquals("CachingSupplier[value=[42], original=" + cs + "]", cached.toString());
+        assertEquals("CachingSupplier[value=[" + supplier.get() + "], original=" + cs + "]", cached.toString());
     }
 
     @Test
     void background() {
         final AtomicInteger cnt = new AtomicInteger(0);
-        ThreadFactory factory = new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable r) {
-                return new Thread(() -> {
-                    r.run();
-                    cnt.incrementAndGet();
-                });
-            }
-        };
-        var cached = StableValue.newCachingSupplier(() -> 42, factory);
+        ThreadFactory factory = r -> new Thread(() -> {
+            r.run();
+            cnt.incrementAndGet();
+        });
+        var cached = StableValue.newCachingSupplier(SUPPLIER, factory);
         while (cnt.get() < 1) {
             Thread.onSpinWait();
         }
-        assertEquals(42, cached.get());
+        assertEquals(SUPPLIER.get(), cached.get());
     }
 
     @Test
@@ -95,21 +98,18 @@ final class CachingSupplierTest {
 
     @Test
     void equality() {
-        Supplier<Integer> mapper = () -> 42;
-        Supplier<Integer> f0 = StableValue.newCachingSupplier(mapper, null);
-        Supplier<Integer> f1 = StableValue.newCachingSupplier(mapper, null);
+        Supplier<Integer> f0 = StableValue.newCachingSupplier(SUPPLIER, null);
+        Supplier<Integer> f1 = StableValue.newCachingSupplier(SUPPLIER, null);
         // No function is equal to another function
         assertNotEquals(f0, f1);
     }
 
     @Test
     void hashCodeStable() {
-        Supplier<Integer> f0 = StableValue.newCachingSupplier(() -> 42, null);
-        int hBefore = f0.hashCode();
+        Supplier<Integer> f0 = StableValue.newCachingSupplier(SUPPLIER, null);
+        assertEquals(System.identityHashCode(f0), f0.hashCode());
         f0.get();
-        int hAfter = f0.hashCode();
-        // hashCode() shall not change
-        assertEquals(hBefore, hAfter);
+        assertEquals(System.identityHashCode(f0), f0.hashCode());
     }
 
 }
