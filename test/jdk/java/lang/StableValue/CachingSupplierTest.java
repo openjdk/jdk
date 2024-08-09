@@ -43,7 +43,7 @@ final class CachingSupplierTest {
 
     @Test
     void factoryInvariants() {
-        assertThrows(IllegalArgumentException.class, () -> StableValue.newCachingSupplier(null));
+        assertThrows(NullPointerException.class, () -> StableValue.newCachingSupplier(null));
         assertThrows(NullPointerException.class, () -> StableValue.newCachingSupplier(SUPPLIER, null));
     }
 
