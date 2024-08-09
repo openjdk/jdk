@@ -83,10 +83,21 @@ static volatile T* reference_referent_addr(oop reference) {
   return (volatile T*)java_lang_ref_Reference::referent_addr_raw(reference);
 }
 
+inline oop reference_coop_decode_raw(narrowOop v) {
+  return CompressedOops::is_null(v) ? nullptr : CompressedOops::decode_raw(v);
+}
+
+inline oop reference_coop_decode_raw(oop v) {
+  return v;
+}
+
+// Raw referent, it can be dead. You cannot dereference it, only use for nullptr
+// and bitmap checks. The decoding uses a special-case inlined CompressedOops::decode
+// method that bypasses normal oop-ness checks.
 template <typename T>
-static oop reference_referent(oop reference) {
+static oop reference_referent_raw(oop reference) {
   T heap_oop = Atomic::load(reference_referent_addr<T>(reference));
-  return CompressedOops::decode(heap_oop);
+  return reference_coop_decode_raw(heap_oop);
 }
 
 static void reference_clear_referent(oop reference) {
@@ -278,7 +289,7 @@ bool ShenandoahReferenceProcessor::should_discover(oop reference, ReferenceType 
 
 template <typename T>
 bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type) const {
-  const oop referent = reference_referent<T>(reference);
+  const oop referent = reference_referent_raw<T>(reference);
   if (referent == nullptr) {
     // Reference has been cleared, by a call to Reference.enqueue()
     // or Reference.clear() from the application, which means we
@@ -303,7 +314,7 @@ void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType ty
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
     assert(reference_next<T>(reference) == nullptr, "Already inactive");
-    assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent<T>(reference)), "only make inactive final refs with alive referents");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -376,7 +387,7 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   log_trace(gc, ref)("Dropped Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
 
 #ifdef ASSERT
-  oop referent = reference_referent<T>(reference);
+  oop referent = reference_referent_raw<T>(reference);
   assert(referent == nullptr || ShenandoahHeap::heap()->marking_context()->is_marked(referent),
          "only drop references with alive referents");
 #endif
