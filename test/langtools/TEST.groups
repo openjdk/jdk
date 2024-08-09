@@ -70,6 +70,9 @@ langtools_jnativescan = \
 langtools_slow = \
     jdk/internal/shellsupport/doc/FullJavadocHelperTest.java
 
+doccheck = \
+    jdk/javadoc/doccheck
+
 # All tests
 
 all = \
