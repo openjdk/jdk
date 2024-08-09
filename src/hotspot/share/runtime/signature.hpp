@@ -28,6 +28,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
+#include "sanitizers/ub.hpp"
 
 
 // Static routines and parsing loops for processing field and method
@@ -338,6 +339,7 @@ class Fingerprinter: public SignatureIterator {
   void do_type_calling_convention(BasicType type);
 
   friend class SignatureIterator;  // so do_parameters_on can call do_type
+  ATTRIBUTE_NO_UBSAN
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
     _accumulator |= ((fingerprint_t)type << _shift_count);
