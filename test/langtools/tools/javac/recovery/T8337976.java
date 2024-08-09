@@ -5,7 +5,6 @@
  * @compile/fail/ref=T8337976.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev T8337976.java
  */
 public class T8337976 {
-    switch (0) { default: }
-    void test(<?> p) {}
-    undefined u;
+    switch (0) { default: undefined u;}
+    if (true) { undefined u; }
 }

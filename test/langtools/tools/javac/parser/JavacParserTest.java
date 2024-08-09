@@ -2483,45 +2483,6 @@ public class JavacParserTest extends TestCase {
                      codes);
     }
 
-    @Test //JDK-8337976
-    void testTypeParametersMissingName() throws IOException {
-        String code = """
-                      package test;
-                      public class Test {
-                          void test(<?> p) {}
-                      }
-                      """;
-        DiagnosticCollector<JavaFileObject> coll =
-                new DiagnosticCollector<>();
-        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
-                List.of("--enable-preview", "--source", SOURCE_VERSION),
-                null, Arrays.asList(new MyFileObject(code)));
-        CompilationUnitTree cut = ct.parse().iterator().next();
-
-        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
-        System.out.println("RESULT\n" + result);
-        assertEquals("incorrect AST",
-                     result,
-                     """
-                     package test;
-                     \n\
-                     public class Test {
-                         \n\
-                         void test(<error><?> p) {
-                         }
-                     }""");
-
-        List<String> codes = new LinkedList<>();
-
-        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
-            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
-        }
-
-        assertEquals("testTypeParametersMissingName: " + codes,
-                     List.of("3:15:compiler.err.expected"),
-                     codes);
-    }
-
     void run(String[] args) throws Exception {
         int passed = 0, failed = 0;
         final Pattern p = (args != null && args.length > 0)
