@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,11 @@ import jdk.internal.misc.InternalLock;
  *
  * <p> Programs that use DataInputStreams for textual input can be localized by
  * replacing each DataInputStream with an appropriate BufferedReader.
+ *
+ * <p> More than one instance of BufferedReader should not be used with the
+ * same underlying Reader instance.  Doing so can cause the BufferedReader
+ * instances to return an incorrect result since each instance of
+ * BufferedReader maintains its own state.
  *
  * @see FileReader
  * @see InputStreamReader

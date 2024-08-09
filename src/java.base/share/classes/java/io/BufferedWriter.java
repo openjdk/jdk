@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,11 @@ import jdk.internal.misc.VM;
  * invocation of a print() method would cause characters to be converted into
  * bytes that would then be written immediately to the file, which can be very
  * inefficient.
+ *
+ * <p> More than one instance of BufferedWriter should not be used with the
+ * same underlying Writer instance.  Doing so can cause unpredictable results
+ * as each BufferedWriter maintains its own state and flushes its internal
+ * buffer according to that state.
  *
  * @see PrintWriter
  * @see FileWriter

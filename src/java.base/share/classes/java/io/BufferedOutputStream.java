@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,11 @@ import jdk.internal.misc.VM;
  * an output stream, an application can write bytes to the underlying
  * output stream without necessarily causing a call to the underlying
  * system for each byte written.
+ *
+ * <p> More than one instance of {@code BufferedOutputStream} should not be
+ * used with the same underlying {@code OutputStream} instance.  Doing so can
+ * cause unpredictable results as each {@code BufferedOutputStream} maintains
+ * its own state and flushes its internal buffer according to that state.
  *
  * @author  Arthur van Hoff
  * @since   1.0
