@@ -341,10 +341,6 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
     private transient Index<K,V> head;
     /** Lazily initialized element count */
     private transient LongAdder adder;
-    /** Lazily initialized key set */
-    private transient KeySet<K,V> keySet;
-    /** Lazily initialized values collection */
-    private transient Values<K,V> values;
     /** Lazily initialized entry set */
     private transient EntrySet<K,V> entrySet;
     /** Lazily initialized descending map */
@@ -1128,9 +1124,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             @SuppressWarnings("unchecked")
             ConcurrentSkipListMap<K,V> clone =
                 (ConcurrentSkipListMap<K,V>) super.clone();
-            clone.keySet = null;
             clone.entrySet = null;
-            clone.values = null;
             clone.descendingMap = null;
             clone.adder = null;
             clone.buildFromSorted(this);
@@ -1613,15 +1607,11 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * @return a navigable set view of the keys in this map
      */
     public NavigableSet<K> keySet() {
-        KeySet<K,V> ks;
-        if ((ks = keySet) != null) return ks;
-        return keySet = new KeySet<>(this);
+        return navigableKeySet();
     }
 
     public NavigableSet<K> navigableKeySet() {
-        KeySet<K,V> ks;
-        if ((ks = keySet) != null) return ks;
-        return keySet = new KeySet<>(this);
+        return new KeySet<>(this);
     }
 
     /**
@@ -1644,9 +1634,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
      */
     public Collection<V> values() {
-        Values<K,V> vs;
-        if ((vs = values) != null) return vs;
-        return values = new Values<>(this);
+        return new Values<>(this);
     }
 
     /**

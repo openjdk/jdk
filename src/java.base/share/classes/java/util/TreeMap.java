@@ -952,7 +952,6 @@ public class TreeMap<K,V>
         clone.size = 0;
         clone.modCount = 0;
         clone.entrySet = null;
-        clone.navigableKeySet = null;
         clone.descendingMap = null;
 
         // Initialize clone with our mappings
@@ -1098,7 +1097,6 @@ public class TreeMap<K,V>
      * there's no reason to create more than one.
      */
     private transient EntrySet entrySet;
-    private transient KeySet<K> navigableKeySet;
     private transient NavigableMap<K,V> descendingMap;
 
     /**
@@ -1134,8 +1132,7 @@ public class TreeMap<K,V>
      * @since 1.6
      */
     public NavigableSet<K> navigableKeySet() {
-        KeySet<K> nks = navigableKeySet;
-        return (nks != null) ? nks : (navigableKeySet = new KeySet<>(this));
+        return new KeySet<>(this);
     }
 
     /**
@@ -1167,12 +1164,7 @@ public class TreeMap<K,V>
      * support the {@code add} or {@code addAll} operations.
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new Values();
-            values = vs;
-        }
-        return vs;
+        return new Values();
     }
 
     /**
