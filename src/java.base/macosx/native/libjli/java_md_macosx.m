@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,29 +369,31 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     int  argc         = *pargc;
     char **argv       = *pargv;
 
-    /* Find out where the JRE is that we will be using. */
-    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
-        JLI_ReportErrorMessage(JRE_ERROR1);
-        exit(2);
-    }
-    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                 jrepath, FILESEP, FILESEP);
-    /* Find the specified JVM type */
-    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-        JLI_ReportErrorMessage(CFG_ERROR7);
-        exit(1);
-    }
+    if (!JLI_IsStaticallyLinked()) {
+        /* Find out where the JRE is that we will be using. */
+        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
+            JLI_ReportErrorMessage(JRE_ERROR1);
+            exit(2);
+        }
+        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+                    jrepath, FILESEP, FILESEP);
+        /* Find the specified JVM type */
+        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+            JLI_ReportErrorMessage(CFG_ERROR7);
+            exit(1);
+        }
 
-    jvmpath[0] = '\0';
-    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-        JLI_ReportErrorMessage(CFG_ERROR9);
-        exit(4);
-    }
+        jvmpath[0] = '\0';
+        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+            JLI_ReportErrorMessage(CFG_ERROR9);
+            exit(4);
+        }
 
-    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
-        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-        exit(4);
+        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+            exit(4);
+        }
     }
 
     /*
@@ -428,9 +430,9 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
 
-#ifdef STATIC_BUILD
-    return JNI_TRUE;
-#else
+    if (JLI_IsStaticallyLinked()) {
+        return JNI_TRUE;
+    }
     if (stat(jvmpath, &s) == 0) {
         JLI_TraceLauncher("yes.\n");
         return JNI_TRUE;
@@ -438,7 +440,6 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
         JLI_TraceLauncher("no.\n");
         return JNI_FALSE;
     }
-#endif
 }
 
 /*
@@ -451,18 +452,18 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
-#ifdef STATIC_BUILD
-        char jvm_cfg[MAXPATHLEN];
-        JLI_Snprintf(jvm_cfg, sizeof(jvm_cfg), "%s/lib/jvm.cfg", path);
-        if (access(jvm_cfg, F_OK) == 0) {
-            return JNI_TRUE;
+        if (JLI_IsStaticallyLinked()) {
+            char jvm_cfg[MAXPATHLEN];
+            JLI_Snprintf(jvm_cfg, sizeof(jvm_cfg), "%s/lib/jvm.cfg", path);
+            if (access(jvm_cfg, F_OK) == 0) {
+                return JNI_TRUE;
+            }
+        } else {
+            JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
+            if (access(libjava, F_OK) == 0) {
+                return JNI_TRUE;
+            }
         }
-#else
-        JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
-        if (access(libjava, F_OK) == 0) {
-            return JNI_TRUE;
-        }
-#endif
         /* ensure storage for path + /jre + NULL */
         if ((JLI_StrLen(path) + 4 + 1) > (size_t) pathsize) {
             JLI_TraceLauncher("Insufficient space to store JRE path\n");
@@ -481,23 +482,24 @@ GetJREPath(char *path, jint pathsize, jboolean speculative)
     Dl_info selfInfo;
     dladdr(&GetJREPath, &selfInfo);
 
-#ifdef STATIC_BUILD
-    char jvm_cfg[MAXPATHLEN];
-    char *p = NULL;
-    strncpy(jvm_cfg, selfInfo.dli_fname, MAXPATHLEN);
-    p = strrchr(jvm_cfg, '/'); *p = '\0';
-    p = strrchr(jvm_cfg, '/');
-    if (strcmp(p, "/.") == 0) {
-      *p = '\0';
-      p = strrchr(jvm_cfg, '/'); *p = '\0';
+    if (JLI_IsStaticallyLinked()) {
+        char jvm_cfg[MAXPATHLEN];
+        char *p = NULL;
+        strncpy(jvm_cfg, selfInfo.dli_fname, MAXPATHLEN);
+        p = strrchr(jvm_cfg, '/'); *p = '\0';
+        p = strrchr(jvm_cfg, '/');
+        if (strcmp(p, "/.") == 0) {
+            *p = '\0';
+            p = strrchr(jvm_cfg, '/'); *p = '\0';
+        } else {
+          *p = '\0';
+        }
+        strncpy(path, jvm_cfg, pathsize);
+        strncat(jvm_cfg, "/lib/jvm.cfg", MAXPATHLEN);
+        if (access(jvm_cfg, F_OK) == 0) {
+           return JNI_TRUE;
+        }
     }
-    else *p = '\0';
-    strncpy(path, jvm_cfg, pathsize);
-    strncat(jvm_cfg, "/lib/jvm.cfg", MAXPATHLEN);
-    if (access(jvm_cfg, F_OK) == 0) {
-      return JNI_TRUE;
-    }
-#endif
 
     char *realPathToSelf = realpath(selfInfo.dli_fname, path);
     if (realPathToSelf != path) {
@@ -549,11 +551,12 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
-#ifndef STATIC_BUILD
-    libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
-#else
-    libjvm = dlopen(NULL, RTLD_FIRST);
-#endif
+    if (JLI_IsStaticallyLinked()) {
+        libjvm = dlopen(NULL, RTLD_FIRST);
+    } else {
+        libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+    }
+
     if (libjvm == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
@@ -603,14 +606,13 @@ SetExecname(char **argv)
     char* exec_path = NULL;
     {
         Dl_info dlinfo;
-
-#ifdef STATIC_BUILD
         void *fptr;
-        fptr = (void *)&SetExecname;
-#else
-        int (*fptr)();
-        fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
-#endif
+
+        if (JLI_IsStaticallyLinked()) {
+            fptr = (void *)&SetExecname;
+        } else {
+            fptr = dlsym(RTLD_DEFAULT, "main");
+        }
         if (fptr == NULL) {
             JLI_ReportErrorMessage(DLL_ERROR3, dlerror());
             return JNI_FALSE;

@@ -1070,9 +1070,9 @@ else
 
   symbols-image: $(LIBS_TARGETS) $(LAUNCHER_TARGETS)
 
-  static-libs-image: hotspot-static-libs $(STATIC_LIBS_TARGETS)
+  static-libs-image: hotspot-static-libs static-libs
 
-  static-libs-graal-image: $(STATIC_LIBS_TARGETS)
+  static-libs-graal-image: static-libs
 
   bootcycle-images: jdk-image
 
@@ -1135,7 +1135,12 @@ java: $(JAVA_TARGETS)
 
 libs: $(LIBS_TARGETS)
 
-static-libs: $(STATIC_LIBS_TARGETS)
+ifeq ($(call isTargetOsType, unix), true)
+  static-libs: $(STATIC_LIBS_TARGETS)
+else
+  static-libs:
+	$(error Static libraries are only supported on Unix)
+endif
 
 launchers: $(LAUNCHER_TARGETS)
 

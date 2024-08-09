@@ -183,12 +183,6 @@ define SetupOutputFiles
   $1_EXPECTED_OBJS := $$(addprefix $$($1_OBJECT_DIR)/, $$($1_EXPECTED_OBJS_FILENAMES))
   # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
-  ifeq ($(STATIC_LIBS), true)
-    # Exclude the object files that match with $1_STATIC_LIB_EXCLUDE_OBJS.
-    ifneq ($$($1_STATIC_LIB_EXCLUDE_OBJS), )
-      $1_ALL_OBJS := $$(call not-containing, $$($1_STATIC_LIB_EXCLUDE_OBJS), $$($1_ALL_OBJS))
-    endif
-  endif
 endef
 
 ################################################################################

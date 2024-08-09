@@ -144,14 +144,6 @@ ifneq ($(USE_EXTERNAL_LIBZ), true)
   LIBJLI_EXTRA_FILES += \
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
           $(LIBJLI_EXTRA_FILE_LIST))
-
-  # Do not include these libz objects in the static libjli library.
-  # When statically linking the java launcher with all JDK and VM
-  # static libraries, we use the --whole-archive linker option.
-  # The duplicate objects in different static libraries cause linking
-  # errors due to duplicate symbols.
-  LIBJLI_STATIC_EXCLUDE_OBJS := \
-      $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
 endif
 
 ifeq ($(call isTargetOs, aix), true)
@@ -176,7 +168,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
         -framework Cocoa \
         -framework Security, \
     LIBS_windows := advapi32.lib comctl32.lib user32.lib, \
-    STATIC_LIB_EXCLUDE_OBJS := $(LIBJLI_STATIC_EXCLUDE_OBJS), \
 ))
 
 TARGETS += $(BUILD_LIBJLI)

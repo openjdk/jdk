@@ -585,22 +585,37 @@ void os::init_system_properties_values() {
     char *pslash;
     os::jvm_path(buf, bufsize);
 
-    // Found the full path to libjvm.so.
-    // Now cut the path to <java_home>/jre if we can.
+    // Found the full path to the binary. Note the code
+    // is based on the known JDK directory structure:
+    //
+    //   <jdk_path>/lib/{client|server|hotspot}/libjvm.so
+    //
+    // or
+    //
+    //   <jdk_path>/bin/<static_binary>
+#define JVM_LIB_NAME "libjvm.so"
     pslash = strrchr(buf, '/');
     if (pslash != nullptr) {
-      *pslash = '\0';            // Get rid of /libjvm.so.
-    }
-    pslash = strrchr(buf, '/');
-    if (pslash != nullptr) {
-      *pslash = '\0';            // Get rid of /{client|server|hotspot}.
+      if (strncmp(pslash + 1, JVM_LIB_NAME, strlen(JVM_LIB_NAME)) == 0) {
+        // Binary name is libjvm.so. Get rid of /libjvm.so.
+        *pslash = '\0';
+      }
+
+      // Get rid of /{client|server|hotspot}, if binary is libjvm.so.
+      // Or, cut off /<binary_name>.
+      pslash = strrchr(buf, '/');
+      if (pslash != nullptr) {
+        *pslash = '\0';
+      }
     }
     Arguments::set_dll_dir(buf);
 
+    // Get rid of /lib, if binary is libjvm.so.
+    // Or, cut off /bin.
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
-        *pslash = '\0';        // Get rid of /lib.
+        *pslash = '\0';
       }
     }
     Arguments::set_java_home(buf);
