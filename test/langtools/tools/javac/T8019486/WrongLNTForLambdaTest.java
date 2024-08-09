@@ -136,15 +136,15 @@ public class WrongLNTForLambdaTest {
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "lambda$bar$0", simpleLambdaExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaWithVarsExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$0", lambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo$1FooBar.class").toUri()), "run", insideLambdaWithVarsExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaVoid2VoidExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$1", lambdaVoid2VoidExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$variablesInLambdas$3", lambdaBridgeExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$2", lambdaBridgeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "assignLambda", assignmentExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),

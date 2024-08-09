@@ -679,6 +679,7 @@ public class TransTypes extends TreeTranslator {
 
                 JCLambda slam = make.Lambda(params.toList(), expr);
                 slam.target = tree.target;
+                slam.owner = tree.owner;
                 slam.type = tree.type;
                 slam.pos = tree.pos;
                 slam.wasMethodReference = true;
