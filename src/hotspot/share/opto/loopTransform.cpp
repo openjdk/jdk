@@ -1309,19 +1309,6 @@ Node *PhaseIdealLoop::clone_up_backedge_goo(Node *back_ctrl, Node *preheader_ctr
   return n;
 }
 
-Node* PhaseIdealLoop::cast_incr_before_loop(Node* incr, Node* ctrl, Node* loop) {
-  Node* castii = new CastIINode(ctrl, incr, TypeInt::INT, ConstraintCastNode::UnconditionalDependency);
-  register_new_node(castii, ctrl);
-  for (DUIterator_Fast imax, i = incr->fast_outs(imax); i < imax; i++) {
-    Node* n = incr->fast_out(i);
-    if (n->is_Phi() && n->in(0) == loop) {
-      int nrep = n->replace_edge(incr, castii, &_igvn);
-      return castii;
-    }
-  }
-  return nullptr;
-}
-
 #ifdef ASSERT
 void PhaseIdealLoop::ensure_zero_trip_guard_proj(Node* node, bool is_main_loop) {
   assert(node->is_IfProj(), "must be the zero trip guard If node");
@@ -1680,14 +1667,11 @@ void PhaseIdealLoop::insert_pre_post_loops(IdealLoopTree *loop, Node_List &old_n
   // variable value and the induction variable Phi to preserve correct
   // dependencies.
 
-  // CastII for the main loop:
-  Node* castii = cast_incr_before_loop(pre_incr, min_taken, main_head);
-  assert(castii != nullptr, "no castII inserted");
   assert(post_head->in(1)->is_IfProj(), "must be zero-trip guard If node projection of the post loop");
-  copy_assertion_predicates_to_main_loop(pre_head, castii, stride, outer_loop, outer_main_head, dd_main_head,
+  copy_assertion_predicates_to_main_loop(pre_head, pre_incr, stride, outer_loop, outer_main_head, dd_main_head,
                                          idx_before_pre_post, idx_after_post_before_pre, min_taken, post_head->in(1),
                                          old_new);
-  copy_assertion_predicates_to_post_loop(outer_main_head, post_head, post_incr, stride);
+  copy_assertion_predicates_to_post_loop(outer_main_head, post_head, stride);
 
   // Step B4: Shorten the pre-loop to run only 1 iteration (for now).
   // RCE and alignment may change this later.
@@ -1812,7 +1796,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   // In this case we throw away the result as we are not using it to connect anything else.
   CountedLoopNode *post_head = nullptr;
   insert_post_loop(loop, old_new, main_head, main_end, incr, limit, post_head);
-  copy_assertion_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, incr, main_head->stride());
+  copy_assertion_predicates_to_post_loop(main_head->skip_strip_mined(), post_head, main_head->stride());
 
   // It's difficult to be precise about the trip-counts
   // for post loops.  They are usually very short,
@@ -1915,10 +1899,6 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     }
   }
 
-  // CastII for the new post loop:
-  incr = cast_incr_before_loop(zer_opaq->in(1), zer_taken, post_head);
-  assert(incr != nullptr, "no castII inserted");
-
   return new_main_exit;
 }
 
@@ -1934,12 +1914,6 @@ bool IdealLoopTree::is_invariant(Node* n) const {
 // to the new stride.
 void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init,
                                                            const int stride_con) {
-  if (init->is_CastII()) {
-    // skip over the cast added by PhaseIdealLoop::cast_incr_before_loop() when pre/post/main loops are created because
-    // it can get in the way of type propagation
-    assert(init->as_CastII()->carry_dependency() && loop_head->skip_assertion_predicates_with_halt() == init->in(0), "casted iv phi from pre loop expected");
-    init = init->in(1);
-  }
   Node* entry = ctrl;
   Node* prev_proj = ctrl;
   LoopNode* outer_loop_head = loop_head->skip_strip_mined();
@@ -1988,7 +1962,9 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLo
 // Go over the Assertion Predicates of the main loop and make a copy for the post loop with its initial iv value and
 // stride as inputs.
 void PhaseIdealLoop::copy_assertion_predicates_to_post_loop(LoopNode* main_loop_head, CountedLoopNode* post_loop_head,
-                                                            Node* init, Node* stride) {
+                                                            Node* stride) {
+  Node* opaq = post_loop_head->is_canonical_loop_entry();
+  Node* init = opaq->in(1);
   Node* post_loop_entry = post_loop_head->in(LoopNode::EntryControl);
   Node* main_loop_entry = main_loop_head->in(LoopNode::EntryControl);
   IdealLoopTree* post_loop = get_loop(post_loop_head);
