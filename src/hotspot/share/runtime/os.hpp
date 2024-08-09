@@ -453,15 +453,18 @@ class os: AllStatic {
   static char*  reserve_memory(size_t bytes, bool executable = false, MEMFLAGS flags = mtNone);
 
   // Reserves virtual memory that starts at an address that is aligned to 'alignment'.
-  static char*  reserve_memory_aligned(size_t size, size_t alignment, bool executable = false);
+  static char*  reserve_memory_aligned(size_t size, size_t alignment,
+                                       bool executable = false, MEMFLAGS flag = mtNone);
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MEMFLAGS flag = mtNone);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes,
+                                          bool executable = false, MEMFLAGS flag = mtNone);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
-  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment,
+                                              bool randomize, MEMFLAGS flag = mtNone);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
@@ -511,10 +514,10 @@ class os: AllStatic {
   // and is added to be used for implementation of -XX:AllocateHeapAt
   static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
-  static char* map_memory_to_file(char* base, size_t size, int fd);
+  static char* map_memory_to_file(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
   static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
   // Replace existing reserved memory with file mapping
-  static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
+  static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
