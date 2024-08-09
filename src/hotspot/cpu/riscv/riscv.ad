@@ -1920,6 +1920,11 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_EncodeISOArray:
       return UseRVV;
 
+    case Op_RoundVF:
+      return UseRVV && MaxVectorSize >= 32;
+    case Op_RoundVD:
+      return UseRVV && MaxVectorSize >= 64;
+
     case Op_PopCountI:
     case Op_PopCountL:
       return UsePopCountInstruction;

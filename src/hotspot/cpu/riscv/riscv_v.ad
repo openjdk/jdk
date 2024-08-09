@@ -4715,6 +4715,34 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
+// ---------------- Round float/double Vector Operations ----------------
+
+instruct vround_f(vReg dst, vReg src, fRegF tmp, vRegMask_V0 v0) %{
+  match(Set dst (RoundVF src));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP v0);
+  format %{ "java_round_float_v $dst, $src\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vector_length = Matcher::vector_length(this);
+    __ java_round_float_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                          as_FloatRegister($tmp$$reg), bt, vector_length);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vround_d(vReg dst, vReg src, fRegD tmp, vRegMask_V0 v0) %{
+  match(Set dst (RoundVD src));
+  effect(TEMP_DEF dst, TEMP tmp, TEMP v0);
+  format %{ "java_round_double_v $dst, $src\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint vector_length = Matcher::vector_length(this);
+    __ java_round_double_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                           as_FloatRegister($tmp$$reg), bt, vector_length);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // -------------------------------- Reverse Bytes Vector Operations ------------------------
 
 instruct vreverse_bytes_masked(vReg dst_src, vRegMask_V0 v0) %{
