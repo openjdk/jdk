@@ -549,7 +549,8 @@ public:
 };
 
 TEST_VM(NMT_VirtualMemoryTracker, add_committed_region) {
-  if (MemTracker::tracking_level() >= NMT_detail) {
+  if (MemTracker::tracking_level() >= NMT_detail &&
+      MemTracker::is_using_sorted_link_list()) {
     VirtualMemoryTrackerTest::test_add_committed_region();
   } else {
     tty->print_cr("skipped.");
@@ -557,7 +558,8 @@ TEST_VM(NMT_VirtualMemoryTracker, add_committed_region) {
 }
 
 TEST_VM(NMT_VirtualMemoryTracker, remove_uncommitted_region) {
-  if (MemTracker::tracking_level() >= NMT_detail) {
+  if (MemTracker::tracking_level() >= NMT_detail &&
+      MemTracker::is_using_sorted_link_list()) {
     VirtualMemoryTrackerTest::test_remove_uncommitted_region();
   } else {
     tty->print_cr("skipped.");

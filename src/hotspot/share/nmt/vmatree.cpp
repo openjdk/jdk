@@ -130,6 +130,7 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
       }
       B_needs_insert = false;
     }
+    return true;
   });
 
   // Insert B node if needed

@@ -49,6 +49,7 @@
 #endif
 
 NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
+MemTracker::VMT_Version MemTracker::_version = OLD;
 
 MemBaseline MemTracker::_baseline;
 
@@ -64,11 +65,13 @@ void MemTracker::initialize() {
   // Memory type is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.
   STATIC_ASSERT(mt_number_of_types <= max_jubyte);
+  set_version(VMT_Version::NEW);
 
   if (level > NMT_off) {
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||
-        !VirtualMemoryTracker::initialize(level)) {
+        !VirtualMemoryTracker::initialize(level) ||
+        !VirtualMemoryTrackerWithTree::initialize(level)) {
       assert(false, "NMT initialization failed");
       level = NMT_off;
       log_warning(nmt)("NMT initialization failed. NMT disabled.");
@@ -123,7 +126,8 @@ void MemTracker::final_report(outputStream* output) {
 bool MemTracker::print_containing_region(const void* p, outputStream* out) {
   return enabled() &&
       (MallocTracker::print_pointer_information(p, out) ||
-       VirtualMemoryTracker::print_containing_region(p, out));
+       VirtualMemoryTracker::print_containing_region(p, out) ||
+       VirtualMemoryTrackerWithTree::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {

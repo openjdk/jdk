@@ -413,6 +413,10 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   // complexity, we avoid printing peaks altogether. Note that peaks should still be printed when reporting
   // usage *by callsite*.
 
+  if (reserved_rgn->flag() == mtTest) {
+    log_debug(nmt)("report vmem, rgn base: " INTPTR_FORMAT " size: " SIZE_FORMAT "cur-scale: " SIZE_FORMAT,
+      p2i(reserved_rgn->base()), reserved_rgn->size(),amount_in_current_scale(reserved_rgn->size()));
+  }
   // Don't report if size is too small.
   if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
 
@@ -432,22 +436,43 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   }
 
   if (all_committed) {
+    if (MemTracker::is_using_sorted_link_list()) {
     CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
-    const CommittedMemoryRegion* committed_rgn = itr.next();
-    if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
-      // One region spanning the entire reserved region, with the same stack trace.
-      // Don't print this regions because the "reserved and committed" line above
-      // already indicates that the region is committed.
-      assert(itr.next() == nullptr, "Unexpectedly more than one regions");
-      return;
+      const CommittedMemoryRegion* committed_rgn = itr.next();
+      if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
+        // One region spanning the entire reserved region, with the same stack trace.
+        // Don't print this regions because the "reserved and committed" line above
+        // already indicates that the region is committed.
+        assert(itr.next() == nullptr, "Unexpectedly more than one regions");
+        return;
+      }
+    }
+    if (MemTracker::is_using_tree()) {
+      CommittedMemoryRegion cmr;
+      bool reserved_and_committed = false;
+      VirtualMemoryTrackerWithTree::tree()->visit_committed_regions(reserved_rgn,
+                                                                    &cmr,
+                                                                    [&](CommittedMemoryRegion* committed_rgn) {
+        if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
+          // One region spanning the entire reserved region, with the same stack trace.
+          // Don't print this regions because the "reserved and committed" line above
+          // already indicates that the region is committed.
+          reserved_and_committed = true;
+          return false;
+        }
+        return true;
+      });
+
+      if (reserved_and_committed)
+        return;
     }
   }
 
   CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
-  const CommittedMemoryRegion* committed_rgn;
-  while ((committed_rgn = itr.next()) != nullptr) {
+  CommittedMemoryRegion* committed_rgn;
+  auto print_committed_rgn = [&](CommittedMemoryRegion* committed_rgn) {
     // Don't report if size is too small
-    if (amount_in_current_scale(committed_rgn->size()) == 0) continue;
+    if (amount_in_current_scale(committed_rgn->size()) == 0) return;
     stack = committed_rgn->call_stack();
     out->cr();
     INDENT_BY(8,
@@ -459,6 +484,18 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
         INDENT_BY(4, stack->print_on(out);)
       }
     )
+  };
+  if (MemTracker::is_using_sorted_link_list()) {
+    while ((committed_rgn = itr.next()) != nullptr) {
+      print_committed_rgn(committed_rgn);
+    }
+  }
+  if (MemTracker::is_using_tree()) {
+    CommittedMemoryRegion cmr;
+    VirtualMemoryTrackerWithTree::tree()->visit_committed_regions(reserved_rgn, &cmr, [&](CommittedMemoryRegion* crgn) {
+      print_committed_rgn(crgn);
+      return true;
+    });
   }
 }
 
