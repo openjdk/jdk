@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /*
  * @test
  * $bug 8087223
+ * @enablePreview
  * @summary Adding constantTag to keep method call consistent with it.
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file IntfMethod.java
  * @run main/othervm IntfMethod
@@ -35,89 +35,63 @@
  */
 
 
-import jdk.internal.org.objectweb.asm.*;
 import java.io.FileOutputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.constant.ClassDesc;
 import java.lang.reflect.InvocationTargetException;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 public class IntfMethod {
     static byte[] dumpC() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_SUPER, "C", null, "java/lang/Object", new String[]{"I"});
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "testSpecialIntf", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "I", "f1", "()V", /*itf=*/false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "testStaticIntf", "()V", null, null);
-            mv.visitCode();
-            mv.visitMethodInsn(INVOKESTATIC, "I", "f2", "()V", /*itf=*/false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "testSpecialClass", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "C", "f1", "()V", /*itf=*/true);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
+        return ClassFile.of(StackMapsOption.DROP_STACK_MAPS).build(ClassDesc.of("C"),
+                clb -> clb
+                        .withVersion(JAVA_8_VERSION, 0)
+                        .withFlags(ACC_PUBLIC | ACC_SUPER)
+                        .withSuperclass(CD_Object)
+                        .withInterfaceSymbols(ClassDesc.of("I"))
+                        .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .aload(0)
+                                        .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                        .return_())
+                        .withMethodBody("testSpecialIntf", MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .aload(0)
+                                        .invokespecial(ClassDesc.of("I"), "f1", MTD_void)
+                                        .return_())
+                        .withMethodBody("testStaticIntf", MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .invokestatic(ClassDesc.of("I"), "f2", MTD_void)
+                                        .return_())
+                        .withMethodBody("testSpecialClass", MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .aload(0)
+                                        .invokespecial(ClassDesc.of("C"), "f1", MTD_void, true)
+                                        .return_())
+                        .withMethodBody("f2", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                CodeBuilder::return_)
+                        .withMethodBody("testStaticClass", MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .invokestatic(ClassDesc.of("C"), "f2", MTD_void, true)
+                                        .return_())
 
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "f2", "()V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "testStaticClass", "()V", null, null);
-            mv.visitCode();
-            mv.visitMethodInsn(INVOKESTATIC, "C", "f2", "()V", /*itf=*/true);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
+                );
     }
 
     static byte[] dumpI() {
-        ClassWriter cw = new ClassWriter(0);
-        cw.visit(52, ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE, "I", null, "java/lang/Object", null);
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "f1", "()V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 1);
-            mv.visitEnd();
-        }
-        {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "f2", "()V", null, null);
-            mv.visitCode();
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.of("I"),
+                clb -> clb
+                        .withVersion(JAVA_8_VERSION, 0)
+                        .withSuperclass(CD_Object)
+                        .withFlags(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE)
+                        .withMethodBody("f1", MTD_void, ACC_PUBLIC,
+                                CodeBuilder::return_)
+                        .withMethodBody("f2", MTD_void, ACC_PUBLIC | ACC_STATIC,
+                                CodeBuilder::return_)
+        );
     }
 
     static class CL extends ClassLoader {
@@ -150,7 +124,6 @@ public class IntfMethod {
                     e.getCause() != null && e.getCause() instanceof IncompatibleClassChangeError) {
                     System.out.println("PASSED - expected ICCE thrown");
                     success++;
-                    continue;
                 }
             }
         }

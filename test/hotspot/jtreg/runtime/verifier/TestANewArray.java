@@ -23,23 +23,25 @@
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 /*
  * @test
+ * @enablePreview
  * @summary Test that anewarray bytecode is valid only if it specifies 254 or fewer dimensions.
  *          255 is invalid because the anewarray would then create an array with 256 dimensions.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
  * @compile -XDignore.symbol.file TestANewArray.java
- * @run driver TestANewArray 49
- * @run driver TestANewArray 52
+ * @run main TestANewArray 49
+ * @run main TestANewArray 52
  */
 
 /*
@@ -101,33 +103,26 @@ public class TestANewArray {
         output.shouldHaveExitValue(1);
     }
 
-    public static byte[] dumpClassFile(int cfv, int testDimension264, String arrayDim) throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        MethodVisitor mv;
+    public static byte[] dumpClassFile(int cfv, int testDimension264, String arrayType) throws IllegalArgumentException {
 
         classCName = "classCName_" + cfv + "_" + testDimension264;
 
-        cw.visit(cfv, ACC_PUBLIC + ACC_SUPER, classCName, null, "java/lang/Object", null);
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {   // classCName main method
-            mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "main", "([Ljava/lang/String;)V", null, null);
-            mv.visitCode();
-            mv.visitIntInsn(BIPUSH, 1);
-            mv.visitTypeInsn(ANEWARRAY, arrayDim); // Test ANEWARRAY bytecode with various dimensions
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(2, 2);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ClassDesc.of(classCName),
+                    clb -> clb
+                            .withVersion(cfv, 0)
+                            .withSuperclass(CD_Object)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+                            .withMethodBody("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()), ACC_PUBLIC | ACC_STATIC,
+                                    cob -> cob
+                                            .bipush(1)
+                                            .anewarray(cob.constantPool().classEntry(cob.constantPool().utf8Entry(arrayType)))
+                                            .return_())
+        );
     }
 
     public static FileOutputStream writeClassFileFromByteArray(byte[] classFileByteArray) throws Exception {
