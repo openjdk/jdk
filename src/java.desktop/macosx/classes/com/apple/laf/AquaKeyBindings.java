@@ -388,7 +388,9 @@ public class AquaKeyBindings {
             "alt shift TAB", "focusHeader",
             "F8", "focusHeader",
             "ctrl shift UP", "selectFirstRowExtendSelection",
-            "ctrl shift DOWN", "selectLastRowExtendSelection"
+            "ctrl shift DOWN", "selectLastRowExtendSelection",
+            "ctrl shift RIGHT", "selectLastColumnExtendSelection",
+            "ctrl shift LEFT", "selectFirstColumnExtendSelection"
         }));
     }
 
