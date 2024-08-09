@@ -824,10 +824,10 @@ static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg
                         address code_start, address code_end,
                         Label& L_ok) {
   Label L_fail;
-  __ lea(temp_reg, ExternalAddress(code_start));
+  __ lea(temp_reg, AddressLiteral(code_start, relocInfo::none));
   __ cmpptr(pc_reg, temp_reg);
   __ jcc(Assembler::belowEqual, L_fail);
-  __ lea(temp_reg, ExternalAddress(code_end));
+  __ lea(temp_reg, AddressLiteral(code_end, relocInfo::none));
   __ cmpptr(pc_reg, temp_reg);
   __ jcc(Assembler::below, L_ok);
   __ bind(L_fail);
