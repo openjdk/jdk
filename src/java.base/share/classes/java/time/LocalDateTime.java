@@ -1966,10 +1966,17 @@ public final class LocalDateTime
     @Override
     public String toString() {
         var buf = new StringBuilder(29);
+        formatTo(buf);
+        return buf.toString();
+    }
+
+    /**
+     * Prints the toString result to the given buf, avoiding extra string allocations.
+     */
+    void formatTo(StringBuilder buf) {
         date.formatTo(buf);
         buf.append('T');
         time.formatTo(buf);
-        return buf.toString();
     }
 
     //-----------------------------------------------------------------------
