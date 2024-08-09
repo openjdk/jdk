@@ -258,12 +258,25 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
       // quick reject, will not fit
       return;
     }
-    sample = _list->reuse(_priority_queue->pop());
+    ObjectSample* popped = _priority_queue->pop();
+    size_t popped_span = popped->span();
+    ObjectSample* previous = popped->prev();
+    sample = _list->reuse(popped);
+    assert(sample != nullptr, "invariant");
+    if (previous != nullptr) {
+      push_span(previous, popped_span);
+      sample->set_span(span);
+    } else {
+      // The removed sample was the youngest sample in the list, which means the new sample is now the youngest
+      // sample. It should cover the spans of both.
+      sample->set_span(span + popped_span);
+    }
   } else {
     sample = _list->get();
+    assert(sample != nullptr, "invariant");
+    sample->set_span(span);
   }
 
-  assert(sample != nullptr, "invariant");
   signal_unresolved_entry();
   sample->set_thread_id(thread_id);
   if (virtual_thread) {
@@ -278,7 +291,6 @@ void ObjectSampler::add(HeapWord* obj, size_t allocated, traceid thread_id, bool
     sample->set_stack_trace_hash(stacktrace_hash);
   }
 
-  sample->set_span(allocated);
   sample->set_object(cast_to_oop(obj));
   sample->set_allocated(allocated);
   sample->set_allocation_time(JfrTicks::now());
@@ -305,12 +317,16 @@ void ObjectSampler::remove_dead(ObjectSample* sample) {
   ObjectSample* const previous = sample->prev();
   // push span onto previous
   if (previous != nullptr) {
-    _priority_queue->remove(previous);
-    previous->add_span(sample->span());
-    _priority_queue->push(previous);
+    push_span(previous, sample->span());
   }
   _priority_queue->remove(sample);
   _list->release(sample);
+}
+
+void ObjectSampler::push_span(ObjectSample* sample, size_t span) {
+    _priority_queue->remove(sample);
+    sample->add_span(span);
+    _priority_queue->push(sample);
 }
 
 ObjectSample* ObjectSampler::last() const {
