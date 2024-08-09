@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1687,6 +1687,19 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // Identify which input register matches the input register.
     uint  matching_input = instr->two_address(_globalNames);
+
+    // Allocate the same src and dest register for CastX2P and CastP2X
+    // on some target platforms, then we can remove the instructions in
+    // the final assembly.
+    if (strcmp("CastX2P", instr->ideal_Opcode(_globalNames)) == 0 ||
+        strcmp("CastP2X", instr->ideal_Opcode(_globalNames)) == 0) {
+      assert(matching_input == 0, "");
+      fprintf(fp,"  virtual uint           two_adr() const  {\n");
+      fprintf(fp,"    if (Matcher::use_same_src_and_dest_reg_for_CastX2P())\n");
+      fprintf(fp,"      return oper_input_base();\n");
+      fprintf(fp,"    return 0;\n");
+      fprintf(fp,"  }\n");
+    }
 
     // Generate the method if it returns != 0 otherwise use MachNode::two_adr()
     if( matching_input != 0 ) {
