@@ -727,12 +727,9 @@ inline void Assembler::frim( FloatRegister d, FloatRegister b) { emit_int32( FRI
 //inline void Assembler::mffgpr( FloatRegister d, Register b)   { emit_int32( MFFGPR_OPCODE | frt(d) | rb(b) | rc(0)); }
 //inline void Assembler::mftgpr( Register d, FloatRegister b)   { emit_int32( MFTGPR_OPCODE | rt(d) | frb(b) | rc(0)); }
 // add cmpb and popcntb to detect ppc power version.
-inline void Assembler::cmpb(   Register a, Register s, Register b) { guarantee(VM_Version::has_cmpb(), "opcode not supported on this hardware");
-                                                                     emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
-inline void Assembler::popcntb(Register a, Register s)             { guarantee(VM_Version::has_popcntb(), "opcode not supported on this hardware");
-                                                                     emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
-inline void Assembler::popcntw(Register a, Register s)             { guarantee(VM_Version::has_popcntw(), "opcode not supported on this hardware");
-                                                                     emit_int32( POPCNTW_OPCODE | rta(a) | rs(s)); };
+inline void Assembler::cmpb(   Register a, Register s, Register b) { emit_int32( CMPB_OPCODE    | rta(a) | rs(s) | rb(b) | rc(0)); }
+inline void Assembler::popcntb(Register a, Register s)             { emit_int32( POPCNTB_OPCODE | rta(a) | rs(s)); };
+inline void Assembler::popcntw(Register a, Register s)             { emit_int32( POPCNTW_OPCODE | rta(a) | rs(s)); };
 inline void Assembler::popcntd(Register a, Register s)             { emit_int32( POPCNTD_OPCODE | rta(a) | rs(s)); };
 
 inline void Assembler::fneg(  FloatRegister d, FloatRegister b) { emit_int32( FNEG_OPCODE  | frt(d) | frb(b) | rc(0)); }
