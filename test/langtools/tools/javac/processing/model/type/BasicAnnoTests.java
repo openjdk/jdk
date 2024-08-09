@@ -717,4 +717,8 @@ public class BasicAnnoTests extends JavacTestingAbstractProcessor {
             GenericNested(@TA(120) GenericInner120<X> GenericInner120.this) {}
         }
     }
+
+    @Test(posn=1, annoType=TA.class, expect="130")
+    @Test(posn=23, annoType=TA.class, expect="131")
+    public Map<@TA(130) String, @TA(131) String> f130;
 }
