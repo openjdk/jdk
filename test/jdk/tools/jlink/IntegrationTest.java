@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,20 +37,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
-import jdk.tools.jlink.internal.Jlink;
-import jdk.tools.jlink.internal.JlinkTask;
+
 import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.internal.Platform;
-import jdk.tools.jlink.plugin.ResourcePool;
-import jdk.tools.jlink.plugin.ResourcePoolBuilder;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.internal.ExecutableImage;
+import jdk.tools.jlink.internal.Jlink;
 import jdk.tools.jlink.internal.Jlink.JlinkConfiguration;
 import jdk.tools.jlink.internal.Jlink.PluginsConfiguration;
+import jdk.tools.jlink.internal.JlinkTask;
+import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.PostProcessor;
-import jdk.tools.jlink.internal.plugins.DefaultCompressPlugin;
-import jdk.tools.jlink.internal.plugins.DefaultStripDebugPlugin;
-
+import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.plugin.ResourcePool;
+import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -73,8 +70,6 @@ import tests.JImageGenerator;
  * @run main/othervm -Xmx1g IntegrationTest
  */
 public class IntegrationTest {
-
-    private static final List<Integer> ordered = new ArrayList<>();
 
     public static class MyPostProcessor implements PostProcessor, Plugin {
 
@@ -162,7 +157,7 @@ public class IntegrationTest {
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
                 mods,
-                JlinkTask.newModuleFinder(modulePaths, limits, mods));
+                JlinkTask.newModuleFinder(modulePaths, limits, mods), false, false, false);
 
         List<Plugin> lst = new ArrayList<>();
 

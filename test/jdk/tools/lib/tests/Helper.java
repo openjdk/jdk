@@ -64,20 +64,26 @@ public class Helper {
     private final Map<String, List<String>> moduleDependencies = new HashMap<>();
     private final List<String> bootClasses;
     private final FileSystem fs;
+    private final boolean linkableRuntime;
+    private static final Path JDK_HOME = Paths.get(System.getProperty("test.jdk"));
 
     public static Helper newHelper() throws IOException {
-        Path jdkHome = Paths.get(System.getProperty("test.jdk"));
-        if (!Files.exists(jdkHome.resolve("jmods"))) {
+        return newHelper(false);
+    }
+
+    public static Helper newHelper(boolean linkableRuntime) throws IOException {
+        if (!linkableRuntime && !Files.exists(JDK_HOME.resolve("jmods"))) {
             // Skip test if the jmods directory is missing (e.g. exploded image)
             System.err.println("Test not run, NO jmods directory");
             return null;
         }
-        return new Helper(jdkHome);
+        return new Helper(JDK_HOME, linkableRuntime);
     }
 
-    private Helper(Path jdkHome) throws IOException {
+    private Helper(Path jdkHome, boolean linkableRuntime) throws IOException {
+        this.linkableRuntime = linkableRuntime;
         this.stdjmods = jdkHome.resolve("jmods").normalize();
-        if (!Files.exists(stdjmods)) {
+        if (!linkableRuntime && !Files.exists(stdjmods)) {
             throw new IOException("Standard jMods do not exist.");
         }
         this.fs = FileSystems.getFileSystem(URI.create("jrt:/"));
@@ -140,7 +146,8 @@ public class Helper {
     }
 
     public String defaultModulePath(boolean includeStdMods) {
-        return (includeStdMods? stdjmods.toAbsolutePath().toString() : "") + File.pathSeparator
+        String standardMods = linkableRuntime ? "" : stdjmods.toAbsolutePath().toString() + File.pathSeparator;
+        return (includeStdMods? standardMods : "")
                 + jmods.toAbsolutePath().toString() + File.pathSeparator
                 + jars.toAbsolutePath().toString() + File.pathSeparator
                 + explodedmodsclasses.toAbsolutePath().toString();
@@ -184,7 +191,7 @@ public class Helper {
         generateGarbage(jmodsclasses.resolve(moduleName));
 
         Path jmodFile = jmods.resolve(moduleName + ".jmod");
-        JModTask task = JImageGenerator.getJModTask()
+        JModTask task = JImageGenerator.getJModTask(linkableRuntime)
                 .jmod(jmodFile)
                 .addJmods(stdjmods)
                 .addJmods(jmods.toAbsolutePath())

@@ -21,16 +21,16 @@
  * questions.
  */
 
-import jdk.test.lib.compiler.CompilerUtils;
-import tests.JImageGenerator;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import jdk.test.lib.compiler.CompilerUtils;
+import tests.JImageGenerator;
+
 /*
- * @test
+ * @test id=packaged_modules
  * @summary Make sure that modules can be linked using jlink
  * and deduplication works correctly when creating sub methods
  * @bug 8311591
@@ -44,7 +44,27 @@ import java.nio.file.Paths;
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
- * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne
+ * @requires jlink.packagedModules
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne false
+ */
+
+/*
+ * @test id=linkable_jdk_runtimes
+ * @summary Make sure that modules can be linked using jlink
+ * and deduplication works correctly when creating sub methods
+ * @bug 8311591
+ * @library /test/lib
+ *          ../lib
+ * @enablePreview
+ * @modules java.base/jdk.internal.jimage
+ *          jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink.plugin
+ *          jdk.jlink/jdk.tools.jmod
+ *          jdk.jlink/jdk.tools.jimage
+ *          jdk.compiler
+ * @requires (jlink.runtime.linkable & !jlink.packagedModules)
+ * @build tests.* JLinkDedupTestBatchSizeOne jdk.test.lib.compiler.CompilerUtils
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLinkDedupTestBatchSizeOne true
  */
 public class JLinkDedupTestBatchSizeOne {
 
@@ -53,10 +73,6 @@ public class JLinkDedupTestBatchSizeOne {
 
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "dedup", "src");
     private static final Path MODS_DIR = Paths.get("mods");
-
-    private static final String MODULE_PATH =
-            Paths.get(JAVA_HOME, "jmods").toString() +
-                    File.pathSeparator + MODS_DIR.toString();
 
     // the names of the modules in this test
     private static String[] modules = new String[]{"m1", "m2", "m3", "m4"};
@@ -69,8 +85,13 @@ public class JLinkDedupTestBatchSizeOne {
         return true;
     }
 
-    public static void compileAll() throws Throwable {
-        if (!hasJmods()) return;
+    private static String modulePath(boolean linkableRuntime) {
+        return (linkableRuntime ? "" : (Paths.get(JAVA_HOME, "jmods").toString() +
+                                        File.pathSeparator)) + MODS_DIR.toString();
+    }
+
+    public static void compileAll(boolean linkableRuntime) throws Throwable {
+        if (!linkableRuntime && !hasJmods()) return;
 
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
@@ -80,11 +101,18 @@ public class JLinkDedupTestBatchSizeOne {
     }
 
     public static void main(String[] args) throws Throwable {
-        compileAll();
+        if (args.length != 1) {
+            throw new AssertionError("Wrong number of arguments for the test!");
+        }
+        boolean linkableRuntime = Boolean.parseBoolean(args[0]);
+        System.out.println("Running test on " +
+                               (linkableRuntime ? "a linkable JDK runtime" :
+                                   "packaged modules") + ".");
+        compileAll(linkableRuntime);
         Path image = Paths.get("bug8311591");
 
         JImageGenerator.getJLinkTask()
-                .modulePath(MODULE_PATH)
+                .modulePath(modulePath(linkableRuntime))
                 .output(image.resolve("out-jlink-dedup"))
                 .addMods("m1")
                 .addMods("m2")
