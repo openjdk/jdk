@@ -475,6 +475,14 @@ public final class IOUtil {
         }
     }
 
+    /**
+     * Skip at most n bytes
+     * @return the number of bytes skipped or IOS_INTERRUPTED
+     */
+    static long skip(FileDescriptor fd, long n, NativeDispatcher nd) throws IOException {
+        return nd.skip(fd, n);
+    }
+
     private static final JavaNioAccess NIO_ACCESS = SharedSecrets.getJavaNioAccess();
 
     static void acquireScope(ByteBuffer bb, boolean async) {
