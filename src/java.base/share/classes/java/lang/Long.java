@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
+import static java.lang.StringConcatHelper.newArray;
 
 /**
  * The {@code Long} class wraps a value of the primitive type {@code
@@ -395,11 +396,11 @@ public final class Long extends Number
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[chars];
+            byte[] buf = newArray(chars);
             formatUnsignedLong0(val, shift, buf, 0, chars);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = new byte[chars * 2];
+            byte[] buf = newArray(chars << 1);
             formatUnsignedLong0UTF16(val, shift, buf, 0, chars);
             return new String(buf, UTF16);
         }
@@ -460,11 +461,11 @@ public final class Long extends Number
     public static String toString(long i) {
         int size = DecimalDigits.stringSize(i);
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
+            byte[] buf = newArray(size);
             StringLatin1.getChars(i, size, buf);
             return new String(buf, LATIN1);
         } else {
-            byte[] buf = new byte[size * 2];
+            byte[] buf = newArray(size << 1);
             StringUTF16.getChars(i, size, buf);
             return new String(buf, UTF16);
         }
