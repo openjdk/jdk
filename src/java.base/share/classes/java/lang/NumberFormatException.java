@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,5 +81,9 @@ public class NumberFormatException extends IllegalArgumentException {
         return new NumberFormatException("Error at index "
                 + (errorIndex - beginIndex) + " in: \""
                 + s.subSequence(beginIndex, endIndex) + "\"");
+    }
+
+    static NumberFormatException forNull() {
+        return new NumberFormatException("Cannot parse null string");
     }
 }
