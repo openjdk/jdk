@@ -5720,6 +5720,36 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // c_rarg0 = jobject receiver
+  // c_rarg1 = JavaThread* thread
+  address generate_upcall_stub_load_target() {
+    Register rmethod = c_rarg0;
+    Register rreceiver = c_rarg0;
+    Register rthread = c_rarg1;
+
+    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    address start = __ pc();
+    __ enter();
+
+    __ resolve_jobject(rreceiver, t0, t1);
+    __ sd(rreceiver, Address(rthread, JavaThread::vm_result_offset()));
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, Address(j_rarg0, java_lang_invoke_MethodHandle::form_offset()), t0, t1);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()), t0, t1);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()), t0, t1);
+    __ access_load_at(T_ADDRESS, IN_HEAP, rmethod,
+                      Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()),
+                      noreg, noreg);
+    __ sd(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+    __ sd(rmethod, Address(rthread, JavaThread::vm_result_2_offset()));
+
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
   // Continuation point for throwing of implicit exceptions that are
   // not handled in the current activation. Fabricates an exception
   // oop and initiates normal exception dispatching in this
@@ -5931,6 +5961,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 #endif // COMPILER2
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
 
     StubRoutines::riscv::set_completed();
   }

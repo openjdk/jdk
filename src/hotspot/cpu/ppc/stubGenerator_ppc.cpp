@@ -4768,6 +4768,39 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // c_rarg0 = jobject receiver
+  // c_rarg1 = JavaThread* thread
+  address generate_upcall_stub_load_target() {
+    Register rmethod = c_rarg0;
+    Register rreceiver = c_rarg0;
+    Register rthread = c_rarg1;
+
+    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    address start = __ pc();
+    __ save_LR_CR(R0);
+    __ push_frame(frame::native_abi_reg_args_size, R22_tmp2);
+
+    __ resolve_jobject(rreceiver, R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS); // kills R31
+    __ std(rreceiver, in_bytes(JavaThread::vm_result_offset()), rthread);
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, java_lang_invoke_MethodHandle::form_offset(), rreceiver,
+                    R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(rmethod, java_lang_invoke_LambdaForm::vmentry_offset(), rmethod,
+                    R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ load_heap_oop(rmethod, java_lang_invoke_MemberName::method_offset(), rmethod,
+                    R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
+    __ ld(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), rmethod);
+    __ std(rreceiver, in_bytes(JavaThread::callee_target_offset()), rthread); // just in case callee is deoptimized
+    __ std(rreceiver, in_bytes(JavaThread::vm_result_2_offset()), rthread);
+
+    __ pop_frame();
+    __ restore_LR_CR(R0);
+    __ blr();
+
+    return start;
+  }
+
   // Initialization
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
@@ -4858,6 +4891,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {

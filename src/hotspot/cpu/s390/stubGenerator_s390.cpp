@@ -3151,6 +3151,39 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // load Method* target of MethodHandle
+  // c_rarg0 = jobject receiver
+  // c_rarg1 = JavaThread* thread
+  address generate_upcall_stub_load_target() {
+    Register rmethod = c_rarg0;
+    Register rreceiver = c_rarg0;
+    Register rthread = c_rarg1;
+
+    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    address start = __ pc();
+    __ save_return_pc();
+    __ push_frame_abi160(0);
+
+    __ resolve_jobject(rreceiver, Z_tmp_1, Z_tmp_2);
+    __ z_stg(rreceiver, Address(rthread, JavaThread::vm_result_offset()));
+      // Load target method from receiver
+    __ load_heap_oop(rmethod, Address(rreceiver, java_lang_invoke_MethodHandle::form_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_LambdaForm::vmentry_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ load_heap_oop(rmethod, Address(rmethod, java_lang_invoke_MemberName::method_offset()),
+                    noreg, noreg, IS_NOT_NULL);
+    __ z_lg(rmethod, Address(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset()));
+    __ z_stg(rmethod, Address(rthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
+    __ z_stg(rmethod, Address(rthread, JavaThread::vm_result_2_offset()));
+
+    __ pop_frame();
+    __ restore_return_pc();
+    __ z_br(Z_R14);
+
+    return start;
+  }
+
   void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points.
 
@@ -3232,6 +3265,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
+    StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
   }
 
   void generate_compiler_stubs() {
