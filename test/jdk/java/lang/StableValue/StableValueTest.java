@@ -79,26 +79,25 @@ final class StableValueTest {
 
     @Test
     void testHashCode() {
-        StableValue<Integer> s0 = StableValue.newInstance();
-        StableValue<Integer> s1 = StableValue.newInstance();
-        assertEquals(s0.hashCode(), s1.hashCode());
-        s0.setOrThrow(42);
-        s1.setOrThrow(42);
-        assertEquals(s0.hashCode(), s1.hashCode());
+        StableValue<Integer> stableValue = StableValue.newInstance();
+        // Should be Object::hashCode
+        assertEquals(System.identityHashCode(stableValue), stableValue.hashCode());
     }
 
     @Test
     void testEquals() {
         StableValue<Integer> s0 = StableValue.newInstance();
         StableValue<Integer> s1 = StableValue.newInstance();
-        assertEquals(s0, s1);
+        assertNotEquals(s0, s1); // Identity based
         s0.setOrThrow(42);
         s1.setOrThrow(42);
-        assertEquals(s0, s1);
-        StableValue<Integer> other = StableValue.newInstance();
-        other.setOrThrow(13);
-        assertNotEquals(s0, other);
+        assertNotEquals(s0, s1);
         assertNotEquals(s0, "a");
+        StableValue<Integer> null0 = StableValue.newInstance();
+        StableValue<Integer> null1 = StableValue.newInstance();
+        null0.setOrThrow(null);
+        null1.setOrThrow(null);
+        assertNotEquals(null0, null1);
     }
 
     @Test
@@ -109,16 +108,6 @@ final class StableValueTest {
         assertEquals(toString, "(this StableValue)");
         assertDoesNotThrow(stable::hashCode);
         assertDoesNotThrow((() -> stable.equals(stable)));
-    }
-
-    @Test
-    void hashCodeDependsOnHolderValue() {
-        StableValue<Integer> stable = StableValue.newInstance();
-        int hBefore = stable.hashCode();
-        stable.trySet(42);
-        int hAfter = stable.hashCode();
-        // hashCode() shall change
-        assertNotEquals(hBefore, hAfter);
     }
 
     private static final BiPredicate<StableValue<Integer>, Integer> TRY_SET = StableValue::trySet;

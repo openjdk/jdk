@@ -89,21 +89,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return wrappedValue != null;
     }
 
-    @Override
-    public int hashCode() {
-        final Object t = wrappedValue;
-        return t == this
-                ? 1
-                : Objects.hashCode(t);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof StableValueImpl<?> other &&
-                // Note that the returned `value()` will be `null` if the holder value
-                // is unset and `nullSentinel()` if the holder value is `null`.
-                Objects.equals(wrappedValue, other.wrappedValue);
-    }
+    // The methods equals() and hashCode() should be based on identity (default)
 
     @Override
     public String toString() {
