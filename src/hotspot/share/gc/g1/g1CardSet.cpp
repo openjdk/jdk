@@ -347,7 +347,11 @@ public:
   }
 
   void reset_table_scanner() {
-    _table_scanner.set(&_table, BucketClaimSize);
+    reset_table_scanner(BucketClaimSize);
+  }
+
+  void reset_table_scanner(uint claim_size) {
+    _table_scanner.set(&_table, claim_size);
   }
 
   void grow() {
@@ -1041,4 +1045,8 @@ void G1CardSet::clear() {
 
 void G1CardSet::reset_table_scanner() {
   _table->reset_table_scanner();
+}
+
+void G1CardSet::reset_table_scanner(uint claim_size) {
+  _table->reset_table_scanner(claim_size);
 }

@@ -36,6 +36,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
+class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
@@ -507,6 +508,9 @@ public:
 
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
+
+  void install_group_cardset(G1CardSet* group_cardset);
+  void uninstall_group_cardset();
 
   void record_surv_words_in_group(size_t words_survived);
 

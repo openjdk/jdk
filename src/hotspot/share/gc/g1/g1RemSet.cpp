@@ -1379,6 +1379,10 @@ public:
         G1ClearBitmapClosure clear(g1h);
         G1CombinedClosure combined(&merge, &clear);
 
+        if (_initial_evacuation) {
+          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
+        }
+
         g1h->collection_set_iterate_increment_from(&combined, nullptr, worker_id);
         G1MergeCardSetStats stats = merge.stats();
 
