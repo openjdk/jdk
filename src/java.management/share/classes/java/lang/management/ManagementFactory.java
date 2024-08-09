@@ -1020,7 +1020,7 @@ public class ManagementFactory {
         loadNativeLib();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadNativeLib() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             System.loadLibrary("management");

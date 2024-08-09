@@ -65,7 +65,7 @@ class AquaFileView extends FileView {
         loadOSXUILibrary();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadOSXUILibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

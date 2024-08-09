@@ -129,7 +129,7 @@ public class NTSystem {
         return impersonationToken;
     }
 
-
+    @SuppressWarnings("restricted")
     private void loadNative() {
         System.loadLibrary("jaas");
     }

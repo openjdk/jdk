@@ -273,16 +273,22 @@ address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, 
 
   // Otherwise call static method findNative in ClassLoader
   Klass*   klass = vmClasses::ClassLoader_klass();
-  Handle name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
+  Handle jni_class(THREAD, method->method_holder()->java_mirror());
+  Handle jni_name_arg = java_lang_String::create_from_str(jni_name, CHECK_NULL);
+  Handle java_name_arg = java_lang_String::create_from_str(method->name()->as_C_string(), CHECK_NULL);
+
+  JavaCallArguments args;
+  args.push_oop(loader);
+  args.push_oop(jni_class);
+  args.push_oop(jni_name_arg);
+  args.push_oop(java_name_arg);
 
   JavaValue result(T_LONG);
   JavaCalls::call_static(&result,
                          klass,
                          vmSymbols::findNative_name(),
-                         vmSymbols::classloader_string_long_signature(),
-                         // Arguments
-                         loader,
-                         name_arg,
+                         vmSymbols::classloader_class_string_string_long_signature(),
+                         &args,
                          CHECK_NULL);
   entry = (address) (intptr_t) result.get_jlong();
 
@@ -408,6 +414,14 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   // JVM TI prefixes which have been applied to the native method name.
   entry = lookup_entry_prefixed(method, CHECK_NULL);
   if (entry != nullptr) return entry;
+
+  if (THREAD->has_pending_exception()) {
+    oop exception = THREAD->pending_exception();
+    if (exception->is_a(vmClasses::IllegalCallerException_klass())) {
+      // we already have a pending exception from the restricted method check, just return
+      return nullptr;
+    }
+  }
 
   // Native function not found, throw UnsatisfiedLinkError
   stringStream ss;

@@ -90,7 +90,7 @@ public class CUPSPrinter  {
         initStatic();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void initStatic() {
         // load awt library to access native code
         java.security.AccessController.doPrivileged(

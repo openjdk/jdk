@@ -39,7 +39,7 @@ public class PlatformGraphicsInfo {
         hasDisplays = hasDisplays0();
     }
 
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadAWTLibrary() {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {

@@ -31,6 +31,7 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.Map;
 
+@SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
 
     static {

@@ -51,7 +51,7 @@ import java.security.PrivilegedAction;
  * (in which case our java code will be executed) or may throw
  * an exception.
  */
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public class ImagingLib {
 
     static boolean useLib = true;

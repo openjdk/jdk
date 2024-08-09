@@ -168,7 +168,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
      */
     private static native void initIDs();
     private static boolean loaded = false;
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     public static void loadLibraries() {
         if (!loaded) {
             java.security.AccessController.doPrivileged(

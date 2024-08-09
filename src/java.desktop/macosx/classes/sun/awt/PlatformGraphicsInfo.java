@@ -30,7 +30,7 @@ import java.awt.Toolkit;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-@SuppressWarnings("removal")
+@SuppressWarnings({"removal", "restricted"})
 public class PlatformGraphicsInfo {
 
     static {

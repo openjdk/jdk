@@ -787,17 +787,23 @@ public final class ModuleBootstrap {
         }
     }
 
-    private static final boolean HAS_ENABLE_NATIVE_ACCESS_FLAG;
     private static final Set<String> USER_NATIVE_ACCESS_MODULES;
     private static final Set<String> JDK_NATIVE_ACCESS_MODULES;
+    private static final IllegalNativeAccess ILLEGAL_NATIVE_ACCESS;
 
-    public static boolean hasEnableNativeAccessFlag() {
-        return HAS_ENABLE_NATIVE_ACCESS_FLAG;
+    public enum IllegalNativeAccess {
+        ALLOW,
+        WARN,
+        DENY
+    }
+
+    public static IllegalNativeAccess illegalNativeAccess() {
+        return ILLEGAL_NATIVE_ACCESS;
     }
 
     static {
+        ILLEGAL_NATIVE_ACCESS = addIllegalNativeAccess();
         USER_NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
-        HAS_ENABLE_NATIVE_ACCESS_FLAG = !USER_NATIVE_ACCESS_MODULES.isEmpty();
         JDK_NATIVE_ACCESS_MODULES = ModuleLoaderMap.nativeAccessModules();
     }
 
@@ -845,6 +851,27 @@ public final class ModuleBootstrap {
             value = getAndRemoveProperty(prefix + index);
         }
         return modules;
+    }
+
+    /**
+     * Process the --illegal-native-access option (and its default).
+     */
+    private static IllegalNativeAccess addIllegalNativeAccess() {
+        String value = getAndRemoveProperty("jdk.module.illegal.native.access");
+        // don't use a switch: bootstrapping issues!
+        if (value == null) {
+            return IllegalNativeAccess.WARN; // default
+        } else if (value.equals("deny")) {
+            return IllegalNativeAccess.DENY;
+        } else if (value.equals("allow")) {
+            return IllegalNativeAccess.ALLOW;
+        } else if (value.equals("warn")) {
+            return IllegalNativeAccess.WARN;
+        } else {
+            fail("Value specified to --illegal-native-access not recognized:"
+                    + " '" + value + "'");
+            return null;
+        }
     }
 
     /**

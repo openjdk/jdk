@@ -281,10 +281,14 @@ public interface JavaLangAccess {
     void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Ensure that the given module has native access. If not, warn or
-     * throw exception depending on the configuration.
+     * Ensure that the given module has native access. If not, warn or throw exception depending on the configuration.
+     * @param m the module in which native access occurred
+     * @param owner the owner of the restricted method being called (or the JNI method being bound)
+     * @param methodName the name of the restricted method being called (or the JNI method being bound)
+     * @param currentClass the class calling the restricted method (for JNI, this is the same as {@code owner})
+     * @param jni {@code true}, if this event is related to a JNI method being bound
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
