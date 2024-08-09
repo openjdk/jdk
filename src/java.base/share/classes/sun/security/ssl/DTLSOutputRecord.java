@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,7 +269,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
         destination.limit(destination.position());
         destination.position(dstContent);
 
-        if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
             SSLLogger.fine(
                     "WRITE: " + protocolVersion.name + " " +
                     ContentType.APPLICATION_DATA.name +
@@ -282,7 +282,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
                 dstPos, dstLim, headerSize,
                 protocolVersion);
 
-        if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
             ByteBuffer temporary = destination.duplicate();
             temporary.limit(temporary.position());
             temporary.position(dstPos);
@@ -497,7 +497,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
             dstBuf.limit(dstBuf.position());
             dstBuf.position(dstContent);
 
-            if (SSLLogger.isOn && SSLLogger.isOn("record")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record")) {
                 SSLLogger.fine(
                         "WRITE: " + protocolVersion.name + " " +
                         ContentType.nameOf(memo.contentType) +
@@ -511,7 +511,7 @@ final class DTLSOutputRecord extends OutputRecord implements DTLSRecord {
                     ProtocolVersion.valueOf(memo.majorVersion,
                             memo.minorVersion));
 
-            if (SSLLogger.isOn && SSLLogger.isOn("packet")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,record,packet")) {
                 ByteBuffer temporary = dstBuf.duplicate();
                 temporary.limit(temporary.position());
                 temporary.position(dstPos);

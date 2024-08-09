@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
                 //
                 // For RSA premaster secrets, do not signal a protocol error
                 // due to the Bleichenbacher attack. See comments further down.
-                if (SSLLogger.isOn && SSLLogger.isOn("handshake")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                     SSLLogger.fine("RSA master secret generation error.", iae);
                 }
                 throw new ProviderException(iae);

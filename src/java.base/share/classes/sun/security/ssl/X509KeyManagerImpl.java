@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,7 +379,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 if (results != null) {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
-                            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                                 SSLLogger.fine("KeyMgr: choosing key: " + status);
                             }
                             return makeAlias(status);
@@ -395,13 +395,13 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
         }
         if (allResults == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.fine("KeyMgr: no matching key found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
             SSLLogger.fine(
                     "KeyMgr: no good matching key found, "
                     + "returning best match out of", allResults);
@@ -440,13 +440,13 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
         }
         if (allResults == null || allResults.isEmpty()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.fine("KeyMgr: no matching alias found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
             SSLLogger.fine("KeyMgr: getting aliases", allResults);
         }
         return toAliases(allResults);
@@ -635,7 +635,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                             } catch (IllegalArgumentException iae) {
                                 // unlikely to happen, just in case ...
                                 if (SSLLogger.isOn &&
-                                        SSLLogger.isOn("keymanager")) {
+                                        SSLLogger.isOn("ssl,keymanager")) {
                                     SSLLogger.fine(
                                        "Illegal server name: " + serverName);
                                 }
@@ -651,7 +651,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                                                         cert, idAlgorithm);
                         } catch (CertificateException e) {
                             if (SSLLogger.isOn &&
-                                    SSLLogger.isOn("keymanager")) {
+                                    SSLLogger.isOn("ssl,keymanager")) {
                                 SSLLogger.fine(
                                     "Certificate identity does not match " +
                                     "Server Name Indication (SNI): " +
@@ -762,7 +762,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 j++;
             }
             if (keyIndex == -1) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                     SSLLogger.fine("Ignore alias " + alias
                                 + ": key algorithm does not match");
                 }
@@ -779,7 +779,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                     }
                 }
                 if (!found) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                         SSLLogger.fine(
                                 "Ignore alias " + alias
                                 + ": issuers do not match");
@@ -793,7 +793,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                     !conformsToAlgorithmConstraints(constraints, chain,
                             checkType.getValidator())) {
 
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                     SSLLogger.fine("Ignore alias " + alias +
                             ": certificate list does not conform to " +
                             "algorithm constraints");
@@ -836,7 +836,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             checker.init(false);
         } catch (CertPathValidatorException cpve) {
             // unlikely to happen
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.fine(
                     "Cannot initialize algorithm constraints checker", cpve);
             }
@@ -851,7 +851,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 // We don't care about the unresolved critical extensions.
                 checker.check(cert, Collections.emptySet());
             } catch (CertPathValidatorException cpve) {
-                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                     SSLLogger.fine("Certificate does not conform to " +
                             "algorithm constraints", cert, cpve);
                 }

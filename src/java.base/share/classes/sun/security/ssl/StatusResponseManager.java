@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,13 +127,13 @@ final class StatusResponseManager {
 
         if (cert.getExtensionValue(
                 PKIXExtensions.OCSPNoCheck_Id.toString()) != null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                 SSLLogger.fine(
                     "OCSP NoCheck extension found.  OCSP will be skipped");
             }
             return null;
         } else if (defaultResponder != null && respOverride) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
               SSLLogger.fine(
                     "Responder override: URI is " + defaultResponder);
             }
@@ -173,7 +173,7 @@ final class StatusResponseManager {
         Map<X509Certificate, byte[]> responseMap = new HashMap<>();
         List<OCSPFetchCall> requestList = new ArrayList<>();
 
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
             SSLLogger.fine(
                 "Beginning check: Type = " + type + ", Chain length = " +
                 chain.length);
@@ -200,7 +200,7 @@ final class StatusResponseManager {
                     requestList.add(new OCSPFetchCall(sInfo, ocspReq));
                 }
             } catch (IOException exc) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine(
                         "Exception during CertId creation: ", exc);
                 }
@@ -227,14 +227,14 @@ final class StatusResponseManager {
                         requestList.add(new OCSPFetchCall(sInfo, ocspReq));
                     }
                 } catch (IOException exc) {
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                         SSLLogger.fine(
                             "Exception during CertId creation: ", exc);
                     }
                 }
             }
         } else {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                 SSLLogger.fine("Unsupported status request type: " + type);
             }
         }
@@ -262,19 +262,19 @@ final class StatusResponseManager {
                             responseMap.put(info.cert,
                                     info.responseData.ocspBytes);
                         } else if (SSLLogger.isOn &&
-                                SSLLogger.isOn("respmgr")) {
+                                SSLLogger.isOn("ssl,respmgr")) {
                             SSLLogger.fine(
                                 "Completed task had no response data");
                         }
                     } else {
-                        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                        if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                             SSLLogger.fine("Found cancelled task");
                         }
                     }
                 }
             } catch (InterruptedException | ExecutionException exc) {
                 // Not sure what else to do here
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine("Exception when getting data: ", exc);
                 }
             }
@@ -301,7 +301,7 @@ final class StatusResponseManager {
         for (Extension ext : ocspRequest.extensions) {
             if (ext.getId().equals(
                     PKIXExtensions.OCSPNonce_Id.toString())) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine(
                             "Nonce extension found, skipping cache check");
                 }
@@ -316,14 +316,14 @@ final class StatusResponseManager {
         // and do not return it as a cache hit.
         if (respEntry != null && respEntry.nextUpdate != null &&
                 respEntry.nextUpdate.before(new Date())) {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                 SSLLogger.fine(
                     "nextUpdate threshold exceeded, purging from cache");
             }
             respEntry = null;
         }
 
-        if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+        if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
             SSLLogger.fine(
                     "Check cache for SN" + Debug.toString(cid.getSerialNumber())
                         + ": " + (respEntry != null ? "HIT" : "MISS"));
@@ -486,7 +486,7 @@ final class StatusResponseManager {
          */
         @Override
         public StatusInfo call() {
-            if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                 SSLLogger.fine(
                     "Starting fetch for SN " +
                     Debug.toString(statInfo.cid.getSerialNumber()));
@@ -498,13 +498,13 @@ final class StatusResponseManager {
                 if (statInfo.responder == null) {
                     // If we have no URI then there's nothing to do
                     // but return.
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                         SSLLogger.fine(
                             "Null URI detected, OCSP fetch aborted");
                     }
                     return statInfo;
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                         SSLLogger.fine(
                             "Attempting fetch from " + statInfo.responder);
                     }
@@ -534,7 +534,7 @@ final class StatusResponseManager {
                         statInfo.cid);
 
                 // Get the response status and act on it appropriately
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine("OCSP Status: " + cacheEntry.status +
                         " (" + respBytes.length + " bytes)");
                 }
@@ -547,7 +547,7 @@ final class StatusResponseManager {
                     addToCache(statInfo.cid, cacheEntry);
                 }
             } catch (IOException ioe) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine("Caught exception: ", ioe);
                 }
             }
@@ -566,12 +566,12 @@ final class StatusResponseManager {
             // If no cache lifetime has been set on entries then
             // don't cache this response if there is no nextUpdate field
             if (entry.nextUpdate == null && cacheLifetime == 0) {
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine("Not caching this OCSP response");
                 }
             } else {
                 responseCache.put(certId, entry);
-                if (SSLLogger.isOn && SSLLogger.isOn("respmgr")) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl,respmgr")) {
                     SSLLogger.fine(
                         "Added response for SN " +
                         Debug.toString(certId.getSerialNumber()) +
