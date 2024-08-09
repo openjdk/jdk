@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ public class Reflection {
     public static final Set<String> ALL_MEMBERS = Set.of(WILDCARD);
 
     static {
+        // 3 filter scenarios:
+        // 1. Classes loaded before Reflection, may (System) or may not
+        //    (ConstantPool) be initialized before main call: below
         fieldFilterMap = Map.of(
             Reflection.class, ALL_MEMBERS,
             AccessibleObject.class, ALL_MEMBERS,
@@ -62,9 +65,15 @@ public class Reflection {
             Field.class, ALL_MEMBERS,
             Method.class, ALL_MEMBERS,
             Module.class, ALL_MEMBERS,
-            System.class, Set.of("security")
+            System.class, Set.of("security"),
+            ConstantPool.class, Set.of("constantPoolOop")
         );
         methodFilterMap = Map.of();
+        // 2. Classes loaded after Reflection, but always initialized
+        //    before main call (MethodHandles.Lookup): register in static {}
+
+        // 3. Classes not always loaded or initialized before main call
+        //    (jdk.unsupported): need alternative handling in the future
     }
 
     /** Returns the class of the caller of the method calling this method,
@@ -275,6 +284,7 @@ public class Reflection {
         return false;
     }
 
+    // Only works for filter scenario #2
     // fieldNames must contain only interned Strings
     public static synchronized void registerFieldsToFilter(Class<?> containingClass,
                                                            Set<String> fieldNames) {
@@ -282,6 +292,7 @@ public class Reflection {
             registerFilter(fieldFilterMap, containingClass, fieldNames);
     }
 
+    // Only works for filter scenario #2
     // methodNames must contain only interned Strings
     public static synchronized void registerMethodsToFilter(Class<?> containingClass,
                                                             Set<String> methodNames) {
@@ -302,18 +313,12 @@ public class Reflection {
     }
 
     public static Field[] filterFields(Class<?> containingClass, Field[] fields) {
-        if (fieldFilterMap == null) {
-            // Bootstrapping
-            return fields;
-        }
+        // fail fast if map is null, result is cached by callers
         return (Field[])filter(fields, fieldFilterMap.get(containingClass));
     }
 
     public static Method[] filterMethods(Class<?> containingClass, Method[] methods) {
-        if (methodFilterMap == null) {
-            // Bootstrapping
-            return methods;
-        }
+        // fail fast if map is null, result is cached by callers
         return (Method[])filter(methods, methodFilterMap.get(containingClass));
     }
 
