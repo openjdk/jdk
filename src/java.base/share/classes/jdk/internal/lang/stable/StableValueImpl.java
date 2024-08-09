@@ -29,8 +29,15 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
+/**
+ * The implementation of StableValue.
+ *
+ * @implNote This implementation can be used early in the boot sequence as it does not
+ *           rely on reflection, MethodHandles, Streams etc.
+ *
+ * @param <T> type of the holder value
+ */
 public final class StableValueImpl<T> implements StableValue<T> {
 
     // Unsafe offsets for direct field access
@@ -89,14 +96,14 @@ public final class StableValueImpl<T> implements StableValue<T> {
         return wrappedValue != null;
     }
 
-    // The methods equals() and hashCode() should be based on identity (default)
+    // The methods equals() and hashCode() should be based on identity (defaults from Object)
 
     @Override
     public String toString() {
         final Object t = wrappedValue;
         return t == this
                 ? "(this StableValue)"
-                : "StableValue" + StableValueUtil.render(t);
+                : "StableValue" + StableValueUtil.renderWrapped(t);
     }
 
     @ForceInline
@@ -106,7 +113,7 @@ public final class StableValueImpl<T> implements StableValue<T> {
 
     // Factory
 
-    public static <T> StableValueImpl<T> newInstance() {
+    static <T> StableValueImpl<T> newInstance() {
         return new StableValueImpl<>();
     }
 

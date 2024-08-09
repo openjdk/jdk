@@ -212,7 +212,7 @@ public sealed interface StableValue<T>
      * @param <T> type of the holder value
      */
     static <T> StableValue<T> newInstance() {
-        return StableValueImpl.newInstance();
+        return StableValueUtil.newInstance();
     }
 
     /**

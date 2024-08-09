@@ -42,26 +42,14 @@ import java.util.stream.IntStream;
  * For performance reasons (~10%), we are not delegating to a StableList but are using
  * the more primitive functions in StableValueUtil that are shared with StableList/StableValueImpl.
  *
+ * @implNote This implementation can be used early in the boot sequence as it does not
+ *           rely on reflection, MethodHandles, Streams etc.
+ *
  * @param <R> the return type
  */
-public final class CachingIntFunction<R> implements IntFunction<R> {
-
-    @Stable
-    private final IntFunction<? extends R> original;
-    @Stable
-    private final Object[] mutexes;
-    @Stable
-    private final Object[] wrappedValues;
-
-    public CachingIntFunction(int size,
-                              IntFunction<? extends R> original) {
-        this.original = original;
-        this.mutexes = new Object[size];
-        for (int i = 0; i < size; i++) {
-            mutexes[i] = new Object();
-        }
-        this.wrappedValues = new Object[size];
-    }
+record CachingIntFunction<R>(IntFunction<? extends R> original,
+                             Object[] mutexes,
+                             Object[] wrappedValues) implements IntFunction<R> {
 
     @ForceInline
     @Override
@@ -86,27 +74,51 @@ public final class CachingIntFunction<R> implements IntFunction<R> {
         }
     }
 
-    public static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
-        return new CachingIntFunction<>(size, original);
+    @Override
+    public int hashCode() {
+        return System.identityHashCode(this);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return obj == this;
     }
 
     @Override
     public String toString() {
         return "CachingIntFunction[values=" +
-                "[" + valuesAsString() + "]"
-                + ", original=" + original + ']';
+                renderElements() +
+                ", original=" + original + ']';
     }
 
-    private String valuesAsString() {
-        return IntStream.range(0, wrappedValues.length)
-                .mapToObj(this::wrappedValue)
-                .map(v -> (v == this) ? "(this CachingIntFunction)" : StableValueUtil.render(v))
-                .collect(Collectors.joining(", "));
+    private String renderElements() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        boolean first = true;
+        for (int i = 0; i < wrappedValues.length; i++) {
+            if (first) { first = false; } else { sb.append(", "); };
+            final Object value = wrappedValue(i);
+            if (value == this) {
+                sb.append("(this CachingIntFunction)");
+            } else {
+                sb.append(StableValueUtil.renderWrapped(value));
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     @ForceInline
     private Object wrappedValue(int i) {
         return StableValueUtil.UNSAFE.getReferenceVolatile(wrappedValues, StableValueUtil.arrayOffset(i));
+    }
+
+    static <R> CachingIntFunction<R> of(int size, IntFunction<? extends R> original) {
+        var mutexes = new Object[size];
+        for (int i = 0; i < size; i++) {
+            mutexes[i] = new Object();
+        }
+        return new CachingIntFunction<>(original, mutexes, new Object[size]);
     }
 
 }

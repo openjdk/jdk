@@ -36,9 +36,12 @@ import java.util.function.Supplier;
  * For performance reasons (~10%), we are not delegating to a StableValue but are using
  * the more primitive functions in StableValueUtil that are shared with StableValueImpl.
  *
+ * @implNote This implementation can be used early in the boot sequence as it does not
+ *           rely on reflection, MethodHandles, Streams etc.
+ *
  * @param <T> the return type
  */
-public final class CachingSupplier<T> implements Supplier<T> {
+final class CachingSupplier<T> implements Supplier<T> {
 
     private static final long VALUE_OFFSET =
             StableValueUtil.UNSAFE.objectFieldOffset(CachingSupplier.class, "wrappedValue");
@@ -50,7 +53,7 @@ public final class CachingSupplier<T> implements Supplier<T> {
     @Stable
     private volatile Object wrappedValue;
 
-    public CachingSupplier(Supplier<? extends T> original) {
+    private CachingSupplier(Supplier<? extends T> original) {
         this.original = original;
     }
 
@@ -72,14 +75,14 @@ public final class CachingSupplier<T> implements Supplier<T> {
         }
     }
 
-    public static <T> CachingSupplier<T> of(Supplier<? extends T> original) {
-        return new CachingSupplier<>(original);
-    }
-
     @Override
     public String toString() {
         final Object t = wrappedValue;
-        return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.render(t)) + ", original=" + original + "]";
+        return "CachingSupplier[value=" + (t == this ? "(this CachingSupplier)" : StableValueUtil.renderWrapped(t)) + ", original=" + original + "]";
+    }
+
+    static <T> CachingSupplier<T> of(Supplier<? extends T> original) {
+        return new CachingSupplier<>(original);
     }
 
 }

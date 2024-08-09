@@ -21,11 +21,11 @@ public final class StableValueUtil {
 
     // Used to indicate a holder value is `null` (see field `value` below)
     // A wrapper method `nullSentinel()` is used for generic type conversion.
-    static final Object NULL_SENTINEL = new Object();
+    private static final Object NULL_SENTINEL = new Object();
 
     // Wraps `null` values into a sentinel value
     @ForceInline
-    static <T> T wrap(T t) {
+    private static <T> T wrap(T t) {
         return (t == null) ? nullSentinel() : t;
     }
 
@@ -42,7 +42,7 @@ public final class StableValueUtil {
         return (T) NULL_SENTINEL;
     }
 
-    static String render(Object t) {
+    static String renderWrapped(Object t) {
         return (t == null) ? ".unset" : "[" + unwrap(t) + "]";
     }
 
@@ -58,6 +58,10 @@ public final class StableValueUtil {
     }
 
     // Factories
+
+    public static <T> StableValueImpl<T> newInstance() {
+        return StableValueImpl.newInstance();
+    }
 
     public static <T> List<StableValueImpl<T>> ofList(int size) {
         if (size < 0) {
@@ -118,8 +122,8 @@ public final class StableValueUtil {
     }
 
     public static <T, R> Function<T, R> newCachingFunction(Set<? extends T> inputs,
-                                                    Function<? super T, ? extends R> original,
-                                                    ThreadFactory factory) {
+                                                           Function<? super T, ? extends R> original,
+                                                           ThreadFactory factory) {
 
         final Function<T, R> memoized = CachingFunction.of(inputs, original);
 
