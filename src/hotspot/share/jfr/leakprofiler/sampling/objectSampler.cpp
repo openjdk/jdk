@@ -226,13 +226,13 @@ void ObjectSampler::sample(HeapWord* obj, size_t allocated, JavaThread* thread) 
   }
   const JfrBlobHandle bh = get_thread_blob(thread, thread_id, virtual_thread);
   assert(bh.valid(), "invariant");
-  RecordStackTrace rst(thread);
   // try enter critical section
   JfrTryLock tryLock(&_lock);
   if (!tryLock.acquired()) {
     log_trace(jfr, oldobject, sampling)("Skipping old object sample due to lock contention");
     return;
   }
+  RecordStackTrace rst(thread);
   instance().add(obj, allocated, thread_id, virtual_thread, bh, thread);
 }
 
