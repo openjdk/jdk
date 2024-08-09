@@ -34,7 +34,7 @@ public:
   static const char* thread_name();
 
   // Allocation
-  static uintptr_t alloc_aligned(size_t alignment, size_t size);
+  static uintptr_t alloc_aligned_unfreeable(size_t alignment, size_t size);
 
   // Size conversion
   static size_t bytes_to_words(size_t size_in_words);
