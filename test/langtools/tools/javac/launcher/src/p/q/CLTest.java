@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,17 @@ import java.net.*;
 import java.util.*;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
+import java.util.spi.ToolProvider;
 
 public class CLTest {
     public static void main(String... args) throws Exception {
         try {
+            ServiceLoader.load(ToolProvider.class, CLTest.class.getClassLoader()).stream()
+                    .map(ServiceLoader.Provider::get)
+                    .filter(toolProvider -> toolProvider.name().equals("Tool"))
+                    .findFirst()
+                    .orElseThrow();
+
             new CLTest().run();
         } catch (Throwable t) {
             t.printStackTrace();
@@ -54,6 +61,9 @@ public class CLTest {
 
     void run() throws Exception {
         String[] names = {
+                "Tool.java",
+                "Tool.class",
+                "p/q/CLTest.java",
                 "p/q/CLTest.class",
                 "p/q/CLTest$Inner.class",
                 "p/q/CLTest2.class",
@@ -152,6 +162,9 @@ public class CLTest {
     }
 
     void checkClass(String name, InputStream in) throws Exception {
+        if (!name.endsWith(".class")) {
+            return; // ignore non-class resources
+        }
         ClassModel cf = ClassFile.of().parse(in.readAllBytes());
         System.err.println("    class " + cf.thisClass().asInternalName());
         if (!name.equals(cf.thisClass().asInternalName() + ".class")) {
