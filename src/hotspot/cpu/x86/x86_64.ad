@@ -6388,7 +6388,7 @@ instruct cmovP_regUCF2_eq(cmpOpUCF2 cop, rFlagsRegUCF cr, rRegP dst, rRegP src) 
   ins_pipe(pipe_cmov_reg);
 %}
 
-instruct cmovL_imm_01(rRegL dst, immI_1 src, rFlagsReg cr, cmpOp cop)
+instruct cmovL_imm_01(rRegL dst, immL1 src, rFlagsReg cr, cmpOp cop)
 %{
   predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
@@ -6426,7 +6426,7 @@ instruct cmovL_mem(cmpOp cop, rFlagsReg cr, rRegL dst, memory src)
   ins_pipe(pipe_cmov_mem);  // XXX
 %}
 
-instruct cmovL_imm_01U(rRegL dst, immI_1 src, rFlagsRegU cr, cmpOpU cop)
+instruct cmovL_imm_01U(rRegL dst, immL1 src, rFlagsRegU cr, cmpOpU cop)
 %{
   predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
@@ -6452,7 +6452,7 @@ instruct cmovL_regU(cmpOpU cop, rFlagsRegU cr, rRegL dst, rRegL src)
   ins_pipe(pipe_cmov_reg); // XXX
 %}
 
-instruct cmovL_imm_01UCF(rRegL dst, immI_1 src, rFlagsRegUCF cr, cmpOpUCF cop)
+instruct cmovL_imm_01UCF(rRegL dst, immL1 src, rFlagsRegUCF cr, cmpOpUCF cop)
 %{
   predicate(n->in(2)->in(2)->is_Con() && n->in(2)->in(2)->get_long() == 0);
   match(Set dst (CMoveL (Binary cop cr) (Binary src dst)));
