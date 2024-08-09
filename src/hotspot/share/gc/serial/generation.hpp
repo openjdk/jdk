@@ -114,8 +114,7 @@ class Generation: public CHeapObj<mtGC> {
 
 public:
   // Performance Counter support
-  virtual void update_counters() = 0;
-  virtual CollectorCounters* counters() { return _gc_counters; }
+  CollectorCounters* counters() { return _gc_counters; }
 
   GCMemoryManager* gc_manager() const {
     assert(_gc_manager != nullptr, "not initialized yet");
