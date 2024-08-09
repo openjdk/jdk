@@ -94,6 +94,21 @@
            "(2) always map at preferred address, and if unsuccessful, "     \
            "do not map the archive")                                        \
            range(0, 2)                                                      \
+                                                                            \
+  /*========== New "AOT" flags =========================================*/  \
+  /* These are aliases of -Xshare:dump, -XX:SharedArchiveFile=..., etc. */  \
+  /* See CDSConfig::check_flag_aliases().                               */  \
+                                                                            \
+  product(ccstr, AOTMode, nullptr,                                          \
+          "Specifies how AOTCache should be created or used. Valid values " \
+          "are: off, record, create, auto, on; the default is auto")        \
+          constraint(AOTModeConstraintFunc, AtParse)                        \
+                                                                            \
+  product(ccstr, AOTConfiguration, nullptr,                                 \
+          "Configuration information used by CreateAOTCache")               \
+                                                                            \
+  product(ccstr, AOTCache, nullptr,                                         \
+          "Cache for improving start up and warm up")                       \
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)

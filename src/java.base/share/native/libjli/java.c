@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1516,6 +1516,10 @@ ParseArguments(int *pargc, char ***pargv,
         * Check for CDS option
         */
         if (JLI_StrCmp(arg, "-Xshare:dump") == 0) {
+            dumpSharedSpaces = JNI_TRUE;
+        }
+        if (JLI_StrCmp(arg, "-XX:AOTMode=create") == 0) {
+            // Alias for -Xshare:dump
             dumpSharedSpaces = JNI_TRUE;
         }
     }

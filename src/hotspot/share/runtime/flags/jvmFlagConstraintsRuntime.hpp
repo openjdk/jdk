@@ -34,6 +34,7 @@
  */
 
 #define RUNTIME_CONSTRAINTS(f)                        \
+  f(ccstr,  AOTModeConstraintFunc)                    \
   f(int,    ObjectAlignmentInBytesConstraintFunc)     \
   f(int,    ContendedPaddingWidthConstraintFunc)      \
   f(int,    PerfDataSamplingIntervalFunc)             \
