@@ -304,7 +304,10 @@ public class CtwRunner {
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
-                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
+                // Do not fail on huge methods where StressGCM makes register
+                // allocation allocate lots of memory
+                "-XX:CompileCommand=memlimit,*.*,0"));
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

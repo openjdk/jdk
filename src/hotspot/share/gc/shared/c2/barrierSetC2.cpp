@@ -109,6 +109,10 @@ Label* BarrierStubC2::continuation() {
   return &_continuation;
 }
 
+uint8_t BarrierStubC2::barrier_data() const {
+  return _node->barrier_data();
+}
+
 void BarrierStubC2::preserve(Register r) {
   const VMReg vm_reg = r->as_VMReg();
   assert(vm_reg->is_Register(), "r must be a general-purpose register");

@@ -4342,6 +4342,7 @@ instruct loadP(rRegP dst, memory mem)
 // Load Compressed Pointer
 instruct loadN(rRegN dst, memory mem)
 %{
+   predicate(n->as_Load()->barrier_data() == 0);
    match(Set dst (LoadN mem));
 
    ins_cost(125); // XXX
@@ -5127,6 +5128,7 @@ instruct storeImmP(memory mem, immP31 src)
 // Store Compressed Pointer
 instruct storeN(memory mem, rRegN src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(125); // XXX
@@ -5151,7 +5153,7 @@ instruct storeNKlass(memory mem, rRegN src)
 
 instruct storeImmN0(memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == nullptr);
+  predicate(CompressedOops::base() == nullptr && n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem zero));
 
   ins_cost(125); // XXX
@@ -5164,6 +5166,7 @@ instruct storeImmN0(memory mem, immN0 zero)
 
 instruct storeImmN(memory mem, immN src)
 %{
+  predicate(n->as_Store()->barrier_data() == 0);
   match(Set mem (StoreN mem src));
 
   ins_cost(150); // XXX
@@ -7173,6 +7176,7 @@ instruct compareAndSwapN(rRegI res,
                           memory mem_ptr,
                           rax_RegN oldval, rRegN newval,
                           rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set res (CompareAndSwapN mem_ptr (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapN mem_ptr (Binary oldval newval)));
   effect(KILL cr, KILL oldval);
@@ -7262,6 +7266,7 @@ instruct compareAndExchangeN(
                           memory mem_ptr,
                           rax_RegN oldval, rRegN newval,
                           rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set oldval (CompareAndExchangeN mem_ptr (Binary oldval newval)));
   effect(KILL cr);
 
@@ -7483,6 +7488,7 @@ instruct xchgP( memory mem, rRegP newval) %{
 %}
 
 instruct xchgN( memory mem, rRegN newval) %{
+  predicate(n->as_LoadStore()->barrier_data() == 0);
   match(Set newval (GetAndSetN mem newval));
   format %{ "XCHGL  $newval,$mem]" %}
   ins_encode %{
@@ -11674,6 +11680,7 @@ instruct compN_rReg(rFlagsRegU cr, rRegN op1, rRegN op2)
 
 instruct compN_rReg_mem(rFlagsRegU cr, rRegN src, memory mem)
 %{
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN src (LoadN mem)));
 
   format %{ "cmpl    $src, $mem\t# compressed ptr" %}
@@ -11695,6 +11702,7 @@ instruct compN_rReg_imm(rFlagsRegU cr, rRegN op1, immN op2) %{
 
 instruct compN_mem_imm(rFlagsRegU cr, memory mem, immN src)
 %{
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN src (LoadN mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed ptr" %}
@@ -11735,7 +11743,8 @@ instruct testN_reg(rFlagsReg cr, rRegN src, immN0 zero) %{
 
 instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() != nullptr);
+  predicate(CompressedOops::base() != nullptr &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN (LoadN mem) zero));
 
   ins_cost(500); // XXX
@@ -11748,7 +11757,8 @@ instruct testN_mem(rFlagsReg cr, memory mem, immN0 zero)
 
 instruct testN_mem_reg0(rFlagsReg cr, memory mem, immN0 zero)
 %{
-  predicate(CompressedOops::base() == nullptr);
+  predicate(CompressedOops::base() == nullptr &&
+            n->in(1)->as_Load()->barrier_data() == 0);
   match(Set cr (CmpN (LoadN mem) zero));
 
   format %{ "cmpl    R12, $mem\t# compressed ptr (R12_heapbase==0)" %}

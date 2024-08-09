@@ -31,6 +31,14 @@
 
 #include <float.h> // for DBL_MAX
 
+// G1_LATE_BARRIER_MIGRATION_SUPPORT enables temporary support for migrating
+// from early to late barrier expansion (see JEP 475) for all platforms.
+// This support is not intended to be integrated in the main JDK repository.
+#ifdef G1_LATE_BARRIER_MIGRATION_SUPPORT
+#error "G1_LATE_BARRIER_MIGRATION_SUPPORT already defined"
+#endif
+#define G1_LATE_BARRIER_MIGRATION_SUPPORT 0
+
 // The larger HeapWordSize for 64bit requires larger heaps
 // for the same application running in 64bit.  See bug 4967770.
 // The minimum alignment to a heap word size is done.  Other
