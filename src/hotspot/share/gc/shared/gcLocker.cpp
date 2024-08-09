@@ -33,10 +33,32 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/ticks.hpp"
 
 volatile jint GCLocker::_jni_lock_count = 0;
 volatile bool GCLocker::_needs_gc       = false;
 unsigned int GCLocker::_total_collections = 0;
+
+// GCLockerTimingDebugLogger tracks specific timing information for GC lock waits.
+class GCLockerTimingDebugLogger : public StackObj {
+  const char* _log_message;
+  Ticks _start;
+
+public:
+  GCLockerTimingDebugLogger(const char* log_message) : _log_message(log_message) {
+    assert(_log_message != nullptr, "GC locker debug message must be set.");
+    _start = Ticks::now();
+  }
+
+  ~GCLockerTimingDebugLogger() {
+    Log(gc, jni) log;
+    if (log.is_debug()) {
+      ResourceMark rm; // JavaThread::name() allocates to convert to UTF8
+      const Tickspan elapsed_time = Ticks::now() - _start;
+      log.debug("%s Resumed after " UINT64_FORMAT "ms. Thread \"%s\".", _log_message, elapsed_time.milliseconds(), Thread::current()->name());
+    }
+  }
+};
 
 #ifdef ASSERT
 volatile jint GCLocker::_debug_jni_lock_count = 0;
@@ -114,6 +136,7 @@ void GCLocker::stall_until_clear() {
 
   // Wait for _needs_gc  to be cleared
   while (needs_gc()) {
+    GCLockerTimingDebugLogger logger("Thread stalled by JNI critical section.");
     ml.wait();
   }
 }
@@ -127,7 +150,12 @@ void GCLocker::jni_lock(JavaThread* thread) {
   assert(!thread->in_critical(), "shouldn't currently be in a critical region");
   MonitorLocker ml(JNICritical_lock);
   // Block entering threads if there's a pending GC request.
+  if (needs_gc()) {
+    log_debug_jni("Blocking thread as there is a pending GC request");
+  }
+
   while (needs_gc()) {
+    GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
     // There's at least one thread that has not left the critical region (CR)
     // completely. When that last thread (no new threads can enter CR due to the
     // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
@@ -148,6 +176,7 @@ void GCLocker::jni_unlock(JavaThread* thread) {
   MutexLocker mu(JNICritical_lock);
   _jni_lock_count--;
   decrement_debug_jni_lock_count();
+  log_debug_jni("Thread exiting critical region.");
   thread->exit_critical();
   if (needs_gc() && !is_active_internal()) {
     // We're the last thread out. Request a GC.
@@ -161,7 +190,7 @@ void GCLocker::jni_unlock(JavaThread* thread) {
     {
       // Must give up the lock while at a safepoint
       MutexUnlocker munlock(JNICritical_lock);
-      log_debug_jni("Performing GC after exiting critical section.");
+      log_debug_jni("Last thread exiting. Performing GC after exiting critical section.");
       Universe::heap()->collect(GCCause::_gc_locker);
     }
     _needs_gc = false;
