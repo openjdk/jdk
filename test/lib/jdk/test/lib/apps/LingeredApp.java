@@ -585,6 +585,13 @@ public class LingeredApp {
         while (steadyStateThread.getState() != Thread.State.BLOCKED) {
             Thread.onSpinWait();
         }
+
+        // Wait a short period of time so we can be sure the thread truly is blocked. See JDK-8269881.
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     static class SteadyStateLock {};
