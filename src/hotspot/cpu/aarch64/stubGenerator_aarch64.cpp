@@ -4207,6 +4207,384 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Arguments:
+  //
+  // Inputs:
+  //   c_rarg0   - byte[]  source+offset
+  //   c_rarg1   - byte[]  SHA.state
+  //   c_rarg2   - int     block_size
+  //   c_rarg3   - int     offset
+  //   c_rarg4   - int     limit
+  //
+  address generate_sha3_implCompress_gpr(bool multi_block, const char *name) {
+    static const uint64_t round_consts[24] = {
+      0x0000000000000001L, 0x0000000000008082L, 0x800000000000808AL,
+      0x8000000080008000L, 0x000000000000808BL, 0x0000000080000001L,
+      0x8000000080008081L, 0x8000000000008009L, 0x000000000000008AL,
+      0x0000000000000088L, 0x0000000080008009L, 0x000000008000000AL,
+      0x000000008000808BL, 0x800000000000008BL, 0x8000000000008089L,
+      0x8000000000008003L, 0x8000000000008002L, 0x8000000000000080L,
+      0x000000000000800AL, 0x800000008000000AL, 0x8000000080008081L,
+      0x8000000000008080L, 0x0000000080000001L, 0x8000000080008008L
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    Register buf           = c_rarg0;
+    Register state         = c_rarg1;
+    Register block_size    = c_rarg2;
+    Register ofs           = c_rarg3;
+    Register limit         = c_rarg4;
+
+    // use r3.r17,r19..r28 to keep a0..a24.
+    // a0..a24 are respective locals from SHA3.java
+    Register a0 = r25,
+             a1 = r26,
+             a2 = r27,
+             a3 = r3,
+             a4 = r4,
+             a5 = r5,
+             a6 = r6,
+             a7 = r7,
+             a8 = r8,
+             a9 = r9,
+             a10 = r10,
+             a11 = r11,
+             a12 = r12,
+             a13 = r13,
+             a14 = r14,
+             a15 = r15,
+             a16 = r16,
+             a17 = r17,
+             a18 = r28,
+             a19 = r19,
+             a20 = r20,
+             a21 = r21,
+             a22 = r22,
+             a23 = r23,
+             a24 = r24;
+
+    Register tmp1 = block_size, tmp2 = buf, tmp3 = state, tmp4 = r30;
+
+    Label sha3_loop, rounds24_preloop, loop_body;
+    Label sha3_512_or_sha3_384, shake128;
+
+    bool can_use_r18 = false;
+#ifndef R18_RESERVED
+    can_use_r18 = true;
+#endif
+    bool can_use_fp = !PreserveFramePointer;
+
+    __ enter();
+
+    // save almost all yet unsaved gpr registers on stack
+    __ str(block_size, __ pre(sp, -128));
+    if (multi_block) {
+      __ stpw(ofs, limit, Address(sp, 8));
+    }
+    // 16 bytes at st+16 will be used to keep buf and loop counter
+    __ stp(r19, r20, Address(sp, 32));
+    __ stp(r21, r22, Address(sp, 48));
+    __ stp(r23, r24, Address(sp, 64));
+    __ stp(r25, r26, Address(sp, 80));
+    __ stp(r27, r28, Address(sp, 96));
+    if (can_use_r18 && can_use_fp) {
+      __ stp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ str(state, Address(sp, 112));
+    }
+
+    // begin sha3 calculations: loading a0..a24 from state arrary
+    __ ldp(a0, a1, state);
+    __ ldp(a2, a3, Address(state, 16));
+    __ ldp(a4, a5, Address(state, 32));
+    __ ldp(a6, a7, Address(state, 48));
+    __ ldp(a8, a9, Address(state, 64));
+    __ ldp(a10, a11, Address(state, 80));
+    __ ldp(a12, a13, Address(state, 96));
+    __ ldp(a14, a15, Address(state, 112));
+    __ ldp(a16, a17, Address(state, 128));
+    __ ldp(a18, a19, Address(state, 144));
+    __ ldp(a20, a21, Address(state, 160));
+    __ ldp(a22, a23, Address(state, 176));
+    __ ldr(a24, Address(state, 192));
+
+    __ BIND(sha3_loop);
+
+    // load input
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a0, a0, tmp4);
+    __ eor(a1, a1, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a2, a2, tmp4);
+    __ eor(a3, a3, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a4, a4, tmp4);
+    __ eor(a5, a5, tmp3);
+    __ ldr(tmp4, __ post(buf, 8));
+    __ eor(a6, a6, tmp4);
+
+    // block_size == 72, SHA3-512; block_size == 104, SHA3-384
+    __ tbz(block_size, 7, sha3_512_or_sha3_384);
+
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a7, a7, tmp4);
+    __ eor(a8, a8, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a9, a9, tmp4);
+    __ eor(a10, a10, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a11, a11, tmp4);
+    __ eor(a12, a12, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a13, a13, tmp4);
+    __ eor(a14, a14, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a15, a15, tmp4);
+    __ eor(a16, a16, tmp3);
+
+    // block_size == 136, bit4 == 0 and bit5 == 0, SHA3-256 or SHAKE256
+    __ andw(tmp3, block_size, 48);
+    __ cbzw(tmp3, rounds24_preloop);
+    __ tbnz(block_size, 5, shake128);
+    // block_size == 144, bit5 == 0, SHA3-244
+    __ ldr(tmp4, __ post(buf, 8));
+    __ eor(a17, a17, tmp4);
+    __ b(rounds24_preloop);
+
+    __ BIND(shake128);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a17, a17, tmp4);
+    __ eor(a18, a18, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a19, a19, tmp4);
+    __ eor(a20, a20, tmp3);
+    __ b(rounds24_preloop); // block_size == 168, SHAKE128
+
+    __ BIND(sha3_512_or_sha3_384);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a7, a7, tmp4);
+    __ eor(a8, a8, tmp3);
+    __ tbz(block_size, 5, rounds24_preloop); // SHA3-512
+
+    // SHA3-384
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a9, a9, tmp4);
+    __ eor(a10, a10, tmp3);
+    __ ldp(tmp4, tmp3, __ post(buf, 16));
+    __ eor(a11, a11, tmp4);
+    __ eor(a12, a12, tmp3);
+
+    __ BIND(rounds24_preloop);
+    __ mov(tmp1, 24);
+    __ stp(buf, tmp1, Address(sp, 16));
+    __ lea(tmp4, ExternalAddress((address) round_consts));
+
+    __ BIND(loop_body);
+
+    __ eor(tmp1, a4, a9); // tmp1 = a4^a9
+    __ eor(tmp2, a14, a19); // tmp2 = a14^a19
+    __ eor(tmp3, a1, a6); // tmp3 = a1^a6
+    __ eor(tmp1, tmp1, tmp2); // tmp1 = a4^a9^a14^19
+    __ eor(tmp2, a11, a16); // tmp2 = a11^16
+    __ eor(tmp1, tmp1, a24); // tmp1 = a4^a9^a14^a19^a24 = c4
+    __ eor(tmp2, tmp2, tmp3); // tmp2 = a1^a6^a11^a16
+    __ eor(tmp2, tmp2, a21); // tmp2 = a1^a6^a11^a16^a21 = c1
+    __ eor(tmp3, tmp1, tmp2, __ ROR, 63); // d0
+    {
+      Register tmp5, tmp6;
+      if (can_use_fp && can_use_r18) {
+        tmp5 = rfp;
+        tmp6 = r18_tls;
+      } else {
+        tmp5 = a4;
+        tmp6 = a9;
+        __ stp(tmp5, tmp6, __ pre(sp, -16));
+      }
+      __ eor(tmp6, a0, a5); // tmp6 = a0^a5
+      __ eor(a0, a0, tmp3);
+      __ eor(a5, a5, tmp3);
+      __ eor(tmp5, a10, a15); // tmp5 = a10^a15
+      __ eor(a10, a10, tmp3);
+      __ eor(a15, a15, tmp3);
+      __ eor(tmp6, tmp6, tmp5); // tmp6 = a0^a5^a10^a15
+      __ eor(tmp6, tmp6, a20); // tmp6 = a0^a5^a10^a15^a20 = c0
+      __ eor(a20, a20, tmp3); // d0(tmp3)
+      __ eor(tmp5, a2, a7); // tmp5 = a2^a7
+      __ eor(tmp3, a12, a17); // tmp3 = a12^a17
+      __ eor(tmp3, tmp3, tmp5); // tmp3 = a2^a7^a12^a17
+      __ eor(tmp3, tmp3, a22); // tmp3 = a2^a7^a12^a17^a22 = c2
+      __ eor(tmp5, tmp6, tmp3, __ ROR, 63); // d1.
+      __ eor(a1, a1, tmp5);
+      __ eor(a6, a6, tmp5);
+      __ eor(a11, a11, tmp5);
+      __ eor(a16, a16, tmp5);
+      __ eor(a21, a21, tmp5); // d1(tmp5)
+      __ eor(tmp5, tmp3, tmp1, __ ROR, 63); // d3
+      __ eor(tmp1, a3, a8); // tmp1 = a3^a8
+      __ eor(a3, a3, tmp5);
+      __ eor(a8, a8, tmp5);
+      __ eor(tmp3, a13, a18); // tmp3 = a13^a18
+      __ eor(a13, a13, tmp5);
+      __ eor(a18, a18, tmp5);
+      __ eor(tmp1, tmp1, tmp3); // tmp1 = a3^a8^a13^a18
+      __ eor(tmp1, tmp1, a23);  // tmp1 = a3^a8^a13^a18^a23 = c3
+      __ eor(a23, a23, tmp5);
+      __ eor(tmp3, tmp2, tmp1, __ ROR, 63); // d2
+      __ eor(a2, a2, tmp3);
+      __ eor(a7, a7, tmp3);
+      __ eor(a12, a12, tmp3);
+      __ eor(tmp1, tmp1, tmp6, __ ROR, 63); // d4
+      if (!can_use_fp || !can_use_r18) {
+        __ ldp(tmp5, tmp6, __ post(sp, 16));
+      }
+      __ eor(a17, a17, tmp3);
+      __ eor(a22, a22, tmp3);
+      __ eor(a4, a4, tmp1);
+      __ eor(a9, a9, tmp1);
+      __ eor(a14, a14, tmp1);
+      __ eor(a19, a19, tmp1);
+      __ eor(a24, a24, tmp1);
+    }
+
+    __ ror(tmp1, a10, 64 - 3);
+    __ ror(a10, a1, 64 - 1);
+    __ ror(a1, a6, 64 - 44);
+    __ ror(a6, a9, 64 - 20);
+    __ ror(a9, a22, 64 - 61);
+    __ ror(a22, a14, 64 - 39);
+    __ ror(a14, a20, 64 - 18);
+    __ ror(a20, a2, 64 - 62);
+    __ ror(a2, a12, 64 - 43);
+    __ ror(a12, a13, 64 - 25);
+    __ ror(a13, a19, 64 - 8) ;
+    __ ror(a19, a23, 64 - 56);
+    __ ror(a23, a15, 64 - 41);
+    __ ror(a15, a4, 64 - 27);
+    __ ror(a4, a24, 64 - 14);
+    __ ror(a24, a21, 64 - 2);
+    __ ror(a21, a8, 64 - 55);
+    __ ror(a8, a16, 64 - 45);
+    __ ror(a16, a5, 64 - 36);
+    __ ror(a5, a3, 64 - 28);
+    __ ror(a3, a18, 64 - 21);
+    __ ror(a18, a17, 64 - 15);
+    __ ror(a17, a11, 64 - 10);
+    __ ror(a11, a7, 64 - 6);
+    __ mov(a7, tmp1);
+
+    __ bic(tmp1, a2, a1); // for a0
+    __ bic(tmp2, a3, a2); // for a1
+    __ bic(tmp3, a4, a3); // for a2
+    __ eor(a2, a2, tmp3);
+    __ bic(tmp3, a0, a4); // for a3
+    __ eor(a3, a3, tmp3);
+    __ bic(tmp3, a1, a0); // for a4
+    __ eor(a0, a0, tmp1);
+    __ eor(a1, a1, tmp2);
+    __ eor(a4, a4, tmp3);
+
+    __ bic(tmp1, a7, a6); // for a5
+    __ bic(tmp2, a8, a7); // for a6
+    __ bic(tmp3, a9, a8); // for a7
+    __ eor(a7, a7, tmp3);
+    __ bic(tmp3, a5, a9); // for a8
+    __ eor(a8, a8, tmp3);
+    __ bic(tmp3, a6, a5); // for a9
+    __ eor(a5, a5, tmp1);
+    __ eor(a6, a6, tmp2);
+    __ eor(a9, a9, tmp3);
+
+    __ bic(tmp1, a12, a11); // for a10
+    __ bic(tmp2, a13, a12); // for a11
+    __ bic(tmp3, a14, a13); // for a12
+    __ eor(a12, a12, tmp3);
+    __ bic(tmp3, a10, a14); // for a13
+    __ eor(a13, a13, tmp3);
+    __ bic(tmp3, a11, a10); // for a14
+    __ eor(a10, a10, tmp1);
+    __ eor(a11, a11, tmp2);
+    __ eor(a14, a14, tmp3);
+
+    __ bic(tmp1, a17, a16); // for a15
+    __ bic(tmp2, a18, a17); // for a16
+    __ bic(tmp3, a19, a18); // for a17
+    __ eor(a17, a17, tmp3);
+    __ bic(tmp3, a15, a19); // for a18
+    __ eor(a18, a18, tmp3);
+    __ bic(tmp3, a16, a15); // for a19
+    __ eor(a15, a15, tmp1);
+    __ eor(a16, a16, tmp2);
+    __ eor(a19, a19, tmp3);
+
+    __ bic(tmp1, a22, a21); // for a20
+    __ bic(tmp2, a23, a22); // for a21
+    __ bic(tmp3, a24, a23); // for a22
+    __ eor(a22, a22, tmp3);
+    __ bic(tmp3, a20, a24); // for a23
+    __ eor(a23, a23, tmp3);
+    __ bic(tmp3, a21, a20); // for a24
+    __ eor(a20, a20, tmp1);
+    __ eor(a21, a21, tmp2);
+    __ eor(a24, a24, tmp3);
+
+    __ ldr(tmp1, Address(sp, 24)); // loop counter
+    __ ldr(tmp2, __ post(tmp4, 8));
+    __ eor(a0, a0, tmp2);
+
+    __ subsw(tmp1, tmp1, 1); // decrease loop counter
+    __ str(tmp1, Address(sp, 24)); // save loop counter
+    __ br(__ NE, loop_body);
+
+    if (multi_block) {
+      __ ldrw(block_size, sp); // block_size
+      __ ldpw(tmp3, tmp2, Address(sp, 8)); // offset, limit
+      __ addw(tmp3, tmp3, block_size);
+      __ cmpw(tmp3, tmp2);
+      __ strw(tmp3, Address(sp, 8)); // store offset in case we're jumping
+      __ ldr(buf, Address(sp, 16)); // restore buf in case we're jumping
+      __ br(Assembler::LE, sha3_loop);
+      __ movw(c_rarg0, tmp3); // return offset
+    }
+    if (can_use_fp && can_use_r18) {
+      __ ldp(r18_tls, state, Address(sp, 112));
+    } else {
+      __ ldr(state, Address(sp, 112));
+    }
+    // saving calculated sha3 state
+    __ stp(a0, a1, Address(state));
+    __ stp(a2, a3, Address(state, 16));
+    __ stp(a4, a5, Address(state, 32));
+    __ stp(a6, a7, Address(state, 48));
+    __ stp(a8, a9, Address(state, 64));
+    __ stp(a10, a11, Address(state, 80));
+    __ stp(a12, a13, Address(state, 96));
+    __ stp(a14, a15, Address(state, 112));
+    __ stp(a16, a17, Address(state, 128));
+    __ stp(a18, a19, Address(state, 144));
+    __ stp(a20, a21, Address(state, 160));
+    __ stp(a22, a23, Address(state, 176));
+    __ str(a24, Address(state, 192));
+
+    // restore required registers from stack
+    __ ldp(r19, r20, Address(sp, 32));
+    __ ldp(r21, r22, Address(sp, 48));
+    __ ldp(r23, r24, Address(sp, 64));
+    __ ldp(r25, r26, Address(sp, 80));
+    __ ldp(r27, r28, Address(sp, 96));
+    if (can_use_fp && can_use_r18) {
+      __ add(rfp, sp, 128); // leave() will copy rfp to sp below
+    } // else no need to recalculate rfp, since it wasn't changed
+
+    __ leave();
+
+    __ ret(lr);
+
+    return start;
+  }
+
   /**
    *  Arguments:
    *
@@ -8581,8 +8959,13 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_sha512_implCompressMB = generate_sha512_implCompress(true,  "sha512_implCompressMB");
     }
     if (UseSHA3Intrinsics) {
-      StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
-      StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
+      if (UseSIMDForSHA3Intrinsic) {
+        StubRoutines::_sha3_implCompress     = generate_sha3_implCompress(false,   "sha3_implCompress");
+        StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress(true,    "sha3_implCompressMB");
+      } else {
+        StubRoutines::_sha3_implCompress     = generate_sha3_implCompress_gpr(false,   "sha3_implCompress");
+        StubRoutines::_sha3_implCompressMB   = generate_sha3_implCompress_gpr(true,    "sha3_implCompressMB");
+      }
     }
 
     // generate Adler32 intrinsics code
