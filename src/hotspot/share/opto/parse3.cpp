@@ -236,21 +236,24 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     set_wrote_fields(true);
 
     // If the field is final, the rules of Java say we are in <init> or <clinit>.
-    // Note the presence of writes to final non-static fields, so that we
+    // If the field is @Stable, we can be in any method, but we only care about
+    // constructors at this point.
+    //
+    // Note the presence of writes to final/@Stable non-static fields, so that we
     // can insert a memory barrier later on to keep the writes from floating
     // out of the constructor.
-    // Any method can write a @Stable field; insert memory barriers after those also.
-    if (field->is_final()) {
-      set_wrote_final(true);
+    if (field->is_final() || field->is_stable()) {
+      if (field->is_final()) {
+        set_wrote_final(true);
+      }
+      if (field->is_stable()) {
+        set_wrote_stable(true);
+      }
       if (AllocateNode::Ideal_allocation(obj) != nullptr) {
         // Preserve allocation ptr to create precedent edge to it in membar
         // generated on exit from constructor.
-        // Can't bind stable with its allocation, only record allocation for final field.
-        set_alloc_with_final(obj);
+        set_alloc_with_final_or_stable(obj);
       }
-    }
-    if (field->is_stable()) {
-      set_wrote_stable(true);
     }
   }
 }

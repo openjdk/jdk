@@ -1563,7 +1563,7 @@ void GraphBuilder::method_return(Value x, bool ignore_return) {
   // The conditions for a memory barrier are described in Parse::do_exits().
   bool need_mem_bar = false;
   if (method()->name() == ciSymbols::object_initializer_name() &&
-       (scope()->wrote_final() ||
+       (scope()->wrote_final() || scope()->wrote_stable() ||
          (AlwaysSafeConstructors && scope()->wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile()))) {
     need_mem_bar = true;
@@ -1741,14 +1741,16 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
     }
   }
 
-  if (field->is_final() && (code == Bytecodes::_putfield)) {
-    scope()->set_wrote_final();
-  }
-
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
     if (field->is_volatile()) {
       scope()->set_wrote_volatile();
+    }
+    if (field->is_final()) {
+      scope()->set_wrote_final();
+    }
+    if (field->is_stable()) {
+      scope()->set_wrote_stable();
     }
   }
 
