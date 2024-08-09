@@ -856,18 +856,6 @@ void ShenandoahVerifier::verify_during_evacuation() {
   );
 }
 
-void ShenandoahVerifier::verify_after_evacuation() {
-  verify_at_safepoint(
-          "After Evacuation",
-          _verify_forwarded_allow,     // objects are still forwarded
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,      // all cset refs are fully forwarded
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded    // evacuation produced some forwarded objects
-  );
-}
-
 void ShenandoahVerifier::verify_before_updaterefs() {
   verify_at_safepoint(
           "Before Updating References",
