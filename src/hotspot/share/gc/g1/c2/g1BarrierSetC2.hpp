@@ -83,6 +83,7 @@ protected:
   static const TypeFunc* write_ref_field_post_entry_Type();
 
   virtual Node* load_at_resolved(C2Access& access, const Type* val_type) const;
+  virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;
 
 #ifdef ASSERT
   bool has_cas_in_use_chain(Node* x) const;

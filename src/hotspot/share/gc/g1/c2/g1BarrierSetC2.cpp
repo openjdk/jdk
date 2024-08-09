@@ -661,6 +661,28 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   return load;
 }
 
+Node* G1BarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& val) const {
+  DecoratorSet decorators = access.decorators();
+
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool no_keepalive = (decorators & AS_NO_KEEPALIVE) != 0;
+
+  if (access.is_parse_access()) {
+    C2ParseAccess &parse_access = static_cast<C2ParseAccess &>(access);
+    GraphKit* kit = parse_access.kit();
+
+    if ((val.node() == kit->null()) &&
+        (on_weak || on_phantom) && no_keepalive) {
+      // Be extra paranoid around this path. Only accept null stores,
+      // otherwise we need a post-store barrier.
+      return BarrierSetC2::store_at_resolved(access, val);
+    }
+  }
+
+  return CardTableBarrierSetC2::store_at_resolved(access, val);
+}
+
 bool G1BarrierSetC2::is_gc_barrier_node(Node* node) const {
   if (CardTableBarrierSetC2::is_gc_barrier_node(node)) {
     return true;
