@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 package sun.security.ssl;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Locale;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLHandshakeException;
@@ -116,11 +116,6 @@ final class NewSessionTicket {
 
             this.ticketLifetime = Record.getInt32(m);
             this.ticket = Record.getBytes16(m);
-        }
-
-        @Override
-        public SSLHandshake handshakeType() {
-            return NEW_SESSION_TICKET;
         }
 
         @Override
@@ -221,11 +216,6 @@ final class NewSessionTicket {
             this.extensions = new SSLExtensions(this, m, supportedExtensions);
         }
 
-        @Override
-        public SSLHandshake handshakeType() {
-            return NEW_SESSION_TICKET;
-        }
-
         int getTicketAgeAdd() {
             return ticketAgeAdd;
         }
@@ -301,7 +291,7 @@ final class NewSessionTicket {
                     "tls13 resumption".getBytes(), nonce, hashAlg.hashLength);
             return hkdf.expand(resumptionMasterSecret, hkdfInfo,
                     hashAlg.hashLength, "TlsPreSharedKey");
-        } catch  (GeneralSecurityException gse) {
+        } catch (GeneralSecurityException gse) {
             throw new SSLHandshakeException("Could not derive PSK", gse);
         }
     }
@@ -332,8 +322,7 @@ final class NewSessionTicket {
                 // Is this session resumable?
                 if (!hc.handshakeSession.isRejoinable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "session is not resumable");
                     }
 
@@ -351,8 +340,7 @@ final class NewSessionTicket {
                 if (pkemSpec == null ||
                         !pkemSpec.contains(PskKeyExchangeMode.PSK_DHE_KE)) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "client does not support psk_dhe_ke");
                     }
 
@@ -363,8 +351,7 @@ final class NewSessionTicket {
                 // using an allowable PSK exchange key mode.
                 if (!hc.handshakeSession.isPSKable()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                                "No session ticket produced: " +
+                        SSLLogger.fine("No session ticket produced: " +
                                 "No session ticket allowed in this session");
                     }
 
@@ -375,76 +362,113 @@ final class NewSessionTicket {
             // get a new session ID
             SSLSessionContextImpl sessionCache = (SSLSessionContextImpl)
                 hc.sslContext.engineGetServerSessionContext();
-            SessionId newId = new SessionId(true,
-                hc.sslContext.getSecureRandom());
-
-            SecretKey resumptionMasterSecret =
-                hc.handshakeSession.getResumptionMasterSecret();
-            if (resumptionMasterSecret == null) {
-                if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                            "No session ticket produced: " +
-                            "no resumption secret");
-                }
-
-                return null;
-            }
-
-            // construct the PSK and handshake message
-            BigInteger nonce = hc.handshakeSession.incrTicketNonceCounter();
-            byte[] nonceArr = nonce.toByteArray();
-            SecretKey psk = derivePreSharedKey(
-                    hc.negotiatedCipherSuite.hashAlg,
-                    resumptionMasterSecret, nonceArr);
-
             int sessionTimeoutSeconds = sessionCache.getSessionTimeout();
             if (sessionTimeoutSeconds > MAX_TICKET_LIFETIME) {
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                            "No session ticket produced: " +
-                            "session timeout");
+                    SSLLogger.fine("No session ticket produced: " +
+                            "session timeout is too long");
                 }
 
                 return null;
             }
 
-            NewSessionTicketMessage nstm = null;
+            // Send NewSessionTickets to the client based
+            if (SSLConfiguration.serverNewSessionTicketCount > 0) {
+                int i = 0;
+                NewSessionTicketMessage nstm;
+                while (i < SSLConfiguration.serverNewSessionTicketCount) {
+                    nstm = generateNST(hc, sessionCache);
+                    if (nstm == null) {
+                        break;
+                    }
+                    nstm.write(hc.handshakeOutput);
+                    i++;
+                }
+
+                hc.handshakeOutput.flush();
+            }
+            /*
+             * With large NST counts, a client that quickly closes after
+             * TLS Finished completes can cause SocketExceptions such as:
+             * Windows servers read-side throwing SocketException:
+             *   "An established connection was aborted by the software in
+             *    your host machine", which relates to error WSAECONNABORTED.
+             * A SocketException caused by a "broken pipe" has been observed on
+             * other systems.
+             * These are very unlikely situations when client and server are on
+             * different machines.
+             *
+             * RFC 8446 does not put requirements when an NST needs to be
+             * sent, but it should be sent very soon after TLS Finished for
+             * clients that will quickly resume to create more sessions.
+             * TLS 1.3 is different from TLS 1.2, there is more data the client
+             * should be aware of
+             */
+
+            // See note on TransportContext.needHandshakeFinishedStatus.
+            //
+            // Reset the needHandshakeFinishedStatus flag.  The delivery
+            // of this post-handshake message will indicate the FINISHED
+            // handshake status.  It is not needed to have a follow-on
+            // SSLEngine.wrap() any longer.
+            if (hc.conContext.needHandshakeFinishedStatus) {
+                hc.conContext.needHandshakeFinishedStatus = false;
+            }
+
+            // clean the post handshake context
+            hc.conContext.finishPostHandshake();
+
+            // The message has been delivered.
+            return null;
+        }
+
+        private NewSessionTicketMessage generateNST(HandshakeContext hc,
+            SSLSessionContextImpl sessionCache) throws IOException {
+
+            NewSessionTicketMessage nstm;
+            SessionId newId = new SessionId(true,
+                hc.sslContext.getSecureRandom());
+
+            // construct the PSK and handshake message
+            byte[] nonce = hc.handshakeSession.incrTicketNonceCounter();
 
             SSLSessionImpl sessionCopy =
-                    new SSLSessionImpl(hc.handshakeSession, newId);
-            sessionCopy.setPreSharedKey(psk);
+                new SSLSessionImpl(hc.handshakeSession, newId);
+            sessionCopy.setPreSharedKey(derivePreSharedKey(
+                hc.negotiatedCipherSuite.hashAlg,
+                hc.handshakeSession.getResumptionMasterSecret(), nonce));
             sessionCopy.setPskIdentity(newId.getId());
 
             // If a stateless ticket is allowed, attempt to make one
             if (hc.statelessResumption &&
                     hc.handshakeSession.isStatelessable()) {
                 nstm = new T13NewSessionTicketMessage(hc,
-                        sessionTimeoutSeconds,
+                        sessionCache.getSessionTimeout(),
                         hc.sslContext.getSecureRandom(),
-                        nonceArr,
+                        nonce,
                         new SessionTicketSpec().encrypt(hc, sessionCopy));
                 // If ticket construction failed, switch to session cache
                 if (!nstm.isValid()) {
                     hc.statelessResumption = false;
                 } else {
                     if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                        SSLLogger.fine(
-                            "Produced NewSessionTicket stateless " +
+                        SSLLogger.fine("Produced NewSessionTicket stateless " +
                             "post-handshake message", nstm);
                     }
                 }
+                return nstm;
             }
 
             // If a session cache ticket is being used, make one
             if (!hc.statelessResumption ||
                     !hc.handshakeSession.isStatelessable()) {
-                nstm = new T13NewSessionTicketMessage(hc, sessionTimeoutSeconds,
-                        hc.sslContext.getSecureRandom(), nonceArr,
-                        newId.getId());
+                nstm = new T13NewSessionTicketMessage(hc,
+                    sessionCache.getSessionTimeout(),
+                    hc.sslContext.getSecureRandom(), nonce,
+                    newId.getId());
                 if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                    SSLLogger.fine(
-                            "Produced NewSessionTicket post-handshake message",
-                            nstm);
+                    SSLLogger.fine("Produced NewSessionTicket " +
+                        "post-handshake message", nstm);
                 }
 
                 // create and cache the new session
@@ -453,29 +477,13 @@ final class NewSessionTicket {
                 hc.handshakeSession.addChild(sessionCopy);
                 sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
                 sessionCache.put(sessionCopy);
+                return nstm;
             }
 
-            // Output the handshake message.
-            if (nstm != null) {
-                // should never be null
-                nstm.write(hc.handshakeOutput);
-                hc.handshakeOutput.flush();
-
-                // See note on TransportContext.needHandshakeFinishedStatus.
-                //
-                // Reset the needHandshakeFinishedStatus flag.  The delivery
-                // of this post-handshake message will indicate the FINISHED
-                // handshake status.  It is not needed to have a follow-on
-                // SSLEngine.wrap() any longer.
-                if (hc.conContext.needHandshakeFinishedStatus) {
-                    hc.conContext.needHandshakeFinishedStatus = false;
-                }
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("No NewSessionTicket created");
             }
 
-            // clean the post handshake context
-            hc.conContext.finishPostHandshake();
-
-            // The message has been delivered.
             return null;
         }
     }
@@ -497,8 +505,9 @@ final class NewSessionTicket {
 
             ServerHandshakeContext shc = (ServerHandshakeContext)context;
 
-            // Is this session resumable?
-            if (!shc.handshakeSession.isRejoinable()) {
+            // Are new tickets allowed?  If so, is this session resumable?
+            if (SSLConfiguration.serverNewSessionTicketCount == 0 ||
+                !shc.handshakeSession.isRejoinable()) {
                 return null;
             }
 
@@ -578,7 +587,6 @@ final class NewSessionTicket {
                             "Discarding NewSessionTicket with lifetime " +
                             nstm.ticketLifetime, nstm);
                 }
-                sessionCache.remove(hc.handshakeSession.getSessionId());
                 return;
             }
 
@@ -619,13 +627,19 @@ final class NewSessionTicket {
             sessionCopy.setPreSharedKey(psk);
             sessionCopy.setTicketAgeAdd(nstm.getTicketAgeAdd());
             sessionCopy.setPskIdentity(nstm.ticket);
-            sessionCache.put(sessionCopy);
+            sessionCache.put(sessionCopy, sessionCopy.isPSK());
+
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine("MultiNST PSK (Server): " +
+                    Utilities.toHexString(Arrays.copyOf(nstm.ticket, 16)));
+            }
 
             // clean the post handshake context
             hc.conContext.finishPostHandshake();
         }
     }
 
+    /* TLS 1.2 spec does not specify multiple NST behavior.*/
     private static final
     class T12NewSessionTicketConsumer implements SSLConsumer {
         // Prevent instantiation of this class.
@@ -674,8 +688,7 @@ final class NewSessionTicket {
 
             hc.handshakeSession.setPskIdentity(nstm.ticket);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine("Consuming NewSessionTicket\n" +
-                        nstm.toString());
+                SSLLogger.fine("Consuming NewSessionTicket\n" + nstm);
             }
         }
     }
