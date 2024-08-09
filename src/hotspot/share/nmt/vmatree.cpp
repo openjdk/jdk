@@ -197,3 +197,46 @@ VMATree::SummaryDiff VMATree::register_mapping(position A, position B, StateType
   }
   return diff;
 }
+
+void VMATree::walk_all_reserved_regions(VMATree::WalkedRegionClosure* closure) const {
+  // Here, we walk all reserved regions in ascending order.
+  // Starting from the first node, which has to be an opening node (Free->(reserved|committed),
+  // we then search for the next node that constitutes a region boundary. A region boundary is
+  // any node that either changes state back to Free, or a node that changes region data (new
+  // flag or new stack). In other words, we ignore any node that just changes the state between
+  // reserved and committed.
+  VMATree::TreapNode* start = nullptr;
+  auto walker = [&start, closure](TreapNode* n) {
+    const StateType state_in = n->val().in.type();
+    const StateType state_out = n->val().out.type();
+    const RegionData data_in = n->val().in.regiondata();
+    const RegionData data_out = n->val().out.regiondata();
+    if (start == nullptr) {
+      // We expect to be in free area, going into either committed right away, or reserved
+      assert(state_in == StateType::Released, "sanity");
+      assert(state_out != StateType::Released, "sanity");
+      start = n;
+    } else {
+      // Is this a reserved region boundary?
+      if (state_in == StateType::Released || state_out == StateType::Released ||
+          !RegionData::equals(data_in, data_out)) {
+        const RegionData data = start->val().out.regiondata();
+        assert(RegionData::equals(data, n->val().in.regiondata()), "in and out data must match");
+        // call closure
+        WalkedRegion r;
+        // We cannot just copy-assign RegionData because StackIndex is not copyable
+        // and its a whole rabbit hole of C++ pain.
+        memcpy(&r.data, &data, sizeof(RegionData));
+        r.from = start->key();
+        r.to = n->key();
+        if (!closure->do_region(&r)) { // closure wants us to stop
+          return;
+        }
+        // If the new state is free, we are in free region now, otherwise
+        // this node is the end of an old and the start of a new region
+        start = (state_out == StateType::Released) ? nullptr : n;
+      }
+    }
+  };
+  visit_in_order(walker);
+}

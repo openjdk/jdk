@@ -53,6 +53,9 @@ public:
     bool is_invalid() {
       return _stack_index == invalid;
     }
+
+    int32_t raw() const { return _stack_index; }
+
   };
 
 private:
