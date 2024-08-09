@@ -1817,7 +1817,8 @@ public class Resolve {
         }
 
     /** Find best qualified method matching given name, type and value
-     *  arguments.
+     *  arguments. Note that there can be multiple "maximally specific"
+     *  methods (JLS 15.12.2.5); if so, this returns an AmbiguityError.
      *  @param env       The current environment.
      *  @param site      The original type from where the selection
      *                   takes place.
@@ -2010,13 +2011,17 @@ public class Resolve {
                     env1, env1.enclClass.sym.type, name, argtypes, typeargtypes,
                     allowBoxing, useVarargs);
                 if (sym.exists()) {
-                    if (sym.kind == MTH &&
-                            sym.owner.kind == TYP &&
-                            (sym.flags() & STATIC) == 0) {
+                    // In order to check method found vs. static or early context,
+                    // we need to try to resolve a possible AmbiguityError.
+                    Symbol checkSym = sym.kind == AMBIGUOUS ?
+                      ((AmbiguityError)sym.baseSymbol()).mergeAbstracts(env1.enclClass.sym.type) : sym;
+                    if (checkSym.kind == MTH &&
+                            checkSym.owner.kind == TYP &&
+                            (checkSym.flags() & STATIC) == 0) {
                         if (staticOnly)
-                            return new StaticError(sym);
+                            return new StaticError(checkSym);
                         if (env1.info.ctorPrologue && env1 == env)
-                            return new RefBeforeCtorCalledError(sym);
+                            return new RefBeforeCtorCalledError(checkSym);
                     }
                     return sym;
                 } else {
