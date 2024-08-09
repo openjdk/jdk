@@ -197,13 +197,17 @@ class markWord {
   }
   ObjectMonitor* monitor() const {
     assert(has_monitor(), "check");
+    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
     // Use xor instead of &~ to provide one extra tag-bit check.
     return (ObjectMonitor*) (value() ^ monitor_value);
   }
   bool has_displaced_mark_helper() const {
     intptr_t lockbits = value() & lock_mask_in_place;
-    return LockingMode == LM_LIGHTWEIGHT  ? lockbits == monitor_value   // monitor?
-                                          : (lockbits & unlocked_value) == 0; // monitor | stack-locked?
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      return !UseObjectMonitorTable && lockbits == monitor_value;
+    }
+    // monitor (0b10) | stack-locked (0b00)?
+    return (lockbits & unlocked_value) == 0;
   }
   markWord displaced_mark_helper() const;
   void set_displaced_mark_helper(markWord m) const;
@@ -223,8 +227,13 @@ class markWord {
     return from_pointer(lock);
   }
   static markWord encode(ObjectMonitor* monitor) {
+    assert(!UseObjectMonitorTable, "Lightweight locking with OM table does not use markWord for monitors");
     uintptr_t tmp = (uintptr_t) monitor;
     return markWord(tmp | monitor_value);
+  }
+
+  markWord set_has_monitor() const {
+    return markWord((value() & ~lock_mask_in_place) | monitor_value);
   }
 
   // used to encode pointers during GC

@@ -29,17 +29,20 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/globals.hpp"
+#include "runtime/javaThread.inline.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/sizes.hpp"
 
 #include <type_traits>
 
@@ -113,4 +116,12 @@ void LockStack::print_on(outputStream* st) {
       st->print_cr("not an oop: " PTR_FORMAT, p2i(o));
     }
   }
+}
+
+OMCache::OMCache(JavaThread* jt) : _entries() {
+  STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
+  STATIC_ASSERT(std::is_standard_layout<OMCache::OMCacheEntry>::value);
+  STATIC_ASSERT(offsetof(OMCache, _null_sentinel) == offsetof(OMCache, _entries) +
+                offsetof(OMCache::OMCacheEntry, _oop) +
+                OMCache::CAPACITY * in_bytes(oop_to_oop_difference()));
 }

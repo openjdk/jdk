@@ -32,10 +32,12 @@
 #include "utilities/sizes.hpp"
 
 class JavaThread;
+class ObjectMonitor;
 class OopClosure;
 class outputStream;
 template<typename>
 class GrowableArray;
+class Thread;
 
 class LockStack {
   friend class LockStackTest;
@@ -121,6 +123,31 @@ public:
 
   // Printing
   void print_on(outputStream* st);
+};
+
+class OMCache {
+  friend class VMStructs;
+public:
+  static constexpr int CAPACITY = 8;
+
+private:
+  struct OMCacheEntry {
+    oop _oop = nullptr;
+    ObjectMonitor* _monitor = nullptr;
+  } _entries[CAPACITY];
+  const oop _null_sentinel = nullptr;
+
+public:
+  static ByteSize entries_offset() { return byte_offset_of(OMCache, _entries); }
+  static constexpr ByteSize oop_to_oop_difference() { return in_ByteSize(sizeof(OMCacheEntry)); }
+  static constexpr ByteSize oop_to_monitor_difference() { return in_ByteSize(sizeof(oop)); }
+
+  explicit OMCache(JavaThread* jt);
+
+  inline ObjectMonitor* get_monitor(oop o);
+  inline void set_monitor(ObjectMonitor* monitor);
+  inline void clear();
+
 };
 
 #endif // SHARE_RUNTIME_LOCKSTACK_HPP

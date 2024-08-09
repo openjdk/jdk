@@ -6218,26 +6218,33 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   { // Handle inflated monitor.
     bind(inflated);
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register tagged_monitor = mark;
-    const Register zero           = tmp2;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register tagged_monitor = mark;
+      const Register zero           = tmp2;
 
-    // Try to CAS m->owner from null to current thread.
-    // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
-    // Otherwise, register zero is filled with the current owner.
-    z_lghi(zero, 0);
-    z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), tagged_monitor);
-    z_bre(locked);
+      // Try to CAS m->owner from null to current thread.
+      // If m->owner is null, then csg succeeds and sets m->owner=THREAD and CR=EQ.
+      // Otherwise, register zero is filled with the current owner.
+      z_lghi(zero, 0);
+      z_csg(zero, Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), tagged_monitor);
+      z_bre(locked);
 
-    // Check if recursive.
-    z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
-    z_brne(slow_path);
+      // Check if recursive.
+      z_cgr(Z_thread, zero); // zero contains the owner from z_csg instruction
+      z_brne(slow_path);
 
-    // Recursive
-    z_agsi(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
-    z_cgr(zero, zero);
-    // z_bru(locked);
-    // Uncomment above line in the future, for now jump address is right next to us.
+      // Recursive
+      z_agsi(Address(tagged_monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1ll);
+      z_cgr(zero, zero);
+      // z_bru(locked);
+      // Uncomment above line in the future, for now jump address is right next to us.
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      // Set flag to NE
+      z_ltgr(obj, obj);
+      z_bru(slow_path);
+    }
   }
   BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
 
@@ -6364,42 +6371,49 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     bind(check_done);
 #endif // ASSERT
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register monitor = mark;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register monitor = mark;
 
-    NearLabel not_recursive;
-    const Register recursions = tmp2;
+      NearLabel not_recursive;
+      const Register recursions = tmp2;
 
-    // Check if recursive.
-    load_and_test_long(recursions, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    z_bre(not_recursive); // if 0 then jump, it's not recursive locking
+      // Check if recursive.
+      load_and_test_long(recursions, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+      z_bre(not_recursive); // if 0 then jump, it's not recursive locking
 
-    // Recursive unlock
-    z_agsi(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
-    z_cgr(monitor, monitor); // set the CC to EQUAL
-    z_bru(unlocked);
+      // Recursive unlock
+      z_agsi(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1ll);
+      z_cgr(monitor, monitor); // set the CC to EQUAL
+      z_bru(unlocked);
 
-    bind(not_recursive);
+      bind(not_recursive);
 
-    NearLabel not_ok;
-    // Check if the entry lists are empty.
-    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    z_brne(not_ok);
-    load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    z_brne(not_ok);
+      NearLabel not_ok;
+      // Check if the entry lists are empty.
+      load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
+      z_brne(not_ok);
+      load_and_test_long(tmp2, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
+      z_brne(not_ok);
 
-    z_release();
-    z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+      z_release();
+      z_stg(tmp2 /*=0*/, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
 
-    z_bru(unlocked); // CC = EQ here
+      z_bru(unlocked); // CC = EQ here
 
-    bind(not_ok);
+      bind(not_ok);
 
-    // The owner may be anonymous, and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
-    z_bru(slow_path); // CC = NE here
+      // The owner may be anonymous, and we removed the last obj entry in
+      // the lock-stack. This loses the information about the owner.
+      // Write the thread to the owner field so the runtime knows the owner.
+      z_stg(Z_thread, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner), monitor);
+      z_bru(slow_path); // CC = NE here
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      // Set flag to NE
+      z_ltgr(obj, obj);
+      z_bru(slow_path);
+    }
   }
 
   bind(unlocked);

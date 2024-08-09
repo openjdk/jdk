@@ -96,6 +96,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
   { // Restore held monitor count and slow path.
 
     __ bind(restore_held_monitor_count_and_slow_path);
+    __ bind(_slow_path);
     // Restore held monitor count.
     __ increment(Address(_thread, JavaThread::held_monitor_count_offset()));
     // increment will always result in ZF = 0 (no overflows).
@@ -112,19 +113,23 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
 #ifndef _LP64
     __ jmpb(restore_held_monitor_count_and_slow_path);
 #else // _LP64
+    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
+    const Address succ_address(monitor, ObjectMonitor::succ_offset() - monitor_tag);
+    const Address owner_address(monitor, ObjectMonitor::owner_offset() - monitor_tag);
+
     // successor null check.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
+    __ cmpptr(succ_address, NULL_WORD);
     __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
 
     // Release lock.
-    __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
+    __ movptr(owner_address, NULL_WORD);
 
     // Fence.
     // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
     __ lock(); __ addl(Address(rsp, 0), 0);
 
     // Recheck successor.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
+    __ cmpptr(succ_address, NULL_WORD);
     // Observed a successor after the release -> fence we have handed off the monitor
     __ jccb(Assembler::notEqual, fix_zf_and_unlocked);
 
@@ -133,7 +138,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     //       not handle the monitor handoff. Currently only works
     //       due to the responsible thread.
     __ xorptr(rax, rax);
-    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    __ lock(); __ cmpxchgptr(_thread, owner_address);
     __ jccb  (Assembler::equal, restore_held_monitor_count_and_slow_path);
 #endif
 
