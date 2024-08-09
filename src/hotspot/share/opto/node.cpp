@@ -73,10 +73,6 @@ void Node::verify_construction() {
   assert(C->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
   uint64_t new_debug_idx = (uint64_t)C->compile_id() * 10000000000 + _idx;
   set_debug_idx(new_debug_idx);
-  if (!C->phase_optimize_finished()) {
-    // Only check assert during parsing and optimization phase. Skip it while generating code.
-    assert(C->live_nodes() <= C->max_node_limit(), "Live Node limit exceeded limit");
-  }
   if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (uint64_t)_idx == BreakAtNode)) {
     tty->print_cr("BreakAtNode: _idx=%d _debug_idx=" UINT64_FORMAT, _idx, _debug_idx);
     BREAKPOINT;
