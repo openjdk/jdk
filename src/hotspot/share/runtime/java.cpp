@@ -48,6 +48,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/generateOopMap.hpp"
@@ -483,7 +484,10 @@ void before_exit(JavaThread* thread, bool halt) {
 
 #ifdef LINUX
   if (DumpPerfMapAtExit) {
-    CodeCache::write_perf_map();
+    CodeCache::write_perf_map(nullptr, tty);
+  }
+  if (PrintMemoryMapAtExit) {
+    MemMapPrinter::print_all_mappings(tty);
   }
 #endif
 

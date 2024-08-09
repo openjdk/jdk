@@ -250,6 +250,25 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
   }
+
+  // Do additional checks for special objects: their fields can hold metadata as well.
+  // We want to check class loading/unloading did not corrupt them.
+
+  if (java_lang_Class::is_instance(obj)) {
+    Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+    if (klass != nullptr && !Metaspace::contains(klass)) {
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Instance class mirror should point to Metaspace",
+                    file, line);
+    }
+
+    Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+    if (array_klass != nullptr && !Metaspace::contains(array_klass)) {
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Array class mirror should point to Metaspace",
+                    file, line);
+    }
+  }
 }
 
 void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, const char* file, int line) {

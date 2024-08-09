@@ -100,10 +100,6 @@ SafepointBlob*      SharedRuntime::_polling_page_vectors_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 
-#ifdef COMPILER2
-UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
-#endif // COMPILER2
-
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
@@ -129,10 +125,6 @@ void SharedRuntime::generate_stubs() {
   _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_RETURN);
 
   generate_deopt_blob();
-
-#ifdef COMPILER2
-  generate_uncommon_trap_blob();
-#endif // COMPILER2
 }
 
 #include <math.h>
@@ -1336,7 +1328,7 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_init_thread(current),
+           callee_method->method_holder()->is_reentrant_initialization(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call

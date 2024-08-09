@@ -356,6 +356,8 @@ reg_class z_rarg3_ptr_reg(Z_R4_H,Z_R4);
 reg_class z_rarg4_ptr_reg(Z_R5_H,Z_R5);
 reg_class z_rarg5_ptr_reg(Z_R6_H,Z_R6);
 reg_class z_thread_ptr_reg(Z_R8_H,Z_R8);
+reg_class z_r10_ptr_reg(Z_R10_H, Z_R10);
+reg_class z_r11_ptr_reg(Z_R11_H, Z_R11);
 
 reg_class z_ptr_reg(
 /*Z_R0_H,Z_R0*/     // R0
@@ -2985,6 +2987,8 @@ operand iRegP() %{
   match(rarg5RegP);
   match(revenRegP);
   match(roddRegP);
+  match(r10TempRegP);
+  match(r11TempRegP);
   format %{ %}
   interface(REG_INTER);
 %}
@@ -2994,6 +2998,20 @@ operand threadRegP() %{
   constraint(ALLOC_IN_RC(z_thread_ptr_reg));
   match(RegP);
   format %{ "Z_THREAD" %}
+  interface(REG_INTER);
+%}
+
+operand r10TempRegP() %{
+  constraint(ALLOC_IN_RC(z_r10_ptr_reg));
+  match(iRegP);
+  format %{ %}
+  interface(REG_INTER);
+%}
+
+operand r11TempRegP() %{
+  constraint(ALLOC_IN_RC(z_r11_ptr_reg));
+  match(iRegP);
+  format %{ %}
   interface(REG_INTER);
 %}
 
@@ -9560,6 +9578,32 @@ instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, fl
   ins_pipe(pipe_class_dummy);
 %}
 
+instruct partialSubtypeCheckConstSuper(rarg2RegP sub, rarg1RegP super, immP super_con,
+                                       r11TempRegP result, rarg5RegP temp1, rarg4RegP temp2,
+                                       rarg3RegP temp3, r10TempRegP temp4, flagsReg pcc) %{
+  match(Set result (PartialSubtypeCheck sub (Binary super super_con)));
+  predicate(UseSecondarySupersTable);
+  effect(KILL pcc, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4);
+  ins_cost(7 * DEFAULT_COST); // needs to be less than competing nodes
+  format %{ "partialSubtypeCheck $result, $sub, $super, $super_con" %}
+
+  ins_encode %{
+    u1 super_klass_slot = ((Klass*)$super_con$$constant)->hash_slot();
+    if (InlineSecondarySupersTest) {
+      __ lookup_secondary_supers_table($sub$$Register, $super$$Register,
+                                                 $temp1$$Register, $temp2$$Register, $temp3$$Register,
+                                                 $temp4$$Register, $result$$Register, super_klass_slot);
+    } else {
+      AddressLiteral stub_address(StubRoutines::lookup_secondary_supers_table_stub(super_klass_slot));
+      __ load_const_optimized(Z_ARG4, stub_address);
+      __ z_basr(Z_R14, Z_ARG4);
+    }
+
+  %}
+
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct partialSubtypeCheck_vs_zero(flagsReg pcc, rarg2RegP sub, rarg3RegP super, immP0 zero,
                                      rarg1RegP index, rarg4RegP scratch1, rarg5RegP scratch2) %{
   match(Set pcc (CmpI (PartialSubtypeCheck sub super) zero));
@@ -9579,6 +9623,7 @@ instruct partialSubtypeCheck_vs_zero(flagsReg pcc, rarg2RegP sub, rarg3RegP supe
 // inlined locking and unlocking
 
 instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set pcc (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
@@ -9589,12 +9634,45 @@ instruct cmpFastLock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRe
 %}
 
 instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set pcc (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{ __ compiler_fast_unlock_object($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set pcc (FastLock oop box));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(100);
+  // TODO: s390 port size(VARIABLE_SIZE);
+  format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
+  ins_encode %{
+    __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    // If locking was successful, cc should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_locking_Java for the case where cc is 'NE'.
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct cmpFastUnlockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, iRegP tmp2) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set pcc (FastUnlock oop box));
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_cost(100);
+  // TODO: s390 port size(FIXED_SIZE);
+  format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    // If unlocking was successful, cc should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_unlocking_Java for the case where cc is 'NE'.
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 

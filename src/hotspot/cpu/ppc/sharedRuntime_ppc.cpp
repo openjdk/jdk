@@ -2472,11 +2472,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     case T_ARRAY:   break;
 
     case T_BOOLEAN: {             // 0 -> false(0); !0 -> true(1)
-      Label skip_modify;
-      __ cmpwi(CCR0, R3_RET, 0);
-      __ beq(CCR0, skip_modify);
-      __ li(R3_RET, 1);
-      __ bind(skip_modify);
+      __ normalize_bool(R3_RET);
       break;
       }
     case T_BYTE: {                // sign extension
@@ -3082,7 +3078,7 @@ void SharedRuntime::generate_deopt_blob() {
 }
 
 #ifdef COMPILER2
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
@@ -3148,7 +3144,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   __ lwz(R22_tmp2, in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset()), unroll_block_reg);
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+  __ asm_assert_eq("OptoRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
 #endif
 
   // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.

@@ -754,18 +754,18 @@ protected:
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 
+  ciMethod* _method;               // Method being direct called
   bool    _optimized_virtual;
   bool    _method_handle_invoke;
   bool    _override_symbolic_info; // Override symbolic call site info from bytecode
-  ciMethod* _method;               // Method being direct called
   bool    _arg_escape;             // ArgEscape in parameter list
 public:
   CallJavaNode(const TypeFunc* tf , address addr, ciMethod* method)
     : CallNode(tf, addr, TypePtr::BOTTOM),
+      _method(method),
       _optimized_virtual(false),
       _method_handle_invoke(false),
       _override_symbolic_info(false),
-      _method(method),
       _arg_escape(false)
   {
     init_class_id(Class_CallJava);
@@ -1153,6 +1153,10 @@ public:
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
+
+  // Check that all locks/unlocks associated with object come from balanced regions.
+  // They can become unbalanced after coarsening optimization or on OSR entry.
+  bool is_balanced();
 
   // locking does not modify its arguments
   virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }

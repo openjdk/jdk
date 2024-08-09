@@ -2808,6 +2808,50 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #ifdef COMPILER2
+  address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,
+      r_array_base   = x11,
+      r_array_length = x12,
+      r_array_index  = x13,
+      r_sub_klass    = x14,
+      result         = x15,
+      r_bitmap       = x16;
+
+    Label L_success;
+    __ enter();
+    __ lookup_secondary_supers_table(r_sub_klass, r_super_klass, result,
+                                     r_array_base, r_array_length, r_array_index,
+                                     r_bitmap, super_klass_index, /*stub_is_near*/true);
+    __ leave();
+    __ ret();
+
+    return start;
+  }
+
+  // Slow path implementation for UseSecondarySupersTable.
+  address generate_lookup_secondary_supers_table_slow_path_stub() {
+    StubCodeMark mark(this, "StubRoutines", "lookup_secondary_supers_table_slow_path");
+
+    address start = __ pc();
+    const Register
+      r_super_klass  = x10,        // argument
+      r_array_base   = x11,        // argument
+      temp1          = x12,        // tmp
+      r_array_index  = x13,        // argument
+      result         = x15,        // argument
+      r_bitmap       = x16;        // argument
+
+
+    __ lookup_secondary_supers_table_slow_path(r_super_klass, r_array_base, r_array_index, r_bitmap, result, temp1);
+    __ ret();
+
+    return start;
+  }
+
   address generate_mulAdd()
   {
     __ align(CodeEntryAlignment);
@@ -3730,7 +3774,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ bnez(t1, thaw_success);
-    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ la(t0, RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
     __ jr(t0);
     __ bind(thaw_success);
 
@@ -5059,6 +5103,481 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
+  /**
+   * vector registers:
+   *   input VectorRegister's:  intputV1-V3, for m2 they could be v2, v4, v6, for m1 they could be v1, v2, v3
+   *   index VectorRegister's:  idxV1-V4, for m2 they could be v8, v10, v12, v14, for m1 they could be v4, v5, v6, v7
+   *   output VectorRegister's: outputV1-V4, for m2 they could be v16, v18, v20, v22, for m1 they could be v8, v9, v10, v11
+   *
+   * NOTE: each field will occupy a vector register group
+   */
+  void base64_vector_encode_round(Register src, Register dst, Register codec,
+                    Register size, Register stepSrc, Register stepDst,
+                    VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3,
+                    VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
+                    VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3, VectorRegister outputV4,
+                    Assembler::LMUL lmul) {
+    // set vector register type/len
+    __ vsetvli(x0, size, Assembler::e8, lmul);
+
+    // segmented load src into v registers: mem(src) => vr(3)
+    __ vlseg3e8_v(inputV1, src);
+
+    // src = src + register_group_len_bytes * 3
+    __ add(src, src, stepSrc);
+
+    // encoding
+    //   1. compute index into lookup table: vr(3) => vr(4)
+    __ vsrl_vi(idxV1, inputV1, 2);
+
+    __ vsrl_vi(idxV2, inputV2, 2);
+    __ vsll_vi(inputV1, inputV1, 6);
+    __ vor_vv(idxV2, idxV2, inputV1);
+    __ vsrl_vi(idxV2, idxV2, 2);
+
+    __ vsrl_vi(idxV3, inputV3, 4);
+    __ vsll_vi(inputV2, inputV2, 4);
+    __ vor_vv(idxV3, inputV2, idxV3);
+    __ vsrl_vi(idxV3, idxV3, 2);
+
+    __ vsll_vi(idxV4, inputV3, 2);
+    __ vsrl_vi(idxV4, idxV4, 2);
+
+    //   2. indexed load: vr(4) => vr(4)
+    __ vluxei8_v(outputV1, codec, idxV1);
+    __ vluxei8_v(outputV2, codec, idxV2);
+    __ vluxei8_v(outputV3, codec, idxV3);
+    __ vluxei8_v(outputV4, codec, idxV4);
+
+    // segmented store encoded data in v registers back to dst: vr(4) => mem(dst)
+    __ vsseg4e8_v(outputV1, dst);
+
+    // dst = dst + register_group_len_bytes * 4
+    __ add(dst, dst, stepDst);
+  }
+
+  /**
+   *  void j.u.Base64.Encoder.encodeBlock(byte[] src, int sp, int sl, byte[] dst, int dp, boolean isURL)
+   *
+   *  Input arguments:
+   *  c_rarg0   - src, source array
+   *  c_rarg1   - sp, src start offset
+   *  c_rarg2   - sl, src end offset
+   *  c_rarg3   - dst, dest array
+   *  c_rarg4   - dp, dst start offset
+   *  c_rarg5   - isURL, Base64 or URL character set
+   */
+  address generate_base64_encodeBlock() {
+    alignas(64) static const char toBase64[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+    };
+
+    alignas(64) static const char toBase64URL[64] = {
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-', '_'
+    };
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "encodeBlock");
+    address start = __ pc();
+    __ enter();
+
+    Register src    = c_rarg0;
+    Register soff   = c_rarg1;
+    Register send   = c_rarg2;
+    Register dst    = c_rarg3;
+    Register doff   = c_rarg4;
+    Register isURL  = c_rarg5;
+
+    Register codec  = c_rarg6;
+    Register length = c_rarg7; // total length of src data in bytes
+
+    Label ProcessData, Exit;
+
+    // length should be multiple of 3
+    __ sub(length, send, soff);
+    // real src/dst to process data
+    __ add(src, src, soff);
+    __ add(dst, dst, doff);
+
+    // load the codec base address
+    __ la(codec, ExternalAddress((address) toBase64));
+    __ beqz(isURL, ProcessData);
+    __ la(codec, ExternalAddress((address) toBase64URL));
+    __ BIND(ProcessData);
+
+    // vector version
+    if (UseRVV) {
+      Label ProcessM2, ProcessM1, ProcessScalar;
+
+      Register size      = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 3);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 4);
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
+      __ BIND(ProcessM2);
+      base64_vector_encode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst,
+                    v2, v4, v6,         // inputs
+                    v8, v10, v12, v14,  // indexes
+                    v16, v18, v20, v22, // outputs
+                    Assembler::m2);
+
+      __ sub(length, length, stepSrcM2);
+      __ bge(length, stepSrcM2, ProcessM2);
+
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_encode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst,
+                    v1, v2, v3,         // inputs
+                    v4, v5, v6, v7,     // indexes
+                    v8, v9, v10, v11,   // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
+
+      __ BIND(ProcessScalar);
+    }
+
+    // scalar version
+    {
+      Register byte1 = soff, byte0 = send, byte2 = doff;
+      Register combined24Bits = isURL;
+
+      __ beqz(length, Exit);
+
+      Label ScalarLoop;
+      __ BIND(ScalarLoop);
+      {
+        // plain:   [byte0[7:0] : byte1[7:0] : byte2[7:0]] =>
+        // encoded: [byte0[7:2] : byte0[1:0]+byte1[7:4] : byte1[3:0]+byte2[7:6] : byte2[5:0]]
+
+        // load 3 bytes src data
+        __ lbu(byte0, Address(src, 0));
+        __ lbu(byte1, Address(src, 1));
+        __ lbu(byte2, Address(src, 2));
+        __ addi(src, src, 3);
+
+        // construct 24 bits from 3 bytes
+        __ slliw(byte0, byte0, 16);
+        __ slliw(byte1, byte1, 8);
+        __ orr(combined24Bits, byte0, byte1);
+        __ orr(combined24Bits, combined24Bits, byte2);
+
+        // get codec index and encode(ie. load from codec by index)
+        __ slliw(byte0, combined24Bits, 8);
+        __ srliw(byte0, byte0, 26);
+        __ add(byte0, codec, byte0);
+        __ lbu(byte0, byte0);
+
+        __ slliw(byte1, combined24Bits, 14);
+        __ srliw(byte1, byte1, 26);
+        __ add(byte1, codec, byte1);
+        __ lbu(byte1, byte1);
+
+        __ slliw(byte2, combined24Bits, 20);
+        __ srliw(byte2, byte2, 26);
+        __ add(byte2, codec, byte2);
+        __ lbu(byte2, byte2);
+
+        __ andi(combined24Bits, combined24Bits, 0x3f);
+        __ add(combined24Bits, codec, combined24Bits);
+        __ lbu(combined24Bits, combined24Bits);
+
+        // store 4 bytes encoded data
+        __ sb(byte0, Address(dst, 0));
+        __ sb(byte1, Address(dst, 1));
+        __ sb(byte2, Address(dst, 2));
+        __ sb(combined24Bits, Address(dst, 3));
+
+        __ sub(length, length, 3);
+        __ addi(dst, dst, 4);
+        // loop back
+        __ bnez(length, ScalarLoop);
+      }
+    }
+
+    __ BIND(Exit);
+
+    __ leave();
+    __ ret();
+
+    return (address) start;
+  }
+
+  void adler32_process_bytes(Register buff, Register s1, Register s2, VectorRegister vtable,
+    VectorRegister vzero, VectorRegister vbytes, VectorRegister vs1acc, VectorRegister vs2acc,
+    Register temp0, Register temp1, Register temp2,  Register temp3,
+    VectorRegister vtemp1, VectorRegister vtemp2, int step, Assembler::LMUL lmul) {
+
+    assert((lmul == Assembler::m4 && step == 64) ||
+           (lmul == Assembler::m2 && step == 32) ||
+           (lmul == Assembler::m1 && step == 16),
+           "LMUL should be aligned with step: m4 and 64, m2 and 32 or m1 and 16");
+    // Below is function for calculating Adler32 checksum with 64-, 32- or 16-byte step. LMUL=m4, m2 or m1 is used.
+    // The results are in v12, v13, ..., v22, v23. Example below is for 64-byte step case.
+    // We use b1, b2, ..., b64 to denote the 64 bytes loaded in each iteration.
+    // In non-vectorized code, we update s1 and s2 as:
+    //   s1 <- s1 + b1
+    //   s2 <- s2 + s1
+    //   s1 <- s1 + b2
+    //   s2 <- s2 + b1
+    //   ...
+    //   s1 <- s1 + b64
+    //   s2 <- s2 + s1
+    // Putting above assignments together, we have:
+    //   s1_new = s1 + b1 + b2 + ... + b64
+    //   s2_new = s2 + (s1 + b1) + (s1 + b1 + b2) + ... + (s1 + b1 + b2 + ... + b64) =
+    //          = s2 + s1 * 64 + (b1 * 64 + b2 * 63 + ... + b64 * 1) =
+    //          = s2 + s1 * 64 + (b1, b2, ... b64) dot (64, 63, ... 1)
+
+    __ mv(temp3, step);
+    // Load data
+    __ vsetvli(temp0, temp3, Assembler::e8, lmul);
+    __ vle8_v(vbytes, buff);
+    __ addi(buff, buff, step);
+
+    // Upper bound reduction sum for s1_new:
+    // 0xFF * 64 = 0x3FC0, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 16-bits elements
+    __ vwredsumu_vs(vs1acc, vbytes, vzero);
+    // Multiplication for s2_new
+    __ vwmulu_vv(vs2acc, vtable, vbytes);
+
+    // s2 = s2 + s1 * log2(step)
+    __ slli(temp1, s1, exact_log2(step));
+    __ add(s2, s2, temp1);
+
+    // Summing up calculated results for s2_new
+    if (MaxVectorSize > 16) {
+      __ vsetvli(temp0, temp3, Assembler::e16, lmul);
+    } else {
+      // Half of vector-widening multiplication result is in successor of vs2acc
+      // group for vlen == 16, in which case we need to double vector register
+      // group width in order to reduction sum all of them
+      Assembler::LMUL lmulx2 = (lmul == Assembler::m1) ? Assembler::m2 :
+                               (lmul == Assembler::m2) ? Assembler::m4 : Assembler::m8;
+      __ vsetvli(temp0, temp3, Assembler::e16, lmulx2);
+    }
+    // Upper bound for reduction sum:
+    // 0xFF * (64 + 63 + ... + 2 + 1) = 0x817E0 max for whole register group, so:
+    // 1. Need to do vector-widening reduction sum
+    // 2. It is safe to perform sign-extension during vmv.x.s with 32-bits elements
+    __ vwredsumu_vs(vtemp1, vs2acc, vzero);
+
+    // Extracting results for:
+    // s1_new
+    __ vmv_x_s(temp0, vs1acc);
+    __ add(s1, s1, temp0);
+    // s2_new
+    __ vsetvli(temp0, temp3, Assembler::e32, Assembler::m1);
+    __ vmv_x_s(temp1, vtemp1);
+    __ add(s2, s2, temp1);
+  }
+
+  /***
+   *  int java.util.zip.Adler32.updateBytes(int adler, byte[] b, int off, int len)
+   *
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff (b + off)
+   *   c_rarg2   - int   len
+   *
+   *  Output:
+   *   c_rarg0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_nmax, L_nmax_loop, L_nmax_loop_entry, L_by16, L_by16_loop,
+      L_by16_loop_unroll, L_by1_loop, L_do_mod, L_combine, L_by1;
+
+    // Aliases
+    Register adler  = c_rarg0;
+    Register s1     = c_rarg0;
+    Register s2     = c_rarg3;
+    Register buff   = c_rarg1;
+    Register len    = c_rarg2;
+    Register nmax  = c_rarg4;
+    Register base  = c_rarg5;
+    Register count = c_rarg6;
+    Register temp0 = x28; // t3
+    Register temp1 = x29; // t4
+    Register temp2 = x30; // t5
+    Register temp3 = x31; // t6
+
+    VectorRegister vzero = v31;
+    VectorRegister vbytes = v8; // group: v8, v9, v10, v11
+    VectorRegister vs1acc = v12; // group: v12, v13, v14, v15
+    VectorRegister vs2acc = v16; // group: v16, v17, v18, v19, v20, v21, v22, v23
+    VectorRegister vtable_64 = v24; // group: v24, v25, v26, v27
+    VectorRegister vtable_32 = v4; // group: v4, v5
+    VectorRegister vtable_16 = v30;
+    VectorRegister vtemp1 = v28;
+    VectorRegister vtemp2 = v29;
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    const uint64_t BASE = 0xfff1;
+    const uint64_t NMAX = 0x15B0;
+
+    // Loops steps
+    int step_64 = 64;
+    int step_32 = 32;
+    int step_16 = 16;
+    int step_1  = 1;
+
+    __ enter(); // Required for proper stackwalking of RuntimeStub frame
+    __ mv(temp1, 64);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m4);
+
+    // Generating accumulation coefficients for further calculations
+    // vtable_64:
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_64, vtemp1, temp1);
+    // vtable_64 group now contains { 0x40, 0x3f, 0x3e, ..., 0x3, 0x2, 0x1 }
+
+    // vtable_32:
+    __ mv(temp1, 32);
+    __ vsetvli(temp0, temp1, Assembler::e8, Assembler::m2);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_32, vtemp1, temp1);
+    // vtable_32 group now contains { 0x20, 0x1f, 0x1e, ..., 0x3, 0x2, 0x1 }
+
+    __ vsetivli(temp0, 16, Assembler::e8, Assembler::m1);
+    // vtable_16:
+    __ mv(temp1, 16);
+    __ vid_v(vtemp1);
+    __ vrsub_vx(vtable_16, vtemp1, temp1);
+    // vtable_16 now contains { 0x10, 0xf, 0xe, ..., 0x3, 0x2, 0x1 }
+
+    __ vmv_v_i(vzero, 0);
+
+    __ mv(base, BASE);
+    __ mv(nmax, NMAX);
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ srliw(s2, adler, 16); // s2 = ((adler >> 16) & 0xffff)
+    __ zero_extend(s1, adler, 16); // s1 = (adler & 0xffff)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    __ mv(temp0, step_16);
+    __ bgeu(len, temp0, L_nmax);
+    __ beqz(len, L_combine);
+
+    // Jumping to L_by1_loop
+    __ sub(len, len, step_1);
+    __ j(L_by1_loop);
+
+  __ bind(L_nmax);
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bltz(len, L_by16);
+
+  // Align L_nmax loop by 64
+  __ bind(L_nmax_loop_entry);
+    __ sub(count, count, 32);
+
+  __ bind(L_nmax_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(count, count, step_64);
+    __ bgtz(count, L_nmax_loop);
+
+    // There are three iterations left to do
+    adler32_process_bytes(buff, s1, s2, vtable_32, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_32, Assembler::m2);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    __ sub(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ bgez(len, L_nmax_loop_entry);
+
+  __ bind(L_by16);
+    __ add(len, len, count);
+    __ bltz(len, L_by1);
+    // Trying to unroll
+    __ mv(temp3, step_64);
+    __ blt(len, temp3, L_by16_loop);
+
+  __ bind(L_by16_loop_unroll);
+    adler32_process_bytes(buff, s1, s2, vtable_64, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_64, Assembler::m4);
+    __ sub(len, len, step_64);
+    // By now the temp3 should still be 64
+    __ bge(len, temp3, L_by16_loop_unroll);
+
+  __ bind(L_by16_loop);
+    adler32_process_bytes(buff, s1, s2, vtable_16, vzero,
+      vbytes, vs1acc, vs2acc, temp0, temp1, temp2, temp3,
+      vtemp1, vtemp2, step_16, Assembler::m1);
+    __ sub(len, len, step_16);
+    __ bgez(len, L_by16_loop);
+
+  __ bind(L_by1);
+    __ add(len, len, 15);
+    __ bltz(len, L_do_mod);
+
+  __ bind(L_by1_loop);
+    __ lbu(temp0, Address(buff, 0));
+    __ addi(buff, buff, step_1);
+    __ add(s1, temp0, s1);
+    __ add(s2, s2, s1);
+    __ sub(len, len, step_1);
+    __ bgez(len, L_by1_loop);
+
+  __ bind(L_do_mod);
+    // s1 = s1 % BASE
+    __ remuw(s1, s1, base);
+    // s2 = s2 % BASE
+    __ remuw(s2, s2, base);
+
+    // Combine lower bits and higher bits
+    // adler = s1 | (s2 << 16)
+  __ bind(L_combine);
+    __ slli(s2, s2, 16);
+    __ orr(s1, s1, s2);
+
+    __ leave(); // Required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
+
 #endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
@@ -5268,6 +5787,52 @@ static const int64_t right_3_bits = right_n_bits(3);
   }
 
 #endif // COMPILER2
+
+  /**
+   *  Arguments:
+   *
+   * Inputs:
+   *   c_rarg0   - int crc
+   *   c_rarg1   - byte* buf
+   *   c_rarg2   - int length
+   *
+   * Output:
+   *   c_rarg0   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "what are we doing here?");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
+
+    address start = __ pc();
+
+    const Register crc    = c_rarg0;  // crc
+    const Register buf    = c_rarg1;  // source java byte array address
+    const Register len    = c_rarg2;  // length
+    const Register table0 = c_rarg3;  // crc_table address
+    const Register table1 = c_rarg4;
+    const Register table2 = c_rarg5;
+    const Register table3 = c_rarg6;
+
+    const Register tmp1 = c_rarg7;
+    const Register tmp2 = t2;
+    const Register tmp3 = x28; // t3
+    const Register tmp4 = x29; // t4
+    const Register tmp5 = x30; // t5
+    const Register tmp6 = x31; // t6
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ kernel_crc32(crc, buf, len, table0, table1, table2,
+                    table3, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    return start;
+  }
 
 #if INCLUDE_JFR
 
@@ -5515,6 +6080,12 @@ static const int64_t right_3_bits = right_n_bits(3);
       generate_throw_exception("delayed StackOverflowError throw_exception",
                                CAST_FROM_FN_PTR(address,
                                                 SharedRuntime::throw_delayed_StackOverflowError));
+
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::riscv::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
   void generate_continuation_stubs() {
@@ -5566,13 +6137,24 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
+#ifdef COMPILER2
+    if (UseSecondarySupersTable) {
+      StubRoutines::_lookup_secondary_supers_table_slow_path_stub = generate_lookup_secondary_supers_table_slow_path_stub();
+      if (!InlineSecondarySupersTest) {
+        for (int slot = 0; slot < Klass::SECONDARY_SUPERS_TABLE_SIZE; slot++) {
+          StubRoutines::_lookup_secondary_supers_table_stubs[slot]
+            = generate_lookup_secondary_supers_table_stub(slot);
+        }
+      }
+    }
+#endif // COMPILER2
+
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
 
     StubRoutines::riscv::set_completed();
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
 #ifdef COMPILER2
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
@@ -5606,7 +6188,6 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_bigIntegerLeftShiftWorker = generate_bigIntegerLeftShift();
       StubRoutines::_bigIntegerRightShiftWorker = generate_bigIntegerRightShift();
     }
-#endif // COMPILER2
 
     if (UseSHA256Intrinsics) {
       Sha2Generator sha2(_masm, this);
@@ -5619,10 +6200,6 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_sha512_implCompress   = sha2.generate_sha512_implCompress(false);
       StubRoutines::_sha512_implCompressMB = sha2.generate_sha512_implCompress(true);
     }
-
-    generate_compare_long_strings();
-
-    generate_string_indexof_stubs();
 
     if (UseMD5Intrinsics) {
       StubRoutines::_md5_implCompress   = generate_md5_implCompress(false, "md5_implCompress");
@@ -5638,7 +6215,19 @@ static const int64_t right_3_bits = right_n_bits(3);
       StubRoutines::_sha1_implCompressMB   = generate_sha1_implCompress(true, "sha1_implCompressMB");
     }
 
-#endif // COMPILER2_OR_JVMCI
+    if (UseBASE64Intrinsics) {
+      StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
+    }
+
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
+    }
+
+    generate_compare_long_strings();
+
+    generate_string_indexof_stubs();
+
+#endif // COMPILER2
   }
 
  public:

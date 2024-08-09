@@ -63,11 +63,12 @@ workspace has been generated. To use it, choose
 <p>The main <code>vscode-project</code> target configures the default
 C++ support in Visual Studio Code. There are also other source indexers
 that can be installed, that may provide additional features. It's
-currently possible to generate configuration for two such indexers, <a
-href="https://clang.llvm.org/extra/clangd/">clangd</a> and <a
-href="https://github.com/Andersbakken/rtags">rtags</a>. These can be
-configured by appending the name of the indexer to the make target, such
-as:</p>
+currently possible to generate configuration for three such indexers, <a
+href="https://clang.llvm.org/extra/clangd/">clangd</a>, <a
+href="https://github.com/MaskRay/ccls/wiki/Visual-Studio-Code">ccls</a>
+and <a href="https://github.com/Andersbakken/rtags">rtags</a>. These can
+be configured by appending the name of the indexer to the make target,
+such as:</p>
 <pre class="shell"><code>make vscode-project-clangd</code></pre>
 <p>Additional instructions for configuring the given indexer will be
 displayed after the workspace has been generated.</p>

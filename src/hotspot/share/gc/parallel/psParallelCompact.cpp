@@ -51,6 +51,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
@@ -237,7 +238,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
   PSVirtualSpace* vspace = new PSVirtualSpace(rs, page_sz);
-  if (vspace != 0) {
+  if (vspace != nullptr) {
     if (vspace->expand_by(_reserved_byte_size)) {
       return vspace;
     }
@@ -246,7 +247,7 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
     rs.release();
   }
 
-  return 0;
+  return nullptr;
 }
 
 bool ParallelCompactData::initialize_region_data(size_t heap_size)
@@ -255,7 +256,7 @@ bool ParallelCompactData::initialize_region_data(size_t heap_size)
 
   const size_t count = heap_size >> Log2RegionSize;
   _region_vspace = create_vspace(count, sizeof(RegionData));
-  if (_region_vspace != 0) {
+  if (_region_vspace != nullptr) {
     _region_data = (RegionData*)_region_vspace->reserved_low_addr();
     _region_count = count;
     return true;
@@ -826,15 +827,21 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
-                                                    size_t total_live_words,
-                                                    MutableSpace* const old_space,
-                                                    HeapWord* full_region_prefix_end) {
+bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
+                                                 MutableSpace* const old_space,
+                                                 HeapWord* full_region_prefix_end) {
+
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+
+  // Check System.GC
+  bool is_max_on_system_gc = UseMaximumCompactionOnSystemGC
+                          && GCCause::is_user_requested_gc(heap->gc_cause());
+
   // Check if all live objs are larger than old-gen.
   const bool is_old_gen_overflowing = (total_live_words > old_space->capacity_in_words());
 
   // JVM flags
-  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
+  const uint total_invocations = heap->total_full_collections();
   assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
   const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
   const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
@@ -843,7 +850,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (maximum_compaction || is_old_gen_overflowing || is_interval_ended || is_region_full) {
+  if (is_max_on_system_gc || is_old_gen_overflowing || is_interval_ended || is_region_full) {
     _maximum_compaction_gc_num = total_invocations;
     return true;
   }
@@ -851,7 +858,7 @@ bool PSParallelCompact::reassess_maximum_compaction(bool maximum_compaction,
   return false;
 }
 
-void PSParallelCompact::summary_phase(bool maximum_compaction)
+void PSParallelCompact::summary_phase()
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -874,10 +881,9 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
       _space_info[i].set_dense_prefix(space->bottom());
     }
 
-    maximum_compaction = reassess_maximum_compaction(maximum_compaction,
-                                                     total_live_words,
-                                                     old_space,
-                                                     full_region_prefix_end);
+    bool maximum_compaction = check_maximum_compaction(total_live_words,
+                                                       old_space,
+                                                       full_region_prefix_end);
     HeapWord* dense_prefix_end =
       maximum_compaction ? full_region_prefix_end
                          : compute_dense_prefix_for_old_space(old_space,
@@ -958,26 +964,24 @@ void PSParallelCompact::summary_phase(bool maximum_compaction)
 // may be true because this method can be called without intervening
 // activity.  For example when the heap space is tight and full measure
 // are being taken to free space.
-bool PSParallelCompact::invoke(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
 
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-  assert(!heap->is_stw_gc_active(), "not reentrant");
-
+  SvcGCMarker sgcm(SvcGCMarker::FULL);
   IsSTWGCActiveMark mark;
 
-  const bool clear_all_soft_refs =
-    heap->soft_ref_policy()->should_clear_all_soft_refs();
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  clear_all_soft_refs = clear_all_soft_refs
+                     || heap->soft_ref_policy()->should_clear_all_soft_refs();
 
-  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs ||
-                                             maximum_heap_compaction);
+  return PSParallelCompact::invoke_no_policy(clear_all_soft_refs);
 }
 
 // This method contains no policy. You should probably
 // be calling invoke() instead.
-bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
+bool PSParallelCompact::invoke_no_policy(bool clear_all_soft_refs) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at a safepoint");
   assert(ref_processor() != nullptr, "Sanity");
 
@@ -998,7 +1002,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   // The scope of casr should end after code that can change
   // SoftRefPolicy::_should_clear_all_soft_refs.
-  ClearedAllSoftRefs casr(maximum_heap_compaction,
+  ClearedAllSoftRefs casr(clear_all_soft_refs,
                           heap->soft_ref_policy());
 
   // Make sure data structures are sane, make the heap parsable, and do other
@@ -1033,7 +1037,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     DerivedPointerTable::clear();
 #endif
 
-    ref_processor()->start_discovery(maximum_heap_compaction);
+    ref_processor()->start_discovery(clear_all_soft_refs);
 
     ClassUnloadingContext ctx(1 /* num_nmethod_unlink_workers */,
                               false /* unregister_nmethods_during_purge */,
@@ -1041,9 +1045,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
     marking_phase(&_gc_tracer);
 
-    bool max_on_system_gc = UseMaximumCompactionOnSystemGC
-      && GCCause::is_user_requested_gc(gc_cause);
-    summary_phase(maximum_heap_compaction || max_on_system_gc);
+    summary_phase();
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
@@ -1186,10 +1188,11 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-    MarkingNMethodClosure mark_and_push_in_blobs(&mark_and_push_closure, !NMethodToOopClosure::FixRelocations, true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
+                                                 !NMethodToOopClosure::FixRelocations,
+                                                 true /* keepalive nmethods */);
 
-    thread->oops_do(&mark_and_push_closure, &mark_and_push_in_blobs);
+    thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
     // Do the real work
     cm->follow_marking_stacks();
@@ -1230,22 +1233,22 @@ public:
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
     cm->create_marking_stats_cache();
-    PCMarkAndPushClosure mark_and_push_closure(cm);
-
     {
-      CLDToOopClosure cld_closure(&mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
+      CLDToOopClosure cld_closure(&cm->_mark_and_push_closure, ClassLoaderData::_claim_stw_fullgc_mark);
       ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
 
       // Do the real work
       cm->follow_marking_stacks();
     }
 
-    PCAddThreadRootsMarkingTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(true /* is_par */, &closure);
+    {
+      PCAddThreadRootsMarkingTaskClosure closure(worker_id);
+      Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
+    }
 
     // Mark from OopStorages
     {
-      _oop_storage_set_par_state.oops_do(&mark_and_push_closure);
+      _oop_storage_set_par_state.oops_do(&cm->_mark_and_push_closure);
       // Do the real work
       cm->follow_marking_stacks();
     }
@@ -1267,10 +1270,9 @@ public:
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
     ParCompactionManager* cm = (_tm == RefProcThreadModel::Single) ? ParCompactionManager::get_vmthread_cm() : ParCompactionManager::gc_thread_compaction_manager(worker_id);
-    PCMarkAndPushClosure keep_alive(cm);
     BarrierEnqueueDiscoveredFieldClosure enqueue;
     ParCompactionManager::FollowStackClosure complete_gc(cm, (_tm == RefProcThreadModel::Single) ? nullptr : &_terminator, worker_id);
-    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &keep_alive, &enqueue, &complete_gc);
+    _rp_task->rp_work(worker_id, PSParallelCompact::is_alive_closure(), &cm->_mark_and_push_closure, &enqueue, &complete_gc);
   }
 
   void prepare_run_task_hook() override {

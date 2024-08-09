@@ -65,7 +65,6 @@ import java.util.PropertyPermission;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.WeakHashMap;
-import java.util.concurrent.Callable;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -2264,6 +2263,7 @@ public final class System {
             super(fd);
         }
 
+        @Override
         public void write(int b) throws IOException {
             boolean attempted = Blocker.begin();
             try {
@@ -2611,10 +2611,6 @@ public final class System {
                 return StringConcatHelper.lookupStatic(name, methodType);
             }
 
-            public long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value) {
-                return StringConcatHelper.prepend(indexCoder, buf, value);
-            }
-
             public long stringConcatInitialCoder() {
                 return StringConcatHelper.initialCoder();
             }
@@ -2625,10 +2621,6 @@ public final class System {
 
             public long stringConcatMix(long lengthCoder, char value) {
                 return StringConcatHelper.mix(lengthCoder, value);
-            }
-
-            public int stringSize(long i) {
-                return Long.stringSize(i);
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {
@@ -2679,14 +2671,6 @@ public final class System {
 
             public Thread currentCarrierThread() {
                 return Thread.currentCarrierThread();
-            }
-
-            public <V> V executeOnCarrierThread(Callable<V> task) throws Exception {
-                if (Thread.currentThread() instanceof VirtualThread vthread) {
-                    return vthread.executeOnCarrierThread(task);
-                } else {
-                    return task.call();
-                }
             }
 
             public <T> T getCarrierThreadLocal(CarrierThreadLocal<T> local) {

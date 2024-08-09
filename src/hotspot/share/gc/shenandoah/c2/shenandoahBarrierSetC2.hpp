@@ -31,16 +31,10 @@
 
 class ShenandoahBarrierSetC2State : public ArenaObj {
 private:
-  GrowableArray<ShenandoahIUBarrierNode*>* _iu_barriers;
   GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
 
 public:
   ShenandoahBarrierSetC2State(Arena* comp_arena);
-
-  int iu_barriers_count() const;
-  ShenandoahIUBarrierNode* iu_barrier(int idx) const;
-  void add_iu_barrier(ShenandoahIUBarrierNode* n);
-  void remove_iu_barrier(ShenandoahIUBarrierNode * n);
 
   int load_reference_barriers_count() const;
   ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
@@ -72,8 +66,6 @@ private:
                                     const TypeOopPtr* val_type,
                                     Node* pre_val,
                                     BasicType bt) const;
-
-  Node* shenandoah_iu_barrier(GraphKit* kit, Node* obj) const;
 
   void insert_pre_barrier(GraphKit* kit, Node* base_oop, Node* offset,
                           Node* pre_val, bool need_mem_bar) const;

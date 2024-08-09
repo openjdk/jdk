@@ -92,7 +92,6 @@ SerialHeap::SerialHeap() :
     _old_gen(nullptr),
     _rem_set(nullptr),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
-    _incremental_collection_failed(false),
     _young_manager(nullptr),
     _old_manager(nullptr),
     _eden_pool(nullptr),
@@ -157,7 +156,7 @@ void SerialHeap::safepoint_synchronize_end() {
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
   MutexLocker ml(Heap_lock);
-  return old_gen()->allocate(word_size, false /* is_tlab */);
+  return old_gen()->allocate(word_size);
 }
 
 void SerialHeap::complete_loaded_archive_space(MemRegion archive_space) {
@@ -287,18 +286,18 @@ size_t SerialHeap::max_capacity() const {
 bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const {
   size_t young_capacity = _young_gen->capacity_before_gc();
   return    (word_size > heap_word_size(young_capacity))
-         || GCLocker::is_active_and_needs_gc()
-         || incremental_collection_failed();
+         || GCLocker::is_active_and_needs_gc();
 }
 
 HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
   if (_old_gen->should_allocate(size, is_tlab)) {
-    result = _old_gen->expand_and_allocate(size, is_tlab);
+    result = _old_gen->expand_and_allocate(size);
   }
   if (result == nullptr) {
     if (_young_gen->should_allocate(size, is_tlab)) {
-      result = _young_gen->expand_and_allocate(size, is_tlab);
+      // Young-gen is not expanded.
+      result = _young_gen->allocate(size);
     }
   }
   assert(result == nullptr || is_in_reserved(result), "result not in heap");
@@ -316,7 +315,7 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
     // First allocation attempt is lock-free.
     DefNewGeneration *young = _young_gen;
     if (young->should_allocate(size, is_tlab)) {
-      result = young->par_allocate(size, is_tlab);
+      result = young->par_allocate(size);
       if (result != nullptr) {
         assert(is_in_reserved(result), "result not in heap");
         return result;
@@ -408,14 +407,14 @@ HeapWord* SerialHeap::attempt_allocation(size_t size,
   HeapWord* res = nullptr;
 
   if (_young_gen->should_allocate(size, is_tlab)) {
-    res = _young_gen->allocate(size, is_tlab);
+    res = _young_gen->allocate(size);
     if (res != nullptr || first_only) {
       return res;
     }
   }
 
   if (_old_gen->should_allocate(size, is_tlab)) {
-    res = _old_gen->allocate(size, is_tlab);
+    res = _old_gen->allocate(size);
   }
 
   return res;

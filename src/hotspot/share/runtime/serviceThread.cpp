@@ -81,10 +81,7 @@ static void cleanup_oopstorages() {
 
 void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
   while (true) {
-    bool sensors_changed = false;
     bool has_jvmti_events = false;
-    bool has_gc_notification_event = false;
-    bool has_dcmd_notification_event = false;
     bool stringtable_work = false;
     bool symboltable_work = false;
     bool finalizerservice_work = false;
@@ -113,10 +110,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
       // only the first recognized bit of work, to avoid frequently true early
       // tests from potentially starving later work.  Hence the use of
       // arithmetic-or to combine results; we don't want short-circuiting.
-      while (((sensors_changed = (!UseNotificationThread && LowMemoryDetector::has_pending_requests())) |
-              (has_jvmti_events = _jvmti_service_queue.has_events()) |
-              (has_gc_notification_event = (!UseNotificationThread && GCNotifier::has_event())) |
-              (has_dcmd_notification_event = (!UseNotificationThread && DCmdFactory::has_pending_jmx_notification())) |
+      while (((has_jvmti_events = _jvmti_service_queue.has_events()) |
               (stringtable_work = StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
               (finalizerservice_work = FinalizerService::has_work()) |
@@ -156,20 +150,6 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     if (has_jvmti_events) {
       _jvmti_event->post();
       _jvmti_event = nullptr;  // reset
-    }
-
-    if (!UseNotificationThread) {
-      if (sensors_changed) {
-        LowMemoryDetector::process_sensor_changes(jt);
-      }
-
-      if(has_gc_notification_event) {
-        GCNotifier::sendNotification(CHECK);
-      }
-
-      if(has_dcmd_notification_event) {
-        DCmdFactory::send_notification(CHECK);
-      }
     }
 
     if (resolved_method_table_work) {
