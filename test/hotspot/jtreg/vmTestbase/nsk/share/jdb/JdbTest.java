@@ -233,8 +233,7 @@ public abstract class JdbTest {
         } catch (Throwable t) {
             out.println("Caught unexpected exception while starting the test: " + t);
             t.printStackTrace(out);
-            out.println("TEST FAILED");
-            throw new RuntimeException("TEST FAILED with " + t);
+            throw new RuntimeException("TEST FAILED", t);
         }
         out.println("TEST PASSED");
     }
