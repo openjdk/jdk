@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@
  * @clean nsk.jdb.set.set002.set002a
  * @compile -g:lines,source,vars set002a.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.set.set002.set002
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -76,15 +76,11 @@ import java.util.*;
 public class set002 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
 
-        return new set002().runTest(argv, out);
+        new set002().runTest(argv);
     }
 
     static final String PACKAGE_NAME = "nsk.jdb.set.set002";

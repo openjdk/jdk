@@ -180,10 +180,12 @@ public class Launcher extends DebugeeBinder {
             } else /* LaunchingConnector or DefaultConnector */ {
 
                 connect.append("vmexec=" + argumentHandler.getLaunchExecName().trim());
+                connect.append(",options=");
+                connect.append(" \"-cp\"");
+                connect.append(" \"" + System.getProperty("test.class.path") + "\"");
+
                 String debuggeeOpts = argumentHandler.getDebuggeeOptions();
                 if (debuggeeOpts.trim().length() > 0) {
-                    //connect.append(",options=" + debuggeeOpts.trim());
-                    connect.append(",options=");
                     for (String arg : debuggeeOpts.split("\\s+")) {
                        connect.append(" \"");
                        connect.append(arg);
