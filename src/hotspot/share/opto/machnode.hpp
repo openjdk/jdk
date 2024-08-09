@@ -134,6 +134,14 @@ public:
     return ::as_VectorSRegister(reg(ra_, node, idx));
   }
 #endif
+#if defined(S390)
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node) const {
+    return ::as_VectorRegister(reg(ra_, node));
+  }
+  VectorRegister as_VectorRegister(PhaseRegAlloc *ra_, const Node *node, int idx) const {
+    return ::as_VectorRegister(reg(ra_, node, idx));
+ }
+#endif
 #if defined(AARCH64)
   PRegister as_PRegister(PhaseRegAlloc* ra_, const Node* node) const {
     return ::as_PRegister(reg(ra_, node));
