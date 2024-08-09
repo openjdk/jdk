@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1608,6 +1608,15 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
+            // Stop the timer if handledEvent is still set indicating
+            // mouseReleased is not called after mousePressed when
+            // this AcionEvent is being processed
+            if (buttonListener.handledEvent) {
+                scrollTimer.stop();
+                buttonListener.handledEvent = false;
+                scrollbar.setValueIsAdjusting(false);
+                return;
+            }
             if(useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse
