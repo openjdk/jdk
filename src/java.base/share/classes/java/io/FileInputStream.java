@@ -31,6 +31,8 @@ import jdk.internal.util.ArraysSupport;
 import jdk.internal.event.FileReadEvent;
 import sun.nio.ch.FileChannelImpl;
 
+import jdk.internal.access.JavaIOFileInputStreamAccess;
+import jdk.internal.access.SharedSecrets;
 /**
  * A {@code FileInputStream} obtains input bytes
  * from a file in a file system. What files
@@ -80,6 +82,17 @@ public class FileInputStream extends InputStream
     private final Object closeLock = new Object();
 
     private volatile boolean closed;
+
+    // Set up JavaIOFileInputStreamAccess in SharedSecrets
+    static {
+        SharedSecrets.setJavaIOFileInputStreamAccess(
+                new JavaIOFileInputStreamAccess() {
+                    public String getPath(FileInputStream fis) {
+                        return fis.path;
+                    }
+                }
+        );
+    }
 
     /**
      * Creates a {@code FileInputStream} by
