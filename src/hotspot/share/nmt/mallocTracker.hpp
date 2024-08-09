@@ -80,7 +80,7 @@ class MemoryCounter {
 
   inline void resize(ssize_t sz) {
     if (sz != 0) {
-      assert(sz >= 0 || size() >= size_t(-sz), "Must be");
+      assert(sz >= 0 || size() >= size_t(-sz), "Must be (%zd >= %zd)", size(), sz);
       size_t sum = Atomic::add(&_size, size_t(sz), memory_order_relaxed);
       update_peak(sum, _count);
     }

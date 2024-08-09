@@ -88,10 +88,11 @@ class MemTracker : AllStatic {
   static inline void* record_free(void* memblock) {
     // Never turned on
     assert(memblock != nullptr, "caller should handle null");
-    if (!enabled()) {
-      return memblock;
+
+    if (enabled()) {
+      return MallocTracker::record_free_block(memblock);
     }
-    return MallocTracker::record_free_block(memblock);
+    return memblock;
   }
   static inline void deaccount(MallocHeader::FreeInfo free_info) {
     assert(enabled(), "NMT must be enabled");

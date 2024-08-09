@@ -62,10 +62,19 @@ private:
 public:
 
   enum class FakeMarker { its_fake };
+
+  inline bool is_fake() const {
+#ifdef ASSERT
+    return (_stack[0] == (address)_fake_address);
+#else
+    return true;
+#endif
+  }
+
 #ifdef ASSERT
   static constexpr uintptr_t _fake_address = -2; // 0xFF...FE
   inline void assert_not_fake() const {
-    assert(_stack[0] != (address)_fake_address, "Must not be a fake stack");
+    assert(!is_fake(), "Must not be a fake stack");
   }
 #endif
 

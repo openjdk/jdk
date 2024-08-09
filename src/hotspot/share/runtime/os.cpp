@@ -634,7 +634,7 @@ void* os::malloc(size_t size, MEMFLAGS flags) {
 }
 
 void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
-
+  //fprintf(stderr, "malloc(%ld)\n", size);
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
   if (NMTPreInit::handle_malloc(&rc, size)) {
@@ -666,6 +666,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   if (outer_ptr == nullptr) {
     return nullptr;
   }
+  NMT_MemoryLogRecorder::log_malloc(memflags, outer_size, outer_ptr, &stack);
 
   void* const inner_ptr = MemTracker::record_malloc((address)outer_ptr, size, memflags, stack);
 
@@ -684,6 +685,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+  //fprintf(stderr, "realloc(%ld)\n", size);
 
   // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
@@ -737,6 +739,16 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       header->revive();
       return nullptr;
     }
+
+#if defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // APPLE
+    NMT_MemoryLogRecorder::log_realloc(memflags, new_outer_size, new_outer_ptr, header, &stack);
+#if defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // APPLE
+
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
     MemTracker::deaccount(free_info);
 
@@ -762,6 +774,14 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
       return nullptr;
     }
 
+#if defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // APPLE
+    NMT_MemoryLogRecorder::log_realloc(memflags, size, rc, memblock, &stack);
+#if defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // APPLE
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)
@@ -769,7 +789,8 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   return rc;
 }
 
-void  os::free(void *memblock) {
+void os::free(void *memblock) {
+  //fprintf(stderr, "free(%p)\n", memblock);
 
   // Special handling for NMT preinit phase before arguments are parsed
   if (NMTPreInit::handle_free(memblock)) {
@@ -782,8 +803,18 @@ void  os::free(void *memblock) {
 
   DEBUG_ONLY(break_if_ptr_caught(memblock);)
 
+  MEMFLAGS flags = mtNone;
+#ifdef ASSERT
+  if (MemTracker::enabled()) {
+    MallocHeader* header = MallocHeader::resolve_checked(memblock);
+    flags = header->flags();
+  }
+#endif
+
   // When NMT is enabled this checks for heap overwrites, then deaccounts the old block.
   void* const old_outer_ptr = MemTracker::record_free(memblock);
+
+  NMT_MemoryLogRecorder::log_free(flags, old_outer_ptr);
 
   ALLOW_C_FUNCTION(::free, ::free(old_outer_ptr);)
 }

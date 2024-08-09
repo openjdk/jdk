@@ -865,6 +865,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 //   + Return to caller
 
 void Threads::destroy_vm() {
+  // finish recording as soon as we know that we're done
+  // to get the most accurate state of the app when it's still running
+  NMT_MemoryLogRecorder::finish();
+
   JavaThread* thread = JavaThread::current();
 
 #ifdef ASSERT
