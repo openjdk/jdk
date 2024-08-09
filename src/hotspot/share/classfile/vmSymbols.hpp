@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -744,7 +744,9 @@ class SerializeClosure;
   template(jdk_internal_vm_ThreadDumper,           "jdk/internal/vm/ThreadDumper")                                \
   template(dumpThreads_name,                       "dumpThreads")                                                 \
   template(dumpThreadsToJson_name,                 "dumpThreadsToJson")                                           \
-
+                                                                                                                  \
+  /* Stable Values */                                                                                             \
+  template(java_lang_StableValue_signature,        "Ljava/lang/StableValue;")                                     \
   /*end*/
 
 // enum for figuring positions and size of Symbol::_vm_symbols[]
