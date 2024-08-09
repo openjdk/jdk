@@ -90,10 +90,15 @@ public final class Constructor<T> extends Executable {
         var genericInfo = this.genericInfo;
         // lazily initialize repository if necessary
         if (genericInfo == null) {
-            // create and cache generic info repository
-            genericInfo =
-                ConstructorRepository.make(getSignature(),
-                                           getFactory());
+            var root = this.root;
+            if (root != null) {
+                genericInfo = root.getGenericInfo();
+            } else {
+                // create and cache generic info repository
+                genericInfo =
+                        ConstructorRepository.make(getSignature(),
+                                getFactory());
+            }
             this.genericInfo = genericInfo;
         }
         return genericInfo; //return cached repository
@@ -162,6 +167,7 @@ public final class Constructor<T> extends Executable {
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.constructorAccessor = constructorAccessor;
+        res.genericInfo = genericInfo;
         return res;
     }
 
