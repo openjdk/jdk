@@ -31,8 +31,8 @@
 
 bool is_vm_statically_linked(void) {
 #ifdef STATIC_BUILD
-  return JNI_TRUE;
+  return true;
 #else
-  return JNI_FALSE;
+  return false;
 #endif
 }
