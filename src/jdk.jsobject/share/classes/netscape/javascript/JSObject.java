@@ -44,8 +44,7 @@ package netscape.javascript;
  * engine is converted to JavaScript data types.
  * </p>
  * @since 1.5
- * @deprecated Users are advised to ship the jdk.jsobject module
- * with their application.
+ * @deprecated The jdk.jsobject module will be delivered with JavaFX.
  */
 @Deprecated(since = "24", forRemoval = true)
 @SuppressWarnings("removal")

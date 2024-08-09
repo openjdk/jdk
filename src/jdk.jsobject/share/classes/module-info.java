@@ -28,8 +28,7 @@
  *
  * @moduleGraph
  * @since 9
- * @deprecated Users are advised to ship the jdk.jsobject module
- * with their application.
+ * @deprecated The jdk.jsobject module will be delivered with JavaFX.
  */
 @Deprecated(since = "24", forRemoval = true)
 @SuppressWarnings("removal")
