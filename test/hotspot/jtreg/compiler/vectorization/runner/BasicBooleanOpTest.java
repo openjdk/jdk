@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +72,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeature = {"asimd", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        phase = CompilePhase.BEFORE_MACRO_EXPANSION,
         counts = {IRNode.AND_VB, ">0"})
-    @IR(applyIfCPUFeatureAnd = {"avx512f", "false", "sse2", "true"},
-        counts = {IRNode.AND_VB, ">0"})
-    @IR(applyIfCPUFeature = {"avx512f", "true"},
-        counts = {IRNode.MACRO_LOGIC_V, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
