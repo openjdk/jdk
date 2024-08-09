@@ -3159,7 +3159,7 @@ class StubGenerator: public StubCodeGenerator {
     Register rreceiver = c_rarg0;
     Register rthread = c_rarg1;
 
-    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
     __ save_return_pc();
     __ push_frame_abi160(0);

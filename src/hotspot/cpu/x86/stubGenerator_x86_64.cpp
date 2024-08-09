@@ -3997,10 +3997,11 @@ address StubGenerator::generate_upcall_stub_load_target() {
   Register rreceiver = c_rarg0;
   Register rthread = c_rarg1;
 
-  StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+  StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
   address start = __ pc();
   __ enter();
 
+  __ reinit_heapbase();
   __ resolve_jobject(rreceiver, rthread, rscratch1);
   __ movptr(Address(rthread, JavaThread::vm_result_offset()), rreceiver);
     // Load target method from receiver

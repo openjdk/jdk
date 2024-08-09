@@ -5728,10 +5728,11 @@ static const int64_t right_3_bits = right_n_bits(3);
     Register rreceiver = c_rarg0;
     Register rthread = c_rarg1;
 
-    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
     __ enter();
 
+    __ reinit_heapbase();
     __ resolve_jobject(rreceiver, t0, t1);
     __ sd(rreceiver, Address(rthread, JavaThread::vm_result_offset()));
       // Load target method from receiver

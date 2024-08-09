@@ -4776,7 +4776,7 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
     Register rreceiver = c_rarg0;
     Register rthread = c_rarg1;
 
-    StubCodeMark mark(this, "StubRoutines", "upcall stub load target");
+    StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
     __ save_LR_CR(R0);
     __ push_frame(frame::native_abi_reg_args_size, R22_tmp2);
