@@ -250,6 +250,19 @@ char* DumpRegion::allocate(size_t num_bytes) {
   return p;
 }
 
+void DumpRegion::allocate_protzone() {
+  assert(_base == _top, "must be the first allocation in this region");
+  // We allocate a protection zone of core alignment size, not page size. The reason
+  // is that the page size may differ between dump- and runtime, and the job of
+  // core alignment is to hide this difference at runtime. See also "compatible-cds-alignment".
+  const size_t protzone_size = MetaspaceShared::core_region_alignment();
+  char* const p = allocate(protzone_size);
+  assert(p != nullptr, "failed to allocate no-access zone");
+  log_debug(cds)("Allocated protection zone at top of dump region (" RANGEFMT ")",
+                 RANGEFMTARGS(p, protzone_size));
+  _has_protzone = true;
+}
+
 void DumpRegion::append_intptr_t(intptr_t n, bool need_to_mark) {
   assert(is_aligned(_top, sizeof(intptr_t)), "bad alignment");
   intptr_t *p = (intptr_t*)_top;

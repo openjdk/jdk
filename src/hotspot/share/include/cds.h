@@ -45,6 +45,7 @@ typedef struct CDSFileMapRegion {
   int     _crc;               // CRC checksum of this region.
   int     _read_only;         // read only region?
   int     _allow_exec;        // executable code in this region?
+  int     _has_protzone;      // does the region have a leading protection zone?
   int     _is_heap_region;    // Used by SA and debug build.
   int     _is_bitmap_region;  // Relocation bitmap for RO/RW regions (used by SA and debug build).
   int     _mapped_from_file;  // Is this region mapped from a file?
