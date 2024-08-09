@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -719,7 +719,12 @@ final class Finished {
                 // update the application traffic read keys.
                 SecretKey writeSecret = kd.deriveKey(
                         "TlsClientAppTrafficSecret", null);
-
+                if (TLSKeyLogger.INSTANCE != null) {
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.CLIENT_TRAFFIC_SECRET,
+                            chc.clientHelloRandom.randomBytes,
+                            writeSecret);
+                }
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(chc, writeSecret);
                 SecretKey writeKey = writeKD.deriveKey(
@@ -822,6 +827,12 @@ final class Finished {
                 // update the handshake traffic write keys.
                 SecretKey writeSecret = secretKD.deriveKey(
                         "TlsServerAppTrafficSecret", null);
+                if (TLSKeyLogger.INSTANCE != null) {
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.SERVER_TRAFFIC_SECRET,
+                            shc.serverHelloRandom.randomBytes,
+                            writeSecret);
+                }
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(shc, writeSecret);
                 SecretKey writeKey = writeKD.deriveKey(
@@ -980,6 +991,12 @@ final class Finished {
                 // update the handshake traffic read keys.
                 SecretKey readSecret = secretKD.deriveKey(
                         "TlsServerAppTrafficSecret", null);
+                if (TLSKeyLogger.INSTANCE != null) {
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.SERVER_TRAFFIC_SECRET,
+                            chc.serverHelloRandom.randomBytes,
+                            readSecret);
+                }
                 SSLKeyDerivation writeKD =
                         kdg.createKeyDerivation(chc, readSecret);
                 SecretKey readKey = writeKD.deriveKey(
@@ -1085,7 +1102,12 @@ final class Finished {
                 // update the application traffic read keys.
                 SecretKey readSecret = kd.deriveKey(
                         "TlsClientAppTrafficSecret", null);
-
+                if (TLSKeyLogger.INSTANCE != null) {
+                    TLSKeyLogger.INSTANCE.log(
+                            TLSKeyLoggerLabel.CLIENT_TRAFFIC_SECRET,
+                            shc.clientHelloRandom.randomBytes,
+                            readSecret);
+                }
                 SSLKeyDerivation readKD =
                         kdg.createKeyDerivation(shc, readSecret);
                 SecretKey readKey = readKD.deriveKey(
