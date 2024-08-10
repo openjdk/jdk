@@ -1171,9 +1171,8 @@ public class RandomSupport {
         if (maxValue >= Math.nextDown(MAX_EXPONENTIAL)) {
             maxExtraMinus1 = Long.MAX_VALUE;
         } else {
-            // Math.round rounds toward infinity in conversion to long; adding 1.0 corrects for any
-            // downward rounding error in the division
-            maxExtraMinus1 = Math.round(1.0 + maxValue / DoubleZigguratTables.exponentialX0);
+            // Add 1 because casting to long rounds down, and we want to round up
+            maxExtraMinus1 = ((long) (maxValue / DoubleZigguratTables.exponentialX0)) + 1;
         }
         for (long extra = 0; ; ) {
             // Use Walker's alias method to sample an (unsigned) integer j from a discrete
