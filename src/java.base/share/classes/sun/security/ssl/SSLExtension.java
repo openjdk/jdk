@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ enum SSLExtension implements SSLStringizer {
     USE_SRTP                (0x000E, "use_srtp"),
 
     // Extensions defined in RFC 6520 (TLS and DTLS Heartbeat Extension)
-    HEARTBEAT               (0x000E, "heartbeat"),
+    HEARTBEAT               (0x000F, "heartbeat"),
 
     // Extensions defined in RFC 7301 (TLS Application-Layer Protocol Negotiation Extension)
     CH_ALPN                 (0x0010, "application_layer_protocol_negotiation",
@@ -406,7 +406,7 @@ enum SSLExtension implements SSLStringizer {
                                 CertificateAuthoritiesExtension.ssStringizer),
 
     OID_FILTERS             (0x0030, "oid_filters"),
-    POST_HANDSHAKE_AUTH     (0x0030, "post_handshake_auth"),
+    POST_HANDSHAKE_AUTH     (0x0031, "post_handshake_auth"),
 
     CH_SIGNATURE_ALGORITHMS_CERT (0x0032, "signature_algorithms_cert",
                                 SSLHandshake.CLIENT_HELLO,

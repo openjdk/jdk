@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,6 +88,7 @@ class UTF8 : AllStatic {
 
   static bool   is_legal_utf8(const unsigned char* buffer, int length,
                               bool version_leq_47);
+  static void   truncate_to_legal_utf8(unsigned char* buffer, int length);
 };
 
 
