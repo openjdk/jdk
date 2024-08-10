@@ -215,7 +215,7 @@ void StubGenerator::array_overlap_test(address no_overlap_target, Label* NOLp, A
   __ cmpptr(to, from);
   __ lea(end_from, Address(from, count, sf, 0));
   if (NOLp == nullptr) {
-    ExternalAddress no_overlap(no_overlap_target);
+    RuntimeAddress no_overlap(no_overlap_target);
     __ jump_cc(Assembler::belowEqual, no_overlap);
     __ cmpptr(to, end_from);
     __ jump_cc(Assembler::aboveEqual, no_overlap);
