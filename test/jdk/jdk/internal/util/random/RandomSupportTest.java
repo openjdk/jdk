@@ -29,14 +29,16 @@ public class RandomSupportTest {
     public void testNextExponentialSoftCapped() {
         for (double max = 1.0; max < 20.0; max++) {
             WorstCaseRandomGenerator rng = new WorstCaseRandomGenerator();
+            double val = RandomSupport.computeNextExponentialSoftCapped(rng, max)
             System.out.println("got " + val + " for max " + max);
-            assertTrue(RandomSupport.computeNextExponentialSoftCapped(rng, max) >= max);
+            assertTrue(val >= max);
         }
         for (int i = 5; i < 30; i++) {
             double max = Math.scalb(1.0, i);
             WorstCaseRandomGenerator rng = new WorstCaseRandomGenerator();
+            double val = RandomSupport.computeNextExponentialSoftCapped(rng, max)
             System.out.println("got " + val + " for max " + max);
-            assertTrue(RandomSupport.computeNextExponentialSoftCapped(rng, max) >= max);
+            assertTrue(val >= max);
         }
     }
 }
