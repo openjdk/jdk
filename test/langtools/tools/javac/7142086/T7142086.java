@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7142086
+ * @bug 7142086 8337334
  * @requires vm.debug == false
  * @summary performance problem in Check.checkOverrideClashes(...)
  * @modules jdk.compiler
