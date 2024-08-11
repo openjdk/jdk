@@ -40,10 +40,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GZIPInputStreamGzipCommand {
 
-    public static Stream<String[]> testScenarios() throws IOException {
+    public static Stream<String[]> gzipScenarios() throws IOException {
         final ArrayList<String[]> scenarios = new ArrayList();
 
         /*
+            # To regenerate the hex data below:
             (
                 for i in 1 2 3 4 5 6 7 8 9; do
                     printf 'this is compression level #%d\n' "$i" | gzip -"${i}"
@@ -77,6 +78,7 @@ public class GZIPInputStreamGzipCommand {
             315da11d000000""" });
 
         /*
+            # To regenerate the hex data below:
             (
                 printf 'this one has a name\n' > file1 && gzip file1
                 printf 'this one has no name\n' > file2 && gzip --no-name file2
@@ -93,6 +95,7 @@ public class GZIPInputStreamGzipCommand {
             55c8482c56c8cb57c84bcc4de50200b1effb5015000000""" });
 
         /*
+            # To regenerate the hex data below:
             (
                 i=0
                 while [ "${i}" -lt 1000 ]; do
@@ -112,7 +115,7 @@ public class GZIPInputStreamGzipCommand {
     }
 
     @ParameterizedTest
-    @MethodSource("testScenarios")
+    @MethodSource("gzipScenarios")
     public void testScenario(String input, String hexData) throws IOException {
 
         // Get expected result
