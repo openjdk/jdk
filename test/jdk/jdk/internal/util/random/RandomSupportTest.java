@@ -12,15 +12,16 @@ import jdk.internal.util.random.RandomSupport;
 import static org.junit.jupiter.api.Assertions.*;
 public class RandomSupportTest {
     private static class WorstCaseRandomGenerator implements RandomGenerator {
-        boolean havePreviousOutput = false;
+        boolean oddNumberOutputsSoFar = false;
         @Override
         public long nextLong() {
-            if (havePreviousOutput) {
+            if (oddNumberOutputsSoFar) {
                 // gets shifted to 0x4000_0000_0000_0000, which puts us in the center of the sampling rectangle and
                 // ensures that we'll never choose a point under the curve
-                return Long.MIN_VALUE;
+                oddNumberOutputsSoFar = false;
+                return 0;
             } else {
-                havePreviousOutput = true;
+                oddNumberOutputsSoFar = true;
                 return Long.MIN_VALUE | 127; // need high value in last byte in order to skip the fast path
             }
         }
