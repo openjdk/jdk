@@ -1168,11 +1168,11 @@ public class RandomSupport {
         }
         // We didn't use the upper part of U1 after all.  We'll probably be able to use it later.
         final long maxExtraMinus1;
-        if (maxValue >= Math.nextDown(MAX_EXPONENTIAL)) {
+        if (maxValue >= MAX_EXPONENTIAL) {
             maxExtraMinus1 = Long.MAX_VALUE;
         } else {
-            // Add 1 because casting to long rounds down, and we want to round up
-            maxExtraMinus1 = ((long) (maxValue / DoubleZigguratTables.exponentialX0)) + 1;
+            // Conversion to long rounds toward zero
+            maxExtraMinus1 = (long) (maxValue / DoubleZigguratTables.exponentialX0);
         }
         for (long extra = 0; ; ) {
             // Use Walker's alias method to sample an (unsigned) integer j from a discrete
