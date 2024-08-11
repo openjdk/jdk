@@ -32,7 +32,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import javax.net.ServerSocketFactory;
@@ -62,9 +61,8 @@ public class Http2TestServer implements AutoCloseable {
     final Set<Http2TestServerConnection> connections;
     final Properties properties;
     final String name;
-    // request approver which takes the server connection key and the incoming request path
-    // as inputs
-    private volatile BiPredicate<String, String> newRequestApprover;
+    // request approver which takes the server connection key as the input
+    private volatile Predicate<String> newRequestApprover;
 
     private static ThreadFactory defaultThreadFac =
         (Runnable r) -> {
@@ -291,11 +289,11 @@ public class Http2TestServer implements AutoCloseable {
         return serverName;
     }
 
-    public void setRequestApprover(final BiPredicate<String, String> approver) {
+    public void setRequestApprover(final Predicate<String> approver) {
         this.newRequestApprover = approver;
     }
 
-    BiPredicate<String, String> getRequestApprover() {
+    Predicate<String> getRequestApprover() {
         return this.newRequestApprover;
     }
 

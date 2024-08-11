@@ -284,8 +284,7 @@ public class H2GoAwayTest {
             this.maxAllowedReqs = maxAllowedReqs;
         }
 
-        public boolean allowNewRequest(final String serverConnKey,
-                                       final String reqPath) {
+        public boolean allowNewRequest(final String serverConnKey) {
             final int approved = numApproved.incrementAndGet();
             return approved <= maxAllowedReqs;
         }
@@ -301,7 +300,7 @@ public class H2GoAwayTest {
         private final Map<String, AtomicInteger> numDisapproved =
                 new ConcurrentHashMap<>();
 
-        public boolean allowNewRequest(final String serverConnKey, final String reqPath) {
+        public boolean allowNewRequest(final String serverConnKey) {
             final AtomicInteger approved = numApproved.computeIfAbsent(serverConnKey,
                     (k) -> new AtomicInteger());
             int curr = approved.get();
