@@ -3810,12 +3810,11 @@ public final class DateTimeFormatterBuilder {
             }
             long inSec = inSecs;
             int inNano = NANO_OF_SECOND.checkValidIntValue(inNanos != null ? inNanos : 0);
-            boolean printNanoInLocalDateTime = fractionalDigits == -2
-                    || fractionalDigits == 0
-                    || (inNano == 0 && (fractionalDigits == 0 || fractionalDigits == -1));
             if (fractionalDigits == 0) {
                 inNano = 0;
             }
+            boolean printNanoInLocalDateTime = fractionalDigits == -2
+                    || (inNano == 0 && (fractionalDigits == 0 || fractionalDigits == -1));
             if (inSec >= -SECONDS_0000_TO_1970) {
                 currentEra(buf, inSec, printNanoInLocalDateTime ? inNano : 0);
             } else {
