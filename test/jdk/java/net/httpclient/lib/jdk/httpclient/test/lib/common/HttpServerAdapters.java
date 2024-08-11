@@ -58,7 +58,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
-import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -721,7 +721,7 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
-        public abstract void setRequestApprover(final BiPredicate<String, String> approver);
+        public abstract void setRequestApprover(final Predicate<String> approver);
 
         public String serverAuthority() {
             InetSocketAddress address = getAddress();
@@ -872,7 +872,7 @@ public interface HttpServerAdapters {
             public Version getVersion() { return Version.HTTP_1_1; }
 
             @Override
-            public void setRequestApprover(final BiPredicate<String, String> approver) {
+            public void setRequestApprover(final Predicate<String> approver) {
                 throw new UnsupportedOperationException("not supported");
             }
         }
@@ -928,7 +928,7 @@ public interface HttpServerAdapters {
             public Version getVersion() { return Version.HTTP_2; }
 
             @Override
-            public void setRequestApprover(final BiPredicate<String, String> approver) {
+            public void setRequestApprover(final Predicate<String> approver) {
                 this.impl.setRequestApprover(approver);
             }
         }

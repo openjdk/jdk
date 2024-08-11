@@ -82,6 +82,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -641,7 +642,7 @@ public class Http2TestServerConnection {
 
         // skip processing the request if configured to do so
         final String connKey = connectionKey();
-        if (!shouldProcessNewHTTPRequest(connKey, path)) {
+        if (!shouldProcessNewHTTPRequest(connKey)) {
             System.err.println("Rejecting primordial stream 1 and sending GOAWAY" +
                     " on server connection " + connKey + ", for request: " + path);
             sendGoAway(ErrorFrame.NO_ERROR);
@@ -661,12 +662,12 @@ public class Http2TestServerConnection {
         });
     }
 
-    private boolean shouldProcessNewHTTPRequest(final String serverConnKey, final String reqPath) {
-        final BiPredicate<String, String> approver = this.server.getRequestApprover();
+    private boolean shouldProcessNewHTTPRequest(final String serverConnKey) {
+        final Predicate<String> approver = this.server.getRequestApprover();
         if (approver == null) {
             return true; // process the request
         }
-        return approver.test(serverConnKey, reqPath);
+        return approver.test(serverConnKey);
     }
 
     final String connectionKey() {
@@ -718,7 +719,7 @@ public class Http2TestServerConnection {
         // skip processing the request if the server is configured to do so
         final String connKey = connectionKey();
         final String path = headers.firstValue(":path").orElse("");
-        if (!shouldProcessNewHTTPRequest(connKey, path)) {
+        if (!shouldProcessNewHTTPRequest(connKey)) {
             System.err.println("Rejecting stream " + streamid
                     + " and sending GOAWAY on server connection "
                     + connKey + ", for request: " + path);
