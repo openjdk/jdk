@@ -21,7 +21,7 @@ public class RandomSupportTest {
                 return Long.MIN_VALUE;
             } else {
                 havePreviousOutput = true;
-                return Long.MIN_VALUE | 255; // need high value in last byte in order to skip the fast path
+                return Long.MIN_VALUE | 127; // need high value in last byte in order to skip the fast path
             }
         }
     }
