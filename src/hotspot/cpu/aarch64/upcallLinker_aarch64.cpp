@@ -223,7 +223,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ block_comment("{ on_entry");
   __ lea(c_rarg0, Address(sp, frame_data_offset));
-  __ movptr(c_rarg1, (intptr_t)receiver);
   __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ blr(rscratch1);
   __ mov(rthread, r0);
@@ -241,8 +240,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ block_comment("{ load target ");
   __ movptr(j_rarg0, (intptr_t)receiver);
-  __ ldr(rscratch1, RuntimeAddress(StubRoutines::upcall_stub_load_target()));
-  __ blr(rscratch1); // puts target Method* in rmethod
+  __ far_call(RuntimeAddress(StubRoutines::upcall_stub_load_target()), rscratch1); // puts target Method* in rmethod
   __ block_comment("} load target ");
 
   __ push_cont_fastpath(rthread);

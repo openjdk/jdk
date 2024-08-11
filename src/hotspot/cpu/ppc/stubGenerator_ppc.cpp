@@ -4769,32 +4769,25 @@ address generate_lookup_secondary_supers_table_stub(u1 super_klass_index) {
   }
 
   // load Method* target of MethodHandle
-  // c_rarg0 = jobject receiver
-  // c_rarg1 = JavaThread* thread
+  // R3_ARG1 = jobject receiver
+  // R19_method = result Method*
   address generate_upcall_stub_load_target() {
-    Register rmethod = c_rarg0;
-    Register rreceiver = c_rarg0;
-    Register rthread = c_rarg1;
 
     StubCodeMark mark(this, "StubRoutines", "upcall_stub_load_target");
     address start = __ pc();
     __ save_LR_CR(R0);
-    __ push_frame(frame::native_abi_reg_args_size, R22_tmp2);
 
-    __ resolve_jobject(rreceiver, R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS); // kills R31
-    __ std(rreceiver, in_bytes(JavaThread::vm_result_offset()), rthread);
+    __ resolve_global_jobject(R3_ARG1, R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS); // kills R31
       // Load target method from receiver
-    __ load_heap_oop(rmethod, java_lang_invoke_MethodHandle::form_offset(), rreceiver,
+    __ load_heap_oop(R19_method, java_lang_invoke_MethodHandle::form_offset(), R3_ARG1,
                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
-    __ load_heap_oop(rmethod, java_lang_invoke_LambdaForm::vmentry_offset(), rmethod,
+    __ load_heap_oop(R19_method, java_lang_invoke_LambdaForm::vmentry_offset(), R19_method,
                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
-    __ load_heap_oop(rmethod, java_lang_invoke_MemberName::method_offset(), rmethod,
+    __ load_heap_oop(R19_method, java_lang_invoke_MemberName::method_offset(), R19_method,
                     R22_tmp2, R23_tmp3, MacroAssembler::PRESERVATION_FRAME_LR_GP_FP_REGS, IS_NOT_NULL);
-    __ ld(rmethod, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), rmethod);
-    __ std(rreceiver, in_bytes(JavaThread::callee_target_offset()), rthread); // just in case callee is deoptimized
-    __ std(rreceiver, in_bytes(JavaThread::vm_result_2_offset()), rthread);
+    __ ld(R19_method, java_lang_invoke_ResolvedMethodName::vmtarget_offset(), R19_method);
+    __ std(R19_method, in_bytes(JavaThread::callee_target_offset()), R16_thread); // just in case callee is deoptimized
 
-    __ pop_frame();
     __ restore_LR_CR(R0);
     __ blr();
 

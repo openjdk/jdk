@@ -222,7 +222,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ block_comment("{ on_entry");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry), R0);
   __ addi(R3_ARG1, R1_SP, frame_data_offset);
-  __ load_const_optimized(R4_ARG2, (intptr_t)receiver, R0);
   __ call_c(call_target_address);
   __ mr(R16_thread, R3_RET);
   __ block_comment("} on_entry");
@@ -237,13 +236,15 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::native_abi_minframe_size, frame::jit_out_preserve_size);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(R3_ARG1);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ load_const_optimized(call_target_address, StubRoutines::upcall_stub_load_target(), R0);
+  __ load_const_optimized(R3_ARG1, (intptr_t)receiver, R0);
+  __ mtctr(call_target_address);
+  __ bctrl(); // loads target Method* into R19_method
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath();
 
-  __ get_vm_result_2(R19_method);
   __ ld(call_target_address, in_bytes(Method::from_compiled_offset()), R19_method);
   __ mtctr(call_target_address);
   __ bctrl();

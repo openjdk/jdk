@@ -207,7 +207,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ block_comment("on_entry {");
   __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::on_entry));
   __ z_aghik(Z_ARG1, Z_SP, frame_data_offset);
-  __ load_const_optimized(Z_ARG2, (intptr_t)receiver);
   __ call(call_target_address);
   __ z_lgr(Z_thread, Z_RET);
   __ block_comment("} on_entry");
@@ -217,11 +216,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size);
   __ block_comment("} argument_shuffle");
 
-  __ block_comment("receiver {");
-  __ get_vm_result(Z_ARG1);
-  __ block_comment("} receiver");
+  __ block_comment("load target {");
+  __ load_const_optimized(Z_ARG1, (intptr_t)receiver);
+  __ call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // load taget Method* into Z_method
+  __ block_comment("} load target");
 
-  __ get_vm_result_2(Z_method);
   __ z_lg(call_target_address, Address(Z_method, in_bytes(Method::from_compiled_offset())));
   __ call(call_target_address);
 

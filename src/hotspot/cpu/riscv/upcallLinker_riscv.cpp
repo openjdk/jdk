@@ -224,7 +224,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   __ block_comment("{ on_entry");
   __ la(c_rarg0, Address(sp, frame_data_offset));
-  __ movptr(c_rarg1, (address) receiver);
   __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry));
   __ mv(xthread, x10);
   __ reinit_heapbase();
@@ -261,13 +260,13 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   arg_shuffle.generate(_masm, as_VMStorage(shuffle_reg), abi._shadow_space_bytes, 0);
   __ block_comment("} argument shuffle");
 
-  __ block_comment("{ receiver ");
-  __ get_vm_result(j_rarg0, xthread);
-  __ block_comment("} receiver ");
+  __ block_comment("{ load target ");
+  __ movptr(j_rarg0, (intptr_t) receiver);
+  __ far_call(RuntimeAddress(StubRoutines::upcall_stub_load_target())); // loads Method* into xmethod
+  __ block_comment("} load target ");
 
   __ push_cont_fastpath(xthread);
 
-  __ get_vm_result_2(xmethod, xthread);
   __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
   __ jalr(t0);
 
