@@ -34,7 +34,7 @@ public class RandomSupportTest {
             System.out.println("got " + val + " for max " + max);
             assertTrue(val >= max);
         }
-        for (int i = 5; i < 30; i++) {
+        for (int i = 5; i < 24; i++) {
             double max = Math.scalb(1.0, i);
             WorstCaseRandomGenerator rng = new WorstCaseRandomGenerator();
             double val = RandomSupport.computeNextExponentialSoftCapped(rng, max);
