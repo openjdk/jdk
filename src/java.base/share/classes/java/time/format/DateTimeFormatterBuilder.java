@@ -3822,19 +3822,24 @@ public final class DateTimeFormatterBuilder {
             }
             // add fraction
             if (!printNanoInLocalDateTime) {
-                buf.append('.');
-                int div = 100_000_000;
-                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
-                                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
-                                    i < fractionalDigits); i++) {
-                    int digit = inNano / div;
-                    buf.append((char) (digit + '0'));
-                    inNano = inNano - (digit * div);
-                    div = div / 10;
-                }
+                printNano(buf, inSec, inNano);
             }
             buf.append('Z');
             return true;
+        }
+
+        private void printNano(StringBuilder buf, long inSec, int inNano) {
+            buf.append('.');
+            int div = 100_000_000;
+            int fractionalDigits = this.fractionalDigits;
+            for (int i = 0; ((fractionalDigits == -1 && inNano > 0) ||
+                    (fractionalDigits == -2 && (inNano > 0 || (i % 3) != 0)) ||
+                    i < fractionalDigits); i++) {
+                int digit = inNano / div;
+                buf.append((char) (digit + '0'));
+                inNano = inNano - (digit * div);
+                div = div / 10;
+            }
         }
 
         private static void currentEra(StringBuilder buf, long inSec, int inNano) {
