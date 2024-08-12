@@ -154,7 +154,7 @@ public class Exchanger<V> {
      * performance.  Nodes also include a participant-local random
      * number generator.
      *
-     * Spreading out contention requires that the mempory locations
+     * Spreading out contention requires that the memory locations
      * used by the arena slots don't share a cache line -- otherwise,
      * the arena would have almost no benefit. We arrange this by
      * adding another level of indirection: The arena elements point
@@ -189,14 +189,14 @@ public class Exchanger<V> {
      *
      * These mechanics rely on a reasonable choice of constant SPINS.
      * The time cost of SPINS * Thread.onSpinWait() should be at least
-     * the cost of a park/unpark context switch, and larger than that
-     * two failed CASes, but still small enouvgh to avoid excessive
-     * delays during arena shrinkage.  We also deal with the
+     * the expected cost of a park/unpark context switch, and larger
+     * than that of two failed CASes, but still small enough to avoid
+     * excessive delays during arena shrinkage.  We also deal with the
      * possibility that when an offering thread waits for a release,
      * spin-waiting would be useless because the releasing thread is
      * descheduled. On multiprocessors, we cannot know this in
      * general. But when Virtual Threads are used, method
-     * ForkJoinWorkerThread. hasKnownQueuedWork serves as a guide to
+     * ForkJoinWorkerThread.hasKnownQueuedWork serves as a guide to
      * whether to spin or immediately block, allowing a context switch
      * that may enable a releaser.  Note also that when many threads
      * are being run on few cores, enountering enough collisions to
@@ -220,10 +220,11 @@ public class Exchanger<V> {
      *
      * Support for optional timeouts in a single method adds further
      * complexity. Note that for the sake of arena bounds control,
-     * time bounds must be ignored during spinouts, which may cause
-     * very short timeouts to be exceeded.  Responses to interruption
-     * are handled similarly, postponing commitment to throw
-     * InterruptedException until successfully cancelled.
+     * time bounds must be ignored during spinouts, which may delay
+     * TimeoutExceptions (but no more so than would excessive context
+     * switching that could occur otherwise).  Responses to
+     * interruption are handled similarly, postponing commitment to
+     * throw InterruptedException until successfully cancelled.
      *
      * Design differences from previous releases include:
      * * Accommodation of VirtualThreads.
@@ -315,7 +316,7 @@ public class Exchanger<V> {
      * @param deadline if zero, untimed, else timeout deadline
      * @return the other thread's item
      * @throws InterruptedException if interrupted while waiting
-     * @throws TimeoutException deadline nonzero and timed out
+     * @throws TimeoutException if deadline nonzero and timed out
      */
     private final V xchg(V x, long deadline)
         throws InterruptedException, TimeoutException {
@@ -367,10 +368,9 @@ public class Exchanger<V> {
                 if (ENTRY.compareAndSet(s, null, p)) {
                     boolean tryCancel;           // true if interrupted
                     Thread t = Thread.currentThread();
-                    if (!(tryCancel = t.isInterrupted()) &&
+                    if (!(tryCancel = t.isInterrupted()) && ncpu > 1 &&
                         (i != 0 ||               // check for busy VTs
-                         (!ForkJoinWorkerThread.hasKnownQueuedWork() &&
-                          ncpu > 1))) {
+                         (!ForkJoinWorkerThread.hasKnownQueuedWork()))) {
                         for (int j = SPINS; j > 0; --j) {
                             if ((v = p.match) != null) {
                                 MATCH.set(p, null);
@@ -379,7 +379,7 @@ public class Exchanger<V> {
                             Thread.onSpinWait();
                         }
                     }
-                    for (long ns = 0L;;) {       // block or cancel offer
+                    for (long ns = 1L;;) {       // block or cancel offer
                         if ((v = p.match) != null) {
                             MATCH.set(p, null);
                             break outer;
