@@ -1190,7 +1190,7 @@ class Stream<T> extends ExchangeImpl<T> {
 
                 // if we find a cf here it should be already completed.
                 // finding a non completed cf should not happen. just assert it.
-                assert cf.isDone() || request.expectContinue && expectTimeoutRaised
+                assert cf.isDone() || request.expectContinue && expectTimeoutRaised()
                         : "Removing uncompleted response: could cause code to hang!";
             } else {
                 // getResponseAsync() is called first. Create a CompletableFuture
@@ -1226,7 +1226,7 @@ class Stream<T> extends ExchangeImpl<T> {
             int cfs_len = response_cfs.size();
             for (int i=0; i<cfs_len; i++) {
                 cf = response_cfs.get(i);
-                if (!cf.isDone() && !expectTimeoutRaised) {
+                if (!cf.isDone() && !expectTimeoutRaised()) {
                     Log.logTrace("Completing response (streamid={0}): {1}",
                                  streamid, cf);
                     if (debug.on())
@@ -1234,7 +1234,7 @@ class Stream<T> extends ExchangeImpl<T> {
                     response_cfs.remove(cf);
                     cf.complete(resp);
                     return;
-                } else if (expectTimeoutRaised) {
+                } else if (expectTimeoutRaised()) {
                     Log.logTrace("Completing response (streamid={0}): {1}",
                             streamid, cf);
                     if (debug.on())

@@ -58,7 +58,7 @@ abstract class ExchangeImpl<T> {
 
     final Exchange<T> exchange;
 
-    volatile boolean expectTimeoutRaised;
+    private volatile boolean expectTimeoutRaised;
 
     ExchangeImpl(Exchange<T> e) {
         // e == null means a http/2 pushed stream
@@ -71,6 +71,10 @@ abstract class ExchangeImpl<T> {
 
     final void setExpectTimeoutRaised(boolean timeoutRaised) {
         expectTimeoutRaised = timeoutRaised;
+    }
+
+    final boolean expectTimeoutRaised() {
+        return expectTimeoutRaised;
     }
 
     HttpClientImpl client() {

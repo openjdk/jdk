@@ -85,7 +85,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
     Http1HangServer http1HangServer;
     Http2TestServer http2TestServer; // HTTP/2
 
-    URI getUri, postUri, hangUri;
+    URI getUri, postUri, forcePostUri, hangUri;
     URI h2postUri, h2forcePostUri, h2hangUri, h2endStreamUri, h2warmupURI;
 
     static PrintStream err = new PrintStream(System.err);
@@ -97,6 +97,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
         return new Object[][]{
                 // URI, Expected Status Code, Will finish with Exception, Protocol Version
                 { postUri, 200, false, HTTP_1_1 },
+                { forcePostUri, 200, false, HTTP_1_1 },
                 { hangUri, 417, false, HTTP_1_1},
                 { h2postUri, 200, false, HTTP_2 },
                 { h2forcePostUri, 200, false, HTTP_2 },
@@ -138,8 +139,10 @@ public class ExpectContinueTest implements HttpServerAdapters {
         http1TestServer = HttpTestServer.create(HTTP_1_1);
         http1TestServer.addHandler(new GetHandler(), "/http1/get");
         http1TestServer.addHandler(new PostHandler(), "/http1/post");
+        http1TestServer.addHandler(new ForcePostHandler(), "/http1/forcePost");
         getUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/get");
         postUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/post");
+        forcePostUri = URI.create("http://" + http1TestServer.serverAuthority() + "/http1/forcePost");
 
         // Due to limitations of the above Http1 Test Server, a manual approach is taken to test the hanging with the
         // httpclient using Http1 so that the correct response header can be returned for the test case
@@ -201,6 +204,18 @@ public class ExpectContinueTest implements HttpServerAdapters {
             }
 
             // Read body from client and acknowledge with 200
+            try (InputStream is = exchange.getRequestBody()) {
+                err.println("Server reading body");
+                is.readAllBytes();
+                err.println("Server send 200 (length=0)");
+                exchange.sendResponseHeaders(200, 0);
+            }
+        }
+    }
+
+    static class ForcePostHandler implements HttpTestHandler {
+        @Override
+        public void handle(HttpTestExchange exchange) throws IOException {
             try (InputStream is = exchange.getRequestBody()) {
                 err.println("Server reading body");
                 is.readAllBytes();
