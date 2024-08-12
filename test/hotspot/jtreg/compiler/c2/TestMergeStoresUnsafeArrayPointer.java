@@ -53,6 +53,7 @@ public class TestMergeStoresUnsafeArrayPointer {
 
     static int four = 4;
     static int max_int = Integer.MAX_VALUE;
+    static int min_int = Integer.MIN_VALUE;
 
     public static void main(String[] args) {
         System.out.println("Allocate big array of SIZE = " + SIZE);
@@ -113,6 +114,40 @@ public class TestMergeStoresUnsafeArrayPointer {
             }
         }
 
+        val = 0;
+        System.out.println("test4");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test4(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test4 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
+        val = 0;
+        System.out.println("test5");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test5(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test5 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
         if (errors > 0) {
             throw new RuntimeException("ERRORS: " + errors);
         }
@@ -149,9 +184,26 @@ public class TestMergeStoresUnsafeArrayPointer {
     }
 
     // Test: if MergeStores is applied this can lead to wrong results
+    //  -> AddI needs overflow check.
     static void test3(int[] a, long anchor) {
         long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
         UNSAFE.putInt(a, base + (long)(max_int + 0), 0x42424242);
         UNSAFE.putInt(a, base + (long)(max_int + 4), 0x66666666);
+    }
+
+    // Test: "max_int - four" cannot be parsed further, but would not make a difference here.
+    static void test4(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(min_int - four) + 0, 0x42424242);
+        UNSAFE.putInt(a, base + (long)(min_int - four) + 4, 0x66666666);
+    }
+
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> SubI needs overflow check.
+    static void test5(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(min_int) - (long)(four) + 0, 0x42424242); // no overflow
+        UNSAFE.putInt(a, base + (long)(min_int - four)         + 4, 0x66666666); // overflow
     }
 }
