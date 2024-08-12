@@ -1070,8 +1070,11 @@ public final class StringConcatFactory {
     /**
      * Bytecode strategy.
      *
-     * <p>This strategy emits StringBuilder chains as similar as possible
-     * to what javac would. No exact sizing of parameters or estimates.
+     * <p>This strategy replicates based on the bytecode what StringBuilders are doing: it builds the
+     * byte[] array on its own and passes that byte[] array to String
+     * constructor. This strategy requires access to some private APIs in JDK,
+     * most notably, the private String constructor that accepts byte[] arrays
+     * without copying.
      */
     private static final class InlineHiddenClassStrategy {
         static final String METHOD_NAME = "concat";
@@ -1543,7 +1546,7 @@ public final class StringConcatFactory {
         }
 
         /**
-         * Generate coder method method. <p>
+         * Generate length method. <p>
          *
          * The following is an example of the generated target code:
          *
@@ -1584,7 +1587,7 @@ public final class StringConcatFactory {
         }
 
         /**
-         * Generate coder method method. <p>
+         * Generate coder method. <p>
          *
          * The following is an example of the generated target code:
          *
