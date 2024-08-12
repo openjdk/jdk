@@ -132,12 +132,11 @@ void GCLocker::stall_until_clear() {
   if (needs_gc()) {
     GCLockerTracer::inc_stall_count();
     log_debug_jni("Allocation failed. Thread stalled by JNI critical section.");
-  }
-
-  // Wait for _needs_gc  to be cleared
-  while (needs_gc()) {
     GCLockerTimingDebugLogger logger("Thread stalled by JNI critical section.");
-    ml.wait();
+    // Wait for _needs_gc to be cleared
+    while (needs_gc()) {
+      ml.wait();
+    }
   }
 }
 
@@ -152,18 +151,18 @@ void GCLocker::jni_lock(JavaThread* thread) {
   // Block entering threads if there's a pending GC request.
   if (needs_gc()) {
     log_debug_jni("Blocking thread as there is a pending GC request");
-  }
-  while (needs_gc()) {
     GCLockerTimingDebugLogger logger("Thread blocked to enter critical region.");
-    // There's at least one thread that has not left the critical region (CR)
-    // completely. When that last thread (no new threads can enter CR due to the
-    // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
-    // to false and wakes up all blocked threads.
-    // We would like to assert #threads in CR to be > 0, `_jni_lock_count > 0`
-    // in the code, but it's too strong; it's possible that the last thread
-    // has called `jni_unlock`, but not yet finished the call, e.g. initiating
-    // a GCCause::_gc_locker GC.
-    ml.wait();
+    while (needs_gc()) {
+      // There's at least one thread that has not left the critical region (CR)
+      // completely. When that last thread (no new threads can enter CR due to the
+      // blocking) exits CR, it calls `jni_unlock`, which sets `_needs_gc`
+      // to false and wakes up all blocked threads.
+      // We would like to assert #threads in CR to be > 0, `_jni_lock_count > 0`
+      // in the code, but it's too strong; it's possible that the last thread
+      // has called `jni_unlock`, but not yet finished the call, e.g. initiating
+      // a GCCause::_gc_locker GC.
+      ml.wait();
+    }
   }
   thread->enter_critical();
   _jni_lock_count++;
