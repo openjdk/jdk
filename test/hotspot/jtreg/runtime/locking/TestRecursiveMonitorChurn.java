@@ -79,7 +79,7 @@ public class TestRecursiveMonitorChurn {
             final long fuzzy_max_difference = 10;
             if (Math.abs(monitor_count_change) < fuzzy_max_difference) {
                 final String type = monitor_count_change < 0 ? "deflation" : "inflation";
-                throw new SkippedException("Intermittent " + type + " detected. Invalid test." );
+                throw new SkippedException("Intermittent " + type + " detected. Invalid test.");
             }
 
             if (monitor_count_change < 0) {
