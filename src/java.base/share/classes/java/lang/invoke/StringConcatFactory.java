@@ -1676,7 +1676,7 @@ public final class StringConcatFactory {
                         } else if (cl == CD_char) {
                             methodTypeDesc = PREPEND_char;
                         } else {
-                            kind = TypeKind.from(String.class);
+                            kind = TypeKind.ReferenceType;
                             methodTypeDesc = PREPEND_String;
                         }
 
