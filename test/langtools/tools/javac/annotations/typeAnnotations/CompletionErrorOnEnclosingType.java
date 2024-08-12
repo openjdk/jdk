@@ -88,7 +88,7 @@ public class CompletionErrorOnEnclosingType {
 
         var expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.err.cant.read.type.annotations: B, a, @Anno,"
+                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, a,"
                             + " (compiler.misc.class.file.not.found: A)",
                         "1 error");
         if (!expectedOutput.equals(log)) {

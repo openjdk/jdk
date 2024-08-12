@@ -2318,7 +2318,7 @@ public class ClassReader {
         } catch (CompletionFailure ex) {
             JavaFileObject prev = log.useSource(currentClassFile);
             try {
-                log.error(Errors.CantReadTypeAnnotations(s.owner, s.name, attributes, ex.getDetailValue()));
+                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
             } finally {
                 log.useSource(prev);
             }
