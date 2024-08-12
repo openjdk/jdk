@@ -52,6 +52,8 @@ import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
+import sun.swing.MnemonicHandler;
+
 /**
  * Windows rendition of the component.
  */
@@ -149,11 +151,11 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                 MenuElement[] selectedPath = msm.getSelectedPath();
                 if (selectedPath.length > 0 && (selectedPath[0] instanceof JMenuBar)) {
                     msm.clearSelectedPath();
-                    WindowsLookAndFeel.setMnemonicHidden(true);
+                    MnemonicHandler.setMnemonicHidden(true);
                 } else {
                     MenuElement[] path = {menuBar, menu};
                     msm.setSelectedPath(path);
-                    WindowsLookAndFeel.setMnemonicHidden(false);
+                    MnemonicHandler.setMnemonicHidden(false);
                 }
                 WindowsLookAndFeel.repaintRootPane(menuBar);
             }

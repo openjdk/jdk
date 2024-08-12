@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -42,7 +43,7 @@ import static java.lang.classfile.ClassFile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
-        implements CodeModel, LabelContext {
+        implements LabelContext {
 
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 
@@ -140,7 +141,7 @@ public final class CodeImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(classReader)) {
             super.writeTo(buf);
         }
@@ -149,11 +150,11 @@ public final class CodeImpl
                                     new Consumer<CodeBuilder>() {
                                         @Override
                                         public void accept(CodeBuilder cb) {
-                                            forEachElement(cb);
+                                            forEach(cb);
                                         }
                                     },
                                     (SplitConstantPool)buf.constantPool(),
-                                    ((BufWriterImpl)buf).context(),
+                                    buf.context(),
                                     null).writeTo(buf);
         }
     }
@@ -166,7 +167,8 @@ public final class CodeImpl
     }
 
     @Override
-    public void forEachElement(Consumer<CodeElement> consumer) {
+    public void forEach(Consumer<? super CodeElement> consumer) {
+        Objects.requireNonNull(consumer);
         inflateMetadata();
         boolean doLineNumbers = (lineNumbers != null);
         generateCatchTargets(consumer);
@@ -208,7 +210,7 @@ public final class CodeImpl
         return exceptionTable;
     }
 
-    public boolean compareCodeBytes(BufWriter buf, int offset, int len) {
+    public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
         return codeLength == len
                && classReader.compare(buf, offset, codeStart, codeLength);
     }
@@ -329,7 +331,7 @@ public final class CodeImpl
         findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).ifPresent(RuntimeInvisibleTypeAnnotationsAttribute::annotations);
     }
 
-    private void generateCatchTargets(Consumer<CodeElement> consumer) {
+    private void generateCatchTargets(Consumer<? super CodeElement> consumer) {
         // We attach all catch targets to bci zero, because trying to attach them
         // to their range could subtly affect the order of exception processing
         iterateExceptionHandlers(new ExceptionHandlerAction() {
@@ -343,7 +345,7 @@ public final class CodeImpl
         });
     }
 
-    private void generateDebugElements(Consumer<CodeElement> consumer) {
+    private void generateDebugElements(Consumer<? super CodeElement> consumer) {
         for (Attribute<?> a : attributes()) {
             if (a.attributeMapper() == Attributes.characterRangeTable()) {
                 var attr = (BoundCharacterRangeTableAttribute) a;

@@ -152,7 +152,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                ((BufWriterImpl) dcb.bytecodesBufWriter).asByteBuffer(),
+                dcb.bytecodesBufWriter.asByteBuffer(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -383,7 +383,7 @@ public final class StackMapGenerator {
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
         return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
-            public void writeBody(BufWriter b) {
+            public void writeBody(BufWriterImpl b) {
                 b.writeU2(frames.size());
                 Frame prevFrame =  new Frame(classHierarchy);
                 prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);

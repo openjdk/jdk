@@ -1947,8 +1947,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     bind(L);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -1992,8 +1991,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
