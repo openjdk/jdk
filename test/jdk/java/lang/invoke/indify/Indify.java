@@ -946,9 +946,9 @@ public class Indify {
                             break decode;
                         }
                         arg = jvm.pop();
-                        if(branchCount == 2 && UNKNOWN_CON.equals(arg))
+                        if (branchCount == 2 && UNKNOWN_CON.equals(arg))
                             break;
-                        if((arg instanceof PoolEntry) && ((PoolEntry) arg).tag() == wantedTag)
+                        if ((arg instanceof PoolEntry) && ((PoolEntry) arg).tag() == wantedTag)
                             return (PoolEntry) arg;
                         break decode;
                     }
