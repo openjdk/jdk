@@ -177,15 +177,17 @@ public class Exchanger<V> {
      * sampling. On each miss (collision or spinout), a thread chooses
      * a new random index within the arena.  Upon the third collision
      * with the same current bound, it tries to grow the arena. And
-     * upon the second spinout, it tries to shrink. (The asymmetry in
-     * part reflects relative costs, and reduces flailing.)  The bound
-     * field is tagged with sequence numbers to reduce stale
-     * decisions. Uniform random indices are generated using XorShift
-     * with enough bits so that bias (See Knuth TAoCP vol 2) is
-     * negligible for moduli used here (at most 256) without requiring
-     * rejection tests. Using nonuniform randoms with greater weight
-     * to higher indices is also possible but does not seem worthwhile
-     * in practice.
+     * upon the second spinout, it tries to shrink. The asymmetry in
+     * part reflects relative costs, and reduces flailing. Because
+     * they cannot be changed without also changing the sampling
+     * strategy, these rules are directly incorporated into uses of
+     * the xchg "misses" variable.  The bound field is tagged with
+     * sequence numbers to reduce stale decisions. Uniform random
+     * indices are generated using XorShift with enough bits so that
+     * bias (See Knuth TAoCP vol 2) is negligible for moduli used here
+     * (at most 256) without requiring rejection tests. Using
+     * nonuniform randoms with greater weight to higher indices is
+     * also possible but does not seem worthwhile in practice.
      *
      * These mechanics rely on a reasonable choice of constant SPINS.
      * The time cost of SPINS * Thread.onSpinWait() should be at least
@@ -237,9 +239,9 @@ public class Exchanger<V> {
 
     /**
      * The maximum supported arena index. The maximum allocatable
-     * arena size is MMASK + 1. Must be a power of two minus one, less
-     * than (1<<(31-ASHIFT)). The cap of 255 (0xff) more than suffices
-     * for the expected scaling limits of the main algorithms.
+     * arena size is MMASK + 1. Must be a power of two minus one. The
+     * cap of 255 (0xff) more than suffices for the expected scaling
+     * limits of the main algorithms.
      */
     private static final int MMASK = 0xff;
 
@@ -429,7 +431,7 @@ public class Exchanger<V> {
      */
     public Exchanger() {
         int h = (ncpu = Runtime.getRuntime().availableProcessors()) >>> 1;
-        int size = (h == 0) ? 1 : (h >= MMASK)? MMASK + 1 : h;
+        int size = (h == 0) ? 1 : (h > MMASK) ? MMASK + 1 : h;
         (arena = new Slot[size])[0] = new Slot();
     }
 
