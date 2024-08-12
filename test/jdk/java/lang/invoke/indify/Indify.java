@@ -728,7 +728,7 @@ public class Indify {
             List<Object> args;
             List<Object> bsmArgs = null;  // args to invokeGeneric
         decode:
-            for(Instruction instruction : instructions){
+            for (Instruction instruction : instructions) {
 
                 int bc = instruction.opcode().bytecode();
                 String UNKNOWN_CON = "<unknown>";
