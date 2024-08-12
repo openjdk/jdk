@@ -469,7 +469,6 @@ class LightweightSynchronizer::LockStackInflateContendedLocks : private OopClosu
     oop obj = *o;
     if (obj->mark_acquire().has_monitor()) {
       if (_length > 0 && _contended_oops[_length-1] == obj) {
-        // assert(VM_Version::supports_recursive_lightweight_locking(), "must be");
         // Recursive
         return;
       }
