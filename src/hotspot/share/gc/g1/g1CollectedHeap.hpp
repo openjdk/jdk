@@ -752,7 +752,6 @@ private:
   // of the incremental collection pause, executed by the vm thread.
   void do_collection_pause_at_safepoint_helper();
 
-  G1HeapVerifier::G1VerifyType young_collection_verify_type() const;
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
