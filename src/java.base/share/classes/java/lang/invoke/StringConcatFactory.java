@@ -1068,7 +1068,7 @@ public final class StringConcatFactory {
     }
 
     /**
-     * Bytecode strategy.
+     * Implement efficient hidden class strategy for String concatenation
      *
      * <p>This strategy replicates based on the bytecode what StringBuilders are doing: it builds the
      * byte[] array on its own and passes that byte[] array to String
