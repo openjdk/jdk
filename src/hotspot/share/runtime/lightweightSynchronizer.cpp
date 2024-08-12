@@ -64,18 +64,18 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
       return (uintx)value->hash();
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->inc_table_count();
+      reinterpret_cast<ObjectMonitorWorld*>(context)->inc_items_count();
       return AllocateHeap(size, MEMFLAGS::mtObjectMonitor);
     };
     static void free_node(void* context, void* memory, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->dec_table_count();
+      reinterpret_cast<ObjectMonitorWorld*>(context)->dec_items_count();
       FreeHeap(memory);
     }
   };
   using ConcurrentTable = ConcurrentHashTable<Config, MEMFLAGS::mtObjectMonitor>;
 
   ConcurrentTable* _table;
-  volatile size_t _table_count;
+  volatile size_t _items_count;
   size_t _table_size;
   volatile bool _resize;
 
@@ -122,16 +122,16 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
     }
   };
 
-  void inc_table_count() {
-    Atomic::inc(&_table_count);
+  void inc_items_count() {
+    Atomic::inc(&_items_count);
   }
 
-  void dec_table_count() {
-    Atomic::inc(&_table_count);
+  void dec_items_count() {
+    Atomic::inc(&_items_count);
   }
 
   double get_load_factor() {
-    return (double)_table_count/(double)_table_size;
+    return (double)_items_count/(double)_table_size;
   }
 
   size_t table_size(Thread* current = Thread::current()) {
@@ -178,7 +178,7 @@ public:
                                ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
                                ConcurrentTable::DEFAULT_MUTEX_RANK,
                                this)),
-    _table_count(0),
+    _items_count(0),
     _table_size(table_size()),
     _resize(false) {}
 
