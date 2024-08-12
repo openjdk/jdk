@@ -33,9 +33,9 @@
 #include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
-VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
+LiveVirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 
-void VirtualMemory::update_peak(size_t size) {
+void LiveVirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
     size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
@@ -47,7 +47,7 @@ void VirtualMemory::update_peak(size_t size) {
   }
 }
 
-void VirtualMemorySummary::snapshot(VirtualMemorySnapshot* s) {
+void VirtualMemorySummary::snapshot(FlatVirtualMemorySnapshot* s) {
   // Snapshot current thread stacks
   VirtualMemoryTracker::snapshot_thread_stacks();
   as_snapshot()->copy_to(s);

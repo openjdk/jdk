@@ -47,7 +47,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::RegionData regiondata(sidx, flag);
   VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
   for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
+    FlatVirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
     summary->reserve_memory(diff.flag[i].commit);
     summary->commit_memory(diff.flag[i].commit);
   }
@@ -56,7 +56,7 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
+    FlatVirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_flag(i));
     summary->reserve_memory(diff.flag[i].commit);
     summary->commit_memory(diff.flag[i].commit);
   }
@@ -178,19 +178,19 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
   return _tracker->files();
 };
 
-void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
+void MemoryFileTracker::summary_snapshot(FlatVirtualMemorySnapshot* snapshot) const {
   for (int d = 0; d < _files.length(); d++) {
     const MemoryFile* file = _files.at(d);
     for (int i = 0; i < mt_number_of_types; i++) {
-      VirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
-      const VirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
+      FlatVirtualMemory* snap = snapshot->by_type(NMTUtil::index_to_flag(i));
+      const FlatVirtualMemory* current = file->_summary.by_type(NMTUtil::index_to_flag(i));
       // Only account the committed memory.
       snap->commit_memory(current->committed());
     }
   }
 }
 
-void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
+void MemoryFileTracker::Instance::summary_snapshot(FlatVirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
 }
 

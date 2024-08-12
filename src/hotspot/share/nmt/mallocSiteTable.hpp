@@ -35,14 +35,29 @@
 
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory
-class MallocSite : public AllocationSite {
-  MemoryCounter _c;
+class LiveMallocSite : public AllocationSite {
+  LiveMemoryCounter _c;
  public:
-  MallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
+  LiveMallocSite(const NativeCallStack& stack, MEMFLAGS flags) :
     AllocationSite(stack, flags) {}
 
   void allocate(size_t size)      { _c.allocate(size);   }
   void deallocate(size_t size)    { _c.deallocate(size); }
+
+  // Memory allocated from this code path
+  size_t size()  const { return _c.size(); }
+
+  // The number of calls were made
+  size_t count() const { return _c.count(); }
+//
+  const LiveMemoryCounter* counter() const { return &_c; }
+};
+
+class FlatMallocSite : public AllocationSite {
+  FlatMemoryCounter _c;
+ public:
+  FlatMallocSite(const LiveMallocSite* lms) :
+          AllocationSite(*lms->call_stack(), lms->flag()), _c(*lms->counter()) {}
 
   // Memory allocated from this code path
   size_t size()  const { return _c.size(); }
@@ -51,13 +66,13 @@ class MallocSite : public AllocationSite {
   // The number of calls were made
   size_t count() const { return _c.count(); }
 
-  const MemoryCounter* counter() const { return &_c; }
+  const FlatMemoryCounter* counter() const { return &_c; }
 };
 
 // Malloc site hashtable entry
 class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
  private:
-  MallocSite                         _malloc_site;
+  LiveMallocSite                     _malloc_site;
   const unsigned int                 _hash;
   MallocSiteHashtableEntry* volatile _next;
 
@@ -79,8 +94,8 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
 
   unsigned int hash() const { return _hash; }
 
-  inline const MallocSite* peek() const { return &_malloc_site; }
-  inline MallocSite* data()             { return &_malloc_site; }
+  inline const LiveMallocSite* peek() const { return &_malloc_site; }
+  inline LiveMallocSite* data()             { return &_malloc_site; }
 
   // Allocation/deallocation on this allocation site
   inline void allocate(size_t size)   { _malloc_site.allocate(size);   }
@@ -93,7 +108,7 @@ class MallocSiteHashtableEntry : public CHeapObj<mtNMT> {
 // The walker walks every entry on MallocSiteTable
 class MallocSiteWalker : public StackObj {
  public:
-   virtual bool do_malloc_site(const MallocSite* e) { return false; }
+   virtual bool do_malloc_site(const LiveMallocSite* e) { return false; }
 };
 
 /*
@@ -132,7 +147,7 @@ class MallocSiteTable : AllStatic {
   // Access and copy a call stack from this table. Shared lock should be
   // acquired before access the entry.
   static inline bool access_stack(NativeCallStack& stack, const MallocHeader& header) {
-    MallocSite* site = malloc_site(header.mst_marker());
+    LiveMallocSite* site = malloc_site(header.mst_marker());
     if (site != nullptr) {
       stack = *site->call_stack();
       return true;
@@ -148,7 +163,7 @@ class MallocSiteTable : AllStatic {
   //  2. overflow hash bucket
   static inline bool allocation_at(const NativeCallStack& stack, size_t size,
       uint32_t* marker, MEMFLAGS flags) {
-    MallocSite* site = lookup_or_add(stack, marker, flags);
+    LiveMallocSite* site = lookup_or_add(stack, marker, flags);
     if (site != nullptr) site->allocate(size);
     return site != nullptr;
   }
@@ -156,7 +171,7 @@ class MallocSiteTable : AllStatic {
   // Record memory deallocation. marker indicates where the allocation
   // information was recorded.
   static inline bool deallocation_at(size_t size, uint32_t marker) {
-    MallocSite* site = malloc_site(marker);
+    LiveMallocSite* site = malloc_site(marker);
     if (site != nullptr) {
       site->deallocate(size);
       return true;
@@ -172,8 +187,8 @@ class MallocSiteTable : AllStatic {
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MEMFLAGS flags);
 
-  static MallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
-  static MallocSite* malloc_site(uint32_t marker);
+  static LiveMallocSite* lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags);
+  static LiveMallocSite* malloc_site(uint32_t marker);
   static bool walk(MallocSiteWalker* walker);
 
   static inline unsigned int hash_to_index(unsigned int hash) {

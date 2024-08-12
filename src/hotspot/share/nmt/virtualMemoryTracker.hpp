@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,44 +38,63 @@
 /*
  * Virtual memory counter
  */
-class VirtualMemory {
+class LiveVirtualMemory {
  private:
-  size_t     _reserved;
-  size_t     _committed;
-
+  volatile size_t _reserved;
+  volatile size_t _committed;
   volatile size_t _peak_size;
   void update_peak(size_t size);
 
  public:
-  VirtualMemory() : _reserved(0), _committed(0), _peak_size(0) {}
+  LiveVirtualMemory() : _reserved(0), _committed(0), _peak_size(0) {}
 
-  inline void reserve_memory(size_t sz) { _reserved += sz; }
+  inline void reserve_memory(size_t sz) {
+    Atomic::add(&_reserved, sz, memory_order_relaxed);
+  }
   inline void commit_memory (size_t sz) {
-    _committed += sz;
-    assert(_committed <= _reserved, "Sanity check");
-    update_peak(_committed);
+    size_t sum = Atomic::add(&_committed, sz, memory_order_relaxed);
+    assert(sum <= _reserved, "Sanity check");
+    update_peak(sum);
   }
 
   inline void release_memory (size_t sz) {
     assert(_reserved >= sz, "Negative amount");
-    _reserved -= sz;
+    Atomic::sub(&_reserved, sz, memory_order_relaxed);
   }
 
   inline void uncommit_memory(size_t sz) {
     assert(_committed >= sz, "Negative amount");
-    _committed -= sz;
+    Atomic::sub(&_committed, sz, memory_order_relaxed);
   }
 
-  inline size_t reserved()  const { return _reserved;  }
-  inline size_t committed() const { return _committed; }
+  inline size_t reserved()  const { return  Atomic::load(&_reserved);  }
+  inline size_t committed() const { return Atomic::load(&_committed); }
   inline size_t peak_size() const {
     return Atomic::load(&_peak_size);
   }
 };
 
+class FlatVirtualMemory {
+ private:
+  size_t     _reserved;
+  size_t     _committed;
+  size_t _peak_size;
+  void update_peak(size_t size);
+
+ public:
+  FlatVirtualMemory() : _reserved(0), _committed(0), _peak_size(0) {}
+  FlatVirtualMemory(LiveVirtualMemory lvm) : _reserved(lvm.reserved()), _committed(lvm.committed()), _peak_size(lvm.peak_size()) {}
+  inline void reserve_memory(size_t sz) { _reserved += sz; }
+  inline void commit_memory (size_t sz) { _committed += sz; }
+
+  inline size_t reserved()  const { return _reserved;  }
+  inline size_t committed() const { return _committed; }
+  inline size_t peak_size() const { return _peak_size; }
+};
+
 // Virtual memory allocation site, keeps track where the virtual memory is reserved.
 class VirtualMemoryAllocationSite : public AllocationSite {
-  VirtualMemory _c;
+  FlatVirtualMemory _c;
  public:
   VirtualMemoryAllocationSite(const NativeCallStack& stack, MEMFLAGS flag) :
     AllocationSite(stack, flag) { }
@@ -91,19 +110,20 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class FlatVirtualMemorySnapshot : public ResourceObj {
   friend class VirtualMemorySummary;
+  friend class LiveVirtualMemorySnapshot;
 
- private:
-  VirtualMemory  _virtual_memory[mt_number_of_types];
+private:
+  FlatVirtualMemory  _virtual_memory[mt_number_of_types];
 
- public:
-  inline VirtualMemory* by_type(MEMFLAGS flag) {
+public:
+  inline FlatVirtualMemory* by_type(MEMFLAGS flag) {
     int index = NMTUtil::flag_to_index(flag);
     return &_virtual_memory[index];
   }
 
-  inline const VirtualMemory* by_type(MEMFLAGS flag) const {
+  inline const FlatVirtualMemory* by_type(MEMFLAGS flag) const {
     int index = NMTUtil::flag_to_index(flag);
     return &_virtual_memory[index];
   }
@@ -123,10 +143,28 @@ class VirtualMemorySnapshot : public ResourceObj {
     }
     return amount;
   }
+};
 
-  void copy_to(VirtualMemorySnapshot* s) {
+class LiveVirtualMemorySnapshot : public ResourceObj {
+  friend class VirtualMemorySummary;
+
+ private:
+  LiveVirtualMemory  _virtual_memory[mt_number_of_types];
+
+ public:
+  inline LiveVirtualMemory* by_type(MEMFLAGS flag) {
+    int index = NMTUtil::flag_to_index(flag);
+    return &_virtual_memory[index];
+  }
+
+  inline const LiveVirtualMemory* by_type(MEMFLAGS flag) const {
+    int index = NMTUtil::flag_to_index(flag);
+    return &_virtual_memory[index];
+  }
+
+  void copy_to(FlatVirtualMemorySnapshot* s) {
     for (int index = 0; index < mt_number_of_types; index ++) {
-      s->_virtual_memory[index] = _virtual_memory[index];
+      s->_virtual_memory[index] = FlatVirtualMemory(_virtual_memory[index]);
     }
   }
 };
@@ -164,14 +202,14 @@ class VirtualMemorySummary : AllStatic {
     as_snapshot()->by_type(to)->commit_memory(size);
   }
 
-  static void snapshot(VirtualMemorySnapshot* s);
+  static void snapshot(FlatVirtualMemorySnapshot* s);
 
-  static VirtualMemorySnapshot* as_snapshot() {
+  static LiveVirtualMemorySnapshot* as_snapshot() {
     return &_snapshot;
   }
 
  private:
-  static VirtualMemorySnapshot _snapshot;
+  static LiveVirtualMemorySnapshot _snapshot;
 };
 
 

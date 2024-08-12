@@ -50,7 +50,7 @@ public:
     friend MemoryFileTracker;
     friend class NMTMemoryFileTrackerTest;
     const char* _descriptive_name;
-    VirtualMemorySnapshot _summary;
+    FlatVirtualMemorySnapshot _summary;
     VMATree _tree;
   public:
     NONCOPYABLE(MemoryFile);
@@ -72,7 +72,7 @@ public:
   MemoryFile* make_file(const char* descriptive_name);
   void free_file(MemoryFile* file);
 
-  void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
+  void summary_snapshot(FlatVirtualMemorySnapshot* snapshot) const;
 
   // Print detailed report of file
   void print_report_on(const MemoryFile* file, outputStream* stream, size_t scale);
@@ -99,7 +99,7 @@ public:
                                 const NativeCallStack& stack, MEMFLAGS flag);
     static void free_memory(MemoryFile* device, size_t offset, size_t size);
 
-    static void summary_snapshot(VirtualMemorySnapshot* snapshot);
+    static void summary_snapshot(FlatVirtualMemorySnapshot* snapshot);
 
     static void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
     static void print_all_reports_on(outputStream* stream, size_t scale);

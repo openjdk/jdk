@@ -51,8 +51,8 @@ class MemReporterBase : public StackObj {
 
   // Helper functions
   // Calculate total reserved and committed amount
-  static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
-  static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
+  static size_t reserved_total(const FlatMallocMemory* malloc, const FlatVirtualMemory* vm);
+  static size_t committed_total(const FlatMallocMemory* malloc, const FlatVirtualMemory* vm);
 
  protected:
   inline outputStream* output() const {
@@ -108,9 +108,9 @@ class MemReporterBase : public StackObj {
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed, size_t peak = 0) const;
-  void print_malloc(const MemoryCounter* c, MEMFLAGS flag = mtNone) const;
+  void print_malloc(const FlatMemoryCounter* c, MEMFLAGS flag = mtNone) const;
   void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
-  void print_arena(const MemoryCounter* c) const;
+  void print_arena(const FlatMemoryCounter* c) const;
 
   void print_virtual_memory_region(const char* type, address base, size_t size) const;
 };
@@ -120,8 +120,8 @@ class MemReporterBase : public StackObj {
  */
 class MemSummaryReporter : public MemReporterBase {
  private:
-  MallocMemorySnapshot*   _malloc_snapshot;
-  VirtualMemorySnapshot*  _vm_snapshot;
+  FlatMallocMemorySnapshot*   _malloc_snapshot;
+  FlatVirtualMemorySnapshot*  _vm_snapshot;
   size_t                  _instance_class_count;
   size_t                  _array_class_count;
 
@@ -139,8 +139,8 @@ class MemSummaryReporter : public MemReporterBase {
   virtual void report();
  private:
   // Report summary for each memory type
-  void report_summary_of_type(MEMFLAGS type, MallocMemory* malloc_memory,
-    VirtualMemory* virtual_memory);
+  void report_summary_of_type(MEMFLAGS type, FlatMallocMemory* malloc_memory,
+    FlatVirtualMemory* virtual_memory);
 
   void report_metadata(Metaspace::MetadataType type) const;
 };
@@ -205,9 +205,9 @@ class MemSummaryDiffReporter : public MemReporterBase {
  private:
   // report the comparison of each memory type
   void diff_summary_of_type(MEMFLAGS type,
-    const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+    const FlatMallocMemory* early_malloc, const FlatVirtualMemory* early_vm,
     const MetaspaceCombinedStats& early_ms,
-    const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+    const FlatMallocMemory* current_malloc, const FlatVirtualMemory* current_vm,
     const MetaspaceCombinedStats& current_ms) const;
 
  protected:
@@ -247,11 +247,11 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   void diff_virtual_memory_sites() const;
 
   // New malloc allocation site in recent baseline
-  void new_malloc_site (const MallocSite* site) const;
+  void new_malloc_site (const FlatMallocSite* site) const;
   // The malloc allocation site is not in recent baseline
-  void old_malloc_site (const MallocSite* site) const;
+  void old_malloc_site (const FlatMallocSite* site) const;
   // Compare malloc allocation site, it is in both baselines
-  void diff_malloc_site(const MallocSite* early, const MallocSite* current)  const;
+  void diff_malloc_site(const FlatMallocSite* early, const FlatMallocSite* current)  const;
 
   // New virtual memory allocation site in recent baseline
   void new_virtual_memory_site (const VirtualMemoryAllocationSite* callsite) const;

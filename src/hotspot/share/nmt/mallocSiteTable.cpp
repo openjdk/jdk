@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ bool MallocSiteTable::walk(MallocSiteWalker* walker) {
  *    2. Overflow hash bucket.
  *  Under any of above circumstances, caller should handle the situation.
  */
-MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
+LiveMallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t* marker, MEMFLAGS flags) {
   assert(flags != mtNone, "Should have a real memory type");
   const unsigned int hash = key.calculate_hash();
   const unsigned int index = hash_to_index(hash);
@@ -136,7 +136,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
   MallocSiteHashtableEntry* head = _table[index];
   while (head != nullptr && pos_idx < MAX_BUCKET_LENGTH) {
     if (head->hash() == hash) {
-      MallocSite* site = head->data();
+      LiveMallocSite* site = head->data();
       if (site->flag() == flags && site->equals(key)) {
         *marker = build_marker(index, pos_idx);
         return head->data();
@@ -162,7 +162,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 }
 
 // Access malloc site
-MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
+LiveMallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   uint16_t bucket_idx = bucket_idx_from_marker(marker);
   assert(bucket_idx < table_size, "Invalid bucket index");
   const uint16_t pos_idx = pos_idx_from_marker(marker);

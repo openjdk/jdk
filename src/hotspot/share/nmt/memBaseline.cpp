@@ -34,7 +34,7 @@
 /*
  * Sizes are sorted in descenting order for reporting
  */
-int compare_malloc_size(const MallocSite& s1, const MallocSite& s2) {
+int compare_malloc_size(const FlatMallocSite& s1, const FlatMallocSite& s2) {
   if (s1.size() == s2.size()) {
     return 0;
   } else if (s1.size() > s2.size()) {
@@ -57,12 +57,12 @@ int compare_virtual_memory_size(const VirtualMemoryAllocationSite& s1,
 }
 
 // Sort into allocation site addresses order for baseline comparison
-int compare_malloc_site(const MallocSite& s1, const MallocSite& s2) {
+int compare_malloc_site(const FlatMallocSite& s1, const FlatMallocSite& s2) {
   return s1.call_stack()->compare(*s2.call_stack());
 }
 
 // Sort into allocation site addresses and memory type order for baseline comparison
-int compare_malloc_site_and_type(const MallocSite& s1, const MallocSite& s2) {
+int compare_malloc_site_and_type(const FlatMallocSite& s1, const FlatMallocSite& s2) {
   int res = compare_malloc_site(s1, s2);
   if (res == 0) {
     res = (int)(NMTUtil::flag_to_index(s1.flag()) - NMTUtil::flag_to_index(s2.flag()));
@@ -81,19 +81,20 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
  */
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
-  SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
+  SortedLinkedList<FlatMallocSite, compare_malloc_size> _malloc_sites;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
 
-  LinkedList<MallocSite>* malloc_sites() {
+  LinkedList<FlatMallocSite>* malloc_sites() {
     return &_malloc_sites;
   }
 
-  bool do_malloc_site(const MallocSite* site) {
-    if (site->size() > 0) {
-      if (_malloc_sites.add(*site) != nullptr) {
+  bool do_malloc_site(const LiveMallocSite* site) {
+    FlatMallocSite fms(site);
+    if (fms.size() > 0) {
+      if (_malloc_sites.add(fms) != nullptr) {
         return true;
       } else {
         return false;  // OOM
@@ -262,7 +263,7 @@ VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) 
 // Sorting allocations sites in different orders
 void MemBaseline::malloc_sites_to_size_order() {
   if (_malloc_sites_order != by_size) {
-    SortedLinkedList<MallocSite, compare_malloc_size> tmp;
+    SortedLinkedList<FlatMallocSite, compare_malloc_size> tmp;
 
     // Add malloc sites to sorted linked list to sort into size order
     tmp.move(&_malloc_sites);
@@ -274,7 +275,7 @@ void MemBaseline::malloc_sites_to_size_order() {
 
 void MemBaseline::malloc_sites_to_allocation_site_order() {
   if (_malloc_sites_order != by_site && _malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site> tmp;
+    SortedLinkedList<FlatMallocSite, compare_malloc_site> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
@@ -285,7 +286,7 @@ void MemBaseline::malloc_sites_to_allocation_site_order() {
 
 void MemBaseline::malloc_sites_to_allocation_site_and_type_order() {
   if (_malloc_sites_order != by_site_and_type) {
-    SortedLinkedList<MallocSite, compare_malloc_site_and_type> tmp;
+    SortedLinkedList<FlatMallocSite, compare_malloc_site_and_type> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());

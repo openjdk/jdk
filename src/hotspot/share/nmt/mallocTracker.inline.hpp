@@ -52,7 +52,7 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MEMFLAGS f) {
       // Category Limit?
       l = MallocLimitHandler::category_limit(f);
       if (l->sz > 0) {
-        const MallocMemory* mm = as_snapshot()->by_type(f);
+        const LiveMallocMemory* mm = as_snapshot()->by_type(f);
         size_t so_far = mm->malloc_size() + mm->arena_size();
         if ((so_far + s) > l->sz) {
           return category_limit_reached(f, s, so_far, l);

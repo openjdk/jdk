@@ -33,7 +33,7 @@
 #include "runtime/mutex.hpp"
 #include "utilities/linkedlist.hpp"
 
-typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
+typedef LinkedListIterator<FlatMallocSite>                   MallocSiteIterator;
 typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
 typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
@@ -58,8 +58,8 @@ class MemBaseline {
 
  private:
   // Summary information
-  MallocMemorySnapshot   _malloc_memory_snapshot;
-  VirtualMemorySnapshot  _virtual_memory_snapshot;
+  FlatMallocMemorySnapshot   _malloc_memory_snapshot;
+  FlatVirtualMemorySnapshot  _virtual_memory_snapshot;
   MetaspaceCombinedStats _metaspace_stats;
 
   size_t                 _instance_class_count;
@@ -68,7 +68,7 @@ class MemBaseline {
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite>                  _malloc_sites;
+  LinkedListImpl<FlatMallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
   LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
@@ -93,11 +93,11 @@ class MemBaseline {
 
   BaselineType baseline_type() const { return _baseline_type; }
 
-  MallocMemorySnapshot* malloc_memory_snapshot() {
+  FlatMallocMemorySnapshot* malloc_memory_snapshot() {
     return &_malloc_memory_snapshot;
   }
 
-  VirtualMemorySnapshot* virtual_memory_snapshot() {
+  FlatVirtualMemorySnapshot* virtual_memory_snapshot() {
     return &_virtual_memory_snapshot;
   }
 
@@ -144,12 +144,12 @@ class MemBaseline {
     return bl->_malloc_memory_snapshot.malloc_overhead();
   }
 
-  MallocMemory* malloc_memory(MEMFLAGS flag) {
+  FlatMallocMemory* malloc_memory(MEMFLAGS flag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     return _malloc_memory_snapshot.by_type(flag);
   }
 
-  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+  FlatVirtualMemory* virtual_memory(MEMFLAGS flag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     return _virtual_memory_snapshot.by_type(flag);
   }

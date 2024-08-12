@@ -45,9 +45,9 @@
 #include "utilities/vmError.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-MallocMemorySnapshot MallocMemorySummary::_snapshot;
+LiveMallocMemorySnapshot MallocMemorySummary::_snapshot;
 
-void MemoryCounter::update_peak(size_t size, size_t cnt) {
+void LiveMemoryCounter::update_peak(size_t size, size_t cnt) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
     size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
@@ -61,16 +61,16 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
   }
 }
 
-void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+void LiveMallocMemorySnapshot::copy_to(FlatMallocMemorySnapshot* s) {
   // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
   ThreadCritical tc;
-  s->_all_mallocs = _all_mallocs;
+  s->_all_mallocs = FlatMemoryCounter(_all_mallocs);
   size_t total_size = 0;
   size_t total_count = 0;
   for (int index = 0; index < mt_number_of_types; index ++) {
-    s->_malloc[index] = _malloc[index];
+    s->_malloc[index] = FlatMallocMemory(_malloc[index]);
     total_size += s->_malloc[index].malloc_size();
     total_count += s->_malloc[index].malloc_count();
   }
@@ -79,7 +79,16 @@ void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
 }
 
 // Total malloc'd memory used by arenas
-size_t MallocMemorySnapshot::total_arena() const {
+size_t FlatMallocMemorySnapshot::total_arena() const {
+  size_t amount = 0;
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    amount += _malloc[index].arena_size();
+  }
+  return amount;
+}
+
+// Total malloc'd memory used by arenas
+size_t LiveMallocMemorySnapshot::total_arena() const {
   size_t amount = 0;
   for (int index = 0; index < mt_number_of_types; index ++) {
     amount += _malloc[index].arena_size();
@@ -89,7 +98,7 @@ size_t MallocMemorySnapshot::total_arena() const {
 
 // Make adjustment by subtracting chunks used by arenas
 // from total chunks to get total free chunk size
-void MallocMemorySnapshot::make_adjustment() {
+void FlatMallocMemorySnapshot::make_adjustment() {
   size_t arena_size = total_arena();
   int chunk_idx = NMTUtil::flag_to_index(mtChunk);
   _malloc[chunk_idx].record_free(arena_size);

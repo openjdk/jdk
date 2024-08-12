@@ -54,12 +54,12 @@ void NMTUsage::update_malloc_usage() {
   // Thread critical needed keep values in sync, total area size
   // is deducted from mtChunk in the end to give correct values.
   ThreadCritical tc;
-  const MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
+  const LiveMallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
   size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_types; i++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    const MallocMemory* mm = ms->by_type(flag);
+    const LiveMallocMemory* mm = ms->by_type(flag);
     _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
     total_arena_size +=  mm->arena_size();
   }
@@ -76,14 +76,14 @@ void NMTUsage::update_malloc_usage() {
 }
 
 void NMTUsage::update_vm_usage() {
-  const VirtualMemorySnapshot* vms = VirtualMemorySummary::as_snapshot();
+  const LiveVirtualMemorySnapshot* vms = VirtualMemorySummary::as_snapshot();
 
   // Reset total to allow recalculation.
   _vm_total.committed = 0;
   _vm_total.reserved = 0;
   for (int i = 0; i < mt_number_of_types; i++) {
     MEMFLAGS flag = NMTUtil::index_to_flag(i);
-    const VirtualMemory* vm = vms->by_type(flag);
+    const LiveVirtualMemory* vm = vms->by_type(flag);
 
     _vm_by_type[i].reserved = vm->reserved();
     _vm_by_type[i].committed = vm->committed();

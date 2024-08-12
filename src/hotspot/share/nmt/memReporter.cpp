@@ -53,11 +53,11 @@ static ssize_t counter_diff(size_t c1, size_t c2) {
 MemReporterBase::MemReporterBase(outputStream* out, size_t scale) :
   _scale(scale), _output(out), _auto_indentor(out) {}
 
-size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) {
+size_t MemReporterBase::reserved_total(const FlatMallocMemory* malloc, const FlatVirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
 }
 
-size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) {
+size_t MemReporterBase::committed_total(const FlatMallocMemory* malloc, const FlatVirtualMemory* vm) {
   return malloc->malloc_size() + malloc->arena_size() + vm->committed();
 }
 
@@ -70,7 +70,7 @@ void MemReporterBase::print_total(size_t reserved, size_t committed, size_t peak
   }
 }
 
-void MemReporterBase::print_malloc(const MemoryCounter* c, MEMFLAGS flag) const {
+void MemReporterBase::print_malloc(const FlatMemoryCounter* c, MEMFLAGS flag) const {
   const char* scale = current_scale();
   outputStream* out = output();
   const char* alloc_type = (flag == mtThreadStack) ? "" : "malloc=";
@@ -115,7 +115,7 @@ void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed, si
   }
 }
 
-void MemReporterBase::print_arena(const MemoryCounter* c) const {
+void MemReporterBase::print_arena(const FlatMemoryCounter* c) const {
   const char* scale = current_scale();
   outputStream* out = output();
 
@@ -181,23 +181,23 @@ void MemSummaryReporter::report() {
     MEMFLAGS flag = NMTUtil::index_to_flag(index);
     // thread stack is reported as part of thread category
     if (flag == mtThreadStack) continue;
-    MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
-    VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
+    FlatMallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
+    FlatVirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
 
     report_summary_of_type(flag, malloc_memory, virtual_memory);
   }
 }
 
 void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
-  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
+  FlatMallocMemory*  malloc_memory, FlatVirtualMemory* virtual_memory) {
 
   size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
   size_t committed_amount = committed_total(malloc_memory, virtual_memory);
 
   // Count thread's native stack in "Thread" category
   if (flag == mtThread) {
-    const VirtualMemory* thread_stack_usage =
-      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+    const FlatVirtualMemory* thread_stack_usage =
+      (const FlatVirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
     reserved_amount  += thread_stack_usage->reserved();
     committed_amount += thread_stack_usage->committed();
   } else if (flag == mtNMT) {
@@ -238,7 +238,7 @@ void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
     out->print_cr("(  instance classes #" SIZE_FORMAT ", array classes #" SIZE_FORMAT ")",
                   _instance_class_count, _array_class_count);
   } else if (flag == mtThread) {
-    const VirtualMemory* thread_stack_usage =
+    const FlatVirtualMemory* thread_stack_usage =
      _vm_snapshot->by_type(mtThreadStack);
     // report thread count
     out->print_cr("(threads #" SIZE_FORMAT ")", ThreadStackTracker::thread_count());
@@ -328,7 +328,7 @@ int MemDetailReporter::report_malloc_sites() {
 
   outputStream* out = output();
 
-  const MallocSite* malloc_site;
+  const FlatMallocSite* malloc_site;
   int num_omitted = 0;
   while ((malloc_site = malloc_itr.next()) != nullptr) {
     // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
@@ -595,9 +595,9 @@ void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, 
 
 
 void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
-  const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+  const FlatMallocMemory* early_malloc, const FlatVirtualMemory* early_vm,
   const MetaspaceCombinedStats& early_ms,
-  const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+  const FlatMallocMemory* current_malloc, const FlatVirtualMemory* current_vm,
   const MetaspaceCombinedStats& current_ms) const {
 
   outputStream* out = output();
@@ -614,9 +614,9 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
 
   // Adjust virtual memory total
   if (flag == mtThread) {
-    const VirtualMemory* early_thread_stack_usage =
+    const FlatVirtualMemory* early_thread_stack_usage =
       _early_baseline.virtual_memory(mtThreadStack);
-    const VirtualMemory* current_thread_stack_usage =
+    const FlatVirtualMemory* current_thread_stack_usage =
       _current_baseline.virtual_memory(mtThreadStack);
 
     early_reserved_amount  += early_thread_stack_usage->reserved();
@@ -679,9 +679,9 @@ void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag,
 
       out->print("(stack: ");
       // report thread stack
-      const VirtualMemory* current_thread_stack =
+      const FlatVirtualMemory* current_thread_stack =
         _current_baseline.virtual_memory(mtThreadStack);
-      const VirtualMemory* early_thread_stack =
+      const FlatVirtualMemory* early_thread_stack =
         _early_baseline.virtual_memory(mtThreadStack);
 
       print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
@@ -798,8 +798,8 @@ void MemDetailDiffReporter::diff_malloc_sites() const {
   MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site_and_type);
   MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site_and_type);
 
-  const MallocSite* early_site   = early_itr.next();
-  const MallocSite* current_site = current_itr.next();
+  const FlatMallocSite* early_site   = early_itr.next();
+  const FlatMallocSite* current_site = current_itr.next();
 
   while (early_site != nullptr || current_site != nullptr) {
     if (early_site == nullptr) {
@@ -864,18 +864,18 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
 }
 
 
-void MemDetailDiffReporter::new_malloc_site(const MallocSite* malloc_site) const {
+void MemDetailDiffReporter::new_malloc_site(const FlatMallocSite* malloc_site) const {
   diff_malloc_site(malloc_site->call_stack(), malloc_site->size(), malloc_site->count(),
     0, 0, malloc_site->flag());
 }
 
-void MemDetailDiffReporter::old_malloc_site(const MallocSite* malloc_site) const {
+void MemDetailDiffReporter::old_malloc_site(const FlatMallocSite* malloc_site) const {
   diff_malloc_site(malloc_site->call_stack(), 0, 0, malloc_site->size(),
     malloc_site->count(), malloc_site->flag());
 }
 
-void MemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
-  const MallocSite* current)  const {
+void MemDetailDiffReporter::diff_malloc_site(const FlatMallocSite* early,
+  const FlatMallocSite* current)  const {
   if (early->flag() != current->flag()) {
     // If malloc site type changed, treat it as deallocation of old type and
     // allocation of new type.
