@@ -32,6 +32,8 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
   Node* pointer = _mem->in(MemNode::Address);
 
+  // pointer->dump_bfs(4,0,"#");
+
   const NoOverflowInt one(1);
   _worklist.push(MemPointerSummand(pointer, one LP64_ONLY( COMMA one )));
 
@@ -90,7 +92,8 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_AddL:
     case Op_AddI:
     {
-      // TODO check if we should decompose or not: int-overflow!!!
+      LP64_ONLY( if (opc == Op_AddI && !is_safe_from_int_overflow(scaleL)) { break; } )
+
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
       _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
@@ -178,6 +181,36 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   // TODO wording of "terminal summands"?
   _summands.push(summand);
 }
+
+#ifdef _LP64
+bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const NoOverflowInt scaleL) {
+  // TODO needed?
+  if (scaleL.is_NaN()) {
+    assert(false, "scaleL must not be NaN");
+    return false;
+  }
+
+  const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
+  if (ary_ptr_t != nullptr) {
+    // Array accesses that are not Unsafe always have a RangeCheck which ensures
+    // that there is no int overflow.
+    if (!_mem->is_unsafe_access()) {
+      return true;
+    }
+
+    // TODO
+    BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
+    if (is_java_primitive(array_element_bt)) {
+      NoOverflowInt array_element_size_in_bytes = NoOverflowInt(type2aelembytes(array_element_bt));
+      if (scaleL.is_multiple_of(array_element_size_in_bytes)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+#endif
 
 MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other) const {
   // Check if all summands are the same:

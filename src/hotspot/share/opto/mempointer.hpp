@@ -92,6 +92,21 @@ public:
     return *this;
   }
 
+  NoOverflowInt abs() const {
+    if (is_NaN()) { return make_NaN(); }
+    if (value() >= 0) { return *this; }
+    return NoOverflowInt(0) - *this;
+  }
+
+  bool is_multiple_of(const NoOverflowInt other) const {
+    NoOverflowInt a = this->abs();
+    NoOverflowInt b = other.abs();
+    if (a.is_NaN()) { return false; }
+    if (b.is_NaN()) { return false; }
+    if (b.is_zero()) { return false; }
+    return a.value() % b.value() == 0;
+  }
+
 #ifndef PRODUCT
   void print() const {
     if (is_NaN()) {
@@ -358,6 +373,7 @@ public:
 private:
   MemPointerSimpleForm parse_simple_form();
   void parse_sub_expression(const MemPointerSummand summand);
+  LP64_ONLY( bool is_safe_from_int_overflow(const NoOverflowInt scaleL); )
 };
 
 // TODO
