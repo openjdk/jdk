@@ -81,9 +81,10 @@ instruct g1StoreP(memory mem, any_RegP src, rRegP tmp1, rRegP tmp2, rRegP tmp3, 
   format %{ "movq    $mem, $src\t# ptr" %}
   ins_encode %{
     // Materialize the store address internally (as opposed to defining 'mem' as
-    // an indirect memory operand) to reduce C2's scheduling and register
-    // allocation pressure (fewer Mach nodes). The same holds for g1StoreN and
-    // g1EncodePAndStoreN.
+    // an indirect memory operand) to reduce the overhead of LCM when processing
+    // large basic blocks with many stores. Such basic blocks arise, for
+    // instance, from static initializations of large String arrays.
+    // The same holds for g1StoreN and g1EncodePAndStoreN.
     __ lea($tmp1$$Register, $mem$$Address);
     write_barrier_pre(masm, this,
                       $tmp1$$Register /* obj */,
