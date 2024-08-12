@@ -141,7 +141,7 @@ public interface OperatingSystemMXBean extends
      *
      * <p> This method is not idempotent. The recent period of observation
      * is the duration since the last call made to this method, or {@link #getCpuLoad()}.
-     * For the very first invocation of this method, the recent period of 
+     * For the very first invocation of this method, the recent period of
      * observation is undefined.
      *
      * @deprecated Use {@link #getCpuLoad()} instead of
@@ -169,7 +169,7 @@ public interface OperatingSystemMXBean extends
      *
      * <p> This method is not idempotent. The recent period of observation
      * is the duration since the last call made to this method, or {@link #getSystemCpuLoad()}.
-     * For the very first invocation of this method, the recent period of 
+     * For the very first invocation of this method, the recent period of
      * observation is undefined.
      *
      * @return the "recent cpu usage" for the whole operating environment;
