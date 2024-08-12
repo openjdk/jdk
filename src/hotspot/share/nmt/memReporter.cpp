@@ -23,11 +23,13 @@
  */
 #include "precompiled.hpp"
 #include "cds/filemap.hpp"
+#include "logging/log.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memflags.hpp"
 #include "nmt/memReporter.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
