@@ -3702,7 +3702,7 @@ address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_
   Label L_thaw_success;
   __ testptr(rbx, rbx);
   __ jccb(Assembler::notZero, L_thaw_success);
-  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+  __ jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
   __ bind(L_thaw_success);
 
   // Make room for the thawed frames and align the stack.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ import com.apple.laf.AquaButtonExtendedTypes.TypeSpecifier;
 import com.apple.laf.AquaUtilControlSize.Sizeable;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 import com.apple.laf.AquaUtils.RecyclableSingletonFromDefaultConstructor;
+import sun.swing.MnemonicHandler;
 import sun.swing.SwingUtilities2;
 
 public class AquaButtonUI extends BasicButtonUI implements Sizeable {
@@ -487,12 +488,10 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
      * Use the paintText method which takes the AbstractButton argument.
      */
     protected void paintText(final Graphics g, final JComponent c, final Rectangle localTextRect, final String text) {
-        final Graphics2D g2d = g instanceof Graphics2D ? (Graphics2D)g : null;
-
         final AbstractButton b = (AbstractButton)c;
         final ButtonModel model = b.getModel();
         final FontMetrics fm = g.getFontMetrics();
-        final int mnemonicIndex = AquaMnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
+        final int mnemonicIndex = MnemonicHandler.isMnemonicHidden() ? -1 : b.getDisplayedMnemonicIndex();
 
         /* Draw the Text */
         if (model.isEnabled()) {

@@ -533,11 +533,6 @@ size_t DefNewGeneration::capacity_before_gc() const {
   return eden()->capacity();
 }
 
-size_t DefNewGeneration::contiguous_available() const {
-  return eden()->free();
-}
-
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);
@@ -575,11 +570,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   }
   assert(to()->is_in_reserved(p), "inv");
   return block_start_const(to(), p);
-}
-
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
 }
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
@@ -838,7 +828,6 @@ void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
-  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
@@ -871,7 +860,7 @@ const char* DefNewGeneration::name() const {
   return "def new generation";
 }
 
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -881,8 +870,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 

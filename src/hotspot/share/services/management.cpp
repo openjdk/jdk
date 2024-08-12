@@ -149,9 +149,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  if (UseNotificationThread) {
-    NotificationThread::initialize();
-  }
+  NotificationThread::initialize();
+
   if (ManagementServer) {
     ResourceMark rm(THREAD);
     HandleMark hm(THREAD);

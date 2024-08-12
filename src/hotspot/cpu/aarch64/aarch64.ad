@@ -2745,10 +2745,7 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
     }
 
     if (index == -1) {
-      /* If we get an out-of-range offset it is a bug in the compiler,
-         so we assert here. */
-      assert(Address::offset_ok_for_immed(disp, exact_log2(size_in_memory)), "c2 compiler bug");
-      /* Fix up any out-of-range offsets. */
+      // Fix up any out-of-range offsets.
       assert_different_registers(rscratch1, base);
       Address addr = Address(base, disp);
       addr = __ legitimize_address(addr, size_in_memory, rscratch1);
@@ -3348,7 +3345,11 @@ encode %{
     int scale = $mem$$scale;
     int disp = $mem$$disp;
     if (index == -1) {
-      __ prfm(Address(base, disp), PSTL1KEEP);
+      // Fix up any out-of-range offsets.
+      assert_different_registers(rscratch1, base);
+      Address addr = Address(base, disp);
+      addr = __ legitimize_address(addr, 8, rscratch1);
+      __ prfm(addr, PSTL1KEEP);
     } else {
       Register index_reg = as_Register(index);
       if (disp == 0) {
@@ -3360,7 +3361,7 @@ encode %{
     }
   %}
 
-  /// mov envcodings
+  // mov encodings
 
   enc_class aarch64_enc_movw_imm(iRegI dst, immI src) %{
     uint32_t con = (uint32_t)$src$$constant;
@@ -4229,9 +4230,9 @@ operand immIOffset16()
   interface(CONST_INTER);
 %}
 
-operand immLoffset()
+operand immLOffset()
 %{
-  predicate(Address::offset_ok_for_immed(n->get_long(), 0));
+  predicate(n->get_long() >= -256 && n->get_long() <= 65520);
   match(ConL);
 
   op_cost(0);
@@ -5341,6 +5342,34 @@ operand indOffL16(iRegP reg, immLoffset16 off)
   %}
 %}
 
+operand indirectX2P(iRegL reg)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(CastX2P reg);
+  op_cost(0);
+  format %{ "[$reg]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp(0x0);
+  %}
+%}
+
+operand indOffX2P(iRegL reg, immLOffset off)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  match(AddP (CastX2P reg) off);
+  op_cost(0);
+  format %{ "[$reg, $off]\t# long -> ptr" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index(0xffffffff);
+    scale(0x0);
+    disp($off);
+  %}
+%}
+
 operand indirectN(iRegN reg)
 %{
   predicate(CompressedOops::shift() == 0);
@@ -5431,7 +5460,7 @@ operand indOffIN(iRegN reg, immIOffset off)
   %}
 %}
 
-operand indOffLN(iRegN reg, immLoffset off)
+operand indOffLN(iRegN reg, immLOffset off)
 %{
   predicate(CompressedOops::shift() == 0);
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5664,6 +5693,17 @@ operand iRegL2I(iRegL reg) %{
   interface(REG_INTER)
 %}
 
+operand iRegL2P(iRegL reg) %{
+
+  op_cost(0);
+
+  match(CastX2P reg);
+
+  format %{ "l2p($reg)" %}
+
+  interface(REG_INTER)
+%}
+
 opclass vmem2(indirect, indIndex, indOffI2, indOffL2);
 opclass vmem4(indirect, indIndex, indOffI4, indOffL4);
 opclass vmem8(indirect, indIndex, indOffI8, indOffL8);
@@ -5680,21 +5720,21 @@ opclass vmem16(indirect, indIndex, indOffI16, indOffL16);
 // instruction defs. we can turn a memory op into an Address
 
 opclass memory1(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI1, indOffL1,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
 
 opclass memory2(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI2, indOffL2,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indirectX2P, indOffX2P);
 
 opclass memory4(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI4, indOffL4,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 opclass memory8(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+                indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 // All of the memory operands. For the pipeline description.
 opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indIndex,
                indOffI1, indOffL1, indOffI2, indOffL2, indOffI4, indOffL4, indOffI8, indOffL8,
-               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN);
+               indirectN, indIndexScaledN, indIndexScaledI2LN, indIndexI2LN, indIndexN, indOffIN, indOffLN, indirectX2P, indOffX2P);
 
 
 // iRegIorL2I is used for src inputs in rules for 32 bit int (I)
@@ -5711,6 +5751,7 @@ opclass memory(indirect, indIndexScaled, indIndexScaledI2L, indIndexI2L, indInde
 // movw is actually redundant but its not too costly.
 
 opclass iRegIorL2I(iRegI, iRegL2I);
+opclass iRegPorL2P(iRegP, iRegL2P);
 
 //----------PIPELINE-----------------------------------------------------------
 // Rules which define the behavior of the target architectures pipeline.
@@ -9811,7 +9852,7 @@ instruct addI_reg_imm_i2l(iRegINoSp dst, iRegL src1, immIAddSub src2) %{
 %}
 
 // Pointer Addition
-instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
+instruct addP_reg_reg(iRegPNoSp dst, iRegPorL2P src1, iRegL src2) %{
   match(Set dst (AddP src1 src2));
 
   ins_cost(INSN_COST);
@@ -9826,7 +9867,7 @@ instruct addP_reg_reg(iRegPNoSp dst, iRegP src1, iRegL src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addP_reg_reg_ext(iRegPNoSp dst, iRegP src1, iRegIorL2I src2) %{
+instruct addP_reg_reg_ext(iRegPNoSp dst, iRegPorL2P src1, iRegIorL2I src2) %{
   match(Set dst (AddP src1 (ConvI2L src2)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9841,7 +9882,7 @@ instruct addP_reg_reg_ext(iRegPNoSp dst, iRegP src1, iRegIorL2I src2) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale scale) %{
+instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegPorL2P src1, iRegL src2, immIScale scale) %{
   match(Set dst (AddP src1 (LShiftL src2 scale)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9856,7 +9897,7 @@ instruct addP_reg_reg_lsl(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale scale
   ins_pipe(ialu_reg_reg_shift);
 %}
 
-instruct addP_reg_reg_ext_shift(iRegPNoSp dst, iRegP src1, iRegIorL2I src2, immIScale scale) %{
+instruct addP_reg_reg_ext_shift(iRegPNoSp dst, iRegPorL2P src1, iRegIorL2I src2, immIScale scale) %{
   match(Set dst (AddP src1 (LShiftL (ConvI2L src2) scale)));
 
   ins_cost(1.9 * INSN_COST);
@@ -9889,7 +9930,7 @@ instruct lshift_ext(iRegLNoSp dst, iRegIorL2I src, immI scale, rFlagsReg cr) %{
 // Pointer Immediate Addition
 // n.b. this needs to be more expensive than using an indirect memory
 // operand
-instruct addP_reg_imm(iRegPNoSp dst, iRegP src1, immLAddSub src2) %{
+instruct addP_reg_imm(iRegPNoSp dst, iRegPorL2P src1, immLAddSub src2) %{
   match(Set dst (AddP src1 src2));
 
   ins_cost(INSN_COST);

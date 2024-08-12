@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import jdk.internal.classfile.impl.AccessFlagsImpl;
 import jdk.internal.classfile.impl.ChainedClassBuilder;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.Util;
@@ -59,12 +60,6 @@ public sealed interface ClassBuilder
         permits ChainedClassBuilder, DirectClassBuilder {
 
     /**
-     * {@return the {@link ClassModel} representing the class being transformed,
-     * if this class builder represents the transformation of some {@link ClassModel}}
-     */
-    Optional<ClassModel> original();
-
-    /**
      * Sets the classfile version.
      * @param major the major version number
      * @param minor the minor version number
@@ -80,7 +75,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(int flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**
@@ -89,7 +84,7 @@ public sealed interface ClassBuilder
      * @return this builder
      */
     default ClassBuilder withFlags(AccessFlag... flags) {
-        return with(AccessFlags.ofClass(flags));
+        return with(new AccessFlagsImpl(AccessFlag.Location.CLASS, flags));
     }
 
     /**

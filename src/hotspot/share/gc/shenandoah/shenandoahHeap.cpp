@@ -66,7 +66,6 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #if INCLUDE_JFR
@@ -446,8 +445,6 @@ void ShenandoahHeap::initialize_mode() {
   if (ShenandoahGCMode != nullptr) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {
       _gc_mode = new ShenandoahSATBMode();
-    } else if (strcmp(ShenandoahGCMode, "iu") == 0) {
-      _gc_mode = new ShenandoahIUMode();
     } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
       _gc_mode = new ShenandoahPassiveMode();
     } else {
@@ -945,24 +942,36 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       return nullptr;
     }
 
-    // Block until control thread reacted, then retry allocation.
-    //
-    // It might happen that one of the threads requesting allocation would unblock
-    // way later after GC happened, only to fail the second allocation, because
-    // other threads have already depleted the free storage. In this case, a better
-    // strategy is to try again, as long as GC makes progress (or until at least
-    // one full GC has completed).
-    size_t original_count = shenandoah_policy()->full_gc_count();
-    while (result == nullptr
-        && (get_gc_no_progress_count() == 0 || original_count == shenandoah_policy()->full_gc_count())) {
-      control_thread()->handle_alloc_failure(req, true);
-      result = allocate_memory_under_lock(req, in_new_region);
-    }
+    if (result == nullptr) {
+      // Block until control thread reacted, then retry allocation.
+      //
+      // It might happen that one of the threads requesting allocation would unblock
+      // way later after GC happened, only to fail the second allocation, because
+      // other threads have already depleted the free storage. In this case, a better
+      // strategy is to try again, until at least one full GC has completed.
+      //
+      // Stop retrying and return nullptr to cause OOMError exception if our allocation failed even after:
+      //   a) We experienced a GC that had good progress, or
+      //   b) We experienced at least one Full GC (whether or not it had good progress)
+      //
+      // TODO: Consider GLOBAL GC rather than Full GC to remediate OOM condition: https://bugs.openjdk.org/browse/JDK-8335910
 
-    if (log_is_enabled(Debug, gc, alloc)) {
-      ResourceMark rm;
-      log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
-                           Thread::current()->name(), p2i(result), req.type_string(), req.size(), original_count, get_gc_no_progress_count());
+      size_t original_count = shenandoah_policy()->full_gc_count();
+      while ((result == nullptr) && (original_count == shenandoah_policy()->full_gc_count())) {
+        control_thread()->handle_alloc_failure(req, true);
+        result = allocate_memory_under_lock(req, in_new_region);
+      }
+      if (result != nullptr) {
+        // If our allocation request has been satisifed after it initially failed, we count this as good gc progress
+        notify_gc_progress();
+      }
+      if (log_is_enabled(Debug, gc, alloc)) {
+        ResourceMark rm;
+        log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT
+                             ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,
+                             Thread::current()->name(), p2i(result), req.type_string(), req.size(),
+                             original_count, get_gc_no_progress_count());
+      }
     }
   } else {
     assert(req.is_gc_alloc(), "Can only accept GC allocs here");
@@ -1166,11 +1175,10 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
   }  else {
@@ -1682,19 +1690,20 @@ class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahHeapRegionClosure* const _blk;
+  size_t const _stride;
 
   shenandoah_padding(0);
   volatile size_t _index;
   shenandoah_padding(1);
 
 public:
-  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk) :
+  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk, size_t stride) :
           WorkerTask("Shenandoah Parallel Region Operation"),
-          _heap(ShenandoahHeap::heap()), _blk(blk), _index(0) {}
+          _heap(ShenandoahHeap::heap()), _blk(blk), _stride(stride), _index(0) {}
 
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    size_t stride = ShenandoahParallelRegionStride;
+    size_t stride = _stride;
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
@@ -1713,8 +1722,20 @@ public:
 
 void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
-  if (num_regions() > ShenandoahParallelRegionStride) {
-    ShenandoahParallelHeapRegionTask task(blk);
+  const uint active_workers = workers()->active_workers();
+  const size_t n_regions = num_regions();
+  size_t stride = ShenandoahParallelRegionStride;
+  if (stride == 0 && active_workers > 1) {
+    // Automatically derive the stride to balance the work between threads
+    // evenly. Do not try to split work if below the reasonable threshold.
+    constexpr size_t threshold = 4096;
+    stride = n_regions <= threshold ?
+            threshold :
+            (n_regions + active_workers - 1) / active_workers;
+  }
+
+  if (n_regions > stride && active_workers > 1) {
+    ShenandoahParallelHeapRegionTask task(blk, stride);
     workers()->run_task(&task);
   } else {
     heap_region_iterate(blk);

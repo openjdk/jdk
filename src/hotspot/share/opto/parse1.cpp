@@ -251,7 +251,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new FastLockNode( 0, lock_object, box ))->as_FastLock();
+    const FastLockNode *flock = _gvn.transform(new FastLockNode( nullptr, lock_object, box ))->as_FastLock();
     map()->push_monitor(flock);
 
     // If the lock is our method synchronization lock, tuck it away in
@@ -435,6 +435,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
+  }
+
+  if (parse_method->is_scoped()) {
+    C->set_has_scoped_access(true);
   }
 
   _iter.reset_to_method(method());
@@ -1009,7 +1013,7 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_initializer() &&
+  if (method()->is_object_initializer() &&
        (wrote_final() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
