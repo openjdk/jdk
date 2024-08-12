@@ -953,7 +953,7 @@ public class Indify {
                         break decode;
                     }
                     default:
-                        if(jvm.stackMotion(instruction.opcode().bytecode())) break;
+                        if (jvm.stackMotion(instruction.opcode().bytecode())) break;
                         if (bc >= ICONST_M1 && bc <= DCONST_1) {
                             jvm.push(instruction.opcode().constantValue()); break;
                         }
