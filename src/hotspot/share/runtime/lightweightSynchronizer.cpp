@@ -544,22 +544,18 @@ public:
 
 class LightweightSynchronizer::VerifyThreadState {
   bool _no_safepoint;
-  union {
-    struct {} _dummy;
-    NoSafepointVerifier _nsv;
-  };
 
 public:
   VerifyThreadState(JavaThread* locking_thread, JavaThread* current) : _no_safepoint(locking_thread != current) {
     assert(current == Thread::current(), "must be");
     assert(locking_thread == current || locking_thread->is_obj_deopt_suspend(), "locking_thread may not run concurrently");
     if (_no_safepoint) {
-      ::new (&_nsv) NoSafepointVerifier();
+      JavaThread::current()->inc_no_safepoint_count();
     }
   }
   ~VerifyThreadState() {
     if (_no_safepoint){
-      _nsv.~NoSafepointVerifier();
+      JavaThread::current()->dec_no_safepoint_count();
     }
   }
 };
