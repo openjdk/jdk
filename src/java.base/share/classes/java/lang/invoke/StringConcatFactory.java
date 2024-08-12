@@ -1079,7 +1079,6 @@ public final class StringConcatFactory {
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
 
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_DecimalDigits      = ClassDesc.ofDescriptor("Ljdk/internal/util/DecimalDigits;");
         static final ClassDesc CD_StringConcatBase   = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
         static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
@@ -1096,7 +1095,6 @@ public final class StringConcatFactory {
         static final MethodTypeDesc MTD_String_double   = MethodTypeDesc.of(CD_String, CD_double);
         static final MethodTypeDesc MTD_String_Object   = MethodTypeDesc.of(CD_String, CD_Object);
 
-        static final MethodTypeDesc MTD_GET_BYTES        = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_int, CD_byte);
         static final MethodTypeDesc MTD_INIT             = MethodTypeDesc.of(CD_void, CD_Array_String);
         static final MethodTypeDesc MTD_NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_int, CD_byte);
         static final MethodTypeDesc MTD_STRING_INIT      = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_byte);
