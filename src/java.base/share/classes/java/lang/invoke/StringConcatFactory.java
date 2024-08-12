@@ -1417,11 +1417,11 @@ public final class StringConcatFactory {
                         }
                     }
 
-                    int lengthSlot    = cb.allocateLocal(TypeKind.from(int.class)),
-                        coderSlot     = cb.allocateLocal(TypeKind.from(int.class)),
-                        bufSlot       = cb.allocateLocal(TypeKind.from(byte[].class)),
-                        constantsSlot = cb.allocateLocal(TypeKind.from(String[].class)),
-                        suffixSlot    = cb.allocateLocal(TypeKind.from(String.class));
+                    int lengthSlot    = cb.allocateLocal(TypeKind.IntType),
+                        coderSlot     = cb.allocateLocal(TypeKind.ByteType),
+                        bufSlot       = cb.allocateLocal(TypeKind.ReferenceType),
+                        constantsSlot = cb.allocateLocal(TypeKind.ReferenceType),
+                        suffixSlot    = cb.allocateLocal(TypeKind.ReferenceType);
 
                     /*
                      * Types other than int/long/char/boolean require local variables to store the result of stringOf.
