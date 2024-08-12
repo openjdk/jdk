@@ -799,7 +799,8 @@ class ImmutableCollections {
                 }
                 final E newValue = mapper.apply(i);
                 if (!stable.trySet(newValue)) {
-                    // This should never happen
+                    // This should never happen. Not even if the mapper recursively
+                    // call itself (see LazyListTest::recursive).
                     throw new InternalError(
                             "Cannot set the holder value for index " + i + " to " + e +
                             " because a value of " + StableValueUtil.unwrap(stable.wrappedValue()) +

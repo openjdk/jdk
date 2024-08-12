@@ -43,6 +43,7 @@ import java.util.NoSuchElementException;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.IntStream;
@@ -198,6 +199,15 @@ final class LazyListTest {
         assertEquals(SIZE - INDEX, cnt.get());
         assertFalse(iterator.hasNext());
         assertThrows(NoSuchElementException.class, iterator::next);
+    }
+
+
+    @Test
+    void recursiveCall() {
+        AtomicReference<IntFunction<Integer>> ref = new AtomicReference<>();
+        var lazy = StableValue.lazyList(SIZE, i -> ref.get().apply(i));
+        ref.set(lazy::get);
+        assertThrows(StackOverflowError.class, () -> lazy.get(INDEX));
     }
 
     // Immutability
