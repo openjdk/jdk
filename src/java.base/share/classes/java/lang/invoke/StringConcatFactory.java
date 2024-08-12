@@ -1460,7 +1460,7 @@ public final class StringConcatFactory {
                             var cl = concatArgs.parameterType(i);
                             if (maybeUTF16(cl)) {
                                 if (cl == char.class) {
-                                    cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
+                                    cb.loadLocal(TypeKind.CharType, cb.parameterSlot(i));
                                 } else {
                                     cb.aload(stringSlots[i]);
                                 }
