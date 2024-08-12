@@ -835,18 +835,7 @@ uint InstructForm::num_opnds() {
   return num_opnds;
 }
 uint InstructForm::num_opnds_unexpanded() {
-  int  num_opnds = _components_unexpanded.num_operands();
-
-  // Need special handling for matching some ideal nodes
-  // i.e. Matching a return node
-  /*
-  if( _matrule ) {
-    if( strcmp(_matrule->_opType,"Return"   )==0 ||
-        strcmp(_matrule->_opType,"Halt"     )==0 )
-      return 3;
-  }
-    */
-  return num_opnds;
+  return _components_unexpanded.num_operands();
 }
 
 const char* InstructForm::opnd_ident(int idx) {

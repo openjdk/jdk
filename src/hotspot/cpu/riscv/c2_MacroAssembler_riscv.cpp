@@ -2379,6 +2379,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
 
 void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt,
                                         VectorRegisterGroup vg1, VectorRegisterGroup vg2,
+                                        VectorRegister v6,
                                         VectorRegister vx, VectorRegister vy,
                                         Register rx) {
                                         // VectorRegister v6, VectorRegister vx, VectorRegister vy, VectorRegister vz, VectorRegister v00, VectorRegister v01, VectorRegister v02,
@@ -2403,7 +2404,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
     // Register dsts[] = {rx, ry, rz, r00, r01, r02};
     Register dsts[] = {rx};
     // VectorRegister vdsts[] = {v6, vx, vy, vz, v00, v01, v02};
-    VectorRegister vdsts[] = {vx, vy};
+    VectorRegister vdsts[] = {v6, vx, vy};
     for (int i = 0; i < sizeof(dsts)/sizeof(Register); i++) {
       mv(dsts[i], src);
     }

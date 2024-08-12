@@ -2004,7 +2004,6 @@ public:
         }
       }
       else {
-        fprintf(stderr, "<<<<<<<<<<<<<<<<<<, rep_var: %s, _inst: %s    ", rep_var, _inst._ident);
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
         int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
@@ -2037,7 +2036,6 @@ public:
         int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
         int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
 
-        fprintf(stderr, "       >>>>, idx: %d, idx_unexpanded: %d, _num_uniq: %d, inst_rep_var: %s, opc: %ld\n", idx, idx_unexpanded, _inst._num_uniq, inst_rep_var, (long int)opc);
         if ( idx != -1 || idx_unexpanded != -1) {
           // This is a local in the instruction
           // Update local state info.
@@ -2292,7 +2290,7 @@ public:
               (strcmp(next, "$base") == 0 || strcmp(next, "$index") == 0)) {
             // handle $rev_var$$base$$Register and $rev_var$$index$$Register by
             // producing as_Register(opnd_array(#)->base(ra_,this,idx1)).
-            fprintf(_fp, "as_Register(/*++++*/");
+            fprintf(_fp, "as_Register(");
             // emit the operand reference
             emit_rep_var( rep_var );
             rep_var = _strings_to_emit.iter();
@@ -2406,10 +2404,6 @@ private:
 
   void emit_field(const char *rep_var) {
     const char* reg_convert = reg_conversion(rep_var);
-    fprintf(stderr, "+++++++++++++++++++, reg_convert: %ld", (long int)reg_convert);
-    if (reg_convert != nullptr && strcmp(reg_convert,"as_VectorRegister") == 0) {
-      fprintf(stderr, "+++++++++++++++++++, rep_var: %s", rep_var);
-    }
 
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
@@ -2557,7 +2551,7 @@ private:
       // Lookup the index position iff the replacement variable is a localName
       int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
       int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
-      if (strcmp(rep_var, "v2m2") == 0) fprintf(stderr, "000000000000, idx: %d, idx_unexpanded: %d\n", idx, idx_unexpanded);
+
       if ( idx != -1 || idx_unexpanded != -1) {
         if ((idx != -1 && _inst.is_noninput_operand(idx)) || (idx_unexpanded != -1 && _inst.is_noninput_operand_unexpanded(idx_unexpanded))) {
           // This operand isn't a normal input so printing it is done
@@ -2567,31 +2561,13 @@ private:
           // Output the emit code for this operand
           // TODO
           if (idx != -1) {
-            fprintf(_fp,"opnd_array(/*------*/%d)",idx);
+            fprintf(_fp,"opnd_array(%d)",idx);
           } else { // idx_unexpanded != -1
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "must");
             assert(operand->_expanded_operands_num > 0, "must");
-            fprintf(_fp,"opnd_array(/*------*/%d",idx_unexpanded + _inst._num_uniq - 1);
-/*
-        char* tmp = new char[1024];
-        strcpy(tmp, inst_rep_var);
-        tmp[strlen(inst_rep_var)] = '_';
-        tmp[strlen(inst_rep_var) + 1] = '0';
-        tmp[strlen(inst_rep_var) + 2] = '\0';
-            int expanded_idx  = _inst.operand_position_format(tmp);
-            fprintf(_fp,"%d", expanded_idx);
-            for (int i = 1; i < operand->_expanded_operands_num; i++) {
-        strcpy(tmp, inst_rep_var);
-        tmp[strlen(inst_rep_var)] = '_';
-        tmp[strlen(inst_rep_var) + 1] = '0' + i;
-        tmp[strlen(inst_rep_var) + 2] = '\0';
-              expanded_idx  = _inst.operand_position_format(tmp);
-              fprintf(_fp,", %d", expanded_idx);
-            }
-*/
+            fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst._num_uniq - 1);
             fprintf(_fp,")");
-          fprintf(stderr, "         >>>>> \n");
           }
         }
         assert( _operand == opc->is_operand(),
@@ -4000,7 +3976,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
 }
 
 
-int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& comp_list, const char *indent, int start_index, bool log) {
+int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& comp_list, const char *indent, int start_index) {
   bool           dont_care = false;
   Component     *comp      = nullptr;
   comp_list.reset();
@@ -4019,14 +3995,10 @@ int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& com
     // For each operand not in the match rule, call MachOperGenerator
     // with the enum for the opcode that needs to be built.
     ComponentList clist = comp_list;
-    if (log) {
-      clist.dump();
-      fprintf(stderr, "       comp->_name: %s, comp->_usedef: %d\n", comp->_name, comp->_usedef);
-    }
     index  = clist.operand_position(comp->_name, comp->_usedef, inst);
     const char *opcode = machOperEnum(comp->_type);
     // TODO
-    fprintf(fp_cpp, "%s node->set_opnd_array(/*@@@@@@*/%d, ", indent, start_index + index);
+    fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, start_index + index);
     fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
   }
   return start_index + index;
@@ -4045,40 +4017,9 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     //
     // Check if the first post-match component may be an interesting def
     int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
-    if (inst->_components_unexpanded.count() > 0) buildMachNode(fp_cpp, inst, inst->_components_unexpanded, indent, index, true);
-
     if (inst->_components_unexpanded.count() > 0) {
-      fprintf(stderr, "<<<<<<<<<<<<<<<<<<<< \n");
-      inst->_components.dump();
-      inst->_components_unexpanded.dump();
-      fprintf(stderr, "       >>>>>>\n");
+      buildMachNode(fp_cpp, inst, inst->_components_unexpanded, indent, index);
     }
-    /*
-    bool           dont_care = false;
-    ComponentList &comp_list = inst->_components;
-    Component     *comp      = nullptr;
-    comp_list.reset();
-    if ( comp_list.match_iter() != nullptr )    dont_care = true;
-
-    // Insert operands that are not in match-rule.
-    // Only insert a DEF if the do_care flag is set
-    comp_list.reset();
-    while ( (comp = comp_list.post_match_iter()) ) {
-      // Check if we don't care about DEFs or KILLs that are not USEs
-      if ( dont_care && (! comp->isa(Component::USE)) ) {
-        continue;
-      }
-      dont_care = true;
-      // For each operand not in the match rule, call MachOperGenerator
-      // with the enum for the opcode that needs to be built.
-      ComponentList clist = inst->_components;
-      int         index  = clist.operand_position(comp->_name, comp->_usedef, inst);
-      const char *opcode = machOperEnum(comp->_type);
-      // TODO
-      fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, index);
-      fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
-    }
-    */
   }
   else if ( inst->is_chain_of_constant(_globalNames, opType) ) {
     // An instruction that chains from a constant!

@@ -514,7 +514,6 @@ void ADLParser::oper_expand_parse(OperandForm* current) {
     char common;
   do {
     skipws();
-    fprintf(stderr, "<<<<<<\n");
     char* ident = get_ident();
     const Form* oper = _globalNames[ident];
     if (oper == nullptr) {
@@ -526,12 +525,8 @@ void ADLParser::oper_expand_parse(OperandForm* current) {
     common = _curchar;
     skipws();
     next_char();
-    fprintf(stderr, "         _curchar: %c\n", common);
-    fprintf(stderr, "       >>>>>> oper_expand_parse: %s\n", ident);
   } while (common == ',');
 
-  // next_char();                              // Consume the ')'
-    fprintf(stderr, "         exit, _curchar: %c\n", common);
   skipws();
 }
 
@@ -4985,19 +4980,16 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
 
     if (oper != nullptr && oper->_expanded_operands_num > 0) {
       for (int i = 0; oper != nullptr && i < oper->_expanded_operands_num; i++) {
-        fprintf(stderr, "           i: %d, strlen(ident): %ld\n", i, strlen(ident));
         char* tmp = new char[1024];
         strcpy(tmp, ident);
         tmp[strlen(ident)] = '_';
         tmp[strlen(ident) + 1] = '0'+(char)i;
         tmp[strlen(ident) + 2] = '\0';
-        fprintf(stderr, "           tmp: %s\n", tmp);
         if( _globalNames[tmp] != nullptr ) {
           parse_err(SYNERR, "Reuse of global name %s as operand.\n",ident);
           return;
         }
         operands.Insert(tmp, oper->_expanded_operands[i]);
-        // oper->_expanded_operands[i]->dump();
         parameters.addName(tmp);
       }
       operands.Insert(ident, opclass);

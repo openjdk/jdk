@@ -193,6 +193,7 @@
 
   void string_equals_v(Register a1, Register a2, Register result, Register cnt,
                                         VectorRegisterGroup vg1, VectorRegisterGroup vg2,
+                                        VectorRegister v6,
                                         VectorRegister vx, VectorRegister vy,
                                         Register rx);
 
