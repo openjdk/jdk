@@ -3973,8 +3973,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // Check if bitmap is SECONDARY_SUPERS_BITMAP_FULL
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "Adjust this code");
-  addi(t0, r_bitmap, (u1)1);
-  beqz(t0, L_bitmap_full);
+  subw(t0, r_array_length, Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  bgtz(t0, L_bitmap_full);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
