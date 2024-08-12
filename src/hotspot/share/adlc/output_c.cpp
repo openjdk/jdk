@@ -2422,7 +2422,7 @@ private:
           }
         } else {
           // TODO
-          fprintf(_fp,"->%s(/*++++++*/ra_,this", reg_convert != nullptr ? reg_convert : "reg");
+          fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
           if (_operands_num == 0) {
             if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
@@ -2493,7 +2493,6 @@ private:
     }
     else {
       printf("emit_field: %s\n",rep_var);
-      fprintf(stderr, "================ emit_field: %s\n",rep_var);
       globalAD->syntax_err(_inst._linenum, "Unknown replacement variable %s in format statement of %s.",
                            rep_var, _inst._ident);
       assert( false, "UnImplemented()");
