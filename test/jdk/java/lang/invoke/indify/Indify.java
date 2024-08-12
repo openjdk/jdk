@@ -920,7 +920,7 @@ public class Indify {
                                 args.add(intrinsic);
                                 continue;
                         }
-                        if(!hasReceiver && ownMethod != null) {
+                        if (!hasReceiver && ownMethod != null) {
                             con = constants.get(ownMethod.methodName().stringValue());
                             if (con == null)  break decode;
                             args.clear(); args.add(con);
