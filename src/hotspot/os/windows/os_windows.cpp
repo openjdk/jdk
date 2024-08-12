@@ -3463,6 +3463,7 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
   }
 
   assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
+  assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
 }
