@@ -1527,7 +1527,7 @@ public final class StringConcatFactory {
                         var kind = TypeKind.from(cl);
                         if (needStringOf(cl)) {
                             paramSlot = stringSlots[i];
-                            kind = TypeKind.from(String.class);
+                            kind = TypeKind.ReferenceType;
                         }
                         cb.loadLocal(kind, paramSlot);
                     }
