@@ -41,7 +41,7 @@ class BasicLock {
   // This is either the actual displaced header from a locked object, or
   // a sentinel zero value indicating a recursive stack-lock.
   // * For LM_LIGHTWEIGHT
-  // Used as a cache the ObjectMonitor* used when locking. Must either
+  // Used as a cache of the ObjectMonitor* used when locking. Must either
   // be nullptr or the ObjectMonitor* used when locking.
   volatile uintptr_t _metadata;
 
