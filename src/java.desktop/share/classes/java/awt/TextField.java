@@ -492,9 +492,9 @@ public non-sealed class TextField extends TextComponent {
     @Override
     public synchronized void setEditable(boolean b) {
         super.setEditable(b);
-        Color defaultBackground = UIManager.getColor("TextField.background");
+        Color defaultBackground = this.getBackground();
         if (!backgroundSetByClientCode) {
-            setBackground(b ? defaultBackground : SystemColor.control, false);
+            setBackground(defaultBackground, false);
         }
     }
 
