@@ -38,7 +38,6 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Set;
 
-import jdk.internal.access.JavaIOFileInputStreamAccess;
 import jdk.internal.access.SharedSecrets;
 
 /**
@@ -294,13 +293,13 @@ public class KeyStoreDelegator extends KeyStoreSpi {
                                     .getJavaIOFileInputStreamAccess()
                                     .getPath((FileInputStream) stream);
                     if (keystorePath != null) {
-                        debug.println("Loaded " + keystorePath.substring(
+                        debug.println("Loaded \"" + keystorePath.substring(
                             keystorePath.lastIndexOf(File.separator) + 1)
-                            + " keystore in " + type + " format");
+                            + "\" keystore in " + type + " format");
+                        return;
                     }
                 }
-                else
-                    debug.println("Loaded a keystore in " + type + " format");
+                debug.println("Loaded a keystore in " + type + " format");
             }
         }
     }

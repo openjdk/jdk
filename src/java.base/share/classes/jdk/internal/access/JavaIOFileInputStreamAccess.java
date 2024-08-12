@@ -25,9 +25,6 @@
 package jdk.internal.access;
 
 import java.io.FileInputStream;
-import java.io.IOException;
-
-import jdk.internal.ref.PhantomCleanable;
 
 public interface JavaIOFileInputStreamAccess {
     public String getPath(FileInputStream fis);

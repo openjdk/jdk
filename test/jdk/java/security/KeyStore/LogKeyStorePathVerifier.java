@@ -24,11 +24,10 @@
 /*
  * @test
  * @bug 8329251
- * @library ../../
  * @library /test/lib
  * @summary Validates the customized keystore/ truststore paths
  * in the debug logs
- * @run main LogKeyStorePathVerifier
+ * @run main/othervm LogKeyStorePathVerifier
 
  */
 
@@ -65,7 +64,6 @@ public class LogKeyStorePathVerifier {
     public static void main(String args[]) throws Exception {
         System.setProperty("test.java.opts",
                     "-Dtest.src=" + System.getProperty("test.src") +
-                            " -Djavax.net.debug=ssl,handshake" +
                             " -Djava.security.debug=keystore");
 
         System.out.println("test.java.opts: " +
@@ -79,7 +77,7 @@ public class LogKeyStorePathVerifier {
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             // Check for the presence of new message and verify the
             // keystore name in debug logs
-            output.shouldContain("Loaded keystore keystore in PKCS12 format");
+            output.shouldContain("Loaded \"keystore\" keystore in PKCS12 format");
         } catch (Exception e) {
             throw e;
         }
