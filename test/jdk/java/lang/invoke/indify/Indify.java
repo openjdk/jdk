@@ -480,7 +480,7 @@ public class Indify {
         ConstantPoolBuilder poolBuilder;  //Builder for the new constant pool
         final char[] poolMarks;
         final Map<String, PoolEntry> constants = new HashMap<>();
-        Logic(ClassModel classModel){
+        Logic(ClassModel classModel) {
             this.classModel = classModel;
             poolBuilder = ConstantPoolBuilder.of(classModel);
             poolMarks = new char[classModel.constantPool().size()];
