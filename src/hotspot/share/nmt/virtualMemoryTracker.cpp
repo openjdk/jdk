@@ -293,10 +293,9 @@ size_t ReservedMemoryRegion::committed_size() const {
     return committed;
   }
   if (MemTracker::is_using_tree()) {
-    CommittedMemoryRegion cmr;
     size_t result = 0;
-    VirtualMemoryTrackerWithTree::_tree->visit_committed_regions(this, &cmr, [&](CommittedMemoryRegion* crgn) {
-      result += crgn->size();
+    VirtualMemoryTrackerWithTree::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
+      result += crgn.size();
       return true;
     });
     return result;
@@ -337,12 +336,11 @@ address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
   if (MemTracker::is_using_tree()) {
     address bottom = base();
     address top = base() + size();
-    CommittedMemoryRegion cmr;
-    VirtualMemoryTrackerWithTree::_tree->visit_committed_regions(this, &cmr, [&](CommittedMemoryRegion* crgn) {
-      address committed_top = crgn->base() + crgn->size();
+    VirtualMemoryTrackerWithTree::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
+      address committed_top = crgn.base() + crgn.size();
       if (committed_top < top) {
         // committed stack guard pages, skip them
-        bottom = crgn->base() + crgn->size();
+        bottom = crgn.base() + crgn.size();
       } else {
         assert(top == committed_top, "Sanity");
         return false;;
@@ -695,7 +693,7 @@ void VirtualMemoryTracker::snapshot_thread_stacks() {
   walk_virtual_memory(&walker);
 }
 
-void VirtualMemoryTrackerWithTree::snapshot_thread_stacks() {
+void VirtualMemoryTrackerWithTree::Instance::snapshot_thread_stacks() {
   SnapshotThreadStackWalker walker;
   walk_virtual_memory(&walker);
 }

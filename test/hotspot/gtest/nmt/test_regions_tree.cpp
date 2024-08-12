@@ -48,13 +48,13 @@ TEST_VM_F(RegionsTreeTest, find_reserved_region) {
   rt.reserve_mapping(1300, 50, rt.make_region_data(ncs, mtTest));
   rt.reserve_mapping(1400, 50, rt.make_region_data(ncs, mtTest));
   ReservedMemoryRegion rmr;
-  rt.find_reserved_region((address)1205, &rmr);
+  rmr = rt.find_reserved_region((address)1205);
   EXPECT_EQ(rmr.base(), (address)1200);
-  rt.find_reserved_region((address)1305, &rmr);
+  rmr = rt.find_reserved_region((address)1305);
   EXPECT_EQ(rmr.base(), (address)1300);
-  rt.find_reserved_region((address)1405, &rmr);
+  rmr = rt.find_reserved_region((address)1405);
   EXPECT_EQ(rmr.base(), (address)1400);
-  rt.find_reserved_region((address)1005, &rmr);
+  rmr = rt.find_reserved_region((address)1005);
   EXPECT_EQ(rmr.base(), (address)1000);
 }
 
@@ -65,10 +65,10 @@ TEST_VM_F(RegionsTreeTest, visit_reserved_regions) {
   rt.reserve_mapping(1200, 50, rt.make_region_data(ncs, mtTest));
   rt.reserve_mapping(1300, 50, rt.make_region_data(ncs, mtTest));
   rt.reserve_mapping(1400, 50, rt.make_region_data(ncs, mtTest));
-  ReservedMemoryRegion rmr;
-  rt.visit_reserved_regions(&rmr, [&](ReservedMemoryRegion* rgn) {
-    EXPECT_EQ((size_t)rgn->base() % 100, 0UL);
-    EXPECT_EQ(rgn->size(), 50UL);
+
+  rt.visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+    EXPECT_EQ((size_t)rgn.base() % 100, 0UL);
+    EXPECT_EQ(rgn.size(), 50UL);
     return true;
   });
 }
@@ -86,12 +86,11 @@ TEST_VM_F(RegionsTreeTest, visit_committed_regions) {
   rt.commit_region((address)1030, 5UL, ncs);
   rt.commit_region((address)1040, 5UL, ncs);
   ReservedMemoryRegion rmr((address)1000, 50);
-  CommittedMemoryRegion cmr;
   size_t count = 0;
-  rt.visit_committed_regions(&rmr, &cmr, [&](CommittedMemoryRegion* crgn) {
+  rt.visit_committed_regions(rmr, [&](CommittedMemoryRegion& crgn) {
     count++;
-    EXPECT_EQ((((size_t)crgn->base()) % 100) / 10, count);
-    EXPECT_EQ(crgn->size(), 5UL);
+    EXPECT_EQ((((size_t)crgn.base()) % 100) / 10, count);
+    EXPECT_EQ(crgn.size(), 5UL);
     return true;
   });
   EXPECT_EQ(count, 4UL);

@@ -63,14 +63,14 @@ class MemTracker : AllStatic {
     if (is_using_sorted_link_list())
       VirtualMemoryTracker::snapshot_thread_stacks();
     if (is_using_tree())
-      VirtualMemoryTrackerWithTree::snapshot_thread_stacks();
+      VirtualMemoryTrackerWithTree::Instance::snapshot_thread_stacks();
   }
 
   static bool walk_virtual_memory(VirtualMemoryWalker* walker) {
     if (is_using_sorted_link_list())
       return VirtualMemoryTracker::walk_virtual_memory(walker);
     if (is_using_tree()) {
-      return VirtualMemoryTrackerWithTree::walk_virtual_memory(walker);
+      return VirtualMemoryTrackerWithTree::Instance::walk_virtual_memory(walker);
     }
     return false;
   }
@@ -152,7 +152,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::add_reserved_region((address)addr, size, stack, flag);
+        VirtualMemoryTrackerWithTree::Instance::add_reserved_region((address)addr, size, stack, flag);
     }
   }
 
@@ -163,7 +163,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::remove_released_region((address)addr, size);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::remove_released_region((address)addr, size);
+        VirtualMemoryTrackerWithTree::Instance::remove_released_region((address)addr, size);
     }
   }
 
@@ -174,7 +174,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::remove_uncommitted_region((address)addr, size);
+        VirtualMemoryTrackerWithTree::Instance::remove_uncommitted_region((address)addr, size);
     }
   }
 
@@ -189,8 +189,8 @@ class MemTracker : AllStatic {
         VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
       }
       if (is_using_tree()) {
-        VirtualMemoryTrackerWithTree::add_reserved_region((address)addr, size, stack, flag);
-        VirtualMemoryTrackerWithTree::add_committed_region((address)addr, size, stack);
+        VirtualMemoryTrackerWithTree::Instance::add_reserved_region((address)addr, size, stack, flag);
+        VirtualMemoryTrackerWithTree::Instance::add_committed_region((address)addr, size, stack);
       }
 
     }
@@ -205,7 +205,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::add_committed_region((address)addr, size, stack);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::add_committed_region((address)addr, size, stack);
+        VirtualMemoryTrackerWithTree::Instance::add_committed_region((address)addr, size, stack);
     }
   }
 
@@ -256,7 +256,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::split_reserved_region((address)addr, size, split, flag, split_flag);
+        VirtualMemoryTrackerWithTree::Instance::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
 
@@ -268,7 +268,7 @@ class MemTracker : AllStatic {
       if (is_using_sorted_link_list())
         VirtualMemoryTracker::set_reserved_region_type((address)addr, flag);
       if (is_using_tree())
-        VirtualMemoryTrackerWithTree::set_reserved_region_type((address)addr, flag);
+        VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type((address)addr, flag);
     }
   }
 

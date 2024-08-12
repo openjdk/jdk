@@ -437,7 +437,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 
   if (all_committed) {
     if (MemTracker::is_using_sorted_link_list()) {
-    CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
+      CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
       const CommittedMemoryRegion* committed_rgn = itr.next();
       if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
         // One region spanning the entire reserved region, with the same stack trace.
@@ -448,12 +448,10 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
       }
     }
     if (MemTracker::is_using_tree()) {
-      CommittedMemoryRegion cmr;
       bool reserved_and_committed = false;
-      VirtualMemoryTrackerWithTree::tree()->visit_committed_regions(reserved_rgn,
-                                                                    &cmr,
-                                                                    [&](CommittedMemoryRegion* committed_rgn) {
-        if (committed_rgn->size() == reserved_rgn->size() && committed_rgn->call_stack()->equals(*stack)) {
+      VirtualMemoryTrackerWithTree::Instance::tree()->visit_committed_regions(*reserved_rgn,
+                                                                    [&](CommittedMemoryRegion& committed_rgn) {
+        if (committed_rgn.size() == reserved_rgn->size() && committed_rgn.call_stack()->equals(*stack)) {
           // One region spanning the entire reserved region, with the same stack trace.
           // Don't print this regions because the "reserved and committed" line above
           // already indicates that the region is committed.
@@ -468,15 +466,13 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     }
   }
 
-  CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
-  CommittedMemoryRegion* committed_rgn;
-  auto print_committed_rgn = [&](CommittedMemoryRegion* committed_rgn) {
+  auto print_committed_rgn = [&](CommittedMemoryRegion* crgn) {
     // Don't report if size is too small
-    if (amount_in_current_scale(committed_rgn->size()) == 0) return;
-    stack = committed_rgn->call_stack();
+    if (amount_in_current_scale(crgn->size()) == 0) return;
+    stack = crgn->call_stack();
     out->cr();
     INDENT_BY(8,
-      print_virtual_memory_region("committed", committed_rgn->base(), committed_rgn->size());
+      print_virtual_memory_region("committed", crgn->base(), crgn->size());
       if (stack->is_empty()) {
         out->cr();
       } else {
@@ -486,14 +482,15 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     )
   };
   if (MemTracker::is_using_sorted_link_list()) {
-    while ((committed_rgn = itr.next()) != nullptr) {
-      print_committed_rgn(committed_rgn);
+    CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
+    CommittedMemoryRegion* crgn;
+    while ((crgn = itr.next()) != nullptr) {
+      print_committed_rgn(crgn);
     }
   }
   if (MemTracker::is_using_tree()) {
-    CommittedMemoryRegion cmr;
-    VirtualMemoryTrackerWithTree::tree()->visit_committed_regions(reserved_rgn, &cmr, [&](CommittedMemoryRegion* crgn) {
-      print_committed_rgn(crgn);
+    VirtualMemoryTrackerWithTree::Instance::tree()->visit_committed_regions(*reserved_rgn, [&](CommittedMemoryRegion& crgn) {
+      print_committed_rgn(&crgn);
       return true;
     });
   }

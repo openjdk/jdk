@@ -143,7 +143,7 @@ class VMTWithVMATreeTest : public testing::Test {
 };
 
 using VMTOld = VirtualMemoryTracker;
-using VMTNew = VirtualMemoryTrackerWithTree;
+using VMTNew = VirtualMemoryTrackerWithTree::Instance;
 using VMS = VirtualMemorySummary;
 using SummaryDiff = VMATree::SummaryDiff;
 

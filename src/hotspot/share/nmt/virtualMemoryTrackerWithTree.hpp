@@ -31,42 +31,74 @@
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-class VirtualMemoryTrackerWithTree : AllStatic {
-  friend class VirtualMemoryTrackerTest;
-  friend class CommittedVirtualMemoryTest;
-  friend class ReservedMemoryRegion;
+class VirtualMemoryTrackerWithTree {
+ private:
+  RegionsTree* _tree;
 
  public:
-  using RegionData = VMATree::RegionData;
-  static bool initialize(NMT_TrackingLevel level);
-
-  static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
-
-  static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
-  static bool remove_uncommitted_region (address base_addr, size_t size);
-  static bool remove_released_region    (address base_addr, size_t size);
-  static bool remove_released_region    (ReservedMemoryRegion* rgn);
-  static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+  VirtualMemoryTrackerWithTree(bool is_detailed_mode) {
+    _tree = new RegionsTree(is_detailed_mode);
+  }
+  bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+  bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
+  bool remove_uncommitted_region (address base_addr, size_t size);
+  bool remove_released_region    (address base_addr, size_t size);
+  bool remove_released_region    (ReservedMemoryRegion* rgn);
+  void set_reserved_region_type  (address addr, MEMFLAGS flag);
 
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
   //  stack and the memory flags of the original section.
-  static bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
+  bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
 
   // Walk virtual memory data structure for creating baseline, etc.
-  static bool walk_virtual_memory(VirtualMemoryWalker* walker);
+  bool walk_virtual_memory(VirtualMemoryWalker* walker);
 
   // If p is contained within a known memory region, print information about it to the
   // given stream and return true; false otherwise.
-  static bool print_containing_region(const void* p, outputStream* st);
+  bool print_containing_region(const void* p, outputStream* st);
 
   // Snapshot current thread stacks
-  static void snapshot_thread_stacks();
-  static void apply_summary_diff(VMATree::SummaryDiff diff);
-  static RegionsTree* tree() { return _tree; }
+  void snapshot_thread_stacks();
+  void apply_summary_diff(VMATree::SummaryDiff diff);
+  RegionsTree* tree() { return _tree; }
+  class Instance : public AllStatic {
+    friend class VirtualMemoryTrackerTest;
+    friend class CommittedVirtualMemoryTest;
+    friend class ReservedMemoryRegion;
 
- private:
-  static RegionsTree* _tree;
+   private:
+    static VirtualMemoryTrackerWithTree* _tracker;
+
+   public:
+    using RegionData = VMATree::RegionData;
+    static bool initialize(NMT_TrackingLevel level);
+
+    static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
+
+    static bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
+    static bool remove_uncommitted_region (address base_addr, size_t size);
+    static bool remove_released_region    (address base_addr, size_t size);
+    static bool remove_released_region    (ReservedMemoryRegion* rgn);
+    static void set_reserved_region_type  (address addr, MEMFLAGS flag);
+
+    // Given an existing memory mapping registered with NMT, split the mapping in
+    //  two. The newly created two mappings will be registered under the call
+    //  stack and the memory flags of the original section.
+    static bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
+
+    // Walk virtual memory data structure for creating baseline, etc.
+    static bool walk_virtual_memory(VirtualMemoryWalker* walker);
+
+    // If p is contained within a known memory region, print information about it to the
+    // given stream and return true; false otherwise.
+    static bool print_containing_region(const void* p, outputStream* st);
+
+    // Snapshot current thread stacks
+    static void snapshot_thread_stacks();
+    static void apply_summary_diff(VMATree::SummaryDiff diff);
+    static RegionsTree* tree() { return _tracker->tree(); }
+  };
 };
 
 #endif // NMT_VIRTUALMEMORYTRACKERWITHTREE_HPP

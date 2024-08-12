@@ -24,32 +24,30 @@
 #include "precompiled.hpp"
 #include "nmt/regionsTree.hpp"
 
-void RegionsTree::find_reserved_region(address addr, ReservedMemoryRegion* found_region, bool with_trace) {
+ReservedMemoryRegion RegionsTree::find_reserved_region(address addr, bool with_trace) {
     ReservedMemoryRegion rmr;
     bool dump = with_trace;
-    auto contain_region = [&](ReservedMemoryRegion* region_in_tree) {
-      if (region_in_tree == nullptr) return true;
+    auto contain_region = [&](ReservedMemoryRegion& region_in_tree) {
       if (dump) {
         tty->print_cr("trc base: " INTPTR_FORMAT " , trc end: " INTPTR_FORMAT,
-                      p2i(region_in_tree->base()), p2i(region_in_tree->end()));
+                      p2i(region_in_tree.base()), p2i(region_in_tree.end()));
       }
-      if (region_in_tree->contain_address(addr)) {
-        rmr = *region_in_tree;
+      if (region_in_tree.contain_address(addr)) {
+        rmr = region_in_tree;
         return false;
       }
       return true;
     };
-    visit_reserved_regions(&rmr, contain_region);
-    *found_region = rmr;
+    visit_reserved_regions(contain_region);
+    return rmr;
 }
 
 VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
-  ReservedMemoryRegion rgn;
-  find_reserved_region(addr, &rgn);
+  ReservedMemoryRegion rgn = find_reserved_region(addr);
   if (rgn.base() == (address)1) {
     tty->print_cr("commit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
     dump(tty);
-    find_reserved_region(addr, &rgn, true);
+    rgn = find_reserved_region(addr, true);
     ShouldNotReachHere();
   }
   return commit_mapping((VMATree::position)addr, size, make_region_data(stack, rgn.flag()));
@@ -57,12 +55,11 @@ VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const
 }
 
 VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
-  ReservedMemoryRegion rgn;
-  find_reserved_region(addr, &rgn);
+  ReservedMemoryRegion rgn = find_reserved_region(addr);
   if (rgn.base() == (address)1) {
     tty->print_cr("uncommit region not-found " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i(addr + size));
     dump(tty);
-    find_reserved_region(addr, &rgn, true);
+    rgn = find_reserved_region(addr, true);
     ShouldNotReachHere();
   }
   return reserve_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), rgn.flag()));

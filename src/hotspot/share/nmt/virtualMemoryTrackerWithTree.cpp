@@ -27,67 +27,76 @@
 #include "nmt/virtualMemoryTrackerWithTree.hpp"
 #include "nmt/memTracker.hpp"
 
-RegionsTree* VirtualMemoryTrackerWithTree::_tree;
+VirtualMemoryTrackerWithTree* VirtualMemoryTrackerWithTree::Instance::_tracker = nullptr;
 
-bool VirtualMemoryTrackerWithTree::initialize(NMT_TrackingLevel level) {
-  assert(_tree == nullptr, "only call once");
+bool VirtualMemoryTrackerWithTree::Instance::initialize(NMT_TrackingLevel level) {
+  assert(_tracker == nullptr, "only call once");
   if (level >= NMT_summary) {
-    _tree = new RegionsTree(level == NMT_detail);
-    return (_tree != nullptr);
+    _tracker = static_cast<VirtualMemoryTrackerWithTree*>(os::malloc(sizeof(VirtualMemoryTrackerWithTree), mtNMT));
+    if (_tracker == nullptr) return false;
+    new (_tracker) VirtualMemoryTrackerWithTree(level == NMT_detail);
+    return _tracker->tree() != nullptr;
   }
   return true;
 }
 
 
+bool VirtualMemoryTrackerWithTree::Instance::add_reserved_region(address base_addr, size_t size,
+  const NativeCallStack& stack, MEMFLAGS flag) {
+    return _tracker->add_reserved_region(base_addr, size, stack, flag);
+}
+
 bool VirtualMemoryTrackerWithTree::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MEMFLAGS flag) {
-  assert(_tree != nullptr, "Sanity check");
   if (flag == mtTest) {
     log_debug(nmt)("add reserve rgn, base: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(base_addr), p2i(base_addr + size));
   }
-  VMATree::SummaryDiff diff = _tree->reserve_mapping((size_t)base_addr, size, _tree->make_region_data(stack, flag));
+  VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, flag));
   apply_summary_diff(diff);
   return true;
 
 }
 
+void VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type(address addr, MEMFLAGS flag) {
+  _tracker->set_reserved_region_type(addr, flag);
+}
+
 void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLAGS flag) {
-    ReservedMemoryRegion rgn;
-    _tree->find_reserved_region(addr, &rgn);
+    ReservedMemoryRegion rgn = tree()->find_reserved_region(addr);
     if (rgn.flag() == flag)
       return;
 
     const VMATree::position& start = (VMATree::position)addr;
     const VMATree::position& end = (VMATree::position)(rgn.end() + 1);
-    RegionsTree::NodeHelper* prev = nullptr;
+    RegionsTree::NodeHelper prev;
     if (start > end) {
-      _tree->dump(tty);
+      tree()->dump(tty);
       tty->print_cr("requested addr: " INTPTR_FORMAT " end: " INTPTR_FORMAT, p2i(addr), p2i((address) end));
-      _tree->find_reserved_region(addr, &rgn, true);
+      rgn = tree()->find_reserved_region(addr, true);
     }
     size_t rgn_size = 0;
     size_t comm_size = 0;
     MEMFLAGS old_flag = mtNone, bak_out_flag;
     bool base_flag_set = false;
     bool release_node_found = false;
-    _tree->visit_range_in_order(start, end, [&](VMATree::TreapNode* node){
-      RegionsTree::NodeHelper* curr = (RegionsTree::NodeHelper*)node;
+    tree()->visit_range_in_order(start, end, [&](VMATree::TreapNode* node){
+      RegionsTree::NodeHelper curr(node);
       if (!base_flag_set) {
-        old_flag = curr->out_flag();
+        old_flag = curr.out_flag();
         base_flag_set = true;
       }
-      bak_out_flag = curr->out_flag();
-      curr->set_out_flag(flag);
-      if (prev != nullptr) {
-        curr->set_in_flag(flag);
-        rgn_size += curr->distance_from(prev);
-        if (prev->is_committed_begin())
-          comm_size += curr->distance_from(prev);
+      bak_out_flag = curr.out_flag();
+      curr.set_out_flag(flag);
+      if (prev.is_valid()) {
+        curr.set_in_flag(flag);
+        rgn_size += curr.distance_from(prev);
+        if (prev.is_committed_begin())
+          comm_size += curr.distance_from(prev);
       }
       prev = curr;
-      if (curr->is_released_begin() || bak_out_flag != old_flag) {
+      if (curr.is_released_begin() || bak_out_flag != old_flag) {
         if (bak_out_flag != old_flag) {
-          curr->set_out_flag(bak_out_flag);
+          curr.set_out_flag(bak_out_flag);
         }
         VirtualMemorySummary::move_reserved_memory(old_flag, flag, rgn_size);
         VirtualMemorySummary::move_committed_memory(old_flag, flag, comm_size);
@@ -96,6 +105,10 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
       }
       return true;
     });
+}
+
+void VirtualMemoryTrackerWithTree::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {
+  _tracker->apply_summary_diff(diff);
 }
 
 void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff) {
@@ -143,39 +156,56 @@ void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff)
   }
 }
 
+bool VirtualMemoryTrackerWithTree::Instance::add_committed_region(address addr, size_t size,
+  const NativeCallStack& stack) {
+  return _tracker->add_committed_region(addr, size, stack);
+}
+
 bool VirtualMemoryTrackerWithTree::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
-    VMATree::SummaryDiff diff = _tree->commit_region(addr, size, stack);
+    VMATree::SummaryDiff diff = tree()->commit_region(addr, size, stack);
     apply_summary_diff(diff);
     return true;
 }
 
+bool VirtualMemoryTrackerWithTree::Instance::remove_uncommitted_region(address addr, size_t size) {
+  return _tracker->remove_uncommitted_region(addr, size);
+}
+
 bool VirtualMemoryTrackerWithTree::remove_uncommitted_region(address addr, size_t size) {
   ThreadCritical tc;
-  VMATree::SummaryDiff diff = _tree->uncommit_region(addr, size);
+  VMATree::SummaryDiff diff = tree()->uncommit_region(addr, size);
   apply_summary_diff(diff);
   return true;
+}
+
+bool VirtualMemoryTrackerWithTree::Instance::remove_released_region(address addr, size_t size) {
+  return _tracker->remove_released_region(addr, size);
 }
 
 bool VirtualMemoryTrackerWithTree::remove_released_region(address addr, size_t size) {
-  VMATree::SummaryDiff diff = _tree->release_mapping((VMATree::position)addr, size);
+  VMATree::SummaryDiff diff = tree()->release_mapping((VMATree::position)addr, size);
   apply_summary_diff(diff);
   return true;
 
 }
 
-// Given an existing memory mapping registered with NMT, split the mapping in
-//  two. The newly created two mappings will be registered under the call
-//  stack and the memory flags of the original section.
+bool VirtualMemoryTrackerWithTree::Instance::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
+  return _tracker->split_reserved_region(addr, size, split, flag, split_flag);
+}
+
 bool VirtualMemoryTrackerWithTree::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
   add_reserved_region(addr, split, NativeCallStack::empty_stack(), flag);
   add_reserved_region(addr + split, size - split, NativeCallStack::empty_stack(), split_flag);
   return true;
 }
 
+bool VirtualMemoryTrackerWithTree::Instance::print_containing_region(const void* p, outputStream* st) {
+  return _tracker->print_containing_region(p, st);
+}
+
 bool VirtualMemoryTrackerWithTree::print_containing_region(const void* p, outputStream* st) {
-  ReservedMemoryRegion rmr;
-  _tree->find_reserved_region((address)p, &rmr);
+  ReservedMemoryRegion rmr = tree()->find_reserved_region((address)p);
   log_debug(nmt)("containing rgn: base=" INTPTR_FORMAT, p2i(rmr.base()));
   if (!rmr.contain_address((address)p))
     return false;
@@ -188,12 +218,15 @@ bool VirtualMemoryTrackerWithTree::print_containing_region(const void* p, output
   return true;
 }
 
+bool VirtualMemoryTrackerWithTree::Instance::walk_virtual_memory(VirtualMemoryWalker* walker) {
+  return _tracker->walk_virtual_memory(walker);
+}
+
 bool VirtualMemoryTrackerWithTree::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  ReservedMemoryRegion rmr;
   ThreadCritical tc;
-  _tree->visit_reserved_regions(&rmr, [&](ReservedMemoryRegion* rgn) {
-    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s", p2i(rgn->base()), rgn->size(), rgn->flag_name());
-    if (!walker->do_allocation_site(rgn))
+  tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+    log_info(nmt)("region in walker vmem, base: " INTPTR_FORMAT " size: " SIZE_FORMAT " , %s", p2i(rgn.base()), rgn.size(), rgn.flag_name());
+    if (!walker->do_allocation_site(&rgn))
       return false;
     return true;
   });
