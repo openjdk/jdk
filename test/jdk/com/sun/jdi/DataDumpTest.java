@@ -48,7 +48,6 @@ import com.sun.jdi.request.ClassPrepareRequest;
  *
  * @library /test/lib
  * @modules jdk.jdi
- * @build DataDumpTest
  * @run driver DataDumpTest
  */
 
