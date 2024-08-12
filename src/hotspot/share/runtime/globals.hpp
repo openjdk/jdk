@@ -1986,9 +1986,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, StressSecondarySupers, false, DIAGNOSTIC,                   \
           "Use a terrible hash function in order to generate many collisions.") \
-                                                                            \
-  develop(bool, RestrictStable, true,                                       \
-          "Restrict @Stable to trusted classes")                            \
 
 // end of RUNTIME_FLAGS
 

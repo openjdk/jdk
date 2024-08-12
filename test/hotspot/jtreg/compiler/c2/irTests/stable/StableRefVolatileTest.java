@@ -27,7 +27,6 @@
  * @requires os.arch=="aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64"
  * @requires vm.gc.Parallel
  * @requires vm.compiler2.enabled
- * @requires vm.debug
  * @summary Check stable field folding and barriers
  * @modules java.base/jdk.internal.vm.annotation
  * @library /test/lib /
@@ -44,13 +43,15 @@ import jdk.internal.vm.annotation.Stable;
 public class StableRefVolatileTest {
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags(
+        TestFramework tf = new TestFramework();
+        tf.addTestClassesToBootClassPath();
+        tf.addFlags(
             "-XX:+UnlockExperimentalVMOptions",
             "-XX:CompileThreshold=100",
             "-XX:-TieredCompilation",
-            "-XX:+UseParallelGC",
-            "-XX:-RestrictStable"
+            "-XX:+UseParallelGC"
         );
+        tf.start();
     }
 
     static final Integer INTEGER = 42;
