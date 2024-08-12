@@ -76,8 +76,8 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
   ZThreadLocalData::set_invisible_root(_thread, (zaddress_unsafe*)&mem);
 
   const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
-  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
-  const size_t process_start_offset_in_bytes = align_up(base_offset_in_bytes, BytesPerWord);
+  const size_t base_offset_in_bytes = (size_t)arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t process_start_offset_in_bytes = align_up(base_offset_in_bytes, (size_t)BytesPerWord);
 
   if (process_start_offset_in_bytes != base_offset_in_bytes) {
     // initialize_memory can only fill word aligned memory,

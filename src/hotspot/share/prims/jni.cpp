@@ -1074,7 +1074,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   TempNewSymbol signature = SymbolTable::probe(sig, (int)strlen(sig));
 
   if (name == nullptr || signature == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), name_str);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), name_str);
   }
 
   oop mirror = JNIHandles::resolve_non_null(clazz);
@@ -1084,7 +1084,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // primitive java.lang.Class
   if (java_lang_Class::is_primitive(mirror)) {
     ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
 
   // Make sure class is linked and initialized before handing id's out to
@@ -1108,7 +1108,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   }
   if (m == nullptr || (m->is_static() != is_static)) {
     ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
   return m->jmethod_id();
 }
@@ -1762,7 +1762,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
   if (fieldname == nullptr || signame == nullptr) {
     ResourceMark rm;
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
   }
 
   // Make sure class is initialized before handing id's out to fields
@@ -1772,7 +1772,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   if (!k->is_instance_klass() ||
       !InstanceKlass::cast(k)->find_field(fieldname, signame, false, &fd)) {
     ResourceMark rm;
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
   }
 
   // A jfieldID for a non-static field is simply the offset of the field within the instanceOop
@@ -1986,7 +1986,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   TempNewSymbol fieldname = SymbolTable::probe(name, (int)strlen(name));
   TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
   if (fieldname == nullptr || signame == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   // Make sure class is initialized before handing id's out to static fields
@@ -1995,7 +1995,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   fieldDescriptor fd;
   if (!k->is_instance_klass() ||
       !InstanceKlass::cast(k)->find_field(fieldname, signame, true, &fd)) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
   // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
@@ -2309,7 +2309,7 @@ JNI_ENTRY(jobject, jni_GetObjectArrayElement(JNIEnv *env, jobjectArray array, js
     ResourceMark rm(THREAD);
     stringStream ss;
     ss.print("Index %d out of bounds for length %d", index, a->length());
-    THROW_MSG_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 JNI_END
 

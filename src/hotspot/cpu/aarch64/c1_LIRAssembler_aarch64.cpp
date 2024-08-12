@@ -647,7 +647,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
     break;
   case T_OBJECT:
   case T_ARRAY:
-    assert(c->as_jobject() == 0, "should be");
+    assert(c->as_jobject() == nullptr, "should be");
     if (UseCompressedOops && !wide) {
       insn = &Assembler::strw;
     } else {
