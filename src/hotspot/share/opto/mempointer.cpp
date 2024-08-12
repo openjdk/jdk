@@ -103,7 +103,8 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
     case Op_SubL:
     case Op_SubI:
     {
-      // TODO check if we should decompose or not: int-overflow!!!
+      LP64_ONLY( if (opc == Op_SubI && !is_safe_from_int_overflow(scaleL)) { break; } )
+
       Node* a = n->in((opc == Op_AddP) ? 2 : 1);
       Node* b = n->in((opc == Op_AddP) ? 3 : 2);
 
