@@ -24,14 +24,15 @@
  */
 package jdk.javadoc.internal.doclets.formats.html;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.ListBuilder;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A class used by various {@link HtmlDocletWriter} subclasses to build tables of contents.
@@ -46,7 +47,7 @@ public class TableOfContents {
      */
     public TableOfContents(HtmlDocletWriter writer) {
         this.writer = writer;
-        listBuilder = new ListBuilder(HtmlTree.OL(HtmlStyle.tocList));
+        listBuilder = new ListBuilder(HtmlTree.OL(HtmlStyles.tocList));
     }
 
     /**
@@ -64,7 +65,7 @@ public class TableOfContents {
      * Adds a new nested list to add new items to.
      */
     public void pushNestedList() {
-        listBuilder.pushNestedList(HtmlTree.OL(HtmlStyle.tocList));
+        listBuilder.pushNestedList(HtmlTree.OL(HtmlStyles.tocList));
     }
 
     /**
@@ -87,23 +88,23 @@ public class TableOfContents {
             return Text.EMPTY;
         }
         var content = HtmlTree.NAV()
-                .setStyle(HtmlStyle.toc)
+                .setStyle(HtmlStyles.toc)
                 .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.table_of_contents"));
-        var header = HtmlTree.DIV(HtmlStyle.tocHeader, writer.contents.contentsHeading);
+        var header = HtmlTree.DIV(HtmlStyles.tocHeader, writer.contents.contentsHeading);
         if (hasFilterInput) {
             header.add(Entity.NO_BREAK_SPACE)
-                    .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyle.filterInput)
+                    .add(HtmlTree.INPUT(HtmlAttr.InputType.TEXT, HtmlStyles.filterInput)
                             .put(HtmlAttr.PLACEHOLDER, writer.resources.getText("doclet.filter_label"))
                             .put(HtmlAttr.ARIA_LABEL, writer.resources.getText("doclet.filter_table_of_contents"))
                             .put(HtmlAttr.AUTOCOMPLETE, "off"))
-                    .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyle.resetFilter)
+                    .add(HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlStyles.resetFilter)
                             .put(HtmlAttr.VALUE, writer.resources.getText("doclet.filter_reset")));
         }
         content.add(header);
-        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.hideSidebar)
+        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.hideSidebar)
                 .add(HtmlTree.SPAN(writer.contents.hideSidebar).add(Entity.NO_BREAK_SPACE))
                 .add(Entity.LEFT_POINTING_ANGLE));
-        content.add(new HtmlTree(TagName.BUTTON).addStyle(HtmlStyle.showSidebar)
+        content.add(new HtmlTree(HtmlTag.BUTTON).addStyle(HtmlStyles.showSidebar)
                 .add(Entity.RIGHT_POINTING_ANGLE)
                 .add(HtmlTree.SPAN(Entity.NO_BREAK_SPACE).add(writer.contents.showSidebar)));
         return content.add(listBuilder);

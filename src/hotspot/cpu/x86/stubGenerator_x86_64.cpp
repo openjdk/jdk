@@ -3702,7 +3702,7 @@ address StubGenerator::generate_cont_thaw(const char* label, Continuation::thaw_
   Label L_thaw_success;
   __ testptr(rbx, rbx);
   __ jccb(Assembler::notZero, L_thaw_success);
-  __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+  __ jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
   __ bind(L_thaw_success);
 
   // Make room for the thawed frames and align the stack.
@@ -4240,6 +4240,12 @@ void StubGenerator::generate_compiler_stubs() {
   generate_ghash_stubs();
 
   generate_chacha_stubs();
+
+#ifdef COMPILER2
+  if ((UseAVX == 2) && EnableX86ECoreOpts) {
+    generate_string_indexof(StubRoutines::_string_indexof_array);
+  }
+#endif
 
   if (UseAdler32Intrinsics) {
      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();

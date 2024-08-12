@@ -290,9 +290,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ std(R30, frame_size_in_bytes - 2*reg_size - vsregstosave_num * vs_reg_size, R1_SP);
 
   // save the flags
-  // Do the save_LR_CR by hand and adjust the return pc if requested.
-  __ mfcr(R30);
-  __ std(R30, frame_size_in_bytes + _abi0(cr), R1_SP);
+  // Do the save_LR by hand and adjust the return pc if requested.
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
     case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
@@ -435,9 +433,6 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   // restore link and the flags
   __ ld(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   __ mtlr(R31);
-
-  __ ld(R31, frame_size_in_bytes + _abi0(cr), R1_SP);
-  __ mtcr(R31);
 
   // restore scratch register's value
   __ ld(R31, frame_size_in_bytes - reg_size - vsregstosave_num * vs_reg_size, R1_SP);
@@ -2241,7 +2236,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(L_skip_barrier);
   }
 
-  __ save_LR_CR(r_temp_1);
+  __ save_LR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
@@ -2477,11 +2472,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     case T_ARRAY:   break;
 
     case T_BOOLEAN: {             // 0 -> false(0); !0 -> true(1)
-      Label skip_modify;
-      __ cmpwi(CCR0, R3_RET, 0);
-      __ beq(CCR0, skip_modify);
-      __ li(R3_RET, 1);
-      __ bind(skip_modify);
+      __ normalize_bool(R3_RET);
       break;
       }
     case T_BYTE: {                // sign extension
@@ -2694,7 +2685,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ blr();
 
 
@@ -2706,7 +2697,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ bind(handle_pending_exception);
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 
@@ -3064,7 +3055,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop the unpack frame.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
@@ -3087,7 +3078,7 @@ void SharedRuntime::generate_deopt_blob() {
 }
 
 #ifdef COMPILER2
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
@@ -3111,7 +3102,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // vframe array and return the `UnrollBlock' information.
 
   // Save LR to compiled frame.
-  __ save_LR_CR(R11_scratch1);
+  __ save_LR(R11_scratch1);
 
   // Push an "uncommon_trap" frame.
   __ push_frame_reg_args(0, R11_scratch1);
@@ -3153,7 +3144,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   __ lwz(R22_tmp2, in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset()), unroll_block_reg);
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+  __ asm_assert_eq("OptoRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
 #endif
 
   // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
@@ -3201,7 +3192,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pop the `unpack frame'.
   __ pop_frame();
   // Restore LR from top interpreter frame.
-  __ restore_LR_CR(R11_scratch1);
+  __ restore_LR(R11_scratch1);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).

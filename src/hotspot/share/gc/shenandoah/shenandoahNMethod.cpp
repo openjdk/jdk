@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,6 +31,7 @@
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/safepointVerifiers.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {
@@ -474,21 +476,40 @@ void ShenandoahNMethodTableSnapshot::concurrent_nmethods_do(NMethodClosure* cl) 
 }
 
 ShenandoahConcurrentNMethodIterator::ShenandoahConcurrentNMethodIterator(ShenandoahNMethodTable* table) :
-  _table(table), _table_snapshot(nullptr) {
-}
-
-void ShenandoahConcurrentNMethodIterator::nmethods_do_begin() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-  _table_snapshot = _table->snapshot_for_iteration();
-}
+  _table(table),
+  _table_snapshot(nullptr),
+  _started_workers(0),
+  _finished_workers(0) {}
 
 void ShenandoahConcurrentNMethodIterator::nmethods_do(NMethodClosure* cl) {
-  assert(_table_snapshot != nullptr, "Must first call nmethod_do_begin()");
-  _table_snapshot->concurrent_nmethods_do(cl);
-}
+  // Cannot safepoint when iteration is running, because this can cause deadlocks
+  // with other threads waiting on iteration to be over.
+  NoSafepointVerifier nsv;
 
-void ShenandoahConcurrentNMethodIterator::nmethods_do_end() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-  _table->finish_iteration(_table_snapshot);
-  CodeCache_lock->notify_all();
+  MutexLocker ml(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  if (_finished_workers > 0) {
+    // Some threads have already finished. We are now in rampdown: we are now
+    // waiting for all currently recorded workers to finish. No new workers
+    // should start.
+    return;
+  }
+
+  // Record a new worker and initialize the snapshot if it is a first visitor.
+  if (_started_workers++ == 0) {
+    _table_snapshot = _table->snapshot_for_iteration();
+  }
+
+  // All set, relinquish the lock and go concurrent.
+  {
+    MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    _table_snapshot->concurrent_nmethods_do(cl);
+  }
+
+  // Record completion. Last worker shuts down the iterator and notifies any waiters.
+  uint count = ++_finished_workers;
+  if (count == _started_workers) {
+    _table->finish_iteration(_table_snapshot);
+    CodeCache_lock->notify_all();
+  }
 }

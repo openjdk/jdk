@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -55,6 +56,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -63,6 +65,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -97,10 +100,6 @@ SafepointBlob*      SharedRuntime::_polling_page_vectors_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 
-#ifdef COMPILER2
-UncommonTrapBlob*   SharedRuntime::_uncommon_trap_blob;
-#endif // COMPILER2
-
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
@@ -126,10 +125,6 @@ void SharedRuntime::generate_stubs() {
   _polling_page_return_handler_blob    = generate_handler_blob(CAST_FROM_FN_PTR(address, SafepointSynchronize::handle_polling_page_exception), POLL_AT_RETURN);
 
   generate_deopt_blob();
-
-#ifdef COMPILER2
-  generate_uncommon_trap_blob();
-#endif // COMPILER2
 }
 
 #include <math.h>
@@ -1333,7 +1328,7 @@ methodHandle SharedRuntime::resolve_helper(bool is_virtual, bool is_optimized, T
 
   if (invoke_code == Bytecodes::_invokestatic) {
     assert(callee_method->method_holder()->is_initialized() ||
-           callee_method->method_holder()->is_init_thread(current),
+           callee_method->method_holder()->is_reentrant_initialization(current),
            "invalid class initialization state for invoke_static");
     if (!VM_Version::supports_fast_class_init_checks() && callee_method->needs_clinit_barrier()) {
       // In order to keep class initialization check, do not patch call
@@ -2570,6 +2565,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            int total_args_passed,
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
+  if (log_is_enabled(Info, perf, class, link)) {
+    ClassLoader::perf_method_adapters_count()->inc();
+  }
 
   // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
   // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior

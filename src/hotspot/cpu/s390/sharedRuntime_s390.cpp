@@ -1711,8 +1711,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for locking.
-    // Fast_lock kills r_temp_1, r_temp_2.
-    __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // Fast_lock kills r_temp_1, r_temp_2.
+      __ compiler_fast_lock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+    } else {
+      // Fast_lock kills r_temp_1, r_temp_2.
+      __ compiler_fast_lock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    }
     __ z_bre(done);
 
     //-------------------------------------------------------------------------
@@ -1910,8 +1915,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ add2reg(r_box, lock_offset, Z_SP);
 
     // Try fastpath for unlocking.
-    // Fast_unlock kills r_tmp1, r_tmp2.
-    __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // Fast_unlock kills r_tmp1, r_tmp2.
+      __ compiler_fast_unlock_lightweight_object(r_oop, r_tmp1, r_tmp2);
+    } else {
+      // Fast_unlock kills r_tmp1, r_tmp2.
+      __ compiler_fast_unlock_object(r_oop, r_box, r_tmp1, r_tmp2);
+    }
     __ z_bre(done);
 
     // Slow path for unlocking.
@@ -2696,7 +2706,7 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -2759,7 +2769,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "OptoRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);

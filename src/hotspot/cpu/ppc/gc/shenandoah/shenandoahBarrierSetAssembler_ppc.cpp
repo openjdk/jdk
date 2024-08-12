@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2018, 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,20 +61,6 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier(MacroAssembler *masm,
   }
 }
 
-void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler *masm,
-                                               Register val,
-                                               Register tmp1, Register tmp2,
-                                               MacroAssembler::PreservationLevel preservation_level,
-                                               DecoratorSet decorators) {
-  // IU barriers are also employed to avoid resurrection of weak references,
-  // even if Shenandoah does not operate in incremental update mode.
-  if (ShenandoahIUBarrier || ShenandoahSATBBarrier) {
-    __ block_comment("iu_barrier (shenandoahgc) {");
-    satb_write_barrier_impl(masm, decorators, noreg, noreg, val, tmp1, tmp2, preservation_level);
-    __ block_comment("} iu_barrier (shenandoahgc)");
-  }
-}
-
 void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler *masm, DecoratorSet decorators,
                                                            Register base, RegisterOrConstant ind_or_offs,
                                                            Register dst,
@@ -110,7 +96,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
 
   // Fast path: No barrier required if for every barrier type, it is either disabled or would not store
   // any useful information.
-  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahIUBarrier && !ShenandoahLoadRefBarrier) {
+  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahLoadRefBarrier) {
     return;
   }
 
@@ -150,7 +136,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
     __ std(dst, -BytesPerWord * ++highest_preserve_register_index, R1_SP);
     __ std(count, -BytesPerWord * ++highest_preserve_register_index, R1_SP);
 
-    __ save_LR_CR(R11_tmp);
+    __ save_LR(R11_tmp);
     __ push_frame_reg_args(-BytesPerWord * highest_preserve_register_index,
                            R11_tmp);
   }
@@ -169,7 +155,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
   // Restore to-be-preserved registers.
   {
     __ pop_frame();
-    __ restore_LR_CR(R11_tmp);
+    __ restore_LR(R11_tmp);
 
     __ ld(count, -BytesPerWord * highest_preserve_register_index--, R1_SP);
     __ ld(dst, -BytesPerWord * highest_preserve_register_index--, R1_SP);
@@ -304,7 +290,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
       __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
     }
 
-    __ save_LR_CR(tmp1);
+    __ save_LR(tmp1);
     __ push_frame_reg_args(nbytes_save, tmp2);
   }
 
@@ -325,7 +311,7 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier_impl(MacroAssembler *masm
 
   if (needs_frame) {
     __ pop_frame();
-    __ restore_LR_CR(tmp1);
+    __ restore_LR(tmp1);
 
     if (preserve_gp_registers) {
       __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
@@ -477,7 +463,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
       __ save_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
     }
 
-    __ save_LR_CR(tmp1);
+    __ save_LR(tmp1);
     __ push_frame_reg_args(nbytes_save, tmp1);
   }
 
@@ -517,7 +503,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier_impl(
 
   if (needs_frame) {
     __ pop_frame();
-    __ restore_LR_CR(tmp1);
+    __ restore_LR(tmp1);
 
     if (preserve_gp_registers) {
       __ restore_volatile_gprs(R1_SP, -nbytes_save, preserve_fp_registers);
@@ -582,7 +568,11 @@ void ShenandoahBarrierSetAssembler::load_at(
 
   /* ==== Apply keep-alive barrier, if required (e.g., to inhibit weak reference resurrection) ==== */
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    iu_barrier(masm, dst, tmp1, tmp2, preservation_level);
+    if (ShenandoahSATBBarrier) {
+      __ block_comment("keep_alive_barrier (shenandoahgc) {");
+      satb_write_barrier_impl(masm, 0, noreg, noreg, dst, tmp1, tmp2, preservation_level);
+      __ block_comment("} keep_alive_barrier (shenandoahgc)");
+    }
   }
 }
 
@@ -596,10 +586,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
   if (is_reference_type(type)) {
     if (ShenandoahSATBBarrier) {
       satb_write_barrier(masm, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
-    }
-
-    if (ShenandoahIUBarrier && val != noreg) {
-      iu_barrier(masm, val, tmp1, tmp2, preservation_level, decorators);
     }
   }
 
@@ -916,7 +902,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
   // Save to-be-preserved registers.
   const int nbytes_save = (MacroAssembler::num_volatile_regs + caller_stack_slots) * BytesPerWord;
   __ save_volatile_gprs(R1_SP, -nbytes_save);
-  __ save_LR_CR(R11_tmp1);
+  __ save_LR(R11_tmp1);
   __ push_frame_reg_args(nbytes_save, R11_tmp1);
 
   // Invoke runtime.
@@ -924,7 +910,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAss
 
   // Restore to-be-preserved registers.
   __ pop_frame();
-  __ restore_LR_CR(R11_tmp1);
+  __ restore_LR(R11_tmp1);
   __ restore_volatile_gprs(R1_SP, -nbytes_save);
 
   __ bind(skip_barrier);
@@ -989,7 +975,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   }
   assert(jrt_address != nullptr, "load reference barrier runtime routine cannot be found");
 
-  __ save_LR_CR(R11_tmp);
+  __ save_LR(R11_tmp);
   __ push_frame_reg_args(nbytes_save, R11_tmp);
 
   // Invoke runtime.  Arguments are already stored in the corresponding registers.
@@ -997,7 +983,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
 
   // Restore to-be-preserved registers.
   __ pop_frame();
-  __ restore_LR_CR(R11_tmp);
+  __ restore_LR(R11_tmp);
   __ restore_volatile_gprs(R1_SP, -nbytes_save, true, false); // Skip 'R3_RET' register.
 
   __ blr();

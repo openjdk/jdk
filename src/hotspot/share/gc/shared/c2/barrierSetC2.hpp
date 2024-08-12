@@ -102,10 +102,10 @@ public:
 class C2Access: public StackObj {
 protected:
   DecoratorSet      _decorators;
-  BasicType         _type;
   Node*             _base;
   C2AccessValuePtr& _addr;
   Node*             _raw_access;
+  BasicType         _type;
   uint8_t           _barrier_data;
 
   void fixup_decorators();
@@ -114,10 +114,10 @@ public:
   C2Access(DecoratorSet decorators,
            BasicType type, Node* base, C2AccessValuePtr& addr) :
     _decorators(decorators),
-    _type(type),
     _base(base),
     _addr(addr),
     _raw_access(nullptr),
+    _type(type),
     _barrier_data(0)
   {}
 

@@ -360,6 +360,20 @@ public class BasicSplitPaneDivider extends Container
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @param enabled {@inheritDoc}
+     */
+    @Override
+    public void setEnabled(boolean enabled) {
+        if (splitPane.isOneTouchExpandable() &&
+                rightButton != null &&
+                leftButton != null) {
+
+            rightButton.setEnabled(enabled);
+            leftButton.setEnabled(enabled);
+        }
+    }
 
     /**
      * Paints the divider.
@@ -472,6 +486,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 
@@ -529,6 +544,7 @@ public class BasicSplitPaneDivider extends Container
         b.setFocusPainted(false);
         b.setBorderPainted(false);
         b.setRequestFocusEnabled(false);
+        b.setEnabled(splitPane.isEnabled());
         return b;
     }
 

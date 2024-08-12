@@ -1205,6 +1205,9 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
   Node* tgt_count = load_array_length(tgt);
 
+  Node* result = nullptr;
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
+
   if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
     // Divide src size by 2 if String is UTF16 encoded
     src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
@@ -1214,7 +1217,16 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
     tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
   }
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, result_rgn, result_phi, ae);
+  if (call_opt_stub) {
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::_string_indexof_array[ae],
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               result_rgn, result_phi, ae);
+  }
   if (result != nullptr) {
     result_phi->init_req(3, result);
     result_rgn->init_req(3, control());
@@ -1226,7 +1238,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//-----------------------------inline_string_indexOf-----------------------
+//-----------------------------inline_string_indexOfI-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1234,6 +1246,7 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (!Matcher::match_rule_supported(Op_StrIndexOf)) {
     return false;
   }
+
   assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
   Node* src         = argument(0); // byte[]
   Node* src_count   = argument(1); // char count
@@ -1259,8 +1272,21 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
 
   RegionNode* region = new RegionNode(5);
   Node* phi = new PhiNode(region, TypeInt::INT);
+  Node* result = nullptr;
 
-  Node* result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, region, phi, ae);
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
+
+  if (call_opt_stub) {
+    assert(arrayOopDesc::base_offset_in_bytes(T_BYTE) >= 16, "Needed for indexOf");
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::_string_indexof_array[ae],
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
+    result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  } else {
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               region, phi, ae);
+  }
   if (result != nullptr) {
     // The result is index relative to from_index if substring was found, -1 otherwise.
     // Generate code which will fold into cmove.
@@ -2112,12 +2138,12 @@ bool LibraryCallKit::inline_number_methods(vmIntrinsics::ID id) {
   case vmIntrinsics::_numberOfTrailingZeros_l:  n = new CountTrailingZerosLNode(arg);  break;
   case vmIntrinsics::_bitCount_i:               n = new PopCountINode(          arg);  break;
   case vmIntrinsics::_bitCount_l:               n = new PopCountLNode(          arg);  break;
-  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( 0,   arg);  break;
-  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( 0,   arg);  break;
-  case vmIntrinsics::_reverse_i:                n = new ReverseINode(0, arg); break;
-  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(0, arg); break;
+  case vmIntrinsics::_reverseBytes_c:           n = new ReverseBytesUSNode(nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_s:           n = new ReverseBytesSNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_i:           n = new ReverseBytesINode( nullptr, arg);  break;
+  case vmIntrinsics::_reverseBytes_l:           n = new ReverseBytesLNode( nullptr, arg);  break;
+  case vmIntrinsics::_reverse_i:                n = new ReverseINode(nullptr, arg); break;
+  case vmIntrinsics::_reverse_l:                n = new ReverseLNode(nullptr, arg); break;
   default:  fatal_unexpected_iid(id);  break;
   }
   set_result(_gvn.transform(n));
@@ -5463,42 +5489,72 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
   uncommon_trap_call->set_req(0, top()); // not used anymore, kill it
 }
 
+// Common checks for array sorting intrinsics arguments.
+// Returns `true` if checks passed.
+bool LibraryCallKit::check_array_sort_arguments(Node* elementType, Node* obj, BasicType& bt) {
+  // check address of the class
+  if (elementType == nullptr || elementType->is_top()) {
+    return false;  // dead path
+  }
+  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
+  if (elem_klass == nullptr) {
+    return false;  // dead path
+  }
+  // java_mirror_type() returns non-null for compile-time Class constants only
+  ciType* elem_type = elem_klass->java_mirror_type();
+  if (elem_type == nullptr) {
+    return false;
+  }
+  bt = elem_type->basic_type();
+  // Disable the intrinsic if the CPU does not support SIMD sort
+  if (!Matcher::supports_simd_sort(bt)) {
+    return false;
+  }
+  // check address of the array
+  if (obj == nullptr || obj->is_top()) {
+    return false;  // dead path
+  }
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM) {
+    return false; // failed input validation
+  }
+  return true;
+}
+
 //------------------------------inline_array_partition-----------------------
 bool LibraryCallKit::inline_array_partition() {
+  address stubAddr = StubRoutines::select_array_partition_function();
+  if (stubAddr == nullptr) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  assert(callee()->signature()->size() == 9, "arrayPartition has 8 parameters (one long)");
 
-  Node* elementType     = null_check(argument(0));
+  // no receiver because it is a static method
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
-  Node* offset          = argument(2);
+  Node* offset          = argument(2); // long
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
   Node* indexPivot1     = argument(6);
   Node* indexPivot2     = argument(7);
+  // PartitionOperation:  argument(8) is ignored
 
   Node* pivotIndices = nullptr;
+  BasicType bt = T_ILLEGAL;
 
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
+    return false;
+  }
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped()) {
+    return true;
+  }
   // Set the original stack and the reexecute bit for the interpreter to reexecute
   // the bytecode that invokes DualPivotQuicksort.partition() if deoptimization happens.
   { PreserveReexecuteState preexecs(this);
     jvms()->set_should_reexecute(true);
 
-    const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-    ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-    BasicType bt = elem_type->basic_type();
-    // Disable the intrinsic if the CPU does not support SIMD sort
-    if (!Matcher::supports_simd_sort(bt)) {
-      return false;
-    }
-    address stubAddr = nullptr;
-    stubAddr = StubRoutines::select_array_partition_function();
-    // stub not loaded
-    if (stubAddr == nullptr) {
-      return false;
-    }
-    // get the address of the array
-    const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-    if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-      return false; // failed input validation
-    }
     Node* obj_adr = make_unsafe_address(obj, offset);
 
     // create the pivotIndices array of type int and size = 2
@@ -5531,31 +5587,29 @@ bool LibraryCallKit::inline_array_partition() {
 
 //------------------------------inline_array_sort-----------------------
 bool LibraryCallKit::inline_array_sort() {
+  address stubAddr = StubRoutines::select_arraysort_function();
+  if (stubAddr == nullptr) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  assert(callee()->signature()->size() == 7, "arraySort has 6 parameters (one long)");
 
-  Node* elementType     = null_check(argument(0));
+  // no receiver because it is a static method
+  Node* elementType     = argument(0);
   Node* obj             = argument(1);
-  Node* offset          = argument(2);
+  Node* offset          = argument(2); // long
   Node* fromIndex       = argument(4);
   Node* toIndex         = argument(5);
+  // SortOperation:       argument(6) is ignored
 
-  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
-  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
-  BasicType bt = elem_type->basic_type();
-  // Disable the intrinsic if the CPU does not support SIMD sort
-  if (!Matcher::supports_simd_sort(bt)) {
+  BasicType bt = T_ILLEGAL;
+
+  if (!check_array_sort_arguments(elementType, obj, bt)) {
     return false;
   }
-  address stubAddr = nullptr;
-  stubAddr = StubRoutines::select_arraysort_function();
-  //stub not loaded
-  if (stubAddr == nullptr) {
-    return false;
-  }
-
-  // get address of the array
-  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
-  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
-    return false; // failed input validation
+  null_check(obj);
+  // If obj is dead, only null-path is taken.
+  if (stopped()) {
+    return true;
   }
   Node* obj_adr = make_unsafe_address(obj, offset);
 
@@ -5895,7 +5949,7 @@ CallStaticJavaNode* LibraryCallKit::get_uncommon_trap_from_success_proj(Node* no
     for (DUIterator_Fast jmax, j = other_proj->fast_outs(jmax); j < jmax; j++) {
       Node* obs = other_proj->fast_out(j);
       if (obs->in(0) == other_proj && obs->is_CallStaticJava() &&
-          (obs->as_CallStaticJava()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point())) {
+          (obs->as_CallStaticJava()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point())) {
         return obs->as_CallStaticJava();
       }
     }
@@ -7554,8 +7608,6 @@ bool LibraryCallKit::inline_intpoly_montgomeryMult_P256() {
                                  OptoRuntime::intpoly_montgomeryMult_P256_Type(),
                                  stubAddr, stubName, TypePtr::BOTTOM,
                                  a_start, b_start, r_start);
-  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-  set_result(result);
   return true;
 }
 
@@ -7655,7 +7707,7 @@ bool LibraryCallKit::inline_digestBase_implCompress(vmIntrinsics::ID id) {
     break;
   case vmIntrinsics::_sha3_implCompress:
     assert(UseSHA3Intrinsics, "need SHA3 instruction support");
-    state = get_state_from_digest_object(digestBase_obj, T_BYTE);
+    state = get_state_from_digest_object(digestBase_obj, T_LONG);
     stubAddr = StubRoutines::sha3_implCompress();
     stubName = "sha3_implCompress";
     block_size = get_block_size_from_digest_object(digestBase_obj);
@@ -7755,7 +7807,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
       klass_digestBase_name = "sun/security/provider/SHA3";
       stub_name = "sha3_implCompressMB";
       stub_addr = StubRoutines::sha3_implCompressMB();
-      elem_type = T_BYTE;
+      elem_type = T_LONG;
     }
     break;
   default:

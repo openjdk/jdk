@@ -46,7 +46,6 @@ import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.events.StackFilter;
-import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
@@ -300,7 +299,7 @@ public final class EventControl {
     }
 
     private static Control defineThreshold(PlatformEventType type) {
-        String def = type.getAnnotationValue(Threshold.class, "0 ns");
+        String def = type.getAnnotationValue(Threshold.class, ThresholdSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THRESHOLD, Threshold.NAME, def, Collections.emptyList()));
         return new Control(new ThresholdSetting(type), def);
     }
@@ -312,13 +311,13 @@ public final class EventControl {
     }
 
     private static Control defineCutoff(PlatformEventType type) {
-        String def = type.getAnnotationValue(Cutoff.class, Cutoff.INFINITY);
+        String def = type.getAnnotationValue(Cutoff.class, CutoffSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_CUTOFF, Cutoff.NAME, def, Collections.emptyList()));
         return new Control(new CutoffSetting(type), def);
     }
 
     private static Control defineThrottle(PlatformEventType type) {
-        String def = type.getAnnotationValue(Throttle.class, Throttle.DEFAULT);
+        String def = type.getAnnotationValue(Throttle.class, ThrottleSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
         return new Control(new ThrottleSetting(type), def);
     }
@@ -331,7 +330,7 @@ public final class EventControl {
     }
 
     private static Control definePeriod(PlatformEventType type) {
-        String def = type.getAnnotationValue(Period.class, "everyChunk");
+        String def = type.getAnnotationValue(Period.class, PeriodSetting.DEFAULT_VALUE);
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
         return new Control(new PeriodSetting(type), def);
     }

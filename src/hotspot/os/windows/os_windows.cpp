@@ -858,6 +858,19 @@ julong os::physical_memory() {
   return win32::physical_memory();
 }
 
+size_t os::rss() {
+  size_t rss = 0;
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+  BOOL ret = GetProcessMemoryInfo(
+      GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmex, sizeof(pmex));
+  if (ret) {
+    rss = pmex.WorkingSetSize;
+  }
+  return rss;
+}
+
 bool os::has_allocatable_memory_limit(size_t* limit) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
@@ -2744,6 +2757,15 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     // Verify that OS save/restore AVX registers.
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr());
   }
+
+#if !defined(PRODUCT) && defined(_LP64)
+  if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
+      VM_Version::is_cpuinfo_segv_addr_apx(pc)) {
+    // Verify that OS save/restore APX registers.
+    VM_Version::clear_apx_test_state();
+    return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
+  }
+#endif
 #endif
 
   if (t != nullptr && t->is_Java_thread()) {
@@ -3871,7 +3893,7 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 }
 
 void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::pd_disclaim_memory(char *addr, size_t bytes) { }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
   return page_size;

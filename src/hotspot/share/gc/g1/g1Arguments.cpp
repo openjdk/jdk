@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -125,15 +125,13 @@ void G1Arguments::initialize_mark_stack_size() {
                                   MAX2(MarkStackSize, (size_t)ConcGCThreads * TASKQUEUE_SIZE));
     FLAG_SET_ERGO(MarkStackSize, mark_stack_size);
   }
-
 }
-
 
 void G1Arguments::initialize_card_set_configuration() {
   assert(G1HeapRegion::LogOfHRGrainBytes != 0, "not initialized");
   // Array of Cards card set container globals.
   const uint LOG_M = 20;
-  assert(log2i_exact(HeapRegionBounds::min_size()) == LOG_M, "inv");
+  assert(log2i_exact(G1HeapRegionBounds::min_size()) == LOG_M, "inv");
   assert(G1HeapRegion::LogOfHRGrainBytes >= LOG_M, "from the above");
   uint region_size_log_mb = G1HeapRegion::LogOfHRGrainBytes - LOG_M;
 

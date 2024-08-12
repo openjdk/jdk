@@ -32,7 +32,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import java.lang.classfile.attribute.ModuleAttribute;
-import java.lang.classfile.attribute.UnknownAttribute;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
@@ -45,6 +44,7 @@ import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
 import static java.util.Objects.requireNonNull;
+import static jdk.internal.constant.ConstantUtils.CD_module_info;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -392,7 +392,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        return build(ClassDesc.of("module-info"), clb -> {
+        return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);
             handler.accept(clb);
@@ -434,15 +434,15 @@ public sealed interface ClassFile
      * This method behaves as if:
      * {@snippet lang=java :
      *     this.build(model.thisClass(), ConstantPoolBuilder.of(model),
-     *                     b -> b.transform(model, transform));
+     *                     clb -> clb.transform(model, transform));
      * }
      *
      * @param model the class model to transform
      * @param transform the transform
      * @return the bytes of the new class
      */
-    default byte[] transform(ClassModel model, ClassTransform transform) {
-        return transform(model, model.thisClass(), transform);
+    default byte[] transformClass(ClassModel model, ClassTransform transform) {
+        return transformClass(model, model.thisClass(), transform);
     }
 
     /**
@@ -457,8 +457,8 @@ public sealed interface ClassFile
      * @param transform the transform
      * @return the bytes of the new class
      */
-    default byte[] transform(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
-        return transform(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
+    default byte[] transformClass(ClassModel model, ClassDesc newClassName, ClassTransform transform) {
+        return transformClass(model, TemporaryConstantPool.INSTANCE.classEntry(newClassName), transform);
     }
 
     /**
@@ -472,7 +472,7 @@ public sealed interface ClassFile
      * This method behaves as if:
      * {@snippet lang=java :
      *     this.build(newClassName, ConstantPoolBuilder.of(model),
-     *                     b -> b.transform(model, transform));
+     *                     clb -> clb.transform(model, transform));
      * }
      *
      * @param model the class model to transform
@@ -480,7 +480,7 @@ public sealed interface ClassFile
      * @param transform the transform
      * @return the bytes of the new class
      */
-    byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform);
+    byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform);
 
     /**
      * Verify a classfile.  Any verification errors found will be returned.
