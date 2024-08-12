@@ -934,7 +934,7 @@ public class Indify {
                     case ARETURN:
                     {
                         ++branchCount;
-                        if(bsmArgs != null){
+                        if (bsmArgs != null) {
                             // parse bsmArgs as (MH, lookup, String, MT, [extra])
                             PoolEntry indyCon = makeInvokeDynamicCon(bsmArgs);
                             if (indyCon != null) {
