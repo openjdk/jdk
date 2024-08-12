@@ -904,7 +904,7 @@ public class Indify {
                             case "Long.valueOf":
                             case "Double.valueOf":
                                 removeEmptyJVMSlots(args);
-                                if(args.size() == 1 ) {
+                                if (args.size() == 1) {
                                     arg = args.removeFirst();
                                     if (arg instanceof Number) {
                                         args.add(arg); continue;
