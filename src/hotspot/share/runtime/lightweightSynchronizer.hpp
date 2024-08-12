@@ -37,7 +37,7 @@ private:
   static ObjectMonitorWorld* _omworld;
 
   static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
-  static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, const ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
   static ObjectMonitor* add_monitor(JavaThread* current, ObjectMonitor* monitor, oop obj);
   static bool remove_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
@@ -65,10 +65,10 @@ public:
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop object, JavaThread* current);
 
-  static ObjectMonitor* inflate_into_object_header(Thread* current, JavaThread* inflating_thread, oop object, const ObjectSynchronizer::InflateCause cause);
-  static ObjectMonitor* inflate_locked_or_imse(oop object, const ObjectSynchronizer::InflateCause cause, TRAPS);
-  static ObjectMonitor* inflate_fast_locked_object(oop object, JavaThread* locking_thread, JavaThread* current, const ObjectSynchronizer::InflateCause cause);
-  static ObjectMonitor* inflate_and_enter(oop object, JavaThread* locking_thread, JavaThread* current, const ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* inflate_into_object_header(Thread* current, JavaThread* inflating_thread, oop object, ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* inflate_locked_or_imse(oop object, ObjectSynchronizer::InflateCause cause, TRAPS);
+  static ObjectMonitor* inflate_fast_locked_object(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* inflate_and_enter(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
   static void deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
 
