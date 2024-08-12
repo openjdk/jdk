@@ -2960,7 +2960,7 @@ bool Matcher::branches_to_uncommon_trap(const Node *n) {
     }
 
     if (call &&
-        call->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+        call->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
       const Type* trtype = call->in(TypeFunc::Parms)->bottom_type();
       if (trtype->isa_int() && trtype->is_int()->is_con()) {
         jint tr_con = trtype->is_int()->get_con();

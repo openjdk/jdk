@@ -31,18 +31,20 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.Script;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.SummaryAPIListBuilder.SummaryElementKind;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Base class for generating a summary page that lists elements with a common characteristic,
@@ -139,8 +141,8 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         HtmlTree body = getHeader(getPageMode(), getTitleKey());
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, getHeadContent());
-        content.add(HtmlTree.DIV(HtmlStyle.header, heading));
+                HtmlStyles.title, getHeadContent());
+        content.add(HtmlTree.DIV(HtmlStyles.header, heading));
         addContentSelectors(content);
         if (showContentsList()) {
             content.add(HtmlTree.HEADING_TITLE(Headings.CONTENT_HEADING, contents.contentsHeading));
@@ -201,7 +203,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      * @return the contents list
      */
     public Content getContentsList() {
-        var ul= HtmlTree.UL(HtmlStyle.contentsList);
+        var ul= HtmlTree.UL(HtmlStyles.contentsList);
         addExtraIndexLink(ul);
         for (SummaryElementKind kind : SummaryElementKind.values()) {
             if (builder.hasDocumentation(kind)) {
@@ -238,7 +240,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         if (apiList.size() > 0) {
             TableHeader tableHeader = getTableHeader(headerKey);
 
-            var table = new Table<Element>(HtmlStyle.summaryTable)
+            var table = new Table<Element>(HtmlStyles.summaryTable)
                     .setCaption(getTableCaption(headingKey))
                     .setHeader(tableHeader)
                     .setId(id)
@@ -267,7 +269,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
                 }
             }
             // note: singleton list
-            content.add(HtmlTree.UL(HtmlStyle.blockList, HtmlTree.LI(table)));
+            content.add(HtmlTree.UL(HtmlStyles.blockList, HtmlTree.LI(table)));
         }
     }
 
@@ -370,7 +372,7 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
      * @return the styles to use for table columns
      */
     protected HtmlStyle[] getColumnStyles() {
-        return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colLast };
+        return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colLast };
     }
 
     /**

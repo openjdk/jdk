@@ -1828,6 +1828,19 @@ enum Nf {
 
 #undef INSN
 
+#define INSN(NAME, op, width, umop, mop, mew, nf)                                               \
+  void NAME(VectorRegister Vd_or_Vs3, Register Rs1, VectorMask vm = unmasked) { \
+    patch_VLdSt(op, Vd_or_Vs3, width, Rs1, umop, vm, mop, mew, nf);                         \
+  }
+
+  // Vector Unit-Stride Segment Load Instructions
+  INSN(vlseg3e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g3);
+
+  // Vector Unit-Stride Segment Store Instructions
+  INSN(vsseg4e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g4);
+
+#undef INSN
+
 #define INSN(NAME, op, width, mop, mew)                                                                  \
   void NAME(VectorRegister Vd, Register Rs1, VectorRegister Vs2, VectorMask vm = unmasked, Nf nf = g1) { \
     patch_VLdSt(op, Vd, width, Rs1, Vs2->raw_encoding(), vm, mop, mew, nf);                              \
