@@ -37,7 +37,6 @@ import java.util.EventListener;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
-import javax.swing.UIManager;
 
 /**
  * A {@code TextField} object is a text component
