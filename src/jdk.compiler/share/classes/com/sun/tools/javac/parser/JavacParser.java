@@ -4918,6 +4918,10 @@ public class JavacParser implements Parser {
                isRecordStart() && allowRecords;
     }
 
+    /**
+     * {@return true if and only if the current token is definitelly a token that
+     *  starts a statement.}
+     */
     private boolean isDefiniteStatementStartToken() {
         return switch (token.kind) {
             case IF, WHILE, DO, SWITCH, RETURN, TRY, FOR, ASSERT, BREAK,
