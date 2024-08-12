@@ -757,8 +757,8 @@ public abstract class AbstractQueuedSynchronizer
                         LockSupport.parkNanos(this, nanos);
                     else
                         break;
-                } catch (Error ex) {            // rethrow VM errors
-                    cancelAcquire(node, interrupted, interruptible);
+                } catch (Error | RuntimeException ex) {
+                    cancelAcquire(node, interrupted, interruptible); // cancel & rethrow
                     throw ex;
                 }
                 node.clearStatus();
