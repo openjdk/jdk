@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,7 +286,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
                     entry.getCertificateIssuerExtension();
             if (ciExt != null) {
                 GeneralNames names = ciExt.getNames();
-                X500Name issuerDN = null;
+                X500Name issuerDN;
                 try {
                     issuerDN = (X500Name) names.get(0).getName();
                 } catch (ClassCastException e) {
