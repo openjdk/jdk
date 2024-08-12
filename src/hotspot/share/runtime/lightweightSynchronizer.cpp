@@ -57,18 +57,18 @@
 //
 
 // ConcurrentHashTable storing links from objects to ObjectMonitors
-class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
+class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   struct Config {
     using Value = ObjectMonitor*;
     static uintx get_hash(Value const& value, bool* is_dead) {
       return (uintx)value->hash();
     }
     static void* allocate_node(void* context, size_t size, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->inc_items_count();
+      reinterpret_cast<ObjectMonitorTable*>(context)->inc_items_count();
       return AllocateHeap(size, MEMFLAGS::mtObjectMonitor);
     };
     static void free_node(void* context, void* memory, Value const& value) {
-      reinterpret_cast<ObjectMonitorWorld*>(context)->dec_items_count();
+      reinterpret_cast<ObjectMonitorTable*>(context)->dec_items_count();
       FreeHeap(memory);
     }
   };
@@ -171,7 +171,7 @@ class ObjectMonitorWorld : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   }
 
 public:
-  ObjectMonitorWorld()
+  ObjectMonitorTable()
   : _table(new ConcurrentTable(initial_log_size(),
                                max_log_size(),
                                grow_hint(),
@@ -338,7 +338,7 @@ public:
   }
 };
 
-ObjectMonitorWorld* LightweightSynchronizer::_omworld = nullptr;
+ObjectMonitorTable* LightweightSynchronizer::_omworld = nullptr;
 
 ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted) {
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
@@ -443,7 +443,7 @@ void LightweightSynchronizer::initialize() {
   if (!UseObjectMonitorTable) {
     return;
   }
-  _omworld = new ObjectMonitorWorld();
+  _omworld = new ObjectMonitorTable();
 }
 
 bool LightweightSynchronizer::needs_resize() {
