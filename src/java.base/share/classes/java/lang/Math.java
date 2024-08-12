@@ -102,21 +102,26 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * The 2019 revision of the IEEE 754 floating-point standard includes
  * a section of recommended operations and the semantics of those
  * operations if they are included in a programming environment. The
- * recommended operations present in this class include {@link sin
- * sin}, {@link cos cos}, {@link tan tan}, {@link asin asin}, {@link
- * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
- * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
- * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link
- * hypot hypot}, and {@link pow pow}.  (The {@link sqrt sqrt}
+ * recommended operations present in this class include
+ * {@link #sin(double) sin}, {@link #cos(double) cos},
+ * {@link #tan(double) tan}, {@link #asin(double) asin},
+ * {@link #acos(double) acos}, {@link #atan(double) atan},
+ * {@link #exp(double) exp}, {@link #expm1(double) expm1},
+ * {@link #log(double) log}, {@link #log10(double) log10},
+ * {@link #log1p(double) log1p}, {@link #sinh(double) sinh},
+ * {@link #cosh(double) cosh}, {@link #tanh(double) tanh},
+ * {@link #hypot(double, double) hypot}, and
+ * {@link #pow(double, double) pow}.  (The {@link #sqrt(double) sqrt}
  * operation is a required part of IEEE 754 from a different section
  * of the standard.) The special case behavior of the recommended
  * operations generally follows the guidance of the IEEE 754
  * standard. However, the {@code pow} method defines different
- * behavior for some arguments, as noted in its {@linkplain pow
- * specification}. The IEEE 754 standard defines its operations to be
- * correctly rounded, which is a more stringent quality of
- * implementation condition than required for most of the methods in
- * question that are also included in this class.
+ * behavior for some arguments, as noted in its
+ * {@linkplain #pow(double, double) specification}. The IEEE 754
+ * standard defines its operations to be correctly rounded, which is a
+ * more stringent quality of implementation condition than required
+ * for most of the methods in question that are also included in this 
+ * class.
  *
  * @see <a href="https://standards.ieee.org/ieee/754/6210/">
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
