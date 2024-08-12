@@ -153,7 +153,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
         http2TestServer.setExchangeSupplier(ExpectContinueTestExchangeImpl::new);
         http2TestServer.addHandler(new GetHandler().toHttp2Handler(), "/http2/warmup");
         http2TestServer.addHandler(new PostHandler().toHttp2Handler(), "/http2/post");
-        http2TestServer.addHandler(new ForcePostHandlerHttp2().toHttp2Handler(), "/http2/forcePost");
+        http2TestServer.addHandler(new ForcePostHandler().toHttp2Handler(), "/http2/forcePost");
         http2TestServer.addHandler(new PostHandlerCantContinue().toHttp2Handler(), "/http2/hang");
         http2TestServer.addHandler(new PostHandlerHttp2(), "/http2/endStream");
 
@@ -214,18 +214,6 @@ public class ExpectContinueTest implements HttpServerAdapters {
     }
 
     static class ForcePostHandler implements HttpTestHandler {
-        @Override
-        public void handle(HttpTestExchange exchange) throws IOException {
-            try (InputStream is = exchange.getRequestBody()) {
-                err.println("Server reading body");
-                is.readAllBytes();
-                err.println("Server send 200 (length=0)");
-                exchange.sendResponseHeaders(200, 0);
-            }
-        }
-    }
-
-    static class ForcePostHandlerHttp2 implements HttpTestHandler {
         @Override
         public void handle(HttpTestExchange exchange) throws IOException {
             try (InputStream is = exchange.getRequestBody()) {
