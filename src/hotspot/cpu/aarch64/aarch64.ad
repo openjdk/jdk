@@ -3395,7 +3395,11 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none, "unexpected reloc type");
-        if (! __ is_valid_AArch64_address(con) || ! __ fits_adrp_limit(con) ||
+        // todo. here is the workaroung for "wrong size of mach node" assertion
+        //       depending on fits_adrp_limit we have either mov+movk+movk or adrp+add generated
+        //       though fits_adrp_limit can give different results for scratch buffer and code buffer
+        //       which results in "wrong size of mach node" assertion in output.cpp
+        if (! __ is_valid_AArch64_address(con) || ! __ fits_adrp_limit(con) || true ||
             con < (address)(uintptr_t)os::vm_page_size()) {
           __ mov(dst_reg, con);
         } else {
