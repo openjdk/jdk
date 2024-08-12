@@ -637,7 +637,7 @@ public class Indify {
             return anyMarkChanged;
         }
 
-        char nameAndTypeMark(Utf8Entry name, Utf8Entry type){
+        char nameAndTypeMark(Utf8Entry name, Utf8Entry type) {
             char mark = poolMarks[name.index()] = nameMark(name.stringValue());
             if (mark == 0) return 0;
             String descriptor = type.stringValue();
