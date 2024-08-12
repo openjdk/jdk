@@ -123,7 +123,7 @@ public class UseObjectMonitorTableTest {
                 WaitNotifyCountDownLatch endLatch = new WaitNotifyCountDownLatch(THREADS);
                 int count = getCount();
                 if (count != i * THREADS) {
-                    throw new RuntimeException("WaitNotifyTest: Invalid Count "  + count +
+                    throw new RuntimeException("WaitNotifyTest: Invalid Count " + count +
                                                " pre-iteration " + i);
                 }
                 startLatchChannel.send(startLatch, 10);
@@ -133,7 +133,7 @@ public class UseObjectMonitorTableTest {
             }
             int count = getCount();
             if (count != ITERATIONS * THREADS) {
-                throw new RuntimeException("WaitNotifyTest: Invalid Count "  + count);
+                throw new RuntimeException("WaitNotifyTest: Invalid Count " + count);
             }
             System.out.println("WaitNotifyTest passed.");
         }
@@ -214,7 +214,7 @@ public class UseObjectMonitorTableTest {
             syncPoint();
             int count = getCount();
             if (count != THREADS * ITERATIONS) {
-                throw new RuntimeException("RandomDepthTest: Invalid Count "  + count);
+                throw new RuntimeException("RandomDepthTest: Invalid Count " + count);
             }
             System.out.println("RandomDepthTest passed.");
         }
