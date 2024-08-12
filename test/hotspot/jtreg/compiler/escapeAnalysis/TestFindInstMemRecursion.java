@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,29 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
-
 /**
- * Supported DOCTYPE declarations.
+ * @test
+ * @bug 8324345
+ * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack
+ *          overflow.
+ *
+ * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
+ *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
+ *                   -XX:CompileCommand=MemLimit,*.*,0
+ *                   compiler.escapeAnalysis.TestFindInstMemRecursion
+ *
  */
-public enum DocType {
-    HTML5("<!DOCTYPE HTML>");
 
-    public final String text;
+package compiler.escapeAnalysis;
 
-    DocType(String text) {
-        this.text = text;
+import javax.swing.*;
+import javax.swing.plaf.metal.*;
+
+public class TestFindInstMemRecursion {
+    public static void main(String[] args) throws Exception {
+        LookAndFeel lookAndFeel = new MetalLookAndFeel();
+        for (int i = 0; i < 20; ++i) {
+            UIManager.setLookAndFeel(lookAndFeel);
+        }
     }
 }

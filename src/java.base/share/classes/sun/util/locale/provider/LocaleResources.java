@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import jdk.internal.util.StaticProperty;
 import sun.security.action.GetPropertyAction;
 import sun.util.resources.LocaleData;
 import sun.util.resources.OpenListResourceBundle;
@@ -289,6 +290,16 @@ public class LocaleResources {
     }
 
     public String getLocaleName(String key) {
+        // Get names for old ISO codes with new ISO code resources
+        if (StaticProperty.javaLocaleUseOldISOCodes().equalsIgnoreCase("true")) {
+            key = switch (key) {
+                case "iw" -> "he";
+                case "in" -> "id";
+                case "ji" -> "yi";
+                default -> key;
+            };
+        }
+
         Object localeName = null;
         String cacheKey = LOCALE_NAMES + key;
 
