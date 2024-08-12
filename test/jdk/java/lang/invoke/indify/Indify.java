@@ -732,7 +732,7 @@ public class Indify {
 
                 int bc = instruction.opcode().bytecode();
                 String UNKNOWN_CON = "<unknown>";
-                switch (bc){
+                switch (bc) {
                     case LDC,LDC_W:           jvm.push(((ConstantInstruction.LoadConstantInstruction) instruction).constantEntry()); break;
                     case LDC2_W:              jvm.push2(((ConstantInstruction.LoadConstantInstruction) instruction).constantEntry()); break;
                     case ACONST_NULL:         jvm.push(null); break;
