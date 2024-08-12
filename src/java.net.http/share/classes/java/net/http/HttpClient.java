@@ -65,7 +65,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * The {@link #newBuilder() newBuilder} method returns a builder that creates
  * instances of the default {@code HttpClient} implementation.
  * The builder can be used to configure per-client state, like: the preferred
- * protocol version ( HTTP/1.1 or HTTP/2 or HTTP/3), whether to follow redirects, a
+ * protocol version ( HTTP/1.1 or HTTP/2 or HTTP/3 ), whether to follow redirects, a
  * proxy, an authenticator, etc. Once built, an {@code HttpClient} is immutable,
  * and can be used to send multiple requests.
  *
@@ -131,6 +131,12 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * proxy has a {@code method} parameter of {@code "CONNECT"} (for all kinds of
  * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
  * where host and port specify the proxy's address.
+ * <p> In the case where {@linkplain Version#HTTP_3 HTTP/3} is used, a {@link
+ * SecurityException} may be thrown if the caller that {@linkplain
+ * HttpClient.Builder#build() created} the {@code HttpClient} didn't possess
+ * the {@link java.net.SocketPermission} for {@code "localhost:*","listen,resolve"}.
+ * The permission is checked when opening a new UDP endpoint, which typically
+ * happens the first time sending an HTTP/3 request is attempted.
  *
  * @apiNote
  * Resources allocated by the {@code HttpClient} may be
@@ -199,7 +205,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * <p>
  * The HTTP/3 protocol is not selected by default, but can be enabled by setting
  * the {@linkplain Builder#version(Version) HttpClient preferred version} or the
- * {@linkplain HttpRequest.Builder#version(Version) HttpRequest version} to
+ * {@linkplain HttpRequest.Builder#version(Version) HttpRequest preferred version} to
  * {@linkplain Version#HTTP_3 HTTP/3}. Like for HTTP/2, which protocol version is
  * actually used when HTTP/3 is enabled may depend on several factors.
  * {@linkplain HttpRequest.Builder#configure(Config) Configuration hints} can

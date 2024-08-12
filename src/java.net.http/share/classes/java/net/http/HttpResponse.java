@@ -836,7 +836,7 @@ public interface HttpResponse<T> {
 
         /**
          * Represents a HTTP/3 PushID. PushIds can be shared across
-         * multiple client initiated requests on the same QUIC connection.
+         * multiple client initiated requests on the same HTTP/3 connection.
          */
         public sealed interface PushId {
             // TODO: should we expose this type?
@@ -892,7 +892,8 @@ public interface HttpResponse<T> {
          * Notification of the first occurrence of a HTTP/3 incoming push promise.
          *
          * Subsequent promises of the same resource (with the same PushId) are notified
-         * using {@link #notifyAdditionalPromise(HttpRequest, PushId)}.
+         * using {@link #notifyAdditionalPromise(HttpRequest, PushId)
+         * notifyAdditionalPromise(HttpRequest, PushId)}.
          *
          * <p> This method is invoked once for each push promise received, up
          * to the point where the response body of the initiating client-sent

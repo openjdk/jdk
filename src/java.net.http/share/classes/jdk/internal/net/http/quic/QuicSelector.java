@@ -354,6 +354,10 @@ public abstract sealed class QuicSelector<T extends QuicEndpoint> implements Run
                     if (debug.on()) {
                         debug.log("Selected: changes=%s, keys=%s", selected, selectedKeys.size());
                     }
+
+                    // We do not synchronize on selectedKeys: selectedKeys is only
+                    // modified in this thread, whether directly, by calling selectedKeys.clear() below,
+                    // or indirectly, by calling selector.close() below.
                     for (var key : selectedKeys) {
                         QuicSelectableEndpoint endpoint = (QuicSelectableEndpoint) key.attachment();
                         if (debug.on()) {
