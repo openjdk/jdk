@@ -885,7 +885,7 @@ public class Indify {
                                 args.clear(); args.add(intrinsic);
                                 continue;
                             case "lookupClass":
-                                if(args.equals(List.of("lookup"))) {
+                                if (args.equals(List.of("lookup"))) {
                                     args.clear(); args.add(classModel.thisClass());
                                     continue;
                                 }
