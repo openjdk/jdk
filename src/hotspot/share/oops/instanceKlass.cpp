@@ -1088,7 +1088,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
     ObjectLocker ol(h_init_lock, jt);
 
     // Step 2
-    // If we were to use wait() instead of waitUninterruptibly() then
+    // If we were to use wait() instead of waitInterruptibly() then
     // we might end up throwing IE from link/symbol resolution sites
     // that aren't expected to throw.  This would wreak havoc.  See 6320309.
     while (is_being_initialized() && !is_reentrant_initialization(jt)) {
