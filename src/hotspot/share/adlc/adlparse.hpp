@@ -88,6 +88,7 @@ protected:
   // ***** Level 1 Parse functions *****
   void instr_parse(void);       // Parse instruction definitions
   void oper_parse(void);        // Parse operand definitions
+  void oper_expand_parse(OperandForm* current);
   void opclass_parse(void);     // Parse operand class definitions
   void ins_attr_parse(void);    // Parse instruction attribute definitions
   void op_attr_parse(void);     // Parse operand attribute definitions
@@ -237,7 +238,7 @@ protected:
   // Return the next token, a relational operator { ==, !=, <=, >= }
   char *get_relation_dup(void);
 
-  void  get_oplist(NameList &parameters, FormDict &operands);// Parse type-operand pairs
+  void  get_oplist(NameList &parameters, FormDict &operands, NameList* parameters_unexpanded = nullptr);// Parse type-operand pairs
   void  get_effectlist(FormDict &effects, FormDict &operands, bool& has_call); // Parse effect-operand pairs
   // Return the contents of a parenthesized expression.
   // Requires initial '(' and consumes final ')', which is replaced by '\0'.

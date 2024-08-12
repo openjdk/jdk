@@ -1514,6 +1514,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
+  // TODO
   fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
@@ -1767,6 +1768,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           declared_def = true;
         }
         if (op && op->_interface && op->_interface->is_RegInterface()) {
+          // TODO
           fprintf(fp,"  def = new MachTempNode(state->MachOperGenerator(%s));\n",
                   machOperEnum(op->_ident));
           fprintf(fp,"  add_req(def);\n");
@@ -1784,6 +1786,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
         if (!declared_kill) {
           // Define the variable "kill" to hold new MachProjNodes
+          // TODO
           fprintf(fp, "  MachProjNode *kill;\n");
           declared_kill = true;
         }
@@ -1797,6 +1800,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
                      node->_ident, comp->_type, comp->_name);
         }
 
+        // TODO
         fprintf(fp,"  kill = ");
         fprintf(fp,"new MachProjNode( %s, %d, (%s), Op_%s );\n",
                 machNode, proj_no++, regmask, ideal_type);
@@ -1918,6 +1922,8 @@ private:
   OpClassForm  *_opclass;
   OperandForm  *_operand;
   int           _operand_idx;
+  int _operands_expanded[8];
+  int _operands_num;
   const char   *_local_name;
   const char   *_operand_name;
   bool          _doing_disp;
@@ -1956,6 +1962,7 @@ public:
     _opclass       = nullptr;
     _operand       = nullptr;
     _operand_idx   = 0;
+    _operands_num  = 0;
     _local_name    = "";
     _operand_name  = "";
     _doing_disp    = false;
@@ -1997,18 +2004,23 @@ public:
         }
       }
       else {
+        fprintf(stderr, "<<<<<<<<<<<<<<<<<<, rep_var: %s, _inst: %s    ", rep_var, _inst._ident);
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
-        if ( param_no == -1 ) {
+        int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
+        if ( param_no == -1 && param_no_unexpanded == -1) {
+          fprintf(stderr, "       >>>>, _encoding._parameter_name_unexpanded: %d\n", _encoding._parameter_name_unexpanded.count());
+          _encoding._parameter_name_unexpanded.dump();
           _AD.syntax_err( _encoding._linenum,
-                          "Replacement variable %s not found in enc_class %s.\n",
+                          "1 Replacement variable %s not found in enc_class %s.\n",
                           rep_var, _encoding._name);
         }
 
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
-        const char *inst_rep_var = _ins_encode.rep_var_name(_inst, param_no);
-        if (inst_rep_var == nullptr) {
+        const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+        const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ? _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
+        if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
                           rep_var, _encoding._name, _inst._ident);
@@ -2016,18 +2028,37 @@ public:
         }
 
         // Check if instruction's actual parameter is a local name in the instruction
+        const char *inst_rep_var = inst_rep_var_expanded != nullptr ? inst_rep_var_expanded : inst_rep_var_unexpanded;
         const Form  *local     = _inst._localNames[inst_rep_var];
         OpClassForm *opc       = (local != nullptr) ? local->is_opclass() : nullptr;
         // Note: assert removed to allow constant and symbolic parameters
         // assert( opc, "replacement variable was not found in local names");
         // Lookup the index position iff the replacement variable is a localName
         int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
+        int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
 
-        if ( idx != -1 ) {
+        fprintf(stderr, "       >>>>, idx: %d, idx_unexpanded: %d, _num_uniq: %d, inst_rep_var: %s, opc: %ld\n", idx, idx_unexpanded, _inst._num_uniq, inst_rep_var, (long int)opc);
+        if ( idx != -1 || idx_unexpanded != -1) {
           // This is a local in the instruction
           // Update local state info.
           _opclass        = opc;
-          _operand_idx    = idx;
+          _operand_idx    = idx != -1 ? idx : idx_unexpanded + _inst._num_uniq - 1;
+          if (idx != -1) {
+            _operands_num = 0;
+          } else {
+            OperandForm *operand = opc->is_operand();
+            assert(operand != nullptr, "must");
+            char tmp[1024];
+            for (int i = 0; i < operand->_expanded_operands_num; i++) {
+              strcpy(tmp, inst_rep_var);
+              tmp[strlen(inst_rep_var)] = '_';
+              tmp[strlen(inst_rep_var) + 1] = '0' + i;
+              tmp[strlen(inst_rep_var) + 2] = '\0';
+              int expanded_idx  = _inst.operand_position_format(tmp);
+              _operands_expanded[i] = expanded_idx;
+            }
+            _operands_num = operand->_expanded_operands_num;
+          }
           _local_name     = rep_var;
           _operand_name   = inst_rep_var;
 
@@ -2220,6 +2251,7 @@ public:
 
       if ( (*rep_var) == '$' ) {
         // A subfield variable, '$$' prefix
+        // TODO
         emit_field( rep_var );
       } else {
         if (_strings_to_emit.peek() != nullptr &&
@@ -2260,7 +2292,7 @@ public:
               (strcmp(next, "$base") == 0 || strcmp(next, "$index") == 0)) {
             // handle $rev_var$$base$$Register and $rev_var$$index$$Register by
             // producing as_Register(opnd_array(#)->base(ra_,this,idx1)).
-            fprintf(_fp, "as_Register(");
+            fprintf(_fp, "as_Register(/*++++*/");
             // emit the operand reference
             emit_rep_var( rep_var );
             rep_var = _strings_to_emit.iter();
@@ -2272,6 +2304,7 @@ public:
             // close up the parens
             fprintf(_fp, ")");
           } else {
+            // TODO
             emit_rep_var( rep_var );
           }
         }
@@ -2335,6 +2368,7 @@ public:
     }
     else {
       // Not an emit# command, just output the replacement string.
+      // TODO
       emit_replacement();
     }
 
@@ -2358,6 +2392,12 @@ private:
     if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
     if (strcmp(rep_var,"$VectorSRegister") == 0)  return "as_VectorSRegister";
 #endif
+
+#if defined(RISCV64)
+    if (strcmp(rep_var,"$VectorRegister") == 0)   return "as_VectorRegister";
+    if (strcmp(rep_var,"$VectorRegisterGroup") == 0)   return "as_VectorRegisterGroup";
+#endif
+
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
 #endif
@@ -2366,6 +2406,10 @@ private:
 
   void emit_field(const char *rep_var) {
     const char* reg_convert = reg_conversion(rep_var);
+    fprintf(stderr, "+++++++++++++++++++, reg_convert: %ld", (long int)reg_convert);
+    if (reg_convert != nullptr && strcmp(reg_convert,"as_VectorRegister") == 0) {
+      fprintf(stderr, "+++++++++++++++++++, rep_var: %s", rep_var);
+    }
 
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
@@ -2383,9 +2427,18 @@ private:
             fprintf(_fp, "%s_enc", first->_regname);
           }
         } else {
-          fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
+          // TODO
+          fprintf(_fp,"->%s(/*++++++*/ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
-          if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
+          if (_operands_num == 0) {
+            if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
+          } else {
+            assert(_operands_num > 0, "must");
+            fprintf(_fp, ",%d", _operands_num);
+            for (int i = 0; i < _operands_num; i++) {
+              fprintf(_fp,",idx%d", _operands_expanded[i]);
+            }
+          }
           fprintf(_fp,")");
           fprintf(_fp, "/* %s */", _operand_name);
         }
@@ -2446,6 +2499,7 @@ private:
     }
     else {
       printf("emit_field: %s\n",rep_var);
+      fprintf(stderr, "================ emit_field: %s\n",rep_var);
       globalAD->syntax_err(_inst._linenum, "Unknown replacement variable %s in format statement of %s.",
                            rep_var, _inst._ident);
       assert( false, "UnImplemented()");
@@ -2476,13 +2530,24 @@ private:
     else {
       // Lookup its position in parameter list
       int   param_no  = _encoding.rep_var_index(rep_var);
-      if ( param_no == -1 ) {
+      int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
+      if ( param_no == -1 && param_no_unexpanded == -1) {
         _AD.syntax_err( _encoding._linenum,
-                        "Replacement variable %s not found in enc_class %s.\n",
+                        "2 Replacement variable %s not found in enc_class %s.\n",
                         rep_var, _encoding._name);
       }
+
       // Lookup the corresponding ins_encode parameter
-      const char *inst_rep_var = _ins_encode.rep_var_name(_inst, param_no);
+      const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+      const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ? _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
+      if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
+        _AD.syntax_err( _ins_encode._linenum,
+                        "Parameter %s not passed to enc_class %s from instruct %s.\n",
+                        rep_var, _encoding._name, _inst._ident);
+        assert(false, "inst_rep_var == null, cannot continue.");
+      }
+
+      const char *inst_rep_var = inst_rep_var_expanded != nullptr ? inst_rep_var_expanded : inst_rep_var_unexpanded;
 
       // Check if instruction's actual parameter is a local name in the instruction
       const Form  *local     = _inst._localNames[inst_rep_var];
@@ -2491,14 +2556,43 @@ private:
       // assert( opc, "replacement variable was not found in local names");
       // Lookup the index position iff the replacement variable is a localName
       int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
-      if( idx != -1 ) {
-        if (_inst.is_noninput_operand(idx)) {
+      int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
+      if (strcmp(rep_var, "v2m2") == 0) fprintf(stderr, "000000000000, idx: %d, idx_unexpanded: %d\n", idx, idx_unexpanded);
+      if ( idx != -1 || idx_unexpanded != -1) {
+        if ((idx != -1 && _inst.is_noninput_operand(idx)) || (idx_unexpanded != -1 && _inst.is_noninput_operand_unexpanded(idx_unexpanded))) {
           // This operand isn't a normal input so printing it is done
           // specially.
           _processing_noninput = true;
         } else {
           // Output the emit code for this operand
-          fprintf(_fp,"opnd_array(%d)",idx);
+          // TODO
+          if (idx != -1) {
+            fprintf(_fp,"opnd_array(/*------*/%d)",idx);
+          } else { // idx_unexpanded != -1
+            OperandForm *operand = opc->is_operand();
+            assert(operand != nullptr, "must");
+            assert(operand->_expanded_operands_num > 0, "must");
+            fprintf(_fp,"opnd_array(/*------*/%d",idx_unexpanded + _inst._num_uniq - 1);
+/*
+        char* tmp = new char[1024];
+        strcpy(tmp, inst_rep_var);
+        tmp[strlen(inst_rep_var)] = '_';
+        tmp[strlen(inst_rep_var) + 1] = '0';
+        tmp[strlen(inst_rep_var) + 2] = '\0';
+            int expanded_idx  = _inst.operand_position_format(tmp);
+            fprintf(_fp,"%d", expanded_idx);
+            for (int i = 1; i < operand->_expanded_operands_num; i++) {
+        strcpy(tmp, inst_rep_var);
+        tmp[strlen(inst_rep_var)] = '_';
+        tmp[strlen(inst_rep_var) + 1] = '0' + i;
+        tmp[strlen(inst_rep_var) + 2] = '\0';
+              expanded_idx  = _inst.operand_position_format(tmp);
+              fprintf(_fp,", %d", expanded_idx);
+            }
+*/
+            fprintf(_fp,")");
+          fprintf(stderr, "         >>>>> \n");
+          }
         }
         assert( _operand == opc->is_operand(),
                 "Previous emit $operand does not match current");
@@ -2582,9 +2676,9 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
     abort();
   }
-  if (ins_encode->current_encoding_num_args() != encoding->num_args()) {
+  if (ins_encode->current_encoding_num_args_expanded() != encoding->num_args()) {
     globalAD->syntax_err(ins_encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                         inst._ident, ins_encode->current_encoding_num_args(),
+                         inst._ident, ins_encode->current_encoding_num_args_expanded(),
                          ec_name, encoding->num_args());
   }
 
@@ -2670,6 +2764,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // (1)
   // Output instruction's emit prototype
+  // TODO
   fprintf(fp, "void %sNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
@@ -2705,9 +2800,9 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
       abort();
     }
 
-    if (encode->current_encoding_num_args() != encoding->num_args()) {
+    if (encode->current_encoding_num_args_expanded() != encoding->num_args()) {
       globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                           inst._ident, encode->current_encoding_num_args(),
+                           inst._ident, encode->current_encoding_num_args_expanded(),
                            ec_name, encoding->num_args());
     }
 
@@ -2720,6 +2815,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     while ((ec_code = encoding->_code.iter()) != nullptr) {
       if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
+        // TODO
         pending.emit();
         pending.clear();
         // Emit this code section
@@ -2728,6 +2824,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
         // A replacement variable or one of its subfields
         // Obtain replacement variable from list
         ec_rep_var  = encoding->_rep_vars.iter();
+        // TODO
         pending.add_rep_var(ec_rep_var);
       }
     }
@@ -2784,9 +2881,9 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
       abort();
     }
 
-    if (encode->current_encoding_num_args() != encoding->num_args()) {
+    if (encode->current_encoding_num_args_expanded() != encoding->num_args()) {
       globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                           inst._ident, encode->current_encoding_num_args(),
+                           inst._ident, encode->current_encoding_num_args_expanded(),
                            ec_name, encoding->num_args());
     }
 
@@ -3903,6 +4000,37 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
 }
 
 
+int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& comp_list, const char *indent, int start_index, bool log) {
+  bool           dont_care = false;
+  Component     *comp      = nullptr;
+  comp_list.reset();
+  if ( comp_list.match_iter() != nullptr )    dont_care = true;
+
+  // Insert operands that are not in match-rule.
+  // Only insert a DEF if the do_care flag is set
+  comp_list.reset();
+  int         index = -1;
+  while ( (comp = comp_list.post_match_iter()) ) {
+    // Check if we don't care about DEFs or KILLs that are not USEs
+    if ( dont_care && (! comp->isa(Component::USE)) ) {
+      continue;
+    }
+    dont_care = true;
+    // For each operand not in the match rule, call MachOperGenerator
+    // with the enum for the opcode that needs to be built.
+    ComponentList clist = comp_list;
+    if (log) {
+      clist.dump();
+      fprintf(stderr, "       comp->_name: %s, comp->_usedef: %d\n", comp->_name, comp->_usedef);
+    }
+    index  = clist.operand_position(comp->_name, comp->_usedef, inst);
+    const char *opcode = machOperEnum(comp->_type);
+    // TODO
+    fprintf(fp_cpp, "%s node->set_opnd_array(/*@@@@@@*/%d, ", indent, start_index + index);
+    fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
+  }
+  return start_index + index;
+}
 //---------------------------buildMachNode-------------------------------------
 // Build a new MachNode, for MachNodeGenerator or cisc-spilling
 void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *indent) {
@@ -3916,6 +4044,16 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Instruction that contains operands which are not in match rule.
     //
     // Check if the first post-match component may be an interesting def
+    int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
+    if (inst->_components_unexpanded.count() > 0) buildMachNode(fp_cpp, inst, inst->_components_unexpanded, indent, index, true);
+
+    if (inst->_components_unexpanded.count() > 0) {
+      fprintf(stderr, "<<<<<<<<<<<<<<<<<<<< \n");
+      inst->_components.dump();
+      inst->_components_unexpanded.dump();
+      fprintf(stderr, "       >>>>>>\n");
+    }
+    /*
     bool           dont_care = false;
     ComponentList &comp_list = inst->_components;
     Component     *comp      = nullptr;
@@ -3936,9 +4074,11 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
       ComponentList clist = inst->_components;
       int         index  = clist.operand_position(comp->_name, comp->_usedef, inst);
       const char *opcode = machOperEnum(comp->_type);
+      // TODO
       fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, index);
       fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
-      }
+    }
+    */
   }
   else if ( inst->is_chain_of_constant(_globalNames, opType) ) {
     // An instruction that chains from a constant!
@@ -4145,11 +4285,13 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
     char       *opType  = nullptr;
 
     // Generate the case statement for this instruction
+    // TODO
     fprintf(fp_cpp, "  case %s_rule:", opClass);
 
     // Start local scope
     fprintf(fp_cpp, " {\n");
     // Generate code to construct the new MachNode
+    // TODO
     buildMachNode(fp_cpp, inst, "     ");
     // Return result and exit scope
     fprintf(fp_cpp, "      return node;\n");

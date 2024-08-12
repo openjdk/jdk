@@ -140,6 +140,7 @@ private:
 
   // Helper function that outputs code to generate an instruction in MachNodeGenerator
   void buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *indent);
+  int buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& components, const char *indent, int start_index = 0, bool log = false);
 
 public:
   ArchDesc();

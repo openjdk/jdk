@@ -2345,11 +2345,44 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   add(a1, a1, tmp1);
   add(a2, a2, tmp1);
   bnez(cnt, loop);
+  mv(result, true);
+}
+
+void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2, VectorRegisterGroup vgs, bool islatin, Label &DONE) {
+  Label loop;
+  Assembler::SEW sew = islatin ? Assembler::e8 : Assembler::e16;
+  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vg2), "sanity");
+  assert(vgrp_to_lmul(vg1) == vgrp_to_lmul(vgs), "sanity");
+  Assembler::LMUL lmul = vgrp_to_lmul(vg1);
+  VectorRegister vr1 = vg1.as_vreg();
+  VectorRegister vr2 = vg2.as_vreg();
+  VectorRegister vrs = vgs.as_vreg();
+
+  bind(loop);
+  vsetvli(tmp1, cnt, sew, lmul);
+  vlex_v(vr1, a1, sew);
+  vlex_v(vr2, a2, sew);
+  vmsne_vv(vrs, vr1, vr2);
+  vfirst_m(tmp2, vrs);
+  bgez(tmp2, DONE);
+  sub(cnt, cnt, tmp1);
+  if (!islatin) {
+    slli(tmp1, tmp1, 1); // get byte counts
+  }
+  add(a1, a1, tmp1);
+  add(a2, a2, tmp1);
+  bnez(cnt, loop);
 
   mv(result, true);
 }
 
-void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
+void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt,
+                                        VectorRegisterGroup vg1, VectorRegisterGroup vg2,
+                                        VectorRegister vx, VectorRegister vy,
+                                        Register rx) {
+                                        // VectorRegister v6, VectorRegister vx, VectorRegister vy, VectorRegister vz, VectorRegister v00, VectorRegister v01, VectorRegister v02,
+                                        // Register rx, Register ry, Register rz, Register r00, Register r01, Register r02) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -2358,7 +2391,28 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE, Assembler::m2);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, vg1, vg2, vg1, true, DONE);
+
+  vsetvli(rx, rx, Assembler::e32, Assembler::m1);
+  if (true) {
+
+    // vlex_v(v6, a1, Assembler::e32);
+    vlex_v(vx, a2, Assembler::e32);
+
+    Register src = a1;
+    // Register dsts[] = {rx, ry, rz, r00, r01, r02};
+    Register dsts[] = {rx};
+    // VectorRegister vdsts[] = {v6, vx, vy, vz, v00, v01, v02};
+    VectorRegister vdsts[] = {vx, vy};
+    for (int i = 0; i < sizeof(dsts)/sizeof(Register); i++) {
+      mv(dsts[i], src);
+    }
+    for (int j = 0; j < sizeof(vdsts)/sizeof(VectorRegister); j++) {
+      vlex_v(vdsts[j], src, Assembler::e32);
+    }
+
+  }
+  ld(rx, Address(zr, 0));
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");

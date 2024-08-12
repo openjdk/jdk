@@ -3558,19 +3558,30 @@ instruct vsqrt_fp_masked(vReg dst_src, vRegMask_V0 v0) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V2 v2,
-                         vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, rFlagsReg cr)
+instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt, iRegI_R10 result, iRegP_R28 tx28, iRegP_R30 tx30,
+                         vReg_V2M2 v2m2, vReg_V4M2 v4m2,
+                         vReg vx, vReg vy,
+                         iRegLNoSp rx, rFlagsReg cr)
+                         // vReg_V6 v1, vReg vx, vReg vy, vReg vz, vReg v00, vReg v01, vReg v02,
+                         // iRegLNoSp rx, iRegLNoSp ry, iRegLNoSp rz, iRegLNoSp r0, iRegLNoSp r1, iRegLNoSp r2, rFlagsReg cr)
 %{
   predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
+  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tx28, TEMP tx30,
+         TEMP v2m2, TEMP v4m2,
+         TEMP vx, TEMP vy,
+         TEMP rx, KILL cr);
 
   format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsL" %}
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register);
+                       $result$$Register, $cnt$$Register,
+                       $v2m2$$VectorRegisterGroup, $v4m2$$VectorRegisterGroup,
+                       $vx$$VectorRegister, $vy$$VectorRegister,
+                       $rx$$Register);
+                       // $v1$$VectorRegister, $vx$$VectorRegister, $vy$$VectorRegister, $vz$$VectorRegister, $v00$$VectorRegister, $v01$$VectorRegister, $v02$$VectorRegister,
+                       // $rx$$Register, $ry$$Register, $rz$$Register, $r0$$Register, $r1$$Register, $r2$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}

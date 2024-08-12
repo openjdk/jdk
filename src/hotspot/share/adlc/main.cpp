@@ -176,7 +176,6 @@ int main(int argc, char *argv[])
 
   ADL_Parse = new ADLParser(ADL_Buf, AD); // Create a parser to parse the buffer
   ADL_Parse->parse();           // Parse buffer & build description lists
-
   if( AD._dfa_debug >= 1 ) {    // For higher debug settings, print dump
     AD.dump();
   }

@@ -1536,7 +1536,8 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp,"class %sNode : public %s { \n",
             instr->_ident, instr->mach_base_class(_globalNames) );
     fprintf(fp,"private:\n");
-    fprintf(fp,"  MachOper *_opnd_array[%d];\n", instr->num_opnds() );
+    fprintf(fp,"  MachOper *_opnd_array[%d];\n", instr->num_opnds() + instr->num_opnds_unexpanded() );
+    fprintf(fp,"  uint16_t _num_opnds_unexpanded;\n" );
     if ( instr->is_ideal_jump() ) {
       fprintf(fp, "  GrowableArray<Label*> _index2label;\n");
     }
@@ -1555,11 +1556,11 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     fprintf(fp,"  MachOper *opnd_array(uint operand_index) const {\n");
-    fprintf(fp,"    assert(operand_index < _num_opnds, \"invalid _opnd_array index\");\n");
+    fprintf(fp,"    assert(operand_index < (_num_opnds + _num_opnds_unexpanded), \"invalid _opnd_array index\");\n");
     fprintf(fp,"    return _opnd_array[operand_index];\n");
     fprintf(fp,"  }\n");
     fprintf(fp,"  void      set_opnd_array(uint operand_index, MachOper *operand) {\n");
-    fprintf(fp,"    assert(operand_index < _num_opnds, \"invalid _opnd_array index\");\n");
+    fprintf(fp,"    assert(operand_index < (_num_opnds + _num_opnds_unexpanded), \"invalid _opnd_array index\");\n");
     fprintf(fp,"    _opnd_array[operand_index] = operand;\n");
     fprintf(fp,"  }\n");
     fprintf(fp,"  virtual uint           rule() const { return %s_rule; }\n",
@@ -1738,7 +1739,9 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
+    // TODO
     fprintf(fp," _num_opnds = %d; _opnds = _opnd_array; ", instr->num_opnds());
+    fprintf(fp," _num_opnds_unexpanded = %d; ", instr->num_opnds_unexpanded());
 
     bool node_flags_set = false;
     // flag: if this instruction matches an ideal 'Copy*' node

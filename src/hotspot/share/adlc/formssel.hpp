@@ -94,6 +94,7 @@ public:
   // Public Data
   const char    *_ident;               // Name of this instruction
   NameList       _parameters;          // Locally defined names
+  NameList       _parameters_unexpanded;
   FormDict       _localNames;          // Table of operands & their types
   MatchRule     *_matrule;             // Matching rule for this instruction
   Opcode        *_opcode;              // Encoding of the opcode for instruction
@@ -116,6 +117,7 @@ public:
   uint           _num_uniq;            // Number  of unique operands
   ComponentList  _components;          // List of Components matches MachNode's
                                        // operand structure
+  ComponentList  _components_unexpanded;
 
   bool           _has_call;            // contain a call and caller save registers should be saved?
 
@@ -207,6 +209,7 @@ public:
   virtual const char *cost();      // Access ins_cost attribute
   virtual uint        num_opnds(); // Count of num_opnds for MachNode class
                                    // Counts USE_DEF opnds twice.  See also num_unique_opnds().
+  virtual uint        num_opnds_unexpanded();
   virtual uint        num_post_match_opnds();
   virtual uint        num_consts(FormDict &globals) const;// Constants in match rule
   // Constants in match rule with specified type
@@ -227,9 +230,11 @@ public:
   Predicate *build_predicate();
 
   virtual void        build_components(); // top-level operands
+  bool        build_components(NameList& params, ComponentList& components);
   // Return zero-based position in component list; -1 if not in list.
   virtual int         operand_position(const char *name, int usedef);
   virtual int         operand_position_format(const char *name);
+  virtual int         operand_position_format_unexpanded(const char *name);
 
   // Return zero-based position in component list; -1 if not in list.
   virtual int         label_position();
@@ -298,6 +303,10 @@ public:
     return (idx >= num_unique_opnds());
   }
 
+  bool is_noninput_operand_unexpanded(uint idx) {
+    return idx > _parameters_unexpanded.count();
+  }
+
   // --------------------------- FILE *output_routines
   //
   // Generate the format call for the replacement variable
@@ -343,6 +352,8 @@ public:
   // NameList for parameter type and name
   NameList       _parameter_type;
   NameList       _parameter_name;
+  NameList       _parameter_type_unexpanded;
+  NameList       _parameter_name_unexpanded;
 
   // Breakdown the encoding into strings separated by $replacement_variables
   // There is an entry in _strings, perhaps null, that precedes each _rep_vars
@@ -363,10 +374,12 @@ public:
   // --------------------------- Parameters
   // Add a parameter <type,name> pair
   void add_parameter(const char *parameter_type, const char *parameter_name);
+  void add_parameter_unexpanded(const char *parameter_type, const char *parameter_name);
   // Verify operand types in parameter list
   bool check_parameter_types(FormDict &globals);
   // Obtain the zero-based index corresponding to a replacement variable
   int         rep_var_index(const char *rep_var);
+  int         rep_var_index_unexpanded(const char *rep_var);
   int         num_args() { return _parameter_name.count(); }
 
   // --------------------------- Code Block
@@ -437,7 +450,8 @@ private:
   // Public Data (access directly only for reads)
   // The encodings can only have the values predefined by the ADLC:
   // blank, RegReg, RegMem, MemReg, ...
-  NameList    _encoding;
+  NameList    _encoding_expanded;
+  NameList    _encoding_unexpanded;
   // NameList    _parameter;
   // The parameters for each encoding are preceded by a NameList::_signal
   // and follow the parameters for the previous encoding.
@@ -450,7 +464,8 @@ public:
   ~InsEncode();
 
   // Add "encode class name" and its parameters
-  NameAndList  *add_encode(char *encode_method_name);
+  NameAndList  *add_encode_expanded(char *encode_method_name);
+  NameAndList  *add_encode_unexpanded(char *encode_method_name);
   // Parameters are added to the returned "NameAndList" by the parser
 
   // Access the list of encodings
@@ -458,8 +473,8 @@ public:
   const char   *encode_class_iter();
 
   // Returns the number of arguments to the current encoding in the iteration
-  int current_encoding_num_args() {
-    return ((NameAndList*)_encoding.current())->count();
+  int current_encoding_num_args_expanded() {
+    return ((NameAndList*)_encoding_expanded.current())->count();
   }
 
   // --------------------------- Parameters
@@ -467,6 +482,7 @@ public:
   //
   // Obtain parameter name from zero based index
   const char   *rep_var_name(InstructForm &inst, uint param_no);
+  const char   *rep_var_name_unexpanded(InstructForm &inst, uint param_no);
   // ---------------------------
 
   void dump();
@@ -610,6 +626,8 @@ public:
   ConstructRule *_construct;  // Construction of operand data after matching
   FormatRule    *_format;     // Format for assembly generation
   NameList       _classes;    // List of opclasses which contain this oper
+  OperandForm   *_expanded_operands[8];
+  int           _expanded_operands_num;
 
   ComponentList _components;  //
 

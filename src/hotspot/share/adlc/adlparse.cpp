@@ -91,6 +91,7 @@ void ADLParser::parse() {
 
   // Iterate over the lines in the file buffer parsing Level 1 objects
   for( next_line(); _curline != nullptr; next_line()) {
+
     _ptr = _curline;             // Reset ptr to start of new line
     skipws();                    // Skip any leading whitespace
     ident = get_ident();         // Get first token
@@ -166,7 +167,7 @@ void ADLParser::instr_parse(void) {
     parse_err(SYNERR, "missing '(' in instruct definition\n");
   }
   // Parse the operand list
-  else get_oplist(instr->_parameters, instr->_localNames);
+  else get_oplist(instr->_parameters, instr->_localNames, &instr->_parameters_unexpanded);
   skipws();                        // Skip leading whitespace
   // Check for block delimiter
   if ( (_curchar != '%')
@@ -414,6 +415,7 @@ void ADLParser::oper_parse(void) {
   AttributeForm *attr;
   MatchRule     *rule;
 
+
   // First get the name of the operand
   skipws();
   if( (ident = get_unique_ident(_globalNames,"operand")) == nullptr )
@@ -433,6 +435,7 @@ void ADLParser::oper_parse(void) {
   }
   else get_oplist(oper->_parameters, oper->_localNames); // Parse the component operand list
   skipws();
+
   // Check for block delimiter
   if ((_curchar != '%') || (*(_ptr+1) != '{')) { // If not open block
     parse_err(SYNERR, "missing '%%{' in operand definition\n");
@@ -476,7 +479,8 @@ void ADLParser::oper_parse(void) {
       parse_err(SYNERR, "Operands do not specify an effect\n");
     }
     else if (!strcmp(ident, "expand"))    {
-      parse_err(SYNERR, "Operands do not specify an expand\n");
+      // parse_err(SYNERR, "Operands do not specify an expand\n");
+      oper_expand_parse(oper);
     }
     else if (!strcmp(ident, "rewrite"))   {
       parse_err(SYNERR, "Operands do not specify a rewrite\n");
@@ -500,6 +504,35 @@ void ADLParser::oper_parse(void) {
   }
   // Add operand to tail of operand list
   _AD.addForm(oper);
+}
+
+void ADLParser::oper_expand_parse(OperandForm* current) {
+  skipws();
+  next_char();                            // Skip past open paren or comma
+
+  char* prev = nullptr;
+    char common;
+  do {
+    skipws();
+    fprintf(stderr, "<<<<<<\n");
+    char* ident = get_ident();
+    const Form* oper = _globalNames[ident];
+    if (oper == nullptr) {
+      parse_err(SYNERR, "missing definition of operand: %s\n", ident);
+    }
+    current->_expanded_operands[current->_expanded_operands_num++] = oper->is_operand();
+    prev = ident;
+    // expanded_operands.addForm(const_cast<Form*>(oper));
+    common = _curchar;
+    skipws();
+    next_char();
+    fprintf(stderr, "         _curchar: %c\n", common);
+    fprintf(stderr, "       >>>>>> oper_expand_parse: %s\n", ident);
+  } while (common == ',');
+
+  // next_char();                              // Consume the ')'
+    fprintf(stderr, "         exit, _curchar: %c\n", common);
+  skipws();
 }
 
 //------------------------------opclass_parse----------------------------------
@@ -2895,6 +2928,12 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
     assert(opForm != nullptr, "sanity");
     encoding->add_parameter(opForm->_ident, param);
   }
+  inst._parameters_unexpanded.reset();
+  while ((param = inst._parameters_unexpanded.iter()) != nullptr) {
+    OpClassForm* opForm = inst._localNames[param]->is_opclass();
+    assert(opForm != nullptr, "sanity");
+    encoding->add_parameter_unexpanded(opForm->_ident, param);
+  }
 
   // Parse the following %{ }% block
   ins_encode_parse_block_impl(inst, encoding, ec_name);
@@ -2902,10 +2941,17 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   // Build an encoding rule which invokes the encoding rule we just
   // created, passing all arguments that we received.
   InsEncode*   encrule = new InsEncode(); // Encode class for instruction
-  NameAndList* params  = encrule->add_encode(ec_name);
+  NameAndList* params_expanded  = encrule->add_encode_expanded(ec_name);
+  NameAndList* params_unexpanded  = encrule->add_encode_unexpanded(ec_name);
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != nullptr) {
-    params->add_entry(param);
+    OpClassForm* opForm = inst._localNames[param]->is_opclass();
+    params_expanded->add_entry(param);
+  }
+  inst._parameters_unexpanded.reset();
+  while ((param = inst._parameters_unexpanded.iter()) != nullptr) {
+    OpClassForm* opForm = inst._localNames[param]->is_opclass();
+    params_unexpanded->add_entry(param);
   }
 
   // Check for duplicate ins_encode sections after parsing the block
@@ -3059,7 +3105,7 @@ void ADLParser::ins_encode_parse(InstructForm& inst) {
     }
 
     // Get list for encode method's parameters
-    NameAndList *params = encrule->add_encode(ec_name);
+    NameAndList *params = encrule->add_encode_expanded(ec_name);
 
     // Parse the parameters to this encode method.
     skipws();
@@ -3225,7 +3271,7 @@ void ADLParser::postalloc_expand_parse(InstructForm& inst) {
     EncClass *encode_class = _AD._encode->encClass(ec_name);
 
     // Get list for encode method's parameters
-    NameAndList *params = encrule->add_encode(ec_name);
+    NameAndList *params = encrule->add_encode_expanded(ec_name);
 
     // Parse the parameters to this encode method.
     skipws();
@@ -3366,7 +3412,7 @@ void ADLParser::constant_parse(InstructForm& inst) {
   // Build an encoding rule which invokes the encoding rule we just
   // created, passing all arguments that we received.
   InsEncode*   encrule = new InsEncode(); // Encode class for instruction
-  NameAndList* params  = encrule->add_encode(ec_name);
+  NameAndList* params  = encrule->add_encode_expanded(ec_name);
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != nullptr) {
     params->add_entry(param);
@@ -4893,7 +4939,7 @@ char *ADLParser::get_relation_dup(void) {
 // Looks for identifier pairs where first must be the name of an operand, and
 // second must be a name unique in the scope of this instruction.  Stores the
 // names with a pointer to the OpClassForm of their type in a local name table.
-void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
+void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* parameters_unexpanded) {
   OpClassForm *opclass = nullptr;
   char        *ident   = nullptr;
 
@@ -4908,7 +4954,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
       parse_err(SYNERR, "optype identifier expected at %c\n", _curchar);
       return;
     }
-    else {
+//    else {
       const Form  *form = _globalNames[ident];
       if( form == nullptr ) {
         parse_err(SYNERR, "undefined operand type %s\n", ident);
@@ -4923,7 +4969,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
         return;
       }
       opclass = opc;
-    }
+//    }
     // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Type: %s\t", ident);
 
@@ -4936,8 +4982,30 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands) {
          parse_err(SYNERR, "Reuse of global name %s as operand.\n",ident);
          return;
     }
-    operands.Insert(ident, opclass);
-    parameters.addName(ident);
+
+    if (oper != nullptr && oper->_expanded_operands_num > 0) {
+      for (int i = 0; oper != nullptr && i < oper->_expanded_operands_num; i++) {
+        fprintf(stderr, "           i: %d, strlen(ident): %ld\n", i, strlen(ident));
+        char* tmp = new char[1024];
+        strcpy(tmp, ident);
+        tmp[strlen(ident)] = '_';
+        tmp[strlen(ident) + 1] = '0'+(char)i;
+        tmp[strlen(ident) + 2] = '\0';
+        fprintf(stderr, "           tmp: %s\n", tmp);
+        if( _globalNames[tmp] != nullptr ) {
+          parse_err(SYNERR, "Reuse of global name %s as operand.\n",ident);
+          return;
+        }
+        operands.Insert(tmp, oper->_expanded_operands[i]);
+        // oper->_expanded_operands[i]->dump();
+        parameters.addName(tmp);
+      }
+      operands.Insert(ident, opclass);
+      if (parameters_unexpanded != nullptr) parameters_unexpanded->addName(ident);
+    } else {
+      operands.Insert(ident, opclass);
+      parameters.addName(ident);
+    }
 
     // Debugging Stuff
     if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
@@ -5010,7 +5078,21 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_
         return;
       }
       // Add the pair to the effects table
-      effects.Insert(ident, eForm);
+      // effects.Insert(ident, eForm);
+      if (opForm->_expanded_operands_num == 0) {
+        effects.Insert(ident, eForm);
+      } else {
+        for (int i = 0; i < opForm->_expanded_operands_num; i++) {
+          char* tmp = new char[1024];
+          strcpy(tmp, ident);
+          tmp[strlen(ident)] = '_';
+          tmp[strlen(ident)+1] = '0'+i;
+          tmp[strlen(ident)+2] = '\0';
+          effects.Insert(tmp, eForm);
+        }
+        effects.Insert(ident, eForm);
+      }
+
       // Debugging Stuff
       if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);
     }
