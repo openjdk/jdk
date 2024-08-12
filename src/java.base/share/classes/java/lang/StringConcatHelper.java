@@ -41,7 +41,7 @@ import java.lang.invoke.MethodType;
  * combinators there.
  */
 final class StringConcatHelper {
-    static class StringConcatBase {
+    static abstract class StringConcatBase {
         @Stable final String[] constants;
         final int length;
         final byte coder;
@@ -55,6 +55,12 @@ final class StringConcatHelper {
             }
             this.length = length;
             this.coder = coder;
+        }
+    }
+
+    static final class Concat1 extends StringConcatBase {
+        Concat1(String[] constants) {
+            super(constants);
         }
 
         @ForceInline
@@ -70,7 +76,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private final String concat(boolean value) {
+        private String concat(boolean value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -80,7 +86,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private final String concat(char value) {
+        private String concat(char value) {
             int length = stringSize(this.length, value);
             byte coder = (byte) (this.coder | stringCoder(value));
             String suffix = constants[1];
@@ -91,7 +97,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private final String concat(int value) {
+        private String concat(int value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -101,7 +107,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private final String concat(long value) {
+        private String concat(long value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -111,18 +117,18 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private final String concat(Object value) {
+        private String concat(Object value) {
             String str = stringOf(value);
             return concat0(stringOf(value));
         }
 
         @ForceInline
-        private final String concat(float value) {
+        private String concat(float value) {
             return concat0(Float.toString(value));
         }
 
         @ForceInline
-        private final String concat(double value) {
+        private String concat(double value) {
             return concat0(Double.toString(value));
         }
     }

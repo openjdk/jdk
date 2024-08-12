@@ -2624,7 +2624,7 @@ public final class System {
             }
 
             public Object stringConcat1(String[] constants) {
-                return new StringConcatHelper.StringConcatBase(constants);
+                return new StringConcatHelper.Concat1(constants);
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {
