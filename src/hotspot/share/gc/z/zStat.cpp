@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -250,14 +250,14 @@ void ZStatUnitTime(LogTargetHandle log, const ZStatSampler& sampler, const ZStat
             "%9.3f / %-9.3f   ms",
             sampler.group(),
             sampler.name(),
-            TimeHelper::counter_to_millis(history.avg_10_seconds()),
-            TimeHelper::counter_to_millis(history.max_10_seconds()),
-            TimeHelper::counter_to_millis(history.avg_10_minutes()),
-            TimeHelper::counter_to_millis(history.max_10_minutes()),
-            TimeHelper::counter_to_millis(history.avg_10_hours()),
-            TimeHelper::counter_to_millis(history.max_10_hours()),
-            TimeHelper::counter_to_millis(history.avg_total()),
-            TimeHelper::counter_to_millis(history.max_total()));
+            TimeHelper::counter_to_millis((jlong)history.avg_10_seconds()),
+            TimeHelper::counter_to_millis((jlong)history.max_10_seconds()),
+            TimeHelper::counter_to_millis((jlong)history.avg_10_minutes()),
+            TimeHelper::counter_to_millis((jlong)history.max_10_minutes()),
+            TimeHelper::counter_to_millis((jlong)history.avg_10_hours()),
+            TimeHelper::counter_to_millis((jlong)history.max_10_hours()),
+            TimeHelper::counter_to_millis((jlong)history.avg_total()),
+            TimeHelper::counter_to_millis((jlong)history.max_total()));
 }
 
 void ZStatUnitBytes(LogTargetHandle log, const ZStatSampler& sampler, const ZStatSamplerHistory& history) {
@@ -677,7 +677,7 @@ void ZStatPhaseCollection::register_end(ConcurrentGCTimer* timer, const Ticks& s
   ZCollectedHeap::heap()->trace_heap_after_gc(jfr_tracer());
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
 
   const size_t used_at_end = ZHeap::heap()->used();
 
@@ -718,7 +718,7 @@ void ZStatPhaseGeneration::register_end(ConcurrentGCTimer* timer, const Ticks& s
   ZCollectedHeap::heap()->print_heap_after_gc();
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
 
   ZGeneration* const generation = ZGeneration::generation(_id);
 
@@ -766,7 +766,7 @@ void ZStatPhasePause::register_end(ConcurrentGCTimer* timer, const Ticks& start,
   timer->register_gc_pause_end(end);
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
 
   // Track max pause time
   if (_max < duration) {
@@ -798,7 +798,7 @@ void ZStatPhaseConcurrent::register_end(ConcurrentGCTimer* timer, const Ticks& s
   timer->register_gc_concurrent_end(end);
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
 
   LogTarget(Info, gc, phases) log;
   log_end(log, duration);
@@ -835,7 +835,7 @@ void ZStatSubPhase::register_end(ConcurrentGCTimer* timer, const Ticks& start, c
   ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
 
   if (Thread::current()->is_Worker_thread()) {
     LogTarget(Trace, gc, phases) log;
@@ -862,7 +862,7 @@ void ZStatCriticalPhase::register_end(ConcurrentGCTimer* timer, const Ticks& sta
   ZTracer::report_thread_phase(name(), start, end);
 
   const Tickspan duration = end - start;
-  ZStatSample(_sampler, duration.value());
+  ZStatDurationSample(_sampler, duration);
   ZStatInc(_counter);
 
   if (_verbose) {
@@ -912,6 +912,10 @@ void ZStatSample(const ZStatSampler& sampler, uint64_t value) {
   }
 
   ZTracer::report_stat_sampler(sampler, value);
+}
+
+void ZStatDurationSample(const ZStatSampler& sampler, const Tickspan& duration) {
+  ZStatSample(sampler, (uint64_t)duration.value());
 }
 
 void ZStatInc(const ZStatCounter& counter, uint64_t increment) {
@@ -1036,7 +1040,7 @@ void ZStat::sample_and_collect(ZStatSamplerHistory* history) const {
 
 bool ZStat::should_print(LogTargetHandle log) const {
   static uint64_t print_at = ZStatisticsInterval;
-  const uint64_t now = os::elapsedTime();
+  const uint64_t now = (uint64_t)os::elapsedTime();
 
   if (now < print_at) {
     return false;
@@ -1846,7 +1850,7 @@ void ZStatHeap::at_relocate_end(const ZPageAllocatorStats& stats, bool record_st
 }
 
 size_t ZStatHeap::reclaimed_avg() {
-  return _reclaimed_bytes.davg();
+  return (size_t)_reclaimed_bytes.davg();
 }
 
 size_t ZStatHeap::max_capacity() {
