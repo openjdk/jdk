@@ -64,7 +64,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat0(String value) {
+        String concat0(String value) {
             int length = stringSize(this.length, value);
             byte coder = (byte) (this.coder | value.coder());
             byte[] buf = newArray(length << coder);
@@ -76,7 +76,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat(boolean value) {
+        String concat(boolean value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -86,7 +86,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat(char value) {
+        String concat(char value) {
             int length = stringSize(this.length, value);
             byte coder = (byte) (this.coder | stringCoder(value));
             String suffix = constants[1];
@@ -97,7 +97,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat(int value) {
+        String concat(int value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -107,7 +107,7 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat(long value) {
+        String concat(long value) {
             int length = stringSize(this.length, value);
             String suffix = constants[1];
             length -= suffix.length();
@@ -117,18 +117,18 @@ final class StringConcatHelper {
         }
 
         @ForceInline
-        private String concat(Object value) {
+        String concat(Object value) {
             String str = stringOf(value);
             return concat0(stringOf(value));
         }
 
         @ForceInline
-        private String concat(float value) {
+        String concat(float value) {
             return concat0(Float.toString(value));
         }
 
         @ForceInline
-        private String concat(double value) {
+        String concat(double value) {
             return concat0(Double.toString(value));
         }
     }

@@ -1229,7 +1229,7 @@ public final class StringConcatFactory {
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
-            lookup = MethodHandles.Lookup.IMPL_LOOKUP;
+            lookup = new MethodHandles.Lookup(String.class);
             String className = "java.lang.String$$StringConcat";
             final MethodType concatArgs = erasedArgs(args);
 
@@ -1266,7 +1266,7 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withSuperclass(CD_StringConcatBase)
                                 .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
-                                .withMethodBody(INIT_NAME, MTD_INIT, ACC_PRIVATE, CONSTRUCTOR_BUILDER)
+                                .withMethodBody(INIT_NAME, MTD_INIT, ACC_PROTECTED, CONSTRUCTOR_BUILDER)
                                 .withMethod("length",
                                         lengthArgs,
                                         ACC_STATIC | ACC_PRIVATE,
@@ -1291,7 +1291,7 @@ public final class StringConcatFactory {
                                         })
                                 .withMethod(METHOD_NAME,
                                         ConstantUtils.methodTypeDesc(concatArgs),
-                                        ACC_FINAL | ACC_PRIVATE,
+                                        ACC_FINAL,
                                         new Consumer<MethodBuilder>() {
                                             public void accept(MethodBuilder mb) {
                                                 if (forceInline) {
