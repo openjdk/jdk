@@ -35,6 +35,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.SignatureAttribute;
 import java.lang.constant.ClassDesc;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Type;
 
 public class TestMissingTypeVariable {
@@ -45,9 +46,10 @@ public class TestMissingTypeVariable {
                 ClassDesc.of("sample.MissingVariable"),
                 classBuilder -> {
                     classBuilder.withSuperclass(ClassDesc.of("java.lang.Object"));
+                    classBuilder.withFlags(AccessFlag.PUBLIC);
                     classBuilder.withField("f",
                             ClassDesc.of("java.lang.Object"),
-                            fieldBuilder -> fieldBuilder.with(SignatureAttribute.of(Signature.parseFrom("TA;"))));
+                            fieldBuilder -> fieldBuilder.withFlags(AccessFlag.PUBLIC).with(SignatureAttribute.of(Signature.parseFrom("TA;"))));
                 });
         Class<?> missing = ByteCodeLoader.load("sample.MissingVariable", bytes);
         try {
