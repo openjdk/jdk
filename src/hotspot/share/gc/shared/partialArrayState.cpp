@@ -100,7 +100,6 @@ PartialArrayStateAllocator::Impl::~Impl() {
   for (uint i = 0; i < _num_workers; ++i) {
     _arenas[i].~Arena();
   }
-
   FREE_C_HEAP_ARRAY(Arena*, _arenas);
 }
 
