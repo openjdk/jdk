@@ -52,6 +52,7 @@ public class TestMergeStoresUnsafeArrayPointer {
     static final long ANCHOR = BYTE_SIZE / 2;
 
     static int four = 4;
+    static int max_int = Integer.MAX_VALUE;
 
     public static void main(String[] args) {
         System.out.println("Allocate big array of SIZE = " + SIZE);
@@ -95,6 +96,23 @@ public class TestMergeStoresUnsafeArrayPointer {
             }
         }
 
+        val = 0;
+        System.out.println("test3");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test3(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test3 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
         if (errors > 0) {
             throw new RuntimeException("ERRORS: " + errors);
         }
@@ -128,5 +146,12 @@ public class TestMergeStoresUnsafeArrayPointer {
         long base = UNSAFE.ARRAY_INT_BASE_OFFSET + ANCHOR;
         UNSAFE.putInt(a, base + 0                 + (long)(four + Integer.MAX_VALUE), 0x42424242);
         UNSAFE.putInt(a, base + Integer.MAX_VALUE + (long)(four + 4                ), 0x66666666);
+    }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    static void test3(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base + (long)(max_int + 0), 0x42424242);
+        UNSAFE.putInt(a, base + (long)(max_int + 4), 0x66666666);
     }
 }
