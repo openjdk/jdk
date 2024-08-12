@@ -259,7 +259,7 @@ Handle SystemDictionary::get_loader_lock_or_null(Handle class_loader) {
 
 Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception, TRAPS) {
   if (name == nullptr) {
-    THROW_MSG_0(exception, "No class name given");
+    THROW_MSG_NULL(exception, "No class name given");
   }
   if ((int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit

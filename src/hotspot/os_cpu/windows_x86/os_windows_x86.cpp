@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,7 +180,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   MacroAssembler* masm = new MacroAssembler(&cb);
   pDCD = (pDynamicCodeData) masm->pc();
 
-  masm->jump(ExternalAddress((address)&HandleExceptionFromCodeCache), rscratch1);
+  masm->jump(RuntimeAddress((address)&HandleExceptionFromCodeCache), rscratch1);
   masm->flush();
 
   // Create an Unwind Structure specifying no unwind info
