@@ -45,7 +45,7 @@ final class StringConcatHelper {
         @Stable final String[] constants;
         final int length;
         final byte coder;
-        protected StringConcatBase(String[] constants) {
+        StringConcatBase(String[] constants) {
             int length = 0;
             byte coder = String.LATIN1;
             this.constants = constants;
