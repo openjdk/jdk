@@ -260,7 +260,7 @@ void G1Arguments::initialize() {
     }
     // Increase the frequency of inter-regional objects in the post-barrier.
     if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
-      FLAG_SET_ERGO(G1HeapRegionSize, HeapRegionBounds::min_size());
+      FLAG_SET_ERGO(G1HeapRegionSize, G1HeapRegionBounds::min_size());
     }
     // Increase the frequency with which the post-barrier sees a clean card and
     // has to dirty it.
