@@ -186,6 +186,8 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 
 TEST_VM_F(NMTVMATreeTest, performance) {
   VMATree::RegionData rd{si[0], mtTest};
+  if (!MemTracker::enabled())
+    return;
   auto n_reserve_vmt = [&](int n) {
     Tree tree;
     double st = os::elapsedTime();
