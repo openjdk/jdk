@@ -1266,7 +1266,7 @@ public final class StringConcatFactory {
                         public void accept(ClassBuilder clb) {
                             clb.withSuperclass(CD_StringConcatBase)
                                 .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
-                                .withMethodBody(INIT_NAME, MTD_INIT, ACC_PROTECTED, CONSTRUCTOR_BUILDER)
+                                .withMethodBody(INIT_NAME, MTD_INIT, 0, CONSTRUCTOR_BUILDER)
                                 .withMethod("length",
                                         lengthArgs,
                                         ACC_STATIC | ACC_PRIVATE,
