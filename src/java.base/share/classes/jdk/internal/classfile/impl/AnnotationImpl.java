@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.*;
 
-import java.lang.constant.ConstantDesc;
 import java.util.List;
 
 import static java.lang.classfile.ClassFile.*;
@@ -80,12 +79,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
     }
 
-    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant, Util.Writable
-            permits AnnotationImpl.OfStringImpl, AnnotationImpl.OfDoubleImpl,
-                    AnnotationImpl.OfFloatImpl, AnnotationImpl.OfLongImpl,
-                    AnnotationImpl.OfIntegerImpl, AnnotationImpl.OfShortImpl,
-                    AnnotationImpl.OfCharacterImpl, AnnotationImpl.OfByteImpl,
-                    AnnotationImpl.OfBooleanImpl {
+    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant, Util.Writable {
 
         @Override
         default void writeTo(BufWriterImpl buf) {
@@ -93,15 +87,10 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
             buf.writeIndex(constant());
         }
 
-        @Override
-        default ConstantDesc constantValue() {
-            return constant().constantValue();
-        }
-
     }
 
     public record OfStringImpl(Utf8Entry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfString {
+            implements OfConstantImpl, AnnotationValue.OfString {
 
         @Override
         public char tag() {
@@ -115,7 +104,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfDoubleImpl(DoubleEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfDouble {
+            implements OfConstantImpl, AnnotationValue.OfDouble {
 
         @Override
         public char tag() {
@@ -129,7 +118,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfFloatImpl(FloatEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfFloat {
+            implements OfConstantImpl, AnnotationValue.OfFloat {
 
         @Override
         public char tag() {
@@ -143,7 +132,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfLongImpl(LongEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfLong {
+            implements OfConstantImpl, AnnotationValue.OfLong {
 
         @Override
         public char tag() {
@@ -156,8 +145,8 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         }
     }
 
-    public record OfIntegerImpl(IntegerEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfInteger {
+    public record OfIntImpl(IntegerEntry constant)
+            implements OfConstantImpl, AnnotationValue.OfInt {
 
         @Override
         public char tag() {
@@ -171,7 +160,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfShortImpl(IntegerEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfShort {
+            implements OfConstantImpl, AnnotationValue.OfShort {
 
         @Override
         public char tag() {
@@ -180,12 +169,12 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public short shortValue() {
-            return (short)constant().intValue();
+            return (short) constant().intValue();
         }
     }
 
-    public record OfCharacterImpl(IntegerEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfCharacter {
+    public record OfCharImpl(IntegerEntry constant)
+            implements OfConstantImpl, AnnotationValue.OfChar {
 
         @Override
         public char tag() {
@@ -194,12 +183,12 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public char charValue() {
-            return (char)constant().intValue();
+            return (char) constant().intValue();
         }
     }
 
     public record OfByteImpl(IntegerEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfByte {
+            implements OfConstantImpl, AnnotationValue.OfByte {
 
         @Override
         public char tag() {
@@ -208,12 +197,12 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public byte byteValue() {
-            return (byte)constant().intValue();
+            return (byte) constant().intValue();
         }
     }
 
     public record OfBooleanImpl(IntegerEntry constant)
-            implements AnnotationImpl.OfConstantImpl, AnnotationValue.OfBoolean {
+            implements OfConstantImpl, AnnotationValue.OfBoolean {
 
         @Override
         public char tag() {
@@ -222,15 +211,15 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
         @Override
         public boolean booleanValue() {
-            return constant().intValue() == 1;
+            return constant().intValue() != 0;
         }
     }
 
     public record OfArrayImpl(List<AnnotationValue> values)
             implements AnnotationValue.OfArray, Util.Writable {
 
-        public OfArrayImpl(List<AnnotationValue> values) {
-            this.values = List.copyOf(values);
+        public OfArrayImpl {
+            values = List.copyOf(values);
         }
 
         @Override

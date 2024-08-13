@@ -511,25 +511,6 @@ public sealed interface ConstantPoolBuilder
     }
 
     /**
-     * {@return An {@link AnnotationConstantValueEntry} describing the provided
-     * constant}  The constant should be an Integer, String, Long, Float,
-     * Double, ClassDesc (for a Class constant), or MethodTypeDesc (for a MethodType
-     * constant.)
-     *
-     * @param c the constant
-     */
-    default AnnotationConstantValueEntry annotationConstantValueEntry(ConstantDesc c) {
-        if (c instanceof Integer i) return intEntry(i);
-        if (c instanceof String s) return utf8Entry(s);
-        if (c instanceof Long l) return longEntry(l);
-        if (c instanceof Float f) return floatEntry(f);
-        if (c instanceof Double d) return doubleEntry(d);
-        if (c instanceof ClassDesc cd) return utf8Entry(cd);
-        if (c instanceof MethodTypeDesc mtd) return utf8Entry(mtd);
-        throw new IllegalArgumentException("Illegal type: " + (c == null ? null : c.getClass()));
-    }
-
-    /**
      * {@return a {@link BootstrapMethodEntry} describing the provided
      * bootstrap method and static arguments}
      *
