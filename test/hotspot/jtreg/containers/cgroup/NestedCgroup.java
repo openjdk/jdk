@@ -26,7 +26,7 @@
  * @key cgroups
  * @requires os.family == "linux"
  * @requires vm.flagless
- * @requires vm.cgroup.tools
+ * @requires cgroup.tools
  * @modules java.base/jdk.internal.platform
  * @library /testlibrary /test/lib
  * @run main/othervm NestedCgroup
@@ -53,63 +53,24 @@ public class NestedCgroup {
     private static abstract class Test {
         public static final String CGROUP_OUTER = "jdktest" + ProcessHandle.current().pid();
         public static final String CGROUP_INNER = "inner";
-        public static final String CONTROLLERS_PATH_OUTER = "memory:" + CGROUP_OUTER;
-        public static final String CONTROLLERS_PATH_INNER = CONTROLLERS_PATH_OUTER + "/" + CGROUP_INNER;
-        public static final String LINE_DELIM = "-".repeat(80);
-        public static final String MOUNTINFO = "/proc/self/mountinfo";
 
         // A real usage on x86_64 fits in 39 MiB.
         public static final int MEMORY_MAX_OUTER = 500 * 1024 * 1024;
         public static final int MEMORY_MAX_INNER = MEMORY_MAX_OUTER * 2;
 
-        class Limits {
-            int integer;
+        class HookResult {
+            int integerLimit;
+            OutputAnalyzer output;
         };
 
-        public static String sysFsCgroup;
-        public String memory_max_filename;
+        public static String memory_max_filename;
         public static boolean isCgroup2;
-
-        public static void lineDelim(String str, String label) {
-            System.err.print(LINE_DELIM + " " + label + "\n" + str);
-            if (!str.isEmpty() && !str.endsWith("\n")) {
-                System.err.println();
-            }
-        }
-
-        public static OutputAnalyzer pSystem(List<String> args,
-                String failStderr, String failExplanation,
-                String fail2Stderr, String fail2Explanation,
-                String ignoreStderr) throws Exception {
-            System.err.println(LINE_DELIM + " command: " + String.join(" ",args));
-            ProcessBuilder pb = new ProcessBuilder(args);
-            Process process = pb.start();
-            OutputAnalyzer output = new OutputAnalyzer(process);
-            int exitValue = process.waitFor();
-            lineDelim(output.getStdout(), "stdout");
-            lineDelim(output.getStderr(), "stderr");
-            System.err.println(LINE_DELIM);
-            if (!failStderr.isEmpty() && output.getStderr().equals(failStderr + "\n")) {
-                throw new SkippedException(failExplanation + ": " + failStderr);
-            }
-            if (!fail2Stderr.isEmpty() && output.getStderr().equals(fail2Stderr + "\n")) {
-                throw new SkippedException(fail2Explanation + ": " + fail2Stderr);
-            }
-            if (!ignoreStderr.isEmpty() && output.getStderr().equals(ignoreStderr + "\n")) {
-                return output;
-            }
-            Asserts.assertEQ(0, exitValue, "Process returned unexpected exit code: " + exitValue);
-            return output;
-        }
-
-        public static OutputAnalyzer pSystem(List<String> args) throws Exception {
-            return pSystem(args, "", "", "", "", "");
-        }
+        public static String controller;
 
         public static void args_add_cgexec(List<String> args) {
             args.add("cgexec");
             args.add("-g");
-            args.add(CONTROLLERS_PATH_INNER);
+            args.add(controller + ":" + CGROUP_OUTER + "/" + CGROUP_INNER);
         }
 
         public static String jdkTool;
@@ -117,7 +78,7 @@ public class NestedCgroup {
         public static void args_add_self(List<String> args) {
             args.add(jdkTool);
             args.add("-cp");
-            args.add(System.getProperty("java.class.path"));
+            args.add(System.getProperty("test.classes"));
         }
 
         public static void args_add_self_verbose(List<String> args) {
@@ -126,40 +87,45 @@ public class NestedCgroup {
             args.add("-Xlog:os+container=trace");
         }
 
-        public Test() throws Exception {
+        public Test(String controller_) throws Exception {
+            controller = controller_;
+            OutputAnalyzer output;
+
             List<String> cgdelete = new ArrayList<>();
             cgdelete.add("cgdelete");
             cgdelete.add("-r");
             cgdelete.add("-g");
-            cgdelete.add(CONTROLLERS_PATH_OUTER);
-            try {
-                pSystem(cgdelete,
-                    "cgdelete: libcgroup initialization failed: Cgroup is not mounted", "cgroup/cgroup2 is not mounted",
-                    "", "",
-                    "cgdelete: cannot remove group '" + CGROUP_OUTER + "': No such file or directory");
-            } catch (IOException e) {
-                if (e.toString().equals("java.io.IOException: Cannot run program \"cgdelete\": error=2, No such file or directory")) {
-                    throw new SkippedException("libcgroup-tools is not installed");
-                }
-                throw e;
+            cgdelete.add(controller + ":" + CGROUP_OUTER);
+            output = ProcessTools.executeProcess(new ProcessBuilder(cgdelete));
+            if (output.contains("cgdelete: libcgroup initialization failed: Cgroup is not mounted")) {
+                throw new SkippedException("cgroup/cgroup2 is not mounted: " + output.getStderr());
+            }
+            output.stdoutShouldBeEmpty();
+            if (!output.contains("cgdelete: cannot remove group '" + CGROUP_OUTER + "': No such file or directory")) {
+                output.stderrShouldBeEmpty();
             }
 
             // Alpine Linux 3.20.1 needs cgcreate1 otherwise:
-            // cgcreate: can't create cgroup CONTROLLERS_PATH_INNER: No such file or directory
+            // cgcreate: can't create cgroup [...]: No such file or directory
             List<String> cgcreate1 = new ArrayList<>();
             cgcreate1.add("cgcreate");
             cgcreate1.add("-g");
-            cgcreate1.add(CONTROLLERS_PATH_OUTER);
-            pSystem(cgcreate1,
-                "cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, operation not allowed", "Missing root permission",
-                "cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, requested group parameter does not exist", "Missing root permission",
-                "");
+            cgcreate1.add(controller + ":" + CGROUP_OUTER);
+            output = ProcessTools.executeProcess(new ProcessBuilder(cgcreate1));
+            if (output.contains("cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, operation not allowed")
+             || output.contains("cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, requested group parameter does not exist")) {
+                throw new SkippedException("Missing root permission: " + output.getStderr());
+            }
+            output.stdoutShouldBeEmpty();
+            output.stderrShouldBeEmpty();
 
             List<String> cgcreate2 = new ArrayList<>();
             cgcreate2.add("cgcreate");
             cgcreate2.add("-g");
-            cgcreate2.add(CONTROLLERS_PATH_INNER);
-            pSystem(cgcreate2, "", "", "", "", "");
+            cgcreate2.add(controller + ":" + CGROUP_OUTER + "/" + CGROUP_INNER);
+            output = ProcessTools.executeProcess(new ProcessBuilder(cgcreate2));
+            output.stdoutShouldBeEmpty();
+            output.stderrShouldBeEmpty();
 
             String provider = Metrics.systemMetrics().getProvider();
             System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
@@ -173,77 +139,65 @@ public class NestedCgroup {
             }
             System.err.println("isCgroup2 = " + isCgroup2);
 
-            String mountInfo;
-            try {
-                mountInfo = Files.readString(Path.of(MOUNTINFO));
-            } catch (NoSuchFileException e) {
-                throw new SkippedException("Cannot open " + MOUNTINFO);
-            }
-
-            Matcher matcher = Pattern.compile("^(?:\\S+\\s+){4}(\\S+)\\s.*\\scgroup(?:2(?:\\s+\\S+){2}|\\s+\\S+\\s+(?:\\S*,)?memory(?:,\\S*)?)$", Pattern.MULTILINE).matcher(mountInfo);
-            if (!matcher.find()) {
-                System.err.println(mountInfo);
-                throw new SkippedException("cgroup/cgroup2 filesystem mount point not found");
-            }
-            sysFsCgroup = matcher.group(1);
-            System.err.println("sysFsCgroup = " + sysFsCgroup);
-
-            System.err.println(LINE_DELIM + " " + (isCgroup2 ? "cgroup2" : "cgroup1") + " mount point: " + sysFsCgroup);
             memory_max_filename = isCgroup2 ? "memory.max" : "memory.limit_in_bytes";
-            Files.writeString(Path.of(sysFsCgroup + "/" + CGROUP_OUTER + "/" + memory_max_filename), "" + MEMORY_MAX_OUTER);
+            ProcessTools.executeProcess("cgset", "-r", memory_max_filename + "=" + MEMORY_MAX_OUTER, "/" + CGROUP_OUTER);
 
-            // Here starts a copy of ProcessTools.createJavaProcessBuilder.
-            List<String> cgexec = new ArrayList<>();
-            Limits limits = hook(cgexec);
-            OutputAnalyzer output = pSystem(cgexec);
+            HookResult hookResult = hook();
             // C++ CgroupController
-            output.shouldMatch("\\[trace\\]\\[os,container\\] Memory Limit is: " + limits.integer + "$");
+            hookResult.output.shouldMatch("\\[trace\\]\\[os,container\\] Memory Limit is: " + hookResult.integerLimit + "$");
 
-            pSystem(cgdelete);
+            output = ProcessTools.executeProcess(new ProcessBuilder(cgdelete));
+            output.stdoutShouldBeEmpty();
+            output.stderrShouldBeEmpty();
         }
 
-        public abstract Limits hook(List<String> cgexec) throws IOException;
+        public abstract HookResult hook() throws Exception;
     }
     private static class TestTwoLimits extends Test {
-        public Limits hook(List<String> cgexec) throws IOException {
-            // CgroupV1Subsystem::read_memory_limit_in_bytes considered hierarchical_memory_limit only when inner memory.limit_in_bytes is unlimited.
-            Files.writeString(Path.of(sysFsCgroup + "/" + CGROUP_OUTER + "/" + CGROUP_INNER + "/" + memory_max_filename), "" + MEMORY_MAX_INNER);
+        public HookResult hook() throws Exception {
+            HookResult hookResult = new HookResult();
 
+            // CgroupV1Subsystem::read_memory_limit_in_bytes considered hierarchical_memory_limit only when inner memory.limit_in_bytes is unlimited.
+            ProcessTools.executeProcess("cgset", "-r", memory_max_filename + "=" + MEMORY_MAX_INNER, "/" + CGROUP_OUTER + "/" + CGROUP_INNER);
+
+            List<String> cgexec = new ArrayList<>();
             args_add_cgexec(cgexec);
             args_add_self_verbose(cgexec);
             cgexec.add("-version");
+            hookResult.output = ProcessTools.executeProcess(new ProcessBuilder(cgexec));
 
             // KFAIL - verify the CgroupSubsystem::initialize_hierarchy() and jdk.internal.platform.CgroupSubsystem.initializeHierarchy() bug
             // TestTwoLimits does not see the lower MEMORY_MAX_OUTER limit.
-            Limits limits = new Limits();
-            limits.integer = MEMORY_MAX_INNER;
-            return limits;
+            hookResult.integerLimit = MEMORY_MAX_INNER;
+            return hookResult;
         }
         public TestTwoLimits() throws Exception {
+            super("memory");
         }
     }
     private static class TestNoController extends Test {
-        public Limits hook(List<String> cgexec) throws IOException {
+        public HookResult hook() throws Exception {
+            HookResult hookResult = new HookResult();
+
+            List<String> cgexec = new ArrayList<>();
             args_add_cgexec(cgexec);
             args_add_self(cgexec);
             cgexec.add("NestedCgroup");
             cgexec.add("TestNoController");
             cgexec.add(Test.jdkTool);
-            cgexec.add(sysFsCgroup + "/" + CGROUP_OUTER + "/cgroup.subtree_control");
+            hookResult.output = ProcessTools.executeProcess(new ProcessBuilder(cgexec));
 
-            Limits limits = new Limits();
-            limits.integer = MEMORY_MAX_OUTER;
-            return limits;
+            hookResult.integerLimit = MEMORY_MAX_OUTER;
+            return hookResult;
         }
         public TestNoController() throws Exception {
+            super("cpu");
         }
-        public static void child(String arg) throws Exception {
-            Files.writeString(Path.of(arg), "-memory");
-
+        public static void child() throws Exception {
             List<String> self_verbose = new ArrayList<>();
             args_add_self_verbose(self_verbose);
             self_verbose.add("-version");
-            pSystem(self_verbose);
+            ProcessTools.executeProcess(new ProcessBuilder(self_verbose));
         }
     }
     public static void main(String[] args) throws Exception {
@@ -255,11 +209,11 @@ public class NestedCgroup {
                     new TestNoController();
                 }
                 return;
-            case 3:
+            case 2:
                 switch (args[0]) {
                     case "TestNoController":
                         Test.jdkTool = args[1];
-                        TestNoController.child(args[2]);
+                        TestNoController.child();
                         return;
                 }
         }

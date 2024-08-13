@@ -138,7 +138,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
-        map.put("vm.cgroup.tools", this::cgroupTools);
+        map.put("cgroup.tools", this::cgroupTools);
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
