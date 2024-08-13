@@ -34,8 +34,6 @@ class ObjectMonitorTable;
 
 class LightweightSynchronizer : AllStatic {
 private:
-  static ObjectMonitorTable* _omworld;
-
   static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
