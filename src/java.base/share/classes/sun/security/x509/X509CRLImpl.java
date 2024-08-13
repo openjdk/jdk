@@ -286,10 +286,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
                     entry.getCertificateIssuerExtension();
             if (ciExt != null) {
                 GeneralNames names = ciExt.getNames();
-                X500Name issuerDN;
-                try {
-                    issuerDN = (X500Name) names.get(0).getName();
-                } catch (ClassCastException e) {
+                if (!(names.get(0).getName() instanceof X500Name issuerDN)) {
                     throw new CRLException("Parsing error: bad X500 issuer");
                 }
                 return issuerDN.asX500Principal();
