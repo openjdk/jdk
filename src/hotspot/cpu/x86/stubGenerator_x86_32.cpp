@@ -3843,24 +3843,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
- public:
-  // Information about frame layout at time of blocking runtime call.
-  // Note that we only have to preserve callee-saved registers since
-  // the compilers are responsible for supplying a continuation point
-  // if they expect all registers to be preserved.
-  enum layout {
-    thread_off,    // last_java_sp
-    arg1_off,
-    arg2_off,
-    rbp_off,       // callee saved register
-    ret_pc,
-    framesize
-  };
-
  private:
-
-#undef  __
-#define __ masm->
 
   void create_control_words() {
     // Round to nearest, 53-bit mode, exceptions masked

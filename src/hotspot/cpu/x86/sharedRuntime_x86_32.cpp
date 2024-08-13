@@ -2657,6 +2657,19 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // so caller saved registers were assumed volatile in the compiler.
 RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
 
+  // Information about frame layout at time of blocking runtime call.
+  // Note that we only have to preserve callee-saved registers since
+  // the compilers are responsible for supplying a continuation point
+  // if they expect all registers to be preserved.
+  enum layout {
+    thread_off,    // last_java_sp
+    arg1_off,
+    arg2_off,
+    rbp_off,       // callee saved register
+    ret_pc,
+    framesize
+  };
+
   int insts_size = 256;
   int locs_size  = 32;
 
@@ -2688,14 +2701,6 @@ RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address r
 
   // push java thread (becomes first argument of C function)
   __ movptr(Address(rsp, thread_off * wordSize), java_thread);
-  if (arg1 != noreg) {
-    __ movptr(Address(rsp, arg1_off * wordSize), arg1);
-  }
-  if (arg2 != noreg) {
-    assert(arg1 != noreg, "missing reg arg");
-    __ movptr(Address(rsp, arg2_off * wordSize), arg2);
-  }
-
   // Set up last_Java_sp and last_Java_fp
   __ set_last_Java_frame(java_thread, rsp, rbp, nullptr, noreg);
 
@@ -2749,7 +2754,7 @@ static void jfr_epilogue(MacroAssembler* masm) {
 // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
-static RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   enum layout {
     FPUState_off         = 0,
     rbp_off              = FPUStateSizeInWords,
@@ -2790,7 +2795,7 @@ static RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 }
 
 // For c2: call to return a leased buffer.
-static RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   enum layout {
     FPUState_off = 0,
     rbp_off = FPUStateSizeInWords,
