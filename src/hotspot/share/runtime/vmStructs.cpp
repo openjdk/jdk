@@ -1422,6 +1422,7 @@
   declare_c2_type(RethrowNode, Node)                                      \
   declare_c2_type(TailCallNode, ReturnNode)                               \
   declare_c2_type(TailJumpNode, ReturnNode)                               \
+  declare_c2_type(ForwardExceptionNode, ReturnNode)                       \
   declare_c2_type(SafePointNode, MultiNode)                               \
   declare_c2_type(CallNode, SafePointNode)                                \
   declare_c2_type(CallJavaNode, CallNode)                                 \
