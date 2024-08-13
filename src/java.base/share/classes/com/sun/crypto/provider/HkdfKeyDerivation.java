@@ -91,7 +91,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      */
     @Override
     protected SecretKey engineDeriveKey(String alg,
-                                        AlgorithmParameterSpec kdfParameterSpec)
+                                        AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException {
 
         if (alg == null || alg.isEmpty()) {
@@ -100,7 +100,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 + " empty");
         }
 
-        return new SecretKeySpec(engineDeriveData(kdfParameterSpec), alg);
+        return new SecretKeySpec(engineDeriveData(derivationParameterSpec), alg);
 
     }
 
@@ -116,7 +116,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the derived key material is not extractable
      */
     @Override
-    protected byte[] engineDeriveData(AlgorithmParameterSpec kdfParameterSpec)
+    protected byte[] engineDeriveData(AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
@@ -129,9 +129,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // JDK 17
         // Also, JEP 305 came out in JDK 14, so we can't declare a variable
         // in instanceof either
-        if (kdfParameterSpec instanceof HKDFParameterSpec.Extract) {
+        if (derivationParameterSpec instanceof HKDFParameterSpec.Extract) {
             HKDFParameterSpec.Extract anExtract =
-                (HKDFParameterSpec.Extract) kdfParameterSpec;
+                (HKDFParameterSpec.Extract) derivationParameterSpec;
             ikms = anExtract.ikms();
             salts = anExtract.salts();
             // we should be able to combine these Lists of keys into single
@@ -160,9 +160,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
             }
-        } else if (kdfParameterSpec instanceof HKDFParameterSpec.Expand) {
+        } else if (derivationParameterSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand =
-                (HKDFParameterSpec.Expand) kdfParameterSpec;
+                (HKDFParameterSpec.Expand) derivationParameterSpec;
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk()) == null) {
                 throw new InvalidAlgorithmParameterException(
@@ -193,9 +193,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
             }
-        } else if (kdfParameterSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
+        } else if (derivationParameterSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
             HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
-                (HKDFParameterSpec.ExtractThenExpand) kdfParameterSpec;
+                (HKDFParameterSpec.ExtractThenExpand) derivationParameterSpec;
             ikms = anExtractThenExpand.ikms();
             salts = anExtractThenExpand.salts();
             // we should be able to combine these Lists of keys into single
@@ -371,7 +371,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         return kdfOutput;
     }
 
-    protected KDFParameters engineGetKDFParameters() {
+    protected KDFParameters engineGetParameters() {
         return null;
     }
 

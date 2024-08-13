@@ -77,12 +77,12 @@ import java.util.Objects;
  * {@snippet lang = java:
  *    KDF kdfHkdf = KDF.getInstance("HKDFWithHmacSHA256");
  *
- *    AlgorithmParameterSpec kdfParameterSpec =
+ *    AlgorithmParameterSpec derivationParameterSpec =
  *             HKDFParameterSpec.ofExtract()
  *                              .addIKM(ikm)
  *                              .addSalt(salt).thenExpand(info, 32);
  *
- *    kdfHkdf.deriveKey("AES", kdfParameterSpec);
+ *    kdfHkdf.deriveKey("AES", derivationParameterSpec);
  *}
  *
  * @see KDFParameters
@@ -124,7 +124,8 @@ public final class KDF {
     int DERIVE_DATA = 1;
 
     /**
-     * Instantiates a KDF object.
+     * Instantiates a {@code KDF} object. This constructor is called when a
+     * provider is supplied to {@code getInstance}.
      *
      * @param keyDerivSpi
      *     the delegate
@@ -146,6 +147,15 @@ public final class KDF {
         lock = new Object();
     }
 
+    /**
+     * Instantiates a {@code KDF} object. This constructor is called when a
+     * provider is not supplied to {@code getInstance}.
+     *
+     * @param s the service
+     * @param t the service iterator
+     * @param algorithm the algorithm
+     * @param kdfParameters the algorithm parameters
+     */
     private KDF(Service s, Iterator<Service> t, String algorithm,
                 KDFParameters kdfParameters) {
         firstService = s;
@@ -190,9 +200,9 @@ public final class KDF {
      * @throws UnsupportedOperationException if this method is not overridden
      * by a provider
      */
-    public KDFParameters getKDFParameters() {
+    public KDFParameters getParameters() {
         chooseFirstProvider();
-        return spi.engineGetKDFParameters();
+        return spi.engineGetParameters();
     }
 
     /**
@@ -313,7 +323,8 @@ public final class KDF {
      *     if no {@code Provider} supports a {@code KDFSpi} implementation for
      *     the specified algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code KDFParameters} is an invalid value
+     *     if the initialization parameters are inappropriate for this
+     *     {@code KDF}
      * @throws NullPointerException
      *     if the {@code algorithm} is {@code null}
      */
@@ -359,7 +370,8 @@ public final class KDF {
      *     if the specified provider is not registered in the security provider
      *     list
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code KDFParameters} is an invalid value
+     *     if the initialization parameters are inappropriate for this
+     *     {@code KDF}
      * @throws NullPointerException
      *     if the {@code algorithm} or {@code provider} is {@code null}
      */
@@ -410,7 +422,8 @@ public final class KDF {
      *     if the specified provider does not support the specified KDF
      *     algorithm
      * @throws InvalidAlgorithmParameterException
-     *     if the {@code KDFParameters} is an invalid value
+     *     if the initialization parameters are inappropriate for this
+     *     {@code KDF}
      * @throws NullPointerException
      *     if the {@code algorithm} or {@code provider} is {@code null}
      */
@@ -455,7 +468,7 @@ public final class KDF {
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
-     * @param kdfParameterSpec
+     * @param derivationParameterSpec
      *     the object describing the inputs to the derivation function
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
@@ -465,15 +478,15 @@ public final class KDF {
      *     appropriate {@code Exception}.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code kdfParameterSpec} is
+     *     if the information contained within the {@code derivationParameterSpec} is
      *     invalid, if {@code alg} is invalid, or if their combination
      *     results in something invalid, ie - a key of inappropriate length
      *     for the specified algorithm
      * @throws NullPointerException
-     *     if {@code alg} or {@code kdfParameterSpec} is null
+     *     if {@code alg} or {@code derivationParameterSpec} is null
      */
     public SecretKey deriveKey(String alg,
-                               AlgorithmParameterSpec kdfParameterSpec)
+                               AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException {
 
             if (alg == null || alg.isEmpty()) {
@@ -481,11 +494,11 @@ public final class KDF {
                     "the algorithm for the SecretKey return value may not be "
                     + "null or empty");
             }
-            Objects.requireNonNull(kdfParameterSpec);
+            Objects.requireNonNull(derivationParameterSpec);
             if (spi != null) {
-                return spi.engineDeriveKey(alg, kdfParameterSpec);
+                return spi.engineDeriveKey(alg, derivationParameterSpec);
             } else {
-                return (SecretKey) chooseProvider(alg, kdfParameterSpec);
+                return (SecretKey) chooseProvider(alg, derivationParameterSpec);
             }
     }
 
@@ -495,7 +508,7 @@ public final class KDF {
      * The {@code deriveData} method may be called multiple times on a
      * particular {@code KDF} instance.
      *
-     * @param kdfParameterSpec
+     * @param derivationParameterSpec
      *     the object describing the inputs to the derivation function
      *
      * @return a byte array corresponding to a key built from the
@@ -505,26 +518,23 @@ public final class KDF {
      *     appropriate {@code Exception}.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code kdfParameterSpec} is
+     *     if the information contained within the {@code derivationParameterSpec} is
      *     invalid
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      * @throws NullPointerException
-     *     if {@code kdfParameterSpec} is null
+     *     if {@code derivationParameterSpec} is null
      */
-    public byte[] deriveData(AlgorithmParameterSpec kdfParameterSpec)
+    public byte[] deriveData(AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException {
 
-        Objects.requireNonNull(kdfParameterSpec);
+        Objects.requireNonNull(derivationParameterSpec);
         if (spi != null) {
-            return spi.engineDeriveData(kdfParameterSpec);
+            return spi.engineDeriveData(derivationParameterSpec);
         } else {
-            return (byte[]) chooseProvider(null, kdfParameterSpec);
+            return (byte[]) chooseProvider(null, derivationParameterSpec);
         }
     }
-
-    // max number of debug warnings to print from chooseFirstProvider()
-    private static int warnCount = 10;
 
     /**
      * Selects the first provider in the list that supports the
@@ -576,18 +586,22 @@ public final class KDF {
 
     /**
      * Selects the provider which supports the passed {@code algorithm} and
-     * {@code kdfParameterSpec} values, and assigns the global spi and provider
-     * variables if they have not been assigned yet.
+     * {@code derivationParameterSpec} values, and assigns the global spi and
+     * provider variables if they have not been assigned yet.
      * <p>
      * If the spi has already been set, it will just return the result.
      */
-    private Object chooseProvider(String algorithm, AlgorithmParameterSpec kdfParameterSpec) throws InvalidAlgorithmParameterException {
+    private Object chooseProvider(String algorithm,
+                                  AlgorithmParameterSpec derivationParameterSpec)
+        throws InvalidAlgorithmParameterException {
 
         int mechanism = (algorithm == null) ? DERIVE_DATA : DERIVE_KEY;
 
         synchronized (lock) {
-            if(spi != null) {
-                return (mechanism == DERIVE_DATA)?spi.engineDeriveData(kdfParameterSpec):spi.engineDeriveKey(algorithm, kdfParameterSpec);
+            if (spi != null) {
+                return (mechanism == DERIVE_DATA) ? spi.engineDeriveData(
+                    derivationParameterSpec) : spi.engineDeriveKey(algorithm,
+                                                                   derivationParameterSpec);
             }
 
             Exception lastException = null;
@@ -604,7 +618,10 @@ public final class KDF {
                 }
                 try {
                     KDFSpi spi = (KDFSpi) s.newInstance(kdfParameters);
-                    Object o = (mechanism == DERIVE_DATA)?spi.engineDeriveData(kdfParameterSpec):spi.engineDeriveKey(algorithm, kdfParameterSpec);
+                    Object o =
+                        (mechanism == DERIVE_DATA) ? spi.engineDeriveData(
+                            derivationParameterSpec) : spi.engineDeriveKey(
+                            algorithm, derivationParameterSpec);
                     this.provider = s.getProvider();
                     this.spi = spi;
                     firstService = null;
@@ -625,7 +642,11 @@ public final class KDF {
             }
         }
         throw new InvalidAlgorithmParameterException(
-            "No installed provider supports the " + ((mechanism == DERIVE_DATA)?"deriveData":"deriveKey") + " method with"
+            "No installed provider supports the " + ((mechanism
+                                                      == DERIVE_DATA) ?
+                                                         "deriveData" :
+                                                         "deriveKey")
+            + " method with"
             + " these parameters");
     }
 }

@@ -30,7 +30,6 @@ import jdk.internal.javac.PreviewFeature;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KDFParameters;
 import java.security.spec.AlgorithmParameterSpec;
-import java.security.spec.InvalidParameterSpecException;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>) for the
@@ -87,7 +86,7 @@ public abstract class KDFSpi {
      * @throws UnsupportedOperationException if this method is not overridden
      * by a provider
      */
-    protected abstract KDFParameters engineGetKDFParameters();
+    protected abstract KDFParameters engineGetParameters();
 
     /**
      * Derives a key, returned as a {@code SecretKey}.
@@ -97,7 +96,7 @@ public abstract class KDFSpi {
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
-     * @param kdfParameterSpec
+     * @param derivationParameterSpec
      *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
@@ -107,15 +106,15 @@ public abstract class KDFSpi {
      *     be returned.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code kdfParameterSpec} is
+     *     if the information contained within the {@code derivationParameterSpec} is
      *     invalid, if {@code alg} is invalid, or if their combination
      *     results in something invalid, ie - a key of inappropriate length
      *     for the specified algorithm
      * @throws NullPointerException
-     *     if {@code alg} or {@code kdfParameterSpec} is null
+     *     if {@code alg} or {@code derivationParameterSpec} is null
      */
     protected abstract SecretKey engineDeriveKey(String alg,
-                                                 AlgorithmParameterSpec kdfParameterSpec)
+                                                 AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException;
 
     /**
@@ -124,7 +123,7 @@ public abstract class KDFSpi {
      * The {@code engineDeriveData} method may be called multiple times on a
      * particular {@code KDFSpi} instance.
      *
-     * @param kdfParameterSpec
+     * @param derivationParameterSpec
      *     derivation parameters
      *
      * @return a byte array corresponding to a key built from the
@@ -134,15 +133,15 @@ public abstract class KDFSpi {
      *     be returned.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code kdfParameterSpec} is
+     *     if the information contained within the {@code derivationParameterSpec} is
      *     invalid
      * @throws UnsupportedOperationException
      *     if the derived key material is not extractable
      * @throws NullPointerException
-     *     if {@code kdfParameterSpec} is null
+     *     if {@code derivationParameterSpec} is null
      */
     protected abstract byte[] engineDeriveData(
-        AlgorithmParameterSpec kdfParameterSpec)
+        AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException;
 
 }
