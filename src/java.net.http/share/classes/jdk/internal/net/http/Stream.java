@@ -1696,15 +1696,21 @@ class Stream<T> extends ExchangeImpl<T> {
      * new connection.
      */
     void closeAsUnprocessed() {
-        // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
-        markUnprocessedByPeer();
-        this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
-        if (debug.on()) {
-            debug.log("closing " + this.request + " as unprocessed by peer");
+        try {
+            // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
+            markUnprocessedByPeer();
+            this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+            if (debug.on()) {
+                debug.log("closing " + this.request + " as unprocessed by peer");
+            }
+            // close the exchange and complete the response CF exceptionally
+            close();
+            completeResponseExceptionally(this.errorRef.get());
+        } finally {
+            // decrementStreamsCount isn't really needed but we do it to make sure
+            // the log messages, where these counts/states get reported, show the accurate state.
+            connection.decrementStreamsCount(streamid);
         }
-        // close the exchange and complete the response CF exceptionally
-        close();
-        completeResponseExceptionally(this.errorRef.get());
     }
 
     private class HeadersConsumer extends ValidatingHeadersConsumer {
