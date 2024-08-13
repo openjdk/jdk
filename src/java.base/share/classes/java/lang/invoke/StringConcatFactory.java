@@ -1317,11 +1317,11 @@ public final class StringConcatFactory {
             try {
                 var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
                                         .defineClass(true, null);
-                var constructorHandle = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
-                var handle = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
-                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructorHandle, handle)));
-                var instance = hiddenClass.cast(constructorHandle.invoke(constants));
-                return handle.bindTo(instance);
+                var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
+                var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concat)));
+                var instance = hiddenClass.cast(constructor.invoke(constants));
+                return concat.bindTo(instance);
             } catch (Throwable e) {
                 throw new StringConcatException("Exception while spinning the class", e);
             }
