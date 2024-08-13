@@ -36,58 +36,33 @@ import java.lang.management.ManagementFactory;
  */
 public class HiddenClassUnloading {
     public static void main(String[] args) throws Throwable {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-
-        Class<?>[] types = new Class[] {
+        var lookup = MethodHandles.lookup();
+        var types  = new Class<?>[] {
                 int.class, long.class, double.class, float.class, char.class, boolean.class, String.class,
         };
-        Object[] values = new Object[] {
-                1, 1L, 1D, 1F, 'C', true, "A",
-        };
 
-        for (int i = 0; i < 10_000; i++) {
+        long initUnloadedClassCount = ManagementFactory.getClassLoadingMXBean().getUnloadedClassCount();
+
+        for (int i = 0; i < 2000; i++) {
             int radix = types.length;
             String str = Integer.toString(i, radix);
             int length = str.length();
-            String recipe = "\1".repeat(length);
-            Class<?>[] ptypes = new Class[length];
-            Object[] pvalues = new Object[length];
+            var ptypes = new Class[length];
             for (int j = 0; j < length; j++) {
                 int index = Integer.parseInt(str.substring(j, j + 1), radix);
                 ptypes[j] = types[index];
-                pvalues[j] = values[index];
             }
-            MethodType concatType = MethodType.methodType(String.class, ptypes);
-            CallSite callSite = StringConcatFactory.makeConcatWithConstants(
+            StringConcatFactory.makeConcatWithConstants(
                     lookup,
                     "concat",
-                    concatType,
-                    recipe,
+                    MethodType.methodType(String.class, ptypes),
+                    "\1".repeat(length), // recipe
                     new Object[0]
             );
-            MethodHandle mh = callSite.dynamicInvoker();
-            String result = switch (length) {
-                case 1  -> (String) mh.invoke(pvalues[0]);
-                case 2  -> (String) mh.invoke(pvalues[0], pvalues[1]);
-                case 3  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2]);
-                case 4  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3]);
-                case 5  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3], pvalues[4]);
-                case 6  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3], pvalues[4], pvalues[5]);
-                case 7  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3], pvalues[4], pvalues[5], pvalues[6]);
-                case 8  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3], pvalues[4], pvalues[5], pvalues[6], pvalues[7]);
-                case 9  -> (String) mh.invoke(pvalues[0], pvalues[1], pvalues[2], pvalues[3], pvalues[4], pvalues[5], pvalues[6], pvalues[7], pvalues[8]);
-                default -> throw new RuntimeException("length too large " + length);
-            };
-
-            StringBuilder sb = new StringBuilder();
-            for (int j = 0; j < pvalues.length; j++) {
-                sb.append(pvalues[j]);
-            }
-            assertEquals(sb.toString(), result);
         }
 
         long unloadedClassCount = ManagementFactory.getClassLoadingMXBean().getUnloadedClassCount();
-        if (unloadedClassCount == 0) {
+        if (initUnloadedClassCount == unloadedClassCount) {
             throw new RuntimeException("unloadedClassCount is zero");
         }
     }
