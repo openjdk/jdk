@@ -93,7 +93,7 @@ class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
 
     bool is_dead(ObjectMonitor** value) {
       assert(*value != nullptr, "must be");
-      return (*value)->object_is_cleared();
+      return false;
     }
   };
 

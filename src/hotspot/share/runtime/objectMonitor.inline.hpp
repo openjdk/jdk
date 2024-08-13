@@ -226,10 +226,6 @@ inline bool ObjectMonitor::object_is_dead() const {
   return object_peek() == nullptr;
 }
 
-inline bool ObjectMonitor::object_is_cleared() const {
-  return _object.is_null();
-}
-
 inline bool ObjectMonitor::object_refers_to(oop obj) const {
   if (_object.is_null()) {
     return false;

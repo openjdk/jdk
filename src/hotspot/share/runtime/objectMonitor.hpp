@@ -318,7 +318,6 @@ private:
 
   oop       object() const;
   oop       object_peek() const;
-  bool      object_is_cleared() const;
   bool      object_is_dead() const;
   bool      object_refers_to(oop obj) const;
 
