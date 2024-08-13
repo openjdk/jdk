@@ -3914,8 +3914,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::x86::_d2i_wrapper                = generate_d2i_wrapper(T_INT,  CAST_FROM_FN_PTR(address, SharedRuntime::d2i));
     StubRoutines::x86::_d2l_wrapper                = generate_d2i_wrapper(T_LONG, CAST_FROM_FN_PTR(address, SharedRuntime::d2l));
 
-      CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
-
     if (UseCRC32Intrinsics) {
       // set table address before stub generation which use it
       StubRoutines::_crc_table_adr = (address)StubRoutines::x86::_crc_table;
