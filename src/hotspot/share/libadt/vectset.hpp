@@ -42,9 +42,9 @@ private:
 
   // Used 32-bit words
   uint       _size;
-  uint32_t*  _data;
   // Allocated words
   uint       _data_size;
+  uint32_t*  _data;
   Arena*     _set_arena;
   ReallocMark _nesting; // Safety checks for arena reallocation
 

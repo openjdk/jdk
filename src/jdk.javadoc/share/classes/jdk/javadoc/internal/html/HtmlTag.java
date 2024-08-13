@@ -23,28 +23,24 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclint;
+package jdk.javadoc.internal.html;
 
+import java.io.Serial;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.Name;
 
-import com.sun.tools.javac.util.StringUtils;
-
-import static jdk.javadoc.internal.doclint.HtmlTag.Attr.*;
+import static jdk.javadoc.internal.html.HtmlAttr.*;
 
 /**
  * Enum representing HTML tags.
  *
  * The intent of this class is to embody the semantics of the current HTML standard,
  * to the extent supported/used by javadoc.
- *
- * This class is derivative of {@link jdk.javadoc.internal.doclets.formats.html.markup.TagName}.
- * Eventually, these two should be merged back together, and possibly made
- * public.
  *
  * @see <a href="https://html.spec.whatwg.org/multipage/">HTML Living Standard</a>
  * @see <a href="http://www.w3.org/TR/html5/">HTML 5 Specification</a>
@@ -88,6 +84,9 @@ public enum HtmlTag {
     BR(BlockType.INLINE, EndKind.NONE,
             attrs(AttrKind.HTML4, CLEAR)),
 
+    BUTTON(BlockType.INLINE, EndKind.REQUIRED,
+            attrs(AttrKind.OK, FORM, NAME, TYPE, VALUE)),
+
     CAPTION(BlockType.TABLE_ITEM, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT),
             attrs(AttrKind.HTML4, ALIGN)),
@@ -117,7 +116,10 @@ public enum HtmlTag {
 
     DEL(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
+
+    DETAILS(BlockType.BLOCK, EndKind.REQUIRED,
+            EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
 
     DFN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -149,12 +151,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -186,12 +186,10 @@ public enum HtmlTag {
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case HEADER: case FOOTER: case MAIN:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case HEADER, FOOTER, MAIN -> false;
+                default -> (t.blockType == BlockType.BLOCK) || (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -209,19 +207,25 @@ public enum HtmlTag {
             attrs(AttrKind.OK, SRC, ALT, HEIGHT, WIDTH, CROSSORIGIN),
             attrs(AttrKind.HTML4, NAME, ALIGN, HSPACE, VSPACE, BORDER)),
 
+    INPUT(BlockType.INLINE, EndKind.NONE,
+            attrs(AttrKind.OK, NAME, TYPE, VALUE)),
+
     INS(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
-            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
+            attrs(AttrKind.OK, HtmlAttr.CITE, HtmlAttr.DATETIME)),
 
     KBD(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    LABEL(BlockType.INLINE, EndKind.REQUIRED),
 
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, VALUE),
             attrs(AttrKind.HTML4, TYPE)),
 
-    LINK(BlockType.OTHER, EndKind.NONE),
+    LINK(BlockType.INLINE, EndKind.NONE,
+            attrs(AttrKind.OK, REL)),
 
     MAIN(BlockType.OTHER, EndKind.REQUIRED),
 
@@ -262,12 +266,10 @@ public enum HtmlTag {
             attrs(AttrKind.HTML4, WIDTH)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case IMG: case BIG: case SMALL: case SUB: case SUP:
-                    return false;
-                default:
-                    return (t.blockType == BlockType.INLINE);
-            }
+            return switch (t) {
+                case IMG, BIG, SMALL, SUB, SUP -> false;
+                default -> (t.blockType == BlockType.INLINE);
+            };
         }
     },
 
@@ -280,8 +282,8 @@ public enum HtmlTag {
     SAMP(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
-    SCRIPT(BlockType.OTHER, EndKind.REQUIRED,
-            attrs(AttrKind.OK, SRC)),
+    SCRIPT(BlockType.INLINE, EndKind.REQUIRED,
+            attrs(AttrKind.OK, SRC, TYPE)),
 
     SECTION(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE)),
@@ -303,25 +305,22 @@ public enum HtmlTag {
     SUB(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
+    SUMMARY(BlockType.BLOCK, EndKind.REQUIRED),
+
     SUP(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     TABLE(BlockType.BLOCK, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT),
             attrs(AttrKind.OK, BORDER),
-            attrs(AttrKind.HTML4, SUMMARY, CELLPADDING, CELLSPACING,
-                    Attr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
+            attrs(AttrKind.HTML4, HtmlAttr.SUMMARY, CELLPADDING, CELLSPACING,
+                    HtmlAttr.FRAME, RULES, WIDTH, ALIGN, BGCOLOR)) {
         @Override
         public boolean accepts(HtmlTag t) {
-            switch (t) {
-                case CAPTION:
-                case COLGROUP:
-                case THEAD: case TBODY: case TFOOT:
-                case TR: // HTML 3.2
-                    return true;
-                default:
-                    return false;
-            }
+            return switch (t) {
+                case CAPTION, COLGROUP, THEAD, TBODY, TFOOT, TR -> true;
+                default -> false;
+            };
         }
     },
 
@@ -337,7 +336,7 @@ public enum HtmlTag {
     TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS),
-            attrs(AttrKind.HTML4, AXIS, Attr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
+            attrs(AttrKind.HTML4, AXIS, HtmlAttr.ABBR, SCOPE, ALIGN, VALIGN, CHAR, CHAROFF,
                     WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
     TEMPLATE(BlockType.BLOCK, EndKind.REQUIRED,
@@ -353,7 +352,7 @@ public enum HtmlTag {
 
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR),
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, HtmlAttr.ABBR),
             attrs(AttrKind.HTML4, WIDTH, BGCOLOR, HEIGHT, NOWRAP, AXIS, ALIGN, CHAR, CHAROFF, VALIGN)),
 
     THEAD(BlockType.TABLE_ITEM, EndKind.REQUIRED,
@@ -408,6 +407,7 @@ public enum HtmlTag {
     /**
      * Enum representing the type of HTML element.
      */
+    // See JDK-8337586 for suggestions
     public enum BlockType {
         BLOCK,
         INLINE,
@@ -432,150 +432,13 @@ public enum HtmlTag {
         NO_NEST
     }
 
-    public enum Attr {
-        ABBR,
-        ACCESSKEY(true),
-        ALIGN,
-        ALINK,
-        ALT,
-        ARIA_ACTIVEDESCENDANT(true),
-        ARIA_CONTROLS(true),
-        ARIA_DESCRIBEDBY(true),
-        ARIA_EXPANDED(true),
-        ARIA_LABEL(true),
-        ARIA_LABELLEDBY(true),
-        ARIA_LEVEL(true),
-        ARIA_MULTISELECTABLE(true),
-        ARIA_OWNS(true),
-        ARIA_POSINSET(true),
-        ARIA_READONLY(true),
-        ARIA_REQUIRED(true),
-        ARIA_SELECTED(true),
-        ARIA_SETSIZE(true),
-        ARIA_SORT(true),
-        AUTOCAPITALIZE(true),
-        AUTOFOCUS(true),
-        AXIS,
-        BACKGROUND,
-        BGCOLOR,
-        BORDER,
-        CELLPADDING,
-        CELLSPACING,
-        CHAR,
-        CHAROFF,
-        CHARSET,
-        CITE,
-        CLASS(true),
-        CLEAR,
-        COLOR,
-        COLSPAN,
-        COMPACT,
-        CONTENTEDITABLE(true),
-        COORDS,
-        CROSSORIGIN,
-        DATETIME,
-        DIR(true),
-        DRAGGABLE(true),
-        ENTERKEYHINT(true),
-        FACE,
-        FRAME,
-        FRAMEBORDER,
-        HEADERS,
-        HEIGHT,
-        HIDDEN(true),
-        HREF,
-        HSPACE,
-        ID(true),
-        INERT(true),
-        INPUTMODE(true),
-        IS(true),
-        ITEMID(true),
-        ITEMPROP(true),
-        ITEMREF(true),
-        ITEMSCOPE(true),
-        ITEMTYPE(true),
-        LANG(true),
-        LINK,
-        LONGDESC,
-        MARGINHEIGHT,
-        MARGINWIDTH,
-        NAME,
-        NONCE(true),
-        NOSHADE,
-        NOWRAP,
-        POPOVER(true),
-        PROFILE,
-        REV,
-        REVERSED,
-        ROLE(true),
-        ROWSPAN,
-        RULES,
-        SCHEME,
-        SCOPE,
-        SCROLLING,
-        SHAPE,
-        SIZE,
-        SPACE,
-        SPELLCHECK(true),
-        SRC,
-        START,
-        STYLE(true),
-        SUMMARY,
-        TABINDEX(true),
-        TARGET,
-        TEXT,
-        TITLE(true),
-        TRANSLATE(true),
-        TYPE,
-        VALIGN,
-        VALUE,
-        VERSION,
-        VLINK,
-        VSPACE,
-        WIDTH,
-        WRITINGSUGGESTIONS(true);
-
-        private final String name;
-        private final boolean isGlobal;
-
-        Attr() {
-            this(false);
-        }
-
-        Attr(boolean flag) {
-            name = StringUtils.toLowerCase(name().replace("_", "-"));
-            isGlobal = flag;
-        }
-
-        public boolean isGlobal() {
-            return isGlobal;
-        }
-
-        public String getText() {
-            return name;
-        }
-
-        static final Map<String,Attr> index = new HashMap<>();
-        static {
-            for (Attr t: values()) {
-                index.put(t.getText(), t);
-            }
-        }
-    }
-
-    public enum AttrKind {
-        OK,
-        INVALID,
-        OBSOLETE,
-        HTML4
-    }
-
     // This class exists to avoid warnings from using parameterized vararg type
     // Map<Attr,AttrKind> in signature of HtmlTag constructor.
-    private static class AttrMap extends EnumMap<Attr,AttrKind>  {
+    private static class AttrMap extends EnumMap<HtmlAttr,AttrKind> {
+        @Serial
         private static final long serialVersionUID = 0;
         AttrMap() {
-            super(Attr.class);
+            super(HtmlAttr.class);
         }
     }
 
@@ -584,7 +447,7 @@ public enum HtmlTag {
     public final BlockType blockType;
     public final EndKind endKind;
     public final Set<Flag> flags;
-    private final Map<Attr,AttrKind> attrs;
+    private final Map<HtmlAttr,AttrKind> attrs;
 
     HtmlTag(BlockType blockType, EndKind endKind, AttrMap... attrMaps) {
         this(ElemKind.OK, blockType, endKind, Set.of(), attrMaps);
@@ -603,8 +466,8 @@ public enum HtmlTag {
         this.blockType = blockType;
         this.endKind = endKind;
         this.flags = flags;
-        this.attrs = new EnumMap<>(Attr.class);
-        for (Map<Attr,AttrKind> m: attrMaps)
+        this.attrs = new EnumMap<>(HtmlAttr.class);
+        for (Map<HtmlAttr,AttrKind> m: attrMaps)
             this.attrs.putAll(m);
     }
 
@@ -615,20 +478,18 @@ public enum HtmlTag {
             return (t.blockType == BlockType.BLOCK);
         } else if (flags.contains(Flag.ACCEPTS_INLINE)) {
             return (t.blockType == BlockType.INLINE);
-        } else
-            switch (blockType) {
-                case BLOCK:
-                case INLINE:
-                    return (t.blockType == BlockType.INLINE);
-                case OTHER:
+        } else {
+            // any combination which could otherwise arrive here
+            // ought to have been handled in an overriding method
+            return switch (blockType) {
+                case BLOCK, INLINE -> (t.blockType == BlockType.INLINE);
+                case OTHER ->
                     // OTHER tags are invalid in doc comments, and will be
                     // reported separately, so silently accept/ignore any content
-                    return true;
-                default:
-                    // any combination which could otherwise arrive here
-                    // ought to have been handled in an overriding method
-                    throw new AssertionError(this + ":" + t);
-            }
+                        true;
+                default -> throw new AssertionError(this + ":" + t);
+            };
+        }
     }
 
     public boolean acceptsText() {
@@ -637,16 +498,16 @@ public enum HtmlTag {
         return accepts(B);
     }
 
-    public String getText() {
-        return StringUtils.toLowerCase(name());
+    public String getName() {
+        return name().toLowerCase(Locale.ROOT).replace("_", "-");
     }
 
-    public Attr getAttr(Name attrName) {
-        return Attr.index.get(StringUtils.toLowerCase(attrName.toString()));
+    public HtmlAttr getAttr(Name attrName) {
+        return HtmlAttr.of(attrName);
     }
 
     public AttrKind getAttrKind(Name attrName) {
-        Attr attr = getAttr(attrName);
+        HtmlAttr attr = getAttr(attrName);
         if (attr == null) {
             return AttrKind.INVALID;
         }
@@ -655,20 +516,20 @@ public enum HtmlTag {
                 attrs.getOrDefault(attr, AttrKind.INVALID);
     }
 
-    private static AttrMap attrs(AttrKind k, Attr... attrs) {
+    private static AttrMap attrs(AttrKind k, HtmlAttr... attrs) {
         AttrMap map = new AttrMap();
-        for (Attr a: attrs) map.put(a, k);
+        for (HtmlAttr a : attrs) map.put(a, k);
         return map;
     }
 
     private static final Map<String, HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
-            index.put(t.getText(), t);
+            index.put(t.getName(), t);
         }
     }
 
-    public static HtmlTag get(Name tagName) {
-        return index.get(StringUtils.toLowerCase(tagName.toString()));
+    public static HtmlTag of(CharSequence tagName) {
+        return index.get(tagName.toString().toLowerCase(Locale.ROOT));
     }
 }
