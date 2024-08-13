@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8332850
- * @summary XXX
+ * @bug 8337998
+ * @summary CompletionFailure in getEnclosingType attaching type annotations
  * @library /tools/javac/lib /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
