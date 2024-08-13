@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ public interface BoundedRangeModel
 
 
     /**
-     * This method sets all of the model's data with a single method call.
+     * This method sets all the model's data with a single method call.
      * The method results in a single change event being generated. This is
      * convenient when you need to adjust all the model data simultaneously and
      * do not want individual change events to occur.
