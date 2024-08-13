@@ -640,27 +640,27 @@ class Stream<T> extends ExchangeImpl<T> {
             } finally {
                 stateLock.unlock();
             }
-            final int error = frame.getErrorCode();
-            if (error == ErrorFrame.REFUSED_STREAM) {
-                // A REFUSED_STREAM error code implies that the stream wasn't processed by the
-                // peer and the client is free to retry the request afresh.
-                // Here we arrange for the request to be retried.
-                if (debug.on()) {
-                    debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
-                }
-                closeAsUnprocessed();
-                return;
-
-            }
             try {
-                final String reason = ErrorFrame.stringForCode(error);
-                final IOException ioe = new IOException("Received RST_STREAM: " + reason);
-                if (debug.on()) {
-                    debug.log(streamid + " received RST_STREAM with code: " + reason);
-                }
-                if (errorRef.compareAndSet(null, ioe)) {
-                    if (subscriber != null) {
-                        subscriber.onError(ioe);
+                final int error = frame.getErrorCode();
+                if (error == ErrorFrame.REFUSED_STREAM) {
+                    // A REFUSED_STREAM error code implies that the stream wasn't processed by the
+                    // peer and the client is free to retry the request afresh.
+                    // Here we arrange for the request to be retried.
+                    markUnprocessedByPeer();
+                    errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+                    if (debug.on()) {
+                        debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
+                    }
+                } else {
+                    final String reason = ErrorFrame.stringForCode(error);
+                    final IOException failureCause = new IOException("Received RST_STREAM: " + reason);
+                    if (debug.on()) {
+                        debug.log(streamid + " received RST_STREAM with code: " + reason);
+                    }
+                    if (errorRef.compareAndSet(null, failureCause)) {
+                        if (subscriber != null) {
+                            subscriber.onError(failureCause);
+                        }
                     }
                 }
                 final Throwable failureCause = errorRef.get();
