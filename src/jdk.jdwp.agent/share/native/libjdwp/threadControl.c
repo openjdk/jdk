@@ -642,26 +642,31 @@ getLocks(void)
      * thread) needs to be grabbed here. This allows thread control
      * code to safely suspend and resume the application threads
      * while ensuring they don't hold a critical lock.
+     *
+     * stepControl_beginStep() grabs the eventHandler lock and stepControl lock
+     * before eventually ending up here, so we need to maintain that order here.
+     * Similarly, invoker_completeInvokeRequest() grabs the eventHandler lock
+     * and invoker lock.
      */
-
+    callback_lock();
     eventHandler_lock();
+    stepControl_lock();
     invoker_lock();
     eventHelper_lock();
-    stepControl_lock();
-    commonRef_lock();
     debugMonitorEnter(threadLock);
-
+    commonRef_lock();
 }
 
 static void
 releaseLocks(void)
 {
-    debugMonitorExit(threadLock);
     commonRef_unlock();
-    stepControl_unlock();
+    debugMonitorExit(threadLock);
     eventHelper_unlock();
     invoker_unlock();
+    stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 }
 
 void

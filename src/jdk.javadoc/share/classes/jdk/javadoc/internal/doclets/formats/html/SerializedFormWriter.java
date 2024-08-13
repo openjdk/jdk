@@ -41,18 +41,19 @@ import javax.lang.model.type.TypeMirror;
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
@@ -562,8 +563,8 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         HtmlTree body = getBody(getWindowTitle(header));
         Content h1Content = Text.of(header);
         var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, h1Content);
-        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+                HtmlStyles.title, h1Content);
+        var div = HtmlTree.DIV(HtmlStyles.header, heading);
         bodyContents.setHeader(getHeader(PageMode.SERIALIZED_FORM))
                 .addMainContent(div);
         return body;
@@ -575,7 +576,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      * @return the serialized form summaries header
      */
      Content getSerializedSummariesHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
     /**
@@ -584,7 +585,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      * @return the package serialized form header tree
      */
      Content getPackageSerializedHeader() {
-        return HtmlTree.SECTION(HtmlStyle.serializedPackageContainer);
+        return HtmlTree.SECTION(HtmlStyles.serializedPackageContainer);
     }
 
      Content getPackageHeader(PackageElement packageElement) {
@@ -596,7 +597,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
     }
 
      Content getClassSerializedHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
     /**
@@ -615,7 +616,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
                         .label(configuration.getClassName(typeElement)))
                 : Text.of(utils.getFullyQualifiedName(typeElement));
-        var section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
+        var section = HtmlTree.SECTION(HtmlStyles.serializedClassDetails)
                 .setId(htmlIds.forClass(typeElement));
         Content superClassLink = typeElement.getSuperclass() != null
                 ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
@@ -640,12 +641,12 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         signature.add(superClassLink);
         signature.add(" implements ");
         signature.add(interfaceLink);
-        section.add(HtmlTree.DIV(HtmlStyle.typeSignature, signature));
+        section.add(HtmlTree.DIV(HtmlStyles.typeSignature, signature));
         return section;
     }
 
      Content getSerialUIDInfoHeader() {
-        return HtmlTree.DL(HtmlStyle.nameValue);
+        return HtmlTree.DL(HtmlStyles.nameValue);
     }
 
     /**
@@ -667,7 +668,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
     }
 
      Content getClassContentHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
     /**

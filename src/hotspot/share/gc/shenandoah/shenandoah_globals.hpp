@@ -318,9 +318,10 @@
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
                                                                             \
-  product(uintx, ShenandoahParallelRegionStride, 1024, EXPERIMENTAL,        \
+  product(uintx, ShenandoahParallelRegionStride, 0, EXPERIMENTAL,           \
           "How many regions to process at once during parallel region "     \
-          "iteration. Affects heaps with lots of regions.")                 \
+          "iteration. Affects heaps with lots of regions. "                 \
+          "Set to 0 to let Shenandoah to decide the best value.")           \
                                                                             \
   product(size_t, ShenandoahSATBBufferSize, 1 * K, EXPERIMENTAL,            \
           "Number of entries in an SATB log buffer.")                       \
@@ -332,9 +333,6 @@
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

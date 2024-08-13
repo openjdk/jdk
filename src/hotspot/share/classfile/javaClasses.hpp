@@ -194,7 +194,7 @@ class java_lang_String : AllStatic {
   static inline bool is_instance(oop obj);
 
   // Debugging
-  static void print(oop java_string, outputStream* st);
+  static void print(oop java_string, outputStream* st, int max_length = MaxStringPrintSize);
   friend class JavaClasses;
   friend class StringTable;
 };
@@ -209,6 +209,7 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
   macro(java_lang_Class, protection_domain,      object_signature,  false) \
   macro(java_lang_Class, source_file,            object_signature,  false) \
+  macro(java_lang_Class, init_lock,              object_signature,  false)
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;

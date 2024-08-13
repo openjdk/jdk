@@ -66,7 +66,6 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
-#include "gc/shenandoah/mode/shenandoahIUMode.hpp"
 #include "gc/shenandoah/mode/shenandoahPassiveMode.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
 #if INCLUDE_JFR
@@ -284,14 +283,7 @@ jint ShenandoahHeap::initialize() {
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   size_t aux_bitmap_page_size = bitmap_page_size;
-#ifdef LINUX
-  // In THP "advise" mode, we refrain from advising the system to use large pages
-  // since we know these commits will be short lived, and there is no reason to trash
-  // the THP area with this bitmap.
-  if (UseTransparentHugePages) {
-    aux_bitmap_page_size = os::vm_page_size();
-  }
-#endif
+
   ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
                                           bitmap_size_orig, aux_bitmap_page_size,
@@ -388,16 +380,6 @@ jint ShenandoahHeap::initialize() {
     _pretouch_heap_page_size = heap_page_size;
     _pretouch_bitmap_page_size = bitmap_page_size;
 
-#ifdef LINUX
-    // UseTransparentHugePages would madvise that backing memory can be coalesced into huge
-    // pages. But, the kernel needs to know that every small page is used, in order to coalesce
-    // them into huge one. Therefore, we need to pretouch with smaller pages.
-    if (UseTransparentHugePages) {
-      _pretouch_heap_page_size = (size_t)os::vm_page_size();
-      _pretouch_bitmap_page_size = (size_t)os::vm_page_size();
-    }
-#endif
-
     // OS memory managers may want to coalesce back-to-back pages. Make their jobs
     // simpler by pre-touching continuous spaces (heap and bitmap) separately.
 
@@ -446,8 +428,6 @@ void ShenandoahHeap::initialize_mode() {
   if (ShenandoahGCMode != nullptr) {
     if (strcmp(ShenandoahGCMode, "satb") == 0) {
       _gc_mode = new ShenandoahSATBMode();
-    } else if (strcmp(ShenandoahGCMode, "iu") == 0) {
-      _gc_mode = new ShenandoahIUMode();
     } else if (strcmp(ShenandoahGCMode, "passive") == 0) {
       _gc_mode = new ShenandoahPassiveMode();
     } else {
@@ -1178,11 +1158,10 @@ oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Try to install the new forwarding pointer.
   oop copy_val = cast_to_oop(copy);
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
     return copy_val;
   }  else {
@@ -1694,19 +1673,20 @@ class ShenandoahParallelHeapRegionTask : public WorkerTask {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahHeapRegionClosure* const _blk;
+  size_t const _stride;
 
   shenandoah_padding(0);
   volatile size_t _index;
   shenandoah_padding(1);
 
 public:
-  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk) :
+  ShenandoahParallelHeapRegionTask(ShenandoahHeapRegionClosure* blk, size_t stride) :
           WorkerTask("Shenandoah Parallel Region Operation"),
-          _heap(ShenandoahHeap::heap()), _blk(blk), _index(0) {}
+          _heap(ShenandoahHeap::heap()), _blk(blk), _stride(stride), _index(0) {}
 
   void work(uint worker_id) {
     ShenandoahParallelWorkerSession worker_session(worker_id);
-    size_t stride = ShenandoahParallelRegionStride;
+    size_t stride = _stride;
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
@@ -1725,8 +1705,20 @@ public:
 
 void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
   assert(blk->is_thread_safe(), "Only thread-safe closures here");
-  if (num_regions() > ShenandoahParallelRegionStride) {
-    ShenandoahParallelHeapRegionTask task(blk);
+  const uint active_workers = workers()->active_workers();
+  const size_t n_regions = num_regions();
+  size_t stride = ShenandoahParallelRegionStride;
+  if (stride == 0 && active_workers > 1) {
+    // Automatically derive the stride to balance the work between threads
+    // evenly. Do not try to split work if below the reasonable threshold.
+    constexpr size_t threshold = 4096;
+    stride = n_regions <= threshold ?
+            threshold :
+            (n_regions + active_workers - 1) / active_workers;
+  }
+
+  if (n_regions > stride && active_workers > 1) {
+    ShenandoahParallelHeapRegionTask task(blk, stride);
     workers()->run_task(&task);
   } else {
     heap_region_iterate(blk);
@@ -1735,12 +1727,12 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
 
 class ShenandoahRendezvousClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
+void ShenandoahHeap::rendezvous_threads(const char* name) {
+  ShenandoahRendezvousClosure cl(name);
   Handshake::execute(&cl);
 }
 
