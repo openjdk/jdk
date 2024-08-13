@@ -169,8 +169,8 @@ class ObjectMonitorTable : AllStatic {
 public:
   static void create() {
     _table = new ConcurrentTable(initial_log_size(),
-                                max_log_size(),
-                                grow_hint());
+                                 max_log_size(),
+                                 grow_hint());
     _items_count = 0;
     _table_size = table_size();
     _resize = false;
@@ -380,7 +380,6 @@ static void post_monitor_inflate_event(EventJavaMonitorInflate* event,
   event->commit();
 }
 
-
 ObjectMonitor* LightweightSynchronizer::get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause) {
   assert(UseObjectMonitorTable, "must be");
 
@@ -575,7 +574,6 @@ inline bool LightweightSynchronizer::fast_lock_try_enter(oop obj, LockStack& loc
   }
   return false;
 }
-
 
 bool LightweightSynchronizer::fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation) {
   assert(UseObjectMonitorTable, "must be");
