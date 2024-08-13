@@ -48,6 +48,16 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
         permits BoundAttribute.BoundCodeAttribute {
 
     /**
+     * {@return the maximum size of the local variable table}
+     */
+    int maxLocals();
+
+    /**
+     * {@return the maximum size of the operand stack}
+     */
+    int maxStack();
+
+    /**
      * {@return The length of the code array in bytes}
      */
     int codeLength();

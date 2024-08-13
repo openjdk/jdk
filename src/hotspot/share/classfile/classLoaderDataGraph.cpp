@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
 void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
   assert_is_safepoint_or_gc();
   for (ClassLoaderData* cld = Atomic::load_acquire(&_head);  cld != nullptr; cld = cld->next()) {
-    CLDClosure* closure = cld->keep_alive() ? strong : weak;
+    CLDClosure* closure = (cld->keep_alive_ref_count() > 0) ? strong : weak;
     if (closure != nullptr) {
       closure->do_cld(cld);
     }
@@ -309,8 +309,7 @@ void ClassLoaderDataGraph::modules_do_keepalive(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
-    // Keep the holder alive.
-    (void)cld->holder();
+    cld->keep_alive();
     cld->modules_do(f);
   }
 }
@@ -334,8 +333,7 @@ void ClassLoaderDataGraph::packages_do(void f(PackageEntry*)) {
 void ClassLoaderDataGraph::loaded_classes_do_keepalive(KlassClosure* klass_closure) {
   ClassLoaderDataGraphIterator iter;
   while (ClassLoaderData* cld = iter.get_next()) {
-    // Keep the holder alive.
-    (void)cld->holder();
+    cld->keep_alive();
     cld->loaded_classes_do(klass_closure);
   }
 }
