@@ -202,9 +202,6 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
     case Op_CastLL:
     case Op_CastX2P:
     case Op_ConvI2L:
-
-    // TODO to find some counter-examples:
-    case Op_MulI:
       return true;
   }
 
