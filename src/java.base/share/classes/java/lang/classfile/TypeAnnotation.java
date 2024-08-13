@@ -57,32 +57,14 @@ import static java.lang.classfile.ClassFile.TAT_THROWS;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models a {@code type_annotation} structure ({@jvms 4.7.20}).
+ * Models a {@code type_annotation} structure (JVMS {@jvms 4.7.20}). This model
+ * indicates the annotated type within a declaration or expression and the part
+ * of the indicated type that is annotated, in addition to what is {@linkplain
+ * #annotation() available} in an {@code Annotation}.
  * <p>
- * Each {@code type_annotation} structure denotes an annotation that applies
- * to a type in Java source code ({@jls 9.7.4}). The structure indicates the
- * interface of the annotation and a set of element-value pairs; this
- * information is exposed by the {@link #annotation() annotation()} method.
- * <p>
- * Multiple annotations of the same interface <i>A</i> in Java source code
- * ({@jls 9.7.5}) are represented by the {@linkplain AnnotationValue.OfAnnotation
- * annotation-valued} array elements of the {@linkplain AnnotationValue.OfArray
- * array-valued} element named {@code value} of a container annotation of the
- * containing annotation interface of <i>A</i>. ({@jls 9.6.3})
- * <p>
- * The {@code type_annotation} structure is a superset of the {@code annotation}
- * structure ({@jvms 4.7.16}),
- * so a {@code TypeAnnotation} exposes more information about its location than
- * an {@code Annotation}.
- * In particular, the {@code type_annotation} structure indicates:
- * <ul>
- * <li>which of the <i>n</i> types in a declaration or expression is the specific
- * type to which the annotation applies. This information is exposed by
- * {@link #targetInfo() targetInfo()}.
- * <li>whether the annotation applies to a type or to part of a type (such as a
- * type argument in a parameterized type). This information is exposed by {@link
- * #targetPath() targetPath()}.
- * </ul>
+ * This model can reconstruct an annotation on a type or a part of a type, given
+ * the location of the {@code type_annotation} structure in the class file and
+ * the definition of the annotation interface.
  * <p>
  * Two {@code TypeAnnotation} objects should be compared using the {@link
  * Object#equals(Object) equals} method.

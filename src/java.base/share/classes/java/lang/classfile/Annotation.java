@@ -24,14 +24,10 @@
  */
 package java.lang.classfile;
 
-import java.lang.classfile.attribute.AnnotationDefaultAttribute;
-import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -41,63 +37,22 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an {@code annotation} structure ({@jvms 4.7.16}) or part of a {@code
- * type_annotation} structure ({@jvms 4.7.20}).
+ * Models an {@code annotation} structure (JVMS {@jvms 4.7.16}) or part of a {@code
+ * type_annotation} structure (JVMS {@jvms 4.7.20}). This model indicates the
+ * interface of the annotation and a set of element-value pairs.
  * <p>
- * Each {@code annotation} structure denotes an annotation that applies to a
- * construct in Java source code ({@jls 9.7.4}).
- * Similarly, each {@code type_annotation} structure denotes an annotation
- * that applies to a type in Java source code.
- * In either case, the structure indicates the interface of the annotation
- * and a set of element-value pairs.
- * <p>
- * In an annotation in Java source code, elements in the annotation interface
- * with default values may not be represented unless an explicit value is provided.
- * ({@jls 9.6.2}) The default value is derived from the {@link AnnotationDefaultAttribute
- * AnnotationDefault} attribute on the method representing the annotation
- * interface element, in the class file representing the annotation interface.
- * <p id="repeatable">
- * Multiple annotations of the same interface <i>A</i> in Java source code
- * ({@jls 9.7.5}) are represented by the {@linkplain AnnotationValue.OfAnnotation
- * annotation-valued} array elements of the {@linkplain AnnotationValue.OfArray
- * array-valued} element named {@code value} of a container annotation, whose
- * interface is the containing annotation interface of <i>A</i>. ({@jls 9.6.3})
- * <p>
- * The location in the class file of an {@code annotation} structure or a
- * {@code type_annotation} structure,
- * respectively, indicates the source code construct or type, respectively, to
- * which the annotation applies.
- * Accordingly, an {@code Annotation} may represent:
- * <ul>
- * <li>A <i>declaration annotation</i> on a class, field, method, or record
- * component declaration, when an {@code annotation} structure appears in the
- * {@link RuntimeVisibleAnnotationsAttribute} or
- * {@link RuntimeInvisibleAnnotationsAttribute} of a class, field, method, or
- * record component.
- * <li>A <i>declaration annotation</i> on a method parameter declaration, when
- * an {@code annotation} structure appears in the
- * {@link RuntimeVisibleParameterAnnotationsAttribute} or
- * {@link RuntimeInvisibleParameterAnnotationsAttribute} of a method.
- * <li>The {@linkplain AnnotationValue.OfAnnotation element value} of an
- * annotation, where the type of the element value is itself an annotation
- * interface. In this case, the {@code annotation} structure appears as the
- * {@code annotation_value} item of an {@code element_value} structure
- * ({@jvms 4.7.16.1}).<br>
- * If this annotation is of a {@linkplain ##repeatable repeatable} annotation
- * interface <i>A</i>, is an array element of an array-valued element named
- * {@code value} in a container annotation, and the interface of the container
- * annotation is the containing annotation interface <i>AC</i> of <i>A</i>,
- * this annotation represents a base annotation of type <i>A</i>, which applies
- * to the same source code construct or type as the container annotation of
- * type <i>AC</i>.
- * <li>A <i>type annotation</i>, when a {@code type_annotation} structure
- * appears in the {@link RuntimeVisibleTypeAnnotationsAttribute}
- * or {@link RuntimeInvisibleTypeAnnotationsAttribute} of a class, field,
- * method, {@link CodeAttribute}, or record component.
- * </ul>
+ * This model can reconstruct an annotation, given the location of the modeled structure
+ * in the class file and the definition of the annotation interface.
  * <p>
  * Two {@code Annotation} objects should be compared using the {@link
  * Object#equals(Object) equals} method.
+ *
+ * @apiNote
+ * For Java programs, the location of the modeled structure indicates the source code
+ * element or type (JLS {@jls 9.7.4}) on which the reconstructed annotation appears,
+ * and the annotation interface definition determines whether the reconstructed annotation has
+ * elements with default values (JLS {@jls 9.6.2}), and whether the reconstructed annotation
+ * is a container annotation for multiple annotations (JLS {@jls 9.7.5}).
  *
  * @see AnnotationElement
  * @see AnnotationValue
