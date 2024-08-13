@@ -2228,14 +2228,6 @@ JNI_ENTRY(jsize, jni_GetStringUTFLength(JNIEnv *env, jstring string))
   return ret;
 JNI_END
 
-JNI_ENTRY(jlong, jni_GetLargeStringUTFLength(JNIEnv *env, jstring string))
- HOTSPOT_JNI_GETLARGESTRINGUTFLENGTH_ENTRY(env, string);
-  oop java_string = JNIHandles::resolve_non_null(string);
-  size_t ret = java_lang_String::utf8_length(java_string);
-  HOTSPOT_JNI_GETLARGESTRINGUTFLENGTH_RETURN(ret);
-return checked_cast<jlong>(ret);
-JNI_END
-
 
 JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboolean *isCopy))
  HOTSPOT_JNI_GETSTRINGUTFCHARS_ENTRY(env, string, (uintptr_t *) isCopy);
@@ -3406,11 +3398,7 @@ struct JNINativeInterface_ jni_NativeInterface = {
 
     // Virtual threads
 
-    jni_IsVirtualThread,
-
-    // Large UTF8 support
-
-    jni_GetLargeStringUTFLength
+    jni_IsVirtualThread
 };
 
 
