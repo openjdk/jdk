@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
  * @run junit BuilderTryCatchTest
  */
 
-import java.lang.classfile.AccessFlags;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CompoundElement;
@@ -35,6 +34,9 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.instruction.BranchInstruction;
 import java.lang.classfile.instruction.ExceptionCatch;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -43,7 +45,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.AccessFlag;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -184,7 +185,7 @@ class BuilderTryCatchTest {
     void testEmptyTry() {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
                             int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
                             xb.loadConstant("S");
@@ -215,7 +216,7 @@ class BuilderTryCatchTest {
     void testLocalAllocation() throws Throwable {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
                             int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
                             xb.loadConstant("S");
@@ -278,7 +279,7 @@ class BuilderTryCatchTest {
     static byte[] generateTryCatchMethod(Consumer<CodeBuilder.CatchBuilder> c) {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
-                    AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
+                    ACC_PUBLIC | ACC_STATIC, mb -> {
                         mb.withCode(xb -> {
                             int stringSlot = xb.allocateLocal(TypeKind.ReferenceType);
                             xb.loadConstant("S");

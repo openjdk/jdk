@@ -92,6 +92,8 @@ import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import jdk.internal.access.SharedSecrets;
+
 public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         extends AbstractElement
         implements Attribute<T>, Util.Writable {
@@ -627,7 +629,13 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
             super(Attributes.runtimeInvisibleParameterAnnotations());
-            this.elements = List.copyOf(elements);
+            // deep copy
+            var array = elements.toArray().clone();
+            for (int i = 0; i < array.length; i++) {
+                array[i] = List.copyOf((List<?>) array[i]);
+            }
+
+            this.elements = SharedSecrets.getJavaUtilCollectionAccess().listFromTrustedArray(array);
         }
 
         @Override
