@@ -36,7 +36,7 @@ import static java.lang.classfile.ClassFile.*;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models stack map frame of {@code StackMapTable} attribute JVMS {@jvms 4.7.4}.
+ * Models stack map frame of {@code StackMapTable} attribute (JVMS {@jvms 4.7.4}).
  *
  * @since 22
  */

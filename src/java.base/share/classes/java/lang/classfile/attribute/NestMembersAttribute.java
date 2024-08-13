@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code NestMembers} attribute JVMS {@jvms 4.7.29}, which can
+ * Models the {@code NestMembers} attribute (JVMS {@jvms 4.7.29}), which can
  * appear on classes to indicate that this class is the host of a nest.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

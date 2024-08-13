@@ -35,7 +35,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code SourceFile} attribute JVMS {@jvms 4.7.10}, which
+ * Models the {@code SourceFile} attribute (JVMS {@jvms 4.7.10}), which
  * can appear on classes. Delivered as a {@link java.lang.classfile.ClassElement}
  * when traversing a {@link ClassModel}.
  * <p>

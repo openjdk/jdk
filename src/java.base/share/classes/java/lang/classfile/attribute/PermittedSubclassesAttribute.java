@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code PermittedSubclasses} attribute JVMS {@jvms 4.7.31}, which can
+ * Models the {@code PermittedSubclasses} attribute (JVMS {@jvms 4.7.31}), which can
  * appear on classes to indicate which classes may extend this class.
  * Delivered as a {@link java.lang.classfile.ClassElement} when
  * traversing the elements of a {@link java.lang.classfile.ClassModel}.

@@ -38,7 +38,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code RuntimeInvisibleTypeAnnotations} attribute JVMS {@jvms 4.7.21}, which
+ * Models the {@code RuntimeInvisibleTypeAnnotations} attribute (JVMS {@jvms 4.7.21}), which
  * can appear on classes, methods, fields, and code attributes. Delivered as a
  * {@link java.lang.classfile.ClassElement}, {@link java.lang.classfile.FieldElement},
  * {@link java.lang.classfile.MethodElement}, or {@link CodeElement} when traversing

@@ -33,7 +33,7 @@ import java.util.List;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code LocalVariableTypeTable} attribute JVMS {@jvms 4.7.14}, which can appear
+ * Models the {@code LocalVariableTypeTable} attribute (JVMS {@jvms 4.7.14}), which can appear
  * on a {@code Code} attribute, and records debug information about local
  * variables.
  * Delivered as a {@link java.lang.classfile.instruction.LocalVariable} when traversing the

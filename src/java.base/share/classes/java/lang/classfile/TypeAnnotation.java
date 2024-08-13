@@ -60,7 +60,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an annotation on a type use, as defined in JVMS {@jvms 4.7.19} and JVMS {@jvms 4.7.20}.
+ * Models an annotation on a type use, as defined in JVMS {@jvms 4.7.19} and {@jvms 4.7.20}.
  *
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute

@@ -37,7 +37,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Exceptions} attribute JVMS {@jvms 4.7.5}, which can appear on
+ * Models the {@code Exceptions} attribute (JVMS {@jvms 4.7.5}), which can appear on
  * methods, and records the exceptions declared to be thrown by this method.
  * Delivered as a {@link MethodElement} when traversing the elements of a
  * {@link java.lang.classfile.MethodModel}.

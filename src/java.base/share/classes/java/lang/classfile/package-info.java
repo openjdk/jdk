@@ -26,7 +26,7 @@
 /**
  * <h2>Provides classfile parsing, generation, and transformation library.</h2>
  * The {@code java.lang.classfile} package contains classes for reading, writing, and
- * modifying Java class files, as specified in Chapter JVMS {@jvms 4} of the
+ * modifying Java class files, as specified in Chapter {@jvms 4} of the
  * <cite>Java Virtual Machine Specification</cite>.
  *
  * <h2>Reading classfiles</h2>
@@ -153,7 +153,7 @@
  * same kind are allowed on a single entity.
  * <p>
  * There are built-in attribute mappers (in {@link java.lang.classfile.Attributes}) for
- * each of the attribute types defined in section JVMS {@jvms 4.7} of <cite>The Java Virtual
+ * each of the attribute types defined in section {@jvms 4.7} of <cite>The Java Virtual
  * Machine Specification</cite>, as well as several common nonstandard attributes used by the
  * JDK such as {@code CharacterRangeTable}.
  * <p>

@@ -37,7 +37,7 @@ import jdk.internal.javac.PreviewFeature;
 
 /**
  * Models the {@code RuntimeInvisibleParameterAnnotations} attribute
- * JVMS {@jvms 4.7.19}, which can appear on methods. Delivered as a {@link
+ * (JVMS {@jvms 4.7.19}), which can appear on methods. Delivered as a {@link
  * java.lang.classfile.MethodElement} when traversing a {@link MethodModel}.
  * <p>
  * The attribute does not permit multiple instances in a given location.
