@@ -1077,10 +1077,14 @@ public final class StringConcatFactory {
      * without copying.
      */
     private static final class InlineHiddenClassStrategy {
-        static final String METHOD_NAME = "concat";
+        static final String CLASS_NAME   = "java.lang.String$$StringConcat";
+        static final String METHOD_NAME  = "concat";
+
         static final ClassFileDumper DUMPER =
                 ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
+        static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
 
+        static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
         static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
         static final ClassDesc CD_StringConcatBase   = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
         static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
@@ -1223,14 +1227,11 @@ public final class StringConcatFactory {
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
-            lookup = new MethodHandles.Lookup(String.class);
-            String className = "java.lang.String$$StringConcat";
+            lookup = STR_LOOKUP;
             final MethodType concatArgs = erasedArgs(args);
 
             // 1 argment use built-in method
-            int paramCount  = args.parameterCount();
-            var concatClass = ConstantUtils.binaryNameToDesc(className);
-            if (paramCount == 1) {
+            if (args.parameterCount() == 1) {
                 Object concat1 = JLA.stringConcat1(constants);
                 var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
                 return handle.bindTo(concat1);
@@ -1252,7 +1253,7 @@ public final class StringConcatFactory {
                            coderArgs   = parameterMaybeUTF16(concatArgs) ? coderArgs(concatArgs) : null,
                            prependArgs = prependArgs(concatArgs);
 
-            byte[] classBytes = ClassFile.of().build(concatClass,
+            byte[] classBytes = ClassFile.of().build(CD_CONCAT,
                     new Consumer<ClassBuilder>() {
                         final boolean forceInline = concatArgs.parameterCount() < FORCE_INLINE_THRESHOLD;
 
@@ -1292,7 +1293,7 @@ public final class StringConcatFactory {
                                                     mb.with(FORCE_INLINE);
                                                 }
                                                 mb.withCode(generateConcatMethod(
-                                                        concatClass,
+                                                        CD_CONCAT,
                                                         concatArgs,
                                                         lengthArgs,
                                                         coderArgs,
@@ -1315,7 +1316,7 @@ public final class StringConcatFactory {
                             }
                     }});
             try {
-                var hiddenClass = lookup.makeHiddenClassDefiner(className, classBytes, Set.of(), DUMPER)
+                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
                                         .defineClass(true, null);
                 var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
                 var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
