@@ -66,15 +66,4 @@ public class HiddenClassUnloading {
             throw new RuntimeException("unloadedClassCount is zero");
         }
     }
-
-    static void assertEquals(String expected, String actual) {
-       if (!expected.equals(actual)) {
-           StringBuilder sb = new StringBuilder();
-           sb.append("Expected = ");
-           sb.append(expected);
-           sb.append(", actual = ");
-           sb.append(actual);
-           throw new IllegalStateException(sb.toString());
-       }
-    }
 }
