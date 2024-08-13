@@ -1414,7 +1414,7 @@ public final class StringConcatFactory {
                     for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
                         if (needStringOf(cl)) {
-                            stringSlots[i] = cb.allocateLocal(TypeKind.from(String.class));
+                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
                         }
                     }
 
