@@ -234,6 +234,10 @@ public class TestMergeStores {
         testGroups.get("test600").put("test600R", (_,i) -> { return test600R(aB.clone(), aI.clone(), i); });
         testGroups.get("test600").put("test600a", (_,i) -> { return test600a(aB.clone(), aI.clone(), i); });
 
+        testGroups.put("test601", new HashMap<String,TestFunction>());
+        testGroups.get("test601").put("test601R", (_,i) -> { return test601R(aB.clone(), aI.clone(), i, offset1); });
+        testGroups.get("test601").put("test601a", (_,i) -> { return test601a(aB.clone(), aI.clone(), i, offset1); });
+
         testGroups.put("test700", new HashMap<String,TestFunction>());
         testGroups.get("test700").put("test700R", (_,i) -> { return test700R(aI.clone(), i); });
         testGroups.get("test700").put("test700a", (_,i) -> { return test700a(aI.clone(), i); });
@@ -292,6 +296,7 @@ public class TestMergeStores {
                  "test501aBE",
                  "test502aBE",
                  "test600a",
+                 "test601a",
                  "test700a",
                  "test800a",
                  "test800aBE"})
@@ -1854,7 +1859,11 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8"}) // note: bottom type
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test600a(byte[] aB, int[] aI, int i) {
         Object a = null;
         long base = 0;
@@ -1865,7 +1874,7 @@ public class TestMergeStores {
             a = aI;
             base = UNSAFE.ARRAY_INT_BASE_OFFSET;
         }
-        // array a is an aryptr, but its element type is unknown, i.e. bottom.
+        // Array type is unknown, i.e. bottom[]. But all AddI can be safely converted to AddL -> safe to merge.
         UNSAFE.putByte(a, base + 0, (byte)0xbe);
         UNSAFE.putByte(a, base + 1, (byte)0xba);
         UNSAFE.putByte(a, base + 2, (byte)0xad);
@@ -1874,6 +1883,56 @@ public class TestMergeStores {
         UNSAFE.putByte(a, base + 5, (byte)0xbe);
         UNSAFE.putByte(a, base + 6, (byte)0xad);
         UNSAFE.putByte(a, base + 7, (byte)0xde);
+        return new Object[]{ aB, aI };
+    }
+
+    @DontCompile
+    static Object[] test601R(byte[] aB, int[] aI, int i, int offset1) {
+        Object a = null;
+        long base = 0;
+        if (i % 2 == 0) {
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        } else {
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+        }
+        UNSAFE.putByte(a, base + (offset1 + 0), (byte)0xbe);
+        UNSAFE.putByte(a, base + (offset1 + 1), (byte)0xba);
+        UNSAFE.putByte(a, base + (offset1 + 2), (byte)0xad);
+        UNSAFE.putByte(a, base + (offset1 + 3), (byte)0xba);
+        UNSAFE.putByte(a, base + (offset1 + 4), (byte)0xef);
+        UNSAFE.putByte(a, base + (offset1 + 5), (byte)0xbe);
+        UNSAFE.putByte(a, base + (offset1 + 6), (byte)0xad);
+        UNSAFE.putByte(a, base + (offset1 + 7), (byte)0xde);
+        return new Object[]{ aB, aI };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",  // nothing merged
+                  IRNode.STORE_C_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test601a(byte[] aB, int[] aI, int i, int offset1) {
+        Object a = null;
+        long base = 0;
+        if (i % 2 == 0) {
+            a = aB;
+            base = UNSAFE.ARRAY_BYTE_BASE_OFFSET;
+        } else {
+            a = aI;
+            base = UNSAFE.ARRAY_INT_BASE_OFFSET;
+        }
+        // Array type is unknown, i.e. bottom[]. Hence we do not know the element size of the array.
+        // Thus, merging is not always safe, there could be overflows.
+        UNSAFE.putByte(a, base + (offset1 + 0), (byte)0xbe);
+        UNSAFE.putByte(a, base + (offset1 + 1), (byte)0xba);
+        UNSAFE.putByte(a, base + (offset1 + 2), (byte)0xad);
+        UNSAFE.putByte(a, base + (offset1 + 3), (byte)0xba);
+        UNSAFE.putByte(a, base + (offset1 + 4), (byte)0xef);
+        UNSAFE.putByte(a, base + (offset1 + 5), (byte)0xbe);
+        UNSAFE.putByte(a, base + (offset1 + 6), (byte)0xad);
+        UNSAFE.putByte(a, base + (offset1 + 7), (byte)0xde);
         return new Object[]{ aB, aI };
     }
 
