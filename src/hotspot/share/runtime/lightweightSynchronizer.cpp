@@ -51,11 +51,6 @@
 #include "utilities/concurrentHashTableTasks.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
-//
-// Lightweight synchronization.
-//
-
 // ConcurrentHashTable storing links from objects to ObjectMonitors
 class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   struct Config {
