@@ -2751,7 +2751,7 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   pop_frame();
   restore_return_pc();
 
-  load_const_optimized(Z_R1, StubRoutines::throw_delayed_StackOverflowError_entry());
+  load_const_optimized(Z_R1, SharedRuntime::throw_delayed_StackOverflowError_entry());
   // Don't use call() or z_basr(), they will invalidate Z_R14 which contains the return pc.
   z_br(Z_R1);
 

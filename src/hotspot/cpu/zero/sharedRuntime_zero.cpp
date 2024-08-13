@@ -127,3 +127,15 @@ int SharedRuntime::vector_calling_convention(VMRegPair *regs,
   ShouldNotCallThis();
   return 0;
 }
+
+#if INCLUDE_JFR
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  return nullptr;
+}
+
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  return nullptr;
+}
+
+#endif // INCLUDE_JFR
+

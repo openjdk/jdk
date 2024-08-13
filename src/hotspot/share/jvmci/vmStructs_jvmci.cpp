@@ -327,8 +327,6 @@
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
                                                                                                                                      \
-  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
-                                                                                                                                     \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
   static_field(StubRoutines,                _jint_arraycopy,                                  address)                               \
