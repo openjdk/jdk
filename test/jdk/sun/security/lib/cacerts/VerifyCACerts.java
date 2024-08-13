@@ -376,7 +376,7 @@ public class VerifyCACerts {
                 cert.verify(cert.getPublicKey());
             } catch (Exception e) {
                 atLeastOneFailed = true;
-                System.err.println("ERROR: cert cannot be verified:" + e.getMessage());
+                System.err.println("ERROR: " + alias + " cert cannot be verified:" + e.getMessage());
             }
 
             // Is cert expired?
@@ -385,11 +385,26 @@ public class VerifyCACerts {
             } catch (CertificateExpiredException cee) {
                 if (!EXPIRY_EXC_ENTRIES.contains(alias)) {
                     atLeastOneFailed = true;
-                    System.err.println("ERROR: cert is expired but not in EXPIRY_EXC_ENTRIES");
+                    System.err.println("ERROR: " + alias + " cert is expired but not in EXPIRY_EXC_ENTRIES");
                 }
             } catch (CertificateNotYetValidException cne) {
                 atLeastOneFailed = true;
-                System.err.println("ERROR: cert is not yet valid");
+                System.err.println("ERROR: " + alias + " cert is not yet valid");
+            }
+
+            // Is it CA certificate?
+            if (cert.getBasicConstraints() == -1){
+                // "VeriSign Class 3 Public Primary Certification Authority - G3" is X.509 version 1 certificate
+                if (!"verisignclass3g3ca [jdk]".equals(alias)) {
+                    atLeastOneFailed = true;
+                    System.err.println("ERROR: " + alias + " BasicConstraints is missing or doesn't specify CA:true");
+                }
+            }
+            boolean[] keyUsageBits = cert.getKeyUsage();
+            // check that the KeyUsage extension, if included, asserts the keyCertSign bit
+            if (keyUsageBits != null && !keyUsageBits[5]){
+                atLeastOneFailed = true;
+                System.err.println("ERROR: " + alias + " KeyUsage doesn't assert Key_CertSign");
             }
 
             // If cert is within 90 days of expiring, mark as warning so
