@@ -2270,7 +2270,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, c
     return nullptr; // size mismatch
   }
 
-  for (uint i = 1; i < pack->size(); i++) {
+  for (uint i = 0; i < pack->size(); i++) {
     if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
       return nullptr; // use-def mismatch
     }
