@@ -62,6 +62,7 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
@@ -2311,9 +2312,17 @@ public class ClassReader {
      * 4.7.20-A target_type to locate the correct type to rewrite, and then interpreting the JVMS
      * 4.7.20.2 type_path to associate the annotation with the correct contained type.
      */
-    private static void addTypeAnnotationsToSymbol(
-            Symbol s, List<Attribute.TypeCompound> attributes) {
-        new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+    private void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+        try {
+            new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+        } catch (CompletionFailure ex) {
+            JavaFileObject prev = log.useSource(currentClassFile);
+            try {
+                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
+            } finally {
+                log.useSource(prev);
+            }
+        }
     }
 
     private static class TypeAnnotationSymbolVisitor
