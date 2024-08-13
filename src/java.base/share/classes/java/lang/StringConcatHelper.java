@@ -42,19 +42,21 @@ import java.lang.invoke.MethodType;
  */
 final class StringConcatHelper {
     static abstract class StringConcatBase {
-        @Stable final String[] constants;
-        final int length;
-        final byte coder;
+        @Stable
+        final String[] constants;
+        final int      length;
+        final byte     coder;
+
         StringConcatBase(String[] constants) {
-            int length = 0;
-            byte coder = String.LATIN1;
-            this.constants = constants;
+            int  length = 0;
+            byte coder  = String.LATIN1;
             for (String c : constants) {
                 length += c.length();
-                coder |= c.coder();
+                coder  |= c.coder();
             }
-            this.length = length;
-            this.coder = coder;
+            this.constants = constants;
+            this.length    = length;
+            this.coder     = coder;
         }
     }
 
