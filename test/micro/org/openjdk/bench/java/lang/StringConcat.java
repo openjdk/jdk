@@ -219,4 +219,16 @@ public class StringConcat {
                  * questions.
                 """;
     }
+
+    public static void main(String... args) {
+        StringConcat concat = new StringConcat();
+        concat.concat4String();
+        concat.concat123String();
+        concat.concat6String();
+        concat.concat13String();
+        concat.concat23String();
+        concat.concatConstInt();
+    }
+
+
 }

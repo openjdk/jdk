@@ -2178,21 +2178,35 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base = map_memory(_fd, _full_path, r->file_offset(),
-                          addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                          r->allow_exec());
-  if (base == nullptr || base != addr) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
-                  INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
-                  p2i(addr), _mapped_heap_memregion.byte_size());
-    return false;
-  }
+  char* base;
 
-  if (VerifySharedSpaces && !r->check_region_crc(base)) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
-    return false;
+  if (MetaspaceShared::use_windows_memory_mapping()) {
+    if (!read_region(MetaspaceShared::hp, addr,
+                     align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
+                     /* do_commit = */ true)) {
+      dealloc_heap_region();
+      log_error(cds)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
+      return false;
+    }
+    // Checks for VerifySharedSpaces is already done inside read_region()
+    base = addr;
+  } else {
+    base = map_memory(_fd, _full_path, r->file_offset(),
+                      addr, _mapped_heap_memregion.byte_size(), r->read_only(),
+                      r->allow_exec());
+    if (base == nullptr || base != addr) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
+                    INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
+                    p2i(addr), _mapped_heap_memregion.byte_size());
+      return false;
+    }
+
+    if (VerifySharedSpaces && !r->check_region_crc(base)) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
+      return false;
+    }
   }
 
   r->set_mapped_base(base);

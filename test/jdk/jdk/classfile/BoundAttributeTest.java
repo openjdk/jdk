@@ -27,6 +27,7 @@
  * @summary Testing BoundAttributes
  * @run junit BoundAttributeTest
  */
+import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Assertions;
@@ -34,7 +35,6 @@ import org.junit.jupiter.api.Test;
 import org.opentest4j.AssertionFailedError;
 
 import java.lang.classfile.Attributes;
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.CodeBuilder;
@@ -84,7 +84,7 @@ class BoundAttributeTest {
             var oneClass = cp.classEntry(oneClassString);
             ((DirectClassBuilder) clb).writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.nestMembers()) {
                 @Override
-                public void writeBody(BufWriter b) {
+                public void writeBody(BufWriterImpl b) {
                     b.writeU2(2);
                     b.writeIndex(oneClass);
                     b.writeIndex(oneClassString);

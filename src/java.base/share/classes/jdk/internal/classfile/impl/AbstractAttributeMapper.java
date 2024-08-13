@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, AnnotationDefaultAttribute attr) {
-            attr.defaultValue().writeTo(buf);
+            AnnotationReader.writeAnnotationValue((BufWriterImpl) buf, attr.defaultValue());
         }
     }
 
@@ -119,7 +119,11 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, BootstrapMethodsAttribute attr) {
-            buf.writeList(attr.bootstrapMethods());
+            var b = (BufWriterImpl) buf;
+            b.writeU2(attr.bootstrapMethodsSize());
+            for (var bsm : attr.bootstrapMethods()) {
+                ((BootstrapMethodEntryImpl) bsm).writeTo(b);
+            }
         }
     }
 
@@ -254,7 +258,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, ExceptionsAttribute attr) {
-            buf.writeListIndices(attr.exceptions());
+            Util.writeListIndices(buf, attr.exceptions());
         }
     }
 
@@ -408,19 +412,19 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
             for (ModuleExportInfo export : attr.exports()) {
                 buf.writeIndex(export.exportedPackage());
                 buf.writeU2(export.exportsFlagsMask());
-                buf.writeListIndices(export.exportsTo());
+                Util.writeListIndices(buf, export.exportsTo());
             }
             buf.writeU2(attr.opens().size());
             for (ModuleOpenInfo open : attr.opens()) {
                 buf.writeIndex(open.openedPackage());
                 buf.writeU2(open.opensFlagsMask());
-                buf.writeListIndices(open.opensTo());
+                Util.writeListIndices(buf, open.opensTo());
             }
-            buf.writeListIndices(attr.uses());
+            Util.writeListIndices(buf, attr.uses());
             buf.writeU2(attr.provides().size());
             for (ModuleProvideInfo provide : attr.provides()) {
                 buf.writeIndex(provide.provides());
-                buf.writeListIndices(provide.providesWith());
+                Util.writeListIndices(buf, provide.providesWith());
             }
         }
     }
@@ -482,7 +486,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, ModulePackagesAttribute attr) {
-            buf.writeListIndices(attr.packages());
+            Util.writeListIndices(buf, attr.packages());
         }
     }
 
@@ -554,7 +558,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, NestMembersAttribute attr) {
-            buf.writeListIndices(attr.nestMembers());
+            Util.writeListIndices(buf, attr.nestMembers());
         }
     }
 
@@ -572,7 +576,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, PermittedSubclassesAttribute attr) {
-            buf.writeListIndices(attr.permittedSubclasses());
+            Util.writeListIndices(buf, attr.permittedSubclasses());
         }
     }
 
@@ -595,7 +599,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
             for (RecordComponentInfo info : components) {
                 buf.writeIndex(info.name());
                 buf.writeIndex(info.descriptor());
-                buf.writeList(info.attributes());
+                Util.writeAttributes((BufWriterImpl) buf, info.attributes());
             }
         }
     }
@@ -614,7 +618,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeInvisibleAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
+            AnnotationReader.writeAnnotations(buf, attr.annotations());
         }
     }
 
@@ -635,7 +639,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
             List<List<Annotation>> lists = attr.parameterAnnotations();
             buf.writeU1(lists.size());
             for (List<Annotation> list : lists)
-                buf.writeList(list);
+                AnnotationReader.writeAnnotations(buf, list);
         }
     }
 
@@ -653,7 +657,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeInvisibleTypeAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
+            AnnotationReader.writeAnnotations(buf, attr.annotations());
         }
     }
 
@@ -671,7 +675,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeVisibleAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
+            AnnotationReader.writeAnnotations(buf, attr.annotations());
         }
     }
 
@@ -692,7 +696,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
             List<List<Annotation>> lists = attr.parameterAnnotations();
             buf.writeU1(lists.size());
             for (List<Annotation> list : lists)
-                buf.writeList(list);
+                AnnotationReader.writeAnnotations(buf, list);
         }
     }
 
@@ -710,7 +714,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeVisibleTypeAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
+            AnnotationReader.writeAnnotations(buf, attr.annotations());
         }
     }
 
