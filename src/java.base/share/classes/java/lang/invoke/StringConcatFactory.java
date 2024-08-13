@@ -1185,10 +1185,7 @@ public final class StringConcatFactory {
 
             for (int i = 0; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
-                if (cl != String.class && needStringOf(cl)) {
-                    cl = String.class;
-                }
-                paramTypes[i + 4] = ConstantUtils.classDesc(cl);
+                paramTypes[i + 4] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
             }
             return MethodTypeDesc.of(CD_int, paramTypes);
         }
