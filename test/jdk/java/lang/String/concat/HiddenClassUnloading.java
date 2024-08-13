@@ -30,6 +30,7 @@ import java.lang.management.ManagementFactory;
  * @test
  * @summary Test whether the hidden class unloading of StringConcatFactory works
  *
+ * @requires vm.flagless
  * @run main/othervm -Xmx8M -Xms8M -Xverify:all HiddenClassUnloading
  * @run main/othervm -Xmx8M -Xms8M -Xverify:all -XX:-CompactStrings HiddenClassUnloading
  */
