@@ -240,7 +240,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
 

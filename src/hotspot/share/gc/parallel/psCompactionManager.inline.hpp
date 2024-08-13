@@ -41,29 +41,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class PCMarkAndPushClosure: public OopClosure {
-private:
-  ParCompactionManager* _compaction_manager;
-public:
-  PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
-
-  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
-};
-
-class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
-private:
-  ParCompactionManager* _compaction_manager;
-public:
-  PCIterateMarkAndPushClosure(ParCompactionManager* cm, ReferenceProcessor* rp) :
-    ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
-    _compaction_manager(cm) { }
-
-  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
-};
+template <typename T>
+inline void PCMarkAndPushClosure::do_oop_work(T* p) {
+  _compaction_manager->mark_and_push(p);
+}
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {
   return oop_task_queues()->steal(queue_num, t);
@@ -161,13 +142,12 @@ inline void ParCompactionManager::follow_array(objArrayOop obj, int index) {
 
 inline void ParCompactionManager::follow_contents(oop obj) {
   assert(PSParallelCompact::mark_bitmap()->is_marked(obj), "should be marked");
-  PCIterateMarkAndPushClosure cl(this, PSParallelCompact::ref_processor());
 
   if (obj->is_objArray()) {
-    cl.do_klass(obj->klass());
+    _mark_and_push_closure.do_klass(obj->klass());
     follow_array(objArrayOop(obj), 0);
   } else {
-    obj->oop_iterate(&cl);
+    obj->oop_iterate(&_mark_and_push_closure);
   }
 }
 

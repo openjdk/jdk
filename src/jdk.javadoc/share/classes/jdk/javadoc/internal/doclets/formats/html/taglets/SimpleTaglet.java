@@ -42,11 +42,11 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.RawHtml;
 
 /**
  * A custom single-argument block tag.

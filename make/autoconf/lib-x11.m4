@@ -71,9 +71,9 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
           elif test -f "$SYSROOT/usr/lib/libX11.so"; then
             x_libraries="$SYSROOT/usr/lib"
           elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
           elif test -f "$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"; then
-            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI/libX11.so"
+            x_libraries="$SYSROOT/usr/lib/$OPENJDK_TARGET_CPU_AUTOCONF-$OPENJDK_TARGET_OS-$OPENJDK_TARGET_ABI"
           fi
         fi
       fi

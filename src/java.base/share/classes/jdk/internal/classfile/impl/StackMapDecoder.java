@@ -285,5 +285,9 @@ public class StackMapDecoder {
                                            List<VerificationTypeInfo> locals,
                                            List<VerificationTypeInfo> stack)
             implements StackMapFrameInfo {
+        public StackMapFrameImpl {
+            locals = List.copyOf(locals);
+            stack = List.copyOf(stack);
+        }
     }
 }
