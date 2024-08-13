@@ -135,8 +135,8 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static size_t max_log_size() {
-    // TODO[OMWorld]: Evaluate the max size.
-    // TODO[OMWorld]: Need to fix init order to use Universe::heap()->max_capacity();
+    // TODO[OMTable]: Evaluate the max size.
+    // TODO[OMTable]: Need to fix init order to use Universe::heap()->max_capacity();
     //                Using MaxHeapSize directly this early may be wrong, and there
     //                are definitely rounding errors (alignment).
     const size_t max_capacity = MaxHeapSize;
@@ -258,7 +258,7 @@ public:
       return (*monitor)->object_is_dead();
     };
     auto do_nothing = [&](ObjectMonitor** monitor) {};
-    NativeHeapTrimmer::SuspendMark sm("omworld");
+    NativeHeapTrimmer::SuspendMark sm("ObjectMonitorTable");
     return run_task(current, clean_task, "Clean", is_dead, do_nothing);
   }
 
