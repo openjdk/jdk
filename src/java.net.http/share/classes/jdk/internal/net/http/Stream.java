@@ -642,10 +642,14 @@ class Stream<T> extends ExchangeImpl<T> {
             }
             try {
                 final int error = frame.getErrorCode();
+                // A REFUSED_STREAM error code implies that the stream wasn't processed by the
+                // peer and the client is free to retry the request afresh.
                 if (error == ErrorFrame.REFUSED_STREAM) {
-                    // A REFUSED_STREAM error code implies that the stream wasn't processed by the
-                    // peer and the client is free to retry the request afresh.
-                    // Here we arrange for the request to be retried.
+                    // Here we arrange for the request to be retried. Note that we don't call
+                    // closeAsUnprocessed() method here because the "closed" state is already set
+                    // to true a few lines above and calling close() from within
+                    // closeAsUnprocessed() will end up being a no-op. We instead do the additional
+                    // bookkeeping here.
                     markUnprocessedByPeer();
                     errorRef.compareAndSet(null, new IOException("request not processed by peer"));
                     if (debug.on()) {
