@@ -295,7 +295,7 @@ static const char* get_as_dcmd_arena_string(oop string) {
     const size_t length = java_lang_String::utf8_length(string, value) + 1;
     str = dcmd_arena_allocate(length);
     assert(str != nullptr, "invariant");
-    java_lang_String::as_utf8_string(string, value, str, static_cast<int>(length));
+    java_lang_String::as_utf8_string(string, value, str, length);
   }
   return str;
 }
