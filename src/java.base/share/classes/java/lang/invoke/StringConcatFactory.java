@@ -1551,7 +1551,8 @@ public final class StringConcatFactory {
             return new Consumer<CodeBuilder>() {
                 @Override
                 public void accept(CodeBuilder cb) {
-                    cb.iload(cb.parameterSlot(0)); // length
+                    int lengthSlot = cb.parameterSlot(0);
+                    cb.iload(lengthSlot);
                     for (int i = 1; i < lengthArgs.parameterCount(); i++) {
                         var cl = lengthArgs.parameterType(i);
                         MethodTypeDesc methodTypeDesc;
@@ -1594,7 +1595,8 @@ public final class StringConcatFactory {
                     /*
                      * return coder | stringCoder(argN) | ... | arg1.coder() | arg0.coder();
                      */
-                    cb.iload(cb.parameterSlot(0)); // coder
+                    int coderSlot = cb.parameterSlot(0);
+                    cb.iload(coderSlot);
                     for (int i = 1; i < coderArgs.parameterCount(); i++) {
                         var cl = coderArgs.parameterType(i);
                         cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
@@ -1636,10 +1638,10 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int lengthSlot    = 0,
-                        coderSlot     = 1,
-                        bufSlot       = 2,
-                        constantsSlot = 3;
+                    int lengthSlot    = cb.parameterSlot(0),
+                        coderSlot     = cb.parameterSlot(1),
+                        bufSlot       = cb.parameterSlot(2),
+                        constantsSlot = cb.parameterSlot(3);
                     /*
                      * // StringConcatHelper.prepend
                      * return prepend(prepend(prepend(prepend(
@@ -1649,7 +1651,7 @@ public final class StringConcatFactory {
                      *              buf, arg3, constant[3]), buf, arg2, constant[2]),
                      *              buf, arg1, constant[1]), buf, arg0, constant[0]);
                      */
-                    cb.iload(cb.parameterSlot(lengthSlot)); // length
+                    cb.iload(lengthSlot);
                     for (int i = prependArgs.parameterCount() - 1; i >= 4; i--) {
                         var cl   = prependArgs.parameterType(i);
                         var kind = TypeKind.from(cl);
