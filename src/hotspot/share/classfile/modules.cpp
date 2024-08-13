@@ -72,7 +72,9 @@ static char* get_module_name(oop module, int& len, TRAPS) {
   if (name_oop == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(), "Null module name");
   }
-  char* module_name = java_lang_String::as_utf8_string(name_oop, len);
+  size_t utf8_len;
+  char* module_name = java_lang_String::as_utf8_string(name_oop, utf8_len);
+  len = checked_cast<int>(utf8_len); // module names are < 64K
   if (!verify_module_name(module_name, len)) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
                    err_msg("Invalid module name: %s", module_name));
@@ -84,9 +86,9 @@ static Symbol* as_symbol(jstring str_object) {
   if (str_object == nullptr) {
     return nullptr;
   }
-  int len;
+  size_t len;
   char* str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(str_object), len);
-  return SymbolTable::new_symbol(str, len);
+  return SymbolTable::new_symbol(str, checked_cast<int>(len));
 }
 
 ModuleEntryTable* Modules::get_module_entry_table(Handle h_loader) {
@@ -142,8 +144,10 @@ bool Modules::is_package_defined(Symbol* package, Handle h_loader) {
 // Will use the provided buffer if it's sufficiently large, otherwise allocates
 // a resource array
 // The length of the resulting string will be assigned to utf8_len
-static const char* as_internal_package(oop package_string, char* buf, int buflen, int& utf8_len) {
-  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, utf8_len);
+static const char* as_internal_package(oop package_string, char* buf, size_t buflen, int& utf8_len) {
+  size_t full_utf8_len;
+  char* package_name = java_lang_String::as_utf8_string_full(package_string, buf, buflen, full_utf8_len);
+  utf8_len = checked_cast<int>(full_utf8_len); // package names are < 64K
 
   // Turn all '/'s into '.'s
   for (int index = 0; index < utf8_len; index++) {

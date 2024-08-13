@@ -1321,7 +1321,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != nullptr) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      int utf8_length = 0;
+      size_t utf8_length = 0;
       n = UNICODE::as_utf8((jchar*) nullptr, utf8_length);
     }
 

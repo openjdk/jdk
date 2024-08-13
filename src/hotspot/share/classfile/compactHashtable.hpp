@@ -431,7 +431,7 @@ public:
 
   int unescape(const char* from, const char* end, int count);
   void get_utf8(char* utf8_buffer, int utf8_length);
-  static void put_utf8(outputStream* st, const char* utf8_string, int utf8_length);
+  static void put_utf8(outputStream* st, const char* utf8_string, size_t utf8_length);
 };
 
 #endif // SHARE_CLASSFILE_COMPACTHASHTABLE_HPP

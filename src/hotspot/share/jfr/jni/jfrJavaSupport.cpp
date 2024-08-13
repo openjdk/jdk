@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -502,7 +502,7 @@ Klass* JfrJavaSupport::klass(const jobject handle) {
   return obj->klass();
 }
 
-static char* allocate_string(bool c_heap, int length, Thread* thread) {
+static char* allocate_string(bool c_heap, size_t length, Thread* thread) {
   return c_heap ? NEW_C_HEAP_ARRAY(char, length, mtTracing) :
                   NEW_RESOURCE_ARRAY_IN_THREAD(thread, char, length);
 }
@@ -511,7 +511,7 @@ const char* JfrJavaSupport::c_str(oop string, Thread* thread, bool c_heap /* fal
   char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
   if (value != nullptr) {
-    const int length = java_lang_String::utf8_length(string, value);
+    const size_t length = java_lang_String::utf8_length(string, value);
     str = allocate_string(c_heap, length + 1, thread);
     if (str == nullptr) {
       return nullptr;
