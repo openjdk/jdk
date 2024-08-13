@@ -198,7 +198,6 @@ public class TestMergeStoresUnsafeArrayPointer {
         UNSAFE.putInt(a, base + (long)(min_int - four) + 4, 0x66666666);
     }
 
-
     // Test: if MergeStores is applied this can lead to wrong results
     //  -> SubI needs overflow check.
     static void test5(int[] a, long anchor) {

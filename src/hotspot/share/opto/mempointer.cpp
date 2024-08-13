@@ -75,105 +75,101 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
   const NoOverflowInt one(1);
 
-  // n->dump();
-
   int opc = n->Opcode();
-  switch (opc) {
-    case Op_ConI:
-    case Op_ConL:
-    {
-      NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
-                                           : NoOverflowInt(n->get_long());
-      _con = _con + scale * con;
-      // TODO problematic: int con and int scale could overflow??? or irrelevant?
-      return;
-    }
-    case Op_AddP:
-    case Op_AddL:
-    case Op_AddI:
-    {
-      LP64_ONLY( if (opc == Op_AddI && !is_safe_from_int_overflow(scaleL)) { break; } )
-
-      Node* a = n->in((opc == Op_AddP) ? 2 : 1);
-      Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-      _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
-      return;
-    }
-    case Op_SubL:
-    case Op_SubI:
-    {
-      LP64_ONLY( if (opc == Op_SubI && !is_safe_from_int_overflow(scaleL)) { break; } )
-
-      Node* a = n->in((opc == Op_AddP) ? 2 : 1);
-      Node* b = n->in((opc == Op_AddP) ? 3 : 2);
-
-      NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
-      LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
-                                                             : scaleL; )
-
-      // If anything went wrong with the scale computation: bailout.
-      if (sub_scale.is_NaN()) { break; }
-      LP64_ONLY( if (sub_scaleL.is_NaN()) { break; } )
-
-      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-      _worklist.push(MemPointerSummand(b, sub_scale LP64_ONLY( COMMA sub_scaleL )));
-      return;
-    }
-    case Op_MulL:
-    case Op_MulI:
-    case Op_LShiftL:
-    case Op_LShiftI:
-    {
-      // TODO check if we should decompose or not: int-overflow!!!
-      // Form must be linear: only multiplication with constants is allowed.
-      Node* in1 = n->in(1);
-      Node* in2 = n->in(2);
-      if (!in2->is_Con()) { break; }
-      NoOverflowInt factor;
-      LP64_ONLY( NoOverflowInt factorL; )
-      switch (opc) {
-        case Op_MulL:
-          factor = NoOverflowInt(in2->get_long());
-          LP64_ONLY( factorL = factor; )
-          break;
-        case Op_MulI:
-          factor = NoOverflowInt(in2->get_int());
-          LP64_ONLY( factorL = one; )
-          break;
-        case Op_LShiftL:
-          factor = one << NoOverflowInt(in2->get_int());
-          LP64_ONLY( factorL = factor; )
-          break;
-        case Op_LShiftI:
-          factor = one << NoOverflowInt(in2->get_int());
-          LP64_ONLY( factorL = one; )
-          break;
+  if (is_safe_from_int_overflow(opc LP64_ONLY( COMMA scaleL ))) {
+    switch (opc) {
+      case Op_ConI:
+      case Op_ConL:
+      {
+        NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
+                                             : NoOverflowInt(n->get_long());
+        _con = _con + scale * con;
+        // TODO problematic: int con and int scale could overflow??? or irrelevant?
+        return;
       }
+      case Op_AddP:
+      case Op_AddL:
+      case Op_AddI:
+      {
+        Node* a = n->in((opc == Op_AddP) ? 2 : 1);
+        Node* b = n->in((opc == Op_AddP) ? 3 : 2);
+        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
+        _worklist.push(MemPointerSummand(b, scale LP64_ONLY( COMMA scaleL )));
+        return;
+      }
+      case Op_SubL:
+      case Op_SubI:
+      {
+        Node* a = n->in((opc == Op_AddP) ? 2 : 1);
+        Node* b = n->in((opc == Op_AddP) ? 3 : 2);
 
-      // Accumulate scale.
-      NoOverflowInt new_scale = scale * factor;
-      LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
+        NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
+        LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
+                                                               : scaleL; )
 
-      // Make sure abs(scale) is not larger than "1 << 30".
-      new_scale = new_scale.truncate_to_30_bits();
-      LP64_ONLY( new_scaleL = new_scaleL.truncate_to_30_bits(); )
+        // If anything went wrong with the scale computation: bailout.
+        if (sub_scale.is_NaN()) { break; }
+        LP64_ONLY( if (sub_scaleL.is_NaN()) { break; } )
 
-      // If anything went wrong with the scale computation: bailout.
-      if (new_scale.is_NaN()) { break; }
-      LP64_ONLY( if (new_scaleL.is_NaN()) { break; } )
+        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
+        _worklist.push(MemPointerSummand(b, sub_scale LP64_ONLY( COMMA sub_scaleL )));
+        return;
+      }
+      case Op_MulL:
+      case Op_MulI:
+      case Op_LShiftL:
+      case Op_LShiftI:
+      {
+        // TODO check if we should decompose or not: int-overflow!!!
+        // Form must be linear: only multiplication with constants is allowed.
+        Node* in1 = n->in(1);
+        Node* in2 = n->in(2);
+        if (!in2->is_Con()) { break; }
+        NoOverflowInt factor;
+        LP64_ONLY( NoOverflowInt factorL; )
+        switch (opc) {
+          case Op_MulL:
+            factor = NoOverflowInt(in2->get_long());
+            LP64_ONLY( factorL = factor; )
+            break;
+          case Op_MulI:
+            factor = NoOverflowInt(in2->get_int());
+            LP64_ONLY( factorL = one; )
+            break;
+          case Op_LShiftL:
+            factor = one << NoOverflowInt(in2->get_int());
+            LP64_ONLY( factorL = factor; )
+            break;
+          case Op_LShiftI:
+            factor = one << NoOverflowInt(in2->get_int());
+            LP64_ONLY( factorL = one; )
+            break;
+        }
 
-      _worklist.push(MemPointerSummand(in1, new_scale LP64_ONLY( COMMA new_scaleL )));
-      return;
-    }
-    case Op_CastII:
-    case Op_CastLL:
-    case Op_CastX2P:
-    case Op_ConvI2L:
-    {
-      Node* a = n->in(1);
-      _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
-      return;
+        // Accumulate scale.
+        NoOverflowInt new_scale = scale * factor;
+        LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
+
+        // Make sure abs(scale) is not larger than "1 << 30".
+        new_scale = new_scale.truncate_to_30_bits();
+        LP64_ONLY( new_scaleL = new_scaleL.truncate_to_30_bits(); )
+
+        // If anything went wrong with the scale computation: bailout.
+        if (new_scale.is_NaN()) { break; }
+        LP64_ONLY( if (new_scaleL.is_NaN()) { break; } )
+
+        _worklist.push(MemPointerSummand(in1, new_scale LP64_ONLY( COMMA new_scaleL )));
+        return;
+      }
+      case Op_CastII:
+      case Op_CastLL:
+      case Op_CastX2P:
+      case Op_ConvI2L:
+      {
+        Node* a = n->in(1);
+        _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
+        return;
+      }
     }
   }
 
@@ -183,8 +179,33 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   _summands.push(summand);
 }
 
-#ifdef _LP64
-bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const NoOverflowInt scaleL) {
+bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
+#ifndef _LP64
+  // On 32-bit platforms, ... TODO
+  return true;
+#else
+
+  // TODO: trivially safe ops
+  // Not trivially safe: AddI, SubI, MulI, LShiftI
+  switch(opc) {
+    case Op_ConI:
+    case Op_ConL:
+    case Op_AddP:
+    case Op_AddL:
+    case Op_SubL:
+    case Op_MulL:
+    case Op_LShiftL:
+    case Op_CastII:
+    case Op_CastLL:
+    case Op_CastX2P:
+    case Op_ConvI2L:
+
+    // TODO to find some counter-examples:
+    case Op_MulI:
+    case Op_LShiftI:
+      return true;
+  }
+
   // TODO needed?
   if (scaleL.is_NaN()) {
     assert(false, "scaleL must not be NaN");
@@ -210,8 +231,8 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const NoOverflowInt s
   }
 
   return false;
-}
 #endif
+}
 
 MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other) const {
   // Check if all summands are the same:

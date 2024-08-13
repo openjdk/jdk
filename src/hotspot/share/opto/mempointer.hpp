@@ -373,7 +373,8 @@ public:
 private:
   MemPointerSimpleForm parse_simple_form();
   void parse_sub_expression(const MemPointerSummand summand);
-  LP64_ONLY( bool is_safe_from_int_overflow(const NoOverflowInt scaleL); )
+
+  bool is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
 };
 
 // TODO
