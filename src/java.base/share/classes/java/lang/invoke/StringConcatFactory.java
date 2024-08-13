@@ -1405,17 +1405,9 @@ public final class StringConcatFactory {
                 @Override
                 public void accept(CodeBuilder cb) {
                     // Compute parameter variable slots
-                    int   paramCount  = concatArgs.parameterCount();
-                    int   thisSlot    = cb.receiverSlot();
-                    int[] stringSlots = new int[paramCount];
-                    for (int i = 0; i < paramCount; i++) {
-                        var cl = concatArgs.parameterType(i);
-                        if (needStringOf(cl)) {
-                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
-                        }
-                    }
-
-                    int lengthSlot    = cb.allocateLocal(TypeKind.IntType),
+                    int paramCount    = concatArgs.parameterCount(),
+                        thisSlot      = cb.receiverSlot(),
+                        lengthSlot    = cb.allocateLocal(TypeKind.IntType),
                         coderSlot     = cb.allocateLocal(TypeKind.ByteType),
                         bufSlot       = cb.allocateLocal(TypeKind.ReferenceType),
                         constantsSlot = cb.allocateLocal(TypeKind.ReferenceType),
@@ -1431,6 +1423,7 @@ public final class StringConcatFactory {
                      * ...
                      * strN = toString(argN);
                      */
+                    int[] stringSlots = new int[paramCount];
                     for (int i = 0; i < paramCount; i++) {
                         var cl = concatArgs.parameterType(i);
                         if (needStringOf(cl)) {
@@ -1442,6 +1435,7 @@ public final class StringConcatFactory {
                             } else {
                                 methodTypeDesc = MTD_String_Object;
                             }
+                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
                             cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
                               .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
                               .astore(stringSlots[i]);
