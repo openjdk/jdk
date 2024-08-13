@@ -69,7 +69,7 @@ class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   };
   using ConcurrentTable = ConcurrentHashTable<Config, MEMFLAGS::mtObjectMonitor>;
 
-  ConcurrentTable _table;
+  ConcurrentTable* _table;
   volatile size_t _items_count;
   size_t _table_size;
   volatile bool _resize;
@@ -130,7 +130,7 @@ class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
   }
 
   size_t table_size(Thread* current = Thread::current()) {
-    return ((size_t)1) << _table.get_size_log2(current);
+    return ((size_t)1) << _table->get_size_log2(current);
   }
 
   static size_t max_log_size() {
@@ -167,12 +167,12 @@ class ObjectMonitorTable : public CHeapObj<MEMFLAGS::mtObjectMonitor> {
 
 public:
   ObjectMonitorTable()
-  : _table(ConcurrentTable(initial_log_size(),
-                           max_log_size(),
-                           grow_hint(),
-                           ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
-                           ConcurrentTable::DEFAULT_MUTEX_RANK,
-                           this)),
+  : _table(new ConcurrentTable(initial_log_size(),
+                               max_log_size(),
+                               grow_hint(),
+                               ConcurrentTable::DEFAULT_ENABLE_STATISTICS,
+                               ConcurrentTable::DEFAULT_MUTEX_RANK,
+                               this)),
     _items_count(0),
     _table_size(table_size()),
     _resize(false) {}
@@ -195,13 +195,13 @@ public:
       assert((*found)->object_peek() == obj, "must be");
       result = *found;
     };
-    _table.get(current, lookup_f, found_f);
+    _table->get(current, lookup_f, found_f);
     verify_monitor_get_result(obj, result);
     return result;
   }
 
   void try_notify_grow() {
-    if (!_table.is_max_size_reached() && !Atomic::load(&_resize)) {
+    if (!_table->is_max_size_reached() && !Atomic::load(&_resize)) {
       Atomic::store(&_resize, true);
       if (Service_lock->try_lock()) {
         Service_lock->notify();
@@ -218,7 +218,7 @@ public:
   static constexpr double GROW_LOAD_FACTOR = 0.75;
 
   bool should_grow() {
-    return get_load_factor() > GROW_LOAD_FACTOR && !_table.is_max_size_reached();
+    return get_load_factor() > GROW_LOAD_FACTOR && !_table->is_max_size_reached();
   }
 
   bool should_resize() {
@@ -244,7 +244,7 @@ public:
   }
 
   bool grow(JavaThread* current) {
-    ConcurrentTable::GrowTask grow_task(&_table);
+    ConcurrentTable::GrowTask grow_task(_table);
     if (run_task(current, grow_task, "Grow")) {
       _table_size = table_size(current);
       log_info(monitortable)("Grown to size: %zu", _table_size);
@@ -254,7 +254,7 @@ public:
   }
 
   bool clean(JavaThread* current) {
-    ConcurrentTable::BulkDeleteTask clean_task(&_table);
+    ConcurrentTable::BulkDeleteTask clean_task(_table);
     auto is_dead = [&](ObjectMonitor** monitor) {
       return (*monitor)->object_is_dead();
     };
@@ -271,7 +271,7 @@ public:
       lt.print("Start growing with load factor %f", get_load_factor());
       success = grow(current);
     } else {
-      if (!_table.is_max_size_reached() && Atomic::load(&_resize)) {
+      if (!_table->is_max_size_reached() && Atomic::load(&_resize)) {
         lt.print("WARNING: Getting resize hints with load factor %f", get_load_factor());
       }
       lt.print("Start cleaning with load factor %f", get_load_factor());
@@ -292,7 +292,7 @@ public:
       result = *found;
     };
     bool grow;
-    _table.insert_get(current, lookup_f, monitor, found_f, &grow);
+    _table->insert_get(current, lookup_f, monitor, found_f, &grow);
     verify_monitor_get_result(obj, result);
     if (grow) {
       try_notify_grow();
@@ -302,7 +302,7 @@ public:
 
   bool remove_monitor_entry(Thread* current, ObjectMonitor* monitor) {
     LookupMonitor lookup_f(monitor);
-    return _table.remove(current, lookup_f);
+    return _table->remove(current, lookup_f);
   }
 
   bool contains_monitor(Thread* current, ObjectMonitor* monitor) {
@@ -311,7 +311,7 @@ public:
     auto found_f = [&](ObjectMonitor** found) {
       result = true;
     };
-    _table.get(current, lookup_f, found_f);
+    _table->get(current, lookup_f, found_f);
     return result;
   }
 
@@ -326,9 +326,9 @@ public:
        return true;
     };
     if (SafepointSynchronize::is_at_safepoint()) {
-      _table.do_safepoint_scan(printer);
+      _table->do_safepoint_scan(printer);
     } else {
-      _table.do_scan(Thread::current(), printer);
+      _table->do_scan(Thread::current(), printer);
     }
   }
 };
