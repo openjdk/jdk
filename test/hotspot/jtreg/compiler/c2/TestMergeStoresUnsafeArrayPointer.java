@@ -54,6 +54,7 @@ public class TestMergeStoresUnsafeArrayPointer {
     static int four = 4;
     static int max_int = Integer.MAX_VALUE;
     static int min_int = Integer.MIN_VALUE;
+    static int val_2_to_30 = (1 << 30);
 
     public static void main(String[] args) {
         System.out.println("Allocate big array of SIZE = " + SIZE);
@@ -148,6 +149,23 @@ public class TestMergeStoresUnsafeArrayPointer {
             }
         }
 
+        val = 0;
+        System.out.println("test6");
+        for (int i = 0; i < 100_000; i++) {
+            testClear(big);
+            test6(big, ANCHOR);
+            long sum = testSum(big);
+            if (i == 0) {
+                val = sum;
+            } else {
+                if (sum != val) {
+                    System.out.println("ERROR: test6 had wrong value: " + val + " != " + sum);
+                    errors++;
+                    break;
+                }
+            }
+        }
+
         if (errors > 0) {
             throw new RuntimeException("ERRORS: " + errors);
         }
@@ -205,4 +223,13 @@ public class TestMergeStoresUnsafeArrayPointer {
         UNSAFE.putInt(a, base + (long)(min_int) - (long)(four) + 0, 0x42424242); // no overflow
         UNSAFE.putInt(a, base + (long)(min_int - four)         + 4, 0x66666666); // overflow
     }
+
+    // Test: if MergeStores is applied this can lead to wrong results
+    //  -> LShiftI needs overflow check.
+    static void test6(int[] a, long anchor) {
+        long base = UNSAFE.ARRAY_INT_BASE_OFFSET + anchor;
+        UNSAFE.putInt(a, base +  (long)(2 * val_2_to_30) + 0, 0x42424242); // overflow
+        UNSAFE.putInt(a, base + 2L * (long)(val_2_to_30) + 4, 0x66666666); // no overflow
+    }
+
 }

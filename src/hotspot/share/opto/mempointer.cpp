@@ -84,7 +84,6 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
         _con = _con + scale * con;
-        // TODO problematic: int con and int scale could overflow??? or irrelevant?
         return;
       }
       case Op_AddP:
@@ -120,7 +119,6 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_LShiftL:
       case Op_LShiftI:
       {
-        // TODO check if we should decompose or not: int-overflow!!!
         // Form must be linear: only multiplication with constants is allowed.
         Node* in1 = n->in(1);
         Node* in2 = n->in(2);
@@ -185,8 +183,13 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
   return true;
 #else
 
-  // TODO: trivially safe ops
-  // Not trivially safe: AddI, SubI, MulI, LShiftI
+  // Not trivially safe:
+  //   AddI:     ConvI2L(a + b)     != ConvI2L(a) + ConvI2L(b)
+  //   SubI:     ConvI2L(a - b)     != ConvI2L(a) - ConvI2L(b)
+  //   MulI:     ConvI2L(a * conI)  != ConvI2L(a) * convI2L(conI)
+  //   LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
+  //
+  // But these are always safe:
   switch(opc) {
     case Op_ConI:
     case Op_ConL:
@@ -202,7 +205,6 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 
     // TODO to find some counter-examples:
     case Op_MulI:
-    case Op_LShiftI:
       return true;
   }
 
