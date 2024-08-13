@@ -939,96 +939,16 @@ void InstructForm::build_components() {
   // Add top-level operands to the components
   if (_matrule)  _matrule->append_components(_localNames, _components);
   bool has_temp = build_components(_parameters, _components);
-  build_components(_parameters_unexpanded, _components_unexpanded);
-/*
-  // Add parameters that "do not appear in match rule".
-  bool has_temp = false;
-  const char *name;
-  const char *kill_name = nullptr;
-  for (_parameters.reset(); (name = _parameters.iter()) != nullptr;) {
-    OpClassForm *opForm = _localNames[name]->is_opclass();
-    assert(opForm != nullptr, "sanity");
-
-    Effect* e = nullptr;
-    {
-      const Form* form = _effects[name];
-      e = form ? form->is_effect() : nullptr;
-    }
-
-    if (e != nullptr) {
-      has_temp |= e->is(Component::TEMP);
-
-      // KILLs must be declared after any TEMPs because TEMPs are real
-      // uses so their operand numbering must directly follow the real
-      // inputs from the match rule.  Fixing the numbering seems
-      // complex so simply enforce the restriction during parse.
-      if (kill_name != nullptr &&
-          e->isa(Component::TEMP) && !e->isa(Component::DEF)) {
-        OpClassForm* kill = _localNames[kill_name]->is_opclass();
-        assert(kill != nullptr, "sanity");
-        globalAD->syntax_err(_linenum, "%s: %s %s must be at the end of the argument list\n",
-                             _ident, kill->_ident, kill_name);
-      } else if (e->isa(Component::KILL) && !e->isa(Component::USE)) {
-        kill_name = name;
-      }
-    }
-
-    const Component *component  = _components.search(name);
-    if ( component  == nullptr ) {
-      if (e) {
-        _components.insert(name, opForm->_ident, e->_use_def, false);
-        component = _components.search(name);
-        if (component->isa(Component::USE) && !component->isa(Component::TEMP) && _matrule) {
-          const Form *form = globalAD->globalNames()[component->_type];
-          assert( form, "component type must be a defined form");
-          OperandForm *op   = form->is_operand();
-          if (op->_interface && op->_interface->is_RegInterface()) {
-            globalAD->syntax_err(_linenum, "%s: illegal USE of non-input: %s %s\n",
-                                 _ident, opForm->_ident, name);
-          }
-        }
-      } else {
-        // This would be a nice warning but it triggers in a few places in a benign way
-        // if (_matrule != nullptr && !expands()) {
-        //   globalAD->syntax_err(_linenum, "%s: %s %s not mentioned in effect or match rule\n",
-        //                        _ident, opForm->_ident, name);
-        // }
-        _components.insert(name, opForm->_ident, Component::INVALID, false);
-      }
-    }
-    else if (e) {
-      // Component was found in the list
-      // Check if there is a new effect that requires an extra component.
-      // This happens when adding 'USE' to a component that is not yet one.
-      if ((!component->isa( Component::USE) && ((e->_use_def & Component::USE) != 0))) {
-        if (component->isa(Component::USE) && _matrule) {
-          const Form *form = globalAD->globalNames()[component->_type];
-          assert( form, "component type must be a defined form");
-          OperandForm *op   = form->is_operand();
-          if (op->_interface && op->_interface->is_RegInterface()) {
-            globalAD->syntax_err(_linenum, "%s: illegal USE of non-input: %s %s\n",
-                                 _ident, opForm->_ident, name);
-          }
-        }
-        _components.insert(name, opForm->_ident, e->_use_def, false);
-      } else {
-        Component  *comp = (Component*)component;
-        comp->promote_use_def_info(e->_use_def);
-      }
-      // Component positions are zero based.
-      int  pos  = _components.operand_position(name);
-      assert( ! (component->isa(Component::DEF) && (pos >= 1)),
-              "Component::DEF can only occur in the first position");
-    }
+  if (_parameters_unexpanded.count() > 0) {
+    bool has_temp_unexpanded = build_components(_parameters_unexpanded, _components_unexpanded);
+    assert(has_temp == has_temp_unexpanded, "must");
   }
-*/
+
   // Resolving the interactions between expand rules and TEMPs would
   // be complex so simply disallow it.
   if (_matrule == nullptr && has_temp) {
     globalAD->syntax_err(_linenum, "%s: TEMPs without match rule isn't supported\n", _ident);
   }
-
-  return;
 }
 
 bool InstructForm::build_components(NameList& parameters, ComponentList& components) {
@@ -1553,6 +1473,7 @@ void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, 
       }
       fprintf(fp," \t// %s\n", unique_opnd_ident(idx));
     }
+
     _parameters_unexpanded.reset();
     const char  * tmp = nullptr;
     while ((tmp = _parameters_unexpanded.iter()) != nullptr) {
@@ -1781,29 +1702,26 @@ void EncClass::add_rep_var(char *replacement_var) {
 
 // Lookup the function body for an encoding class
 int EncClass::rep_var_index(const char *rep_var) {
-  uint        position = 0;
-  const char *name     = nullptr;
-
-  _parameter_name.reset();
-  while ( (name = _parameter_name.iter()) != nullptr ) {
-    if ( strcmp(rep_var,name) == 0 ) return position;
-    ++position;
-  }
-
-  return -1;
+  return rep_var_index(rep_var, _parameter_name);
 }
+
 int EncClass::rep_var_index_unexpanded(const char *rep_var) {
+  return rep_var_index(rep_var, _parameter_name_unexpanded);
+}
+
+int EncClass::rep_var_index(const char *rep_var, NameList& parameter) {
   uint        position = 0;
   const char *name     = nullptr;
 
-  _parameter_name_unexpanded.reset();
-  while ( (name = _parameter_name_unexpanded.iter()) != nullptr ) {
+  parameter.reset();
+  while ( (name = parameter.iter()) != nullptr ) {
     if ( strcmp(rep_var,name) == 0 ) return position;
     ++position;
   }
 
   return -1;
 }
+
 // Check after parsing
 bool EncClass::verify() {
   // 1!!!!
@@ -1928,12 +1846,12 @@ InsEncode::~InsEncode() {
 }
 
 // Add "encode class name" and its parameters
-NameAndList *InsEncode::add_encode_expanded(char *encoding) {
+NameAndList *InsEncode::add_encode(char *encoding) {
   assert( encoding != nullptr, "Must provide name for encoding");
 
   // add_parameter(NameList::_signal);
   NameAndList *encode = new NameAndList(encoding);
-  _encoding_expanded.addName((char*)encode);
+  _encoding.addName((char*)encode);
 
   return encode;
 }
@@ -1949,25 +1867,23 @@ NameAndList *InsEncode::add_encode_unexpanded(char *encoding) {
 
 // Access the list of encodings
 void InsEncode::reset() {
-  _encoding_expanded.reset();
+  _encoding.reset();
   _encoding_unexpanded.reset();
   // _parameter.reset();
 }
 const char* InsEncode::encode_class_iter() {
-  NameAndList  *encode_class = (NameAndList*)_encoding_expanded.iter();
+  NameAndList  *encode_class = (NameAndList*)_encoding.iter();
   return  ( encode_class != nullptr ? encode_class->name() : nullptr );
 }
 // Obtain parameter name from zero based index
 const char *InsEncode::rep_var_name(InstructForm &inst, uint param_no) {
-  NameAndList *params = (NameAndList*)_encoding_expanded.current();
-  assert( params != nullptr, "Internal Error");
-  const char *param = (*params)[param_no];
-
-  // Remove '$' if parser placed it there.
-  return ( param != nullptr && *param == '$') ? (param+1) : param;
+  return rep_var_name(inst, param_no, _encoding);
 }
 const char *InsEncode::rep_var_name_unexpanded(InstructForm &inst, uint param_no) {
-  NameAndList *params = (NameAndList*)_encoding_unexpanded.current();
+  return rep_var_name(inst, param_no, _encoding_unexpanded);
+}
+const char *InsEncode::rep_var_name(InstructForm &inst, uint param_no, NameList& encoding) {
+  NameAndList *params = (NameAndList*)encoding.current();
   assert( params != nullptr, "Internal Error");
   const char *param = (*params)[param_no];
 
@@ -1985,9 +1901,9 @@ void InsEncode::output(FILE *fp) {
   const char  *parameter = nullptr;
 
   fprintf(fp,"InsEncode: ");
-  _encoding_expanded.reset();
+  _encoding.reset();
 
-  while ( (encoding = (NameAndList*)_encoding_expanded.iter()) != 0 ) {
+  while ( (encoding = (NameAndList*)_encoding.iter()) != 0 ) {
     // Output the encoding being used
     fprintf(fp,"%s(", encoding->name() );
 
@@ -2008,9 +1924,9 @@ void InsEncode::output(FILE *fp) {
 }
 
 void InsEncode::forms_do(FormClosure *f) {
-  _encoding_expanded.reset();
-  NameAndList *encoding = (NameAndList*)_encoding_expanded.iter();
-  for( ; encoding != nullptr; encoding = (NameAndList*)_encoding_expanded.iter() ) {
+  _encoding.reset();
+  NameAndList *encoding = (NameAndList*)_encoding.iter();
+  for( ; encoding != nullptr; encoding = (NameAndList*)_encoding.iter() ) {
     // just check name, other operands will be checked as instruction parameters
     f->do_form_by_name(encoding->name());
   }
@@ -2697,6 +2613,30 @@ const char *OperandForm::reduce_left(FormDict &globals)   const {
   return  ( _matrule ? _matrule->reduce_left(globals) : nullptr );
 }
 
+void OperandForm::append_expanded_operand(OperandForm *oper) {
+  assert(oper != nullptr, "sanity");
+  assert(_expanded_operands_num >= 0 && _expanded_operands_num < EXPANDED_OPER_LIMIT, "sanity");
+  _expanded_operands[_expanded_operands_num++] = oper->is_operand();
+}
+
+OperandForm* OperandForm::get_expanded_operand(int idx) {
+  assert(idx >= 0 && idx < _expanded_operands_num, "sanity");
+  return _expanded_operands[idx];
+}
+int OperandForm::get_expanded_operands_num() {
+  assert(_expanded_operands_num >= 0 && _expanded_operands_num <= EXPANDED_OPER_LIMIT, "sanity");
+  return _expanded_operands_num;
+}
+
+const char *OperandForm::get_expanded_oper_name(const char *name, int idx) {
+  assert(idx >= 0 && idx < EXPANDED_OPER_LIMIT, "must");
+
+  const char *suffix = "_expanded_";
+  const int len = strlen(name) + strlen(suffix) + 2;
+  char *buf = (char *)AdlAllocateHeap(len);
+  snprintf_checked(buf, len, "%s%s%d", name, suffix, idx);
+  return buf;
+}
 
 // --------------------------- FILE *output_routines
 //

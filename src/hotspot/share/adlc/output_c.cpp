@@ -1922,8 +1922,8 @@ private:
   OpClassForm  *_opclass;
   OperandForm  *_operand;
   int           _operand_idx;
-  int _operands_expanded[8];
-  int _operands_num;
+  int           _expanded_operands[OperandForm::EXPANDED_OPER_LIMIT];
+  int           _expanded_operands_num;
   const char   *_local_name;
   const char   *_operand_name;
   bool          _doing_disp;
@@ -1962,7 +1962,7 @@ public:
     _opclass       = nullptr;
     _operand       = nullptr;
     _operand_idx   = 0;
-    _operands_num  = 0;
+    _expanded_operands_num  = 0;
     _local_name    = "";
     _operand_name  = "";
     _doing_disp    = false;
@@ -2042,20 +2042,16 @@ public:
           _opclass        = opc;
           _operand_idx    = idx != -1 ? idx : idx_unexpanded + _inst._num_uniq - 1;
           if (idx != -1) {
-            _operands_num = 0;
+            _expanded_operands_num = 0;
           } else {
             OperandForm *operand = opc->is_operand();
-            assert(operand != nullptr, "must");
-            char tmp[1024];
-            for (int i = 0; i < operand->_expanded_operands_num; i++) {
-              strcpy(tmp, inst_rep_var);
-              tmp[strlen(inst_rep_var)] = '_';
-              tmp[strlen(inst_rep_var) + 1] = '0' + i;
-              tmp[strlen(inst_rep_var) + 2] = '\0';
-              int expanded_idx  = _inst.operand_position_format(tmp);
-              _operands_expanded[i] = expanded_idx;
+            assert(operand != nullptr, "sanity");
+            for (int i = 0; i < operand->get_expanded_operands_num(); i++) {
+              const char* expanded = OperandForm::get_expanded_oper_name(inst_rep_var, i);
+              int expanded_idx  = _inst.operand_position_format(expanded);
+              _expanded_operands[i] = expanded_idx;
             }
-            _operands_num = operand->_expanded_operands_num;
+            _expanded_operands_num = operand->get_expanded_operands_num();
           }
           _local_name     = rep_var;
           _operand_name   = inst_rep_var;
@@ -2424,13 +2420,14 @@ private:
           // TODO
           fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
-          if (_operands_num == 0) {
+          if (_expanded_operands_num == 0) {
             if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           } else {
-            assert(_operands_num > 0, "must");
-            fprintf(_fp, ",%d", _operands_num);
-            for (int i = 0; i < _operands_num; i++) {
-              fprintf(_fp,",idx%d", _operands_expanded[i]);
+            assert(_expanded_operands_num > 0 && _expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
+            fprintf(_fp, ",%d", _expanded_operands_num);
+            for (int i = 0; i < _expanded_operands_num; i++) {
+              assert(_expanded_operands[i] >= 0, "sanity");
+              fprintf(_fp,",idx%d", _expanded_operands[i]);
             }
           }
           fprintf(_fp,")");
@@ -2563,8 +2560,8 @@ private:
             fprintf(_fp,"opnd_array(%d)",idx);
           } else { // idx_unexpanded != -1
             OperandForm *operand = opc->is_operand();
-            assert(operand != nullptr, "must");
-            assert(operand->_expanded_operands_num > 0, "must");
+            assert(operand != nullptr, "sanity");
+            assert(operand->get_expanded_operands_num() > 0, "sanity");
             fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst._num_uniq - 1);
             fprintf(_fp,")");
           }
@@ -2651,9 +2648,9 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
     fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
     abort();
   }
-  if (ins_encode->current_encoding_num_args_expanded() != encoding->num_args()) {
+  if (ins_encode->current_encoding_num_args() != encoding->num_args()) {
     globalAD->syntax_err(ins_encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                         inst._ident, ins_encode->current_encoding_num_args_expanded(),
+                         inst._ident, ins_encode->current_encoding_num_args(),
                          ec_name, encoding->num_args());
   }
 
@@ -2775,9 +2772,9 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
       abort();
     }
 
-    if (encode->current_encoding_num_args_expanded() != encoding->num_args()) {
+    if (encode->current_encoding_num_args() != encoding->num_args()) {
       globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                           inst._ident, encode->current_encoding_num_args_expanded(),
+                           inst._ident, encode->current_encoding_num_args(),
                            ec_name, encoding->num_args());
     }
 
@@ -2856,9 +2853,9 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
       abort();
     }
 
-    if (encode->current_encoding_num_args_expanded() != encoding->num_args()) {
+    if (encode->current_encoding_num_args() != encoding->num_args()) {
       globalAD->syntax_err(encode->_linenum, "In %s: passing %d arguments to %s but expecting %d",
-                           inst._ident, encode->current_encoding_num_args_expanded(),
+                           inst._ident, encode->current_encoding_num_args(),
                            ec_name, encoding->num_args());
     }
 

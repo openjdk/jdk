@@ -230,7 +230,6 @@ public:
   Predicate *build_predicate();
 
   virtual void        build_components(); // top-level operands
-  bool        build_components(NameList& params, ComponentList& components);
   // Return zero-based position in component list; -1 if not in list.
   virtual int         operand_position(const char *name, int usedef);
   virtual int         operand_position_format(const char *name);
@@ -320,6 +319,9 @@ public:
   virtual void dump();             // Debug printer
   virtual void output(FILE *fp);   // Write to output files
   virtual void forms_do(FormClosure *f);
+
+private:
+  bool build_components(NameList& params, ComponentList& components);
 };
 
 //------------------------------EncodeForm-------------------------------------
@@ -393,6 +395,9 @@ public:
   void dump();
   void output(FILE *fp);
   virtual void forms_do(FormClosure* f);
+
+private:
+  static int rep_var_index(const char *rep_var, NameList& parameter);
 };
 
 //------------------------------MachNode---------------------------------------
@@ -450,7 +455,7 @@ private:
   // Public Data (access directly only for reads)
   // The encodings can only have the values predefined by the ADLC:
   // blank, RegReg, RegMem, MemReg, ...
-  NameList    _encoding_expanded;
+  NameList    _encoding;
   NameList    _encoding_unexpanded;
   // NameList    _parameter;
   // The parameters for each encoding are preceded by a NameList::_signal
@@ -464,7 +469,7 @@ public:
   ~InsEncode();
 
   // Add "encode class name" and its parameters
-  NameAndList  *add_encode_expanded(char *encode_method_name);
+  NameAndList  *add_encode(char *encode_method_name);
   NameAndList  *add_encode_unexpanded(char *encode_method_name);
   // Parameters are added to the returned "NameAndList" by the parser
 
@@ -473,8 +478,8 @@ public:
   const char   *encode_class_iter();
 
   // Returns the number of arguments to the current encoding in the iteration
-  int current_encoding_num_args_expanded() {
-    return ((NameAndList*)_encoding_expanded.current())->count();
+  int current_encoding_num_args() {
+    return ((NameAndList*)_encoding.current())->count();
   }
 
   // --------------------------- Parameters
@@ -488,6 +493,9 @@ public:
   void dump();
   void output(FILE *fp);
   virtual void forms_do(FormClosure *f);
+
+private:
+  const char *rep_var_name(InstructForm &inst, uint param_no, NameList& encoding);
 };
 
 //------------------------------Effect-----------------------------------------
@@ -611,8 +619,13 @@ public:
 
 //------------------------------OperandForm------------------------------------
 class OperandForm : public OpClassForm {
+public:
+  static constexpr int EXPANDED_OPER_LIMIT = 8;
+
 private:
   bool         _ideal_only; // Not a user-defined instruction
+  OperandForm  *_expanded_operands[EXPANDED_OPER_LIMIT];
+  int          _expanded_operands_num;
 
 public:
   // Public Data
@@ -626,8 +639,6 @@ public:
   ConstructRule *_construct;  // Construction of operand data after matching
   FormatRule    *_format;     // Format for assembly generation
   NameList       _classes;    // List of opclasses which contain this oper
-  OperandForm   *_expanded_operands[8];
-  int           _expanded_operands_num;
 
   ComponentList _components;  //
 
@@ -719,6 +730,10 @@ public:
   const char         *reduce_right(FormDict &globals)  const;
   const char         *reduce_left(FormDict &globals)   const;
 
+  void append_expanded_operand(OperandForm *oper);
+  OperandForm* get_expanded_operand(int idx);
+  int get_expanded_operands_num();
+  static const char  *get_expanded_oper_name(const char *name, int idx);
 
   // --------------------------- FILE *output_routines
   //
