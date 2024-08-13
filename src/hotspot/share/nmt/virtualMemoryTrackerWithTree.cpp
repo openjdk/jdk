@@ -43,6 +43,7 @@ bool VirtualMemoryTrackerWithTree::Instance::initialize(NMT_TrackingLevel level)
 
 bool VirtualMemoryTrackerWithTree::Instance::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MEMFLAGS flag) {
+    assert(_tracker != nullptr, "Sanity check");
     return _tracker->add_reserved_region(base_addr, size, stack, flag);
 }
 
@@ -58,6 +59,7 @@ bool VirtualMemoryTrackerWithTree::add_reserved_region(address base_addr, size_t
 }
 
 void VirtualMemoryTrackerWithTree::Instance::set_reserved_region_type(address addr, MEMFLAGS flag) {
+  assert(_tracker != nullptr, "Sanity check");
   _tracker->set_reserved_region_type(addr, flag);
 }
 
@@ -108,6 +110,7 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
 }
 
 void VirtualMemoryTrackerWithTree::Instance::apply_summary_diff(VMATree::SummaryDiff diff) {
+  assert(_tracker != nullptr, "Sanity check");
   _tracker->apply_summary_diff(diff);
 }
 
@@ -158,6 +161,7 @@ void VirtualMemoryTrackerWithTree::apply_summary_diff(VMATree::SummaryDiff diff)
 
 bool VirtualMemoryTrackerWithTree::Instance::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->add_committed_region(addr, size, stack);
 }
 
@@ -169,6 +173,7 @@ bool VirtualMemoryTrackerWithTree::add_committed_region(address addr, size_t siz
 }
 
 bool VirtualMemoryTrackerWithTree::Instance::remove_uncommitted_region(address addr, size_t size) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->remove_uncommitted_region(addr, size);
 }
 
@@ -180,6 +185,7 @@ bool VirtualMemoryTrackerWithTree::remove_uncommitted_region(address addr, size_
 }
 
 bool VirtualMemoryTrackerWithTree::Instance::remove_released_region(address addr, size_t size) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->remove_released_region(addr, size);
 }
 
@@ -191,6 +197,7 @@ bool VirtualMemoryTrackerWithTree::remove_released_region(address addr, size_t s
 }
 
 bool VirtualMemoryTrackerWithTree::Instance::split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->split_reserved_region(addr, size, split, flag, split_flag);
 }
 
@@ -201,6 +208,7 @@ bool VirtualMemoryTrackerWithTree::split_reserved_region(address addr, size_t si
 }
 
 bool VirtualMemoryTrackerWithTree::Instance::print_containing_region(const void* p, outputStream* st) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->print_containing_region(p, st);
 }
 
@@ -219,6 +227,7 @@ bool VirtualMemoryTrackerWithTree::print_containing_region(const void* p, output
 }
 
 bool VirtualMemoryTrackerWithTree::Instance::walk_virtual_memory(VirtualMemoryWalker* walker) {
+  assert(_tracker != nullptr, "Sanity check");
   return _tracker->walk_virtual_memory(walker);
 }
 
