@@ -823,7 +823,7 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   // Perform handshake to flush out dead oops
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
   }
 }
 

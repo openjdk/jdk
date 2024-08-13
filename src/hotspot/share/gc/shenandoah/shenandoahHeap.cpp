@@ -1744,12 +1744,12 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
 
 class ShenandoahRendezvousClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
+void ShenandoahHeap::rendezvous_threads(const char* name) {
+  ShenandoahRendezvousClosure cl(name);
   Handshake::execute(&cl);
 }
 

@@ -179,7 +179,7 @@ private:
   SATBMarkQueueSet& _qset;
 public:
   ShenandoahFlushSATBHandshakeClosure(SATBMarkQueueSet& qset) :
-    HandshakeClosure("Shenandoah Flush SATB Handshake"),
+    HandshakeClosure("Shenandoah Flush SATB"),
     _qset(qset) {}
 
   void do_thread(Thread* thread) {
