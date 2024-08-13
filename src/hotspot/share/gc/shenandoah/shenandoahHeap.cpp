@@ -2503,7 +2503,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
   // point to deal with case when Shenandoah runs with smaller regions.
   // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
-  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriterConsts::MIN_GC_REGION_ALIGNMENT) {
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
     return nullptr;
   }
 
@@ -2517,13 +2517,6 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
     for (size_t c = start_idx; c < start_idx + num_regions; c++) {
       get_region(c)->make_regular_bypass();
     }
-  }
-
-  // If the trailing region is not full, we need to adjust its top.
-  size_t tail = (size % ShenandoahHeapRegion::region_size_words());
-  if (tail > 0) {
-    ShenandoahHeapRegion* tail_reg = get_region(start_idx + num_regions);
-    tail_reg->set_new_top(tail_reg->bottom() + tail);
   }
 
   return mem;
