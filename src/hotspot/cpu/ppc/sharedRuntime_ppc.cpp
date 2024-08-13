@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"

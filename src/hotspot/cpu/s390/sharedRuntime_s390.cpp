@@ -43,7 +43,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/vframeArray.hpp"
+riscv/#include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_s390.inline.hpp"
