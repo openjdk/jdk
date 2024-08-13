@@ -543,7 +543,7 @@ char* UNICODE::as_utf8(const jchar* base, int length, char* buf, size_t buflen) 
   for (int index = 0; index < length; index++) {
     jchar c = base[index];
     size_t sz = utf8_size(c);
-    if (sz > buflen)  break; // string is truncated
+    if (sz >= buflen) break; // string is truncated
     buflen -= sz;
     p = utf8_write(p, c);
   }
@@ -557,7 +557,7 @@ char* UNICODE::as_utf8(const jbyte* base, int length, char* buf, size_t buflen) 
   for (int index = 0; index < length; index++) {
     jbyte c = base[index];
     size_t sz = utf8_size(c);
-    if (sz > buflen)  break; // string is truncated
+    if (sz >= buflen) break; // string is truncated
     buflen -= sz;
     if (sz == 1) {
       // Copy ASCII characters (UTF-8 is ASCII compatible)
