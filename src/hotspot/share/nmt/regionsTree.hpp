@@ -144,14 +144,19 @@ class RegionsTree : public VMATree {
           tty->print_cr("----------------- size differ, distance: " SIZE_FORMAT " size: " SIZE_FORMAT, r_size, rgn_size);
         }
         if (rgn_size == 0) {
-          prev = nullptr;
+          prev.clear_node();
           return true;
         }
         ReservedMemoryRegion rmr((address)begin_node.position(), rgn_size, st, begin_node.out_flag());
         if (!func(rmr))
           return false;
         rgn_size = 0;
-        begin_node = curr;
+        if (!curr.is_released_begin())
+          begin_node = curr;
+        else {
+          begin_node.clear_node();
+          prev.clear_node();
+        }
       }
 
       return true;

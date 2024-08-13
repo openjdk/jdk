@@ -31,22 +31,19 @@
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
-using Tree = VMATree;
-using Node = Tree::TreapNode;
-using NCS = NativeCallStackStorage;
 class RegionsTreeTest : public testing::Test {
  public:
   RegionsTree rt;
   RegionsTreeTest() : rt(true) { }
-
 };
 
-TEST_VM_F(RegionsTreeTest, find_reserved_region) {
+TEST_VM_F(RegionsTreeTest, FindReservedRegion) {
   NativeCallStack ncs;
-  rt.reserve_mapping(1000, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1200, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1300, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1400, 50, rt.make_region_data(ncs, mtTest));
+  VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
+  rt.reserve_mapping(1000, 50, rd);
+  rt.reserve_mapping(1200, 50, rd);
+  rt.reserve_mapping(1300, 50, rd);
+  rt.reserve_mapping(1400, 50, rd);
   ReservedMemoryRegion rmr;
   rmr = rt.find_reserved_region((address)1205);
   EXPECT_EQ(rmr.base(), (address)1200);
@@ -58,28 +55,28 @@ TEST_VM_F(RegionsTreeTest, find_reserved_region) {
   EXPECT_EQ(rmr.base(), (address)1000);
 }
 
-TEST_VM_F(RegionsTreeTest, visit_reserved_regions) {
+TEST_VM_F(RegionsTreeTest, VisitReservedRegions) {
   NativeCallStack ncs;
-  ResourceMark rm;
-  rt.reserve_mapping(1000, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1200, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1300, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1400, 50, rt.make_region_data(ncs, mtTest));
+  VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
+  rt.reserve_mapping(1000, 50, rd);
+  rt.reserve_mapping(1200, 50, rd);
+  rt.reserve_mapping(1300, 50, rd);
+  rt.reserve_mapping(1400, 50, rd);
 
-  rt.visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    EXPECT_EQ((size_t)rgn.base() % 100, 0UL);
+  rt.visit_reserved_regions([&](const ReservedMemoryRegion& rgn) {
+    EXPECT_EQ(((size_t)rgn.base()) % 100, 0UL);
     EXPECT_EQ(rgn.size(), 50UL);
     return true;
   });
 }
 
-TEST_VM_F(RegionsTreeTest, visit_committed_regions) {
+TEST_VM_F(RegionsTreeTest, VisitCommittedRegions) {
   NativeCallStack ncs;
-  ResourceMark rm;
-  rt.reserve_mapping(1000, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1200, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1300, 50, rt.make_region_data(ncs, mtTest));
-  rt.reserve_mapping(1400, 50, rt.make_region_data(ncs, mtTest));
+  VMATree::RegionData rd = rt.make_region_data(ncs, mtTest);
+  rt.reserve_mapping(1000, 50, rd);
+  rt.reserve_mapping(1200, 50, rd);
+  rt.reserve_mapping(1300, 50, rd);
+  rt.reserve_mapping(1400, 50, rd);
 
   rt.commit_region((address)1010, 5UL, ncs);
   rt.commit_region((address)1020, 5UL, ncs);

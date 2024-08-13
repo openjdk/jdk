@@ -33,12 +33,11 @@
 
 class VirtualMemoryTrackerWithTree {
  private:
-  RegionsTree* _tree;
+  RegionsTree _tree;
 
  public:
-  VirtualMemoryTrackerWithTree(bool is_detailed_mode) {
-    _tree = new RegionsTree(is_detailed_mode);
-  }
+  VirtualMemoryTrackerWithTree(bool is_detailed_mode) : _tree(is_detailed_mode) { }
+
   bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack, MEMFLAGS flag = mtNone);
   bool add_committed_region      (address base_addr, size_t size, const NativeCallStack& stack);
   bool remove_uncommitted_region (address base_addr, size_t size);
@@ -61,7 +60,7 @@ class VirtualMemoryTrackerWithTree {
   // Snapshot current thread stacks
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff diff);
-  RegionsTree* tree() { return _tree; }
+  RegionsTree* tree() { return &_tree; }
   class Instance : public AllStatic {
     friend class VirtualMemoryTrackerTest;
     friend class CommittedVirtualMemoryTest;

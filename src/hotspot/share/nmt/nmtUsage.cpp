@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/threadCritical.hpp"
 
 // Enabled all options for snapshot.
