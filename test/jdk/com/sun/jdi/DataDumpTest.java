@@ -41,6 +41,7 @@ import com.sun.jdi.event.Event;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.request.EventRequest;
 import com.sun.jdi.request.ClassPrepareRequest;
+
 /**
  * @test
  * @bug  8332488
