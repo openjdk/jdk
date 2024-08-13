@@ -307,6 +307,7 @@ private:
   MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
+    // TODO test with more summands?
     for (int i = 0; i < summands.length(); i++) {
       _summands[i] = summands.at(i);
     }

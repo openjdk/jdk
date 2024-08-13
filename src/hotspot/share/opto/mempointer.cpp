@@ -43,6 +43,8 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     parse_sub_expression(_worklist.pop());
   }
 
+  // TODO: sort and combine summands!
+
   // for (int i = 0; i < _summands.length(); i++) {
   //   MemPointerSummand summand = _summands.at(i);
   //   summand.print();
@@ -204,6 +206,8 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
     case Op_ConvI2L:
       return true;
   }
+
+  // TODO tests with native memory, etc.
 
   // TODO needed?
   if (scaleL.is_NaN()) {
