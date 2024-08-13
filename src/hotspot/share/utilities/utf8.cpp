@@ -103,7 +103,7 @@ char* UTF8::next_character(const char* str, jint* value) {
 // a 2 or 3-byte multi-byte sequence, all others are either characters
 // themselves or else the start of a multi-byte character.
 
-// Calculate the unicode length of a utf8 sequence of known size
+// Calculate the unicode length of a utf8 string of known size
 // by counting bytes of the form 10xxxxxx and deducting this count
 // from the total byte count.  The utf8 string must be in
 // legal form which has been verified in the format checker.
@@ -127,8 +127,8 @@ int UTF8::unicode_length(const char* str, size_t len, bool& is_latin1, bool& has
   return checked_cast<int>(num_chars);
 }
 
-// Calculate the unicode length of a nul-terminated utf8 sequence
-// By counting bytes of the utf8 string except those in the form
+// Calculate the unicode length of a nul-terminated utf8 string
+// by counting bytes of the utf8 string except those in the form
 // 10xxxxxx. The utf8 string must be in legal form and has been
 // verified in the format checker.
 int UTF8::unicode_length(const char* str, bool& is_latin1, bool& has_multibyte) {
