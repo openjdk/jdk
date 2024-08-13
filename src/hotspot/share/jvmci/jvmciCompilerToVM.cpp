@@ -550,7 +550,7 @@ C2V_VMENTRY_NULL(jobject, getImplementor, (JNIEnv* env, jobject, ARGUMENT_PAIR(k
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (!klass->is_interface()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-        err_msg("Expected interface type, got %s", klass->external_name()));
+                   err_msg("Expected interface type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
   JVMCIKlassHandle handle(THREAD, iklass->implementor());
