@@ -1883,16 +1883,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Check for safepoint operation in progress and/or pending suspend requests.
   {
-    // We need an acquire here to ensure that any subsequent load of the
-    // global SafepointSynchronize::_state flag is ordered after this load
-    // of the thread-local polling word.  We don't want this poll to
-    // return false (i.e. not safepointing) and a later poll of the global
-    // SafepointSynchronize::_state spuriously to return true.
-    //
-    // This is to avoid a race when we're in a native->Java transition
-    // racing the code which wakes up from a safepoint.
-
-    __ safepoint_poll(safepoint_in_progress, true /* at_return */, true /* acquire */, false /* in_nmethod */);
+    // No need for acquire as Java threads always disarm themselves.
+    __ safepoint_poll(safepoint_in_progress, true /* at_return */, false /* acquire */, false /* in_nmethod */);
     __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
     __ cbnzw(rscratch1, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);

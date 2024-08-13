@@ -1730,8 +1730,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmn(r_bitmap, (u1)1);
-  br(EQ, L_huge);
+  cmpw(r_array_length, (u1)(Klass::SECONDARY_SUPERS_TABLE_SIZE - 2));
+  br(GT, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
