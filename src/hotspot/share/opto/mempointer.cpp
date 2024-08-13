@@ -184,9 +184,9 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 #else
 
   // Not trivially safe:
-  //   AddI:     ConvI2L(a + b)     != ConvI2L(a) + ConvI2L(b)
-  //   SubI:     ConvI2L(a - b)     != ConvI2L(a) - ConvI2L(b)
-  //   MulI:     ConvI2L(a * conI)  != ConvI2L(a) * convI2L(conI)
+  //   AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
+  //   SubI:     ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
+  //   MulI:     ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
   //   LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
   //
   // But these are always safe:
