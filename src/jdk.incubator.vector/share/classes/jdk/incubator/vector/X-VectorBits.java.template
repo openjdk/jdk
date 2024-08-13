@@ -144,14 +144,10 @@ final class $vectortype$ extends $abstractvectortype$ {
     $shuffletype$ iotaShuffle() { return $shuffletype$.IOTA; }
 
     @ForceInline
-    $shuffletype$ iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    $shuffletype$ iotaShuffle(int start, int step, boolean partialWrap) {
+      return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -160,11 +156,21 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    $shuffletype$ shuffleFromArray(int[] indexes, int i) { return new $shuffletype$(indexes, i); }
+    $shuffletype$ shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new $shuffletype$(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    $shuffletype$ shuffleFromOp(IntUnaryOperator fn) { return new $shuffletype$(fn); }
+    $shuffletype$ shuffleFromArray(int[] indexes, int i) { return new $shuffletype$(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    $shuffletype$ shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new $shuffletype$(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    $shuffletype$ shuffleFromOp(IntUnaryOperator fn) { return new $shuffletype$(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -362,8 +368,13 @@ final class $vectortype$ extends $abstractvectortype$ {
     }
 
     @ForceInline
+    public VectorShuffle<$Boxtype$> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate($shuffletype$.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<$Boxtype$> toShuffle() {
-        return super.toShuffleTemplate($shuffletype$.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -468,12 +479,19 @@ final class $vectortype$ extends $abstractvectortype$ {
     @Override
     @ForceInline
     public $vectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle,
-                                  VectorMask<$Boxtype$> m) {
+                                  VectorMask<$Boxtype$> m, boolean wrap) {
         return ($vectortype$)
             super.rearrangeTemplate($shuffletype$.class,
                                     $masktype$.class,
                                     ($shuffletype$) shuffle,
-                                    ($masktype$) m);  // specialize
+                                    ($masktype$) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public $vectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle,
+                                  VectorMask<$Boxtype$> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -504,18 +522,31 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    public $vectortype$ selectFrom(Vector<$Boxtype$> v) {
+    public $vectortype$ selectFrom(Vector<$Boxtype$> v, boolean wrap) {
         return ($vectortype$)
-            super.selectFromTemplate(($vectortype$) v);  // specialize
+            super.selectFromTemplate(($vectortype$) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public $vectortype$ selectFrom(Vector<$Boxtype$> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public $vectortype$ selectFrom(Vector<$Boxtype$> v,
+                                   VectorMask<$Boxtype$> m, boolean wrap) {
+        return ($vectortype$)
+            super.selectFromTemplate(($vectortype$) v,
+                                     ($masktype$) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public $vectortype$ selectFrom(Vector<$Boxtype$> v,
                                    VectorMask<$Boxtype$> m) {
-        return ($vectortype$)
-            super.selectFromTemplate(($vectortype$) v,
-                                     ($masktype$) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -1082,16 +1113,28 @@ final class $vectortype$ extends $abstractvectortype$ {
             super(VLENGTH, reorder);
         }
 
+        public $shuffletype$(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public $shuffletype$(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public $shuffletype$(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public $shuffletype$(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public $shuffletype$(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public $shuffletype$(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

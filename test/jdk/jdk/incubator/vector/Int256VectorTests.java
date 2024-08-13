@@ -1305,7 +1305,7 @@ public class Int256VectorTests extends AbstractVectorTest {
     static void smokeTest2() {
         // Do some zipping and shuffling.
         IntVector io = (IntVector) SPECIES.broadcast(0).addIndex(1);
-        IntVector io2 = (IntVector) VectorShuffle.iota(SPECIES,0,1,false).toVector();
+        IntVector io2 = (IntVector) VectorShuffle.iota(SPECIES,0,1,true).toVector();
         Assert.assertEquals(io, io2);
         IntVector a = io.add((int)1); //[1,2]
         IntVector b = a.neg();  //[-1,-2]

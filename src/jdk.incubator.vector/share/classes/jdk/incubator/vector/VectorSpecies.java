@@ -584,17 +584,36 @@ public interface VectorSpecies<E> {
      * Creates a shuffle for this species from
      * a series of source indexes.
      *
-     * <p> For each shuffle lane, where {@code N} is the shuffle lane
-     * index, the {@code N}th index value is validated
+     * <p> If {@code partialWrap} is true, for each shuffle lane,
+     * where {@code N} is the shuffle lane index,
+     * the {@code N}th index value is validated
      * against the species {@code VLENGTH}, and (if invalid)
      * is partially wrapped to an exceptional index in the
      * range {@code [-VLENGTH..-1]}.
      *
+     * @param partialWrap if true partially wrap any any invalid index to an
+     *                    exceptional index
      * @param sourceIndexes the source indexes which the shuffle will draw from
      * @return a shuffle where each lane's source index is set to the given
      *         {@code int} value, partially wrapped if exceptional
      * @throws IndexOutOfBoundsException if {@code sourceIndexes.length != VLENGTH}
      * @see VectorShuffle#fromValues(VectorSpecies,int...)
+     */
+    VectorShuffle<E> shuffleFromValues(boolean partialWrap, int... sourceIndexes);
+
+    /**
+     * Creates a shuffle for this species from
+     * a series of source indexes.
+     *
+     * <p> For each shuffle lane, where {@code N} is the shuffle lane
+     * index, the {@code N}th index value is set to the given
+     * {@code int} value TBD (cast to byte)
+     *
+     * @param sourceIndexes the source indexes which the shuffle will draw from
+     * @return a shuffle where each lane's source index is set to the given
+     *         {@code int} value
+     * @throws IndexOutOfBoundsException if {@code sourceIndexes.length != VLENGTH}
+     * @see VectorSpecies#shuffleFromValues(int...)
      */
     VectorShuffle<E> shuffleFromValues(int... sourceIndexes);
 
@@ -602,24 +621,79 @@ public interface VectorSpecies<E> {
      * Creates a shuffle for this species from
      * an {@code int} array starting at an offset.
      *
-     * <p> For each shuffle lane, where {@code N} is the shuffle lane
-     * index, the array element at index {@code i + N} is validated
+     * <p> If {@code partialWrap} is true, for each shuffle lane,
+     * where {@code N} is the shuffle lane index, the array element
+     * at index {@code offset + N} is validated
      * against the species {@code VLENGTH}, and (if invalid)
      * is partially wrapped to an exceptional index in the
      * range {@code [-VLENGTH..-1]}.
      *
      * @param sourceIndexes the source indexes which the shuffle will draw from
      * @param offset the offset into the array
+     * @param partialWrap if true partially wrap any any invalid index to an
+     *                    exceptional index
      * @return a shuffle where each lane's source index is set to the given
-     *         {@code int} value, partially wrapped if exceptional
+     *         {@code int} value, optionally partially wrapped
      * @throws IndexOutOfBoundsException if {@code offset < 0}, or
      *         {@code offset > sourceIndexes.length - VLENGTH}
-     * @see VectorShuffle#fromArray(VectorSpecies,int[],int)
+     * @see VectorSpecies#shuffleFromArray(int[], int)
+     */
+    VectorShuffle<E> shuffleFromArray(int[] sourceIndexes, int offset, boolean partialWrap);
+
+    /**
+     * Creates a shuffle for this species from
+     * an {@code int} array starting at an offset.
+     *
+     * <p> For each shuffle lane, where {@code N} is the shuffle lane
+     * index, the {@code N}th index value is set to the array element
+     * value at index {@code offset + N}
+     *
+     * @param sourceIndexes the source indexes which the shuffle will draw from
+     * @param offset the offset into the array
+     * @return a shuffle where each lane's source index is set to the given
+     *         {@code int} value at index {@code offset + N}
+     * @throws IndexOutOfBoundsException if {@code offset < 0}, or
+     *         {@code offset > sourceIndexes.length - VLENGTH}
+     * @see VectorSpecies#shuffleFromArray(int[], int)
      */
     VectorShuffle<E> shuffleFromArray(int[] sourceIndexes, int offset);
 
     /**
      * Creates a shuffle for this species from
+     * the successive values of an operator applied to
+     * the range {@code [0..VLENGTH-1]}.
+     *
+     * <p> If {@code partialWrap} is true, for each shuffle lane,
+     * where {@code N} is the shuffle lane index, the {@code N}th index
+     * value is validated against the species {@code VLENGTH}, and (if invalid)
+     * is partially wrapped to an exceptional index in the
+     * range {@code [-VLENGTH..-1]}.
+     *
+     * <p> Care should be taken to ensure {@code VectorShuffle} values
+     * produced from this method are consumed as constants to ensure
+     * optimal generation of code.  For example, shuffle values can be
+     * held in {@code static final} fields or loop-invariant local variables.
+     *
+     * <p> This method behaves as if a shuffle is created from an array of
+     * mapped indexes as follows:
+     * <pre>{@code
+     *   int[] a = new int[species.length()];
+     *   for (int i = 0; i < a.length; i++) {
+     *       a[i] = fn.applyAsInt(i);
+     *   }
+     *   return VectorShuffle.fromArray(a, 0, false);
+     * }</pre>
+     *
+     * @param fn the lane index mapping function
+     * @param partialWrap if true partially wrap any any invalid index to an
+     *                    exceptional index
+     * @return a shuffle of mapped indexes
+     * @see VectorSpecies#shuffleFromOp(IntUnaryOperator)
+     */
+    VectorShuffle<E> shuffleFromOp(IntUnaryOperator fn, boolean partialWrap);
+
+    /**
+     * Creates a shuffle for a given species from
      * the successive values of an operator applied to
      * the range {@code [0..VLENGTH-1]}.
      *
@@ -637,16 +711,16 @@ public interface VectorSpecies<E> {
      * <p> This method behaves as if a shuffle is created from an array of
      * mapped indexes as follows:
      * <pre>{@code
-     *   int[] a = new int[VLENGTH];
+     *   int[] a = new int[species.length()];
      *   for (int i = 0; i < a.length; i++) {
      *       a[i] = fn.applyAsInt(i);
      *   }
-     *   return VectorShuffle.fromArray(this, a, 0);
+     *   return VectorShuffle.fromArray(a, 0);
      * }</pre>
      *
      * @param fn the lane index mapping function
      * @return a shuffle of mapped indexes
-     * @see VectorShuffle#fromOp(VectorSpecies,IntUnaryOperator)
+     * @see VectorSpecies#shuffleFromOp(IntUnaryOperator)
      */
     VectorShuffle<E> shuffleFromOp(IntUnaryOperator fn);
 
@@ -676,11 +750,11 @@ public interface VectorSpecies<E> {
      *
      * @param start the starting value of the source index sequence, typically {@code 0}
      * @param step the difference between adjacent source indexes, typically {@code 1}
-     * @param wrap whether to wrap resulting indexes modulo {@code VLENGTH}
+     * @param partialWrap whether to partially wrap resulting indexes
      * @return a shuffle of sequential lane indexes
      * @see VectorShuffle#iota(VectorSpecies,int,int,boolean)
      */
-    VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap);
+    VectorShuffle<E> iotaShuffle(int start, int step, boolean partialWrap);
 
     /**
      * Returns a string of the form "Species[ETYPE, VLENGTH, SHAPE]",

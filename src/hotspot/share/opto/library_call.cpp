@@ -713,6 +713,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_mask_operation();
   case vmIntrinsics::_VectorShuffleToVector:
     return inline_vector_shuffle_to_vector();
+  case vmIntrinsics::_VectorToShuffle:
+    return inline_vector_to_shuffle();
   case vmIntrinsics::_VectorShuffleWrapIndexes:
     return inline_vector_shuffle_wrap_indexes();
   case vmIntrinsics::_VectorLoadOp:

@@ -142,14 +142,10 @@ final class Int128Vector extends IntVector {
     Int128Shuffle iotaShuffle() { return Int128Shuffle.IOTA; }
 
     @ForceInline
-    Int128Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Int128Shuffle)VectorSupport.shuffleIota(ETYPE, Int128Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Int128Shuffle)VectorSupport.shuffleIota(ETYPE, Int128Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Int128Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Int128Shuffle)VectorSupport.shuffleIota(ETYPE, Int128Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
-    Int128Shuffle shuffleFromArray(int[] indexes, int i) { return new Int128Shuffle(indexes, i); }
+    Int128Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Int128Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Int128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Int128Shuffle(fn); }
+    Int128Shuffle shuffleFromArray(int[] indexes, int i) { return new Int128Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Int128Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Int128Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Int128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Int128Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -358,8 +364,13 @@ final class Int128Vector extends IntVector {
     }
 
     @ForceInline
+    public VectorShuffle<Integer> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Int128Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        return super.toShuffleTemplate(Int128Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -462,12 +473,19 @@ final class Int128Vector extends IntVector {
     @Override
     @ForceInline
     public Int128Vector rearrange(VectorShuffle<Integer> shuffle,
-                                  VectorMask<Integer> m) {
+                                  VectorMask<Integer> m, boolean wrap) {
         return (Int128Vector)
             super.rearrangeTemplate(Int128Shuffle.class,
                                     Int128Mask.class,
                                     (Int128Shuffle) shuffle,
-                                    (Int128Mask) m);  // specialize
+                                    (Int128Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int128Vector rearrange(VectorShuffle<Integer> shuffle,
+                                  VectorMask<Integer> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -498,18 +516,31 @@ final class Int128Vector extends IntVector {
 
     @Override
     @ForceInline
-    public Int128Vector selectFrom(Vector<Integer> v) {
+    public Int128Vector selectFrom(Vector<Integer> v, boolean wrap) {
         return (Int128Vector)
-            super.selectFromTemplate((Int128Vector) v);  // specialize
+            super.selectFromTemplate((Int128Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Int128Vector selectFrom(Vector<Integer> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Int128Vector selectFrom(Vector<Integer> v,
+                                   VectorMask<Integer> m, boolean wrap) {
+        return (Int128Vector)
+            super.selectFromTemplate((Int128Vector) v,
+                                     (Int128Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Int128Vector selectFrom(Vector<Integer> v,
                                    VectorMask<Integer> m) {
-        return (Int128Vector)
-            super.selectFromTemplate((Int128Vector) v,
-                                     (Int128Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -800,16 +831,28 @@ final class Int128Vector extends IntVector {
             super(VLENGTH, reorder);
         }
 
+        public Int128Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Int128Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Int128Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Int128Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Int128Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Int128Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

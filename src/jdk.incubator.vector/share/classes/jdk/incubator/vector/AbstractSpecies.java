@@ -331,33 +331,54 @@ abstract class AbstractSpecies<E> extends jdk.internal.vm.vector.VectorSupport.V
     public final
     @Override
     @ForceInline
+    VectorShuffle<E> shuffleFromArray(int[] sourceIndexes, int offset, boolean partialWrap) {
+        return dummyVector().shuffleFromArray(sourceIndexes, offset, partialWrap);
+    }
+
+    public final
+    @Override
+    @ForceInline
     VectorShuffle<E> shuffleFromArray(int[] sourceIndexes, int offset) {
-        return dummyVector().shuffleFromArray(sourceIndexes, offset);
+        return shuffleFromArray(sourceIndexes, offset, false);
+    }
+
+    public final
+    @Override
+    @ForceInline
+    VectorShuffle<E> shuffleFromValues(boolean partialWrap, int... sourceIndexes) {
+        return dummyVector().shuffleFromArray(sourceIndexes, 0, partialWrap);
     }
 
     public final
     @Override
     @ForceInline
     VectorShuffle<E> shuffleFromValues(int... sourceIndexes) {
-        return dummyVector().shuffleFromArray(sourceIndexes, 0);
+        return dummyVector().shuffleFromArray(sourceIndexes, 0, false);
+    }
+
+    public final
+    @Override
+    @ForceInline
+    VectorShuffle<E> shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) {
+        return dummyVector().shuffleFromOp(fn, partialWrap);
     }
 
     public final
     @Override
     @ForceInline
     VectorShuffle<E> shuffleFromOp(IntUnaryOperator fn) {
-        return dummyVector().shuffleFromOp(fn);
+        return shuffleFromOp(fn, false);
     }
 
     public final
     @Override
     @ForceInline
-    VectorShuffle<E> iotaShuffle(int start, int step, boolean wrap) {
+    VectorShuffle<E> iotaShuffle(int start, int step, boolean partialWrap) {
         AbstractShuffle<E> res;
         if (start == 0 && step == 1)
             return dummyVector().iotaShuffle();
         else
-            return dummyVector().iotaShuffle(start, step, wrap);
+            return dummyVector().iotaShuffle(start, step, partialWrap);
     }
 
     @Override

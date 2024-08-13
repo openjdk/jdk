@@ -142,14 +142,10 @@ final class Byte256Vector extends ByteVector {
     Byte256Shuffle iotaShuffle() { return Byte256Shuffle.IOTA; }
 
     @ForceInline
-    Byte256Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Byte256Shuffle)VectorSupport.shuffleIota(ETYPE, Byte256Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Byte256Shuffle)VectorSupport.shuffleIota(ETYPE, Byte256Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Byte256Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Byte256Shuffle)VectorSupport.shuffleIota(ETYPE, Byte256Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class Byte256Vector extends ByteVector {
 
     @Override
     @ForceInline
-    Byte256Shuffle shuffleFromArray(int[] indexes, int i) { return new Byte256Shuffle(indexes, i); }
+    Byte256Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Byte256Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Byte256Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Byte256Shuffle(fn); }
+    Byte256Shuffle shuffleFromArray(int[] indexes, int i) { return new Byte256Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Byte256Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Byte256Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Byte256Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Byte256Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -358,8 +364,13 @@ final class Byte256Vector extends ByteVector {
     }
 
     @ForceInline
+    public VectorShuffle<Byte> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Byte256Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        return super.toShuffleTemplate(Byte256Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -462,12 +473,19 @@ final class Byte256Vector extends ByteVector {
     @Override
     @ForceInline
     public Byte256Vector rearrange(VectorShuffle<Byte> shuffle,
-                                  VectorMask<Byte> m) {
+                                  VectorMask<Byte> m, boolean wrap) {
         return (Byte256Vector)
             super.rearrangeTemplate(Byte256Shuffle.class,
                                     Byte256Mask.class,
                                     (Byte256Shuffle) shuffle,
-                                    (Byte256Mask) m);  // specialize
+                                    (Byte256Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte256Vector rearrange(VectorShuffle<Byte> shuffle,
+                                  VectorMask<Byte> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -498,18 +516,31 @@ final class Byte256Vector extends ByteVector {
 
     @Override
     @ForceInline
-    public Byte256Vector selectFrom(Vector<Byte> v) {
+    public Byte256Vector selectFrom(Vector<Byte> v, boolean wrap) {
         return (Byte256Vector)
-            super.selectFromTemplate((Byte256Vector) v);  // specialize
+            super.selectFromTemplate((Byte256Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte256Vector selectFrom(Vector<Byte> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Byte256Vector selectFrom(Vector<Byte> v,
+                                   VectorMask<Byte> m, boolean wrap) {
+        return (Byte256Vector)
+            super.selectFromTemplate((Byte256Vector) v,
+                                     (Byte256Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Byte256Vector selectFrom(Vector<Byte> v,
                                    VectorMask<Byte> m) {
-        return (Byte256Vector)
-            super.selectFromTemplate((Byte256Vector) v,
-                                     (Byte256Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -856,16 +887,28 @@ final class Byte256Vector extends ByteVector {
             super(VLENGTH, reorder);
         }
 
+        public Byte256Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Byte256Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Byte256Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Byte256Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Byte256Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Byte256Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

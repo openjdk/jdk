@@ -230,7 +230,7 @@ public class VectorSupport {
     /* ============================================================================ */
     public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
                                           SH extends VectorShuffle<?>> {
-        SH apply(int length, int start, int step, S s);
+        SH apply(int length, int start, int step, S s, boolean partialWrap);
     }
 
     @IntrinsicCandidate
@@ -240,10 +240,10 @@ public class VectorSupport {
      SH extends VectorShuffle<E>>
     SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
                    int length,
-                   int start, int step, int wrap,
+                   int start, int step, boolean partialWrap,
                    ShuffleIotaOperation<S, SH> defaultImpl) {
        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(length, start, step, s);
+       return defaultImpl.apply(length, start, step, s, partialWrap);
     }
 
     public interface ShuffleToVectorOperation<V extends Vector<?>,
@@ -265,6 +265,25 @@ public class VectorSupport {
 
     public interface ShuffleWrapIndexesOperation<SH extends VectorShuffle<?>> {
         SH apply(SH sh);
+    }
+
+    public interface VectorToShuffleOperation<V extends Vector<?>,
+                                              S extends VectorSpecies<?>,
+                                              SH extends VectorShuffle<?>> {
+       SH apply(V v, S s, Boolean partialWrap);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     SH extends VectorShuffle<E>,
+     S extends VectorSpecies<E>,
+     E>
+    SH vectorToShuffle(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, V v,
+                      int length, S s, boolean partialWrap,
+                      VectorToShuffleOperation<V, S, SH> defaultImpl) {
+      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+      return defaultImpl.apply(v, s, partialWrap);
     }
 
     @IntrinsicCandidate

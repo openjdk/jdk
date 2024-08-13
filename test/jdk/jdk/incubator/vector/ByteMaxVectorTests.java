@@ -1353,7 +1353,7 @@ public class ByteMaxVectorTests extends AbstractVectorTest {
     static void smokeTest2() {
         // Do some zipping and shuffling.
         ByteVector io = (ByteVector) SPECIES.broadcast(0).addIndex(1);
-        ByteVector io2 = (ByteVector) VectorShuffle.iota(SPECIES,0,1,false).toVector();
+        ByteVector io2 = (ByteVector) VectorShuffle.iota(SPECIES,0,1,true).toVector();
         Assert.assertEquals(io, io2);
         ByteVector a = io.add((byte)1); //[1,2]
         ByteVector b = a.neg();  //[-1,-2]

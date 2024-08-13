@@ -137,14 +137,10 @@ final class LongMaxVector extends LongVector {
     LongMaxShuffle iotaShuffle() { return LongMaxShuffle.IOTA; }
 
     @ForceInline
-    LongMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (LongMaxShuffle)VectorSupport.shuffleIota(ETYPE, LongMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (LongMaxShuffle)VectorSupport.shuffleIota(ETYPE, LongMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    LongMaxShuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (LongMaxShuffle)VectorSupport.shuffleIota(ETYPE, LongMaxShuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -153,11 +149,21 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
-    LongMaxShuffle shuffleFromArray(int[] indexes, int i) { return new LongMaxShuffle(indexes, i); }
+    LongMaxShuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new LongMaxShuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    LongMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new LongMaxShuffle(fn); }
+    LongMaxShuffle shuffleFromArray(int[] indexes, int i) { return new LongMaxShuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    LongMaxShuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new LongMaxShuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    LongMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new LongMaxShuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -353,8 +359,13 @@ final class LongMaxVector extends LongVector {
     }
 
     @ForceInline
+    public VectorShuffle<Long> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(LongMaxShuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        return super.toShuffleTemplate(LongMaxShuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -452,12 +463,19 @@ final class LongMaxVector extends LongVector {
     @Override
     @ForceInline
     public LongMaxVector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m) {
+                                  VectorMask<Long> m, boolean wrap) {
         return (LongMaxVector)
             super.rearrangeTemplate(LongMaxShuffle.class,
                                     LongMaxMask.class,
                                     (LongMaxShuffle) shuffle,
-                                    (LongMaxMask) m);  // specialize
+                                    (LongMaxMask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector rearrange(VectorShuffle<Long> shuffle,
+                                  VectorMask<Long> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -488,18 +506,31 @@ final class LongMaxVector extends LongVector {
 
     @Override
     @ForceInline
-    public LongMaxVector selectFrom(Vector<Long> v) {
+    public LongMaxVector selectFrom(Vector<Long> v, boolean wrap) {
         return (LongMaxVector)
-            super.selectFromTemplate((LongMaxVector) v);  // specialize
+            super.selectFromTemplate((LongMaxVector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v,
+                                   VectorMask<Long> m, boolean wrap) {
+        return (LongMaxVector)
+            super.selectFromTemplate((LongMaxVector) v,
+                                     (LongMaxMask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public LongMaxVector selectFrom(Vector<Long> v,
                                    VectorMask<Long> m) {
-        return (LongMaxVector)
-            super.selectFromTemplate((LongMaxVector) v,
-                                     (LongMaxMask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -784,16 +815,28 @@ final class LongMaxVector extends LongVector {
             super(VLENGTH, reorder);
         }
 
+        public LongMaxShuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public LongMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public LongMaxShuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public LongMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public LongMaxShuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public LongMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

@@ -1344,7 +1344,7 @@ public class ShortMaxVectorTests extends AbstractVectorTest {
     static void smokeTest2() {
         // Do some zipping and shuffling.
         ShortVector io = (ShortVector) SPECIES.broadcast(0).addIndex(1);
-        ShortVector io2 = (ShortVector) VectorShuffle.iota(SPECIES,0,1,false).toVector();
+        ShortVector io2 = (ShortVector) VectorShuffle.iota(SPECIES,0,1,true).toVector();
         Assert.assertEquals(io, io2);
         ShortVector a = io.add((short)1); //[1,2]
         ShortVector b = a.neg();  //[-1,-2]

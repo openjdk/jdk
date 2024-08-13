@@ -2127,7 +2127,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Double> iota = iotaShuffle();
         VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        iota = iotaShuffle(origin, 1, false);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2157,7 +2157,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Double> iota = iotaShuffle();
         VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((double)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        iota = iotaShuffle(origin, 1, false);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2179,7 +2179,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         VectorShuffle<Double> iota = iotaShuffle();
         VectorMask<Double> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((double)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        iota = iotaShuffle(-origin, 1, false);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2219,7 +2219,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         VectorShuffle<Double> iota = iotaShuffle();
         VectorMask<Double> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((double)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        iota = iotaShuffle(-origin, 1, false);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2269,6 +2269,14 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     @Override
     public abstract
     DoubleVector rearrange(VectorShuffle<Double> s,
+                                   VectorMask<Double> m, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    DoubleVector rearrange(VectorShuffle<Double> s,
                                    VectorMask<Double> m);
 
     /*package-private*/
@@ -2278,17 +2286,21 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     DoubleVector rearrangeTemplate(Class<S> shuffletype,
                                            Class<M> masktype,
                                            S shuffle,
-                                           M m) {
+                                           M m, boolean wrap) {
 
         m.check(masktype, this);
-        VectorMask<Double> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
+        if (!wrap) {
+            VectorMask<Double> valid = shuffle.laneIsValid();
+            if (m.andNot(valid).anyTrue()) {
+                shuffle.checkIndexes();
+                throw new AssertionError();
+            }
         }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, double.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
                         return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
@@ -2334,25 +2346,24 @@ public abstract class DoubleVector extends AbstractVector<Double> {
 
     @ForceInline
     private final
-    VectorShuffle<Double> toShuffle0(DoubleSpecies dsp) {
+    VectorShuffle<Double> toShuffle0(DoubleSpecies dsp, boolean partialWrap) {
         double[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+        return VectorShuffle.fromArray(dsp, sa, 0, partialWrap);
     }
 
     /*package-private*/
     @ForceInline
     final
-    VectorShuffle<Double> toShuffleTemplate(Class<?> shuffleType) {
+    <S extends VectorShuffle<Double>>
+    VectorShuffle<Double> toShuffleTemplate(Class<S> shuffleType, boolean partialWrap) {
         DoubleSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), double.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     DoubleVector::toShuffle0);
+        return VectorSupport.vectorToShuffle(getClass(), double.class, shuffleType,
+                                             this, length(), vsp, partialWrap,
+                                             (v, s, pwrap) -> v.toShuffle0(s, pwrap));
     }
 
     /**
@@ -2399,13 +2410,27 @@ public abstract class DoubleVector extends AbstractVector<Double> {
      */
     @Override
     public abstract
+    DoubleVector selectFrom(Vector<Double> v, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
     DoubleVector selectFrom(Vector<Double> v);
 
     /*package-private*/
     @ForceInline
-    final DoubleVector selectFromTemplate(DoubleVector v) {
-        return v.rearrange(this.toShuffle());
+    final DoubleVector selectFromTemplate(DoubleVector v, boolean wrap) {
+        return v.rearrange(this.toShuffle(!wrap), wrap);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    DoubleVector selectFrom(Vector<Double> s, VectorMask<Double> m, boolean wrap);
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -2417,8 +2442,8 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     /*package-private*/
     @ForceInline
     final DoubleVector selectFromTemplate(DoubleVector v,
-                                                  AbstractMask<Double> m) {
-        return v.rearrange(this.toShuffle(), m);
+                                                  AbstractMask<Double> m, boolean wrap) {
+        return v.rearrange(this.toShuffle(!wrap), m, wrap);
     }
 
     /// Ternary operations

@@ -142,14 +142,10 @@ final class ByteMaxVector extends ByteVector {
     ByteMaxShuffle iotaShuffle() { return ByteMaxShuffle.IOTA; }
 
     @ForceInline
-    ByteMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (ByteMaxShuffle)VectorSupport.shuffleIota(ETYPE, ByteMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (ByteMaxShuffle)VectorSupport.shuffleIota(ETYPE, ByteMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    ByteMaxShuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (ByteMaxShuffle)VectorSupport.shuffleIota(ETYPE, ByteMaxShuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
-    ByteMaxShuffle shuffleFromArray(int[] indexes, int i) { return new ByteMaxShuffle(indexes, i); }
+    ByteMaxShuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new ByteMaxShuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    ByteMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new ByteMaxShuffle(fn); }
+    ByteMaxShuffle shuffleFromArray(int[] indexes, int i) { return new ByteMaxShuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    ByteMaxShuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new ByteMaxShuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    ByteMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new ByteMaxShuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -358,8 +364,13 @@ final class ByteMaxVector extends ByteVector {
     }
 
     @ForceInline
+    public VectorShuffle<Byte> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(ByteMaxShuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Byte> toShuffle() {
-        return super.toShuffleTemplate(ByteMaxShuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -462,12 +473,19 @@ final class ByteMaxVector extends ByteVector {
     @Override
     @ForceInline
     public ByteMaxVector rearrange(VectorShuffle<Byte> shuffle,
-                                  VectorMask<Byte> m) {
+                                  VectorMask<Byte> m, boolean wrap) {
         return (ByteMaxVector)
             super.rearrangeTemplate(ByteMaxShuffle.class,
                                     ByteMaxMask.class,
                                     (ByteMaxShuffle) shuffle,
-                                    (ByteMaxMask) m);  // specialize
+                                    (ByteMaxMask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector rearrange(VectorShuffle<Byte> shuffle,
+                                  VectorMask<Byte> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -498,18 +516,31 @@ final class ByteMaxVector extends ByteVector {
 
     @Override
     @ForceInline
-    public ByteMaxVector selectFrom(Vector<Byte> v) {
+    public ByteMaxVector selectFrom(Vector<Byte> v, boolean wrap) {
         return (ByteMaxVector)
-            super.selectFromTemplate((ByteMaxVector) v);  // specialize
+            super.selectFromTemplate((ByteMaxVector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector selectFrom(Vector<Byte> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public ByteMaxVector selectFrom(Vector<Byte> v,
+                                   VectorMask<Byte> m, boolean wrap) {
+        return (ByteMaxVector)
+            super.selectFromTemplate((ByteMaxVector) v,
+                                     (ByteMaxMask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public ByteMaxVector selectFrom(Vector<Byte> v,
                                    VectorMask<Byte> m) {
-        return (ByteMaxVector)
-            super.selectFromTemplate((ByteMaxVector) v,
-                                     (ByteMaxMask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -794,16 +825,28 @@ final class ByteMaxVector extends ByteVector {
             super(VLENGTH, reorder);
         }
 
+        public ByteMaxShuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public ByteMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public ByteMaxShuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public ByteMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public ByteMaxShuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public ByteMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

@@ -142,14 +142,10 @@ final class Double64Vector extends DoubleVector {
     Double64Shuffle iotaShuffle() { return Double64Shuffle.IOTA; }
 
     @ForceInline
-    Double64Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Double64Shuffle)VectorSupport.shuffleIota(ETYPE, Double64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Double64Shuffle)VectorSupport.shuffleIota(ETYPE, Double64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Double64Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Double64Shuffle)VectorSupport.shuffleIota(ETYPE, Double64Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class Double64Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    Double64Shuffle shuffleFromArray(int[] indexes, int i) { return new Double64Shuffle(indexes, i); }
+    Double64Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Double64Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Double64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Double64Shuffle(fn); }
+    Double64Shuffle shuffleFromArray(int[] indexes, int i) { return new Double64Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Double64Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Double64Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Double64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Double64Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -345,8 +351,13 @@ final class Double64Vector extends DoubleVector {
     }
 
     @ForceInline
+    public VectorShuffle<Double> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Double64Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        return super.toShuffleTemplate(Double64Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -449,12 +460,19 @@ final class Double64Vector extends DoubleVector {
     @Override
     @ForceInline
     public Double64Vector rearrange(VectorShuffle<Double> shuffle,
-                                  VectorMask<Double> m) {
+                                  VectorMask<Double> m, boolean wrap) {
         return (Double64Vector)
             super.rearrangeTemplate(Double64Shuffle.class,
                                     Double64Mask.class,
                                     (Double64Shuffle) shuffle,
-                                    (Double64Mask) m);  // specialize
+                                    (Double64Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector rearrange(VectorShuffle<Double> shuffle,
+                                  VectorMask<Double> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -485,18 +503,31 @@ final class Double64Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double64Vector selectFrom(Vector<Double> v) {
+    public Double64Vector selectFrom(Vector<Double> v, boolean wrap) {
         return (Double64Vector)
-            super.selectFromTemplate((Double64Vector) v);  // specialize
+            super.selectFromTemplate((Double64Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector selectFrom(Vector<Double> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector selectFrom(Vector<Double> v,
+                                   VectorMask<Double> m, boolean wrap) {
+        return (Double64Vector)
+            super.selectFromTemplate((Double64Vector) v,
+                                     (Double64Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Double64Vector selectFrom(Vector<Double> v,
                                    VectorMask<Double> m) {
-        return (Double64Vector)
-            super.selectFromTemplate((Double64Vector) v,
-                                     (Double64Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -783,16 +814,28 @@ final class Double64Vector extends DoubleVector {
             super(VLENGTH, reorder);
         }
 
+        public Double64Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Double64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Double64Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Double64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Double64Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Double64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

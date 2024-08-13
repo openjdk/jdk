@@ -808,6 +808,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorFromBitsCoerced:
   case vmIntrinsics::_VectorShuffleIota:
   case vmIntrinsics::_VectorShuffleToVector:
+  case vmIntrinsics::_VectorToShuffle:
   case vmIntrinsics::_VectorShuffleWrapIndexes:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:

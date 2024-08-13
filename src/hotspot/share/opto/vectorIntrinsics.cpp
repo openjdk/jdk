@@ -544,17 +544,17 @@ Node* LibraryCallKit::partially_wrap_indexes(Node* index_vec, int num_elem, Basi
 
 // <Sh extends VectorShuffle<E>,  E>
 //  Sh ShuffleIota(Class<?> E, Class<?> shuffleClass, Vector.Species<E> s, int length,
-//                  int start, int step, int wrap, ShuffleIotaOperation<Sh, E> defaultImpl)
+//                  int start, int step, boolean partialWrap, ShuffleIotaOperation<Sh, E> defaultImpl)
 bool LibraryCallKit::inline_vector_shuffle_iota() {
   const TypeInstPtr* shuffle_klass = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen          = gvn().type(argument(3))->isa_int();
   const TypeInt*     start_val     = gvn().type(argument(4))->isa_int();
   const TypeInt*     step_val      = gvn().type(argument(5))->isa_int();
-  const TypeInt*     wrap          = gvn().type(argument(6))->isa_int();
+  const TypeInt*     partial_wrap  = gvn().type(argument(6))->isa_int();
 
   if (shuffle_klass == nullptr || shuffle_klass->const_oop() == nullptr ||
       vlen == nullptr || !vlen->is_con() || start_val == nullptr || step_val == nullptr ||
-      wrap == nullptr || !wrap->is_con()) {
+      partial_wrap == nullptr || !partial_wrap->is_con()) {
     return false; // not enough info for intrinsification
   }
 
@@ -563,32 +563,19 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     return false;
   }
 
-  int do_wrap = wrap->get_con();
+  int do_partial_wrap = partial_wrap->get_con();
   int num_elem = vlen->get_con();
   BasicType elem_bt = T_BYTE;
 
-  bool effective_indices_in_range = false;
-  if (start_val->is_con() && step_val->is_con()) {
-    int effective_min_index = start_val->get_con();
-    int effective_max_index = start_val->get_con() + step_val->get_con() * (num_elem - 1);
-    effective_indices_in_range = effective_max_index >= effective_min_index && effective_min_index >= -128 && effective_max_index <= 127;
-  }
-
-  if (!do_wrap && !effective_indices_in_range) {
-    // Disable instrinsification for unwrapped shuffle iota if start/step
-    // values are non-constant OR if intermediate result overflows byte value range.
-    return false;
-  }
-
   if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
-      !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
       !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
       !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
 
-  if (!do_wrap &&
+  if (do_partial_wrap &&
       (!arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)       ||
+      !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)         ||
       !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskNotUsed)  ||
       !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed))) {
     return false;
@@ -622,13 +609,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     res = gvn().transform(VectorNode::make(Op_AddVB, res, bcast_start, vt));
   }
 
-  Node * mod_val = gvn().makecon(TypeInt::make(num_elem-1));
-  Node * bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
-
-  if (do_wrap)  {
-    // Wrap the indices greater than lane count.
-    res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
-  } else {
+  if (do_partial_wrap)  {
     res = partially_wrap_indexes(res, num_elem, elem_bt);
   }
 
@@ -752,6 +733,82 @@ bool LibraryCallKit::inline_vector_shuffle_to_vector() {
 
   // Box vector
   Node* res = box_vector(shuffle_vec, vec_box_type, elem_bt, num_elem);
+  set_result(res);
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
+  return true;
+}
+
+//    public static
+//    <V extends Vector<E>,
+//     SH extends VectorShuffle<E>,
+//     S extends VectorSpecies<E>,
+//     E>
+//    SH vectorToShuffle(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, V v,
+//                      int length, S s, boolean partialWrap,
+//                      VectorToShuffleOperation<V, S, SH> defaultImpl)
+bool LibraryCallKit::inline_vector_to_shuffle() {
+  const TypeInstPtr* vector_klass  = gvn().type(argument(0))->isa_instptr();
+  const TypeInstPtr* elem_klass    = gvn().type(argument(1))->isa_instptr();
+  const TypeInstPtr* shuffle_klass = gvn().type(argument(2))->isa_instptr();
+  Node*              vecbox        = argument(3);
+  const TypeInt*     vlen          = gvn().type(argument(4))->isa_int();
+  const TypeInt*     partial_wrap   = gvn().type(argument(6))->isa_int();
+
+  if (vector_klass == nullptr || elem_klass == nullptr || shuffle_klass == nullptr || vecbox->is_top() || vlen == nullptr 
+      || partial_wrap == nullptr) {
+    return false; // dead code
+  }
+  if (!vlen->is_con() || !partial_wrap->is_con() || vector_klass->const_oop() == nullptr ||
+      elem_klass->const_oop() == nullptr || shuffle_klass->const_oop() == nullptr) {
+    return false; // not enough info for intrinsification
+  }
+  if (!is_klass_initialized(shuffle_klass) || !is_klass_initialized(vector_klass) ) {
+    log_if_needed("  ** klass argument not initialized");
+    return false;
+  }
+
+  int num_elem = vlen->get_con();
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  BasicType elem_bt = elem_type->basic_type();
+
+  if (num_elem < 4) {
+    return false;
+  }
+
+  int cast_vopc = VectorCastNode::opcode(-1, elem_bt); // from vector of type elem_bt
+  // Make sure that cast is implemented to particular type/size combination.
+  if (!arch_supports_vector(cast_vopc, num_elem, T_BYTE, VecMaskNotUsed)) {
+    log_if_needed("  ** not supported: arity=1 op=cast#%d/3 vlen2=%d etype2=%s",
+        cast_vopc, num_elem, type2name(elem_bt));
+    return false;
+  }
+
+  int do_partial_wrap = partial_wrap->get_con();
+  if (do_partial_wrap &&
+      (!arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)       ||
+       !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)         ||
+       !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskNotUsed)  ||
+       !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed))) {
+    return false;
+  }
+
+  ciKlass* vbox_klass = vector_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
+
+  Node* vec = unbox_vector(vecbox, vbox_type, elem_bt, num_elem);
+
+  // cast element type to byte type
+  Node* shuffle_vec = gvn().transform(VectorCastNode::make(cast_vopc, vec, T_BYTE, num_elem));
+
+  if (do_partial_wrap)  {
+    shuffle_vec = partially_wrap_indexes(shuffle_vec, num_elem, T_BYTE);
+  }
+
+  ciKlass* shuffle_box_klass = shuffle_klass->const_oop()->as_instance()->java_lang_Class_klass();
+  const TypeInstPtr* shuffle_box_type = TypeInstPtr::make_exact(TypePtr::NotNull, shuffle_box_klass);
+
+  // Box vector
+  Node* res = box_vector(shuffle_vec, shuffle_box_type, T_BYTE, num_elem);
   set_result(res);
   C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(num_elem * type2aelembytes(elem_bt))));
   return true;
@@ -2327,7 +2384,7 @@ bool LibraryCallKit::inline_vector_convert() {
 
   ciKlass* vbox_klass_from = vector_klass_from->const_oop()->as_instance()->java_lang_Class_klass();
   ciKlass* vbox_klass_to = vector_klass_to->const_oop()->as_instance()->java_lang_Class_klass();
-  if (is_vector_shuffle(vbox_klass_from)) {
+  if (is_vector_shuffle(vbox_klass_from) || is_vector_shuffle(vbox_klass_to)) {
     return false; // vector shuffles aren't supported
   }
   bool is_mask = is_vector_mask(vbox_klass_from);
@@ -2366,18 +2423,6 @@ bool LibraryCallKit::inline_vector_convert() {
     log_if_needed("  ** not supported: arity=1 op=%s/2 vlen2=%d etype2=%s ismask=%d",
                     is_cast ? "cast" : "reinterpret",
                     num_elem_to, type2name(elem_bt_to), is_mask);
-    return false;
-  }
-
-
-  if (is_vector_shuffle(vbox_klass_to) &&
-      (!arch_supports_vector(Op_SubVB, num_elem_to, elem_bt_to, VecMaskNotUsed)           ||
-       !arch_supports_vector(Op_VectorBlend, num_elem_to, elem_bt_to, VecMaskNotUsed)     ||
-       !arch_supports_vector(Op_VectorMaskCmp, num_elem_to, elem_bt_to, VecMaskNotUsed)   ||
-       !arch_supports_vector(Op_AndV, num_elem_to, elem_bt_to, VecMaskNotUsed)            ||
-       !arch_supports_vector(Op_Replicate, num_elem_to, elem_bt_to, VecMaskNotUsed))) {
-    log_if_needed("  ** not supported: arity=1 op=shuffle_index_wrap vlen2=%d etype2=%s",
-                    num_elem_to, type2name(elem_bt_to));
     return false;
   }
 
@@ -2476,10 +2521,6 @@ bool LibraryCallKit::inline_vector_convert() {
   } else if (!Type::equals(src_type, dst_type)) {
     assert(!is_cast, "must be reinterpret");
     op = gvn().transform(new VectorReinterpretNode(op, src_type, dst_type));
-  }
-
-  if (is_vector_shuffle(vbox_klass_to)) {
-     op = partially_wrap_indexes(op, num_elem_to, elem_bt_to);
   }
 
   const TypeInstPtr* vbox_type_to = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass_to);

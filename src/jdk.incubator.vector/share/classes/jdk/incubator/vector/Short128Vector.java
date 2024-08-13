@@ -142,14 +142,10 @@ final class Short128Vector extends ShortVector {
     Short128Shuffle iotaShuffle() { return Short128Shuffle.IOTA; }
 
     @ForceInline
-    Short128Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Short128Shuffle)VectorSupport.shuffleIota(ETYPE, Short128Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Short128Shuffle)VectorSupport.shuffleIota(ETYPE, Short128Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Short128Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Short128Shuffle)VectorSupport.shuffleIota(ETYPE, Short128Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class Short128Vector extends ShortVector {
 
     @Override
     @ForceInline
-    Short128Shuffle shuffleFromArray(int[] indexes, int i) { return new Short128Shuffle(indexes, i); }
+    Short128Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Short128Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Short128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short128Shuffle(fn); }
+    Short128Shuffle shuffleFromArray(int[] indexes, int i) { return new Short128Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Short128Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Short128Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Short128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short128Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -358,8 +364,13 @@ final class Short128Vector extends ShortVector {
     }
 
     @ForceInline
+    public VectorShuffle<Short> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Short128Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        return super.toShuffleTemplate(Short128Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -462,12 +473,19 @@ final class Short128Vector extends ShortVector {
     @Override
     @ForceInline
     public Short128Vector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m) {
+                                  VectorMask<Short> m, boolean wrap) {
         return (Short128Vector)
             super.rearrangeTemplate(Short128Shuffle.class,
                                     Short128Mask.class,
                                     (Short128Shuffle) shuffle,
-                                    (Short128Mask) m);  // specialize
+                                    (Short128Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector rearrange(VectorShuffle<Short> shuffle,
+                                  VectorMask<Short> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -498,18 +516,31 @@ final class Short128Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short128Vector selectFrom(Vector<Short> v) {
+    public Short128Vector selectFrom(Vector<Short> v, boolean wrap) {
         return (Short128Vector)
-            super.selectFromTemplate((Short128Vector) v);  // specialize
+            super.selectFromTemplate((Short128Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector selectFrom(Vector<Short> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Short128Vector selectFrom(Vector<Short> v,
+                                   VectorMask<Short> m, boolean wrap) {
+        return (Short128Vector)
+            super.selectFromTemplate((Short128Vector) v,
+                                     (Short128Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Short128Vector selectFrom(Vector<Short> v,
                                    VectorMask<Short> m) {
-        return (Short128Vector)
-            super.selectFromTemplate((Short128Vector) v,
-                                     (Short128Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -808,16 +839,28 @@ final class Short128Vector extends ShortVector {
             super(VLENGTH, reorder);
         }
 
+        public Short128Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Short128Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Short128Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Short128Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Short128Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Short128Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

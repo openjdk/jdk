@@ -142,14 +142,10 @@ final class DoubleMaxVector extends DoubleVector {
     DoubleMaxShuffle iotaShuffle() { return DoubleMaxShuffle.IOTA; }
 
     @ForceInline
-    DoubleMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (DoubleMaxShuffle)VectorSupport.shuffleIota(ETYPE, DoubleMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (DoubleMaxShuffle)VectorSupport.shuffleIota(ETYPE, DoubleMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    DoubleMaxShuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (DoubleMaxShuffle)VectorSupport.shuffleIota(ETYPE, DoubleMaxShuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class DoubleMaxVector extends DoubleVector {
 
     @Override
     @ForceInline
-    DoubleMaxShuffle shuffleFromArray(int[] indexes, int i) { return new DoubleMaxShuffle(indexes, i); }
+    DoubleMaxShuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new DoubleMaxShuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    DoubleMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new DoubleMaxShuffle(fn); }
+    DoubleMaxShuffle shuffleFromArray(int[] indexes, int i) { return new DoubleMaxShuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    DoubleMaxShuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new DoubleMaxShuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    DoubleMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new DoubleMaxShuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -345,8 +351,13 @@ final class DoubleMaxVector extends DoubleVector {
     }
 
     @ForceInline
+    public VectorShuffle<Double> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(DoubleMaxShuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        return super.toShuffleTemplate(DoubleMaxShuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -449,12 +460,19 @@ final class DoubleMaxVector extends DoubleVector {
     @Override
     @ForceInline
     public DoubleMaxVector rearrange(VectorShuffle<Double> shuffle,
-                                  VectorMask<Double> m) {
+                                  VectorMask<Double> m, boolean wrap) {
         return (DoubleMaxVector)
             super.rearrangeTemplate(DoubleMaxShuffle.class,
                                     DoubleMaxMask.class,
                                     (DoubleMaxShuffle) shuffle,
-                                    (DoubleMaxMask) m);  // specialize
+                                    (DoubleMaxMask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public DoubleMaxVector rearrange(VectorShuffle<Double> shuffle,
+                                  VectorMask<Double> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -485,18 +503,31 @@ final class DoubleMaxVector extends DoubleVector {
 
     @Override
     @ForceInline
-    public DoubleMaxVector selectFrom(Vector<Double> v) {
+    public DoubleMaxVector selectFrom(Vector<Double> v, boolean wrap) {
         return (DoubleMaxVector)
-            super.selectFromTemplate((DoubleMaxVector) v);  // specialize
+            super.selectFromTemplate((DoubleMaxVector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public DoubleMaxVector selectFrom(Vector<Double> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public DoubleMaxVector selectFrom(Vector<Double> v,
+                                   VectorMask<Double> m, boolean wrap) {
+        return (DoubleMaxVector)
+            super.selectFromTemplate((DoubleMaxVector) v,
+                                     (DoubleMaxMask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public DoubleMaxVector selectFrom(Vector<Double> v,
                                    VectorMask<Double> m) {
-        return (DoubleMaxVector)
-            super.selectFromTemplate((DoubleMaxVector) v,
-                                     (DoubleMaxMask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -782,16 +813,28 @@ final class DoubleMaxVector extends DoubleVector {
             super(VLENGTH, reorder);
         }
 
+        public DoubleMaxShuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public DoubleMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public DoubleMaxShuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public DoubleMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public DoubleMaxShuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public DoubleMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

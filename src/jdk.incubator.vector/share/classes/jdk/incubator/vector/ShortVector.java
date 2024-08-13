@@ -2286,7 +2286,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Short> iota = iotaShuffle();
         VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        iota = iotaShuffle(origin, 1, false);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2316,7 +2316,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Short> iota = iotaShuffle();
         VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((short)(length() - origin))));
-        iota = iotaShuffle(origin, 1, true);
+        iota = iotaShuffle(origin, 1, false);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2338,7 +2338,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         VectorShuffle<Short> iota = iotaShuffle();
         VectorMask<Short> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((short)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        iota = iotaShuffle(-origin, 1, false);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2378,7 +2378,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         VectorShuffle<Short> iota = iotaShuffle();
         VectorMask<Short> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((short)(origin))));
-        iota = iotaShuffle(-origin, 1, true);
+        iota = iotaShuffle(-origin, 1, false);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2428,6 +2428,14 @@ public abstract class ShortVector extends AbstractVector<Short> {
     @Override
     public abstract
     ShortVector rearrange(VectorShuffle<Short> s,
+                                   VectorMask<Short> m, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector rearrange(VectorShuffle<Short> s,
                                    VectorMask<Short> m);
 
     /*package-private*/
@@ -2437,17 +2445,21 @@ public abstract class ShortVector extends AbstractVector<Short> {
     ShortVector rearrangeTemplate(Class<S> shuffletype,
                                            Class<M> masktype,
                                            S shuffle,
-                                           M m) {
+                                           M m, boolean wrap) {
 
         m.check(masktype, this);
-        VectorMask<Short> valid = shuffle.laneIsValid();
-        if (m.andNot(valid).anyTrue()) {
-            shuffle.checkIndexes();
-            throw new AssertionError();
+        if (!wrap) {
+            VectorMask<Short> valid = shuffle.laneIsValid();
+            if (m.andNot(valid).anyTrue()) {
+                shuffle.checkIndexes();
+                throw new AssertionError();
+            }
         }
+        @SuppressWarnings("unchecked")
+        S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
                    getClass(), shuffletype, masktype, short.class, length(),
-                   this, shuffle, m,
+                   this, ws, m,
                    (v1, s_, m_) -> v1.uOp((i, a) -> {
                         int ei = s_.laneSource(i);
                         return ei < 0  || !m_.laneIsSet(i) ? 0 : v1.lane(ei);
@@ -2493,25 +2505,24 @@ public abstract class ShortVector extends AbstractVector<Short> {
 
     @ForceInline
     private final
-    VectorShuffle<Short> toShuffle0(ShortSpecies dsp) {
+    VectorShuffle<Short> toShuffle0(ShortSpecies dsp, boolean partialWrap) {
         short[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0);
+        return VectorShuffle.fromArray(dsp, sa, 0, partialWrap);
     }
 
     /*package-private*/
     @ForceInline
     final
-    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
+    <S extends VectorShuffle<Short>>
+    VectorShuffle<Short> toShuffleTemplate(Class<S> shuffleType, boolean partialWrap) {
         ShortSpecies vsp = vspecies();
-        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
-                                     getClass(), short.class, length(),
-                                     shuffleType, byte.class, length(),
-                                     this, vsp,
-                                     ShortVector::toShuffle0);
+        return VectorSupport.vectorToShuffle(getClass(), short.class, shuffleType,
+                                             this, length(), vsp, partialWrap,
+                                             (v, s, pwrap) -> v.toShuffle0(s, pwrap));
     }
 
     /**
@@ -2558,13 +2569,27 @@ public abstract class ShortVector extends AbstractVector<Short> {
      */
     @Override
     public abstract
+    ShortVector selectFrom(Vector<Short> v, boolean wrap);
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
     ShortVector selectFrom(Vector<Short> v);
 
     /*package-private*/
     @ForceInline
-    final ShortVector selectFromTemplate(ShortVector v) {
-        return v.rearrange(this.toShuffle());
+    final ShortVector selectFromTemplate(ShortVector v, boolean wrap) {
+        return v.rearrange(this.toShuffle(!wrap), wrap);
     }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    ShortVector selectFrom(Vector<Short> s, VectorMask<Short> m, boolean wrap);
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -2576,8 +2601,8 @@ public abstract class ShortVector extends AbstractVector<Short> {
     /*package-private*/
     @ForceInline
     final ShortVector selectFromTemplate(ShortVector v,
-                                                  AbstractMask<Short> m) {
-        return v.rearrange(this.toShuffle(), m);
+                                                  AbstractMask<Short> m, boolean wrap) {
+        return v.rearrange(this.toShuffle(!wrap), m, wrap);
     }
 
     /// Ternary operations

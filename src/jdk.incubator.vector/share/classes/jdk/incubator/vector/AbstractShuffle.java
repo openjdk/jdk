@@ -39,33 +39,37 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         assert(indexesInRange(reorder));
     }
 
-    AbstractShuffle(int length, int[] reorder) {
-        this(length, reorder, 0);
+    AbstractShuffle(int length, int[] reorder, boolean partialWrap) {
+        this(length, reorder, 0, partialWrap);
     }
 
-    AbstractShuffle(int length, int[] reorder, int offset) {
-        super(prepare(length, reorder, offset));
+    AbstractShuffle(int length, int[] reorder, int offset, boolean partialWrap) {
+        super(prepare(length, reorder, offset, partialWrap));
     }
 
-    AbstractShuffle(int length, IntUnaryOperator f) {
-        super(prepare(length, f));
+    AbstractShuffle(int length, IntUnaryOperator f, boolean partialWrap) {
+        super(prepare(length, f, partialWrap));
     }
 
-    private static byte[] prepare(int length, int[] reorder, int offset) {
+    private static byte[] prepare(int length, int[] reorder, int offset, boolean partialWrap) {
         byte[] a = new byte[length];
         for (int i = 0; i < length; i++) {
             int si = reorder[offset + i];
-            si = partiallyWrapIndex(si, length);
+            if (partialWrap) {
+                si = partiallyWrapIndex(si, length);
+            }
             a[i] = (byte) si;
         }
         return a;
     }
 
-    private static byte[] prepare(int length, IntUnaryOperator f) {
+    private static byte[] prepare(int length, IntUnaryOperator f, boolean partialWrap) {
         byte[] a = new byte[length];
         for (int i = 0; i < a.length; i++) {
             int si = f.applyAsInt(i);
-            si = partiallyWrapIndex(si, length);
+            if (partialWrap) {
+                si = partiallyWrapIndex(si, length);
+            }
             a[i] = (byte) si;
         }
         return a;
@@ -91,7 +95,6 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
         int vlen = reorder.length;
         for (int i = 0; i < vlen; i++) {
             int sourceIndex = reorder[i];
-            assert(sourceIndex >= -vlen && sourceIndex < vlen);
             a[offset + i] = sourceIndex;
         }
     }
@@ -133,31 +136,26 @@ abstract class AbstractShuffle<E> extends VectorShuffle<E> {
     }
 
     @ForceInline
-    public final VectorShuffle<E> wrapIndexesTemplate() {
+    final VectorShuffle<E> wrapIndexesTemplate() {
         Vector<E> shufvec = this.toVector();
-        VectorMask<E> vecmask = shufvec.compare(VectorOperators.LT, vspecies().zero());
+        VectorMask<E> vecmasklt = shufvec.compare(VectorOperators.LT, vspecies().zero());
+        VectorMask<E> vecmaskge = shufvec.compare(VectorOperators.GE, vspecies().length());
+        VectorMask<E> vecmask = vecmasklt.or(vecmaskge);
         if (vecmask.anyTrue()) {
             // FIXME: vectorize this
             byte[] reorder = reorder();
-            return wrapAndRebuild(reorder);
+            return wrapAndRebuild(reorder, vspecies().length());
         }
         return this;
     }
 
     @ForceInline
-    public final VectorShuffle<E> wrapAndRebuild(byte[] oldReorder) {
-        int length = oldReorder.length;
-        byte[] reorder = new byte[length];
-        for (int i = 0; i < length; i++) {
+    public final VectorShuffle<E> wrapAndRebuild(byte[] oldReorder, int length) {
+        int len = oldReorder.length;
+        byte[] reorder = new byte[len];
+        for (int i = 0; i < len; i++) {
             int si = oldReorder[i];
-            // FIXME: This does not work unless it's a power of 2.
-            if ((length & (length - 1)) == 0) {
-                si += si & length;  // power-of-two optimization
-            } else if (si < 0) {
-                // non-POT code requires a conditional add
-                si += length;
-            }
-            assert(si >= 0 && si < length);
+            si = VectorIntrinsics.wrapToRange(si, length);
             reorder[i] = (byte) si;
         }
         return vspecies().dummyVector().shuffleFromBytes(reorder);

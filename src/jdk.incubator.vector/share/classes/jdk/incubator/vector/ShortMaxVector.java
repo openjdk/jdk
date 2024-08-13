@@ -142,14 +142,10 @@ final class ShortMaxVector extends ShortVector {
     ShortMaxShuffle iotaShuffle() { return ShortMaxShuffle.IOTA; }
 
     @ForceInline
-    ShortMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (ShortMaxShuffle)VectorSupport.shuffleIota(ETYPE, ShortMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (ShortMaxShuffle)VectorSupport.shuffleIota(ETYPE, ShortMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    ShortMaxShuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (ShortMaxShuffle)VectorSupport.shuffleIota(ETYPE, ShortMaxShuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class ShortMaxVector extends ShortVector {
 
     @Override
     @ForceInline
-    ShortMaxShuffle shuffleFromArray(int[] indexes, int i) { return new ShortMaxShuffle(indexes, i); }
+    ShortMaxShuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new ShortMaxShuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    ShortMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new ShortMaxShuffle(fn); }
+    ShortMaxShuffle shuffleFromArray(int[] indexes, int i) { return new ShortMaxShuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    ShortMaxShuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new ShortMaxShuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    ShortMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new ShortMaxShuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -358,8 +364,13 @@ final class ShortMaxVector extends ShortVector {
     }
 
     @ForceInline
+    public VectorShuffle<Short> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(ShortMaxShuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        return super.toShuffleTemplate(ShortMaxShuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -462,12 +473,19 @@ final class ShortMaxVector extends ShortVector {
     @Override
     @ForceInline
     public ShortMaxVector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m) {
+                                  VectorMask<Short> m, boolean wrap) {
         return (ShortMaxVector)
             super.rearrangeTemplate(ShortMaxShuffle.class,
                                     ShortMaxMask.class,
                                     (ShortMaxShuffle) shuffle,
-                                    (ShortMaxMask) m);  // specialize
+                                    (ShortMaxMask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector rearrange(VectorShuffle<Short> shuffle,
+                                  VectorMask<Short> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -498,18 +516,31 @@ final class ShortMaxVector extends ShortVector {
 
     @Override
     @ForceInline
-    public ShortMaxVector selectFrom(Vector<Short> v) {
+    public ShortMaxVector selectFrom(Vector<Short> v, boolean wrap) {
         return (ShortMaxVector)
-            super.selectFromTemplate((ShortMaxVector) v);  // specialize
+            super.selectFromTemplate((ShortMaxVector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector selectFrom(Vector<Short> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector selectFrom(Vector<Short> v,
+                                   VectorMask<Short> m, boolean wrap) {
+        return (ShortMaxVector)
+            super.selectFromTemplate((ShortMaxVector) v,
+                                     (ShortMaxMask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public ShortMaxVector selectFrom(Vector<Short> v,
                                    VectorMask<Short> m) {
-        return (ShortMaxVector)
-            super.selectFromTemplate((ShortMaxVector) v,
-                                     (ShortMaxMask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -794,16 +825,28 @@ final class ShortMaxVector extends ShortVector {
             super(VLENGTH, reorder);
         }
 
+        public ShortMaxShuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public ShortMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public ShortMaxShuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public ShortMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public ShortMaxShuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public ShortMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

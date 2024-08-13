@@ -142,14 +142,10 @@ final class Float512Vector extends FloatVector {
     Float512Shuffle iotaShuffle() { return Float512Shuffle.IOTA; }
 
     @ForceInline
-    Float512Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Float512Shuffle)VectorSupport.shuffleIota(ETYPE, Float512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Float512Shuffle)VectorSupport.shuffleIota(ETYPE, Float512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Float512Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Float512Shuffle)VectorSupport.shuffleIota(ETYPE, Float512Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -158,11 +154,21 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
-    Float512Shuffle shuffleFromArray(int[] indexes, int i) { return new Float512Shuffle(indexes, i); }
+    Float512Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Float512Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Float512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float512Shuffle(fn); }
+    Float512Shuffle shuffleFromArray(int[] indexes, int i) { return new Float512Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Float512Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Float512Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Float512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float512Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -345,8 +351,13 @@ final class Float512Vector extends FloatVector {
     }
 
     @ForceInline
+    public VectorShuffle<Float> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Float512Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Float> toShuffle() {
-        return super.toShuffleTemplate(Float512Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -449,12 +460,19 @@ final class Float512Vector extends FloatVector {
     @Override
     @ForceInline
     public Float512Vector rearrange(VectorShuffle<Float> shuffle,
-                                  VectorMask<Float> m) {
+                                  VectorMask<Float> m, boolean wrap) {
         return (Float512Vector)
             super.rearrangeTemplate(Float512Shuffle.class,
                                     Float512Mask.class,
                                     (Float512Shuffle) shuffle,
-                                    (Float512Mask) m);  // specialize
+                                    (Float512Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float512Vector rearrange(VectorShuffle<Float> shuffle,
+                                  VectorMask<Float> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -485,18 +503,31 @@ final class Float512Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float512Vector selectFrom(Vector<Float> v) {
+    public Float512Vector selectFrom(Vector<Float> v, boolean wrap) {
         return (Float512Vector)
-            super.selectFromTemplate((Float512Vector) v);  // specialize
+            super.selectFromTemplate((Float512Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Float512Vector selectFrom(Vector<Float> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Float512Vector selectFrom(Vector<Float> v,
+                                   VectorMask<Float> m, boolean wrap) {
+        return (Float512Vector)
+            super.selectFromTemplate((Float512Vector) v,
+                                     (Float512Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Float512Vector selectFrom(Vector<Float> v,
                                    VectorMask<Float> m) {
-        return (Float512Vector)
-            super.selectFromTemplate((Float512Vector) v,
-                                     (Float512Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -813,16 +844,28 @@ final class Float512Vector extends FloatVector {
             super(VLENGTH, reorder);
         }
 
+        public Float512Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Float512Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Float512Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Float512Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Float512Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Float512Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override

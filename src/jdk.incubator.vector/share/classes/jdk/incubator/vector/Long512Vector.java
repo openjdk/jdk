@@ -137,14 +137,10 @@ final class Long512Vector extends LongVector {
     Long512Shuffle iotaShuffle() { return Long512Shuffle.IOTA; }
 
     @ForceInline
-    Long512Shuffle iotaShuffle(int start, int step, boolean wrap) {
-      if (wrap) {
-        return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
-      } else {
-        return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
-                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
-      }
+    Long512Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
+      return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH,
+              start, step, partialWrap,
+              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
     }
 
     @Override
@@ -153,11 +149,21 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    Long512Shuffle shuffleFromArray(int[] indexes, int i) { return new Long512Shuffle(indexes, i); }
+    Long512Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
+        return new Long512Shuffle(indexes, i, partialWrap);
+    }
 
     @Override
     @ForceInline
-    Long512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long512Shuffle(fn); }
+    Long512Shuffle shuffleFromArray(int[] indexes, int i) { return new Long512Shuffle(indexes, i, false); }
+
+    @Override
+    @ForceInline
+    Long512Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Long512Shuffle(fn, partialWrap); }
+
+    @Override
+    @ForceInline
+    Long512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long512Shuffle(fn, false); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -353,8 +359,13 @@ final class Long512Vector extends LongVector {
     }
 
     @ForceInline
+    public VectorShuffle<Long> toShuffle(boolean partialWrap) {
+        return super.toShuffleTemplate(Long512Shuffle.class, partialWrap); // specialize
+    }
+
+    @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        return super.toShuffleTemplate(Long512Shuffle.class); // specialize
+        return toShuffle(false);
     }
 
     // Specialized unary testing
@@ -452,12 +463,19 @@ final class Long512Vector extends LongVector {
     @Override
     @ForceInline
     public Long512Vector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m) {
+                                  VectorMask<Long> m, boolean wrap) {
         return (Long512Vector)
             super.rearrangeTemplate(Long512Shuffle.class,
                                     Long512Mask.class,
                                     (Long512Shuffle) shuffle,
-                                    (Long512Mask) m);  // specialize
+                                    (Long512Mask) m, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long512Vector rearrange(VectorShuffle<Long> shuffle,
+                                  VectorMask<Long> m) {
+        return rearrange(shuffle, m, true);
     }
 
     @Override
@@ -488,18 +506,31 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long512Vector selectFrom(Vector<Long> v) {
+    public Long512Vector selectFrom(Vector<Long> v, boolean wrap) {
         return (Long512Vector)
-            super.selectFromTemplate((Long512Vector) v);  // specialize
+            super.selectFromTemplate((Long512Vector) v, wrap);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long512Vector selectFrom(Vector<Long> v) {
+        return selectFrom(v, true);
+    }
+
+    @Override
+    @ForceInline
+    public Long512Vector selectFrom(Vector<Long> v,
+                                   VectorMask<Long> m, boolean wrap) {
+        return (Long512Vector)
+            super.selectFromTemplate((Long512Vector) v,
+                                     (Long512Mask) m, wrap);  // specialize
     }
 
     @Override
     @ForceInline
     public Long512Vector selectFrom(Vector<Long> v,
                                    VectorMask<Long> m) {
-        return (Long512Vector)
-            super.selectFromTemplate((Long512Vector) v,
-                                     (Long512Mask) m);  // specialize
+        return selectFrom(v, m, true);
     }
 
 
@@ -798,16 +829,28 @@ final class Long512Vector extends LongVector {
             super(VLENGTH, reorder);
         }
 
+        public Long512Shuffle(int[] reorder, boolean partialWrap) {
+            super(VLENGTH, reorder, partialWrap);
+        }
+
         public Long512Shuffle(int[] reorder) {
-            super(VLENGTH, reorder);
+            super(VLENGTH, reorder, false);
+        }
+
+        public Long512Shuffle(int[] reorder, int i, boolean partialWrap) {
+            super(VLENGTH, reorder, i, partialWrap);
         }
 
         public Long512Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i);
+            super(VLENGTH, reorder, i, false);
+        }
+
+        public Long512Shuffle(IntUnaryOperator fn, boolean partialWrap) {
+            super(VLENGTH, fn, partialWrap);
         }
 
         public Long512Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn);
+            super(VLENGTH, fn, false);
         }
 
         @Override
