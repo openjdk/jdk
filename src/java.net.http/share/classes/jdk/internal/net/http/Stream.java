@@ -640,18 +640,19 @@ class Stream<T> extends ExchangeImpl<T> {
             } finally {
                 stateLock.unlock();
             }
-            try {
-                final int error = frame.getErrorCode();
-                if (error == ErrorFrame.REFUSED_STREAM) {
-                    // A REFUSED_STREAM error code implies that the stream wasn't processed by the
-                    // peer and the client is free to retry the request afresh.
-                    // Here we arrange for the request to be retried.
-                    if (debug.on()) {
-                        debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
-                    }
-                    closeAsUnprocessed();
-                    return;
+            final int error = frame.getErrorCode();
+            if (error == ErrorFrame.REFUSED_STREAM) {
+                // A REFUSED_STREAM error code implies that the stream wasn't processed by the
+                // peer and the client is free to retry the request afresh.
+                // Here we arrange for the request to be retried.
+                if (debug.on()) {
+                    debug.log("request unprocessed by peer (REFUSED_STREAM) " + this.request);
                 }
+                closeAsUnprocessed();
+                return;
+
+            }
+            try {
                 final String reason = ErrorFrame.stringForCode(error);
                 final IOException ioe = new IOException("Received RST_STREAM: " + reason);
                 if (debug.on()) {
