@@ -118,7 +118,6 @@ final class StringConcatHelper {
 
         @ForceInline
         String concat(Object value) {
-            String str = stringOf(value);
             return concat0(stringOf(value));
         }
 
