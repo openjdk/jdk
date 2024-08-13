@@ -1947,16 +1947,16 @@ final class HttpClientImpl extends HttpClient implements Trackable {
     }
 
     private Duration getIdleConnectionTimeoutH2() {
-        if (IDLE_CONNECTION_TIMEOUT_H2 >= 0)
+        if (IDLE_CONNECTION_TIMEOUT_H2 >= 0) {
             return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT_H2);
+        }
         return null;
     }
 
     private Duration getIdleConnectionTimeoutH3() {
-        debug.log("HTTP/3 Idle Connection Timeout Value (seconds): "
-                + IDLE_CONNECTION_TIMEOUT_H3);
-        if (IDLE_CONNECTION_TIMEOUT_H3 >= 0)
+        if (IDLE_CONNECTION_TIMEOUT_H3 >= 0) {
             return Duration.ofSeconds(IDLE_CONNECTION_TIMEOUT_H3);
+        }
         return null;
     }
 

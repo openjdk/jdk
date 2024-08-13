@@ -126,7 +126,16 @@ public final class IdleTimeoutManager {
 
     void keepAlive() {
         lastActivityAt = System.nanoTime(); // TODO: timeline().instant()?
-        // we don't immediately issue a PING
+    }
+
+    void keepAliveWithPing() {
+        keepAlive();
+        if (debug.on()) {
+            debug.log("sending PING to keep the connection alive");
+        } else {
+            Log.logQuic("{0} sending PING to keep the connection alive", connection.logTag());
+        }
+        var _ = this.connection.requestSendPing();
     }
 
     void shutdown() {
@@ -187,9 +196,10 @@ public final class IdleTimeoutManager {
         if (debug.on()) {
             debug.log("idle connection timeout updated to "
                     + newIdleTimeoutMillis + " milli seconds");
+        } else {
+            Log.logQuic("{0} idle connection timeout updated to {1} milli seconds",
+                    connection.logTag(), newIdleTimeoutMillis);
         }
-        Log.logQuic("{0} idle connection timeout updated to {1} milli seconds",
-                connection.logTag(), newIdleTimeoutMillis);
         // arm the idle timer
         startPreIdleTimer();
     }
@@ -247,6 +257,13 @@ public final class IdleTimeoutManager {
             if (timeoutDurations.preIdleTimeoutMs == NO_IDLE_TIMEOUT) {
                 return Deadline.MAX;
             }
+            // check whether the connection has indeed been idle for the preIdleTimeout duration
+            Deadline postponed = maybePostponeDeadline(timeoutDurations.preIdleTimeoutMs);
+            if (postponed != null) {
+                // not idle long enough, reschedule
+                this.nextDeadline = postponed;
+                return postponed;
+            }
             // let the higher (application) layer know that we have reached pre idle timeout
             // and would like to terminate the connection some reasonably long duration from
             // now. If they want to keep the connection alive, they will disapprove the
@@ -266,17 +283,17 @@ public final class IdleTimeoutManager {
                 if (debug.on()) {
                     debug.log("idle termination disapproved");
                 }
-                keepAlive();
-            }
-            // re-check whether to postpone
-            final Deadline postponed = maybePostponeDeadline(timeoutDurations.preIdleTimeoutMs);
-            if (postponed != null) {
-                // reschedule
-                this.nextDeadline = postponed;
-                return postponed;
-            }
-            if (!allowedToIdleTimeout) {
-                return this.nextDeadline;
+                // we had reached the pre idle timeout (due to lack of traffic on the connection),
+                // yet the higher layer wants us to keep the connection alive. we thus explicitly
+                // send a ping to generate traffic on the connection and prevent the peer from
+                // idle timing out the connection
+                keepAliveWithPing();
+                // postpone and reschedule the pre idle timeout timer
+                final Deadline p = maybePostponeDeadline(timeoutDurations.preIdleTimeoutMs);
+                // we expect it to be postponed
+                assert p != null : "postponed deadline is null";
+                this.nextDeadline = p;
+                return p;
             }
             // the connection has been idle for the pre idle timeout duration
             // and has been approved to be terminated by the higher layer.
@@ -391,8 +408,9 @@ public final class IdleTimeoutManager {
         // silently close the connection and discard all its state
         if (debug.on()) {
             debug.log("silently closing connection due to idle timeout");
+        } else {
+            Log.logQuic("{0} silently closing connection due to idle timeout", connection.logTag());
         }
-        Log.logQuic("{0} silently closing connection due to idle timeout", connection.logTag());
         final TerminationCause cause = forSilentTermination("connection idle timed out");
         connection.terminator.terminate(cause);
     }

@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.net.http.HttpRequest.H3DiscoveryConfig;
 import java.net.http.UnsupportedProtocolVersionException;
 import java.nio.channels.ClosedChannelException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -140,6 +141,24 @@ public final class Http3ClientImpl implements AutoCloseable {
         transportParameters.setIntParameter(initial_max_streams_bidi, 0);
         // HTTP/3 doesn't allow remote bidirectional stream: no need to allow data
         transportParameters.setIntParameter(initial_max_stream_data_bidi_remote, 0);
+        final Duration h3IdleTimeout = client.idleConnectionTimeout(HTTP_3).orElse(null);
+        if (h3IdleTimeout != null) {
+            final long h3Millis = h3IdleTimeout.toMillis();
+            // If a h3 idle timeout has been configured, then we introduce a quic idle timeout
+            // which is (much) higher than the h3 idle timeout. This gives the h3 layer enough
+            // time to do a graceful close (through GOAWAY frame and then a CONNECTION_CLOSE
+            // frame).
+            if (h3Millis > 0) {
+                final long quicIdleMillis;
+                if (h3Millis <= 60000) {
+                    quicIdleMillis = Math.max(30000, h3Millis * 2); // at least 30 seconds
+                } else {
+                    quicIdleMillis = h3Millis + 60000; // a minute more than h3 timeout
+                }
+                transportParameters.setIntParameter(max_idle_timeout, quicIdleMillis);
+            }
+        }
+        builder.transportParameters(transportParameters);
         this.quicClient = builder.build();
     }
 

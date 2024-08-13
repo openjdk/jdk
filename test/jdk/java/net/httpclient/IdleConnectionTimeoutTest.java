@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +19,6 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 8288717
- * @summary Tests that when the idleConnectionTimeoutEvent is configured in HTTP/2,
- *          an HTTP/2 connection will close within the specified interval if there
- *          are no active streams on the connection.
- * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.httpclient.test.lib.http2.Http2TestServer jdk.httpclient.test.lib.http3.Http3TestServer
- *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=1
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=20
- *                                                             IdleConnectionTimeoutTest
- *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=1
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=20
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=abc
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=-1
- *                                                             IdleConnectionTimeoutTest
- *
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=1
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=20
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=abc
- *                                                             IdleConnectionTimeoutTest
- * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=-1
- *                                                             IdleConnectionTimeoutTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
@@ -91,6 +58,39 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static org.testng.Assert.assertEquals;
 
+/*
+ * @test
+ * @bug 8288717
+ * @summary Tests that when the idle connection timeout is configured for a HTTP connection,
+ *          then the connection is closed if it has been idle for that long
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.httpclient.test.lib.http3.Http3TestServer
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout=20
+ *                                                             IdleConnectionTimeoutTest
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=20
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=abc
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h2=-1
+ *                                                             IdleConnectionTimeoutTest
+ *
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=1
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=20
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=abc
+ *                                                             IdleConnectionTimeoutTest
+ * @run testng/othervm -Djdk.httpclient.HttpClient.log=all -Djdk.httpclient.keepalive.timeout.h3=-1
+ *                                                             IdleConnectionTimeoutTest
+ */
 public class IdleConnectionTimeoutTest {
 
     URI timeoutUriH2, noTimeoutUriH2, timeoutUriH3, noTimeoutUriH3, getH3;
@@ -110,7 +110,7 @@ public class IdleConnectionTimeoutTest {
         http2TestServer = new Http2TestServer(false, 0);
         http2TestServer.addHandler(new ServerTimeoutHandlerH2(), TIMEOUT_PATH);
         http2TestServer.addHandler(new ServerNoTimeoutHandlerH2(), NO_TIMEOUT_PATH);
-        http2TestServer.setExchangeSupplier(TestExchangeSupplier::new);
+        http2TestServer.setExchangeSupplier(TestExchange::new);
 
         sslContext = new SimpleSSLContext().get();
         http3TestServer = new Http3TestServer(sslContext) {
@@ -166,7 +166,6 @@ public class IdleConnectionTimeoutTest {
 
     @Test
     public void testRoot() {
-        // This should cause a read of the static finals
         String keepAliveVal = System.getProperty(KEEP_ALIVE_PROPERTY);
         String idleConnectionH2Val = System.getProperty(IDLE_CONN_PROPERTY_H2);
         String idleConnectionH3Val = System.getProperty(IDLE_CONN_PROPERTY_H3);
@@ -243,12 +242,12 @@ public class IdleConnectionTimeoutTest {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            if (exchange instanceof TestExchangeSupplier exch) {
+            if (exchange instanceof TestExchange exch) {
                 if (firstConnection == null) {
-                    firstConnection = exch.getTestConnection();
+                    firstConnection = exch.getServerConnection();
                     exch.sendResponseHeaders(200, 0);
                 } else {
-                    var secondConnection = exch.getTestConnection();
+                    var secondConnection = exch.getServerConnection();
 
                     if (firstConnection != secondConnection) {
                         testLog.println("ServerTimeoutHandlerH2: New Connection was used, idleConnectionTimeoutEvent fired."
@@ -270,12 +269,12 @@ public class IdleConnectionTimeoutTest {
 
         @Override
         public void handle(Http2TestExchange exchange) throws IOException {
-            if (exchange instanceof TestExchangeSupplier exch) {
+            if (exchange instanceof TestExchange exch) {
                 if (firstConnection == null) {
-                    firstConnection = exch.getTestConnection();
+                    firstConnection = exch.getServerConnection();
                     exch.sendResponseHeaders(200, 0);
                 } else {
-                    var secondConnection = exch.getTestConnection();
+                    var secondConnection = exch.getServerConnection();
 
                     if (firstConnection == secondConnection) {
                         testLog.println("ServerTimeoutHandlerH2: Same Connection was used, idleConnectionTimeoutEvent did not fire."
@@ -342,13 +341,17 @@ public class IdleConnectionTimeoutTest {
         }
     }
 
-    static class TestExchangeSupplier extends Http2TestExchangeImpl {
+    static class TestExchange extends Http2TestExchangeImpl {
 
-        public TestExchangeSupplier(int streamid, String method, HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder, URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os, Http2TestServerConnection conn, boolean pushAllowed) {
-            super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os, conn, pushAllowed);
+        public TestExchange(int streamid, String method,
+                            HttpHeaders reqheaders, HttpHeadersBuilder rspheadersBuilder,
+                            URI uri, InputStream is, SSLSession sslSession, BodyOutputStream os,
+                            Http2TestServerConnection conn, boolean pushAllowed) {
+            super(streamid, method, reqheaders, rspheadersBuilder, uri, is, sslSession, os,
+                    conn, pushAllowed);
         }
 
-        public Http2TestServerConnection getTestConnection() {
+        public Http2TestServerConnection getServerConnection() {
             return this.conn;
         }
     }
