@@ -95,6 +95,7 @@ public enum Modifier {
      * @jls 8.1.1.4 {@code static} Classes
      * @jls 8.3.1.1 {@code static} Fields
      * @jls 8.4.3.2 {@code static} Methods
+     * @jls 9.1.1.3 {@code static} Interfaces
      */
     STATIC,
 
