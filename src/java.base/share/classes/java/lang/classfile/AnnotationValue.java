@@ -83,7 +83,7 @@ public sealed interface AnnotationValue {
          *
          * @apiNote
          * All array elements derived from Java source code have the same type,
-         * which must not be an array type. ({@jls 9.6.1}) If such elements are
+         * which must not be an array type. (JLS {@jls 9.6.1}) If such elements are
          * annotations, they have the same annotation interface; if such elements
          * are enum, they belong to the same enum class.
          */
