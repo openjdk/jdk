@@ -3036,6 +3036,11 @@ RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address r
 
   int insts_size = 256;
   int locs_size  = 0;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
   CodeBuffer      code(name, insts_size, locs_size);
   MacroAssembler* masm = new MacroAssembler(&code);
   int framesize_in_bytes;
@@ -3045,9 +3050,6 @@ RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address r
   framesize_in_bytes = __ push_frame_abi160(0);
 
   address frame_complete_pc = __ pc();
-  if (restore_saved_exception_pc) {
-    __ unimplemented("SharedRuntime::throw_exception", 74);
-  }
 
   // Note that we always have a runtime stub frame on the top of stack at this point.
   __ get_PC(Z_R1);

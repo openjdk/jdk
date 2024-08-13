@@ -2663,6 +2663,10 @@ RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address r
   const int insts_size = 1024;
   const int locs_size  = 64;
 
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps  = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);

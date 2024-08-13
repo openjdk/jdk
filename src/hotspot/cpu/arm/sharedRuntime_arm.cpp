@@ -1736,6 +1736,11 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
   int insts_size = 128;
   int locs_size  = 32;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps;
   int frame_size;

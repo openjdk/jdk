@@ -3426,6 +3426,10 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 // SharedRuntime.cpp requires that this code be generated into a
 // RuntimeStub.
 RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
   CodeBuffer code(name, 1024 DEBUG_ONLY(+ 512), 0);
   MacroAssembler* masm = new MacroAssembler(&code);
 
