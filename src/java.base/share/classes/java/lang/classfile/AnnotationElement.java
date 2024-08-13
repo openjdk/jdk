@@ -66,7 +66,7 @@ public sealed interface AnnotationElement
     AnnotationValue value();
 
     /**
-     * {@return an annotation element-value pair}
+     * {@return an element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -76,7 +76,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair}
+     * {@return an element-value pair}
      * @param name the name of the key
      * @param value the associated value
      */
@@ -86,7 +86,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a class-valued annotation}
+     * {@return an element-value pair for a class-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofClass(ClassDesc) AnnotationValue::ofClass
@@ -97,7 +97,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a string-valued annotation}
+     * {@return an element-value pair for a string-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofString(String) AnnotationValue::ofString
@@ -108,7 +108,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a long-valued annotation}
+     * {@return an element-value pair for a long-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofLong(long) AnnotationValue::ofLong
@@ -119,7 +119,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for an int-valued annotation}
+     * {@return an element-value pair for an int-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofInt(int) AnnotationValue::ofInt
@@ -130,7 +130,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a char-valued annotation}
+     * {@return an element-value pair for a char-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofChar(char) AnnotationValue::ofChar
@@ -141,7 +141,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a short-valued annotation}
+     * {@return an element-value pair for a short-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofShort(short) AnnotationValue::ofShort
@@ -152,7 +152,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a byte-valued annotation}
+     * {@return an element-value pair for a byte-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofByte(byte) AnnotationValue::ofByte
@@ -163,7 +163,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a boolean-valued annotation}
+     * {@return an element-value pair for a boolean-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofBoolean(boolean) AnnotationValue::ofBoolean
@@ -174,7 +174,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a double-valued annotation}
+     * {@return an element-value pair for a double-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofDouble(double) AnnotationValue::ofDouble
@@ -185,7 +185,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for a float-valued annotation}
+     * {@return an element-value pair for a float-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofFloat(float) AnnotationValue::ofFloat
@@ -196,7 +196,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for an annotation-valued annotation}
+     * {@return an element-value pair for an annotation-valued element}
      * @param name the name of the key
      * @param value the associated value
      * @see AnnotationValue#ofAnnotation AnnotationValue::ofAnnotation
@@ -207,7 +207,7 @@ public sealed interface AnnotationElement
     }
 
     /**
-     * {@return an annotation element-value pair for an array-valued annotation}
+     * {@return an element-value pair for an array-valued element}
      * @param name the name of the key
      * @param values the associated values
      * @see AnnotationValue#ofArray(AnnotationValue...) AnnotationValue::ofArray
