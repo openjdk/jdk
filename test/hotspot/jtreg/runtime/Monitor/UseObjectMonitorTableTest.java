@@ -25,6 +25,7 @@
  * @test id=NormalDeflation
  * @summary A collection of small tests using synchronized, wait, notify to try
  *          and achieve good cheap coverage of UseObjectMonitorTable.
+ * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+UseObjectMonitorTable
  *                   UseObjectMonitorTableTest
@@ -33,11 +34,14 @@
 /**
  * @test id=ExtremeDeflation
  * @summary Run the same tests but with deflation running constantly.
+ * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions
  *                   -XX:GuaranteedAsyncDeflationInterval=1
  *                   -XX:+UseObjectMonitorTable
  *                   UseObjectMonitorTableTest
  */
+
+import jdk.test.lib.Utils;
 
 import java.lang.Runnable;
 import java.util.concurrent.BrokenBarrierException;
@@ -145,7 +149,7 @@ public class UseObjectMonitorTableTest {
         static final int MAX_DEPTH = 20;
         static final int MAX_RECURSION_COUNT = 10;
         static final double RECURSION_CHANCE = .25;
-        final Random random = new Random();
+        final Random random = Utils.getRandomInstance();
         final Locker lockers[] = new Locker[MAX_DEPTH];
         final CyclicBarrier syncBarrier = new CyclicBarrier(THREADS + 1);
         int count = 0;
@@ -199,9 +203,7 @@ public class UseObjectMonitorTableTest {
             }
         }
         public void run() {
-            final long seed = random.nextLong();
-            random.setSeed(seed);
-            System.out.println("RandomDepthTest started. Random seed: " + seed);
+            System.out.println("RandomDepthTest started.");
             for (int t = 0; t < THREADS; t++) {
                 TF.newThread(() -> {
                     syncPoint();
