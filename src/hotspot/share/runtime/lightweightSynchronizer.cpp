@@ -126,7 +126,7 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static double get_load_factor() {
-    return (double)_items_count/(double)_table_size;
+    return (double)_items_count / (double)_table_size;
   }
 
   static size_t table_size(Thread* current = Thread::current()) {
