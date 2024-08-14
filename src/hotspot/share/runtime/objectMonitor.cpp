@@ -661,11 +661,9 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
 
   if (UseObjectMonitorTable) {
     LightweightSynchronizer::deflate_monitor(current, obj, this);
-  } else {
-    if (obj != nullptr) {
-      // Install the old mark word if nobody else has already done it.
-      install_displaced_markword_in_object(obj);
-    }
+  } else if (obj != nullptr) {
+    // Install the old mark word if nobody else has already done it.
+    install_displaced_markword_in_object(obj);
   }
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
