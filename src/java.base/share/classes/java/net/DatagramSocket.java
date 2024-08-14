@@ -423,7 +423,7 @@ public class DatagramSocket implements java.io.Closeable {
      * there is no guarantee that the exception will be thrown.
      *
      * <p> If this socket is already connected, then this method will attempt to
-     * connect to the passed address and if the connect fails then the state of
+     * connect to the given address. If this connect fails then the state of
      * this socket is unknown - it may or may not be connected to the address
      * that it was previously connected to.
      *
@@ -490,7 +490,7 @@ public class DatagramSocket implements java.io.Closeable {
      * this method, may be discarded.
      *
      * <p> If this socket is already connected, then this method will attempt to
-     * connect to the passed address and if the connect fails then the state of
+     * connect to the given address. If this connect fails then the state of
      * this socket is unknown - it may or may not be connected to the address
      * that it was previously connected to.
      *
