@@ -677,7 +677,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
 // monitor and by other threads that have detected a race with the
 // deflation process.
 void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
-  assert(!UseObjectMonitorTable, "Lightweight has no dmw");
+  assert(!UseObjectMonitorTable, "ObjectMonitorTable has no dmw");
   // This function must only be called when (owner == DEFLATER_MARKER
   // && contentions <= 0), but we can't guarantee that here because
   // those values could change when the ObjectMonitor gets moved from
