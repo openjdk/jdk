@@ -629,7 +629,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
 
         bool success = false;
         if (LockingMode == LM_LEGACY) {
-           // Traditional lightweight locking.
+           // Traditional fast locking.
           markWord displaced = rcvr->mark().set_unlocked();
           mon->lock()->set_displaced_header(displaced);
           success = true;
@@ -733,7 +733,7 @@ void BytecodeInterpreter::run(interpreterState istate) {
 
       bool success = false;
       if (LockingMode == LM_LEGACY) {
-        // traditional lightweight locking
+        // Traditional fast locking.
         markWord displaced = lockee->mark().set_unlocked();
         entry->lock()->set_displaced_header(displaced);
         success = true;
@@ -1668,7 +1668,7 @@ run:
 
           bool success = false;
           if (LockingMode == LM_LEGACY) {
-            // traditional lightweight locking
+            // Traditional fast locking.
             markWord displaced = lockee->mark().set_unlocked();
             entry->lock()->set_displaced_header(displaced);
             success = true;
