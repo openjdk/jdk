@@ -423,8 +423,9 @@ public class DatagramSocket implements java.io.Closeable {
      * there is no guarantee that the exception will be thrown.
      *
      * <p> If this socket is already connected, then this method will attempt to
-     * connect to the passed address and if that attempt completes exceptionally,
-     * then this socket will continue to be connected to the previously connected address.
+     * connect to the passed address and if the connect fails then the state of
+     * this socket is unknown - it may or may not be connected to the address
+     * that it was previously connected to.
      *
      * <p> If a security manager has been installed then it is invoked to check
      * access to the remote address. Specifically, if the given {@code address}
@@ -487,6 +488,11 @@ public class DatagramSocket implements java.io.Closeable {
      * java.net.StandardSocketOptions#SO_RCVBUF socket receive buffer}, which
      * have not been {@linkplain #receive(DatagramPacket) received} before invoking
      * this method, may be discarded.
+     *
+     * <p> If this socket is already connected, then this method will attempt to
+     * connect to the passed address and if the connect fails then the state of
+     * this socket is unknown - it may or may not be connected to the address
+     * that it was previously connected to.
      *
      * @param   addr    The remote address.
      *
