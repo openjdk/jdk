@@ -416,7 +416,7 @@ ObjectMonitor* LightweightSynchronizer::add_monitor(JavaThread* current, ObjectM
   return ObjectMonitorTable::monitor_put_get(current, monitor, obj);
 }
 
-bool LightweightSynchronizer::remove_monitor(Thread* current, oop obj, ObjectMonitor* monitor) {
+bool LightweightSynchronizer::remove_monitor(Thread* current, ObjectMonitor* monitor, oop obj) {
   assert(UseObjectMonitorTable, "must be");
   assert(monitor->object_peek() == obj, "must be, cleared objects are removed by is_dead");
 
@@ -1153,7 +1153,7 @@ void LightweightSynchronizer::deflate_monitor(Thread* current, oop obj, ObjectMo
   if (obj != nullptr) {
     deflate_mark_word(obj);
   }
-  bool removed = remove_monitor(current, obj, monitor);
+  bool removed = remove_monitor(current, monitor, obj);
   if (obj != nullptr) {
     assert(removed, "Should have removed the entry if obj was alive");
   }
