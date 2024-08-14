@@ -400,8 +400,7 @@ static bool useHeavyMonitors() {
 // Note that we can't safely call AsyncPrintJavaStack() from within
 // quick_enter() as our thread state remains _in_Java.
 
-bool ObjectSynchronizer::quick_enter_legacy(oop obj, JavaThread* current,
-                                     BasicLock * lock) {
+bool ObjectSynchronizer::quick_enter_legacy(oop obj, BasicLock* lock, JavaThread* current) {
   assert(current->thread_state() == _thread_in_Java, "invariant");
 
   if (useHeavyMonitors()) {
@@ -409,7 +408,7 @@ bool ObjectSynchronizer::quick_enter_legacy(oop obj, JavaThread* current,
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, current, lock);
+    return LightweightSynchronizer::quick_enter(obj, lock, current);
   }
 
   assert(LockingMode == LM_LEGACY, "legacy mode below");

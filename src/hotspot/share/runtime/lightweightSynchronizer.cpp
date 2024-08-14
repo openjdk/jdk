@@ -1166,7 +1166,7 @@ bool LightweightSynchronizer::contains_monitor(Thread* current, ObjectMonitor* m
   return ObjectMonitorTable::contains_monitor(current, monitor);
 }
 
-bool LightweightSynchronizer::quick_enter(oop obj, JavaThread* current, BasicLock* lock) {
+bool LightweightSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {
   assert(current->thread_state() == _thread_in_Java, "must be");
   assert(obj != nullptr, "must be");
   NoSafepointVerifier nsv;

@@ -52,8 +52,7 @@ inline void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* c
   }
 }
 
-inline bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
-                                     BasicLock * lock) {
+inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {
   assert(current->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == nullptr) return false;       // Need to throw NPE
@@ -63,9 +62,9 @@ inline bool ObjectSynchronizer::quick_enter(oop obj, JavaThread* current,
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    return LightweightSynchronizer::quick_enter(obj, current, lock);
+    return LightweightSynchronizer::quick_enter(obj, lock, current);
   } else {
-    return quick_enter_legacy(obj, current, lock);
+    return quick_enter_legacy(obj, lock, current);
   }
 }
 

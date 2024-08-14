@@ -74,7 +74,7 @@ class LightweightSynchronizer : AllStatic {
 
   static bool contains_monitor(Thread* current, ObjectMonitor* monitor);
 
-  static bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
+  static bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
 };
 
 #endif // SHARE_RUNTIME_LIGHTWEIGHTSYNCHRONIZER_HPP

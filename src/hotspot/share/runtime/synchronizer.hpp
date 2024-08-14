@@ -108,7 +108,7 @@ private:
   // inflated monitor enter.
   static bool enter_fast_impl(Handle obj, BasicLock* lock, JavaThread* locking_thread);
 
-  static bool quick_enter_legacy(oop obj, JavaThread* current, BasicLock* Lock);
+  static bool quick_enter_legacy(oop obj, BasicLock* Lock, JavaThread* current);
   static void enter_legacy(Handle obj, BasicLock* Lock, JavaThread* current);
   static void exit_legacy(oop obj, BasicLock* lock, JavaThread* current);
 public:
@@ -123,7 +123,8 @@ public:
   static void notifyall(Handle obj, TRAPS);
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
-  static inline bool quick_enter(oop obj, JavaThread* current, BasicLock* Lock);
+
+  static inline bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
 
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk
