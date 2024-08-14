@@ -728,14 +728,8 @@ size_t ShenandoahHeap::initial_capacity() const {
   return _initial_size;
 }
 
-bool ShenandoahHeap::is_in_bounds(const void* p) const {
-  HeapWord* heap_base = (HeapWord*) base();
-  HeapWord* last_region_end = heap_base + ShenandoahHeapRegion::region_size_words() * num_regions();
-  return p >= heap_base && p < last_region_end;
-}
-
 bool ShenandoahHeap::is_in(const void* p) const {
-  if (is_in_bounds(p)) {
+  if (is_in_reserved(p)) {
     // Now check if region is in active state, unless we are moving
     // objects during Full GC across the regions in not yet determinate state.
     return is_full_gc_move_in_progress() ||

@@ -37,7 +37,7 @@ void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // should be in heap, in known committed region, within that region.
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (!heap->is_in_bounds(loc)) return;
+  if (!heap->is_in_reserved(loc)) return;
 
   ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
   if (r != nullptr && r->is_committed()) {
@@ -77,7 +77,7 @@ void ShenandoahAsserts::print_obj(ShenandoahMessageBuffer& msg, oop obj) {
 
 void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->is_in_bounds(loc)) {
+  if (heap->is_in_reserved(loc)) {
     msg.append("  inside Java heap\n");
     ShenandoahHeapRegion *r = heap->heap_region_containing(loc);
     stringStream ss;
@@ -96,7 +96,7 @@ void ShenandoahAsserts::print_non_obj(ShenandoahMessageBuffer& msg, void* loc) {
 void ShenandoahAsserts::print_obj_safe(ShenandoahMessageBuffer& msg, void* loc) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   msg.append("  " PTR_FORMAT " - safe print, no details\n", p2i(loc));
-  if (heap->is_in_bounds(loc)) {
+  if (heap->is_in_reserved(loc)) {
     ShenandoahHeapRegion* r = heap->heap_region_containing(loc);
     if (r != nullptr) {
       stringStream ss;
@@ -113,7 +113,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ResourceMark rm;
 
-  bool loc_in_heap = (loc != nullptr && heap->is_in_bounds(loc));
+  bool loc_in_heap = (loc != nullptr && heap->is_in_reserved(loc));
 
   ShenandoahMessageBuffer msg("%s; %s\n\n", phase, label);
 
@@ -169,7 +169,7 @@ void ShenandoahAsserts::print_failure(SafeLevel level, oop obj, void* interior_l
 void ShenandoahAsserts::assert_in_heap_bounds(void* interior_loc, oop obj, const char *file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  if (!heap->is_in_bounds(obj)) {
+  if (!heap->is_in_reserved(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_bounds failed",
                   "oop must be in heap bounds",
                   file, line);
@@ -179,7 +179,7 @@ void ShenandoahAsserts::assert_in_heap_bounds(void* interior_loc, oop obj, const
 void ShenandoahAsserts::assert_in_heap_bounds_or_null(void* interior_loc, oop obj, const char *file, int line) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  if (obj != nullptr && !heap->is_in_bounds(obj)) {
+  if (obj != nullptr && !heap->is_in_reserved(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_heap_bounds_or_null failed",
                   "oop must be in heap bounds",
                   file, line);
@@ -191,7 +191,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
 
   // Step 1. Check that obj is correct.
   // After this step, it is safe to call heap_region_containing().
-  if (!heap->is_in_bounds(obj)) {
+  if (!heap->is_in_reserved(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "oop must be in heap bounds",
                   file, line);
@@ -230,7 +230,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
     }
 
     // Step 2. Check that forwardee is correct
-    if (!heap->is_in_bounds(fwd)) {
+    if (!heap->is_in_reserved(fwd)) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee must be in heap bounds",
                     file, line);

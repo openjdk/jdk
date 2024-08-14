@@ -494,10 +494,8 @@ public:
   bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
 
   // Check the pointer is in active part of Java heap.
+  // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
-
-  // Check the pointer is within Java heap bounds.
-  bool is_in_bounds(const void* p) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
 
