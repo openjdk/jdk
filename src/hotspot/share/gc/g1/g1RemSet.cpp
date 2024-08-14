@@ -1230,11 +1230,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
       _cards_skipped(0)
     {}
 
-    void do_card_ptr(CardValue* card_ptr, uint worker_id) {
+    void do_card_ptr(CardValue* card_ptr) override {
       // The only time we care about recording cards that
       // contain references that point into the collection set
       // is during RSet updating within an evacuation pause.
-      // In this case worker_id should be the id of a GC worker thread.
       assert(SafepointSynchronize::is_at_safepoint(), "not during an evacuation pause");
 
       uint const region_idx = _ct->region_idx_for(card_ptr);
@@ -1342,6 +1341,7 @@ public:
       FREE_C_HEAP_ARRAY(Stack, _dirty_card_buffers);
     }
   }
+
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();

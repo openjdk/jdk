@@ -522,7 +522,7 @@ public:
     _g1_ct(g1h->card_table()),
     _evac_failure_regions(evac_failure_regions) { }
 
-  void do_card_ptr(CardValue* card_ptr, uint worker_id) {
+  void do_card_ptr(CardValue* card_ptr) override {
     G1HeapRegion* hr = region_for_card(card_ptr);
 
     // Should only dirty cards in regions that won't be freed.
