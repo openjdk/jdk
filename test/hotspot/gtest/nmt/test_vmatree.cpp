@@ -185,7 +185,7 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
-TEST_VM_F(NMTVMATreeTest, performance) {
+TEST_VM_F(NMTVMATreeTest, PerformanceComparison) {
   VMATree::RegionData rd{si[0], mtTest};
   if (!MemTracker::enabled())
     return;

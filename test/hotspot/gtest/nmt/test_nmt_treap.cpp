@@ -390,10 +390,11 @@ TEST_VM_F(NMTTreapTest, TestClosestLeq) {
   }
 }
 
-TEST_VM_F(NMTTreapTest, performance) {
+TEST_VM_F(NMTTreapTest, PerformanceComparison) {
   compare_insert_SLL_with_Treap();
   compare_remove_SLL_with_Treap();
 }
+
 #ifdef ASSERT
 
 TEST_VM_F(NMTTreapTest, VerifyItThroughStressTest) {

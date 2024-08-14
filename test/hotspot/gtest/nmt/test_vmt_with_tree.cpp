@@ -191,7 +191,8 @@ SummaryDiff vms_diff(VirtualMemorySnapshot* vms) {
   NativeCallStack ncs;        \
   VirtualMemorySnapshot vms;  \
   ThreadCritical tc;          \
-  ResourceMark rm;
+  ResourceMark rm;            \
+  if (!MemTracker::enabled()) return;
 
 #define CALL_OLD_AND_NEW(code)  \
   VMTNew::code;                 \
@@ -208,20 +209,20 @@ SummaryDiff vms_diff(VirtualMemorySnapshot* vms) {
 
 
 
-TEST_VM(VMTWithTree, add_reserved_region) {
+TEST_VM(VMTWithTree, AddReservedRegion) {
   COMMON_DEFS;
   CALL_AND_COMPARE(add_reserved_region(1200_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(remove_released_region(1200_a, 100));
 }
 
-TEST_VM(VMTWithTree, add_committed_region) {
+TEST_VM(VMTWithTree, AddCommittedRegion) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2200_a, 100, ncs, mtTest));
   CALL_AND_COMPARE(add_committed_region(2250_a, 10, ncs));
   CALL_OLD_AND_NEW(remove_released_region(2200_a, 100));
 }
 
-TEST_VM(VMTWithTree, remove_uncommitted_region) {
+TEST_VM(VMTWithTree, RemoveUncommittedRegion) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2200_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(add_committed_region(2250_a, 10, ncs));
@@ -229,7 +230,7 @@ TEST_VM(VMTWithTree, remove_uncommitted_region) {
   CALL_OLD_AND_NEW(remove_released_region(2200_a, 100));
 }
 
-TEST_VM(VMTWithTree, release_region_partial) {
+TEST_VM(VMTWithTree, ReleaseRegionPartial) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2200_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(add_committed_region(2250_a, 10, ncs));
@@ -238,21 +239,21 @@ TEST_VM(VMTWithTree, release_region_partial) {
   CALL_OLD_AND_NEW(remove_released_region(2200_a, 20));
 }
 
-TEST_VM(VMTWithTree, release_region_whole) {
+TEST_VM(VMTWithTree, ReleaseRegionWhole) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2400_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(add_committed_region(2450_a, 10, ncs));
   CALL_AND_COMPARE(remove_released_region(2400_a, 100));
 }
 
-TEST_VM(VMTWithTree, set_region_type) {
+TEST_VM(VMTWithTree, SetRegionType) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(2500_a, 100, ncs, mtNone));
   CALL_AND_COMPARE(set_reserved_region_type(2500_a, mtClass));
   CALL_OLD_AND_NEW(remove_released_region(2500_a, 100));
 }
 
-TEST_VM(VMTWithTree, split_region) {
+TEST_VM(VMTWithTree, SplitRegion) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(4200_a, 100, ncs, mtTest));
   CALL_AND_COMPARE(split_reserved_region(4200_a, 100, 30, mtClass, mtClassShared));
@@ -260,7 +261,7 @@ TEST_VM(VMTWithTree, split_region) {
   CALL_OLD_AND_NEW(remove_released_region(4230_a, 70));
 }
 
-TEST_VM(VMTWithTree, print_containig_region) {
+TEST_VM(VMTWithTree, PrintContainingRegion) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(7200_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(add_reserved_region(7400_a, 100, ncs, mtTest));
@@ -273,7 +274,7 @@ TEST_VM(VMTWithTree, print_containig_region) {
   CALL_OLD_AND_NEW(remove_released_region(7600_a, 100));
 }
 
-TEST_VM(VMTWithTree, walk_virtual_memory) {
+TEST_VM(VMTWithTree, WalkVirtualMemory) {
   COMMON_DEFS;
   CALL_OLD_AND_NEW(add_reserved_region(8200_a, 100, ncs, mtTest));
   CALL_OLD_AND_NEW(add_reserved_region(8400_a, 100, ncs, mtTest));
@@ -293,7 +294,7 @@ TEST_VM(VMTWithTree, walk_virtual_memory) {
   VMTNew::walk_virtual_memory(&walker);
 }
 
-TEST_VM_F(VMTWithVMATreeTest, performance_comparison) {
+TEST_VM_F(VMTWithVMATreeTest, PerformanceComparison) {
 
   tty->print_cr("\n\nPerformance comparison of two versions is skipped.\n\n");
   return;
