@@ -358,12 +358,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
   CompilationPolicy::compile_if_required(method, CHECK);
 
   // Since the call stub sets up like the interpreter we call the from_interpreted_entry
-  // so we can go compiled via a i2c. Otherwise initial entry method will always
-  // run interpreted.
+  // so we can go compiled via a i2c.
   address entry_point = method->from_interpreted_entry();
-  if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
-    entry_point = method->interpreter_entry();
-  }
 
   // Figure out if the result value is an oop or not (Note: This is a different value
   // than result_type. result_type will be T_INT of oops. (it is about size)
@@ -412,6 +408,12 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
         }
       }
 #endif
+
+      // What to do if JVMCI set adapter?
+      if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+        entry_point = method->interpreter_entry();
+      }
+
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
