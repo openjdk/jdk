@@ -365,7 +365,7 @@ jobs:
       - build-linux-x64-hs-minimal
       - build-linux-x64-hs-optimized
       - build-linux-cross-compile
-      - build-alpine-linux-hs
+      - build-alpine-linux-x64-hs
       - build-macos-x64
       - build-macos-aarch64
       - build-windows-x64
