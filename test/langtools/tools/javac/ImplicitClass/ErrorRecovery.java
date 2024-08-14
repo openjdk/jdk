@@ -98,19 +98,20 @@ public class ErrorRecovery extends TestRunner {
     }
 
     @Test
-    public void testBrokenVariable(Path base) throws Exception {
+    public void testStatement(Path base) throws Exception {
         Path current = base.resolve(".");
         Path src = current.resolve("src");
         Path classes = current.resolve("classes");
         tb.writeFile(src.resolve("Test.java"),
                      """
-                     if (true) ;
+                     if (true) {int var = 0;}
                      """);
 
         Files.createDirectories(classes);
 
         List<String> log = new JavacTask(tb)
             .options("-XDrawDiagnostics",
+                     "-XDshould-stop.at=FLOW",
                      "--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
@@ -148,4 +149,74 @@ public class ErrorRecovery extends TestRunner {
             .run(Task.Expect.SUCCESS)
             .writeAll();
     }
+
+    @Test
+    public void testVeryBroken(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     "neither-of-class-method-file-statement"
+                     """);
+
+        Files.createDirectories(classes);
+
+        List<String> log;
+        List<String> expected;
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                        "--enable-preview", "--release", SOURCE_VERSION)
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+                "Test.java:1:1: compiler.err.class.method.or.field.expected",
+                "1 error"
+        );
+
+        if (!Objects.equals(expected, log)) {
+            throw new AssertionError("Unexpected output: " + log +
+                                     ", while expecting: " + expected);
+        }
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+                "Test.java:1:1: compiler.err.expected4: class, interface, enum, record",
+                "1 error"
+        );
+
+        if (!Objects.equals(expected, log)) {
+            throw new AssertionError("Unexpected output: " + log +
+                                     ", while expecting: " + expected);
+        }
+
+        log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                         "--release", "17")
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+        expected = List.of(
+                "Test.java:1:1: compiler.err.expected4: class, interface, enum, record",
+                "1 error"
+        );
+
+        if (!Objects.equals(expected, log)) {
+            throw new AssertionError("Unexpected output: " + log +
+                                     ", while expecting: " + expected);
+        }
+    }
+
 }
