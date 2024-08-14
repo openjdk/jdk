@@ -244,8 +244,8 @@ MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpl
 #ifndef PRODUCT
   if (trace.is_trace_aliasing()) {
     tty->print_cr("MemPointerSimpleForm::get_aliasing_with:");
-    print();
-    other.print();
+    print_on(tty);
+    other.print_on(tty);
   }
 #endif
 
@@ -290,7 +290,7 @@ bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
 
 #ifndef PRODUCT
   if (_trace.is_trace_adjacency()) {
-    tty->print("Aliasing for adjacency: "); aliasing.print(); tty->cr();
+    tty->print("Aliasing for adjacency: "); aliasing.print_on(tty); tty->cr();
     // TODO
   }
 #endif

@@ -108,11 +108,11 @@ public:
   }
 
 #ifndef PRODUCT
-  void print() const {
+  void print_on(outputStream* st) const {
     if (is_NaN()) {
-      tty->print("NaN");
+      st->print("NaN");
     } else {
-      tty->print("%d", value());
+      st->print("%d", value());
     }
   }
 #endif
@@ -214,12 +214,12 @@ public:
 //   }
 
 #ifndef PRODUCT
-  void print() const {
+  void print_on(outputStream* st) const {
     switch(_aliasing) {
-      case Unknown: tty->print("Unknown");               break;
-      case Never:   tty->print("Never");                 break;
-      case Always:  tty->print("Always(%d)", _distance); break;
-      case Maybe:   tty->print("Maybe(%d)", _distance);  break;
+      case Unknown: st->print("Unknown");               break;
+      case Never:   st->print("Never");                 break;
+      case Always:  st->print("Always(%d)", _distance); break;
+      case Maybe:   st->print("Maybe(%d)", _distance);  break;
       default: ShouldNotReachHere();
     }
   }
@@ -299,16 +299,15 @@ public:
   }
 
 #ifndef PRODUCT
-  void print() const {
-    tty->print("  MemPointerSummand: ");
+  void print_on(outputStream* st) const {
+    st->print("Summand[");
 #ifdef _LP64
-    tty->print("(scaleL = ");
-    _scaleL.print();
-    tty->print(") ");
+    st->print("(scaleL = ");
+    _scaleL.print_on(st);
+    st->print(") ");
 #endif
-    _scale.print();
-    tty->print(" * variable: ");
-    _variable->dump();
+    _scale.print_on(st);
+    tty->print(" * [%d %s]]", _variable->_idx, _variable->Name());
   }
 #endif
 };
@@ -365,22 +364,21 @@ public:
   const NoOverflowInt con() const { return _con; }
 
 #ifndef PRODUCT
-  void print() const {
+  void print_on(outputStream* st) const {
     if (_pointer == nullptr) {
-      tty->print_cr("MemPointerSimpleForm empty.");
+      st->print_cr("MemPointerSimpleForm empty.");
       return;
     }
-    tty->print("MemPointerSimpleForm for ");
-    _pointer->dump();
-    tty->print("  con = ");
-    _con.print();
-    tty->cr();
+    st->print("MemPointerSimpleForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
+    _con.print_on(st);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
       if (summand.variable() != nullptr) {
-        summand.print();
+        st->print(", ");
+        summand.print_on(st);
       }
     }
+    st->print_cr("]");
   }
 #endif
 };
@@ -431,7 +429,7 @@ public:
       tty->print_cr("MemPointer::MemPointer:");
       tty->print("mem: "); mem->dump();
       _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
-      _simple_form.print();
+      _simple_form.print_on(tty);
     }
 #endif
   }
