@@ -156,11 +156,11 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   //   DEFLATER_MARKER must *not* have that bit set.
   static const uintptr_t DEFLATER_MARKER_VALUE = 2;
   #define DEFLATER_MARKER reinterpret_cast<void*>(DEFLATER_MARKER_VALUE)
-public:
+ public:
   // NOTE: Typed as uintptr_t so that we can pick it up in SA, via vmStructs.
   static const uintptr_t ANONYMOUS_OWNER = 1;
 
-private:
+ private:
   static void* anon_owner_ptr() { return reinterpret_cast<void*>(ANONYMOUS_OWNER); }
 
   void* volatile _owner;            // pointer to owning thread OR BasicLock
@@ -385,7 +385,7 @@ private:
 
   // Deflation support
   bool      deflate_monitor(Thread* current);
-private:
+ private:
   void      install_displaced_markword_in_object(const oop obj);
 };
 
@@ -398,7 +398,7 @@ class ObjectMonitorContentionMark : StackObj {
 
   NONCOPYABLE(ObjectMonitorContentionMark);
 
-public:
+ public:
   explicit ObjectMonitorContentionMark(ObjectMonitor* monitor);
   ~ObjectMonitorContentionMark();
 };
