@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4348864 4112924 4425386 4495052 4836940 4851113 8008577 8174269
+ *      8333582
  * @summary test time zone display names in en_US locale
  * @run junit TimeZoneNameTest
  */
