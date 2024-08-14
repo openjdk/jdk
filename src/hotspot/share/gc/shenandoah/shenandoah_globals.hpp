@@ -334,9 +334,6 @@
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
                                                                             \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
-                                                                            \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \
                                                                             \

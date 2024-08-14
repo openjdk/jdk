@@ -393,7 +393,6 @@ public:
   inline bool       is_region_aligned(HeapWord* addr) const;
 
 #ifdef  ASSERT
-  void verify_clear(const PSVirtualSpace* vspace);
   void verify_clear();
 #endif  // #ifdef ASSERT
 
