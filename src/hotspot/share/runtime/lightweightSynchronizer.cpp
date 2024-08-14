@@ -486,7 +486,7 @@ class LightweightSynchronizer::LockStackInflateContendedLocks : private OopClosu
     current->lock_stack().oops_do(this);
     for (int i = 0; i < _length; i++) {
       LightweightSynchronizer::
-        inflate_fast_locked_object(_contended_oops[i], current, current, ObjectSynchronizer::inflate_cause_vm_internal);
+        inflate_fast_locked_object(_contended_oops[i], ObjectSynchronizer::inflate_cause_vm_internal, current, current);
     }
   }
 };
@@ -501,7 +501,7 @@ void LightweightSynchronizer::ensure_lock_stack_space(JavaThread* current) {
     LockStackInflateContendedLocks().inflate(current);
     if (lock_stack.is_full()) {
       // Inflate the oldest object
-      inflate_fast_locked_object(lock_stack.bottom(), current, current, ObjectSynchronizer::inflate_cause_vm_internal);
+      inflate_fast_locked_object(lock_stack.bottom(), ObjectSynchronizer::inflate_cause_vm_internal, current, current);
     }
   }
 }
@@ -634,12 +634,12 @@ void LightweightSynchronizer::enter_for(Handle obj, BasicLock* lock, JavaThread*
 
   ObjectMonitor* monitor = nullptr;
   if (lock_stack.contains(obj())) {
-    monitor = inflate_fast_locked_object(obj(), locking_thread, current, ObjectSynchronizer::inflate_cause_monitor_enter);
+    monitor = inflate_fast_locked_object(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
     bool entered = monitor->enter_for(locking_thread);
     assert(entered, "recursive ObjectMonitor::enter_for must succeed");
   } else {
     // It is assumed that enter_for must enter on an object without contention.
-    monitor = inflate_and_enter(obj(), locking_thread, current, ObjectSynchronizer::inflate_cause_monitor_enter);
+    monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, locking_thread, current);
   }
 
   assert(monitor != nullptr, "LightweightSynchronizer::enter_for must succeed");
@@ -672,7 +672,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
   }
 
   if (lock_stack.contains(obj())) {
-    ObjectMonitor* monitor = inflate_fast_locked_object(obj(), current, current, ObjectSynchronizer::inflate_cause_monitor_enter);
+    ObjectMonitor* monitor = inflate_fast_locked_object(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, current, current);
     bool entered = monitor->enter(current);
     assert(entered, "recursive ObjectMonitor::enter must succeed");
     cache_setter.set_monitor(monitor);
@@ -695,7 +695,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
       spin_yield.wait();
     }
 
-    ObjectMonitor* monitor = inflate_and_enter(obj(), current, current, ObjectSynchronizer::inflate_cause_monitor_enter);
+    ObjectMonitor* monitor = inflate_and_enter(obj(), ObjectSynchronizer::inflate_cause_monitor_enter, current, current);
     if (monitor != nullptr) {
       cache_setter.set_monitor(monitor);
       return;
@@ -726,7 +726,7 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
       // Must inflate recursive locks if try_recursive_exit fails
       // This happens for un-structured unlocks, could potentially
       // fix try_recursive_exit to handle these.
-      inflate_fast_locked_object(object, current, current, ObjectSynchronizer::inflate_cause_vm_internal);
+      inflate_fast_locked_object(object, ObjectSynchronizer::inflate_cause_vm_internal, current, current);
     }
   }
 
@@ -783,7 +783,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
                   "current thread is not owner", nullptr);
       } else {
         // Current thread owns the lock, must inflate
-        return inflate_fast_locked_object(obj, current, current, cause);
+        return inflate_fast_locked_object(obj, cause, current, current);
       }
     }
 
@@ -808,7 +808,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
   }
 }
 
-ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(Thread* current, JavaThread* inflating_thread, oop object, ObjectSynchronizer::InflateCause cause) {
+ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* inflating_thread, Thread* current) {
 
   // The JavaThread* inflating_thread parameter is only used by LM_LIGHTWEIGHT and requires
   // that the inflating_thread == Thread::current() or is suspended throughout the call by
@@ -932,7 +932,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_into_object_header(Thread* curre
   }
 }
 
-ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause) {
+ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used for lightweight");
   VerifyThreadState vts(locking_thread, current);
   assert(locking_thread->lock_stack().contains(object), "locking_thread must have object on its lock stack");
@@ -940,7 +940,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   ObjectMonitor* monitor;
 
   if (!UseObjectMonitorTable) {
-    return inflate_into_object_header(current, locking_thread, object, cause);
+    return inflate_into_object_header(object, cause, locking_thread, current);
   }
 
   // Inflating requires a hash code
@@ -989,7 +989,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_fast_locked_object(oop object, J
   return monitor;
 }
 
-ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause) {
+ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used for lightweight");
   VerifyThreadState vts(locking_thread, current);
 
@@ -1000,7 +1000,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, JavaThread
 
   if (!UseObjectMonitorTable) {
     // Do the old inflate and enter.
-    monitor = inflate_into_object_header(current, locking_thread, object, cause);
+    monitor = inflate_into_object_header(object, cause, locking_thread, current);
 
     bool entered;
     if (locking_thread == current) {

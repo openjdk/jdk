@@ -63,10 +63,10 @@ class LightweightSynchronizer : AllStatic {
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop object, JavaThread* current);
 
-  static ObjectMonitor* inflate_into_object_header(Thread* current, JavaThread* inflating_thread, oop object, ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* inflate_into_object_header(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* inflating_thread, Thread* current);
   static ObjectMonitor* inflate_locked_or_imse(oop object, ObjectSynchronizer::InflateCause cause, TRAPS);
-  static ObjectMonitor* inflate_fast_locked_object(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause);
-  static ObjectMonitor* inflate_and_enter(oop object, JavaThread* locking_thread, JavaThread* current, ObjectSynchronizer::InflateCause cause);
+  static ObjectMonitor* inflate_fast_locked_object(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
+  static ObjectMonitor* inflate_and_enter(oop object, ObjectSynchronizer::InflateCause cause, JavaThread* locking_thread, JavaThread* current);
 
   static void deflate_monitor(Thread* current, oop obj, ObjectMonitor* monitor);
 
