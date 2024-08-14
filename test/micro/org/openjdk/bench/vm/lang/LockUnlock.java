@@ -197,7 +197,7 @@ public class LockUnlock {
         }
     }
 
-  /** Perform two synchronized after each other on the same object. */
+    /** Perform two synchronized after each other on the same object. */
     @Benchmark
     public void testInflatedSerialLockUnlock() {
         for (int i = 0; i < innerCount; i++) {
