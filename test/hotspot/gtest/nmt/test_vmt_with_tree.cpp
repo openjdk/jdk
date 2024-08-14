@@ -46,7 +46,7 @@ class VMTWithVMATreeTest : public testing::Test {
   const int region_size = 100 * K;
   const int commit_size = 4 * K;
   const int region_gap = 4 * K;
-  const address all_base = 0xABCD000_a;
+  const address all_base = 0xABCD0000_a;
 
   VMTWithVMATreeTest() { }
   class TimeIt {
@@ -148,7 +148,7 @@ using VMTNew = VirtualMemoryTrackerWithTree::Instance;
 using VMS = VirtualMemorySummary;
 using SummaryDiff = VMATree::SummaryDiff;
 
-bool compare_diffs(SummaryDiff d1, SummaryDiff d2) {
+bool same_diffs(SummaryDiff d1, SummaryDiff d2) {
   bool result = true;
   for (int i = 0; i < mt_number_of_types; i++) {
     if (d1.flag[i].reserve != d2.flag[i].reserve) {
@@ -194,18 +194,18 @@ SummaryDiff vms_diff(VirtualMemorySnapshot* vms) {
   ResourceMark rm;            \
   if (!MemTracker::enabled()) return;
 
-#define CALL_OLD_AND_NEW(code)  \
-  VMTNew::code;                 \
-  VMTOld::code;
+#define CALL_OLD_AND_NEW(func_to_call)  \
+  VMTNew::func_to_call;                 \
+  VMTOld::func_to_call;
 
-#define CALL_AND_COMPARE(code)            \
-  VMS::as_snapshot()->copy_to(&vms);      \
-  VMTOld::code  ;                         \
-  SummaryDiff diff_old = vms_diff(&vms);  \
-  VMS::as_snapshot()->copy_to(&vms);      \
-  VMTNew::code  ;                         \
-  SummaryDiff diff_new = vms_diff(&vms);  \
-  EXPECT_TRUE(compare_diffs(diff_old, diff_new));
+#define CALL_AND_COMPARE(func_to_call)        \
+  VMS::as_snapshot()->copy_to(&vms);          \
+  VMTOld::func_to_call ;                      \
+  SummaryDiff diff_old = vms_diff(&vms);      \
+  VMS::as_snapshot()->copy_to(&vms);          \
+  VMTNew::func_to_call ;                      \
+  SummaryDiff diff_new = vms_diff(&vms);      \
+  EXPECT_TRUE(same_diffs(diff_old, diff_new));
 
 
 
