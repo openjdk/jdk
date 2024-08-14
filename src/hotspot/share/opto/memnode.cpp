@@ -48,6 +48,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
+#include "opto/traceMergeStoresTag.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
@@ -2738,8 +2739,13 @@ private:
   PhaseGVN* _phase;
   StoreNode* _store;
 
+  NOT_PRODUCT( const CHeapBitMap &_trace_tags; )
+
 public:
-  MergePrimitiveStores(PhaseGVN* phase, StoreNode* store) : _phase(phase), _store(store) {}
+  MergePrimitiveStores(PhaseGVN* phase, StoreNode* store) :
+    _phase(phase), _store(store)
+    NOT_PRODUCT( COMMA _trace_tags(Compile::current()->directive()->trace_merge_stores_tags()) )
+    {}
 
   StoreNode* run();
 
@@ -2783,7 +2789,18 @@ private:
   Node* make_merged_input_value(const Node_List& merge_list);
   StoreNode* make_merged_store(const Node_List& merge_list, Node* merged_input_value);
 
-  DEBUG_ONLY( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
+#ifndef PRODUCT
+  // Access to TraceMergeStores tags
+  bool is_trace(TraceMergeStores::Tag tag) const {
+    return _trace_tags.at(tag);
+  }
+
+  bool is_trace_success() const {
+    return is_trace(TraceMergeStores::Tag::SUCCESS);
+  }
+#endif
+
+  NOT_PRODUCT( void trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const; )
 };
 
 StoreNode* MergePrimitiveStores::run() {
@@ -2817,7 +2834,7 @@ StoreNode* MergePrimitiveStores::run() {
 
   StoreNode* merged_store = make_merged_store(merge_list, merged_input_value);
 
-  DEBUG_ONLY( if(TraceMergeStores) { trace(merge_list, merged_input_value, merged_store); } )
+  NOT_PRODUCT( if(is_trace_success()) { trace(merge_list, merged_input_value, merged_store); } )
 
   return merged_store;
 }
@@ -3183,7 +3200,7 @@ StoreNode* MergePrimitiveStores::make_merged_store(const Node_List& merge_list, 
   return merged_store;
 }
 
-#ifdef ASSERT
+#ifndef PRODUCT
 void MergePrimitiveStores::trace(const Node_List& merge_list, const Node* merged_input_value, const StoreNode* merged_store) const {
   stringStream ss;
   ss.print_cr("[TraceMergeStores]: Replace");
