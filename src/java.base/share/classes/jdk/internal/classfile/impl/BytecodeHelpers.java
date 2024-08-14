@@ -275,15 +275,7 @@ public class BytecodeHelpers {
         List<LoadableConstantEntry> staticArgs = new ArrayList<>(bootstrapArgs.length);
         for (ConstantDesc bootstrapArg : bootstrapArgs)
             staticArgs.add(constantPool.loadableConstantEntry(bootstrapArg));
-
-        var bootstrapDesc = desc.bootstrapMethod();
-        ClassEntry bsOwner = constantPool.classEntry(bootstrapDesc.owner());
-        NameAndTypeEntry bsNameAndType = constantPool.nameAndTypeEntry(bootstrapDesc.methodName(),
-                                                               bootstrapDesc.invocationType());
-        int bsRefKind = bootstrapDesc.refKind();
-
-        MemberRefEntry memberRefEntry = toBootstrapMemberRef(constantPool, bsRefKind, bsOwner, bsNameAndType, bootstrapDesc.isOwnerInterface());
-        MethodHandleEntry methodHandleEntry = constantPool.methodHandleEntry(bsRefKind, memberRefEntry);
+        MethodHandleEntry methodHandleEntry = handleDescToHandleInfo(constantPool, desc.bootstrapMethod());
         BootstrapMethodEntry bme = constantPool.bsmEntry(methodHandleEntry, staticArgs);
         return constantPool.constantDynamicEntry(bme,
                                                  constantPool.nameAndTypeEntry(desc.constantName(),
