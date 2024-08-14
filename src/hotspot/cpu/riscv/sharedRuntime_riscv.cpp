@@ -66,6 +66,12 @@
 
 #define __ masm->
 
+#ifdef PRODUCT
+#define BLOCK_COMMENT(str) /* nothing */
+#else
+#define BLOCK_COMMENT(str) __ block_comment(str)
+#endif
+
 const int StackAlignmentInSlots = StackAlignmentInBytes / VMRegImpl::stack_slot_size;
 
 class RegisterSaver {
@@ -2742,7 +2748,7 @@ static void jfr_epilogue(MacroAssembler* masm) {
 // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
-static RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
   enum layout {
     fp_off,
     fp_off2,
@@ -2780,7 +2786,7 @@ static RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 }
 
 // For c2: call to return a leased buffer.
-static RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
   enum layout {
     fp_off,
     fp_off2,
