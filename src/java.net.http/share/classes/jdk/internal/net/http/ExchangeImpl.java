@@ -73,8 +73,8 @@ abstract class ExchangeImpl<T> {
         return exchange;
     }
 
-    final void setExpectTimeoutRaised(boolean timeoutRaised) {
-        expectTimeoutRaised = timeoutRaised;
+    final void setExpectTimeoutRaised() {
+        expectTimeoutRaised = true;
     }
 
     final boolean expectTimeoutRaised() {

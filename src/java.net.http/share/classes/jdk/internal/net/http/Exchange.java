@@ -456,39 +456,21 @@ final class Exchange<T> {
     private CompletableFuture<Response> expectContinue(ExchangeImpl<T> ex) {
         assert request.expectContinue();
 
-        long responseTimeout = 5;
-        if (request.timeout().isPresent() && request.timeout().get().getSeconds() < responseTimeout) {
-            responseTimeout = request.timeout().get().getSeconds();
+        long responseTimeoutMillis = 5000;
+        if (request.timeout().isPresent()) {
+            final long timeoutMillis = request.timeout().get().toMillis();
+            responseTimeoutMillis = Math.min(responseTimeoutMillis, timeoutMillis);
         }
 
         return ex.getResponseAsync(parentExecutor)
-                .orTimeout(responseTimeout, TimeUnit.SECONDS)
-                .handle((response, exception) -> {
-                    CompletableFuture<Response> cf;
-                    if (exception != null) {
-                        if (exception instanceof TimeoutException) {
-                            // Timeout has occurred, this SHOULD result in the request being sent anyway
-                            // return the null response to be handled below
-                            if (debug.on())
-                                debug.log("Request timeout waiting for response");
-                            cf = CompletableFuture.completedFuture(response);
-                        } else {
-                            // All other exceptions get returned as failedFuture
-                            cf = CompletableFuture.failedFuture(exception);
-                        }
-                        return cf;
-                    }
-                    // If there was no exception then return the response
-                    cf = CompletableFuture.completedFuture(response);
-                    return cf;
-                }).thenCompose(Function.identity())
+                .completeOnTimeout(null, responseTimeoutMillis, TimeUnit.MILLISECONDS)
                 .thenCompose((Response r1) -> {
                     // The response will only be null if there was a timeout
                     // send body regardless
                     if (r1 == null) {
                         if (debug.on())
                             debug.log("Setting ExpectTimeoutRaised and sending request body");
-                        exchImpl.setExpectTimeoutRaised(true);
+                        exchImpl.setExpectTimeoutRaised();
                         CompletableFuture<Response> cf =
                                 exchImpl.sendBodyAsync()
                                         .thenCompose(exIm -> exIm.getResponseAsync(parentExecutor));
