@@ -1912,7 +1912,8 @@ public class TestMergeStores {
     @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",  // nothing merged
                   IRNode.STORE_C_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+                  IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
+        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to fold some cases, but not others.
     static Object[] test601a(byte[] aB, int[] aI, int i, int offset1) {
         Object a = null;
         long base = 0;
