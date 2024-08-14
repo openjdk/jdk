@@ -239,12 +239,26 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 #endif
 }
 
-MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other) const {
+MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other
+                                                           NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
+#ifndef PRODUCT
+  if (trace.is_trace_aliasing()) {
+    tty->print_cr("MemPointerSimpleForm::get_aliasing_with:");
+    print();
+    other.print();
+  }
+#endif
+
   // Check if all summands are the same:
   for (uint i = 0; i < SUMMANDS_SIZE; i++) {
     const MemPointerSummand s1 = summands_at(i);
     const MemPointerSummand s2 = other.summands_at(i);
     if (s1 != s2) {
+#ifndef PRODUCT
+      if (trace.is_trace_aliasing()) {
+        tty->print_cr("  -> Aliasing unknown, differ on summand %d.", i);
+      }
+#endif
       return MemPointerAliasing::make_unknown();
     }
   }
@@ -253,18 +267,34 @@ MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpl
   NoOverflowInt distance = other.con() - con();
   distance = distance.truncate_to_30_bits();
   if (distance.is_NaN()) {
+#ifndef PRODUCT
+    if (trace.is_trace_aliasing()) {
+      tty->print_cr("  -> Aliasing unknown, distance is NaN.");
+    }
+#endif
     return MemPointerAliasing::make_unknown();
   }
 
+#ifndef PRODUCT
+    if (trace.is_trace_aliasing()) {
+      tty->print_cr("  -> Aliasing always, distance = %d.", distance.value());
+    }
+#endif
   return MemPointerAliasing::make_always(distance.value());
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
-  const MemPointerAliasing aliasing = simple_form().get_aliasing_with(other.simple_form());
-  // tty->print_cr("MemPointer::is_adjacent_to_and_before");
-  // simple_form().print();
-  // other.simple_form().print();
-  // tty->print("Aliasing: "); aliasing.print(); tty->cr();
+  const MemPointerSimpleForm& s1 = simple_form();
+  const MemPointerSimpleForm& s2 = other.simple_form();
+  const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
+
+#ifndef PRODUCT
+  if (_trace.is_trace_adjacency()) {
+    tty->print("Aliasing for adjacency: "); aliasing.print(); tty->cr();
+    // TODO
+  }
+#endif
+
   return aliasing.is_always_at_distance(mem()->memory_size());
 }
 

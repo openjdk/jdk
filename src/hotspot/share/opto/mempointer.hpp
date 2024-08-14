@@ -118,6 +118,28 @@ public:
 #endif
 };
 
+#ifndef PRODUCT
+class TraceMemPointer : public StackObj {
+private:
+  const bool _is_trace_pointer;
+  const bool _is_trace_aliasing;
+  const bool _is_trace_adjacency;
+
+public:
+  TraceMemPointer(const bool is_trace_pointer,
+                  const bool is_trace_aliasing,
+                  const bool is_trace_adjacency) :
+    _is_trace_pointer(  is_trace_pointer),
+    _is_trace_aliasing( is_trace_aliasing),
+    _is_trace_adjacency(is_trace_adjacency)
+    {}
+
+  bool is_trace_pointer()   const { return _is_trace_pointer; }
+  bool is_trace_aliasing()  const { return _is_trace_aliasing; }
+  bool is_trace_adjacency() const { return _is_trace_adjacency; }
+};
+#endif
+
 // Class to represent aliasing between two MemPointer.
 class MemPointerAliasing {
 public:
@@ -332,7 +354,8 @@ public:
     }
   }
 
-  MemPointerAliasing get_aliasing_with(const MemPointerSimpleForm& other) const;
+  MemPointerAliasing get_aliasing_with(const MemPointerSimpleForm& other
+                                       NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
   const MemPointerSummand summands_at(const uint i) const {
     assert(i < SUMMANDS_SIZE, "in bounds");
@@ -394,13 +417,23 @@ private:
   const MemNode* _mem;
   const MemPointerSimpleForm _simple_form;
 
+  NOT_PRODUCT( const TraceMemPointer& _trace; )
+
 public:
   // TODO no need for phase?
-  MemPointer(PhaseGVN* phase, const MemNode* mem) :
+  MemPointer(PhaseGVN* phase, const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
     _mem(mem),
     _simple_form(init_simple_form(_mem))
+    NOT_PRODUCT( COMMA _trace(trace) )
   {
-    // _simple_form.print(); // TODO tracing???
+#ifndef PRODUCT
+    if (_trace.is_trace_pointer()) {
+      tty->print_cr("MemPointer::MemPointer:");
+      tty->print("mem: "); mem->dump();
+      _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
+      _simple_form.print();
+    }
+#endif
   }
 
   const MemNode* mem() const { return _mem; }

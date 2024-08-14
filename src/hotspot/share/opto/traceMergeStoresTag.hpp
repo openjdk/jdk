@@ -30,8 +30,9 @@
 
 namespace TraceMergeStores {
   #define COMPILER_TAG(flags) \
-    flags(MEM_POINTER,          "Trace MemPointer (verbose)") \
+    flags(POINTER,              "Trace pointer IR") \
     flags(ALIASING,             "Trace MemPointerSimpleForm::get_aliasing_with") \
+    flags(ADJACENCY,            "Trace adjacency") \
     flags(SUCCESS,              "Trace successful merges") \
 
   #define table_entry(name, description) name,
