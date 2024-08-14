@@ -56,19 +56,11 @@ public:
   enum Aliasing {
     Unknown, // Distance unknown.
              //   Example: two "int[]" with different variable index offsets.
-             //            e.g. "array[i] = array[j]".
-    Never,   // Can never alias.
-             //   Example: "int[]" and "float[]".
-             //            e.g. "intArray[i] = floatArray[i]".
-    Always,  // Constant distance = p1 - p2.
+             //            e.g. "array[i]  vs  array[j]".
+             //            e.g. "array1[i] vs  array2[j]".
+    Always}; // Constant distance = p1 - p2.
              //   Example: The same address expression, except for a constant offset
-             //            e.g. "array[i] = array[i+1]".
-    Maybe};  // Either "Never" (i.e. different memory objects)
-             //     or "Always" (at constant distance).
-             //   Example: "array1[i] = array2[i]":
-             //     If at runtime "array1 != array2": cannot alias.
-             //     If at runtime "array1 == array2": constant distance.
-             // TODO consider to simplify for MergeStores...?
+             //            e.g. "array[i]  vs  array[i+1]".
 private:
   const Aliasing _aliasing;
   const jint _distance;
@@ -88,48 +80,20 @@ public:
     return MemPointerAliasing();
   }
 
-  static MemPointerAliasing make_never() {
-    return MemPointerAliasing(Never, 0);
-  }
-
   static MemPointerAliasing make_always(const jint distance) {
     return MemPointerAliasing(Always, distance);
   }
-
-  static MemPointerAliasing make_maybe(const jint distance) {
-    return MemPointerAliasing(Maybe, distance);
-  }
-
-  Aliasing aliasing() const { return _aliasing; }
-  bool has_distance() const { return _aliasing == Always || _aliasing == Maybe; }
-  jint distance() const { assert(has_distance(), "must have"); return _distance; }
 
   // Use case: exact aliasing and adjacency.
   bool is_always_at_distance(const jint distance) const {
     return _aliasing == Always && _distance == distance;
   }
 
-// TODO maybe not yet
-//   bool is_never_overlapping(const jint size1, const jint size2) {
-//     assert(1 <= size1 && size1 <= 1024, "sane size");
-//     assert(1 <= size2 && size2 <= 1024, "sane size");
-//
-//     if (_aliasing == Unknown) { return false; }
-//     if (_aliasing == Never)   { return true; }
-//
-//     // distance = p2 - p1
-//     const jint d = distance();
-//     return size1 <=  d || // <==>  size1 <= p2 - p1  <==>  p1 + size1 <= p2
-//            size2 <= -d;   // <==>  size2 <= p1 - p2  <==>  p2 + size2 <= p1
-//   }
-
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     switch(_aliasing) {
       case Unknown: st->print("Unknown");               break;
-      case Never:   st->print("Never");                 break;
       case Always:  st->print("Always(%d)", _distance); break;
-      case Maybe:   st->print("Maybe(%d)", _distance);  break;
       default: ShouldNotReachHere();
     }
   }
