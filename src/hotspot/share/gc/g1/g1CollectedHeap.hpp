@@ -780,7 +780,7 @@ private:
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
   // Group cardsets
-  G1CardSetMemoryManager _card_set_mm;
+  G1CardSetMemoryManager _young_regions_cardset_mm;
   G1CardSet _young_regions_cardset;
 
 public:
@@ -788,7 +788,7 @@ public:
 
   G1CardSet* young_regions_cardset() { return &_young_regions_cardset; };
 
-  G1CardSetMemoryManager* card_set_mm() { return &_card_set_mm; }
+  G1CardSetMemoryManager* young_regions_card_set_mm() { return &_young_regions_cardset_mm; }
 
   void prepare_group_cardsets_for_scan();
 

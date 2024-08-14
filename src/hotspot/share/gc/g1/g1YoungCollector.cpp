@@ -517,7 +517,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->card_set_mm()->memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_mm()->memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
 
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());

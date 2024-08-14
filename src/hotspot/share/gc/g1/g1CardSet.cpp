@@ -244,6 +244,10 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
+  // The claim size for group cardsets should be smaller to facilitate
+  // better work distribution. The group cardsets should be larger than
+  // the per region cardsets.
+  const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   bool volatile _inserted_card;
 
@@ -348,6 +352,10 @@ public:
 
   void reset_table_scanner() {
     reset_table_scanner(BucketClaimSize);
+  }
+
+  void reset_table_scanner_for_groups() {
+    reset_table_scanner(GroupBucketClaimSize);
   }
 
   void reset_table_scanner(uint claim_size) {
@@ -1047,6 +1055,6 @@ void G1CardSet::reset_table_scanner() {
   _table->reset_table_scanner();
 }
 
-void G1CardSet::reset_table_scanner(uint claim_size) {
-  _table->reset_table_scanner(claim_size);
+void G1CardSet::reset_table_scanner_for_groups() {
+  _table->reset_table_scanner_for_groups();
 }

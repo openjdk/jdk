@@ -1159,8 +1159,8 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _card_set_mm(card_set_config(), card_set_freelist_pool()),
-  _young_regions_cardset(card_set_config(), &_card_set_mm),
+  _young_regions_cardset_mm(card_set_config(), card_set_freelist_pool()),
+  _young_regions_cardset(card_set_config(), &_young_regions_cardset_mm),
   _cm(nullptr),
   _cm_thread(nullptr),
   _cr(nullptr),
@@ -3050,5 +3050,5 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
 }
 
 void G1CollectedHeap::prepare_group_cardsets_for_scan () {
-  _young_regions_cardset.reset_table_scanner(4);
+  _young_regions_cardset.reset_table_scanner_for_groups();
 }
