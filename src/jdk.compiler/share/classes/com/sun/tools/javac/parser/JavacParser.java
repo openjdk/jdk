@@ -4932,7 +4932,6 @@ public class JavacParser implements Parser {
                     false, true, false, dc));
         }
 
-
         return List.of(F.Erroneous());
     }
 
