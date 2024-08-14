@@ -56,6 +56,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.NESTMATE;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.STRONG;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import static java.util.Objects.requireNonNull;
@@ -95,19 +96,13 @@ public class SwitchBootstraps {
     private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
     private static class StaticHolders {
-        private static final MethodHandle NULL_CHECK;
-        private static final MethodHandle IS_ZERO;
-        private static final MethodHandle MAPPED_ENUM_LOOKUP;
+        private static final MethodHandle MAPPED_ENUM_SWITCH;
 
         static {
             try {
-                NULL_CHECK = LOOKUP.findStatic(Objects.class, "isNull",
-                                               MethodType.methodType(boolean.class, Object.class));
-                IS_ZERO = LOOKUP.findStatic(SwitchBootstraps.class, "isZero",
-                                               MethodType.methodType(boolean.class, int.class));
-                MAPPED_ENUM_LOOKUP = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumLookup",
-                                                       MethodType.methodType(int.class, Enum.class, MethodHandles.Lookup.class,
-                                                                             Class.class, EnumDesc[].class, EnumMap.class));
+                MAPPED_ENUM_SWITCH = LOOKUP.findStatic(SwitchBootstraps.class, "mappedEnumSwitch",
+                                                       MethodType.methodType(int.class, Enum.class, int.class, MethodHandles.Lookup.class,
+                                                                             Class.class, EnumDesc[].class, MappedEnumCache.class));
             }
             catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
@@ -211,10 +206,6 @@ public class SwitchBootstraps {
         }
     }
 
-    private static boolean isZero(int value) {
-        return value == 0;
-    }
-
     /**
      * Bootstrap method for linking an {@code invokedynamic} call site that
      * implements a {@code switch} on a target of an enum type. The static
@@ -286,23 +277,27 @@ public class SwitchBootstraps {
         labels = labels.clone();
 
         Class<?> enumClass = invocationType.parameterType(0);
-        labels = Stream.of(labels).map(l -> convertEnumConstants(lookup, enumClass, l)).toArray();
+        boolean constantsOnly = true;
+        int len = labels.length;
+
+        for (int i = 0; i < len; i++) {
+            Object convertedLabel =
+                    convertEnumConstants(lookup, enumClass, labels[i]);
+            labels[i] = convertedLabel;
+            if (constantsOnly)
+                constantsOnly = convertedLabel instanceof EnumDesc;
+        }
 
         MethodHandle target;
-        boolean constantsOnly = Stream.of(labels).allMatch(l -> enumClass.isAssignableFrom(EnumDesc.class));
 
         if (labels.length > 0 && constantsOnly) {
             //If all labels are enum constants, construct an optimized handle for repeat index 0:
             //if (selector == null) return -1
             //else if (idx == 0) return mappingArray[selector.ordinal()]; //mapping array created lazily
             //else return "typeSwitch(labels)"
-            MethodHandle body =
-                    MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.NULL_CHECK, 0, int.class),
-                                                MethodHandles.dropArguments(MethodHandles.constant(int.class, -1), 0, int.class, Object.class),
-                                                MethodHandles.guardWithTest(MethodHandles.dropArguments(StaticHolders.IS_ZERO, 1, Object.class),
-                                                                            generateTypeSwitch(lookup, invocationType.parameterType(0), labels),
-                                                                            MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_LOOKUP, 1, lookup, enumClass, labels, new EnumMap())));
-            target = MethodHandles.permuteArguments(body, MethodType.methodType(int.class, Object.class, int.class), 1, 0);
+            EnumDesc<?>[] enumDescLabels =
+                    Arrays.copyOf(labels, labels.length, EnumDesc[].class);
+            target = MethodHandles.insertArguments(StaticHolders.MAPPED_ENUM_SWITCH, 2, lookup, enumClass, enumDescLabels, new MappedEnumCache());
         } else {
             target = generateTypeSwitch(lookup, invocationType.parameterType(0), labels);
         }
@@ -331,26 +326,63 @@ public class SwitchBootstraps {
         }
     }
 
-    private static <T extends Enum<T>> int mappedEnumLookup(T value, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, EnumMap enumMap) {
-        if (enumMap.map == null) {
-            T[] constants = SharedSecrets.getJavaLangAccess().getEnumConstantsShared(enumClass);
-            int[] map = new int[constants.length];
-            int ordinal = 0;
+    private static <T extends Enum<T>> int mappedEnumSwitch(T value, int restartIndex, MethodHandles.Lookup lookup, Class<T> enumClass, EnumDesc<?>[] labels, MappedEnumCache enumCache) throws Throwable {
+        if (value == null) {
+            return -1;
+        }
 
-            for (T constant : constants) {
-                map[ordinal] = labels.length;
+        if (restartIndex != 0) {
+            MethodHandle generatedSwitch = enumCache.generatedSwitch;
+            if (generatedSwitch == null) {
+                synchronized (enumCache) {
+                    generatedSwitch = enumCache.generatedSwitch;
 
-                for (int i = 0; i < labels.length; i++) {
-                    if (Objects.equals(labels[i].constantName(), constant.name())) {
-                        map[ordinal] = i;
-                        break;
+                    if (generatedSwitch == null) {
+                        generatedSwitch =
+                                generateTypeSwitch(lookup, enumClass, labels)
+                                        .asType(MethodType.methodType(int.class,
+                                                                      Enum.class,
+                                                                      int.class));
+                        enumCache.generatedSwitch = generatedSwitch;
                     }
                 }
+            }
 
-                ordinal++;
+            return (int) generatedSwitch.invokeExact(value, restartIndex);
+        }
+
+        int[] constantsMap = enumCache.constantsMap;
+
+        if (constantsMap == null) {
+            synchronized (enumCache) {
+                constantsMap = enumCache.constantsMap;
+
+                if (constantsMap == null) {
+                    T[] constants = SharedSecrets.getJavaLangAccess()
+                                                 .getEnumConstantsShared(enumClass);
+                    constantsMap = new int[constants.length];
+                    int ordinal = 0;
+
+                    for (T constant : constants) {
+                        constantsMap[ordinal] = labels.length;
+
+                        for (int i = 0; i < labels.length; i++) {
+                            if (Objects.equals(labels[i].constantName(),
+                                               constant.name())) {
+                                constantsMap[ordinal] = i;
+                                break;
+                            }
+                        }
+
+                        ordinal++;
+                    }
+
+                    enumCache.constantsMap = constantsMap;
+                }
             }
         }
-        return enumMap.map[value.ordinal()];
+
+        return constantsMap[value.ordinal()];
     }
 
     private static final class ResolvedEnumLabels implements BiPredicate<Integer, Object> {
@@ -395,9 +427,11 @@ public class SwitchBootstraps {
         }
     }
 
-    private static final class EnumMap {
+    private static final class MappedEnumCache {
         @Stable
-        public int[] map;
+        public int[] constantsMap;
+        @Stable
+        public MethodHandle generatedSwitch;
     }
 
     /*

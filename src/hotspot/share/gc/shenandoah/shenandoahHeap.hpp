@@ -400,7 +400,7 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
-  void rendezvous_threads();
+  void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
   void notify_gc_progress();

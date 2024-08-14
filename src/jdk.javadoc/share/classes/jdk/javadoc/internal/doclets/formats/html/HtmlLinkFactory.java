@@ -162,9 +162,11 @@ public class HtmlLinkFactory {
                     Element owner = typevariable.asElement().getEnclosingElement();
                     if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
                         linkInfo.setTypeElement((TypeElement) owner);
-                        Content label = newContent();
-                        label.add(utils.getTypeName(type, false));
-                        linkInfo.label(label).skipPreview(true);
+                        if (linkInfo.getLabel() == null || linkInfo.getLabel().isEmpty()) {
+                            Content label = newContent();
+                            label.add(utils.getTypeName(type, false));
+                            linkInfo.label(label).skipPreview(true);
+                        }
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -242,6 +244,11 @@ public class HtmlLinkFactory {
             boolean isTypeLink = linkInfo.getType() != null &&
                      utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
+            if (isTypeLink) {
+                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
+                        typeElement).name());
+            }
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {

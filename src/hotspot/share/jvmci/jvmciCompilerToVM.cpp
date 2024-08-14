@@ -549,8 +549,8 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, getImplementor, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (!klass->is_interface()) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-        err_msg("Expected interface type, got %s", klass->external_name()));
+    THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                   err_msg("Expected interface type, got %s", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
   JVMCIKlassHandle handle(THREAD, iklass->implementor());
@@ -589,7 +589,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
 
   if (class_name->utf8_length() <= 1) {
-    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", str));
+    JVMCI_THROW_MSG_NULL(InternalError, err_msg("Primitive type %s should be handled in Java code", str));
   }
 
 #ifdef ASSERT
@@ -598,8 +598,8 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
     if (strstr(val, "<trace>") != nullptr) {
       tty->print_cr("CompilerToVM.lookupType: %s", str);
     } else if (strstr(str, val) != nullptr) {
-      THROW_MSG_0(vmSymbols::java_lang_Exception(),
-                  err_msg("lookupTypeException: %s", str));
+      THROW_MSG_NULL(vmSymbols::java_lang_Exception(),
+                     err_msg("lookupTypeException: %s", str));
     }
   }
 #endif
@@ -617,7 +617,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
       case 1: class_loader = Handle(THREAD, SystemDictionary::java_platform_loader()); break;
       case 2: class_loader = Handle(THREAD, SystemDictionary::java_system_loader()); break;
       default:
-        JVMCI_THROW_MSG_0(InternalError, err_msg("Illegal class loader value: %d", accessing_klass_loader));
+        JVMCI_THROW_MSG_NULL(InternalError, err_msg("Illegal class loader value: %d", accessing_klass_loader));
     }
     JVMCIENV->runtime()->initialize(JVMCI_CHECK_NULL);
   }
@@ -660,7 +660,7 @@ C2V_VMENTRY_NULL(jobject, getArrayType, (JNIEnv* env, jobject, jchar type_char, 
   JVMCIKlassHandle array_klass(THREAD);
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    BasicType type = JVMCIENV->typeCharToBasicType(type_char, JVMCI_CHECK_0);
+    BasicType type = JVMCIENV->typeCharToBasicType(type_char, JVMCI_CHECK_NULL);
     if (type == T_VOID) {
       return nullptr;
     }
@@ -812,7 +812,7 @@ C2V_VMENTRY_NULL(jobjectArray, resolveBootstrapMethod, (JNIEnv* env, jobject, AR
   bool is_indy = tag.is_invoke_dynamic();
   bool is_condy = tag.is_dynamic_constant();
   if (!(is_condy || is_indy)) {
-    JVMCI_THROW_MSG_0(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, err_msg("Unexpected constant pool tag at index %d: %d", index, tag.value()));
   }
   // Get the indy entry based on CP index
   int indy_index = -1;
@@ -1969,11 +1969,11 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, getInterfaces, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
 
   if (!klass->is_instance_klass()) {
-    JVMCI_THROW_MSG_0(InternalError, err_msg("Class %s must be instance klass", klass->external_name()));
+    JVMCI_THROW_MSG_NULL(InternalError, err_msg("Class %s must be instance klass", klass->external_name()));
   }
   InstanceKlass* iklass = InstanceKlass::cast(klass);
 
@@ -1993,7 +1993,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, getComponentType, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
 
   if (!klass->is_array_klass()) {
@@ -2002,8 +2002,8 @@ C2V_VMENTRY_NULL(jobject, getComponentType, (JNIEnv* env, jobject, ARGUMENT_PAIR
   oop mirror = klass->java_mirror();
   oop component_mirror = java_lang_Class::component_mirror(mirror);
   if (component_mirror == nullptr) {
-    JVMCI_THROW_MSG_0(NullPointerException,
-                    err_msg("Component mirror for array class %s is null", klass->external_name()))
+    JVMCI_THROW_MSG_NULL(NullPointerException,
+                         err_msg("Component mirror for array class %s is null", klass->external_name()))
   }
 
   Klass* component_klass = java_lang_Class::as_Klass(component_mirror);
@@ -2106,7 +2106,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, unboxPrimitive, (JNIEnv* env, jobject, jobject object))
   if (object == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Handle box = JVMCIENV->asConstant(JVMCIENV->wrap(object), JVMCI_CHECK_NULL);
   BasicType type = java_lang_boxing_object::basic_type(box());
@@ -2120,7 +2120,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, boxPrimitive, (JNIEnv* env, jobject, jobject object))
   if (object == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   JVMCIObject box = JVMCIENV->wrap(object);
   BasicType type = JVMCIENV->get_box_type(box);
@@ -2165,7 +2165,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredConstructors, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   if (!klass->is_instance_klass()) {
     JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(0, JVMCI_CHECK_NULL);
@@ -2192,7 +2192,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredMethods, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   if (!klass->is_instance_klass()) {
     JVMCIObjectArray methods = JVMCIENV->new_ResolvedJavaMethod_array(0, JVMCI_CHECK_NULL);
@@ -2219,7 +2219,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobjectArray, getDeclaredFieldsInfo, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   if (!klass->is_instance_klass()) {
     JVMCI_THROW_MSG_NULL(IllegalArgumentException, "not an InstanceKlass");
@@ -2346,7 +2346,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, readFieldValue, (JNIEnv* env, jobject, jobject object, ARGUMENT_PAIR(expected_type), long displacement, jchar type_char))
   if (object == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
 
   // asConstant will throw an NPE if a constant contains null
@@ -2396,7 +2396,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, asJavaType, (JNIEnv* env, jobject, jobject object))
   if (object == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Handle obj = JVMCIENV->asConstant(JVMCIENV->wrap(object), JVMCI_CHECK_NULL);
   if (java_lang_Class::is_instance(obj())) {
@@ -2416,7 +2416,7 @@ C2V_END
 
 C2V_VMENTRY_NULL(jobject, asString, (JNIEnv* env, jobject, jobject object))
   if (object == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Handle obj = JVMCIENV->asConstant(JVMCIENV->wrap(object), JVMCI_CHECK_NULL);
   const char* str = java_lang_String::as_utf8_string(obj());
@@ -2435,7 +2435,7 @@ C2V_END
 C2V_VMENTRY_NULL(jobject, getJavaMirror, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
   Klass* klass = UNPACK_PAIR(Klass, klass);
   if (klass == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Handle mirror(THREAD, klass->java_mirror());
   JVMCIObject result = JVMCIENV->get_object_constant(mirror());
@@ -2457,7 +2457,7 @@ C2V_VMENTRY_0(jint, getArrayLength, (JNIEnv* env, jobject, jobject x))
 
 C2V_VMENTRY_NULL(jobject, readArrayElement, (JNIEnv* env, jobject, jobject x, int index))
   if (x == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Handle xobj = JVMCIENV->asConstant(JVMCIENV->wrap(x), JVMCI_CHECK_NULL);
   if (xobj->klass()->is_array_klass()) {
@@ -2543,16 +2543,16 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
     }
     sl_handle = JVMCI::get_shared_library(sl_path, false);
     if (sl_handle == nullptr) {
-      JVMCI_THROW_MSG_0(InternalError, err_msg("Error initializing JVMCI runtime %d", runtime->id()));
+      JVMCI_THROW_MSG_NULL(InternalError, err_msg("Error initializing JVMCI runtime %d", runtime->id()));
     }
   }
 
   if (mirror == nullptr) {
-    JVMCI_THROW_0(NullPointerException);
+    JVMCI_THROW_NULL(NullPointerException);
   }
   Klass* klass = java_lang_Class::as_Klass(JNIHandles::resolve(mirror));
   if (klass == nullptr || !klass->is_instance_klass()) {
-    JVMCI_THROW_MSG_0(IllegalArgumentException, "clazz is for primitive type");
+    JVMCI_THROW_MSG_NULL(IllegalArgumentException, "clazz is for primitive type");
   }
 
   InstanceKlass* iklass = InstanceKlass::cast(klass);
@@ -2587,14 +2587,14 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
         char* jni_long_name = st.as_string();
         entry = (address) os::dll_lookup(sl_handle, jni_long_name);
         if (entry == nullptr) {
-          JVMCI_THROW_MSG_0(UnsatisfiedLinkError, err_msg("%s [neither %s nor %s exist in %s]",
+          JVMCI_THROW_MSG_NULL(UnsatisfiedLinkError, err_msg("%s [neither %s nor %s exist in %s]",
               method->name_and_sig_as_C_string(),
               jni_name, jni_long_name, sl_path));
         }
       }
 
       if (method->has_native_function() && entry != method->native_function()) {
-        JVMCI_THROW_MSG_0(UnsatisfiedLinkError, err_msg("%s [cannot re-link from " PTR_FORMAT " to " PTR_FORMAT "]",
+        JVMCI_THROW_MSG_NULL(UnsatisfiedLinkError, err_msg("%s [cannot re-link from " PTR_FORMAT " to " PTR_FORMAT "]",
             method->name_and_sig_as_C_string(), p2i(method->native_function()), p2i(entry)));
       }
       method->set_native_function(entry, Method::native_bind_event_is_interesting);
@@ -2605,9 +2605,9 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
     }
   }
 
-  typeArrayOop info_oop = oopFactory::new_longArray(4, CHECK_0);
+  typeArrayOop info_oop = oopFactory::new_longArray(4, CHECK_NULL);
   jlongArray info = (jlongArray) JNIHandles::make_local(THREAD, info_oop);
-  runtime->init_JavaVM_info(info, JVMCI_CHECK_0);
+  runtime->init_JavaVM_info(info, JVMCI_CHECK_NULL);
   return info;
 C2V_END
 
@@ -3154,8 +3154,8 @@ C2V_VMENTRY_NULL(jobject, getThreadLocalObject, (JNIEnv* env, jobject, jint id))
   if (id == 0) {
     return JNIHandles::make_local(thread->get_jvmci_reserved_oop0());
   }
-  THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-              err_msg("%d is not a valid thread local id", id));
+  THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
+                 err_msg("%d is not a valid thread local id", id));
 C2V_END
 
 C2V_VMENTRY(void, setThreadLocalLong, (JNIEnv* env, jobject, jint id, jlong value))
