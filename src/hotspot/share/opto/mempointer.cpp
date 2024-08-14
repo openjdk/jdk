@@ -47,29 +47,6 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
   // TODO: sort and combine summands!
 
-  // for (int i = 0; i < _summands.length(); i++) {
-  //   MemPointerSummand summand = _summands.at(i);
-  //   summand.print();
-  // }
-
-  // tty->print("con: ");
-  // _con.print();
-  // tty->cr();
-
-  // TODO gtest???
-  // NoOverflowInt a(1 << 20);
-  // a.print(); tty->cr();
-  // NoOverflowInt b(1LL << 33);
-  // b.print(); tty->cr();
-  // NoOverflowInt c(55);
-  // NoOverflowInt d(22);
-  // NoOverflowInt e = c + d;
-  // e.print(); tty->cr();
-  // NoOverflowInt f(max_jint);
-  // NoOverflowInt g(max_jint);
-  // NoOverflowInt h = f + g;
-  // h.print(); tty->cr();
-
   return MemPointerSimpleForm::make(pointer, _summands, _con);
 }
 

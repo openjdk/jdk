@@ -26,9 +26,10 @@
 #define SHARE_OPTO_NOOVERFLOWINT_HPP
 
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // Wrapper around jint, which detects overflow.
-// TODO consider moving to separate file, and have GTests?
+// If any operation overflows, then it returns a NaN.
 class NoOverflowInt {
 private:
   bool _is_NaN; // overflow, uninitialized, etc.
