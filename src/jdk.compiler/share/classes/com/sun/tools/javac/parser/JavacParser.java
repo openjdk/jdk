@@ -4088,6 +4088,15 @@ public class JavacParser implements Parser {
 
                 mods = null;
                 firstTypeDecl = false;
+
+                //TODO: better?
+                while (mods == null && token.kind == SEMI) {
+                    nextToken();
+                    semiList.append(toP(F.at(pos).Skip()));
+                    if (token.kind == EOF)
+                        break OUTER;
+                }
+                //better? end
             }
         }
         List<JCTree> topLevelDefs = isImplicitClass ?  constructImplicitClass(defs.toList()) : defs.toList();

@@ -126,4 +126,26 @@ public class ErrorRecovery extends TestRunner {
                                      ", while expecting: " + expected);
         }
     }
+
+    @Test
+    public void testExtraSemi(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeFile(src.resolve("Test.java"),
+                     """
+                     class C {};
+                     void main() {};
+                     """);
+
+        Files.createDirectories(classes);
+
+        new JavacTask(tb)
+            .options("-XDrawDiagnostics",
+                     "--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run(Task.Expect.SUCCESS)
+            .writeAll();
+    }
 }
