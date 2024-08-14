@@ -25,6 +25,8 @@
 #include <sys/time.h>
 #include "java.h"
 
+#define JAVA_DLL "libjava.so"
+
 /*
  * Find the last occurrence of a string
  */
@@ -107,6 +109,47 @@ GetApplicationHomeFromDll(char *buf, jint bufsize)
     }
     return JNI_FALSE;
 }
+
+#if defined(AIX)
+static jboolean
+LibjavaExists(const char *path)
+{
+    char tmp[PATH_MAX + 1];
+    struct stat statbuf;
+    JLI_Snprintf(tmp, PATH_MAX, "%s/%s", path, JAVA_DLL);
+    if (stat(tmp, &statbuf) == 0) {
+        return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
+
+/*
+ * Retrieves the path to the JRE home by locating libjava.so in
+ * LIBPATH and then truncating the path to it.
+ */
+jboolean
+GetApplicationHomeFromLibpath(char *buf, jint bufsize)
+{
+    char *env = getenv("LIBPATH");
+    char *tmp;
+    char *save_ptr = NULL;
+    char *envpath = JLI_StringDup(env);
+    for (tmp = strtok_r(envpath, ":", &save_ptr); tmp != NULL; tmp = strtok_r(NULL, ":", &save_ptr)) {
+        if (LibjavaExists(tmp)) {
+            char *path = realpath(tmp, buf);
+            if (path == buf) {
+                JLI_StrCat(buf, "/");
+                if (JNI_TRUE == TruncatePath(buf, JNI_TRUE)) {
+                    JLI_MemFree(envpath);
+                    return JNI_TRUE;
+                }
+            }
+        }
+    }
+    JLI_MemFree(envpath);
+    return JNI_FALSE;
+}
+#endif
 
 /*
  * Return true if the named program exists

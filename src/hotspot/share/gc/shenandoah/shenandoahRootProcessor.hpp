@@ -92,7 +92,7 @@ public:
   ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par);
   ~ShenandoahThreadRoots();
 
-  void oops_do(OopClosure* oops_cl, CodeBlobClosure* code_cl, uint worker_id);
+  void oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id);
   void threads_do(ThreadClosure* tc, uint worker_id);
 };
 
@@ -103,7 +103,7 @@ private:
 public:
   ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase);
 
-  void code_blobs_do(CodeBlobClosure* blob_cl, uint worker_id);
+  void nmethods_do(NMethodClosure* nmethod_cl, uint worker_id);
 };
 
 template <bool CONCURRENT>

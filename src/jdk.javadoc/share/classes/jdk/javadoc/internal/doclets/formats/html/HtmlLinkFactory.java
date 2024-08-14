@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -42,17 +43,18 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A factory that returns a link given the information about it.
@@ -96,28 +98,40 @@ public class HtmlLinkFactory {
                 // handles primitives, no types and error types
                 @Override
                 protected Content defaultAction(TypeMirror type, HtmlLinkInfo linkInfo) {
-                    link.add(utils.getTypeName(type, false));
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    link.add(utils.getTypeSignature(type, false, false));
                     return link;
                 }
 
-                int currentDepth = 0;
                 @Override
                 public Content visitArray(ArrayType type, HtmlLinkInfo linkInfo) {
-                    // keep track of the dimension depth and replace the last dimension
-                    // specifier with varargs, when the stack is fully unwound.
-                    currentDepth++;
-                    var componentType = type.getComponentType();
-                    visit(componentType, linkInfo.forType(componentType));
-                    currentDepth--;
-                    if (utils.isAnnotated(type)) {
-                        link.add(" ");
-                        link.add(getTypeAnnotationLinks(linkInfo));
+                    // int @A [] @B [] has @A on int[][] and @B on int[],
+                    // encounter order is @A @B so print in FIFO order
+                    var deque = new ArrayDeque<ArrayType>(1);
+                    while (true) {
+                        deque.add(type);
+                        var component = type.getComponentType();
+                        if (component instanceof ArrayType arrayType) {
+                            type = arrayType;
+                        } else {
+                            visit(component, linkInfo.forType(component));
+                            break;
+                        }
                     }
-                    // use vararg if required
-                    if (linkInfo.isVarArg() && currentDepth == 0) {
-                        link.add("...");
-                    } else {
-                        link.add("[]");
+
+                    while (!deque.isEmpty()) {
+                        var currentType = deque.remove();
+                        if (utils.isAnnotated(currentType)) {
+                            link.add(" ");
+                            link.add(getTypeAnnotationLinks(linkInfo.forType(currentType)));
+                        }
+
+                        // use vararg if required
+                        if (linkInfo.isVarArg() && deque.isEmpty()) {
+                            link.add("...");
+                        } else {
+                            link.add("[]");
+                        }
                     }
                     return link;
                 }
@@ -148,9 +162,11 @@ public class HtmlLinkFactory {
                     Element owner = typevariable.asElement().getEnclosingElement();
                     if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
                         linkInfo.setTypeElement((TypeElement) owner);
-                        Content label = newContent();
-                        label.add(utils.getTypeName(type, false));
-                        linkInfo.label(label).skipPreview(true);
+                        if (linkInfo.getLabel() == null || linkInfo.getLabel().isEmpty()) {
+                            Content label = newContent();
+                            label.add(utils.getTypeName(type, false));
+                            linkInfo.label(label).skipPreview(true);
+                        }
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -228,6 +244,11 @@ public class HtmlLinkFactory {
             boolean isTypeLink = linkInfo.getType() != null &&
                      utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
+            if (isTypeLink) {
+                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
+                        typeElement).name());
+            }
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
@@ -364,14 +385,14 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(TagName.WBR));
+                links.add(new HtmlTree(HtmlTag.WBR));
             }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(new HtmlTree(TagName.WBR));
+                    links.add(new HtmlTree(HtmlTag.WBR));
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1157,7 +1157,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="gb2312han">ລຽງຕາມອັກສອນຈີນປະຍຸກ</type>
 			<type key="collation" type="phonebook">ລຽງຕາມສະໝຸດໂທລະສັບ</type>
 			<type key="collation" type="pinyin">ລຽງຕາມການອອກສຽງພາສາຈີນ</type>
-			<type key="collation" type="reformed">ລຽງຕາມລຳດັບສຸດທ້າຍ</type>
 			<type key="collation" type="search">ການຊອກຫາທົ່ວໄປ</type>
 			<type key="collation" type="searchjl">ຄົ້ນຫາຕາມພະຍັນຊະນະຂຶ້ນຕົ້ນທີ່ເປັນຮັງກີຣ</type>
 			<type key="collation" type="standard">ຮຽງຕາມມາດຕະຖານ</type>
@@ -2754,9 +2753,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>ເວລາ {0}</regionFormat>
 			<regionFormat type="daylight">ເວລາກາງເວັນ {0}</regionFormat>
 			<regionFormat type="standard">ເວລາມາດຕະຖານ {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>ຊານຕາ ອິດຊາເບວ</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>ເວລາສາກົນເຊີງພິກັດ</standard>
@@ -2878,9 +2874,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Australia/Melbourne">
 				<exemplarCity>ເມວເບິນ</exemplarCity>
-			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>ກູຣີ</exemplarCity>
 			</zone>
 			<zone type="Australia/Hobart">
 				<exemplarCity>ໂຮບາດ</exemplarCity>
@@ -3035,9 +3028,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Creston">
 				<exemplarCity>ເຄຣສຕັນ</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ເຢໂລໄນຟ໌</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ເອດມອນຕອນ</exemplarCity>
 			</zone>
@@ -3056,29 +3046,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="America/Resolute">
 				<exemplarCity>ເຣໂຊລຸດ</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ເຣນນີ ຣິເວີ</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ແຣນກິນ ອິນເລັດ</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ອາທິໂຄຄານ</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ທັນເດີເບ</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ນີປີກອນ</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ໂທຣອນໂຕ</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ອີກົວລິດ</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ແພງເນີດທັງ</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ມອນຕັນ</exemplarCity>
@@ -3893,17 +3871,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>ດາເອສສະລາມ</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>ອັສຊ໌ກໍໂຣດ</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>ຂຽບ</exemplarCity>
 			</zone>
 			<zone type="Europe/Simferopol">
 				<exemplarCity>ຊີມເຟໂລໂປ</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>ຊາໂປໂຣຊີ</exemplarCity>
 			</zone>
 			<zone type="Africa/Kampala">
 				<exemplarCity>ຄຳປາລາ</exemplarCity>
@@ -3922,9 +3894,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Pacific/Honolulu">
 				<exemplarCity>ໂຮໂນລູລູ</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity>ຈອນສະໂຕນ</exemplarCity>
 			</zone>
 			<zone type="America/Anchorage">
 				<exemplarCity>ແອນເຄີເຣກ</exemplarCity>
@@ -4611,11 +4580,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight>ເວລາລະດູຮ້ອນມາເກົາ</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>ເວ​ລາ​ເກາະ​ແມັກ​ຄົວ​ຣີ</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>ເວລາເມັກກາເດນ</generic>
@@ -4653,13 +4617,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>ເວລາມໍສັນ</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>​ເວ​ລາ​ນອດ​ເວ​ສ​ເມັກ​ຊິ​ໂກ</generic>
-					<standard>​ເວ​ລາ​ມາດ​ຕະ​ຖານນອດ​ເວ​ສ​ເມັກ​ຊິ​ໂກ</standard>
-					<daylight>ເວລາກາງເວັນເມັກຊິກັນນອດເວສ</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

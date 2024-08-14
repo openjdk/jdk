@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
+#include "runtime/semaphore.inline.hpp"
 #include "runtime/threadCrashProtection.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -522,3 +523,33 @@ void Mutex::set_owner_implementation(Thread *new_owner) {
   }
 }
 #endif // ASSERT
+
+
+RecursiveMutex::RecursiveMutex() : _sem(1), _owner(nullptr), _recursions(0) {}
+
+void RecursiveMutex::lock(Thread* current) {
+  assert(current == Thread::current(), "must be current thread");
+  if (current == _owner) {
+    _recursions++;
+  } else {
+    // can be called by jvmti by VMThread.
+    if (current->is_Java_thread()) {
+      _sem.wait_with_safepoint_check(JavaThread::cast(current));
+    } else {
+      _sem.wait();
+    }
+    _recursions++;
+    assert(_recursions == 1, "should be");
+    _owner = current;
+  }
+}
+
+void RecursiveMutex::unlock(Thread* current) {
+  assert(current == Thread::current(), "must be current thread");
+  assert(current == _owner, "must be owner");
+  _recursions--;
+  if (_recursions == 0) {
+    _owner = nullptr;
+    _sem.signal();
+  }
+}

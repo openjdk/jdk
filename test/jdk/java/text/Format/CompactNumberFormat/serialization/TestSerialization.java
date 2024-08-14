@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8327640
  * @modules jdk.localedata
  * @summary Checks the serialization feature of CompactNumberFormat
  * @run testng/othervm TestSerialization
@@ -71,6 +71,7 @@ public class TestSerialization {
 
         FORMAT_FR_FR.setParseIntegerOnly(true);
         FORMAT_FR_FR.setGroupingUsed(true);
+        FORMAT_FR_FR.setStrict(true);
 
         // Setting minimum integer digits beyond the allowed range
         FORMAT_DE_DE.setMinimumIntegerDigits(320);

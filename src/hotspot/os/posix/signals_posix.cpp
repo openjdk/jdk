@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/compiledMethod.hpp"
 #include "code/nativeInst.hpp"
+#include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
@@ -503,13 +503,6 @@ void PosixSignals::unblock_error_signals() {
   ::pthread_sigmask(SIG_UNBLOCK, &set, nullptr);
 }
 
-class ErrnoPreserver: public StackObj {
-  const int _saved;
-public:
-  ErrnoPreserver() : _saved(errno) {}
-  ~ErrnoPreserver() { errno = _saved; }
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 // JVM_handle_(linux|aix|bsd)_signal()
 
@@ -620,17 +613,16 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
   if (!signal_was_handled && pc != nullptr && os::is_readable_pointer(pc)) {
     if (NativeDeoptInstruction::is_deopt_at(pc)) {
       CodeBlob* cb = CodeCache::find_blob(pc);
-      if (cb != nullptr && cb->is_compiled()) {
-        MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, t);) // can call PcDescCache::add_pc_desc
-        CompiledMethod* cm = cb->as_compiled_method();
-        assert(cm->insts_contains_inclusive(pc), "");
-        address deopt = cm->is_method_handle_return(pc) ?
-          cm->deopt_mh_handler_begin() :
-          cm->deopt_handler_begin();
+      if (cb != nullptr && cb->is_nmethod()) {
+        nmethod* nm = cb->as_nmethod();
+        assert(nm->insts_contains_inclusive(pc), "");
+        address deopt = nm->is_method_handle_return(pc) ?
+          nm->deopt_mh_handler_begin() :
+          nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
-        cm->set_original_pc(&fr, pc);
+        nm->set_original_pc(&fr, pc);
 
         os::Posix::ucontext_set_pc(uc, deopt);
         signal_was_handled = true;
@@ -1727,7 +1719,7 @@ static int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
-  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
+  if ((s = ::getenv("_JAVA_SR_SIGNUM")) != nullptr) {
     int sig;
     bool result = parse_integer(s, &sig);
     if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
@@ -1750,7 +1742,7 @@ static int SR_initialize() {
   pthread_sigmask(SIG_BLOCK, nullptr, &act.sa_mask);
   remove_error_signals_from_set(&(act.sa_mask));
 
-  if (sigaction(PosixSignals::SR_signum, &act, 0) == -1) {
+  if (sigaction(PosixSignals::SR_signum, &act, nullptr) == -1) {
     return -1;
   }
 

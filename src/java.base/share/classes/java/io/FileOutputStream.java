@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package java.io;
 import java.nio.channels.FileChannel;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
-import jdk.internal.misc.Blocker;
+import jdk.internal.event.FileWriteEvent;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -68,6 +68,12 @@ public class FileOutputStream extends OutputStream
      */
     private static final JavaIOFileDescriptorAccess FD_ACCESS =
         SharedSecrets.getJavaIOFileDescriptorAccess();
+
+    /**
+     * Flag set by jdk.internal.event.JFRTracing to indicate if
+     * file writes should be traced by JFR.
+     */
+    private static boolean jfrTracing;
 
     /**
      * The system dependent file descriptor.
@@ -286,12 +292,7 @@ public class FileOutputStream extends OutputStream
      * @param append whether the file is to be opened in append mode
      */
     private void open(String name, boolean append) throws FileNotFoundException {
-        long comp = Blocker.begin();
-        try {
-            open0(name, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        open0(name, append);
     }
 
     /**
@@ -303,6 +304,21 @@ public class FileOutputStream extends OutputStream
      */
     private native void write(int b, boolean append) throws IOException;
 
+    private void traceWrite(int b, boolean append) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            write(b, append);
+            bytesWritten = 1;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     /**
      * Writes the specified byte to this file output stream. Implements
      * the {@code write} method of {@code OutputStream}.
@@ -313,12 +329,11 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(int b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            write(b, append);
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWrite(b, append);
+            return;
         }
+        write(b, append);
     }
 
     /**
@@ -333,6 +348,21 @@ public class FileOutputStream extends OutputStream
     private native void writeBytes(byte[] b, int off, int len, boolean append)
         throws IOException;
 
+    private void traceWriteBytes(byte b[], int off, int len, boolean append) throws IOException {
+        long bytesWritten = 0;
+        long start = 0;
+        try {
+            start = FileWriteEvent.timestamp();
+            writeBytes(b, off, len, append);
+            bytesWritten = len;
+        } finally {
+            long duration = FileWriteEvent.timestamp() - start;
+            if (FileWriteEvent.shouldCommit(duration)) {
+                FileWriteEvent.commit(start, duration, path, bytesWritten);
+            }
+        }
+    }
+
     /**
      * Writes {@code b.length} bytes from the specified byte array
      * to this file output stream.
@@ -343,12 +373,11 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            writeBytes(b, 0, b.length, append);
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWriteBytes(b, 0, b.length, append);
+            return;
         }
+        writeBytes(b, 0, b.length, append);
     }
 
     /**
@@ -364,12 +393,11 @@ public class FileOutputStream extends OutputStream
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            writeBytes(b, off, len, append);
-        } finally {
-            Blocker.end(comp);
+        if (jfrTracing && FileWriteEvent.enabled()) {
+            traceWriteBytes(b, off, len, append);
+            return;
         }
+        writeBytes(b, off, len, append);
     }
 
     /**
@@ -460,8 +488,8 @@ public class FileOutputStream extends OutputStream
             synchronized (this) {
                 fc = this.channel;
                 if (fc == null) {
-                    this.channel = fc = FileChannelImpl.open(fd, path, false,
-                        true, false, this);
+                    fc = FileChannelImpl.open(fd, path, false, true, false, false, this);
+                    this.channel = fc;
                     if (closed) {
                         try {
                             // possible race with close(), benign since

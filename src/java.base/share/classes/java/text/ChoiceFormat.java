@@ -134,16 +134,6 @@ import java.util.Objects;
  * Use two single quotes in a row to produce a literal single quote. For example,
  * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
  *
- * @apiNote A subclass could perform more consistent pattern validation by
- * throwing an {@code IllegalArgumentException} for all incorrect cases.
- * @implNote Given an incorrect pattern, this implementation may either
- * throw an exception or succeed and discard the incorrect portion. A {@code
- * NumberFormatException} is thrown if a {@code limit} can not be
- * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
- * if a {@code SubPattern} is missing, or the intervals are not ascending.
- * Discarding the incorrect portion may result in a ChoiceFormat with
- * empty {@code limits} and {@code formats}.
- *
  * <h2>Usage Information</h2>
  *
  * <p>
@@ -223,6 +213,21 @@ import java.util.Objects;
  * It is recommended to create separate format instances for each thread.
  * If multiple threads access a format concurrently, it must be synchronized
  * externally.
+ *
+ * @apiNote A subclass could perform more consistent pattern validation by
+ * throwing an {@code IllegalArgumentException} for all incorrect cases.
+ * See the {@code Implementation Note} for this implementation's behavior regarding
+ * incorrect patterns.
+ * <p>This class inherits instance methods from {@code NumberFormat} it does
+ * not utilize; a subclass could override and throw {@code
+ * UnsupportedOperationException} for such methods.
+ * @implNote Given an incorrect pattern, this implementation may either
+ * throw an exception or succeed and discard the incorrect portion. A {@code
+ * NumberFormatException} is thrown if a {@code limit} can not be
+ * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
+ * if a {@code SubPattern} is missing, or the intervals are not ascending.
+ * Discarding the incorrect portion may result in a ChoiceFormat with
+ * empty {@code limits} and {@code formats}.
  *
  *
  * @see          DecimalFormat
@@ -509,7 +514,13 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(long number, StringBuffer toAppendTo,
                                FieldPosition status) {
-        return format((double)number, toAppendTo, status);
+        return format((double) number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf toAppendTo,
+                     FieldPosition status) {
+        return format((double) number, toAppendTo, status);
     }
 
     /**
@@ -526,6 +537,12 @@ public class ChoiceFormat extends NumberFormat {
     @Override
     public StringBuffer format(double number, StringBuffer toAppendTo,
                                FieldPosition status) {
+        return format(number, StringBufFactory.of(toAppendTo), status).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf toAppendTo,
+                         FieldPosition status) {
         // find the number
         int i;
         for (i = 0; i < choiceLimits.length; ++i) {
@@ -579,6 +596,24 @@ public class ChoiceFormat extends NumberFormat {
             status.errorIndex = furthest;
         }
         return Double.valueOf(bestNumber);
+    }
+
+    /**
+     * @since 23
+     */
+    @Override
+    public boolean isStrict() {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
+    }
+
+    /**
+     * @since 23
+     */
+    @Override
+    public void setStrict(boolean strict) {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
     }
 
     /**

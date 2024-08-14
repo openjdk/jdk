@@ -163,7 +163,7 @@ public class EnclosingMethodTest extends TestResult {
                 checkEquals(countEnclosingMethodAttributes(classFile), 1l,
                         "number of the EnclosingMethod attribute in the class is one : "
                                 + clazz);
-                EnclosingMethodAttribute attr = classFile.findAttribute(Attributes.ENCLOSING_METHOD).orElse(null);
+                EnclosingMethodAttribute attr = classFile.findAttribute(Attributes.enclosingMethod()).orElse(null);
 
                 if (!checkNotNull(attr, "the EnclosingMethod attribute is not null : " + className)) {
                     // stop checking, attr is null. test case failed

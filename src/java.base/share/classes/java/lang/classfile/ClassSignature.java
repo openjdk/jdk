@@ -41,7 +41,11 @@ public sealed interface ClassSignature
     /** {@return the type parameters of this class} */
     List<Signature.TypeParam> typeParameters();
 
-    /** {@return the instantiation of the superclass in this signature} */
+    /**
+     * {@return the instantiation of the superclass in this signature}
+     *
+     * @since 23
+     */
     Signature.ClassTypeSig superclassSignature();
 
     /** {@return the instantiation of the interfaces in this signature} */
@@ -54,6 +58,7 @@ public sealed interface ClassSignature
      * {@return a class signature}
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
+     * @since 23
      */
     public static ClassSignature of(Signature.ClassTypeSig superclassSignature,
                                     Signature.ClassTypeSig... superinterfaceSignatures) {
@@ -65,12 +70,13 @@ public sealed interface ClassSignature
      * @param typeParameters the type parameters
      * @param superclassSignature the superclass
      * @param superinterfaceSignatures the interfaces
+     * @since 23
      */
     public static ClassSignature of(List<Signature.TypeParam> typeParameters,
                                     Signature.ClassTypeSig superclassSignature,
                                     Signature.ClassTypeSig... superinterfaceSignatures) {
         return new SignaturesImpl.ClassSignatureImpl(
-                requireNonNull(typeParameters),
+                List.copyOf(requireNonNull(typeParameters)),
                 requireNonNull(superclassSignature),
                 List.of(superinterfaceSignatures));
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -229,6 +229,9 @@ void VM_Version::initialize() {
 
     if (FLAG_IS_DEFAULT(OnSpinWaitInstCount)) {
       FLAG_SET_DEFAULT(OnSpinWaitInstCount, 1);
+    }
+    if (FLAG_IS_DEFAULT(AlwaysMergeDMB)) {
+      FLAG_SET_DEFAULT(AlwaysMergeDMB, false);
     }
   }
 
@@ -603,12 +606,12 @@ static bool check_info_file(const char* fpath,
     return false;
   }
   while (fgets(line, sizeof(line), fp) != nullptr) {
-    if (strcasestr(line, virt1) != 0) {
+    if (strcasestr(line, virt1) != nullptr) {
       Abstract_VM_Version::_detected_virtualization = vt1;
       fclose(fp);
       return true;
     }
-    if (virt2 != nullptr && strcasestr(line, virt2) != 0) {
+    if (virt2 != nullptr && strcasestr(line, virt2) != nullptr) {
       Abstract_VM_Version::_detected_virtualization = vt2;
       fclose(fp);
       return true;

@@ -261,12 +261,9 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
   # The sysroot flags are needed for configure to be able to run the compilers
   FLAGS_SETUP_SYSROOT_FLAGS
 
-  # For xlc, the word size flag is required for correct behavior.
   # For clang/gcc, the flag is only strictly required for reduced builds, but
   # set it always where possible (x86 and ppc).
-  if test "x$TOOLCHAIN_TYPE" = xxlc; then
-    MACHINE_FLAG="-q${OPENJDK_TARGET_CPU_BITS}"
-  elif test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86 &&
         test "x$OPENJDK_TARGET_CPU" != xx32 ||
         test "x$OPENJDK_TARGET_CPU_ARCH" = xppc; then
@@ -321,47 +318,6 @@ AC_DEFUN_ONCE([FLAGS_PRE_TOOLCHAIN],
 
 AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 [
-  # COMPILER_TARGET_BITS_FLAG  : option for selecting 32- or 64-bit output
-  # COMPILER_COMMAND_FILE_FLAG : option for passing a command file to the compiler
-  # COMPILER_BINDCMD_FILE_FLAG : option for specifying a file which saves the binder
-  #                              commands produced by the link step (currently AIX only)
-  if test "x$TOOLCHAIN_TYPE" = xxlc; then
-    COMPILER_TARGET_BITS_FLAG="-q"
-    COMPILER_COMMAND_FILE_FLAG="-f"
-    COMPILER_BINDCMD_FILE_FLAG="-bloadmap:"
-  else
-    COMPILER_TARGET_BITS_FLAG="-m"
-    COMPILER_COMMAND_FILE_FLAG="@"
-    COMPILER_BINDCMD_FILE_FLAG=""
-
-    # Check if @file is supported by gcc
-    if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      AC_MSG_CHECKING([if @file is supported by gcc])
-      # Extra empty "" to prevent ECHO from interpreting '--version' as argument
-      $ECHO "" "--version" > command.file
-      # Redirect stderr and stdout to config.log (AS_MESSAGE_LOG_FD) via merge
-      if $CXX @command.file 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
-        AC_MSG_RESULT(yes)
-        COMPILER_COMMAND_FILE_FLAG="@"
-      else
-        AC_MSG_RESULT(no)
-        COMPILER_COMMAND_FILE_FLAG=
-      fi
-      $RM command.file
-    fi
-  fi
-
-  AC_SUBST(COMPILER_TARGET_BITS_FLAG)
-  AC_SUBST(COMPILER_COMMAND_FILE_FLAG)
-  AC_SUBST(COMPILER_BINDCMD_FILE_FLAG)
-
-  # Check that the compiler supports -mX (or -qX on AIX) flags
-  # Set COMPILER_SUPPORTS_TARGET_BITS_FLAG to 'true' if it does
-  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}],
-      IF_TRUE: [COMPILER_SUPPORTS_TARGET_BITS_FLAG=true],
-      IF_FALSE: [COMPILER_SUPPORTS_TARGET_BITS_FLAG=false])
-  AC_SUBST(COMPILER_SUPPORTS_TARGET_BITS_FLAG)
-
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
   else
@@ -376,8 +332,6 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
     GENDEPS_FLAGS="-MMD -MF"
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     GENDEPS_FLAGS="-MMD -MF"
-  elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    GENDEPS_FLAGS="-qmakedep=gcc -MF"
   fi
   AC_SUBST(GENDEPS_FLAGS)
 ])

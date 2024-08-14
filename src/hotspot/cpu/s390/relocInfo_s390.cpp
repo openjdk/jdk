@@ -30,27 +30,25 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
-  // we don't support splitting of relocations, so o must be zero:
-  assert(o == 0, "tried to split relocations");
+void Relocation::pd_set_data_value(address x, bool verify_only) {
   if (!verify_only) {
     switch (format()) {
       case relocInfo::uncompressed_format:
-        nativeMovConstReg_at(addr())->set_data_plain(((intptr_t)x) + o, code());
+        nativeMovConstReg_at(addr())->set_data_plain(((intptr_t)x), code());
         break;
       case relocInfo::compressed_format:
         if (type() == relocInfo::metadata_type)
-          nativeMovConstReg_at(addr())->set_narrow_klass(((intptr_t)x) + o);
+          nativeMovConstReg_at(addr())->set_narrow_klass(((intptr_t)x));
         else if (type() == relocInfo::oop_type)
-          nativeMovConstReg_at(addr())->set_narrow_oop(((intptr_t)x) + o);
+          nativeMovConstReg_at(addr())->set_narrow_oop(((intptr_t)x));
         else
           guarantee(false, "bad relocInfo type for relocInfo::narrow_oop_format");
         break;
       case relocInfo::pcrel_addr_format:  // patch target location
-        nativeMovConstReg_at(addr())->set_pcrel_addr(((intptr_t)x) + o, code());
+        nativeMovConstReg_at(addr())->set_pcrel_addr(((intptr_t)x), code());
         break;
       case relocInfo::pcrel_data_format:  // patch data at target location
-        nativeMovConstReg_at(addr())->set_pcrel_data(((intptr_t)x) + o, code());
+        nativeMovConstReg_at(addr())->set_pcrel_data(((intptr_t)x), code());
         break;
       default:
         assert(false, "not a valid relocInfo format");

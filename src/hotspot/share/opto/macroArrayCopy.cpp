@@ -1266,7 +1266,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     generate_arraycopy(ac, alloc, &ctrl, merge_mem, &io,
                        adr_type, T_OBJECT,
                        src, src_offset, dest, dest_offset, length,
-                       true, !ac->is_copyofrange());
+                       true, ac->has_negative_length_guard());
 
     return;
   }

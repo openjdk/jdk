@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 
 Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/ for derived annotations.
@@ -1112,7 +1112,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="collation" type="phonebook">Aturan Isih Buku Telefon</type>
 			<type key="collation" type="phonetic">Urutan Isih Fonetik</type>
 			<type key="collation" type="pinyin">Aturan Isih Pinyin</type>
-			<type key="collation" type="reformed">Aturan Isih Pembaharuan</type>
 			<type key="collation" type="search">Carian Tujuan Umum</type>
 			<type key="collation" type="searchjl">Cari Mengikut Konsonan Awal Hangul</type>
 			<type key="collation" type="standard">Tertib Isih Standard</type>
@@ -2425,9 +2424,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<regionFormat>Waktu {0}</regionFormat>
 			<regionFormat type="daylight">Waktu Siang {0}</regionFormat>
 			<regionFormat type="standard">Waktu Piawai {0}</regionFormat>
-			<zone type="America/Santa_Isabel">
-				<exemplarCity>Santa Isabel</exemplarCity>
-			</zone>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Waktu Universal Selaras</standard>
@@ -2436,17 +2432,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Etc/Unknown">
 				<exemplarCity>Bandar Tidak Diketahui</exemplarCity>
 			</zone>
-			<zone type="Australia/Currie">
-				<exemplarCity>Currie</exemplarCity>
-			</zone>
 			<zone type="America/St_Barthelemy">
 				<exemplarCity>Saint Barthelemy</exemplarCity>
 			</zone>
 			<zone type="America/Cambridge_Bay">
 				<exemplarCity>Teluk Cambridge</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>Sungai Rainy</exemplarCity>
 			</zone>
 			<zone type="America/Goose_Bay">
 				<exemplarCity>Teluk Goose</exemplarCity>
@@ -3058,11 +3048,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<daylight draft="contributed">Waktu Musim Panas Macao</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Waktu Pulau Macquarie</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Waktu Magadan</generic>
@@ -3103,13 +3088,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<metazone type="Mawson">
 				<long>
 					<standard>Waktu Mawson</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Waktu Barat Laut Mexico</generic>
-					<standard>Waktu Piawai Barat Laut Mexico</standard>
-					<daylight>Waktu Siang Barat Laut Mexico</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

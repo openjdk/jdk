@@ -25,6 +25,7 @@
  * @test TestCDSVMCrash
  * @summary Verify that an exception is thrown when the VM crashes during executeAndLog
  * @requires vm.cds
+ * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @run driver TestCDSVMCrash
@@ -37,12 +38,14 @@ import jdk.test.lib.process.ProcessTools;
 
 public class TestCDSVMCrash {
 
+    static Object[] oa;
+
     public static void main(String[] args) throws Exception {
         if (args.length == 1) {
             // This should guarantee to throw:
             // java.lang.OutOfMemoryError: Requested array size exceeds VM limit
             try {
-                Object[] oa = new Object[Integer.MAX_VALUE];
+                oa = new Object[Integer.MAX_VALUE];
                 throw new Error("OOME not triggered");
             } catch (OutOfMemoryError err) {
                 throw new Error("OOME didn't abort JVM!");
@@ -50,9 +53,9 @@ public class TestCDSVMCrash {
         }
         // else this is the main test
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+CrashOnOutOfMemoryError",
-                                                                             "-XX:-CreateCoredumpOnCrash", "-Xmx128m",
-                                                                             "-Xshare:on", TestCDSVMCrash.class.getName(),
-                                                                             "throwOOME");
+                                                                      "-XX:-CreateCoredumpOnCrash", "-Xmx128m",
+                                                                      "-Xshare:on", TestCDSVMCrash.class.getName(),
+                                                                      "throwOOME");
         // executeAndLog should throw an exception in the VM crashed
         try {
             CDSTestUtils.executeAndLog(pb, "cds_vm_crash");

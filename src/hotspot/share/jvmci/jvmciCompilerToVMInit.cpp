@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@
 #if INCLUDE_ZGC
 #include "gc/x/xBarrierSetRuntime.hpp"
 #include "gc/x/xThreadLocalData.hpp"
+#include "gc/z/zBarrierSetRuntime.hpp"
+#include "gc/z/zThreadLocalData.hpp"
 #endif
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -80,6 +82,10 @@ address CompilerToVM::Data::ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_
 address CompilerToVM::Data::ZBarrierSetRuntime_load_barrier_on_oop_array;
 address CompilerToVM::Data::ZBarrierSetRuntime_clone;
 
+address CompilerToVM::Data::ZPointerVectorLoadBadMask_address;
+address CompilerToVM::Data::ZPointerVectorStoreBadMask_address;
+address CompilerToVM::Data::ZPointerVectorStoreGoodMask_address;
+
 bool CompilerToVM::Data::continuations_enabled;
 
 #ifdef AARCH64
@@ -108,6 +114,10 @@ int CompilerToVM::Data::_fields_annotations_base_offset;
 CardTable::CardValue* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
+#ifdef X86
+int CompilerToVM::Data::L1_line_size;
+#endif
+
 size_t CompilerToVM::Data::vm_page_size;
 
 int CompilerToVM::Data::sizeof_vtableEntry = sizeof(vtableEntry);
@@ -117,6 +127,9 @@ int CompilerToVM::Data::sizeof_ConstantPool = sizeof(ConstantPool);
 int CompilerToVM::Data::sizeof_narrowKlass = sizeof(narrowKlass);
 int CompilerToVM::Data::sizeof_arrayOopDesc = sizeof(arrayOopDesc);
 int CompilerToVM::Data::sizeof_BasicLock = sizeof(BasicLock);
+#if INCLUDE_ZGC
+int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
+#endif
 
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
@@ -131,7 +144,7 @@ address CompilerToVM::Data::symbol_clinit;
 
 int CompilerToVM::Data::data_section_item_alignment;
 
-int* CompilerToVM::Data::_should_notify_object_alloc;
+JVMTI_ONLY( int* CompilerToVM::Data::_should_notify_object_alloc; )
 
 void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
@@ -157,15 +170,23 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
-    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_oop_array =                               XBarrierSetRuntime::load_barrier_on_oop_array_addr();
-    ZBarrierSetRuntime_clone =                                                   XBarrierSetRuntime::clone_addr();
+    if (ZGenerational) {
+      ZPointerVectorLoadBadMask_address   = (address) &ZPointerVectorLoadBadMask;
+      ZPointerVectorStoreBadMask_address  = (address) &ZPointerVectorStoreBadMask;
+      ZPointerVectorStoreGoodMask_address = (address) &ZPointerVectorStoreGoodMask;
+    } else {
+      thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
+      // Initialize the old names for compatibility.  The proper XBarrierSetRuntime names are
+      // exported as addresses in vmStructs_jvmci.cpp as are the new ZBarrierSetRuntime names.
+      ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded              = XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded         = XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded      = XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded         = XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded    = XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded = XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
+      ZBarrierSetRuntime_load_barrier_on_oop_array                        = XBarrierSetRuntime::load_barrier_on_oop_array_addr();
+      ZBarrierSetRuntime_clone                                            = XBarrierSetRuntime::clone_addr();
+    }
   }
 #endif
 
@@ -175,10 +196,20 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   Universe_collectedHeap = Universe::heap();
   Universe_base_vtable_size = Universe::base_vtable_size();
-  Universe_narrow_oop_base = CompressedOops::base();
-  Universe_narrow_oop_shift = CompressedOops::shift();
-  Universe_narrow_klass_base = CompressedKlassPointers::base();
-  Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  if (UseCompressedOops) {
+    Universe_narrow_oop_base = CompressedOops::base();
+    Universe_narrow_oop_shift = CompressedOops::shift();
+  } else {
+    Universe_narrow_oop_base = nullptr;
+    Universe_narrow_oop_shift = 0;
+  }
+  if (UseCompressedClassPointers) {
+    Universe_narrow_klass_base = CompressedKlassPointers::base();
+    Universe_narrow_klass_shift = CompressedKlassPointers::shift();
+  } else {
+    Universe_narrow_klass_base = nullptr;
+    Universe_narrow_klass_shift = 0;
+  }
   Universe_non_oop_bits = Universe::non_oop_word();
   Universe_verify_oop_mask = Universe::verify_oop_mask();
   Universe_verify_oop_bits = Universe::verify_oop_bits();
@@ -199,7 +230,7 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
   data_section_item_alignment = relocInfo::addr_unit();
 
-  _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc;
+  JVMTI_ONLY( _should_notify_object_alloc = &JvmtiExport::_should_notify_object_alloc; )
 
   BarrierSet* bs = BarrierSet::barrier_set();
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
@@ -209,9 +240,13 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     cardtable_shift = CardTable::card_shift();
   } else {
     // No card mark barriers
-    cardtable_start_address = 0;
+    cardtable_start_address = nullptr;
     cardtable_shift = 0;
   }
+
+#ifdef X86
+  L1_line_size = VM_Version::L1_line_size();
+#endif
 
   vm_page_size = os::vm_page_size();
 

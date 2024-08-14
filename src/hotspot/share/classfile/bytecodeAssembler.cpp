@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,31 +33,63 @@
 #include "utilities/bytes.hpp"
 #include "utilities/checkedCast.hpp"
 
+void BytecodeConstantPool::init() {
+  for (int i = 1; i < _orig->length(); i++) {
+    BytecodeCPEntry entry;
+    switch(_orig->tag_at(i).value()) {
+    case JVM_CONSTANT_Class:
+    case JVM_CONSTANT_UnresolvedClass:
+      entry = BytecodeCPEntry::klass(_orig->klass_slot_at(i).name_index());
+      break;
+    case JVM_CONSTANT_Utf8:
+      entry = BytecodeCPEntry::utf8(_orig->symbol_at(i));
+      break;
+    case JVM_CONSTANT_NameAndType:
+      entry = BytecodeCPEntry::name_and_type(_orig->name_ref_index_at(i), _orig->signature_ref_index_at(i));
+      break;
+    case JVM_CONSTANT_Methodref:
+      entry = BytecodeCPEntry::methodref(_orig->uncached_klass_ref_index_at(i), _orig->uncached_name_and_type_ref_index_at(i));
+      break;
+    case JVM_CONSTANT_String:
+      entry = BytecodeCPEntry::string(_orig->unresolved_string_at(i));
+      break;
+    }
+    if (entry._tag != BytecodeCPEntry::tag::ERROR_TAG) {
+      bool created = false;
+      _index_map.put_if_absent(entry, i, &created);
+      if (created) {
+        _orig_cp_added += 1;
+        _added_entries.append(entry);
+      }
+    }
+  }
+}
+
 u2 BytecodeConstantPool::find_or_add(BytecodeCPEntry const& bcpe, TRAPS) {
 
   // Check for overflow
-  int new_size = _orig->length() + _entries.length();
+  int new_size = _orig->length() + _added_entries.length() - _orig_cp_added;
   if (new_size > USHRT_MAX) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "default methods constant pool overflowed");
   }
 
-  u2 index = checked_cast<u2>(_entries.length());
+  u2 index = checked_cast<u2>(new_size);
   bool created = false;
-  u2* probe = _indices.put_if_absent(bcpe, index, &created);
+  u2* probe = _index_map.put_if_absent(bcpe, index, &created);
   if (created) {
-    _entries.append(bcpe);
+    _added_entries.append(bcpe);
   } else {
     index = *probe;
   }
-  return checked_cast<u2>(index + _orig->length());
+  return index;
 }
 
 ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
-  if (_entries.length() == 0) {
+  if (_added_entries.length() == 0) {
     return _orig;
   }
 
-  int new_size = _orig->length() + _entries.length();
+  int new_size = _orig->length() + _added_entries.length() - _orig_cp_added;
   ConstantPool* cp = ConstantPool::allocate(
       _orig->pool_holder()->class_loader_data(),
       new_size, CHECK_NULL);
@@ -69,9 +101,13 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
   // Preserve dynamic constant information from the original pool
   cp->copy_fields(_orig);
 
-  for (int i = 0; i < _entries.length(); ++i) {
-    BytecodeCPEntry entry = _entries.at(i);
-    int idx = i + _orig->length();
+  for (int i = _orig_cp_added; i < _added_entries.length(); ++i) {
+    // Add new entries that we added to the temporary constant pool, to the
+    // newly creatd constant pool.
+    BytecodeCPEntry entry = _added_entries.at(i);
+    // Get the constant pool index saved in the hashtable for this new entry.
+    u2* value = _index_map.get(entry);
+    int idx = *value;
     switch (entry._tag) {
       case BytecodeCPEntry::UTF8:
         entry._u.utf8->increment_refcount();
@@ -83,7 +119,7 @@ ConstantPool* BytecodeConstantPool::create_constant_pool(TRAPS) const {
         break;
       case BytecodeCPEntry::STRING:
         cp->unresolved_string_at_put(
-            idx, cp->symbol_at(entry._u.string));
+            idx, entry._u.utf8);
         break;
       case BytecodeCPEntry::NAME_AND_TYPE:
         cp->name_and_type_at_put(idx,

@@ -26,8 +26,6 @@
 include GensrcCommon.gmk
 include GensrcProperties.gmk
 
-DISABLED_WARNINGS_java += this-escape
-
 $(eval $(call SetupVersionProperties, JAVAP_VERSION, \
     com/sun/tools/javap/resources/version.properties))
 

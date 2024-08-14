@@ -36,8 +36,6 @@ class MetadataFactory : AllStatic {
  public:
   template <typename T>
   static Array<T>* new_array(ClassLoaderData* loader_data, int length, TRAPS) {
-    // The "true" argument is because all metadata arrays are read only when
-    // dumped to the shared archive
     return new (loader_data, length, THREAD) Array<T>(length);
   }
 

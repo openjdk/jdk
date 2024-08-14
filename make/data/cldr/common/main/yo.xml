@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1683,9 +1683,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Creston">
 				<exemplarCity>ìlú Kírẹstọ́ọ̀nù</exemplarCity>
 			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity>ìlú Yelonáfù</exemplarCity>
-			</zone>
 			<zone type="America/Edmonton">
 				<exemplarCity>ìlú Edmonton</exemplarCity>
 			</zone>
@@ -1704,29 +1701,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Resolute">
 				<exemplarCity>ìlú Resolútì</exemplarCity>
 			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity>ìlú Raini Rifà</exemplarCity>
-			</zone>
 			<zone type="America/Rankin_Inlet">
 				<exemplarCity>ìlú Rankin Inlet</exemplarCity>
 			</zone>
 			<zone type="America/Coral_Harbour">
 				<exemplarCity>ìlú àtikọkàn</exemplarCity>
 			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity>ìlú Omi Thunder</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity>ìlú Nipigoni</exemplarCity>
-			</zone>
 			<zone type="America/Toronto">
 				<exemplarCity>ìlú Toronto</exemplarCity>
 			</zone>
 			<zone type="America/Iqaluit">
 				<exemplarCity>ìlú Iqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity>ìlú Panituni</exemplarCity>
 			</zone>
 			<zone type="America/Moncton">
 				<exemplarCity>ìlú Montoni</exemplarCity>
@@ -2475,11 +2460,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Lord Howe Daylight Time</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Macquarie Island Time</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Magadan Time</generic>
@@ -2517,13 +2497,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<metazone type="Mawson">
 				<long>
 					<standard>Mawson Time</standard>
-				</long>
-			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Àkókò Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</generic>
-					<standard>Àkókò Àfẹnukò Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</standard>
-					<daylight>Àkókò Ojúmọmọ Apá Ìwọ̀ Oorùn Mẹ́ṣíkò</daylight>
 				</long>
 			</metazone>
 			<metazone type="Mexico_Pacific">

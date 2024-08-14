@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.internal.access;
 
 import java.io.InputStream;
+import java.io.PrintStream;
 import java.lang.annotation.Annotation;
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -41,7 +42,6 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
@@ -270,6 +270,12 @@ public interface JavaLangAccess {
     Module addEnableNativeAccess(Module m);
 
     /**
+     * Updates module named {@code name} in layer {@code layer} to allow access to restricted methods.
+     * Returns true iff the given module exists in the given layer.
+     */
+    boolean addEnableNativeAccess(ModuleLayer layer, String name);
+
+    /**
      * Updates all unnamed modules to allow access to restricted methods.
      */
     void addEnableNativeAccessToAllUnnamed();
@@ -359,6 +365,15 @@ public interface JavaLangAccess {
     char getUTF16Char(byte[] bytes, int index);
 
     /**
+     * Put the char at index in a byte[] in internal UTF-16 representation,
+     * with no bounds checks.
+     *
+     * @param bytes the UTF-16 encoded bytes
+     * @param index of the char to retrieve, 0 <= index < (bytes.length >> 1)
+     */
+    void putCharUTF16(byte[] bytes, int index, int ch);
+
+    /**
      * Encode the given string into a sequence of bytes using utf8.
      *
      * @param s the string to encode
@@ -385,6 +400,11 @@ public interface JavaLangAccess {
      * with `System.setIn(newIn)` method
      */
     InputStream initialSystemIn();
+
+    /**
+     * Returns the initial value of System.err.
+     */
+    PrintStream initialSystemErr();
 
     /**
      * Encodes ASCII codepoints as possible from the source array into
@@ -421,20 +441,10 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, String constant);
 
-   /**
-    * Get the coder for the supplied character.
-    */
-   long stringConcatCoder(char value);
-
-   /**
-    * Update lengthCoder for StringBuilder.
-    */
-   long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
-
     /**
-     * Prepend StringBuilder content.
-    */
-   long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
+     * Mix value length and coder into current length and coder.
+     */
+    long stringConcatMix(long lengthCoder, char value);
 
     /**
      * Join strings
@@ -447,6 +457,10 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
+
+    int getCharsLatin1(long i, int index, byte[] buf);
+
+    int getCharsUTF16(long i, int index, byte[] buf);
 
     long findNative(ClassLoader loader, String entry);
 
@@ -486,11 +500,6 @@ public interface JavaLangAccess {
      * current thread is a virtual thread then this method returns the carrier.
      */
     Thread currentCarrierThread();
-
-    /**
-     * Executes the given value returning task on the current carrier thread.
-     */
-    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
 
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.
@@ -586,4 +595,10 @@ public interface JavaLangAccess {
      * Are the string bytes compatible with the given charset?
      */
     boolean bytesCompatible(String string, Charset charset);
+
+    /**
+     * Is a security manager already set or allowed to be set
+     * (using -Djava.security.manager=allow)?
+     */
+    boolean allowSecurityManager();
 }

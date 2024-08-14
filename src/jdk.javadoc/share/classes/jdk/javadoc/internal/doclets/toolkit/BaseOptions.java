@@ -209,6 +209,13 @@ public abstract class BaseOptions {
     private boolean noDeprecated = false;
 
     /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts} is used and font files
+     * should not be included in generated documentation. Default value is false.
+     */
+    private boolean noFonts = false;
+
+    /**
      * Argument for command-line option {@code --no-platform-links}.
      * True if command-line option "--no-platform-links" is used. Default value is
      * false.
@@ -477,6 +484,14 @@ public abstract class BaseOptions {
                     @Override
                     public boolean process(String opt, List<String> args) {
                         noDeprecated = true;
+                        return true;
+                    }
+                },
+
+                new Option(resources, "--no-fonts") {
+                    @Override
+                    public boolean process(String opt, List<String> args) {
+                        noFonts = true;
                         return true;
                     }
                 },
@@ -887,6 +902,15 @@ public abstract class BaseOptions {
      */
     public boolean noDeprecated() {
         return noDeprecated;
+    }
+
+    /**
+     * Argument for command-line option {@code --no-fonts}.
+     * True if command-line option {@code --no-fonts"} is used.
+     * Default value is false.
+     */
+    public boolean noFonts() {
+        return noFonts;
     }
 
     /**

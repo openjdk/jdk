@@ -143,21 +143,24 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _depth = 0;
   _current_method = nullptr;
   _network_stream = nullptr;
+  _append = append;
 
   if (file_name != nullptr) {
-    init_file_stream(file_name, use_multiple_files, append);
+    init_file_stream(file_name, use_multiple_files);
   } else {
     init_network_stream();
   }
   _xml = new (mtCompiler) xmlStream(_output);
-  if (!append) {
+  if (!_append) {
     head(TOP_ELEMENT);
   }
 }
 
 // Destructor, close file or network stream
 IdealGraphPrinter::~IdealGraphPrinter() {
-  tail(TOP_ELEMENT);
+  if (!_append) {
+    tail(TOP_ELEMENT);
+  }
 
   // tty->print_cr("Walk time: %d", (int)_walk_time.milliseconds());
   // tty->print_cr("Output time: %d", (int)_output_time.milliseconds());
@@ -371,7 +374,6 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     head(PROPERTIES_ELEMENT);
 
     Node *node = n;
-#ifndef PRODUCT
     Compile::current()->_in_dump_cnt++;
     print_prop(NODE_NAME_PROPERTY, (const char *)node->Name());
     print_prop("idx", node->_idx);
@@ -609,23 +611,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       }
     }
 
-    if (caller != nullptr) {
-      stringStream bciStream;
-      ciMethod* last = nullptr;
-      int last_bci;
-      while(caller) {
-        if (caller->has_method()) {
-          last = caller->method();
-          last_bci = caller->bci();
-        }
-        bciStream.print("%d ", caller->bci());
-        caller = caller->caller();
-      }
-      print_prop("bci", bciStream.freeze());
-      if (last != nullptr && last->has_linenumber_table() && last_bci >= 0) {
-        print_prop("line", last->line_number_from_bci(last_bci));
-      }
-    }
+    print_bci_and_line_number(caller);
 
 #ifdef ASSERT
     if (node->debug_orig() != nullptr) {
@@ -647,10 +633,38 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     }
 
     Compile::current()->_in_dump_cnt--;
-#endif
 
     tail(PROPERTIES_ELEMENT);
     tail(NODE_ELEMENT);
+  }
+}
+
+void IdealGraphPrinter::print_bci_and_line_number(JVMState* caller) {
+  if (caller != nullptr) {
+    ResourceMark rm;
+    stringStream bciStream;
+    stringStream lineStream;
+
+    // Print line and bci numbers for the callee and all entries in the call stack until we reach the root method.
+    while (caller) {
+      const int bci = caller->bci();
+      bool appended_line = false;
+      if (caller->has_method()) {
+        ciMethod* method = caller->method();
+        if (method->has_linenumber_table() && bci >= 0) {
+          lineStream.print("%d ", method->line_number_from_bci(bci));
+          appended_line = true;
+        }
+      }
+      if (!appended_line) {
+        lineStream.print("%s ", "_");
+      }
+      bciStream.print("%d ", bci);
+      caller = caller->caller();
+    }
+
+    print_prop("bci", bciStream.freeze());
+    print_prop("line", lineStream.freeze());
   }
 }
 
@@ -849,10 +863,10 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   _xml->flush();
 }
 
-void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files, bool append) {
+void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multiple_files) {
   ThreadCritical tc;
   if (use_multiple_files && _file_count != 0) {
-    assert(!append, "append should only be used for debugging with a single file");
+    assert(!_append, "append should only be used for debugging with a single file");
     ResourceMark rm;
     stringStream st;
     const char* dot = strrchr(file_name, '.');
@@ -864,10 +878,10 @@ void IdealGraphPrinter::init_file_stream(const char* file_name, bool use_multipl
     }
     _output = new (mtCompiler) fileStream(st.as_string(), "w");
   } else {
-    _output = new (mtCompiler) fileStream(file_name, append ? "a" : "w");
+    _output = new (mtCompiler) fileStream(file_name, _append ? "a" : "w");
   }
   if (use_multiple_files) {
-    assert(!append, "append should only be used for debugging with a single file");
+    assert(!_append, "append should only be used for debugging with a single file");
     _file_count++;
   }
 }
@@ -898,9 +912,16 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
   assert(C != nullptr, "must already be set");
   if (current_method != _current_method) {
     // If a different method, end the old and begin with the new one.
-    end_method();
-    _current_method = nullptr;
-    begin_method();
+    if (_append) {
+      // Do not call `end_method` if we are appending, just update `_current_method`,
+      // because `begin_method` is not called in the constructor in append mode.
+      _current_method = current_method;
+    } else {
+      // End the old method and begin a new one.
+      // Don't worry about `_current_method`, `end_method` will clear it.
+      end_method();
+      begin_method();
+    }
   }
 }
 

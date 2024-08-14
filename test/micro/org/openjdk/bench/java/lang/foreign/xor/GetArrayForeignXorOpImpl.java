@@ -19,7 +19,7 @@ public class GetArrayForeignXorOpImpl implements XorOp {
         Linker linker;
         linker = Linker.nativeLinker();
         FunctionDescriptor xor_op_func = FunctionDescriptor.ofVoid(C_POINTER, C_POINTER, C_INT);
-        xor_op = linker.downcallHandle(SymbolLookup.loaderLookup().find("xor_op").orElseThrow(), xor_op_func, critical(false));
+        xor_op = linker.downcallHandle(SymbolLookup.loaderLookup().findOrThrow("xor_op"), xor_op_func, critical(false));
     }
 
     static final MethodHandle xor_op;

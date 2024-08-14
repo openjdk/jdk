@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,39 +15,39 @@ package jdk.internal.org.jline.utils;
  */
 public class AttributedStyle {
 
-    public static final int BLACK =     0;
-    public static final int RED =       1;
-    public static final int GREEN =     2;
-    public static final int YELLOW =    3;
-    public static final int BLUE =      4;
-    public static final int MAGENTA =   5;
-    public static final int CYAN =      6;
-    public static final int WHITE =     7;
+    public static final int BLACK = 0;
+    public static final int RED = 1;
+    public static final int GREEN = 2;
+    public static final int YELLOW = 3;
+    public static final int BLUE = 4;
+    public static final int MAGENTA = 5;
+    public static final int CYAN = 6;
+    public static final int WHITE = 7;
 
-    public static final int BRIGHT =    8;
+    public static final int BRIGHT = 8;
 
-    static final long F_BOLD            = 0x00000001;
-    static final long F_FAINT           = 0x00000002;
-    static final long F_ITALIC          = 0x00000004;
-    static final long F_UNDERLINE       = 0x00000008;
-    static final long F_BLINK           = 0x00000010;
-    static final long F_INVERSE         = 0x00000020;
-    static final long F_CONCEAL         = 0x00000040;
-    static final long F_CROSSED_OUT     = 0x00000080;
-    static final long F_FOREGROUND_IND  = 0x00000100;
-    static final long F_FOREGROUND_RGB  = 0x00000200;
-    static final long F_FOREGROUND      = F_FOREGROUND_IND | F_FOREGROUND_RGB;
-    static final long F_BACKGROUND_IND  = 0x00000400;
-    static final long F_BACKGROUND_RGB  = 0x00000800;
-    static final long F_BACKGROUND      = F_BACKGROUND_IND | F_BACKGROUND_RGB;
-    static final long F_HIDDEN          = 0x00001000;
+    static final long F_BOLD = 0x00000001;
+    static final long F_FAINT = 0x00000002;
+    static final long F_ITALIC = 0x00000004;
+    static final long F_UNDERLINE = 0x00000008;
+    static final long F_BLINK = 0x00000010;
+    static final long F_INVERSE = 0x00000020;
+    static final long F_CONCEAL = 0x00000040;
+    static final long F_CROSSED_OUT = 0x00000080;
+    static final long F_FOREGROUND_IND = 0x00000100;
+    static final long F_FOREGROUND_RGB = 0x00000200;
+    static final long F_FOREGROUND = F_FOREGROUND_IND | F_FOREGROUND_RGB;
+    static final long F_BACKGROUND_IND = 0x00000400;
+    static final long F_BACKGROUND_RGB = 0x00000800;
+    static final long F_BACKGROUND = F_BACKGROUND_IND | F_BACKGROUND_RGB;
+    static final long F_HIDDEN = 0x00001000;
 
-    static final long MASK           = 0x00001FFF;
+    static final long MASK = 0x00001FFF;
 
-    static final int FG_COLOR_EXP    = 15;
-    static final int BG_COLOR_EXP    = 39;
-    static final long FG_COLOR        = 0xFFFFFFL << FG_COLOR_EXP;
-    static final long BG_COLOR        = 0xFFFFFFL << BG_COLOR_EXP;
+    static final int FG_COLOR_EXP = 15;
+    static final int BG_COLOR_EXP = 39;
+    static final long FG_COLOR = 0xFFFFFFL << FG_COLOR_EXP;
+    static final long BG_COLOR = 0xFFFFFFL << BG_COLOR_EXP;
 
     public static final AttributedStyle DEFAULT = new AttributedStyle();
     public static final AttributedStyle BOLD = DEFAULT.bold();
@@ -70,8 +70,9 @@ public class AttributedStyle {
 
     public AttributedStyle(long style, long mask) {
         this.style = style;
-        this.mask = mask & MASK | ((style & F_FOREGROUND) != 0 ? FG_COLOR : 0)
-                                | ((style & F_BACKGROUND) != 0 ? BG_COLOR : 0);
+        this.mask = mask & MASK
+                | ((style & F_FOREGROUND) != 0 ? FG_COLOR : 0)
+                | ((style & F_BACKGROUND) != 0 ? BG_COLOR : 0);
     }
 
     public AttributedStyle bold() {
@@ -176,7 +177,9 @@ public class AttributedStyle {
     }
 
     public AttributedStyle foreground(int color) {
-        return new AttributedStyle(style & ~FG_COLOR | F_FOREGROUND_IND | (((long) color << FG_COLOR_EXP) & FG_COLOR), mask | F_FOREGROUND_IND);
+        return new AttributedStyle(
+                style & ~FG_COLOR | F_FOREGROUND_IND | (((long) color << FG_COLOR_EXP) & FG_COLOR),
+                mask | F_FOREGROUND_IND);
     }
 
     public AttributedStyle foreground(int r, int g, int b) {
@@ -184,7 +187,9 @@ public class AttributedStyle {
     }
 
     public AttributedStyle foregroundRgb(int color) {
-        return new AttributedStyle(style & ~FG_COLOR | F_FOREGROUND_RGB | ((((long) color & 0xFFFFFF) << FG_COLOR_EXP) & FG_COLOR), mask | F_FOREGROUND_RGB);
+        return new AttributedStyle(
+                style & ~FG_COLOR | F_FOREGROUND_RGB | ((((long) color & 0xFFFFFF) << FG_COLOR_EXP) & FG_COLOR),
+                mask | F_FOREGROUND_RGB);
     }
 
     public AttributedStyle foregroundOff() {
@@ -196,7 +201,9 @@ public class AttributedStyle {
     }
 
     public AttributedStyle background(int color) {
-        return new AttributedStyle(style & ~BG_COLOR | F_BACKGROUND_IND | (((long) color << BG_COLOR_EXP) & BG_COLOR), mask | F_BACKGROUND_IND);
+        return new AttributedStyle(
+                style & ~BG_COLOR | F_BACKGROUND_IND | (((long) color << BG_COLOR_EXP) & BG_COLOR),
+                mask | F_BACKGROUND_IND);
     }
 
     public AttributedStyle background(int r, int g, int b) {
@@ -204,7 +211,9 @@ public class AttributedStyle {
     }
 
     public AttributedStyle backgroundRgb(int color) {
-        return new AttributedStyle(style & ~BG_COLOR | F_BACKGROUND_RGB | ((((long) color & 0xFFFFFF) << BG_COLOR_EXP) & BG_COLOR), mask | F_BACKGROUND_RGB);
+        return new AttributedStyle(
+                style & ~BG_COLOR | F_BACKGROUND_RGB | ((((long) color & 0xFFFFFF) << BG_COLOR_EXP) & BG_COLOR),
+                mask | F_BACKGROUND_RGB);
     }
 
     public AttributedStyle backgroundOff() {
@@ -249,7 +258,6 @@ public class AttributedStyle {
         AttributedStyle that = (AttributedStyle) o;
         if (style != that.style) return false;
         return mask == that.mask;
-
     }
 
     @Override
@@ -266,10 +274,6 @@ public class AttributedStyle {
 
     @Override
     public String toString() {
-        return "AttributedStyle{" +
-                "style=" + style +
-                ", mask=" + mask +
-                ", ansi=" + toAnsi() +
-                '}';
+        return "AttributedStyle{" + "style=" + style + ", mask=" + mask + ", ansi=" + toAnsi() + '}';
     }
 }

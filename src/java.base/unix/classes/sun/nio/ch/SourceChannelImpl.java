@@ -200,6 +200,9 @@ class SourceChannelImpl
     }
     @Override
     public void kill() {
+        // wait for any read operation to complete before trying to close
+        readLock.lock();
+        readLock.unlock();
         synchronized (stateLock) {
             assert !isOpen();
             if (state == ST_CLOSING) {
@@ -306,6 +309,7 @@ class SourceChannelImpl
 
         readLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             int n = 0;
             try {
@@ -334,6 +338,7 @@ class SourceChannelImpl
 
         readLock.lock();
         try {
+            ensureOpen();
             boolean blocking = isBlocking();
             long n = 0;
             try {

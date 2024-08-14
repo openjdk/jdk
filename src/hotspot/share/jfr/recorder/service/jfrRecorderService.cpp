@@ -639,11 +639,7 @@ static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
 
 size_t JfrRecorderService::flush() {
   size_t total_elements = flush_metadata(_chunkwriter);
-  const size_t storage_elements = flush_storage(_storage, _chunkwriter);
-  if (0 == storage_elements) {
-    return total_elements;
-  }
-  total_elements += storage_elements;
+  total_elements = flush_storage(_storage, _chunkwriter);
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
@@ -699,6 +695,8 @@ void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks, bool emi
   // and serializes all event emit checkpoint events to the same segment.
   JfrRotationLock lock;
   // Take the rotation lock before the transition.
-  ThreadInVMfromNative transition(JavaThread::current());
+  JavaThread* current_thread = JavaThread::current();
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
+  ThreadInVMfromNative transition(current_thread);
   LeakProfiler::emit_events(cutoff_ticks, emit_all, skip_bfs);
 }

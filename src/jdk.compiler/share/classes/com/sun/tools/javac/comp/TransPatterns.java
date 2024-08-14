@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,8 @@ import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.RecordComponent;
 import com.sun.tools.javac.code.Type;
 import static com.sun.tools.javac.code.TypeTag.BOT;
+import static com.sun.tools.javac.code.TypeTag.VOID;
+
 import com.sun.tools.javac.jvm.PoolConstant.LoadableConstant;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
@@ -106,7 +108,6 @@ import com.sun.tools.javac.tree.JCTree.LetExpr;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 
@@ -276,7 +277,7 @@ public class TransPatterns extends TreeTranslator {
 
         if (bindingVar != null && !bindingVar.isUnnamedVariable()) {
             JCAssign fakeInit = (JCAssign)make.at(TreeInfo.getStartPos(tree)).Assign(
-                    make.Ident(bindingVar), convert(make.Ident(currentValue), castTargetType)).setType(bindingVar.erasure(types));
+                    make.Ident(bindingVar), convert(make.Ident(currentValue).setType(currentValue.erasure(types)), castTargetType)).setType(bindingVar.erasure(types));
             LetExpr nestedLE = make.LetExpr(List.of(make.Exec(fakeInit)),
                                             make.Literal(true));
             nestedLE.needsCond = true;
@@ -393,7 +394,7 @@ public class TransPatterns extends TreeTranslator {
                               boolean hasUnconditionalPattern,
                               boolean patternSwitch) {
         if (patternSwitch) {
-            Type seltype = selector.type.hasTag(BOT)
+            Type seltype = selector.type.hasTag(BOT) || target.usesReferenceOnlySelectorTypes()
                     ? syms.objectType
                     : selector.type;
 
@@ -459,7 +460,9 @@ public class TransPatterns extends TreeTranslator {
                 newCases.add(c.head);
                 appendBreakIfNeeded(tree, cases, c.head);
             }
-            cases = processCases(tree, newCases.toList());
+            cases = newCases.toList();
+            patchCompletingNormallyCases(cases);
+            cases = processCases(tree, cases);
             ListBuffer<JCStatement> statements = new ListBuffer<>();
             VarSymbol temp = new VarSymbol(Flags.SYNTHETIC,
                     names.fromString("selector" + variableIndex++ + target.syntheticNameChar() + "temp"),
@@ -496,14 +499,12 @@ public class TransPatterns extends TreeTranslator {
                          .toArray(s -> new LoadableConstant[s]);
 
             boolean enumSelector = seltype.tsym.isEnum();
-            boolean primitiveSelector = seltype.isPrimitive();
             Name bootstrapName = enumSelector ? names.enumSwitch : names.typeSwitch;
             MethodSymbol bsm = rs.resolveInternalMethod(tree.pos(), env, syms.switchBootstrapsType,
                     bootstrapName, staticArgTypes, List.nil());
 
-            Type resolvedSelectorType = seltype;
             MethodType indyType = new MethodType(
-                    List.of(resolvedSelectorType, syms.intType),
+                    List.of(seltype, syms.intType),
                     syms.intType,
                     List.nil(),
                     syms.methodClass
@@ -525,8 +526,6 @@ public class TransPatterns extends TreeTranslator {
             int i = 0;
             boolean previousCompletesNormally = false;
             boolean hasDefault = false;
-
-            patchCompletingNormallyCases(cases);
 
             for (var c : cases) {
                 List<JCCaseLabel> clearedPatterns = c.labels;
@@ -688,7 +687,7 @@ public class TransPatterns extends TreeTranslator {
             if (currentCase.caseKind == CaseKind.STATEMENT &&
                 currentCase.completesNormally &&
                 cases.tail.nonEmpty() &&
-                cases.tail.head.guard != null) {
+                (cases.tail.head.guard != null || cases.tail.head.labels.stream().anyMatch(cl -> cl instanceof JCPatternCaseLabel p && p.syntheticGuard != null))) {
                 ListBuffer<JCStatement> newStatements = new ListBuffer<>();
                 List<JCCase> copyFrom = cases;
 
@@ -703,6 +702,7 @@ public class TransPatterns extends TreeTranslator {
                 };
 
                 currentCase.stats = newStatements.toList();
+                currentCase.completesNormally = false;
             }
 
             cases = cases.tail;
@@ -787,7 +787,7 @@ public class TransPatterns extends TreeTranslator {
         StringBuilder sb = new StringBuilder();
 
         PrimitiveGenerator() {
-            super(types);
+            types.super();
         }
 
         @Override
@@ -951,10 +951,12 @@ public class TransPatterns extends TreeTranslator {
         JCExpression commonNestedExpression = null;
         VarSymbol commonNestedBinding = null;
         boolean previousNullable = false;
+        boolean previousCompletesNormally = false;
 
         for (List<JCCase> c = inputCases; c.nonEmpty(); c = c.tail) {
             VarSymbol currentBinding = null;
             boolean currentNullable = false;
+            boolean currentCompletesNormally = c.head.completesNormally;
             JCExpression currentNestedExpression = null;
             VarSymbol currentNestedBinding = null;
 
@@ -989,6 +991,8 @@ public class TransPatterns extends TreeTranslator {
                        commonBinding.isUnnamedVariable() == currentBinding.isUnnamedVariable() &&
                        !previousNullable &&
                        !currentNullable &&
+                       !previousCompletesNormally &&
+                       !currentCompletesNormally &&
                        new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
@@ -1004,6 +1008,7 @@ public class TransPatterns extends TreeTranslator {
                 commonNestedBinding = currentNestedBinding;
             }
             previousNullable = currentNullable;
+            previousCompletesNormally = currentCompletesNormally;
         }
         resolveAccummulator.resolve(commonBinding, commonNestedExpression, commonNestedBinding);
         return result.toList();
@@ -1257,7 +1262,11 @@ public class TransPatterns extends TreeTranslator {
                 tree.body = translate(tree.body);
                 if (deconstructorCalls != null) {
                     if (tree.body instanceof JCExpression value) {
-                        tree.body = make.Block(0, List.of(make.Return(value)));
+                        if (value.type.hasTag(VOID)) {
+                            tree.body = make.Block(0, List.of(make.Exec(value)));
+                        } else {
+                            tree.body = make.Block(0, List.of(make.Return(value)));
+                        }
                     }
                     if (tree.body instanceof JCBlock block) {
                         preparePatternMatchingCatchIfNeeded(block);
@@ -1476,8 +1485,8 @@ public class TransPatterns extends TreeTranslator {
             ListBuffer<JCStatement> stats = new ListBuffer<>();
             for (Entry<BindingSymbol, VarSymbol> e : hoistedVarMap.entrySet()) {
                 JCVariableDecl decl = makeHoistedVarDecl(diagPos, e.getValue());
-                if (!e.getKey().isPreserved() ||
-                    !parent.tryPrepend(e.getKey(), decl)) {
+                if (!e.getValue().isUnnamedVariable() &&
+                        (!e.getKey().isPreserved() || !parent.tryPrepend(e.getKey(), decl))) {
                     stats.add(decl);
                 }
             }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include Execute.gmk
 include Modules.gmk
 include Utils.gmk
@@ -142,6 +144,14 @@ define CreateCDSArchive
     $1_$2_CDS_ARCHIVE := bin/$1/classes$2.jsa
   else
     $1_$2_CDS_ARCHIVE := lib/$1/classes$2.jsa
+  endif
+
+  ifneq ($(COMPARE_BUILD), )
+    DEBUG_CDS_ARCHIVE := true
+  endif
+
+  ifeq ($(DEBUG_CDS_ARCHIVE), true)
+    $1_$2_CDS_DUMP_FLAGS += -Xlog:cds+map*=trace:file=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE).cdsmap:none:filesize=0
   endif
 
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \

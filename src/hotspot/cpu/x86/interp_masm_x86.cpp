@@ -463,11 +463,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
     load_unsigned_short(index, Address(_bcp_register, bcp_offset));
   } else if (index_size == sizeof(u4)) {
     movl(index, Address(_bcp_register, bcp_offset));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    notl(index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(_bcp_register, bcp_offset));
   } else {
@@ -1960,8 +1955,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     bind(L);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -2005,8 +1999,7 @@ void InterpreterMacroAssembler::notify_method_exit(
     pop(state);
   }
 
-  {
-    SkipIfEqual skip(this, &DTraceMethodProbes, false, rscratch1);
+  if (DTraceMethodProbes) {
     push(state);
     NOT_LP64(get_thread(rthread);)
     get_method(rarg);

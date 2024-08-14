@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ void ArchivedClassLoaderData::init_archived_entries(ClassLoaderData* loader_data
 }
 
 void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops) {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   assert_valid(loader_data);
   if (_modules != nullptr) { // Could be null if we have archived no modules for platform/system loaders
     ModuleEntryTable* modules = loader_data->modules();
@@ -120,7 +120,7 @@ void ArchivedClassLoaderData::restore(ClassLoaderData* loader_data, bool do_entr
 }
 
 void ArchivedClassLoaderData::clear_archived_oops() {
-  assert(UseSharedSpaces, "must be");
+  assert(CDSConfig::is_using_archive(), "must be");
   if (_modules != nullptr) {
     for (int i = 0; i < _modules->length(); i++) {
       _modules->at(i)->clear_archived_oops();
@@ -172,7 +172,7 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_system_loader_data.serialize(f);
   f->do_ptr(&_archived_javabase_moduleEntry);
 
-  if (f->reading() && CDSConfig::is_loading_full_module_graph()) {
+  if (f->reading() && CDSConfig::is_using_full_module_graph()) {
     // Must be done before ClassLoader::create_javabase()
     _archived_boot_loader_data.restore(null_class_loader_data(), true, false);
     ModuleEntryTable::set_javabase_moduleEntry(_archived_javabase_moduleEntry);
@@ -182,25 +182,25 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
 }
 
 void ClassLoaderDataShared::clear_archived_oops() {
-  assert(!CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(!CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.clear_archived_oops();
   _archived_platform_loader_data.clear_archived_oops();
   _archived_system_loader_data.clear_archived_oops();
 }
 
 oop ClassLoaderDataShared::restore_archived_oops_for_null_class_loader_data() {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_boot_loader_data.restore(null_class_loader_data(), false, true);
   return _archived_javabase_moduleEntry->module();
 }
 
 void ClassLoaderDataShared::restore_java_platform_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_platform_loader_data.restore(loader_data, true, true);
 }
 
 void ClassLoaderDataShared::restore_java_system_loader_from_archive(ClassLoaderData* loader_data) {
-  assert(CDSConfig::is_loading_full_module_graph(), "must be");
+  assert(CDSConfig::is_using_full_module_graph(), "must be");
   _archived_system_loader_data.restore(loader_data, true, true);
   _full_module_graph_loaded = true;
 }

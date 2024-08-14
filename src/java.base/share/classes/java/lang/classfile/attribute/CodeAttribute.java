@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,16 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
         permits BoundAttribute.BoundCodeAttribute {
 
     /**
+     * {@return the maximum size of the local variable table}
+     */
+    int maxLocals();
+
+    /**
+     * {@return the maximum size of the operand stack}
+     */
+    int maxStack();
+
+    /**
      * {@return The length of the code array in bytes}
      */
     int codeLength();
@@ -58,9 +68,9 @@ public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeMode
     byte[] codeArray();
 
     /**
-     * {@return the position of the {@code Label} in the {@code codeArray}
-     * or -1 if the {@code Label} does not point to the {@code codeArray}}
+     * {@return the position of the {@code label} in the {@link #codeArray codeArray}}
      * @param label a marker for a position within this {@code CodeAttribute}
+     * @throws IllegalArgumentException if the {@code label} is not from this attribute
      */
     int labelToBci(Label label);
 }
