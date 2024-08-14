@@ -123,7 +123,7 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static void dec_items_count() {
-    Atomic::inc(&_items_count);
+    Atomic::dec(&_items_count);
   }
 
   static double get_load_factor() {
