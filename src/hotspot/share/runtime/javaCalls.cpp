@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -392,30 +392,33 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       intptr_t* parameter_address = args->parameters();
 
       address entry_point;
-      if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
-        entry_point = method->interpreter_entry();
-      }
-      else {
-        // Since the call stub sets up like the interpreter we call the from_interpreted_entry
-        // so we can go compiled via a i2c.
-        entry_point = method->from_interpreted_entry();
+      {
+        // The enter_interp_only_mode use handshake to set interp_only mode
+        // so no safepoint should be allowed between is_interp_only_mode() and call
+        NoSafepointVerifier nsv;
+        if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
+          entry_point = method->interpreter_entry();
+        } else {
+          // Since the call stub sets up like the interpreter we call the from_interpreted_entry
+          // so we can go compiled via a i2c.
+          entry_point = method->from_interpreted_entry();
 #if INCLUDE_JVMCI
-        // Gets the alternative target (if any) that should be called
-        Handle alternative_target = args->alternative_target();
-        if (!alternative_target.is_null()) {
-          // Must extract verified entry point from HotSpotNmethod after VM to Java
-          // transition in JavaCallWrapper constructor so that it is safe with
-          // respect to nmethod sweeping.
-          address
-              verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
-          if (verified_entry_point != nullptr) {
-            thread->set_jvmci_alternate_call_target(verified_entry_point);
-            entry_point = method->adapter()->get_i2c_entry();
+          // Gets the alternative target (if any) that should be called
+          Handle alternative_target = args->alternative_target();
+          if (!alternative_target.is_null()) {
+            // Must extract verified entry point from HotSpotNmethod after VM to Java
+            // transition in JavaCallWrapper constructor so that it is safe with
+            // respect to nmethod sweeping.
+            address
+                verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
+            if (verified_entry_point != nullptr) {
+              thread->set_jvmci_alternate_call_target(verified_entry_point);
+              entry_point = method->adapter()->get_i2c_entry();
+            }
           }
-        }
 #endif
+        }
       }
-
       StubRoutines::call_stub()(
         (address)&link,
         // (intptr_t*)&(result->_value), // see NOTE above (compiler problem)
