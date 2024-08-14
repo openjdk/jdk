@@ -32,15 +32,15 @@ TEST_VM(ObjectMonitor, sanity) {
   if (cache_line_size != 0) {
 
     EXPECT_EQ(in_bytes(ObjectMonitor::metadata_offset()), 0)
-         << "_metadata at a non 0 offset. metadata_offset = "
-         << in_bytes(ObjectMonitor::metadata_offset());
+        << "_metadata at a non 0 offset. metadata_offset = "
+        << in_bytes(ObjectMonitor::metadata_offset());
 
     EXPECT_GE((size_t) in_bytes(ObjectMonitor::owner_offset()), cache_line_size)
-         << "the _metadata and _owner fields are closer "
-         << "than a cache line which permits false sharing.";
+        << "the _metadata and _owner fields are closer "
+        << "than a cache line which permits false sharing.";
 
     EXPECT_GE((size_t) in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), cache_line_size)
-         << "the _owner and _recursions fields are closer "
-         << "than a cache line which permits false sharing.";
+        << "the _owner and _recursions fields are closer "
+        << "than a cache line which permits false sharing.";
   }
 }
