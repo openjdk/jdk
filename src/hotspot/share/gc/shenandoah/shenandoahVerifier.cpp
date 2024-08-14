@@ -86,7 +86,7 @@ public:
     }
   }
 
-  ReferenceIterationMode reference_iteration_mode() {
+  ReferenceIterationMode reference_iteration_mode() override {
     return _ref_mode;
   }
 
@@ -331,8 +331,8 @@ public:
     _loc = nullptr;
   }
 
-  virtual void do_oop(oop* p) { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) override { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) override { do_oop_work(p); }
 };
 
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
