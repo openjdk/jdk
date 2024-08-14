@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,16 @@ static bool z_is_null_relaxed(zpointer o) {
   return (untype(o) & ~color_mask) == 0;
 }
 
+static void z_verify_oop_object(zaddress addr, zpointer o, void* p) {
+  const oop obj = cast_to_oop(addr);
+  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(o, p));
+}
+
+static void z_verify_root_oop_object(zaddress addr, void* p) {
+  const oop obj = cast_to_oop(addr);
+  guarantee(oopDesc::is_oop(obj), BAD_OOP_ARG(addr, p));
+}
+
 static void z_verify_old_oop(zpointer* p) {
   const zpointer o = *p;
   assert(o != zpointer::null, "Old should not contain raw null");
@@ -121,7 +131,7 @@ static void z_verify_old_oop(zpointer* p) {
       // safepoint after reference processing, where we hold the driver lock and
       // know there is no concurrent remembered set processing in the young generation.
       const zaddress addr = ZPointer::uncolor(o);
-      guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+      z_verify_oop_object(addr, o, p);
     } else {
       const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
       // Old to young pointers might not be mark good if the young
@@ -143,13 +153,9 @@ static void z_verify_young_oop(zpointer* p) {
     guarantee(ZPointer::is_marked_young(o),  BAD_OOP_ARG(o, p));
 
     if (ZPointer::is_load_good(o)) {
-      guarantee(oopDesc::is_oop(to_oop(ZPointer::uncolor(o))), BAD_OOP_ARG(o, p));
+      z_verify_oop_object(ZPointer::uncolor(o), o, p);
     }
   }
-}
-
-static void z_verify_root_oop_object(zaddress o, void* p) {
-  guarantee(oopDesc::is_oop(to_oop(o)), BAD_OOP_ARG(o, p));
 }
 
 static void z_verify_uncolored_root_oop(zaddress* p) {
@@ -168,7 +174,7 @@ static void z_verify_possibly_weak_oop(zpointer* p) {
     const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
     guarantee(ZHeap::heap()->is_old(addr) || ZPointer::is_marked_young(o), BAD_OOP_ARG(o, p));
     guarantee(ZHeap::heap()->is_young(addr) || ZHeap::heap()->is_object_live(addr), BAD_OOP_ARG(o, p));
-    guarantee(oopDesc::is_oop(to_oop(addr)), BAD_OOP_ARG(o, p));
+    z_verify_oop_object(addr, o, p);
 
     // Verify no missing remset entries. We are holding the driver lock here and that
     // allows us to more precisely verify the remembered set, as there is no concurrent
@@ -211,14 +217,14 @@ public:
       // Minor collections could have relocated the object;
       // use load barrier to find correct object.
       const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
-      z_verify_root_oop_object(addr, p);
+      z_verify_oop_object(addr, o, p);
     } else {
       // Don't know the state of the oop
       if (is_valid(o)) {
         // it looks like a valid colored oop;
         // use load barrier to find correct object.
         const zaddress addr = ZBarrier::load_barrier_on_oop_field_preloaded(nullptr, o);
-        z_verify_root_oop_object(addr, p);
+        z_verify_oop_object(addr, o, p);
       }
     }
   }
@@ -583,7 +589,7 @@ void ZVerify::on_color_flip() {
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* const jt = jtiwh.next(); ) {
     const ZStoreBarrierBuffer* const buffer = ZThreadLocalData::store_barrier_buffer(jt);
 
-    for (int i = buffer->current(); i < (int)ZStoreBarrierBuffer::_buffer_length; ++i) {
+    for (size_t i = buffer->current(); i < ZStoreBarrierBuffer::_buffer_length; ++i) {
       volatile zpointer* const p = buffer->_buffer[i]._p;
       bool created = false;
       z_verify_store_barrier_buffer_table->put_if_absent(p, true, &created);

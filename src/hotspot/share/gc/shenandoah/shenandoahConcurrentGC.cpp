@@ -767,16 +767,9 @@ public:
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()),
-    _phase(phase) {
-    if (ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_begin();
-    }
-  }
+    _phase(phase) {}
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
-    if (ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_end();
-    }
     // Notify runtime data structures of potentially dead oops
     _vm_roots.report_num_dead();
   }
@@ -830,7 +823,7 @@ void ShenandoahConcurrentGC::op_weak_roots() {
   // Perform handshake to flush out dead oops
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_rendezvous);
-    heap->rendezvous_threads();
+    heap->rendezvous_threads("Shenandoah Concurrent Weak Roots");
   }
 }
 
@@ -878,17 +871,7 @@ public:
     _phase(phase),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
-    _nmethod_itr(ShenandoahCodeRoots::table()) {
-    if (!ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_begin();
-    }
-  }
-
-  ~ShenandoahConcurrentRootsEvacUpdateTask() {
-    if (!ShenandoahHeap::heap()->unload_classes()) {
-      _nmethod_itr.nmethods_do_end();
-    }
-  }
+    _nmethod_itr(ShenandoahCodeRoots::table()) {}
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
