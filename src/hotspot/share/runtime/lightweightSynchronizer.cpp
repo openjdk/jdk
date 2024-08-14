@@ -207,7 +207,7 @@ class ObjectMonitorTable : AllStatic {
   }
 
   static bool should_shrink() {
-    // No implemented;
+    // Not implemented;
     return false;
   }
 
