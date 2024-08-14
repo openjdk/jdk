@@ -315,8 +315,8 @@ class ObjectMonitorTable : AllStatic {
     auto printer = [&] (ObjectMonitor** entry) {
        ObjectMonitor* om = *entry;
        oop obj = om->object_peek();
-       st->print("monitor " PTR_FORMAT " ", p2i(om));
-       st->print("object " PTR_FORMAT, p2i(obj));
+       st->print("monitor=" PTR_FORMAT ", ", p2i(om));
+       st->print("object=" PTR_FORMAT, p2i(obj));
        assert(obj->mark().hash() == om->hash(), "hash must match");
        st->cr();
        return true;
@@ -361,7 +361,7 @@ static void log_inflate(Thread* current, oop object, ObjectSynchronizer::Inflate
   if (log_is_enabled(Trace, monitorinflation)) {
     ResourceMark rm(current);
     log_trace(monitorinflation)("inflate: object=" INTPTR_FORMAT ", mark="
-                                INTPTR_FORMAT ", type='%s' cause %s", p2i(object),
+                                INTPTR_FORMAT ", type='%s' cause=%s", p2i(object),
                                 object->mark().value(), object->klass()->external_name(),
                                 ObjectSynchronizer::inflate_cause_name(cause));
   }
