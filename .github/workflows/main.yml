@@ -36,7 +36,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, alpine-linux-x64-hs, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -62,6 +62,7 @@ jobs:
       linux-x86: ${{ steps.include.outputs.linux-x86 }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
       linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
+      alpine-linux-x64-hs: ${{ steps.include.outputs.alpine-linux-x64-hs }}
       macos-x64: ${{ steps.include.outputs.macos-x64 }}
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
@@ -220,6 +221,16 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
 
+  build-alpine-linux-x64-hs:
+    name: alpine-linux-x64-hs
+    needs: select
+    uses: ./.github/workflows/build-alpine-linux.yml
+    with:
+      platform: alpine-linux-x64
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.alpine-linux-x64-hs == 'true'
+
   build-macos-x64:
     name: macos-x64
     needs: select
@@ -353,6 +364,7 @@ jobs:
       - build-linux-x64-hs-minimal
       - build-linux-x64-hs-optimized
       - build-linux-cross-compile
+      - build-alpine-linux-hs
       - build-macos-x64
       - build-macos-aarch64
       - build-windows-x64
