@@ -48,20 +48,8 @@ inline void TenuredGeneration::update_for_block(HeapWord* start, HeapWord* end) 
   _bts->update_for_block(start, end);
 }
 
-HeapWord* TenuredGeneration::allocate(size_t word_size,
-                                      bool is_tlab) {
-  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
+HeapWord* TenuredGeneration::allocate(size_t word_size) {
   HeapWord* res = _the_space->allocate(word_size);
-  if (res != nullptr) {
-    _bts->update_for_block(res, res + word_size);
-  }
-  return res;
-}
-
-HeapWord* TenuredGeneration::par_allocate(size_t word_size,
-                                          bool is_tlab) {
-  assert(!is_tlab, "TenuredGeneration does not support TLAB allocation");
-  HeapWord* res = _the_space->par_allocate(word_size);
   if (res != nullptr) {
     _bts->update_for_block(res, res + word_size);
   }
