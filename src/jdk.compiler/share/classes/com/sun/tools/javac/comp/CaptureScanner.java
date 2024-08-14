@@ -33,6 +33,7 @@ import com.sun.tools.javac.util.List;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.SequencedSet;
 import java.util.Set;
 
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
@@ -56,7 +57,7 @@ public class CaptureScanner extends TreeScanner {
     /**
      * The set of captured local variables accessed from within the tree under analysis.
      */
-    private final Set<VarSymbol> fvs = new LinkedHashSet<>();
+    private final SequencedSet<VarSymbol> fvs = new LinkedHashSet<>();
 
     public CaptureScanner(JCTree ownerTree) {
         this.tree = ownerTree;
