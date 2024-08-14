@@ -239,6 +239,7 @@ uint Block_Stack::most_frequent_successor( Block *b ) {
     break;
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
