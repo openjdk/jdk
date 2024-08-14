@@ -115,6 +115,7 @@ jobs:
           echo "linux-x86=$(check_platform linux-x86 linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
+          echo "alpine-linux-x64-hs=$(check_platform alpine-linux-x64-hs alpine-linux x64)" >> $GITHUB_OUTPUT
           echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
