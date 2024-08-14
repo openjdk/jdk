@@ -461,7 +461,7 @@ class LightweightSynchronizer::LockStackInflateContendedLocks : private OopClosu
   void do_oop(oop* o) final {
     oop obj = *o;
     if (obj->mark_acquire().has_monitor()) {
-      if (_length > 0 && _contended_oops[_length-1] == obj) {
+      if (_length > 0 && _contended_oops[_length - 1] == obj) {
         // Recursive
         return;
       }
