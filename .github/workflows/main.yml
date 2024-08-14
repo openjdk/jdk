@@ -227,6 +227,7 @@ jobs:
     uses: ./.github/workflows/build-alpine-linux.yml
     with:
       platform: alpine-linux-x64
+      make-target: 'hotspot'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.alpine-linux-x64-hs == 'true'
