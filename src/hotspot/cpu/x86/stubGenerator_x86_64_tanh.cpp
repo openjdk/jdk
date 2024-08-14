@@ -1277,7 +1277,7 @@ address StubGenerator::generate_libmTanh() {
   __ mulsd(xmm3, xmm4);
   __ movq(xmm0, xmm6);
   __ mulsd(xmm6, xmm4);
-  __ subsd(xmm3, xmm1);
+  __ subsd(xmm1, xmm3); //TODO: BUG FIXED 
   __ subsd(xmm1, xmm6);
   __ addsd(xmm0, xmm1);
   __ xorpd(xmm0, xmm2);
