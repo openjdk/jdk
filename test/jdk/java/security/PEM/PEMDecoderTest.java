@@ -31,13 +31,15 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import java.io.*;
 import java.lang.Class;
-import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.Arrays;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 public class PEMDecoderTest {
 
@@ -80,9 +82,9 @@ public class PEMDecoderTest {
 
         DEREncodable result = test(PEMCerts.ecCSRWithData);
         if (result instanceof PEMRecord rec) {
-            if (PEMCerts.preData.compareTo(new String(rec.preData())) != 0) {
+            if (PEMCerts.preData.compareTo(new String(rec.leadingData())) != 0) {
                 System.err.println("expected: " + PEMCerts.preData);
-                System.err.println("received: " + new String(rec.preData()));
+                System.err.println("received: " + new String(rec.leadingData()));
                 throw new AssertionError("ecCSRWithData preData wrong");
             }
             if (rec.pem().lastIndexOf("F") > rec.pem().length() - 5) {
@@ -100,6 +102,54 @@ public class PEMDecoderTest {
         }
         if (((PEMRecord) result).id().compareTo(PEMRecord.PUBLIC_KEY) != 0) {
             throw new AssertionError("pubecpem PEMRecord didn't decode as a Public Key");
+        }
+
+        ByteArrayOutputStream ba = new ByteArrayOutputStream(2048);
+        OutputStreamWriter os = new OutputStreamWriter(ba);
+        os.write(PEMCerts.preData);
+        os.write(PEMCerts.pubecpem.pem());
+        os.write(System.lineSeparator());
+        os.write(PEMCerts.preData);
+        os.write(PEMCerts.pubecpem.pem());
+        os.write(PEMCerts.postData);
+        os.flush();
+        Stream<DEREncodable> stream = PEMDecoder.of().decodeFromStream(
+            new ByteArrayInputStream(ba.toByteArray()));
+        ArrayList<DEREncodable> list = new ArrayList<>(stream.toList());
+
+        //Supplier<Stream<DEREncodable>> list = (Supplier<Stream<DEREncodable>>) stream;
+        if (list.size() != 2) {
+            throw new AssertionError("count should be 2.  Was " +
+                list.size());
+        }
+        for (DEREncodable d : list) {
+            if (!(d instanceof ECPublicKey)) {
+                throw new AssertionError("item in stream did not" +
+                    " contain ECPublicKey.  Was " + d.toString());
+            }
+        }
+
+        os.write(PEMCerts.preData);
+        os.write(System.lineSeparator());
+        os.write(PEMCerts.ecprivpem.pem());
+        os.write(PEMCerts.preData);
+        os.write(System.lineSeparator());
+        os.write(PEMCerts.privpem.pem());
+        os.flush();
+        stream = PEMDecoder.of().decodeFromStream(
+            new ByteArrayInputStream(ba.toByteArray()), ECPrivateKey.class);
+        list = new ArrayList<>(stream.toList());
+
+        //Supplier<Stream<DEREncodable>> list = (Supplier<Stream<DEREncodable>>) stream;
+        if (list.size() != 1) {
+            throw new AssertionError("count should be 2.  Was " +
+                list.size());
+        }
+        for (DEREncodable d : list) {
+            if (!(d instanceof ECPrivateKey)) {
+                throw new AssertionError("item in stream did not" +
+                    " contain ECPrivateKey.  Was " + d.toString());
+            }
         }
     }
 

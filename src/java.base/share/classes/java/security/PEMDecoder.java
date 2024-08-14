@@ -35,8 +35,11 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
 import java.security.cert.*;
 import java.security.spec.*;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * PEMDecoder is an immutable Privacy-Enhanced Mail (PEM) decoding class.
@@ -338,6 +341,82 @@ public final class PEMDecoder {
         return tClass.cast(so);
     }
 
+    /**
+     * This method reads to the end of the given InputStream and returns a
+     * stream of DEREncodable objects.  Any exceptions that occur will
+     * end the stream and the InputStream's read pointer will be where it
+     * was last read.
+     * @param is the InputStream read from.
+     * @return a stream of DEREncodable objects from the PEM data read.
+     * @throws IOException on IO error with the InputStream.
+     * @throws IllegalArgumentException on error when decoding PEM.
+     */
+    public Stream<DEREncodable> decodeFromStream(InputStream is)
+        throws IOException {
+        Objects.requireNonNull(is);
+
+        List<DEREncodable> list = new ArrayList<>();
+        PEMRecord pem;
+        while ((pem = Pem.readPEM(is)) != null) {
+            list.add(decode(pem));
+        }
+
+        return list.stream();
+    }
+
+    @SuppressWarnings("rawtypes")
+    private static Class getClassFromId(String id) {
+        return switch (id) {
+            case PEMRecord.X509_CERTIFICATE -> X509Certificate.class;
+            case PEMRecord.X509_CRL -> X509CRL.class;
+            case PEMRecord.PRIVATE_KEY,
+                PEMRecord.RSA_PRIVATE_KEY -> PrivateKey.class;
+            case PEMRecord.PUBLIC_KEY -> PublicKey.class;
+            case PEMRecord.ENCRYPTED_PRIVATE_KEY ->
+                EncryptedPrivateKeyInfo.class;
+            default -> PEMRecord.class;
+        };
+    }
+
+    /**
+     * This method reads to the end of the given InputStream and returns a
+     * stream of DEREncodable objects.  Any exceptions that occur will
+     * end the stream and the InputStream's read pointer will be where it
+     * was last read.
+     * @param <S> the class type to be decoded into the stream
+     * @param is the InputStream read from.
+     * @param tClass class type to be returned in the stream.
+     * @return a stream of DEREncodable objects from the PEM data read.
+     * @throws IOException on IO error with the InputStream.
+     * @throws IllegalArgumentException on error when decoding PEM.
+     */
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    public <S extends DEREncodable> Stream<DEREncodable> decodeFromStream(
+        InputStream is, Class<S> tClass) throws IOException {
+        Objects.requireNonNull(is);
+        boolean pemRec = tClass.isAssignableFrom(PEMRecord.class);
+
+        List<DEREncodable> list = new ArrayList<>();
+        PEMRecord pem;
+        while ((pem = Pem.readPEM(is)) != null) {
+            if (pemRec) {
+                list.add(pem);
+            } else {
+                Class c = getClassFromId(pem.id());
+//                Class c = o.getClass();
+                if (c.isAssignableFrom(tClass)) {
+                //if (getClassFromId(pem.id()).getClass().isAssignableFrom(tClass)) {
+                    DEREncodable o = decode(pem);
+                    if (tClass.isAssignableFrom(o.getClass())) {
+                        list.add(o);
+                    }
+                }
+            }
+        }
+
+        return list.stream();
+    }
 
     private KeyFactory getKeyFactory(String algorithm) {
         try {
