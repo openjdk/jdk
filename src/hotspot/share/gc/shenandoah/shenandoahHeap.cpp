@@ -2485,6 +2485,7 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
+#if INCLUDE_CDS_JAVA_HEAP
   // CDS wants a continuous memory range to load a bunch of objects.
   // This effectively bypasses normal allocation paths, and requires
   // a bit of massaging to unbreak GC invariants.
@@ -2503,14 +2504,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
   // point to deal with case when Shenandoah runs with smaller regions.
   // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
-
-  // Pull the constant here, since it is only available when INCLUDE_CDS_JAVA_HEAP is defined.
-  const size_t min_gc_region_align = 1 * M;
-#if INCLUDE_CDS_JAVA_HEAP
-  STATIC_ASSERT(min_gc_region_align == ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT);
-#endif
-
-  if (ShenandoahHeapRegion::region_size_bytes() < min_gc_region_align) {
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
     return nullptr;
   }
 
@@ -2527,6 +2521,10 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   }
 
   return mem;
+#else
+  assert(false, "Archive heap loader should not be available, should not be here");
+  return nullptr;
+#endif // INCLUDE_CDS_JAVA_HEAP
 }
 
 void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
