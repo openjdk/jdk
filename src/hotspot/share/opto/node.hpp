@@ -834,7 +834,9 @@ private:
   juint _class_id;
   juint _flags;
 
+#ifdef ASSERT
   static juint max_flags();
+#endif
 
 protected:
   // These methods should be called from constructors only.
