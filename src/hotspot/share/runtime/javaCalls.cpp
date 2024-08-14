@@ -394,25 +394,27 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       // the call to call_stub, the optimizer produces wrong code.
       intptr_t* result_val_address = (intptr_t*)(result->get_value_addr());
       intptr_t* parameter_address = args->parameters();
-#if INCLUDE_JVMCI
-      // Gets the alternative target (if any) that should be called
-      Handle alternative_target = args->alternative_target();
-      if (!alternative_target.is_null()) {
-        // Must extract verified entry point from HotSpotNmethod after VM to Java
-        // transition in JavaCallWrapper constructor so that it is safe with
-        // respect to nmethod sweeping.
-        address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
-        if (verified_entry_point != nullptr) {
-          thread->set_jvmci_alternate_call_target(verified_entry_point);
-          entry_point = method->adapter()->get_i2c_entry();
-        }
-      }
-#endif
-
       // What to do if JVMCI set adapter?
       if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
         entry_point = method->interpreter_entry();
       }
+#if INCLUDE_JVMCI
+      else {
+        // Gets the alternative target (if any) that should be called
+        Handle alternative_target = args->alternative_target();
+        if (!alternative_target.is_null()) {
+          // Must extract verified entry point from HotSpotNmethod after VM to Java
+          // transition in JavaCallWrapper constructor so that it is safe with
+          // respect to nmethod sweeping.
+          address
+              verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
+          if (verified_entry_point != nullptr) {
+            thread->set_jvmci_alternate_call_target(verified_entry_point);
+            entry_point = method->adapter()->get_i2c_entry();
+          }
+        }
+      }
+#endif
 
       StubRoutines::call_stub()(
         (address)&link,
