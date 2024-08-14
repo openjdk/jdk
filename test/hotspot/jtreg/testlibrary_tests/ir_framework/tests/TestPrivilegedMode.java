@@ -35,7 +35,6 @@ import jdk.test.lib.Asserts;
  * @summary Test that IR framework successfully adds test class to boot classpath in order to run in privileged mode.
  * @modules java.base/jdk.internal.vm.annotation
  * @library /test/lib /
- * @build jdk.test.lib.Platform
  * @run driver ir_framework.tests.TestPrivilegedMode
  */
 
