@@ -1219,9 +1219,17 @@ public class Resolve {
 
             /** Parameters {@code t} and {@code s} are unrelated functional interface types. */
             private boolean functionalInterfaceMostSpecific(Type t, Type s, JCTree tree) {
-                Type tDesc = types.findDescriptorType(types.capture(t));
-                Type tDescNoCapture = types.findDescriptorType(t);
-                Type sDesc = types.findDescriptorType(s);
+                Type tDesc;
+                Type tDescNoCapture;
+                Type sDesc;
+                try {
+                    tDesc = types.findDescriptorType(types.capture(t));
+                    tDescNoCapture = types.findDescriptorType(t);
+                    sDesc = types.findDescriptorType(s);
+                } catch (Types.FunctionDescriptorLookupError ex) {
+                    // don't report, a more meaningful error should be reported upstream
+                    return false;
+                }
                 final List<Type> tTypeParams = tDesc.getTypeArguments();
                 final List<Type> tTypeParamsNoCapture = tDescNoCapture.getTypeArguments();
                 final List<Type> sTypeParams = sDesc.getTypeArguments();

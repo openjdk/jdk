@@ -96,8 +96,11 @@ public class $vectorteststype$ extends AbstractVectorTest {
     private static final $type$ CONST_SHIFT = $Boxtype$.SIZE / 2;
 #end[BITWISE]
 #if[FP]
-    // for floating point reduction ops that may introduce rounding errors
-    private static final $type$ RELATIVE_ROUNDING_ERROR = ($type$)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_ADD = ($type$)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final $type$ RELATIVE_ROUNDING_ERROR_FACTOR_MUL = ($type$)50.0;
 #end[FP]
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / $bits$);
@@ -177,16 +180,16 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
     static void assertReductionArraysEquals($type$[] r, $type$ rc, $type$[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            $type$ relativeError) {
+                                            $type$ relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 #end[FP]

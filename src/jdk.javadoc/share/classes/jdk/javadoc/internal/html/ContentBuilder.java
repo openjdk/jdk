@@ -23,15 +23,13 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.formats.html.markup;
+package jdk.javadoc.internal.html;
 
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-
-import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A sequence of Content nodes.

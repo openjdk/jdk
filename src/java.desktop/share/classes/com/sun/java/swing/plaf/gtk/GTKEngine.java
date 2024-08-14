@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class GTKEngine {
     /** Size of the image cache */
     private static final int CACHE_SIZE = 50;
 
-    /** This enum mirrors that in gtk2_interface.h */
+    /** This enum mirrors that in gtk_interface.h */
     static enum WidgetType {
         BUTTON, CHECK_BOX, CHECK_BOX_MENU_ITEM, COLOR_CHOOSER,
         COMBO_BOX, COMBO_BOX_ARROW_BUTTON, COMBO_BOX_TEXT_FIELD,
@@ -493,13 +493,13 @@ class GTKEngine {
             GTKLookAndFeel.synthStateToGTKStateType(state).ordinal();
         int synthState = context.getComponentState();
         Container parent = context.getComponent().getParent();
-        if(GTKLookAndFeel.is3()) {
-            if (parent != null && parent.getParent() instanceof JComboBox) {
-                if (parent.getParent().hasFocus()) {
-                    synthState |= SynthConstants.FOCUSED;
-                }
+
+        if (parent != null && parent.getParent() instanceof JComboBox) {
+            if (parent.getParent().hasFocus()) {
+                synthState |= SynthConstants.FOCUSED;
             }
         }
+
         int dir = getTextDirection(context);
         int widget = getWidgetType(context.getComponent(), id).ordinal();
         native_paint_shadow(widget, gtkState, shadowType.ordinal(), detail,
@@ -628,7 +628,7 @@ class GTKEngine {
         cache.flush();
     }
 
-    /* GtkSettings enum mirrors that in gtk2_interface.h */
+    /* GtkSettings enum mirrors that in gtk_interface.h */
     public Object getSetting(Settings property) {
         synchronized(sun.awt.UNIXToolkit.GTK_LOCK) {
             return native_get_gtk_setting(property.ordinal());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,29 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zUtils.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/globalDefinitions.hpp"
+/**
+ * @test
+ * @bug 8324345
+ * @summary Ensure that ConnectionGraph::find_inst_mem does not cause a stack
+ *          overflow.
+ *
+ * @run main/othervm -Xcomp -XX:CompileThreshold=10 -XX:-TieredCompilation
+ *                   -XX:CompileCommand=CompileOnly,javax.swing.plaf.basic.BasicLookAndFeel::initComponentDefaults
+ *                   -XX:CompileCommand=MemLimit,*.*,0
+ *                   compiler.escapeAnalysis.TestFindInstMemRecursion
+ *
+ */
 
-#include <stdlib.h>
+package compiler.escapeAnalysis;
 
-uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
-  void* res = nullptr;
+import javax.swing.*;
+import javax.swing.plaf.metal.*;
 
-  // Use raw posix_memalign as long as we have no wrapper for it
-  ALLOW_C_FUNCTION(::posix_memalign, int rc = posix_memalign(&res, alignment, size);)
-  if (rc != 0) {
-    fatal("posix_memalign() failed");
-  }
-
-  memset(res, 0, size);
-
-  return (uintptr_t)res;
+public class TestFindInstMemRecursion {
+    public static void main(String[] args) throws Exception {
+        LookAndFeel lookAndFeel = new MetalLookAndFeel();
+        for (int i = 0; i < 20; ++i) {
+            UIManager.setLookAndFeel(lookAndFeel);
+        }
+    }
 }

@@ -929,9 +929,8 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _cached_class_file_ptr = cache_ptr;
     _has_been_modified = false;
 
-    if (_thread->is_in_any_VTMS_transition()) {
-      return; // no events should be posted if thread is in any VTMS transition
-    }
+    assert(!_thread->is_in_any_VTMS_transition(), "CFLH events are not allowed in any VTMS transition");
+
     _state = JvmtiExport::get_jvmti_thread_state(_thread);
     if (_state != nullptr) {
       _class_being_redefined = _state->get_class_being_redefined();
@@ -1091,8 +1090,9 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return false;
   }
-  if (JavaThread::current()->is_in_tmp_VTMS_transition()) {
-    return false; // skip CFLH events in tmp VTMS transition
+
+  if (JavaThread::current()->is_in_any_VTMS_transition()) {
+    return false; // no events should be posted if thread is in any VTMS transition
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -2068,7 +2068,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
 
         jmethodID catch_jmethodID;
         if (current_bci < 0) {
-          catch_jmethodID = 0;
+          catch_jmethodID = nullptr;
           current_bci = 0;
         } else {
           catch_jmethodID = jem.to_jmethodID(current_mh);
@@ -2105,8 +2105,8 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
-                     location==0? "no location:" : "",
-                     location==0? 0 : location - mh()->code_base(),
+                     location == nullptr ? "no location:" : "",
+                     location == nullptr ? 0 : location - mh()->code_base(),
                      in_handler_frame? "in handler frame" : "not handler frame" ));
 
   if (state->is_exception_detected()) {
