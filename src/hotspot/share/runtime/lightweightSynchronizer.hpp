@@ -33,7 +33,7 @@
 class ObjectMonitorTable;
 
 class LightweightSynchronizer : AllStatic {
-private:
+ private:
   static ObjectMonitor* get_or_insert_monitor_from_table(oop object, JavaThread* current, bool* inserted);
   static ObjectMonitor* get_or_insert_monitor(oop object, JavaThread* current, ObjectSynchronizer::InflateCause cause);
 
@@ -54,11 +54,11 @@ private:
   static bool needs_resize();
   static bool resize_table(JavaThread* current);
 
-private:
+ private:
   static inline bool fast_lock_try_enter(oop obj, LockStack& lock_stack, JavaThread* current);
   static bool fast_lock_spin_enter(oop obj, LockStack& lock_stack, JavaThread* current, bool observed_deflation);
 
-public:
+ public:
   static void enter_for(Handle obj, BasicLock* lock, JavaThread* locking_thread);
   static void enter(Handle obj, BasicLock* lock, JavaThread* current);
   static void exit(oop object, JavaThread* current);
