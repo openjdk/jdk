@@ -730,10 +730,14 @@ size_t ShenandoahHeap::initial_capacity() const {
 
 bool ShenandoahHeap::is_in(const void* p) const {
   if (is_in_reserved(p)) {
-    // Now check if region is in active state, unless we are moving
-    // objects during Full GC across the regions in not yet determinate state.
-    return is_full_gc_move_in_progress() ||
-           heap_region_containing(p)->is_active();
+    if (is_full_gc_move_in_progress()) {
+      // Full GC move is running, we do not have a consistent region
+      // information yet. But we know the pointer is in heap.
+      return true;
+    }
+    // Now check if we point to a live section in active region.
+    ShenandoahHeapRegion* r = heap_region_containing(p);
+    return (r->is_active() && p < r->top());
   } else {
     return false;
   }
