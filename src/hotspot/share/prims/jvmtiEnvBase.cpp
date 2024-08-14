@@ -1500,7 +1500,6 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       : nullptr;
 
   if (mon != nullptr) {
-    assert(mon != nullptr, "must have monitor");
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor entry, but not re-entry
     nWait = mon->waiters();     // # of threads waiting for notification,
