@@ -72,6 +72,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
+      # Linux/clang toolchain needs now lld on the system to work
+      UTIL_REQUIRE_PROGS(LLD, lld)
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
       BASIC_LDFLAGS="-Wl,-b64 -Wl,-brtl -Wl,-bnorwexec -Wl,-bnolibpath -Wl,-bnoexpall \
