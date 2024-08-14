@@ -834,6 +834,7 @@ uint InstructForm::num_opnds() {
     */
   return num_opnds;
 }
+
 uint InstructForm::num_opnds_unexpanded() {
   return _components_unexpanded.num_operands();
 }
@@ -1046,7 +1047,7 @@ int   InstructForm::operand_position_format(const char *name) {
 }
 
 int   InstructForm::operand_position_format_unexpanded(const char *name) {
-  return unique_opnds_idx(_components_unexpanded.operand_position_format(name, this));
+  return _components_unexpanded.operand_position_format(name, this);
 }
 
 // Return zero-based position in component list; -1 if not in list.

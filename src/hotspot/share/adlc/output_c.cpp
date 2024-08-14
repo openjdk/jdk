@@ -2006,14 +2006,13 @@ public:
       else {
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
-        int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
+        int   param_no_unexpanded = _encoding.rep_var_index_unexpanded(rep_var);
         if ( param_no == -1 && param_no_unexpanded == -1) {
-          fprintf(stderr, "       >>>>, _encoding._parameter_name_unexpanded: %d\n", _encoding._parameter_name_unexpanded.count());
-          _encoding._parameter_name_unexpanded.dump();
           _AD.syntax_err( _encoding._linenum,
                           "1 Replacement variable %s not found in enc_class %s.\n",
                           rep_var, _encoding._name);
         }
+        assert(param_no == -1 || param_no_unexpanded == -1, "sanity");
 
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
@@ -2035,20 +2034,23 @@ public:
         // Lookup the index position iff the replacement variable is a localName
         int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
         int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
+        assert(idx == -1 || idx_unexpanded == -1, "sanity");
 
         if ( idx != -1 || idx_unexpanded != -1) {
           // This is a local in the instruction
           // Update local state info.
           _opclass        = opc;
-          _operand_idx    = idx != -1 ? idx : idx_unexpanded + _inst._num_uniq - 1;
+          _operand_idx    = idx;
           if (idx != -1) {
             _expanded_operands_num = 0;
           } else {
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
+            assert(operand->get_expanded_operands_num() > 0, "sanity");
             for (int i = 0; i < operand->get_expanded_operands_num(); i++) {
               const char* expanded = OperandForm::get_expanded_oper_name(inst_rep_var, i);
               int expanded_idx  = _inst.operand_position_format(expanded);
+              assert(expanded_idx >= 0 && expanded_idx < _inst.num_unique_opnds(), "sanity");
               _expanded_operands[i] = expanded_idx;
             }
             _expanded_operands_num = operand->get_expanded_operands_num();
@@ -2404,7 +2406,7 @@ private:
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
       // $reg form or the $Register MacroAssembler type conversions
-      assert( _operand_idx != -1,
+      assert( _operand_idx != -1 || _expanded_operands_num > 0,
               "Must use this subfield after operand");
       if( _reg_status == LITERAL_NOT_SEEN ) {
         if (_processing_noninput) {
@@ -2521,11 +2523,12 @@ private:
       // Lookup its position in parameter list
       int   param_no  = _encoding.rep_var_index(rep_var);
       int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
-      if ( param_no == -1 && param_no_unexpanded == -1) {
+      if ( param_no == -1 && param_no_unexpanded == -1 ) {
         _AD.syntax_err( _encoding._linenum,
                         "2 Replacement variable %s not found in enc_class %s.\n",
                         rep_var, _encoding._name);
       }
+      assert(param_no == -1 || param_no_unexpanded == -1, "sanity");
 
       // Lookup the corresponding ins_encode parameter
       const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
@@ -2547,9 +2550,10 @@ private:
       // Lookup the index position iff the replacement variable is a localName
       int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
       int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
+      assert(idx == -1 || idx_unexpanded == -1, "sanity");
 
       if ( idx != -1 || idx_unexpanded != -1) {
-        if ((idx != -1 && _inst.is_noninput_operand(idx)) || (idx_unexpanded != -1 && _inst.is_noninput_operand_unexpanded(idx_unexpanded))) {
+        if ((idx != -1 && _inst.is_noninput_operand(idx))) {
           // This operand isn't a normal input so printing it is done
           // specially.
           _processing_noninput = true;
@@ -2562,7 +2566,10 @@ private:
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
             assert(operand->get_expanded_operands_num() > 0, "sanity");
-            fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst._num_uniq - 1);
+            // Pass `- 1` below, because in _inst.operand_position_format_unexpanded above
+            // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
+            // and for expanding operand, only TEMP is supported.
+            fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst.num_unique_opnds() - 1);
             fprintf(_fp,")");
           }
         }
@@ -3971,7 +3978,6 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "};\n");
 }
 
-
 int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& comp_list, const char *indent, int start_index) {
   bool           dont_care = false;
   Component     *comp      = nullptr;
@@ -3999,6 +4005,7 @@ int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& com
   }
   return start_index + index;
 }
+
 //---------------------------buildMachNode-------------------------------------
 // Build a new MachNode, for MachNodeGenerator or cisc-spilling
 void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *indent) {
@@ -4014,6 +4021,10 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Check if the first post-match component may be an interesting def
     int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
     if (inst->_components_unexpanded.count() > 0) {
+      assert(index + 1 == inst->num_unique_opnds(), "sanity");
+      // Not pass `index + 1` as the start_index below, because in buildMachNode(..., start_idx)
+      // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
+      // and for expanding operand, only TEMP is supported.
       buildMachNode(fp_cpp, inst, inst->_components_unexpanded, indent, index);
     }
   }

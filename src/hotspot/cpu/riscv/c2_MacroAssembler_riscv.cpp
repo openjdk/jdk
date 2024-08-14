@@ -2394,6 +2394,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   element_compare(a1, a2, result, cnt, tmp1, tmp2, vg1, vg2, vg1, true, DONE);
 
+  // TODO: Below code is just for demo, delete before push
   vsetvli(rx, rx, Assembler::e32, Assembler::m1);
   if (true) {
 
@@ -2413,7 +2414,6 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
     }
 
   }
-  ld(rx, Address(zr, 0));
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");

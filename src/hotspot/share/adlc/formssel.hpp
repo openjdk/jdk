@@ -302,10 +302,6 @@ public:
     return (idx >= num_unique_opnds());
   }
 
-  bool is_noninput_operand_unexpanded(uint idx) {
-    return idx > _parameters_unexpanded.count();
-  }
-
   // --------------------------- FILE *output_routines
   //
   // Generate the format call for the replacement variable
