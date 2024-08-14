@@ -199,7 +199,9 @@ public class UseObjectMonitorTableTest {
             }
         }
         public void run() {
-            System.out.println("RandomDepthTest started.");
+            final long seed = random.nextLong();
+            random.setSeed(seed);
+            System.out.println("RandomDepthTest started. Random seed: " + seed);
             for (int t = 0; t < THREADS; t++) {
                 TF.newThread(() -> {
                     syncPoint();
