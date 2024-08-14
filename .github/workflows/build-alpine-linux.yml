@@ -66,7 +66,7 @@ jobs:
         include:
           - debug-level: debug
             flags: --with-debug-level=fastdebug
-            suffix: -debug
+            suffix: -debug+
 
     steps:
       - name: 'Checkout the JDK source'
@@ -75,7 +75,7 @@ jobs:
       - name: 'Install toolchain and dependencies'
         run: |
           apk update
-          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers zip ${{ inputs.apk-extra-packages }}
+          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers wget  zip ${{ inputs.apk-extra-packages }}
 
       - name: 'Get the BootJDK'
         id: bootjdk
