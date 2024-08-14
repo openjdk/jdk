@@ -765,19 +765,19 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
   assert(LockingMode == LM_LIGHTWEIGHT, "must be");
   JavaThread* current = THREAD;
 
-  for(;;) {
+  for (;;) {
     markWord mark = obj->mark_acquire();
     if (mark.is_unlocked()) {
       // No lock, IMSE.
       THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
-                "current thread is not owner", nullptr);
+                 "current thread is not owner", nullptr);
     }
 
     if (mark.is_fast_locked()) {
       if (!current->lock_stack().contains(obj)) {
         // Fast locked by other thread, IMSE.
         THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
-                  "current thread is not owner", nullptr);
+                   "current thread is not owner", nullptr);
       } else {
         // Current thread owns the lock, must inflate
         return inflate_fast_locked_object(obj, cause, current, current);
@@ -797,7 +797,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
         } else {
           // Fast locked (and inflated) by other thread, or deflation in progress, IMSE.
           THROW_MSG_(vmSymbols::java_lang_IllegalMonitorStateException(),
-                    "current thread is not owner", nullptr);
+                     "current thread is not owner", nullptr);
         }
       }
       return monitor;
