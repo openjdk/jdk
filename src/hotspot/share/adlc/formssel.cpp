@@ -2633,7 +2633,7 @@ const char *OperandForm::get_expanded_oper_name(const char *name, int idx) {
   assert(idx >= 0 && idx < EXPANDED_OPER_LIMIT, "must");
 
   const char *suffix = "_expanded_";
-  const int len = strlen(name) + strlen(suffix) + 2;
+  const size_t len = strlen(name) + strlen(suffix) + 2;
   char *buf = (char *)AdlAllocateHeap(len);
   snprintf_checked(buf, len, "%s%s%d", name, suffix, idx);
   return buf;
