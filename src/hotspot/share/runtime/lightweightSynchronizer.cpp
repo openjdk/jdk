@@ -494,7 +494,7 @@ void LightweightSynchronizer::ensure_lock_stack_space(JavaThread* current) {
 
   // Make room on lock_stack
   if (lock_stack.is_full()) {
-    // Inflate contented objects
+    // Inflate contended objects
     LockStackInflateContendedLocks().inflate(current);
     if (lock_stack.is_full()) {
       // Inflate the oldest object
@@ -656,7 +656,7 @@ void LightweightSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* cur
   CacheSetter cache_setter(current, lock);
 
   // Used when deflation is observed. Progress here requires progress
-  // from the deflator. After observing the that the deflator is not
+  // from the deflator. After observing that the deflator is not
   // making progress (after two yields), switch to sleeping.
   SpinYield spin_yield(0, 2);
   bool observed_deflation = false;
@@ -752,7 +752,7 @@ void LightweightSynchronizer::exit(oop object, JavaThread* current) {
 }
 
 // LightweightSynchronizer::inflate_locked_or_imse is used to to get an inflated
-// ObjectMonitor* with LM_LIGHTWEIGHT. It is used from contexts which requires
+// ObjectMonitor* with LM_LIGHTWEIGHT. It is used from contexts which require
 // an inflated ObjectMonitor* for a monitor, and expects to throw a
 // java.lang.IllegalMonitorStateException if it is not held by the current
 // thread. Such as notify/wait and jni_exit. LM_LIGHTWEIGHT keeps it invariant
@@ -790,8 +790,8 @@ ObjectMonitor* LightweightSynchronizer::inflate_locked_or_imse(oop obj, ObjectSy
       if (monitor->is_owner_anonymous()) {
         LockStack& lock_stack = current->lock_stack();
         if (lock_stack.contains(obj)) {
-          // Current thread owns the lock but someone else inflated
-          // fix owner and pop lock stack
+          // Current thread owns the lock but someone else inflated it.
+          // Fix owner and pop lock stack.
           monitor->set_owner_from_anonymous(current);
           monitor->set_recursions(lock_stack.remove(obj) - 1);
         } else {
@@ -1037,7 +1037,7 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, ObjectSync
   /// First handle the case where the monitor from the table is deflated
   if (monitor->is_being_async_deflated()) {
     // The MonitorDeflation thread is deflating the monitor. The locking thread
-    // must spin until further progress have been made.
+    // must spin until further progress has been made.
 
     const markWord mark = object->mark_acquire();
 
@@ -1064,10 +1064,10 @@ ObjectMonitor* LightweightSynchronizer::inflate_and_enter(oop object, ObjectSync
     const markWord mark = object->mark_acquire();
     // The mark can be in one of the following states:
     // *  inflated     - If the ObjectMonitor owner is anonymous
-    //                   and the locking_thread thread owns the object
-    //                   lock, then we make the locking_thread thread
+    //                   and the locking_thread owns the object
+    //                   lock, then we make the locking_thread
     //                   the ObjectMonitor owner and remove the
-    //                   lock from the locking_thread thread's lock stack.
+    //                   lock from the locking_thread's lock stack.
     // *  fast-locked  - Coerce it to inflated from fast-locked.
     // *  neutral      - Inflate the object. Successful CAS is locked
 
@@ -1171,6 +1171,7 @@ bool LightweightSynchronizer::quick_enter(oop obj, JavaThread* current, BasicLoc
   assert(obj != nullptr, "must be");
   NoSafepointVerifier nsv;
 
+  // If quick_enter succeeds with entering, the cache should be in a valid initialized state.
   CacheSetter cache_setter(current, lock);
 
   LockStack& lock_stack = current->lock_stack();
@@ -1182,11 +1183,10 @@ bool LightweightSynchronizer::quick_enter(oop obj, JavaThread* current, BasicLoc
   const markWord mark = obj->mark();
 
 #ifndef _LP64
-  // Only for 32bit which have limited support for fast locking outside the runtime.
+  // Only for 32bit which has limited support for fast locking outside the runtime.
   if (lock_stack.try_recursive_enter(obj)) {
     // Recursive lock successful.
     current->inc_held_monitor_count();
-    // Clears object monitor cache, because ?
     return true;
   }
 
