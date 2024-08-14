@@ -830,17 +830,17 @@ public abstract class LongVector extends AbstractVector<Long> {
             case VECTOR_OP_RROTATE: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> rotateRight(a, (int)n));
             case VECTOR_OP_UMAX: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)Long.umax(a, b));
+                    v0.bOp(v1, vm, (i, a, b) -> (long)Long.maxUnsigned(a, b));
             case VECTOR_OP_UMIN: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)Long.umin(a, b));
-            case VECTOR_OP_SATURATING_ADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.saturatingAdd(a, b)));
-            case VECTOR_OP_SATURATING_SUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.saturatingSub(a, b)));
-            case VECTOR_OP_SATURATING_UADD: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.saturatingUnsignedAdd(a, b)));
-            case VECTOR_OP_SATURATING_USUB: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.saturatingUnsignedSub(a, b)));
+                    v0.bOp(v1, vm, (i, a, b) -> (long)Long.minUnsigned(a, b));
+            case VECTOR_OP_SADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.addSaturating(a, b)));
+            case VECTOR_OP_SSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.subSaturating(a, b)));
+            case VECTOR_OP_SUADD: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.addSaturatingUnsigned(a, b)));
+            case VECTOR_OP_SUSUB: return (v0, v1, vm) ->
+                    v0.bOp(v1, vm, (i, a, b) -> (long)(Long.subSaturatingUnsigned(a, b)));
             case VECTOR_OP_COMPRESS_BITS: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, n) -> Long.compress(a, n));
             case VECTOR_OP_EXPAND_BITS: return (v0, v1, vm) ->

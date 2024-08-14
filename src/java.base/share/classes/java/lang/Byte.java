@@ -593,7 +593,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte umax(byte a, byte b) {
+    public static byte maxUnsigned(byte a, byte b) {
         return compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -606,7 +606,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte umin(byte a, byte b) {
+    public static byte minUnsigned(byte a, byte b) {
         return compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -621,7 +621,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte saturatingAdd(byte a, byte b) {
+    public static byte addSaturating(byte a, byte b) {
         int res = a + b;
         if (res > Byte.MAX_VALUE) {
             return Byte.MAX_VALUE;
@@ -643,7 +643,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte saturatingSub(byte a, byte b) {
+    public static byte subSaturating(byte a, byte b) {
         byte res = (byte)(a - b);
         // Saturation occurs when result of computation over opposite polarity inputs exceeds the byte
         // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
@@ -666,7 +666,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte saturatingUnsignedAdd(byte a, byte b) {
+    public static byte addSaturatingUnsigned(byte a, byte b) {
         byte res = (byte)(a + b);
         boolean overflow = Byte.compareUnsigned(res, (byte)(a | b)) < 0;
         if (overflow)  {
@@ -686,7 +686,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static byte saturatingUnsignedSub(byte a, byte b) {
+    public static byte subSaturatingUnsigned(byte a, byte b) {
         if (Byte.compareUnsigned(b, a) < 0) {
             return (byte)(a - b);
         } else {

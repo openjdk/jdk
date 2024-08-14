@@ -628,7 +628,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short umax(short a, short b) {
+    public static short maxUnsigned(short a, short b) {
         return compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -641,7 +641,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short umin(short a, short b) {
+    public static short minUnsigned(short a, short b) {
         return compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -656,7 +656,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short saturatingAdd(short a, short b) {
+    public static short addSaturating(short a, short b) {
         int res = a + b;
         if (res > Short.MAX_VALUE) {
             return Short.MAX_VALUE;
@@ -678,7 +678,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short saturatingSub(short a, short b) {
+    public static short subSaturating(short a, short b) {
         short res = (short)(a - b);
         // Saturation occurs when result of computation over opposite polarity inputs exceeds the short
         // value range, in this case, for a non-commutative operation like subtraction, result polarity does not
@@ -701,7 +701,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short saturatingUnsignedAdd(short a, short b) {
+    public static short addSaturatingUnsigned(short a, short b) {
         short res = (short)(a + b);
         boolean overflow = Short.compareUnsigned(res, (short)(a | b)) < 0;
         if (overflow)  {
@@ -721,7 +721,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static short saturatingUnsignedSub(short a, short b) {
+    public static short subSaturatingUnsigned(short a, short b) {
         if (Short.compareUnsigned(b, a) < 0) {
             return (short)(a - b);
         } else {

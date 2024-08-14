@@ -568,13 +568,13 @@ public abstract class VectorOperators {
     public static final /*bitwise*/ Associative XOR = assoc("XOR", "^", VectorSupport.VECTOR_OP_XOR, VO_NOFP+VO_ASSOC);
 
     /** Produce {@code a [+] b}.  */
-    public static final Associative SATURATING_ADD = assoc("SATURATING_ADD", "+", VectorSupport.VECTOR_OP_SATURATING_ADD, VO_NOFP+VO_ASSOC);
+    public static final Associative SADD = assoc("SADD", "+", VectorSupport.VECTOR_OP_SADD, VO_NOFP+VO_ASSOC);
     /** Produce {@code a [u+] b}. */
-    public static final Associative SATURATING_UADD = assoc("SATURATING_UADD", "+", VectorSupport.VECTOR_OP_SATURATING_UADD, VO_NOFP+VO_ASSOC);
+    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
     /** Produce {@code a [-] b}.  */
-    public static final Binary SATURATING_SUB = binary("SATURATING_SUB", "-", VectorSupport.VECTOR_OP_SATURATING_SUB, VO_NOFP);
+    public static final Binary SSUB = binary("SSUB", "-", VectorSupport.VECTOR_OP_SSUB, VO_NOFP);
     /** Produce {@code a [u-] b}. */
-    public static final Binary SATURATING_USUB = binary("SATURATING_USUB", "-", VectorSupport.VECTOR_OP_SATURATING_USUB, VO_NOFP);
+    public static final Binary SUSUB = binary("SUSUB", "-", VectorSupport.VECTOR_OP_SUSUB, VO_NOFP);
     /** Produce {@code umin(a,b)}. */
     public static final Associative UMIN = assoc("UMIN", "umin", VectorSupport.VECTOR_OP_UMIN, VO_NOFP+VO_ASSOC);
     /** Produce {@code umax(a,b)}. */

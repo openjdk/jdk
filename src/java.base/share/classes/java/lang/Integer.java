@@ -2003,7 +2003,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 1.8
      */
-    public static int umax(int a, int b) {
+    public static int maxUnsigned(int a, int b) {
         return compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -2016,7 +2016,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 1.8
      */
-    public static int umin(int a, int b) {
+    public static int minUnsigned(int a, int b) {
         return compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -2032,7 +2032,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static int saturatingAdd(int a, int b) {
+    public static int addSaturating(int a, int b) {
         long res = (long)a + (long)b;
         if (res > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;
@@ -2054,7 +2054,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static int saturatingSub(int a, int b) {
+    public static int subSaturating(int a, int b) {
         int res = a - b;
         boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_INT) == POLARITY_MASK_INT;
         // Saturation occurs when result of computation over opposite polarity inputs exceeds the int
@@ -2077,7 +2077,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static int saturatingUnsignedAdd(int a, int b) {
+    public static int addSaturatingUnsigned(int a, int b) {
         int res = a + b;
         boolean overflow = Integer.compareUnsigned(res, (a | b)) < 0;
         if (overflow)  {
@@ -2097,7 +2097,7 @@ public final class Integer extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static int saturatingUnsignedSub(int a, int b) {
+    public static int subSaturatingUnsigned(int a, int b) {
         if (Integer.compareUnsigned(b, a) < 0) {
            return a - b;
         } else {

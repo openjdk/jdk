@@ -3016,7 +3016,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMIN(int a, int b) {
-        return (int)(Integer.umin(a, b));
+        return (int)(Integer.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -3057,7 +3057,7 @@ public class Int64VectorTests extends AbstractVectorTest {
     }
 
     static int UMAX(int a, int b) {
-        return (int)(Integer.umax(a, b));
+        return (int)(Integer.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "intBinaryOpProvider")
@@ -3097,12 +3097,12 @@ public class Int64VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, mask, Int64VectorTests::UMAX);
     }
 
-    static int SATURATING_ADD(int a, int b) {
-        return (int)(Integer.saturatingAdd(a, b));
+    static int SADD(int a, int b) {
+        return (int)(Integer.addSaturating(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
-    static void SATURATING_ADDInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void SADDInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -3111,15 +3111,15 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Int64VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, Int64VectorTests::SADD);
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
-    static void SATURATING_ADDInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void SADDInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -3131,19 +3131,19 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, mask, Int64VectorTests::SADD);
     }
 
-    static int SATURATING_SUB(int a, int b) {
-        return (int)(Integer.saturatingSub(a, b));
+    static int SSUB(int a, int b) {
+        return (int)(Integer.subSaturating(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
-    static void SATURATING_SUBInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void SSUBInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -3152,15 +3152,15 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Int64VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, Int64VectorTests::SSUB);
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
-    static void SATURATING_SUBInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void SSUBInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -3172,19 +3172,19 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, mask, Int64VectorTests::SSUB);
     }
 
-    static int SATURATING_UADD(int a, int b) {
-        return (int)(Integer.saturatingUnsignedAdd(a, b));
+    static int SUADD(int a, int b) {
+        return (int)(Integer.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
-    static void SATURATING_UADDInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void SUADDInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -3193,15 +3193,15 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Int64VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, Int64VectorTests::SUADD);
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
-    static void SATURATING_UADDInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void SUADDInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -3213,19 +3213,19 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, mask, Int64VectorTests::SUADD);
     }
 
-    static int SATURATING_USUB(int a, int b) {
-        return (int)(Integer.saturatingUnsignedSub(a, b));
+    static int SUSUB(int a, int b) {
+        return (int)(Integer.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpProvider")
-    static void SATURATING_USUBInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
+    static void SUSUBInt64VectorTests(IntFunction<int[]> fa, IntFunction<int[]> fb) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
         int[] r = fr.apply(SPECIES.length());
@@ -3234,15 +3234,15 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Int64VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, Int64VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "intSaturatingBinaryOpMaskProvider")
-    static void SATURATING_USUBInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
+    static void SUSUBInt64VectorTestsMasked(IntFunction<int[]> fa, IntFunction<int[]> fb,
                                           IntFunction<boolean[]> fm) {
         int[] a = fa.apply(SPECIES.length());
         int[] b = fb.apply(SPECIES.length());
@@ -3254,11 +3254,11 @@ public class Int64VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
                 IntVector bv = IntVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Int64VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, mask, Int64VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "intBinaryOpProvider")

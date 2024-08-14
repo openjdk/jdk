@@ -356,7 +356,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
-    case VECTOR_OP_SATURATING_ADD: {
+    case VECTOR_OP_SADD: {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
@@ -366,7 +366,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
-    case VECTOR_OP_SATURATING_SUB: {
+    case VECTOR_OP_SSUB: {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
@@ -376,7 +376,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
-    case VECTOR_OP_SATURATING_UADD: {
+    case VECTOR_OP_SUADD: {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through
@@ -386,7 +386,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       }
       break;
     }
-    case VECTOR_OP_SATURATING_USUB: {
+    case VECTOR_OP_SUSUB: {
       switch (bt) {
         case T_BYTE:   // fall-through
         case T_SHORT:  // fall-through

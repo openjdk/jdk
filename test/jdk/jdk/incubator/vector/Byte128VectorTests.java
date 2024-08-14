@@ -2972,7 +2972,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMIN(byte a, byte b) {
-        return (byte)(Byte.umin(a, b));
+        return (byte)(Byte.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -3013,7 +3013,7 @@ public class Byte128VectorTests extends AbstractVectorTest {
     }
 
     static byte UMAX(byte a, byte b) {
-        return (byte)(Byte.umax(a, b));
+        return (byte)(Byte.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")
@@ -3053,12 +3053,12 @@ public class Byte128VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, mask, Byte128VectorTests::UMAX);
     }
 
-    static byte SATURATING_ADD(byte a, byte b) {
-        return (byte)(Byte.saturatingAdd(a, b));
+    static byte SADD(byte a, byte b) {
+        return (byte)(Byte.addSaturating(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
-    static void SATURATING_ADDByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void SADDByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -3067,15 +3067,15 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Byte128VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, Byte128VectorTests::SADD);
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpMaskProvider")
-    static void SATURATING_ADDByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void SADDByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -3087,19 +3087,19 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SADD);
     }
 
-    static byte SATURATING_SUB(byte a, byte b) {
-        return (byte)(Byte.saturatingSub(a, b));
+    static byte SSUB(byte a, byte b) {
+        return (byte)(Byte.subSaturating(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
-    static void SATURATING_SUBByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void SSUBByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -3108,15 +3108,15 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Byte128VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, Byte128VectorTests::SSUB);
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpMaskProvider")
-    static void SATURATING_SUBByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void SSUBByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -3128,19 +3128,19 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SSUB);
     }
 
-    static byte SATURATING_UADD(byte a, byte b) {
-        return (byte)(Byte.saturatingUnsignedAdd(a, b));
+    static byte SUADD(byte a, byte b) {
+        return (byte)(Byte.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
-    static void SATURATING_UADDByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void SUADDByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -3149,15 +3149,15 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Byte128VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, Byte128VectorTests::SUADD);
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpMaskProvider")
-    static void SATURATING_UADDByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void SUADDByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -3169,19 +3169,19 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SUADD);
     }
 
-    static byte SATURATING_USUB(byte a, byte b) {
-        return (byte)(Byte.saturatingUnsignedSub(a, b));
+    static byte SUSUB(byte a, byte b) {
+        return (byte)(Byte.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpProvider")
-    static void SATURATING_USUBByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
+    static void SUSUBByte128VectorTests(IntFunction<byte[]> fa, IntFunction<byte[]> fb) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
         byte[] r = fr.apply(SPECIES.length());
@@ -3190,15 +3190,15 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Byte128VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, Byte128VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "byteSaturatingBinaryOpMaskProvider")
-    static void SATURATING_USUBByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
+    static void SUSUBByte128VectorTestsMasked(IntFunction<byte[]> fa, IntFunction<byte[]> fb,
                                           IntFunction<boolean[]> fm) {
         byte[] a = fa.apply(SPECIES.length());
         byte[] b = fb.apply(SPECIES.length());
@@ -3210,11 +3210,11 @@ public class Byte128VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ByteVector av = ByteVector.fromArray(SPECIES, a, i);
                 ByteVector bv = ByteVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, mask, Byte128VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "byteBinaryOpProvider")

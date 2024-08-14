@@ -1954,7 +1954,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long umax(long a, long b) {
+    public static long maxUnsigned(long a, long b) {
         return compareUnsigned(a, b) > 0 ? a : b;
     }
 
@@ -1967,7 +1967,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long umin(long a, long b) {
+    public static long minUnsigned(long a, long b) {
         return compareUnsigned(a, b) < 0 ? a : b;
     }
 
@@ -1982,7 +1982,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long saturatingAdd(long a, long b) {
+    public static long addSaturating(long a, long b) {
         long res = a + b;
         // Saturation occurs when result of computation over same polarity inputs exceeds the {@code long} value range.
         boolean same_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == 0;
@@ -2004,7 +2004,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long saturatingSub(long a, long b) {
+    public static long subSaturating(long a, long b) {
         boolean opposite_polarity_inputs = ((a ^ b) & POLARITY_MASK_LONG) == POLARITY_MASK_LONG;
         long res = a - b;
         // Saturation occurs when result of computation over opposite polarity inputs exceeds the long
@@ -2027,7 +2027,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long saturatingUnsignedAdd(long a, long b) {
+    public static long addSaturatingUnsigned(long a, long b) {
         long res = a + b;
         boolean overflow = Long.compareUnsigned(res, (a | b)) < 0;
         if (overflow)  {
@@ -2047,7 +2047,7 @@ public final class Long extends Number
      * @see java.util.function.BinaryOperator
      * @since 24
      */
-    public static long saturatingUnsignedSub(long a, long b) {
+    public static long subSaturatingUnsigned(long a, long b) {
         if (Long.compareUnsigned(b, a) < 0) {
            return a - b;
         } else {

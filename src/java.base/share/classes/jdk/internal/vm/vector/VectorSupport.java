@@ -114,10 +114,10 @@ public class VectorSupport {
     public static final int VECTOR_OP_EXPM1 = 117;
     public static final int VECTOR_OP_HYPOT = 118;
 
-    public static final int VECTOR_OP_SATURATING_ADD  = 119;
-    public static final int VECTOR_OP_SATURATING_SUB  = 120;
-    public static final int VECTOR_OP_SATURATING_UADD = 121;
-    public static final int VECTOR_OP_SATURATING_USUB = 122;
+    public static final int VECTOR_OP_SADD  = 119;
+    public static final int VECTOR_OP_SSUB  = 120;
+    public static final int VECTOR_OP_SUADD = 121;
+    public static final int VECTOR_OP_SUSUB = 122;
     public static final int VECTOR_OP_UMIN = 123;
     public static final int VECTOR_OP_UMAX = 124;
 

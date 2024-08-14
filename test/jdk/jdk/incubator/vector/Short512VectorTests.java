@@ -2963,7 +2963,7 @@ public class Short512VectorTests extends AbstractVectorTest {
     }
 
     static short UMIN(short a, short b) {
-        return (short)(Short.umin(a, b));
+        return (short)(Short.minUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -3004,7 +3004,7 @@ public class Short512VectorTests extends AbstractVectorTest {
     }
 
     static short UMAX(short a, short b) {
-        return (short)(Short.umax(a, b));
+        return (short)(Short.maxUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
@@ -3044,12 +3044,12 @@ public class Short512VectorTests extends AbstractVectorTest {
         assertArraysEquals(r, a, b, mask, Short512VectorTests::UMAX);
     }
 
-    static short SATURATING_ADD(short a, short b) {
-        return (short)(Short.saturatingAdd(a, b));
+    static short SADD(short a, short b) {
+        return (short)(Short.addSaturating(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
-    static void SATURATING_ADDShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void SADDShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -3058,15 +3058,15 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Short512VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, Short512VectorTests::SADD);
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
-    static void SATURATING_ADDShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void SADDShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3078,19 +3078,19 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_ADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Short512VectorTests::SATURATING_ADD);
+        assertArraysEquals(r, a, b, mask, Short512VectorTests::SADD);
     }
 
-    static short SATURATING_SUB(short a, short b) {
-        return (short)(Short.saturatingSub(a, b));
+    static short SSUB(short a, short b) {
+        return (short)(Short.subSaturating(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
-    static void SATURATING_SUBShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void SSUBShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -3099,15 +3099,15 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Short512VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, Short512VectorTests::SSUB);
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
-    static void SATURATING_SUBShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void SSUBShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3119,19 +3119,19 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_SUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Short512VectorTests::SATURATING_SUB);
+        assertArraysEquals(r, a, b, mask, Short512VectorTests::SSUB);
     }
 
-    static short SATURATING_UADD(short a, short b) {
-        return (short)(Short.saturatingUnsignedAdd(a, b));
+    static short SUADD(short a, short b) {
+        return (short)(Short.addSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
-    static void SATURATING_UADDShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void SUADDShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -3140,15 +3140,15 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Short512VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, Short512VectorTests::SUADD);
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
-    static void SATURATING_UADDShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void SUADDShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3160,19 +3160,19 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_UADD, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUADD, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Short512VectorTests::SATURATING_UADD);
+        assertArraysEquals(r, a, b, mask, Short512VectorTests::SUADD);
     }
 
-    static short SATURATING_USUB(short a, short b) {
-        return (short)(Short.saturatingUnsignedSub(a, b));
+    static short SUSUB(short a, short b) {
+        return (short)(Short.subSaturatingUnsigned(a, b));
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpProvider")
-    static void SATURATING_USUBShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
+    static void SUSUBShort512VectorTests(IntFunction<short[]> fa, IntFunction<short[]> fb) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
         short[] r = fr.apply(SPECIES.length());
@@ -3181,15 +3181,15 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, Short512VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, Short512VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "shortSaturatingBinaryOpMaskProvider")
-    static void SATURATING_USUBShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
+    static void SUSUBShort512VectorTestsMasked(IntFunction<short[]> fa, IntFunction<short[]> fb,
                                           IntFunction<boolean[]> fm) {
         short[] a = fa.apply(SPECIES.length());
         short[] b = fb.apply(SPECIES.length());
@@ -3201,11 +3201,11 @@ public class Short512VectorTests extends AbstractVectorTest {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
                 ShortVector bv = ShortVector.fromArray(SPECIES, b, i);
-                av.lanewise(VectorOperators.SATURATING_USUB, bv, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.SUSUB, bv, vmask).intoArray(r, i);
             }
         }
 
-        assertArraysEquals(r, a, b, mask, Short512VectorTests::SATURATING_USUB);
+        assertArraysEquals(r, a, b, mask, Short512VectorTests::SUSUB);
     }
 
     @Test(dataProvider = "shortBinaryOpProvider")
