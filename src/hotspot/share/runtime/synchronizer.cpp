@@ -1268,7 +1268,7 @@ static bool monitors_used_above_threshold(MonitorList* list) {
   if (NoAsyncDeflationProgressMax != 0 &&
       _no_progress_cnt >= NoAsyncDeflationProgressMax) {
     double remainder = (100.0 - MonitorUsedDeflationThreshold) / 100.0;
-    size_t new_ceiling = ceiling / remainder + 1;
+    size_t new_ceiling = ceiling + (size_t)((double)ceiling * remainder) + 1;
     ObjectSynchronizer::set_in_use_list_ceiling(new_ceiling);
     log_info(monitorinflation)("Too many deflations without progress; "
                                "bumping in_use_list_ceiling from " SIZE_FORMAT
