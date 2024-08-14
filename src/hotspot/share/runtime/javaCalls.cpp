@@ -357,10 +357,6 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
 
   CompilationPolicy::compile_if_required(method, CHECK);
 
-  // Since the call stub sets up like the interpreter we call the from_interpreted_entry
-  // so we can go compiled via a i2c.
-  address entry_point = method->from_interpreted_entry();
-
   // Figure out if the result value is an oop or not (Note: This is a different value
   // than result_type. result_type will be T_INT of oops. (it is about size)
   BasicType result_type = runtime_type_from(result);
@@ -394,12 +390,16 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
       // the call to call_stub, the optimizer produces wrong code.
       intptr_t* result_val_address = (intptr_t*)(result->get_value_addr());
       intptr_t* parameter_address = args->parameters();
-      // What to do if JVMCI set adapter?
+
+      address entry_point;
       if (JvmtiExport::can_post_interpreter_events() && thread->is_interp_only_mode()) {
         entry_point = method->interpreter_entry();
       }
-#if INCLUDE_JVMCI
       else {
+        // Since the call stub sets up like the interpreter we call the from_interpreted_entry
+        // so we can go compiled via a i2c.
+        entry_point = method->from_interpreted_entry();
+#if INCLUDE_JVMCI
         // Gets the alternative target (if any) that should be called
         Handle alternative_target = args->alternative_target();
         if (!alternative_target.is_null()) {
@@ -413,8 +413,8 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
             entry_point = method->adapter()->get_i2c_entry();
           }
         }
-      }
 #endif
+      }
 
       StubRoutines::call_stub()(
         (address)&link,
