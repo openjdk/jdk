@@ -42,7 +42,7 @@ inline ObjectMonitor* BasicLock::object_monitor_cache() const {
 #if defined(X86) || defined(AARCH64)
   return reinterpret_cast<ObjectMonitor*>(get_metadata());
 #else
-  // Other platforms does not make use of the cache yet,
+  // Other platforms do not make use of the cache yet,
   // and are not as careful with maintaining the invariant
   // that the metadata either is nullptr or ObjectMonitor*.
   return nullptr;
