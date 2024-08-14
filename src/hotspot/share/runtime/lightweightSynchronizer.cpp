@@ -167,9 +167,7 @@ class ObjectMonitorTable : AllStatic {
 
  public:
   static void create() {
-    _table = new ConcurrentTable(initial_log_size(),
-                                 max_log_size(),
-                                 grow_hint());
+    _table = new ConcurrentTable(initial_log_size(), max_log_size(), grow_hint());
     _items_count = 0;
     _table_size = table_size();
     _resize = false;
