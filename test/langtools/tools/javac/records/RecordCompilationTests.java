@@ -1358,7 +1358,7 @@ class RecordCompilationTests extends CompilationTestCase {
         try {
             String[] testOptions = {};
             setCompileOptions(testOptions);
-            assertFail("compiler.err.illegal.start.of.type",
+            assertFail("compiler.err.statement.not.expected",
                     "class R {\n" +
                             "    record RR(int i) {\n" +
                             "        return null;\n" +
