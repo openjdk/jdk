@@ -33,6 +33,7 @@ import jdk.test.lib.Utils;
  * @bug 8324655 8329797 8331090
  * @key randomness
  * @summary Test that if expressions are properly folded into min/max nodes
+ * @requires os.arch != "riscv64"
  * @library /test/lib /
  * @run driver compiler.c2.irTests.TestIfMinMax
  */

@@ -36,7 +36,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
-#include "runtime/globals_extension.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/quickSort.hpp"
 
 // These constants are used to adjust the margin of error for the moving

@@ -72,12 +72,7 @@ GCName GCConfiguration::old_collector() const {
   }
 
   if (UseShenandoahGC) {
-#if INCLUDE_SHENANDOAHGC
-    if (strcmp(ShenandoahGCMode, "generational") == 0) {
-      return Shenandoah;
-    }
-#endif
-    return NA;
+    return Shenandoah;
   }
 
   if (UseZGC) {
