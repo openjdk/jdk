@@ -71,8 +71,8 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     LDFLAGS_CXX_PARTIAL_LINKING="$MACHINE_FLAG -r"
 
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      # Clang needs the lld linker to work correctly
       BASIC_LDFLAGS="-fuse-ld=lld -Wl,--exclude-libs,ALL"
-      # Linux/clang toolchain needs now lld on the system to work
       UTIL_REQUIRE_PROGS(LLD, lld)
     fi
     if test "x$OPENJDK_TARGET_OS" = xaix; then
