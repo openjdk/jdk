@@ -78,5 +78,4 @@ inline void ObjectSynchronizer::exit(oop object, BasicLock* lock, JavaThread* cu
   }
 }
 
-
 #endif // SHARE_RUNTIME_SYNCHRONIZER_INLINE_HPP

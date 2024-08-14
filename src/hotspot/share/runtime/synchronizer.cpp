@@ -973,7 +973,7 @@ static intptr_t install_hash_code(Thread* current, oop obj) {
   assert(UseObjectMonitorTable && LockingMode == LM_LIGHTWEIGHT, "must be");
 
   markWord mark = obj->mark_acquire();
-  for(;;) {
+  for (;;) {
     intptr_t hash = mark.hash();
     if (hash != 0) {
       return hash;
