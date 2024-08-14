@@ -77,7 +77,7 @@ class ObjectMonitorTable : AllStatic {
   class Lookup : public StackObj {
     oop _obj;
 
-  public:
+   public:
     explicit Lookup(oop obj) : _obj(obj) {}
 
     uintx get_hash() const {
@@ -100,7 +100,7 @@ class ObjectMonitorTable : AllStatic {
   class LookupMonitor : public StackObj {
     ObjectMonitor* _monitor;
 
-  public:
+   public:
     explicit LookupMonitor(ObjectMonitor* monitor) : _monitor(monitor) {}
 
     uintx get_hash() const {
@@ -165,7 +165,7 @@ class ObjectMonitorTable : AllStatic {
     return ConcurrentTable::DEFAULT_GROW_HINT;
   }
 
-public:
+ public:
   static void create() {
     _table = new ConcurrentTable(initial_log_size(),
                                  max_log_size(),
@@ -512,7 +512,7 @@ class LightweightSynchronizer::CacheSetter : StackObj {
 
   NONCOPYABLE(CacheSetter);
 
-public:
+ public:
   CacheSetter(JavaThread* thread, BasicLock* lock) :
     _thread(thread),
     _lock(lock),
@@ -540,7 +540,7 @@ public:
 class LightweightSynchronizer::VerifyThreadState {
   bool _no_safepoint;
 
-public:
+ public:
   VerifyThreadState(JavaThread* locking_thread, JavaThread* current) : _no_safepoint(locking_thread != current) {
     assert(current == Thread::current(), "must be");
     assert(locking_thread == current || locking_thread->is_obj_deopt_suspend(), "locking_thread may not run concurrently");
