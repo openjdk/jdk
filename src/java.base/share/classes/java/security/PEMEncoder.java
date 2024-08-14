@@ -39,7 +39,6 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
-import java.security.cert.Certificate;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -119,7 +118,7 @@ public final class PEMEncoder {
      * @return the string
      */
     private String pemEncoded(PEMRecord pem) {
-        StringBuffer sb = new StringBuffer(1024);
+        StringBuilder sb = new StringBuilder(1024);
         sb.append("-----BEGIN ").append(pem.id()).append("-----");
         sb.append(System.lineSeparator());
         if (b64Encoder == null) {
@@ -176,7 +175,7 @@ public final class PEMEncoder {
                     throw new SecurityException(e);
                 }
             }
-            case Certificate c -> {
+            case X509Certificate c -> {
                 try {
                     yield pemEncoded(new PEMRecord(PEMRecord.CERTIFICATE,
                         c.getEncoded()));
@@ -184,11 +183,10 @@ public final class PEMEncoder {
                     throw new IllegalArgumentException(e);
                 }
             }
-            case CRL crl -> {
-                X509CRL xcrl = (X509CRL)crl;
+            case X509CRL crl -> {
                 try {
                     yield pemEncoded(new PEMRecord(PEMRecord.X509_CRL,
-                        xcrl.getEncoded()));
+                        crl.getEncoded()));
                 } catch (CRLException e) {
                     throw new IllegalArgumentException(e);
                 }
@@ -224,7 +222,7 @@ public final class PEMEncoder {
      *
      * <p> Default algorithm defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options
-     * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, PBEKeySpec, String,
+     * see {@link EncryptedPrivateKeyInfo#encryptKey(PrivateKey, char[], String,
      * AlgorithmParameterSpec, Provider)} and use the returned object with
      * {@link #encode(DEREncodable)}.
      *

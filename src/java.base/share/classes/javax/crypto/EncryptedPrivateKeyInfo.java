@@ -421,9 +421,11 @@ public final class EncryptedPrivateKeyInfo implements DEREncodable {
      *
      * @since 24
      */
+    @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(char[] password) throws InvalidKeyException {
         return getKey(password, null);
     }
+
     /**
      * Return a PrivateKey from the object's encrypted data with a KeyFactory
      * from the given Provider.
