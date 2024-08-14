@@ -128,3 +128,57 @@ TEST_VM(opto, NoOverflowInt_lshift) {
   ASSERT_EQ((NoOverflowInt(-13) << NoOverflowInt(4)).value(), -13 * 16);
 }
 
+TEST_VM(opto, NoOverflowInt_misc) {
+  const NoOverflowInt nan;
+  const NoOverflowInt zero(0);
+  const NoOverflowInt one(1);
+  const NoOverflowInt two(2);
+  const NoOverflowInt big(1 << 30);
+
+  // operator==
+  ASSERT_FALSE(nan == nan);
+  ASSERT_FALSE(nan == zero);
+  ASSERT_FALSE(zero == nan);
+  ASSERT_TRUE(zero == zero);
+  ASSERT_TRUE(one == one);
+  ASSERT_TRUE((one + two) == (two + one));
+  ASSERT_TRUE((big + two) == (two + big));
+  ASSERT_FALSE((big + big) == (big + big));
+  ASSERT_TRUE((big - one + big) == (big - one + big));
+
+  // truncate_to_30_bits
+  for (int i = -(1 << 30) + 1; i < (1 << 30); i += 1000) {
+    ASSERT_EQ(NoOverflowInt(i).truncate_to_30_bits().value(), i);
+  }
+  ASSERT_TRUE(big.truncate_to_30_bits().is_NaN());
+  ASSERT_FALSE((big - one).truncate_to_30_bits().is_NaN());
+  ASSERT_TRUE((zero - big).truncate_to_30_bits().is_NaN());
+  ASSERT_FALSE((one - big).truncate_to_30_bits().is_NaN());
+  ASSERT_TRUE(nan.truncate_to_30_bits().is_NaN());
+
+  // abs
+  for (int i = 0; i < (1 << 31); i += 1024) {
+    ASSERT_EQ(NoOverflowInt(i).abs().value(), i);
+    ASSERT_EQ(NoOverflowInt(-i).abs().value(), i);
+  }
+  ASSERT_EQ(NoOverflowInt(max_jint).abs().value(), max_jint);
+  ASSERT_EQ(NoOverflowInt(min_jint + 1).abs().value(), max_jint);
+  ASSERT_TRUE(NoOverflowInt(min_jint).abs().is_NaN());
+  ASSERT_TRUE(NoOverflowInt(nan).abs().is_NaN());
+
+  // is_multiple_of
+  ASSERT_TRUE(one.is_multiple_of(one));
+  ASSERT_FALSE(one.is_multiple_of(nan));
+  ASSERT_FALSE(nan.is_multiple_of(one));
+  ASSERT_FALSE(nan.is_multiple_of(nan));
+  for (int i = 0; i < (1 << 31); i += 1023) {
+    ASSERT_TRUE(NoOverflowInt(i).is_multiple_of(one));
+    ASSERT_TRUE(NoOverflowInt(-i).is_multiple_of(one));
+    ASSERT_FALSE(NoOverflowInt(i).is_multiple_of(zero));
+    ASSERT_FALSE(NoOverflowInt(-i).is_multiple_of(zero));
+  }
+  ASSERT_TRUE(NoOverflowInt(33 * 7).is_multiple_of(NoOverflowInt(33)));
+  ASSERT_TRUE(NoOverflowInt(13 * 5).is_multiple_of(NoOverflowInt(5)));
+  ASSERT_FALSE(NoOverflowInt(7).is_multiple_of(NoOverflowInt(5)));
+}
+

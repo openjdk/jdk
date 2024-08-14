@@ -89,7 +89,7 @@ public:
   NoOverflowInt truncate_to_30_bits() const {
     if (is_NaN()) { return make_NaN(); }
     const jint max_value = 1 << 30;
-    if (value() > max_value || value() < -max_value) { return make_NaN(); }
+    if (value() >= max_value || value() <= -max_value) { return make_NaN(); }
     return *this;
   }
 
