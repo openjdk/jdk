@@ -283,14 +283,7 @@ jint ShenandoahHeap::initialize() {
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   size_t aux_bitmap_page_size = bitmap_page_size;
-#ifdef LINUX
-  // In THP "advise" mode, we refrain from advising the system to use large pages
-  // since we know these commits will be short lived, and there is no reason to trash
-  // the THP area with this bitmap.
-  if (UseTransparentHugePages) {
-    aux_bitmap_page_size = os::vm_page_size();
-  }
-#endif
+
   ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
                                           bitmap_size_orig, aux_bitmap_page_size,
@@ -386,16 +379,6 @@ jint ShenandoahHeap::initialize() {
 
     _pretouch_heap_page_size = heap_page_size;
     _pretouch_bitmap_page_size = bitmap_page_size;
-
-#ifdef LINUX
-    // UseTransparentHugePages would madvise that backing memory can be coalesced into huge
-    // pages. But, the kernel needs to know that every small page is used, in order to coalesce
-    // them into huge one. Therefore, we need to pretouch with smaller pages.
-    if (UseTransparentHugePages) {
-      _pretouch_heap_page_size = (size_t)os::vm_page_size();
-      _pretouch_bitmap_page_size = (size_t)os::vm_page_size();
-    }
-#endif
 
     // OS memory managers may want to coalesce back-to-back pages. Make their jobs
     // simpler by pre-touching continuous spaces (heap and bitmap) separately.

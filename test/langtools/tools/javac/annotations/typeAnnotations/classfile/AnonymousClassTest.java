@@ -246,7 +246,7 @@ public class AnonymousClassTest {
 
     private static String elementValueDebugString(AnnotationValue value) {
         if (value.tag() == 'I') {
-            return Integer.toString(((AnnotationValue.OfInteger) value).intValue());
+            return Integer.toString(((AnnotationValue.OfInt) value).intValue());
         } else {
             throw new UnsupportedOperationException(String.format("%c", value.tag()));
         }

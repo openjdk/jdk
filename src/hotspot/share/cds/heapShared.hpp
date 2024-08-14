@@ -371,7 +371,9 @@ private:
                                              KlassSubGraphInfo* subgraph_info,
                                              oop orig_obj);
 
+#ifndef PRODUCT
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
+#endif
   static void add_to_dumped_interned_strings(oop string);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -426,7 +428,9 @@ private:
   static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
+#ifndef PRODUCT
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
+#endif
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
