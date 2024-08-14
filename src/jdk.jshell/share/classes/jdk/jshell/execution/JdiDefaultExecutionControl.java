@@ -49,6 +49,7 @@ import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.VirtualMachine;
 import java.io.PrintStream;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import jdk.jshell.JShellConsole;
 import jdk.jshell.execution.JdiDefaultExecutionControl.JdiStarter.TargetDescription;
@@ -267,6 +268,13 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     @Override
     public void close() {
         super.close();
+        if (process != null) {
+            try {
+                process.waitFor(1, TimeUnit.SECONDS);
+            } catch (InterruptedException ex) {
+                debug(ex, "waitFor remote");
+            }
+        }
         disposeVM();
     }
 
