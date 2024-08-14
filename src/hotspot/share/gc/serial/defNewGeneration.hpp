@@ -172,8 +172,6 @@ class DefNewGeneration: public Generation {
   // heuristic resizing decisions.
   size_t unsafe_max_alloc_nogc() const;
 
-  size_t contiguous_available() const;
-
   size_t max_eden_size() const              { return _max_eden_size; }
   size_t max_survivor_size() const          { return _max_survivor_size; }
 
@@ -211,9 +209,9 @@ class DefNewGeneration: public Generation {
     return result;
   }
 
-  HeapWord* allocate(size_t word_size, bool is_tlab);
-
-  HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate requested size or return null; single-threaded and lock-free versions.
+  HeapWord* allocate(size_t word_size);
+  HeapWord* par_allocate(size_t word_size);
 
   void gc_epilogue(bool full);
 
@@ -228,8 +226,6 @@ class DefNewGeneration: public Generation {
   void compute_new_size();
 
   bool collect(bool clear_all_soft_refs);
-
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
 
   oop copy_to_survivor_space(oop old);
   uint tenuring_threshold() { return _tenuring_threshold; }

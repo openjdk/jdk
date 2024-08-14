@@ -168,7 +168,10 @@ private:
   // CodeBlob support
   // ===================================================================
 
+  static UncommonTrapBlob*   _uncommon_trap_blob;
   static ExceptionBlob*       _exception_blob;
+
+  static void generate_uncommon_trap_blob(void);
   static void generate_exception_blob();
 
   static void register_finalizer(oopDesc* obj, JavaThread* current);
@@ -208,6 +211,7 @@ private:
   static address notify_jvmti_vthread_unmount()          { return _notify_jvmti_vthread_unmount; }
 #endif
 
+  static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
   // Implicit exception support

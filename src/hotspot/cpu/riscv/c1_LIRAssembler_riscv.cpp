@@ -542,7 +542,7 @@ void LIR_Assembler::const2mem(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmi
       insn = &MacroAssembler::sw; break;
     case T_OBJECT:    // fall through
     case T_ARRAY:
-      assert(c->as_jobject() == 0, "should be");
+      assert(c->as_jobject() == nullptr, "should be");
       if (UseCompressedOops && !wide) {
         insn = &MacroAssembler::sw;
       } else {
@@ -1346,7 +1346,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
-  address call = __ trampoline_call(Address(op->addr(), rtype));
+  address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("trampoline stub overflow");
     return;

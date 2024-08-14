@@ -63,8 +63,11 @@ public class Float64VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final float RELATIVE_ROUNDING_ERROR = (float)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (float)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (float)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 64);
 
@@ -129,16 +132,16 @@ public class Float64VectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(float[] r, float rc, float[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            float relativeError) {
+                                            float relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -2205,7 +2208,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float64VectorTests::ADDReduce, Float64VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float64VectorTests::ADDReduce, Float64VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2251,7 +2254,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float64VectorTests::ADDReduceMasked, Float64VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float64VectorTests::ADDReduceMasked, Float64VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float MULReduce(float[] a, int idx) {
@@ -2294,7 +2297,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float64VectorTests::MULReduce, Float64VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float64VectorTests::MULReduce, Float64VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2340,7 +2343,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float64VectorTests::MULReduceMasked, Float64VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float64VectorTests::MULReduceMasked, Float64VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MINReduce(float[] a, int idx) {

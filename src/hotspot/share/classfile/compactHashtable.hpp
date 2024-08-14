@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,18 +204,20 @@ protected:
   u4* _entries;
 
 public:
-  SimpleCompactHashtable() {
-    _entry_count = 0;
-    _bucket_count = 0;
-    _buckets = 0;
-    _entries = 0;
-  }
+  SimpleCompactHashtable() :
+    _base_address(nullptr),
+    _bucket_count(0),
+    _entry_count(0),
+    _buckets(nullptr),
+    _entries(nullptr)
+  {}
 
   void reset() {
+    _base_address = nullptr;
     _bucket_count = 0;
     _entry_count = 0;
-    _buckets = 0;
-    _entries = 0;
+    _buckets = nullptr;
+    _entries = nullptr;
   }
 
   void init(address base_address, u4 entry_count, u4 bucket_count, u4* buckets, u4* entries);
