@@ -31,6 +31,7 @@
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"

@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -51,6 +52,7 @@ ShenandoahBarrierSet::ShenandoahBarrierSet(ShenandoahHeap* heap, MemRegion heap_
              new ShenandoahBarrierSetStackChunk(),
              BarrierSet::FakeRtti(BarrierSet::ShenandoahBarrierSet)),
   _heap(heap),
+  _card_table(nullptr),
   _satb_mark_queue_buffer_allocator("SATB Buffer Allocator", ShenandoahSATBBufferSize),
   _satb_mark_queue_set(&_satb_mark_queue_buffer_allocator)
 {

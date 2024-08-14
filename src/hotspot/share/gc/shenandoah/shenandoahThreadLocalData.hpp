@@ -30,6 +30,7 @@
 #include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
