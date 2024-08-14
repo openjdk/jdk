@@ -72,6 +72,11 @@ jobs:
       - name: 'Checkout the JDK source'
         uses: actions/checkout@v4
 
+      - name: 'Install toolchain and dependencies'
+        run: |
+          apk update
+          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers zip ${{ inputs.apk-extra-packages }}
+
       - name: 'Get the BootJDK'
         id: bootjdk
         uses: ./.github/actions/get-bootjdk
@@ -85,11 +90,6 @@ jobs:
       - name: 'Get GTest'
         id: gtest
         uses: ./.github/actions/get-gtest
-
-      - name: 'Install toolchain and dependencies'
-        run: |
-          apk update
-          apk add alpine-sdk alsa-lib-dev autoconf bash cups-dev cups-libs fontconfig-dev freetype-dev grep libx11-dev libxext-dev libxrandr-dev libxrender-dev libxt-dev libxtst-dev linux-headers zip ${{ inputs.apk-extra-packages }}
 
       - name: 'Configure'
         run: >
