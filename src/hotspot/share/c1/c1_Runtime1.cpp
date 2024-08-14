@@ -315,7 +315,7 @@ const char* Runtime1::name_for_address(address entry) {
   FUNCTION_CASE(entry, SharedRuntime::drem);
   FUNCTION_CASE(entry, SharedRuntime::dsin);
   FUNCTION_CASE(entry, SharedRuntime::dtan);
-  FUNCTION_CASE(entry, SharedRuntime::dtanh);
+  //FUNCTION_CASE(entry, SharedRuntime::dtanh);
   FUNCTION_CASE(entry, SharedRuntime::f2i);
   FUNCTION_CASE(entry, SharedRuntime::f2l);
   FUNCTION_CASE(entry, SharedRuntime::frem);

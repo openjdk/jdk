@@ -254,6 +254,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dabs:
   case vmIntrinsics::_fabs:
   case vmIntrinsics::_iabs:
@@ -1877,9 +1878,10 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtan(), "dtan") :
       runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtan), "TAN");
   case vmIntrinsics::_dtanh:
-    return StubRoutines::dtanh() != nullptr ?
-      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") :
-      runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtanh), "TANH");
+    // return StubRoutines::dtanh() != nullptr ?
+    //   runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh") :
+    //   runtime_math(OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dtanh), "TANH");
+    return runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dtanh(), "dtanh");
   case vmIntrinsics::_dexp:
     return StubRoutines::dexp() != nullptr ?
       runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :

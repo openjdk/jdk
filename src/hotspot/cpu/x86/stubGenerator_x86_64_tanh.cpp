@@ -1210,10 +1210,10 @@ address StubGenerator::generate_libmTanh() {
   __ subsd(xmm3, xmm6);
   __ xorpd(xmm0, xmm0);
   __ addsd(xmm2, xmm1);
-  __ subsd(xmm3, xmm7);
+  __ subsd(xmm7, xmm3); //TODO: BUG FIXED : registers interchanged
   __ movdqu(xmm6, ExternalAddress(cv)); //TODO: movapd
   __ addsd(xmm2, xmm7);
-  __ movl(rcx, 25);
+  __ movl(rcx, 255); //TODO: BUG FIXED
   __ andl(rcx, rax);
   __ addl(rcx, rcx);
   __ lea(r8, ExternalAddress(T2_neg_f));
@@ -1343,10 +1343,10 @@ address StubGenerator::generate_libmTanh() {
 
   __ bind(L_2TAG_PACKET_4_0_1);
   __ movq(xmm2, xmm0);
-  __ movdq(rax, xmm0); // TODO: check movd
+  __ movdl(rax, xmm0); // TODO: check movd
   __ psrlq(xmm2, 20);
-  __ movdq(rcx, xmm2); // TODO: check movd
-  __ orl(rcx, rcx);
+  __ movdl(rcx, xmm2); // TODO: check movd
+  __ orl(rax, rcx); // TODO: BUG fixed
   __ cmpl(rcx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
   __ addsd(xmm0, xmm0);
