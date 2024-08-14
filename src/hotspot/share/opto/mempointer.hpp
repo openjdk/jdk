@@ -253,6 +253,16 @@ public:
   NoOverflowInt scale() const { return _scale; }
   LP64_ONLY( NoOverflowInt scaleL() const { return _scaleL; } )
 
+  static int cmp_for_sort(MemPointerSummand* p1, MemPointerSummand* p2) {
+    if (p1->variable() == nullptr) {
+      return (p2->variable() == nullptr) ? 0 : 1;
+    } else if (p2->variable() == nullptr) {
+      return -1;
+    }
+
+    return p1->variable()->_idx - p2->variable()->_idx;
+  }
+
   friend bool operator==(const MemPointerSummand a, const MemPointerSummand b) {
     // Both "null" -> equal.
     if (a.variable() == nullptr && b.variable() == nullptr) { return true; }

@@ -43,6 +43,8 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     parse_sub_expression(_worklist.pop());
   }
 
+  _summands.sort(MemPointerSummand::cmp_for_sort);
+
   // TODO: sort and combine summands!
 
   // for (int i = 0; i < _summands.length(); i++) {
