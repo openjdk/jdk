@@ -178,7 +178,7 @@ class ObjectMonitorTable : AllStatic {
     if (SafepointSynchronize::is_at_safepoint()) {
       bool has_monitor = obj->mark().has_monitor();
       assert(has_monitor == (monitor != nullptr),
-          "Inconsistency between markWord and OMW table has_monitor: %s monitor: " PTR_FORMAT,
+          "Inconsistency between markWord and ObjectMonitorTable has_monitor: %s monitor: " PTR_FORMAT,
           BOOL_TO_STR(has_monitor), p2i(monitor));
     }
 #endif
