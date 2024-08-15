@@ -185,8 +185,8 @@ public:
     INDENT_BY(57);
     st->print("%s-%s", info.stateBuffer, info.typeBuffer);
     INDENT_BY(60);
-    st->print("%#8llx", reinterpret_cast<const unsigned long long>(mInfo.BaseAddress) - reinterpret_cast<const unsigned long long>(mInfo.AllocationBase));
-    INDENT_BY(71);
+    st->print("%#9llx", reinterpret_cast<const unsigned long long>(mInfo.BaseAddress) - reinterpret_cast<const unsigned long long>(mInfo.AllocationBase));
+    INDENT_BY(72);
     if (_session.print_nmt_info_for_region(mInfo.BaseAddress, static_cast<const char*>(mInfo.BaseAddress) + mInfo.RegionSize)) {
       st->print(" ");
     }
@@ -221,8 +221,8 @@ public:
     outputStream* st = _session.out();
     //            0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6         7
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000-0x0000000453000000 123456789012 rw-p 123456789012 123456789012 16g  thp,thpadv       STACK-340754-Monitor-Deflation-Thread /shared/tmp.txt
-    st->print_cr("from               to                        vsize prot  state   offset vm info/file");
+    //            0x00007ffd5bd64000-0x00007ffd5c250000      5160960 r---  c-img 0x10d4000 C:\work\jdk\build\work-fastdebug\jdk\bin\server\jvm.dll
+    st->print_cr("from               to                        vsize prot  state    offset vm info/file");
     st->print_cr("=============================================================================================================================");
   }
 };
