@@ -24,7 +24,7 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM -XX:StressSeed=884154126
@@ -35,7 +35,7 @@
 /**
 * @test
 * @key stress randomness
-* @bug 8299259
+* @bug 8299259 8336729
 * @requires vm.compiler2.enabled
 * @summary Test various cases of divisions/modulo which should not be split through iv phis.
 * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:LoopUnrollLimit=0 -XX:+StressGCM
