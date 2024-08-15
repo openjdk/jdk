@@ -84,14 +84,17 @@
 //   be decomposed further). We decompose the summands recursively until all remaining summands
 //   are terminal, see MemPointerLinearFormParser::parse_sub_expression. This effectively parses
 //   the pointer expression recursively.
-
-// TODO why not everything linear?
-
-// TODO
-// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:
 //
-//   abs(scale) < (1 << 30)
+//   We have to be careful on 64bit systems with ConvI2L: decomposing its input is not
+//   correct in general, overflows may not be preserved in the linear form:
 //
+//     AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
+//     SubI:     ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
+//     MulI:     ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
+//     LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
+//
+//   However, there are some cases where we can prove that the decomposition is safe,
+//   see MemPointerLinearFormParser::is_safe_from_int_overflow.
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
@@ -259,7 +262,6 @@ public:
 //
 //   pointer = con + sum(summands)
 //
-// TODO summands scale 30 bits
 class MemPointerLinearForm : public StackObj {
 private:
   // We limit the number of summands to 10. Usually, a pointer contains a base pointer
@@ -287,12 +289,13 @@ public:
 private:
   MemPointerLinearForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
+    assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
       MemPointerSummand s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
-      assert(s.scale().is_abs_less_than_2_to_30(), "non-NaN scale and fits in 30bits");
-      LP64_ONLY( assert(s.scaleL().is_abs_less_than_2_to_30(), "non-NaN scaleL and fits in 30bits"); )
+      assert(!s.scale().is_NaN(), "non-NaN scale");
+      LP64_ONLY( assert(!s.scaleL().is_NaN(), "non-NaN scaleL"); )
       _summands[i] = s;
     }
   }
@@ -362,7 +365,8 @@ private:
   bool is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
 };
 
-// TODO
+// Facility to parse the pointer of a Load or Store, so that aliasing between two such
+// memory operations can be determined (e.g. adjacency).
 class MemPointer : public StackObj {
 private:
   const MemNode* _mem;

@@ -45,6 +45,9 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
     parse_sub_expression(_worklist.pop());
   }
 
+  // Check for constant overflow.
+  if (_con.is_NaN()) { return MemPointerLinearForm(pointer); }
+
   // Sort summands by variable->_idx
   _summands.sort(MemPointerSummand::cmp_for_sort);
 
@@ -60,8 +63,8 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
       MemPointerSummand s = _summands.at(pos_get++);
       scale = scale + s.scale();
     }
-    // Bail out if scale does not fit in 30bits or is NaN (i.e. overflow).
-    if (!scale.is_abs_less_than_2_to_30()) {
+    // Bail out if scale is NaN.
+    if (scale.is_NaN()) {
       return MemPointerLinearForm(pointer);
     }
     // Keep summands with non-zero scale.
@@ -260,6 +263,7 @@ MemPointerAliasing MemPointerLinearForm::get_aliasing_with(const MemPointerLinea
 
   // Compute distance:
   const NoOverflowInt distance = other.con() - con();
+  // TODO why 2_to_30 ?
   if (distance.is_NaN() || !distance.is_abs_less_than_2_to_30()) {
 #ifndef PRODUCT
     if (trace.is_trace_aliasing()) {
