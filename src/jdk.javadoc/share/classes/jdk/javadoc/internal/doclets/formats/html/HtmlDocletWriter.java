@@ -2644,9 +2644,12 @@ public abstract class HtmlDocletWriter {
             restrictedDiv.setId(htmlIds.forRestrictedSection(forWhat));
             String name = forWhat.getSimpleName().toString();
             var nameCode = HtmlTree.CODE(Text.of(name));
+            var restrictedSectionPath = replaceDocRootDir(contents.getContent("doclet.Restricted.url").toString());
+            var restrictedSectionLink = links.createLink(DocPath.create(restrictedSectionPath),
+                                                   contents.getContent("doclet.Restricted.text"));
             String leadingNoteKey = "doclet.RestrictedLeadingNote";
             Content leadingNote =
-                    contents.getContent(leadingNoteKey, nameCode);
+                    contents.getContent(leadingNoteKey, nameCode, restrictedSectionLink);
             restrictedDiv.add(HtmlTree.SPAN(HtmlStyles.restrictedLabel,
                     leadingNote));
             Content note1 = contents.getContent("doclet.RestrictedTrailingNote1", nameCode);
