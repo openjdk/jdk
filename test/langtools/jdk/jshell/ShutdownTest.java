@@ -141,7 +141,9 @@ public class ShutdownTest extends KullaTesting {
                                 //ignored
                             }
                         }))
-                        """.replace("$TEMPORARY", temporary.toAbsolutePath().toString()));
+                        """.replace("$TEMPORARY", temporary.toAbsolutePath()
+                                                           .toString()
+                                                           .replace("\\", "\\\\")));
         getState().close();
         assertFalse(Files.exists(temporary));
     }
