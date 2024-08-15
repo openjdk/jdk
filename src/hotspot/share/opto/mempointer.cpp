@@ -202,12 +202,6 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 
   // TODO tests with native memory, etc.
 
-  // TODO needed?
-  if (scaleL.is_NaN()) {
-    assert(false, "scaleL must not be NaN");
-    return false;
-  }
-
   const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
   if (ary_ptr_t != nullptr) {
     // Array accesses that are not Unsafe always have a RangeCheck which ensures
