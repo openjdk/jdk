@@ -323,6 +323,7 @@ public class DockerTestUtils {
                                            String baseImageVersion) throws Exception {
         String template =
             "FROM %s:%s\n" +
+            "RUN apt-get install libubsan1\n" +
             "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
             "CMD [\"/bin/bash\"]\n";

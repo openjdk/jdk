@@ -7045,7 +7045,7 @@ class StubGenerator: public StubCodeGenerator {
     Label thaw_success;
     // rscratch2 contains the size of the frames to thaw, 0 if overflow or no more frames
     __ cbnz(rscratch2, thaw_success);
-    __ lea(rscratch1, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ lea(rscratch1, RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
     __ br(rscratch1);
     __ bind(thaw_success);
 

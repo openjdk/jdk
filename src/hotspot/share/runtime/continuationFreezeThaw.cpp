@@ -1579,6 +1579,11 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
     verify_continuation(cont.continuation());
     freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
     log_develop_trace(continuations)("=== end of freeze (fail %d)", res);
+    // Avoid Thread.yield() loops without safepoint polls.
+    if (SafepointMechanism::should_process(current)) {
+      cont.done(); // allow safepoint
+      ThreadInVMfromJava tivmfj(current);
+    }
     return res;
   }
 
@@ -1860,7 +1865,7 @@ int ThawBase::remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &arg
   const int frame_size = f.cb()->frame_size();
   argsize = f.stack_argsize();
 
-  f.next(SmallRegisterMap::instance, true /* stop */);
+  f.next(SmallRegisterMap::instance(), true /* stop */);
   empty = f.is_done();
   assert(!empty || argsize == chunk->argsize(), "");
 
@@ -2070,7 +2075,7 @@ bool ThawBase::recurse_thaw_java_frame(frame& caller, int num_frames) {
 
   int argsize = _stream.stack_argsize();
 
-  _stream.next(SmallRegisterMap::instance);
+  _stream.next(SmallRegisterMap::instance());
   assert(_stream.to_frame().is_empty() == _stream.is_done(), "");
 
   // we never leave a compiled caller of an interpreted frame as the top frame in the chunk
@@ -2178,7 +2183,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
   assert(hf.is_interpreted_frame(), "");
 
   if (UNLIKELY(seen_by_gc())) {
-    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance);
+    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance());
   }
 
   const bool is_bottom_frame = recurse_thaw_java_frame<ContinuationHelper::InterpretedFrame>(caller, num_frames);
@@ -2221,7 +2226,7 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs)
-    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
+    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance());
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
     address start = (address)(heap_frame_bottom - locals);
@@ -2238,7 +2243,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
   assert(_cont.is_preempted() || !stub_caller, "stub caller not at preemption");
 
   if (!stub_caller && UNLIKELY(seen_by_gc())) { // recurse_thaw_stub_frame already invoked our barriers with a full regmap
-    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance);
+    _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance());
   }
 
   const bool is_bottom_frame = recurse_thaw_java_frame<ContinuationHelper::CompiledFrame>(caller, num_frames);
@@ -2297,7 +2302,7 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
 
   if (!is_bottom_frame) {
     // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
-    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
+    _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance());
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
     address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
     int stack_args_slots = f.cb()->as_nmethod()->num_stack_arg_slots(false /* rounded */);
@@ -2379,7 +2384,7 @@ void ThawBase::finish_thaw(frame& f) {
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
   }
   push_return_frame(f);
-  chunk->fix_thawed_frame(f, SmallRegisterMap::instance); // can only fix caller after push_return_frame (due to callee saved regs)
+  chunk->fix_thawed_frame(f, SmallRegisterMap::instance()); // can only fix caller after push_return_frame (due to callee saved regs)
 
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");
 
@@ -2445,8 +2450,8 @@ static inline intptr_t* thaw_internal(JavaThread* thread, const Continuation::th
   intptr_t* const sp = thw.thaw(kind);
   assert(is_aligned(sp, frame::frame_alignment), "");
 
-  // All the frames have been thawed so we know they don't hold any monitors
-  assert(thread->held_monitor_count() == 0, "Must be");
+  // All or part of the frames have been thawed so we know they don't hold any monitors except JNI monitors.
+  assert(thread->held_monitor_count() == thread->jni_monitor_count(), "Must be");
 
 #ifdef ASSERT
   intptr_t* sp0 = sp;

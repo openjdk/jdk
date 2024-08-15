@@ -124,18 +124,18 @@ public:
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
 
-  size_t contiguous_available() const;
-
   // Iteration
   void object_iterate(ObjectClosure* blk);
 
   void complete_loaded_archive_space(MemRegion archive_space);
   inline void update_for_block(HeapWord* start, HeapWord* end);
 
-  virtual inline HeapWord* allocate(size_t word_size, bool is_tlab);
-  virtual inline HeapWord* par_allocate(size_t word_size, bool is_tlab);
+  // Allocate and returns a block of the requested size, or returns "null".
+  // Assumes the caller has done any necessary locking.
+  inline HeapWord* allocate(size_t word_size);
 
-  HeapWord* expand_and_allocate(size_t size, bool is_tlab);
+  // Expand the old-gen then invoke allocate above.
+  HeapWord* expand_and_allocate(size_t size);
 
   void gc_prologue();
   void gc_epilogue();

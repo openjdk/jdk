@@ -1786,6 +1786,16 @@ void C2_MacroAssembler::reduce_operation_128(BasicType typ, int opcode, XMMRegis
   }
 }
 
+void C2_MacroAssembler::unordered_reduce_operation_128(BasicType typ, int opcode, XMMRegister dst, XMMRegister src) {
+  switch (opcode) {
+    case Op_AddReductionVF: addps(dst, src); break;
+    case Op_AddReductionVD: addpd(dst, src); break;
+    case Op_MulReductionVF: mulps(dst, src); break;
+    case Op_MulReductionVD: mulpd(dst, src); break;
+    default:                assert(false, "%s", NodeClassNames[opcode]);
+  }
+}
+
 void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegister dst,  XMMRegister src1, XMMRegister src2) {
   int vector_len = Assembler::AVX_256bit;
 
@@ -1834,6 +1844,18 @@ void C2_MacroAssembler::reduce_operation_256(BasicType typ, int opcode, XMMRegis
   }
 }
 
+void C2_MacroAssembler::unordered_reduce_operation_256(BasicType typ, int opcode, XMMRegister dst,  XMMRegister src1, XMMRegister src2) {
+  int vector_len = Assembler::AVX_256bit;
+
+  switch (opcode) {
+    case Op_AddReductionVF: vaddps(dst, src1, src2, vector_len); break;
+    case Op_AddReductionVD: vaddpd(dst, src1, src2, vector_len); break;
+    case Op_MulReductionVF: vmulps(dst, src1, src2, vector_len); break;
+    case Op_MulReductionVD: vmulpd(dst, src1, src2, vector_len); break;
+    default:                assert(false, "%s", NodeClassNames[opcode]);
+  }
+}
+
 void C2_MacroAssembler::reduce_fp(int opcode, int vlen,
                                   XMMRegister dst, XMMRegister src,
                                   XMMRegister vtmp1, XMMRegister vtmp2) {
@@ -1849,6 +1871,24 @@ void C2_MacroAssembler::reduce_fp(int opcode, int vlen,
       break;
 
     default: assert(false, "wrong opcode");
+  }
+}
+
+void C2_MacroAssembler::unordered_reduce_fp(int opcode, int vlen,
+                                            XMMRegister dst, XMMRegister src,
+                                            XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (opcode) {
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+      unorderedReduceF(opcode, vlen, dst, src, vtmp1, vtmp2);
+      break;
+
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
+      unorderedReduceD(opcode, vlen, dst, src, vtmp1, vtmp2);
+      break;
+
+    default: assert(false, "%s", NodeClassNames[opcode]);
   }
 }
 
@@ -1949,6 +1989,45 @@ void C2_MacroAssembler::reduceD(int opcode, int vlen, XMMRegister dst, XMMRegist
       break;
     case 8:
       reduce8D(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    default: assert(false, "wrong vector length");
+  }
+}
+
+void C2_MacroAssembler::unorderedReduceF(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case 2:
+      assert(vtmp1 == xnoreg, "");
+      assert(vtmp2 == xnoreg, "");
+      unorderedReduce2F(opcode, dst, src);
+      break;
+    case 4:
+      assert(vtmp2 == xnoreg, "");
+      unorderedReduce4F(opcode, dst, src, vtmp1);
+      break;
+    case 8:
+      unorderedReduce8F(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    case 16:
+      unorderedReduce16F(opcode, dst, src, vtmp1, vtmp2);
+      break;
+    default: assert(false, "wrong vector length");
+  }
+}
+
+void C2_MacroAssembler::unorderedReduceD(int opcode, int vlen, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  switch (vlen) {
+    case 2:
+      assert(vtmp1 == xnoreg, "");
+      assert(vtmp2 == xnoreg, "");
+      unorderedReduce2D(opcode, dst, src);
+      break;
+    case 4:
+      assert(vtmp2 == xnoreg, "");
+      unorderedReduce4D(opcode, dst, src, vtmp1);
+      break;
+    case 8:
+      unorderedReduce8D(opcode, dst, src, vtmp1, vtmp2);
       break;
     default: assert(false, "wrong vector length");
   }
@@ -2181,6 +2260,29 @@ void C2_MacroAssembler::reduce16F(int opcode, XMMRegister dst, XMMRegister src, 
   reduce8F(opcode, dst, vtmp1, vtmp1, vtmp2);
 }
 
+void C2_MacroAssembler::unorderedReduce2F(int opcode, XMMRegister dst, XMMRegister src) {
+  pshufd(dst, src, 0x1);
+  reduce_operation_128(T_FLOAT, opcode, dst, src);
+}
+
+void C2_MacroAssembler::unorderedReduce4F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
+  pshufd(vtmp, src, 0xE);
+  unordered_reduce_operation_128(T_FLOAT, opcode, vtmp, src);
+  unorderedReduce2F(opcode, dst, vtmp);
+}
+
+void C2_MacroAssembler::unorderedReduce8F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextractf128_high(vtmp1, src);
+  unordered_reduce_operation_128(T_FLOAT, opcode, vtmp1, src);
+  unorderedReduce4F(opcode, dst, vtmp1, vtmp2);
+}
+
+void C2_MacroAssembler::unorderedReduce16F(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextractf64x4_high(vtmp2, src);
+  unordered_reduce_operation_256(T_FLOAT, opcode, vtmp2, vtmp2, src);
+  unorderedReduce8F(opcode, dst, vtmp2, vtmp1, vtmp2);
+}
+
 void C2_MacroAssembler::reduce2D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
   reduce_operation_128(T_DOUBLE, opcode, dst, src);
   pshufd(vtmp, src, 0xE);
@@ -2197,6 +2299,23 @@ void C2_MacroAssembler::reduce8D(int opcode, XMMRegister dst, XMMRegister src, X
   reduce4D(opcode, dst, src, vtmp1, vtmp2);
   vextracti64x4_high(vtmp1, src);
   reduce4D(opcode, dst, vtmp1, vtmp1, vtmp2);
+}
+
+void C2_MacroAssembler::unorderedReduce2D(int opcode, XMMRegister dst, XMMRegister src) {
+  pshufd(dst, src, 0xE);
+  reduce_operation_128(T_DOUBLE, opcode, dst, src);
+}
+
+void C2_MacroAssembler::unorderedReduce4D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp) {
+  vextractf128_high(vtmp, src);
+  unordered_reduce_operation_128(T_DOUBLE, opcode, vtmp, src);
+  unorderedReduce2D(opcode, dst, vtmp);
+}
+
+void C2_MacroAssembler::unorderedReduce8D(int opcode, XMMRegister dst, XMMRegister src, XMMRegister vtmp1, XMMRegister vtmp2) {
+  vextractf64x4_high(vtmp2, src);
+  unordered_reduce_operation_256(T_DOUBLE, opcode, vtmp2, vtmp2, src);
+  unorderedReduce4D(opcode, dst, vtmp2, vtmp1);
 }
 
 void C2_MacroAssembler::evmovdqu(BasicType type, KRegister kmask, XMMRegister dst, Address src, bool merge, int vector_len) {
