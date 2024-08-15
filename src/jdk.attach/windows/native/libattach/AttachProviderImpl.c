@@ -32,6 +32,26 @@
 
 #include "sun_tools_attach_AttachProviderImpl.h"
 
+// For dynamic lookup of GetTempPath2 API
+typedef DWORD (WINAPI *GetTempPath2AFnPtr)(DWORD, LPSTR);
+static GetTempPath2AFnPtr _GetTempPath2A = NULL;
+static BOOL _GetTempPath2AInitialized = FALSE;
+
+DWORD _GetTempPathA(DWORD nBufferLength, LPSTR lpBuffer)
+{
+    if (!_GetTempPath2AInitialized) {
+        HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
+        if (_kernelbase != NULL) {
+            _GetTempPath2A = (GetTempPath2AFnPtr)GetProcAddress(_kernelbase, "GetTempPath2A");
+        }
+        _GetTempPath2AInitialized = TRUE;
+    }
+    if (_GetTempPath2A != NULL) {
+        return _GetTempPath2A(nBufferLength, lpBuffer);
+    }
+    return GetTempPathA(nBufferLength, lpBuffer);
+}
+
 /*
  * Class:     sun_tools_attach_AttachProviderImpl
  * Method:    tempPath
@@ -45,13 +65,13 @@ Java_sun_tools_attach_AttachProviderImpl_tempPath(JNIEnv *env, jclass cls)
     jstring result = NULL;
 
     bufLen = sizeof(buf) / sizeof(char);
-    actualLen = GetTempPath(bufLen, buf);
+    actualLen = _GetTempPathA(bufLen, buf);
     if (actualLen > 0) {
         char* bufP = buf;
         if (actualLen > bufLen) {
             actualLen += sizeof(char);
             bufP = (char*)malloc(actualLen * sizeof(char));
-            actualLen = GetTempPath(actualLen, bufP);
+            actualLen = _GetTempPathA(actualLen, bufP);
         }
         if (actualLen > 0) {
             result = JNU_NewStringPlatform(env, bufP);

@@ -32,14 +32,36 @@
 
 // Requires linking with Shell32
 
+// For dynamic lookup of GetTempPath2 API
+typedef DWORD (WINAPI *GetTempPath2WFnPtr)(DWORD, LPWSTR);
+static GetTempPath2WFnPtr _GetTempPath2W = nullptr;
+static bool _GetTempPath2WInitialized = false;
+
+DWORD _GetTempPathW(DWORD nBufferLength, LPWSTR lpBuffer)
+{
+    if (!_GetTempPath2WInitialized) {
+        HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
+        if (_kernelbase != nullptr) {
+            _GetTempPath2W = 
+                reinterpret_cast<GetTempPath2WFnPtr>(
+                    GetProcAddress(_kernelbase, "GetTempPath2W"));
+        }
+        _GetTempPath2WInitialized = true;
+    }
+    if (_GetTempPath2W != nullptr) {
+        return _GetTempPath2W(nBufferLength, lpBuffer);
+    }
+    return GetTempPathW(nBufferLength, lpBuffer);
+}
+
 namespace SysInfo {
 
 tstring getTempDir() {
     std::vector<TCHAR> buffer(MAX_PATH);
-    DWORD res = GetTempPath(static_cast<DWORD>(buffer.size()), buffer.data());
+    DWORD res = _GetTempPathW(static_cast<DWORD>(buffer.size()), buffer.data());
     if (res > buffer.size()) {
         buffer.resize(res);
-        GetTempPath(static_cast<DWORD>(buffer.size()), buffer.data());
+        _GetTempPathW(static_cast<DWORD>(buffer.size()), buffer.data());
     }
     return FileUtils::removeTrailingSlash(buffer.data());
 }

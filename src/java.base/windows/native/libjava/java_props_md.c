@@ -321,6 +321,26 @@ SetupI18nProps(LCID lcid, char** language, char** script, char** country,
     return TRUE;
 }
 
+// For dynamic lookup of GetTempPath2 API
+typedef DWORD (WINAPI *GetTempPath2WFnPtr)(DWORD, LPWSTR);
+static GetTempPath2WFnPtr _GetTempPath2W = NULL;
+static BOOL _GetTempPath2WInitialized = FALSE;
+
+DWORD _GetTempPathW(DWORD nBufferLength, LPWSTR lpBuffer)
+{
+    if (!_GetTempPath2WInitialized) {
+        HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
+        if (_kernelbase != NULL) {
+            _GetTempPath2W = (GetTempPath2WFnPtr)GetProcAddress(_kernelbase, "GetTempPath2W");
+        }
+        _GetTempPath2WInitialized = TRUE;
+    }
+    if (_GetTempPath2W != NULL) {
+        return _GetTempPath2W(nBufferLength, lpBuffer);
+    }
+    return GetTempPathW(nBufferLength, lpBuffer);
+}
+
 // GetVersionEx is deprecated; disable the warning until a replacement is found
 #pragma warning(disable : 4996)
 java_props_t *
@@ -339,7 +359,7 @@ GetJavaProperties(JNIEnv* env)
     {
         WCHAR tmpdir[MAX_PATH + 1];
         /* we might want to check that this succeed */
-        GetTempPathW(MAX_PATH + 1, tmpdir);
+        _GetTempPathW(MAX_PATH + 1, tmpdir);
         sprops.tmp_dir = _wcsdup(tmpdir);
     }
 
