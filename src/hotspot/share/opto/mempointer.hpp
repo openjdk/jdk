@@ -48,7 +48,7 @@
 //   computed with int-add/mul.
 //
 // MemPointerAliasing:
-//   This linear form allows us to determine the aliasing between two pointers easily. For
+//   The linear form allows us to determine the aliasing between two pointers easily. For
 //   example, if two pointers are identical, except for their constant:
 //
 //     pointer1 = con1 + sum(summands)
@@ -58,8 +58,32 @@
 //   and determine if they are adjacent.
 //
 // MemPointerLinearFormParser:
-//   TODO
-
+//   Any pointer can be parsed into this (default / trivial) linear form:
+//
+//     pointer = 0   + 1     * pointer
+//               con   scale
+//
+//   However, this is not particularly useful to compute aliasing. We would like to decompose
+//   the pointer as far as possible, i.e. extract as many summands and add up the constants to
+//   a single constant.
+//
+//   Example (normal int-array access):
+//     pointer1 = array[i + 0] = array_base + array_int_base_offset + 4L * ConvI2L(i + 0)
+//     pointer2 = array[i + 1] = array_base + array_int_base_offset + 4L * ConvI2L(i + 1)
+//
+//     At first, computing aliasing is difficult because the distance is hidden inside the
+//     ConvI2L. we can convert this (with array_int_base_offset = 16) into these linear forms:
+//
+//     pointer1 = 16L + 1L * array_base + 4L * i
+//     pointer2 = 20L + 1L * array_base + 4L * i
+//
+//     This allows us to easily see that these two pointers are adjacent (distance = 4).
+//
+//   Hence, in MemPointerLinearFormParser::parse_linear_form, we start with the pointer as
+//   a trivial summand. A summand can either be decomposed further or it is terminal (cannot
+//   be decomposed further). We decompose the summands recursively until all remaining summands
+//   are terminal, see MemPointerLinearFormParser::parse_sub_expression. This effectively parses
+//   the pointer expression recursively.
 
 // TODO
 // For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:

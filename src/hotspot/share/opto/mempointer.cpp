@@ -25,18 +25,20 @@
 #include "opto/mempointer.hpp"
 #include "utilities/resourceHash.hpp"
 
-// DFS all-path traversal (i.e. with node repetitions), starting at the pointer:
+// Recursively parse the pointer expression with a DFS all-path traversal
+// (i.e. with node repetitions), starting at the pointer.
 MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
   Node* pointer = _mem->in(MemNode::Address);
 
-  // pointer->dump_bfs(4,0,"#");
-
+  // Start with the trivial summand.
   const NoOverflowInt one(1);
   _worklist.push(MemPointerSummand(pointer, one LP64_ONLY( COMMA one )));
 
+  // Decompose the summands until only terminal summands remain. This effectively
+  // parses the pointer expression recursively.
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
     if (traversal_count++ > 1000) { return MemPointerLinearForm(pointer); }
@@ -72,6 +74,9 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
   return MemPointerLinearForm::make(pointer, _summands, _con);
 }
 
+// Parse a sub-expression of the pointer, starting at the current summand. We parse the
+// current node, and see if it can be decomposed into further summands, or if the current
+// summand is terminal.
 void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
@@ -84,6 +89,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_ConI:
       case Op_ConL:
       {
+        // Terminal: add to constant.
         NoOverflowInt con = (opc == Op_ConI) ? NoOverflowInt(n->get_int())
                                              : NoOverflowInt(n->get_long());
         _con = _con + scale * con;
@@ -93,6 +99,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_AddL:
       case Op_AddI:
       {
+        // Decompose addition.
         Node* a = n->in((opc == Op_AddP) ? 2 : 1);
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
         _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
@@ -102,16 +109,13 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_SubL:
       case Op_SubI:
       {
+        // Decompose subtraction.
         Node* a = n->in((opc == Op_AddP) ? 2 : 1);
         Node* b = n->in((opc == Op_AddP) ? 3 : 2);
 
         NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
         LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
                                                                : scaleL; )
-
-        // If anything went wrong with the scale computation: bailout.
-        if (sub_scale.is_NaN()) { break; }
-        LP64_ONLY( if (sub_scaleL.is_NaN()) { break; } )
 
         _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
         _worklist.push(MemPointerSummand(b, sub_scale LP64_ONLY( COMMA sub_scaleL )));
@@ -122,7 +126,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_LShiftL:
       case Op_LShiftI:
       {
-        // Form must be linear: only multiplication with constants is allowed.
+        // Form must be linear: only multiplication with constants can be decomposed.
         Node* in1 = n->in(1);
         Node* in2 = n->in(2);
         if (!in2->is_Con()) { break; }
@@ -159,6 +163,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_CastX2P:
       case Op_ConvI2L:
       {
+        // Decompose: look through.
         Node* a = n->in(1);
         _worklist.push(MemPointerSummand(a, scale LP64_ONLY( COMMA scaleL )));
         return;
@@ -166,9 +171,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
     }
   }
 
-  // Default: could not parse the "summand" further, take it as one of the
-  // "terminal" summands.
-  // TODO wording of "terminal summands"?
+  // Default: we could not parse the "summand" further, i.e. it is terminal.
   _summands.push(summand);
 }
 
@@ -196,6 +199,7 @@ bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ON
     case Op_CastII:
     case Op_CastLL:
     case Op_CastX2P:
+    // TODO CastPP ?
     case Op_ConvI2L:
       return true;
   }
