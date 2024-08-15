@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2407,6 +2407,80 @@ public class JavacParserTest extends TestCase {
                      """
                      package test;
                      (ERROR: public )""");
+    }
+
+    @Test //JDK-8337976
+    void testStatementsInClass() throws IOException {
+        String code = """
+                      package test;
+                      public class Test {
+                          if (true);
+                          while (true);
+                          do {} while (true);
+                          for ( ; ; );
+                          switch (0) { default: }
+                          assert true;
+                          break;
+                          continue;
+                          return ;
+                          throw new RuntimeException();
+                          try {
+                          } catch (RuntimeException ex) {}
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package test;
+                     \n\
+                     public class Test {
+                         (ERROR: if (true) ;)
+                         (ERROR: while (true) ;)
+                         (ERROR: do {
+                     } while (true);)
+                         (ERROR: for (; ; ) ;)
+                         (ERROR: switch (0) {
+                     default:
+
+                     })
+                         (ERROR: assert true;)
+                         (ERROR: break;)
+                         (ERROR: continue;)
+                         (ERROR: return;)
+                         (ERROR: throw new RuntimeException();)
+                         (ERROR: try {
+                     } catch (RuntimeException ex) {
+                     })
+                     }""");
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testStatementsInClass: " + codes,
+                     List.of("3:5:compiler.err.statement.not.expected",
+                             "4:5:compiler.err.statement.not.expected",
+                             "5:5:compiler.err.statement.not.expected",
+                             "6:5:compiler.err.statement.not.expected",
+                             "7:5:compiler.err.statement.not.expected",
+                             "8:5:compiler.err.statement.not.expected",
+                             "9:5:compiler.err.statement.not.expected",
+                             "10:5:compiler.err.statement.not.expected",
+                             "11:5:compiler.err.statement.not.expected",
+                             "12:5:compiler.err.statement.not.expected",
+                             "13:5:compiler.err.statement.not.expected"),
+                     codes);
     }
 
     void run(String[] args) throws Exception {
