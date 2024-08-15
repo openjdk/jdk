@@ -74,7 +74,8 @@ public class TestStringPoolVirtualThreadPinning {
                     for (int i = 0; i < VIRTUAL_THREAD_COUNT / STARTER_THREADS; i++) {
                         try {
                             Thread vt = factory.newThread(TestStringPoolVirtualThreadPinning::emitEvent);
-                            // For a thread to be placed in the JFR string pool, it must exceed 16 chars.
+                            // For an event field string to be placed in the JFR string pool, it must exceed 16 characters.
+                            // We use the virtual thread name as the event field string so we can verify the result as a 1-1 mapping.
                             vt.setName("VirtualTestThread-" + i);
                             vt.start();
                             vt.join();
