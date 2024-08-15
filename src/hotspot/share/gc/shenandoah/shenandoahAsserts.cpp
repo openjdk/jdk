@@ -283,7 +283,7 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   }
 
   size_t alloc_size = obj->size();
-  if (alloc_size > ShenandoahHeapRegion::humongous_threshold_words()) {
+  if (ShenandoahHeapRegion::requires_humongous(alloc_size)) {
     size_t idx = r->index();
     size_t num_regions = ShenandoahHeapRegion::required_regions(alloc_size * HeapWordSize);
     for (size_t i = idx; i < idx + num_regions; i++) {
