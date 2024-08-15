@@ -102,7 +102,7 @@ public class TestSplitDivisionThroughPhi {
         }
     }
 
-    // Fixed with JDK-8336792.
+    // Fixed with JDK-8336729.
     static void testPushDivLThruPhiForOuterLongLoop() {
         // This loop is first transformed into a LongCountedLoop in the first loop opts phase.
         // In the second loop opts phase, the LongCountedLoop is split into an inner and an outer loop. Both get the
