@@ -62,6 +62,8 @@ import static com.sun.tools.javac.code.Symbol.*;
 import static com.sun.tools.javac.code.Type.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ClassFile.externalize;
+import static com.sun.tools.javac.main.Option.DOE;
+
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 
 /**
@@ -99,6 +101,7 @@ public class Types {
     final Name capturedName;
 
     public final Warner noWarnings;
+    public final boolean dumpStacktraceOnError;
 
     // <editor-fold defaultstate="collapsed" desc="Instantiating">
     public static Types instance(Context context) {
@@ -120,6 +123,8 @@ public class Types {
         messages = JavacMessages.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         noWarnings = new Warner(null);
+        Options options = Options.instance(context);
+        dumpStacktraceOnError = options.isSet("dev") || options.isSet(DOE);
     }
     // </editor-fold>
 
@@ -634,12 +639,13 @@ public class Types {
      * wraps a diagnostic that can be used to generate more details error
      * messages.
      */
-    public static class FunctionDescriptorLookupError extends RuntimeException {
+    public static class FunctionDescriptorLookupError extends CompilerInternalException {
         private static final long serialVersionUID = 0;
 
         transient JCDiagnostic diagnostic;
 
-        FunctionDescriptorLookupError() {
+        FunctionDescriptorLookupError(boolean dumpStackTraceOnError) {
+            super(dumpStackTraceOnError);
             this.diagnostic = null;
         }
 
@@ -650,12 +656,6 @@ public class Types {
 
         public JCDiagnostic getDiagnostic() {
             return diagnostic;
-        }
-
-        @Override
-        public Throwable fillInStackTrace() {
-            // This is an internal exception; the stack trace is irrelevant.
-            return this;
         }
     }
 
@@ -809,7 +809,7 @@ public class Types {
         }
 
         FunctionDescriptorLookupError failure(JCDiagnostic diag) {
-            return new FunctionDescriptorLookupError().setMessage(diag);
+            return new FunctionDescriptorLookupError(Types.this.dumpStacktraceOnError).setMessage(diag);
         }
     }
 
@@ -5107,41 +5107,30 @@ public class Types {
 
     // <editor-fold defaultstate="collapsed" desc="Signature Generation">
 
-    public abstract static class SignatureGenerator {
+    public abstract class SignatureGenerator {
 
-        public static class InvalidSignatureException extends RuntimeException {
+        public class InvalidSignatureException extends CompilerInternalException {
             private static final long serialVersionUID = 0;
 
             private final transient Type type;
 
-            InvalidSignatureException(Type type) {
+            InvalidSignatureException(Type type, boolean dumpStackTraceOnError) {
+                super(dumpStackTraceOnError);
                 this.type = type;
             }
 
             public Type type() {
                 return type;
             }
-
-            @Override
-            public Throwable fillInStackTrace() {
-                // This is an internal exception; the stack trace is irrelevant.
-                return this;
-            }
         }
-
-        private final Types types;
 
         protected abstract void append(char ch);
         protected abstract void append(byte[] ba);
         protected abstract void append(Name name);
         protected void classReference(ClassSymbol c) { /* by default: no-op */ }
 
-        protected SignatureGenerator(Types types) {
-            this.types = types;
-        }
-
         protected void reportIllegalSignature(Type t) {
-            throw new InvalidSignatureException(t);
+            throw new InvalidSignatureException(t, Types.this.dumpStacktraceOnError);
         }
 
         /**
@@ -5257,9 +5246,9 @@ public class Types {
             if (outer.allparams().nonEmpty()) {
                 boolean rawOuter =
                         c.owner.kind == MTH || // either a local class
-                        c.name == types.names.empty; // or anonymous
+                        c.name == Types.this.names.empty; // or anonymous
                 assembleClassSig(rawOuter
-                        ? types.erasure(outer)
+                        ? Types.this.erasure(outer)
                         : outer);
                 append(rawOuter ? '$' : '.');
                 Assert.check(c.flatname.startsWith(c.owner.enclClass().flatname));
@@ -5281,7 +5270,7 @@ public class Types {
             for (List<Type> ts = typarams; ts.nonEmpty(); ts = ts.tail) {
                 Type.TypeVar tvar = (Type.TypeVar) ts.head;
                 append(tvar.tsym.name);
-                List<Type> bounds = types.getBounds(tvar);
+                List<Type> bounds = Types.this.getBounds(tvar);
                 if ((bounds.head.tsym.flags() & INTERFACE) != 0) {
                     append(':');
                 }

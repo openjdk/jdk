@@ -95,6 +95,8 @@ public final class Method extends Executable {
     // If this branching structure would ever contain cycles, deadlocks can
     // occur in annotation code.
     private Method              root;
+    // Hash code of this object
+    private int                 hash;
 
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
@@ -381,7 +383,13 @@ public final class Method extends Executable {
      * method's declaring class name and the method's name.
      */
     public int hashCode() {
-        return getDeclaringClass().getName().hashCode() ^ getName().hashCode();
+        int hc = hash;
+
+        if (hc == 0) {
+            hc = hash = getDeclaringClass().getName().hashCode() ^ getName()
+                .hashCode();
+        }
+        return hc;
     }
 
     /**

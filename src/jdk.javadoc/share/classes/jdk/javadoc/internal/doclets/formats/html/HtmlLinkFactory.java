@@ -43,17 +43,18 @@ import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * A factory that returns a link given the information about it.
@@ -161,9 +162,11 @@ public class HtmlLinkFactory {
                     Element owner = typevariable.asElement().getEnclosingElement();
                     if (linkInfo.linkTypeParameters() && utils.isTypeElement(owner)) {
                         linkInfo.setTypeElement((TypeElement) owner);
-                        Content label = newContent();
-                        label.add(utils.getTypeName(type, false));
-                        linkInfo.label(label).skipPreview(true);
+                        if (linkInfo.getLabel() == null || linkInfo.getLabel().isEmpty()) {
+                            Content label = newContent();
+                            label.add(utils.getTypeName(type, false));
+                            linkInfo.label(label).skipPreview(true);
+                        }
                         link.add(getClassLink(linkInfo));
                     } else {
                         // No need to link method type parameters.
@@ -241,6 +244,11 @@ public class HtmlLinkFactory {
             boolean isTypeLink = linkInfo.getType() != null &&
                      utils.isTypeVariable(utils.getComponentType(linkInfo.getType()));
             title = getClassToolTip(typeElement, isTypeLink);
+            if (isTypeLink) {
+                linkInfo.fragment(m_writer.configuration.htmlIds.forTypeParam(
+                        utils.getTypeName(utils.getComponentType(linkInfo.getType()), false),
+                        typeElement).name());
+            }
         }
         Content label = linkInfo.getClassLinkLabel(configuration);
         if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_TYPE_PARAMS_IN_LABEL) {
@@ -377,14 +385,14 @@ public class HtmlLinkFactory {
         }
         if (!vars.isEmpty()) {
             if (linkInfo.addLineBreakOpportunitiesInTypeParameters()) {
-                links.add(new HtmlTree(TagName.WBR));
+                links.add(new HtmlTree(HtmlTag.WBR));
             }
             links.add("<");
             boolean many = false;
             for (TypeMirror t : vars) {
                 if (many) {
                     links.add(",");
-                    links.add(new HtmlTree(TagName.WBR));
+                    links.add(new HtmlTree(HtmlTag.WBR));
                     if (linkInfo.addLineBreaksInTypeParameters()) {
                         links.add(Text.NL);
                     }

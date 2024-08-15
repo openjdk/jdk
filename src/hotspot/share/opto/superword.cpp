@@ -707,9 +707,7 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   BasicType bt2 = velt_basic_type(s2);
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
-  BasicType longer_bt = longer_type_for_conversion(s1);
-  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
+  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2) {
     return false; // No vectors for this type
   }
 
@@ -2289,7 +2287,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, c
     return nullptr; // size mismatch
   }
 
-  for (uint i = 1; i < pack->size(); i++) {
+  for (uint i = 0; i < pack->size(); i++) {
     if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
       return nullptr; // use-def mismatch
     }
@@ -2494,27 +2492,6 @@ VStatus VLoopBody::construct() {
 #endif
 
   return VStatus::make_success();
-}
-
-BasicType SuperWord::longer_type_for_conversion(Node* n) const {
-  if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(n->Opcode())) ||
-      !in_bb(n->in(1))) {
-    return T_ILLEGAL;
-  }
-  assert(in_bb(n), "must be in the bb");
-  BasicType src_t = velt_basic_type(n->in(1));
-  BasicType dst_t = velt_basic_type(n);
-  // Do not use superword for non-primitives.
-  // Superword does not support casting involving unsigned types.
-  if (!is_java_primitive(src_t) || is_unsigned_subword_type(src_t) ||
-      !is_java_primitive(dst_t) || is_unsigned_subword_type(dst_t)) {
-    return T_ILLEGAL;
-  }
-  int src_size = type2aelembytes(src_t);
-  int dst_size = type2aelembytes(dst_t);
-  return src_size == dst_size ? T_ILLEGAL
-                              : (src_size > dst_size ? src_t : dst_t);
 }
 
 void VLoopTypes::compute_vector_element_type() {
@@ -3008,27 +2985,55 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   TRACE_ALIGN_VECTOR_NODE(mask_AW);
   TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
 
-  // 4: Compute (3a, b):
+  // 4: The computation of the new pre-loop limit could overflow (for 3a) or
+  //    underflow (for 3b) the int range. This is problematic in combination
+  //    with Range Check Elimination (RCE), which determines a "safe" range
+  //    where a RangeCheck will always succeed. RCE adjusts the pre-loop limit
+  //    such that we only enter the main-loop once we have reached the "safe"
+  //    range, and adjusts the main-loop limit so that we exit the main-loop
+  //    before we leave the "safe" range. After RCE, the range of the main-loop
+  //    can only be safely narrowed, and should never be widened. Hence, the
+  //    pre-loop limit can only be increased (for stride > 0), but an add
+  //    overflow might decrease it, or decreased (for stride < 0), but a sub
+  //    underflow might increase it. To prevent that, we perform the Sub / Add
+  //    and Max / Min with long operations.
+  old_limit       = new ConvI2LNode(old_limit);
+  orig_limit      = new ConvI2LNode(orig_limit);
+  adjust_pre_iter = new ConvI2LNode(adjust_pre_iter);
+  phase()->register_new_node(old_limit, pre_ctrl);
+  phase()->register_new_node(orig_limit, pre_ctrl);
+  phase()->register_new_node(adjust_pre_iter, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(old_limit);
+  TRACE_ALIGN_VECTOR_NODE(orig_limit);
+  TRACE_ALIGN_VECTOR_NODE(adjust_pre_iter);
+
+  // 5: Compute (3a, b):
   //    new_limit = old_limit + adjust_pre_iter     (stride > 0)
   //    new_limit = old_limit - adjust_pre_iter     (stride < 0)
+  //
   Node* new_limit = nullptr;
   if (stride < 0) {
-    new_limit = new SubINode(old_limit, adjust_pre_iter);
+    new_limit = new SubLNode(old_limit, adjust_pre_iter);
   } else {
-    new_limit = new AddINode(old_limit, adjust_pre_iter);
+    new_limit = new AddLNode(old_limit, adjust_pre_iter);
   }
   phase()->register_new_node(new_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(new_limit);
 
-  // 5: Compute (15a, b):
+  // 6: Compute (15a, b):
   //    Prevent pre-loop from going past the original limit of the loop.
   Node* constrained_limit =
-    (stride > 0) ? (Node*) new MinINode(new_limit, orig_limit)
-                 : (Node*) new MaxINode(new_limit, orig_limit);
+    (stride > 0) ? (Node*) new MinLNode(phase()->C, new_limit, orig_limit)
+                 : (Node*) new MaxLNode(phase()->C, new_limit, orig_limit);
   phase()->register_new_node(constrained_limit, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(constrained_limit);
 
-  // 6: Hack the pre-loop limit
+  // 7: We know that the result is in the int range, there is never truncation
+  constrained_limit = new ConvL2INode(constrained_limit);
+  phase()->register_new_node(constrained_limit, pre_ctrl);
+  TRACE_ALIGN_VECTOR_NODE(constrained_limit);
+
+  // 8: Hack the pre-loop limit
   igvn().replace_input_of(pre_opaq, 1, constrained_limit);
 }
 

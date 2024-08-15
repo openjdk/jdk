@@ -374,10 +374,10 @@ IfProjNode* PhaseIdealLoop::clone_assertion_predicate_for_unswitched_loops(IfNod
                                                                            IfProjNode* predicate,
                                                                            Deoptimization::DeoptReason reason,
                                                                            ParsePredicateSuccessProj* parse_predicate_proj) {
-  TemplateAssertionPredicateExpression template_assertion_predicate_expression(
-      template_assertion_predicate->in(1)->as_Opaque4());
-  Opaque4Node* cloned_opaque4_node = template_assertion_predicate_expression.clone(parse_predicate_proj->in(0)->in(0), this);
-  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, template_assertion_predicate->Opcode(), false);
+  TemplateAssertionExpression template_assertion_expression(template_assertion_predicate->in(1)->as_Opaque4());
+  Opaque4Node* cloned_opaque4_node = template_assertion_expression.clone(parse_predicate_proj->in(0)->in(0), this);
+  IfProjNode* if_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason,
+                                                    template_assertion_predicate->Opcode(), false);
   _igvn.replace_input_of(if_proj->in(0), 1, cloned_opaque4_node);
   _igvn.replace_input_of(parse_predicate_proj->in(0), 0, if_proj);
   set_idom(parse_predicate_proj->in(0), if_proj, dom_depth(if_proj));
@@ -1324,7 +1324,7 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
   IfTrueNode* new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
-                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::Init_value));
+                                                     false NOT_PRODUCT(COMMA AssertionPredicateType::InitValue));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(opaque_init->outcnt() > 0, "should be used");
 
@@ -1341,8 +1341,8 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
   const Type* type_iv = loop->_head->as_CountedLoop()->phi()->bottom_type();
   assert(!type_iv->is_int()->is_con(), "constant indicates one loop iteration for which we bailed out earlier");
-  max_value = new CastIINode(max_value, type_iv);
-  register_new_node(max_value, parse_predicate_proj);
+  max_value = new CastIINode(new_proj, max_value, type_iv);
+  register_new_node(max_value, new_proj);
 
   bol = rc_predicate(new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
                      overflow);
@@ -1350,7 +1350,7 @@ IfTrueNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
   new_proj = create_new_if_for_predicate(parse_predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode(),
-                                         false NOT_PRODUCT(COMMA AssertionPredicateType::Last_value));
+                                         false NOT_PRODUCT(COMMA AssertionPredicateType::LastValue));
   _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   assert(max_value->outcnt() > 0, "should be used");
   assert(assertion_predicate_has_loop_opaque_node(new_proj->in(0)->as_If()), "unexpected");

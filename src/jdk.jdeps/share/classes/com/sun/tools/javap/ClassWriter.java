@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 
 package com.sun.tools.javap;
 
+import java.lang.reflect.AccessFlag;
 import java.net.URI;
 import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
@@ -149,7 +151,7 @@ public class ClassWriter extends BasicWriter {
             indent(-1);
         }
 
-        writeModifiers(getClassModifiers(cm.flags().flagsMask()));
+        writeModifiers(getClassModifiers(cm.flags()));
 
         if ((classModel.flags().flagsMask() & ACC_MODULE) != 0) {
             var attr = classModel.findAttribute(Attributes.module());
@@ -210,7 +212,7 @@ public class ClassWriter extends BasicWriter {
             println("minor version: " + classModel.minorVersion());
             println("major version: " + classModel.majorVersion());
             writeList(String.format("flags: (0x%04x) ", cm.flags().flagsMask()),
-                    getClassFlags(cm.flags().flagsMask()), "\n");
+                    getClassFlags(cm.flags()), "\n");
             print("this_class: #");print(() -> classModel.thisClass().index());
             tab();
             print(() -> "// " + classModel.thisClass().asInternalName());
@@ -416,7 +418,7 @@ public class ClassWriter extends BasicWriter {
         if (!options.checkAccess(f.flags().flagsMask()))
             return;
 
-        var flags = AccessFlags.ofField(f.flags().flagsMask());
+        var flags = f.flags();
         writeModifiers(flagsReportUnknown(flags).stream().filter(fl -> fl.sourceModifier())
                 .map(fl -> Modifier.toString(fl.mask())).toList());
         print(() -> sigPrinter.print(
@@ -794,9 +796,16 @@ public class ClassWriter extends BasicWriter {
         }
     }
 
-    private Set<String> getClassModifiers(int mask) {
-        return getModifiers(flagsReportUnknown(AccessFlags.ofClass((mask & ACC_INTERFACE) != 0
-                ? mask & ~ACC_ABSTRACT : mask)));
+    private Set<String> getClassModifiers(AccessFlags flags) {
+        var flagSet = flagsReportUnknown(flags);
+        Set<AccessFlag> set;
+        if (flagSet.contains(AccessFlag.INTERFACE)) {
+            set = EnumSet.copyOf(flagSet);
+            set.remove(AccessFlag.ABSTRACT);
+        } else {
+            set = flagSet;
+        }
+        return getModifiers(set);
     }
 
     private static Set<String> getModifiers(Set<java.lang.reflect.AccessFlag> flags) {
@@ -806,16 +815,8 @@ public class ClassWriter extends BasicWriter {
         return s;
     }
 
-    private Set<String> getClassFlags(int mask) {
-        return getFlags(mask, flagsReportUnknown(AccessFlags.ofClass(mask)));
-    }
-
-    private Set<String> getMethodFlags(int mask) {
-        return getFlags(mask, flagsReportUnknown(AccessFlags.ofMethod(mask)));
-    }
-
-    private Set<String> getFieldFlags(int mask) {
-        return getFlags(mask, flagsReportUnknown(AccessFlags.ofField(mask)));
+    private Set<String> getClassFlags(AccessFlags flags) {
+        return getFlags(flags.flagsMask(), flagsReportUnknown(flags));
     }
 
     private static Set<String> getFlags(int mask, Set<java.lang.reflect.AccessFlag> flags) {

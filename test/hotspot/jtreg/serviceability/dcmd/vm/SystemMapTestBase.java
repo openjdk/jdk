@@ -42,19 +42,21 @@ public class SystemMapTestBase {
     private static final String regexBase_committed = regexBase + "com.*";
     private static final String regexBase_shared_and_committed = regexBase + "shrd,com.*";
 
+    // java heap is either committed, non-shared, or - in case of ZGC - committed and shared.
+    private static final String regexBase_java_heap = regexBase + "(shrd,)?com.*";
     protected static final String shouldMatchUnconditionally[] = {
         // java launcher
         regexBase_committed + "/bin/java",
         // libjvm
         regexBase_committed + "/lib/.*/libjvm.so",
-        // vdso library, should be part of all user space apps on all architectures OpenJDK supports.
-        regexBase_committed + "\\[vdso\\]",
+        // heap segment, should be part of all user space apps on all architectures OpenJDK supports.
+        regexBase_committed + "\\[heap\\]",
         // we should see the hs-perf data file, and it should appear as shared as well as committed
         regexBase_shared_and_committed + "hsperfdata_.*"
     };
 
     protected static final String shouldMatchIfNMTIsEnabled[] = {
-        regexBase_committed + "JAVAHEAP.*",
+        regexBase_java_heap + "JAVAHEAP.*",
         // metaspace
         regexBase_committed + "META.*",
         // parts of metaspace should be uncommitted
