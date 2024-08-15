@@ -270,9 +270,16 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
     @Override
     public void close() {
         super.close();
-        if (process != null) {
+
+        Process remoteProcess;
+
+        synchronized (this) {
+            remoteProcess = this.process;
+        }
+
+        if (remoteProcess != null) {
             try {
-                process.waitFor(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
+                remoteProcess.waitFor(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
             } catch (InterruptedException ex) {
                 debug(ex, "waitFor remote");
             }
