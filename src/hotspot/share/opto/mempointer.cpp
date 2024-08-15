@@ -186,11 +186,12 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
 
 bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
 #ifndef _LP64
-  // On 32-bit platforms, ... TODO
+  // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
+  // be truncated. Thus, it does not matter if we have int or long overflows.
   return true;
 #else
 
-  // Not trivially safe:
+  // But on 64-bit platforms, these operations are not trivially safe:
   //   AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
   //   SubI:     ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
   //   MulI:     ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
