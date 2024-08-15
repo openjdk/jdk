@@ -86,11 +86,11 @@ public:
     return a.value() == b.value();
   }
 
-  NoOverflowInt truncate_to_30_bits() const {
-    if (is_NaN()) { return make_NaN(); }
+  bool is_abs_less_than_2_to_30() const {
+    const NoOverflowInt i = abs();
+    if (i.is_NaN()) { return false; }
     const jint max_value = 1 << 30;
-    if (value() >= max_value || value() <= -max_value) { return make_NaN(); }
-    return *this;
+    return i.value() < max_value;
   }
 
   NoOverflowInt abs() const {

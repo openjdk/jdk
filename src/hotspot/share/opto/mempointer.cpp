@@ -61,7 +61,7 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
       scale = scale + s.scale();
     }
     // Bail out if scale does not fit in 30bits or is NaN (i.e. overflow).
-    if (scale.truncate_to_30_bits().is_NaN()) {
+    if (!scale.is_abs_less_than_2_to_30()) {
       return MemPointerLinearForm(pointer);
     }
     // Keep summands with non-zero scale.
@@ -110,8 +110,8 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_SubI:
       {
         // Decompose subtraction.
-        Node* a = n->in((opc == Op_AddP) ? 2 : 1);
-        Node* b = n->in((opc == Op_AddP) ? 3 : 2);
+        Node* a = n->in(1);
+        Node* b = n->in(2);
 
         NoOverflowInt sub_scale = NoOverflowInt(-1) * scale;
         LP64_ONLY( NoOverflowInt sub_scaleL = (opc == Op_SubL) ? scaleL * NoOverflowInt(-1)
@@ -259,12 +259,13 @@ MemPointerAliasing MemPointerLinearForm::get_aliasing_with(const MemPointerLinea
   }
 
   // Compute distance:
-  NoOverflowInt distance = other.con() - con();
-  distance = distance.truncate_to_30_bits();
-  if (distance.is_NaN()) {
+  const NoOverflowInt distance = other.con() - con();
+  if (distance.is_NaN() || !distance.is_abs_less_than_2_to_30()) {
 #ifndef PRODUCT
     if (trace.is_trace_aliasing()) {
-      tty->print_cr("  -> Aliasing unknown, distance is NaN.");
+      tty->print("  -> Aliasing unknown, bad distance: ");
+      distance.print_on(tty);
+      tty->cr();
     }
 #endif
     return MemPointerAliasing::make_unknown();

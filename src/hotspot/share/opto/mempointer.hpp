@@ -291,8 +291,8 @@ private:
     for (int i = 0; i < summands.length(); i++) {
       MemPointerSummand s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
-      assert(!s.scale().truncate_to_30_bits().is_NaN(), "non-NaN scale and fits in 30bits");
-      LP64_ONLY( assert(!s.scaleL().truncate_to_30_bits().is_NaN(), "non-NaN scaleL and fits in 30bits"); )
+      assert(s.scale().is_abs_less_than_2_to_30(), "non-NaN scale and fits in 30bits");
+      LP64_ONLY( assert(s.scaleL().is_abs_less_than_2_to_30(), "non-NaN scaleL and fits in 30bits"); )
       _summands[i] = s;
     }
   }

@@ -146,15 +146,15 @@ TEST_VM(opto, NoOverflowInt_misc) {
   ASSERT_FALSE((big + big) == (big + big));
   ASSERT_TRUE((big - one + big) == (big - one + big));
 
-  // truncate_to_30_bits
+  // is_abs_less_than_2_to_30
   for (int i = -(1 << 30) + 1; i < (1 << 30); i += 1000) {
-    ASSERT_EQ(NoOverflowInt(i).truncate_to_30_bits().value(), i);
+    ASSERT_TRUE(NoOverflowInt(i).is_abs_less_than_2_to_30());
   }
-  ASSERT_TRUE(big.truncate_to_30_bits().is_NaN());
-  ASSERT_FALSE((big - one).truncate_to_30_bits().is_NaN());
-  ASSERT_TRUE((zero - big).truncate_to_30_bits().is_NaN());
-  ASSERT_FALSE((one - big).truncate_to_30_bits().is_NaN());
-  ASSERT_TRUE(nan.truncate_to_30_bits().is_NaN());
+  ASSERT_FALSE(big.is_abs_less_than_2_to_30());
+  ASSERT_TRUE((big - one).is_abs_less_than_2_to_30());
+  ASSERT_FALSE((zero - big).is_abs_less_than_2_to_30());
+  ASSERT_TRUE((one - big).is_abs_less_than_2_to_30());
+  ASSERT_FALSE(nan.is_abs_less_than_2_to_30());
 
   // abs
   for (int i = 0; i < (1 << 31); i += 1024) {
