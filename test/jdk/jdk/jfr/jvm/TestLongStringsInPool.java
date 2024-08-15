@@ -53,10 +53,10 @@ public class TestLongStringsInPool {
         // the two recording should be roughly the same size.
         final int numEvents = 10;
         final String longString = generateString();
-        final int strLen = longString.length(); 
+        final int strLen = longString.length();
         final StringEvent event = new StringEvent();
         event.message = longString;
-        
+
         Recording firstRec = new Recording();
         firstRec.enable(StringEvent.class);
         firstRec.start();
@@ -97,7 +97,7 @@ public class TestLongStringsInPool {
         // not take up space for all strings if they're pooled correctly
         long maxAllowedDiff = (numEvents - 1)  * strLen;
         long diff = Math.abs(Files.size(rec2) - Files.size(rec1));
-        
+
         Asserts.assertTrue(diff <= maxAllowedDiff, "Size difference between recordings is too large: "+ diff +" > " + maxAllowedDiff);
         Asserts.assertFalse(RecordingFile.readAllEvents(rec1).isEmpty(), "No events found in recording 1");
         Asserts.assertFalse(RecordingFile.readAllEvents(rec2).isEmpty(), "No events found in recording 2");
