@@ -76,6 +76,24 @@ public class TestSegmentCopy {
         }
     }
 
+    @Test(dataProvider = "segmentKinds")
+    public void testByteCopySizes(SegmentKind kind1, SegmentKind kind2) {
+        for (int size = 0; size < 513; size++) {
+            MemorySegment s1 = kind1.makeSegment(size);
+            MemorySegment s2 = kind2.makeSegment(size);
+            //prepare source slice
+            for (int i = 0; i < size; i++) {
+                Type.BYTE.set(s1, 0, i, i);
+            }
+            //perform copy
+            MemorySegment.copy(s1, Type.BYTE.layout, 0, s2, Type.BYTE.layout, 0, size);
+            //check that copy actually worked
+            for (int i = 0; i < size; i++) {
+                Type.BYTE.check(s2, 0, i, i);
+            }
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class, dataProvider = "segmentKinds")
     public void testReadOnlyCopy(SegmentKind kind1, SegmentKind kind2) {
         MemorySegment s1 = kind1.makeSegment(TEST_BYTE_SIZE);

@@ -57,6 +57,7 @@ import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -704,6 +705,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             assert remaining < 8 : "remaining greater than 7: " + remaining;
             i = bytes - remaining;
         }
+        // Tail
         for (; i < bytes; i++) {
             if (srcImpl.get(JAVA_BYTE, srcFromOffset + i) != dstImpl.get(JAVA_BYTE, dstFromOffset + i)) {
                 return i;
