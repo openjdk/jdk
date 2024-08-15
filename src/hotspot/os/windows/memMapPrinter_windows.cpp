@@ -215,7 +215,7 @@ public:
       streamIndentor si(st, 16);
       _session.print_nmt_flag_legend();
     }
-  } 
+  }
 
   void print_header() const {
     outputStream* st = _session.out();
