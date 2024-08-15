@@ -23,7 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/archiveHeapWriter.hpp"
@@ -393,7 +395,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-
+  AOTLinkedClassBulkLoader::serialize(soc, true);
   InstanceMirrorKlass::serialize_offsets(soc);
 
   // Dump/restore well known classes (pointers)
@@ -495,6 +497,7 @@ char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
   ArchiveBuilder::OtherROAllocMark mark;
 
   SystemDictionaryShared::write_to_archive();
+  AOTClassLinker::write_to_archive();
 
   // Write lambform lines into archive
   LambdaFormInvokers::dump_static_archive_invokers();
@@ -607,7 +610,7 @@ bool MetaspaceShared::link_class_for_cds(InstanceKlass* ik, TRAPS) {
 }
 
 void MetaspaceShared::link_shared_classes(bool jcmd_request, TRAPS) {
-  AOTConstantPoolResolver::initialize();
+  AOTClassLinker::initialize();
 
   if (!jcmd_request) {
     LambdaFormInvokers::regenerate_holder_classes(CHECK);
@@ -1436,6 +1439,10 @@ MapArchiveResult MetaspaceShared::map_archive(FileMapInfo* mapinfo, char* mapped
     return MAP_ARCHIVE_SUCCESS; // The dynamic archive has not been specified. No error has happened -- trivially succeeded.
   }
 
+  if (!mapinfo->validate_aot_class_linking()) {
+    return MAP_ARCHIVE_OTHER_FAILURE;
+  }
+
   mapinfo->set_is_mapped(false);
   if (mapinfo->core_region_alignment() != (size_t)core_region_alignment()) {
     log_info(cds)("Unable to map CDS archive -- core_region_alignment() expected: " SIZE_FORMAT
@@ -1515,6 +1522,12 @@ void MetaspaceShared::initialize_shared_spaces() {
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }
+
+  log_info(cds)("Using AOT-linked classes: %s (%s%s)",
+                CDSConfig::is_using_aot_linked_classes() ? "true" : "false",
+                static_mapinfo->header()->has_aot_linked_classes() ? "static archive: true" : "static archive: false",
+                (dynamic_mapinfo == nullptr) ? "" :
+                   (dynamic_mapinfo->header()->has_aot_linked_classes() ? ", dynamic archive: true" : ", dynamic archive: false"));
 
   // Set up LambdaFormInvokers::_lambdaform_lines for dynamic dump
   if (CDSConfig::is_dumping_dynamic_archive()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,13 +117,20 @@ public class ClassPathAttr {
     Files.copy(Paths.get(cp), Paths.get(nonExistPath),
                StandardCopyOption.REPLACE_EXISTING);
 
-    TestCommon.run(
+    CDSTestUtils.Result result = TestCommon.run(
         "-Xlog:class+path",
         "-cp", cp,
-        "CpAttr6")
-      .assertNormalExit(output -> {
-          output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
-        });
+        "CpAttr6");
+    if (CDSTestUtils.isAOTClassLinkingEnabled()) {
+        result.assertAbnormalExit(output -> {
+                output.shouldMatch("CDS archive has aot-linked classes. It cannot be used because the file .*cpattrX.jar exists");
+            });
+
+    } else {
+        result.assertNormalExit(output -> {
+                output.shouldMatch("Archived non-system classes are disabled because the file .*cpattrX.jar exists");
+            });
+    }
   }
 
   private static void buildCpAttr(String jarName, String manifest, String enclosingClassName, String ...testClassNames) throws Exception {

@@ -38,6 +38,7 @@ class outputStream;
   LOG_TAG(age) \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
+  LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
   LOG_TAG(attach) \

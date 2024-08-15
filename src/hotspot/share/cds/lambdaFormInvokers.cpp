@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,15 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
     log_info(cds)("Nothing to regenerate for holder classes");
+    return;
+  }
+
+  if (CDSConfig::is_dumping_dynamic_archive() && CDSConfig::is_dumping_aot_linked_classes() &&
+      CDSConfig::is_using_aot_linked_classes()) {
+    // The base archive may have some pre-resolved CP entries that point to the lambda form holder
+    // classes in the base archive. If we generate new versions of these classes, those CP entries
+    // will be pointing to invalid classes.
+    log_info(cds)("Base archive already have aot-linked lambda form holder classes. Cannot regenerate.");
     return;
   }
 

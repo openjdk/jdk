@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassLinker.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.hpp"
@@ -282,6 +284,8 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // but this should be enough for now
     _estimated_metaspaceobj_bytes += 200 * 1024 * 1024;
   }
+
+  AOTClassLinker::add_candidates();
 }
 
 int ArchiveBuilder::compare_symbols_by_address(Symbol** a, Symbol** b) {
@@ -307,6 +311,10 @@ size_t ArchiveBuilder::estimate_archive_size() {
   size_t symbol_table_est = SymbolTable::estimate_size_for_archive();
   size_t dictionary_est = SystemDictionaryShared::estimate_size_for_archive();
   _estimated_hashtable_bytes = symbol_table_est + dictionary_est;
+
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    _estimated_hashtable_bytes += _klasses->length() * 2 * sizeof(Klass*);
+  }
 
   size_t total = 0;
 
@@ -421,11 +429,12 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   if (src_obj == nullptr) {
     return false;
   }
+
+  remember_embedded_pointer_in_enclosing_obj(ref);
   if (RegeneratedClasses::has_been_regenerated(src_obj)) {
     // No need to copy it. We will later relocate it to point to the regenerated klass/method.
     return false;
   }
-  remember_embedded_pointer_in_enclosing_obj(ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
   SourceObjInfo src_info(ref, read_only, follow_mode);
@@ -752,16 +761,30 @@ void ArchiveBuilder::relocate_metaspaceobj_embedded_pointers() {
   relocate_embedded_pointers(&_ro_src_objs);
 }
 
+#define ADD_COUNT(x) \
+  x += 1; \
+  x ## _a += aotloaded;
+
+#define DECLARE_INSTANCE_KLASS_COUNTER(x) \
+  int x = 0; \
+  int x ## _a = 0;
+
 void ArchiveBuilder::make_klasses_shareable() {
-  int num_instance_klasses = 0;
-  int num_boot_klasses = 0;
-  int num_platform_klasses = 0;
-  int num_app_klasses = 0;
-  int num_hidden_klasses = 0;
-  int num_unlinked_klasses = 0;
-  int num_unregistered_klasses = 0;
+  DECLARE_INSTANCE_KLASS_COUNTER(num_instance_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_boot_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_vm_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_platform_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_app_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_hidden_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_unlinked_klasses);
+  DECLARE_INSTANCE_KLASS_COUNTER(num_unregistered_klasses);
   int num_obj_array_klasses = 0;
   int num_type_array_klasses = 0;
+
+  int boot_unlinked = 0;
+  int platform_unlinked = 0;
+  int app_unlinked = 0;
+  int unreg_unlinked = 0;
 
   for (int i = 0; i < klasses()->length(); i++) {
     // Some of the code in ConstantPool::remove_unshareable_info() requires the classes
@@ -778,6 +801,7 @@ void ArchiveBuilder::make_klasses_shareable() {
     const char* unlinked = "";
     const char* hidden = "";
     const char* generated = "";
+    const char* aotloaded_msg = "";
     Klass* k = get_buffered_addr(klasses()->at(i));
     k->remove_java_mirror();
     if (k->is_objArray_klass()) {
@@ -791,59 +815,107 @@ void ArchiveBuilder::make_klasses_shareable() {
       k->remove_unshareable_info();
     } else {
       assert(k->is_instance_klass(), " must be");
-      num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (ik->is_shared_boot_class()) {
+      InstanceKlass* src_ik = get_source_addr(ik);
+      int aotloaded = AOTClassLinker::is_candidate(src_ik);
+      ADD_COUNT(num_instance_klasses);
+      if (CDSConfig::is_dumping_dynamic_archive()) {
+        // For static dump, class loader type are already set.
+        ik->assign_class_loader_type();
+      }
+      if (ik->is_hidden()) {
+        oop loader = k->class_loader();
+        if (loader == nullptr) {
+          type = "boot";
+          ADD_COUNT(num_boot_klasses);
+        } else if (loader == SystemDictionary::java_platform_loader()) {
+          type = "plat";
+          ADD_COUNT(num_platform_klasses);
+        } else if (loader == SystemDictionary::java_system_loader()) {
+          type = "app";
+          ADD_COUNT(num_app_klasses);
+        } else {
+          type = "bad";
+          assert(0, "shouldn't happen");
+        }
+      } else if (ik->is_shared_boot_class()) {
         type = "boot";
-        num_boot_klasses ++;
+        ADD_COUNT(num_boot_klasses);
       } else if (ik->is_shared_platform_class()) {
         type = "plat";
-        num_platform_klasses ++;
+        ADD_COUNT(num_platform_klasses);
       } else if (ik->is_shared_app_class()) {
         type = "app";
-        num_app_klasses ++;
+        ADD_COUNT(num_app_klasses);
       } else {
         assert(ik->is_shared_unregistered_class(), "must be");
         type = "unreg";
-        num_unregistered_klasses ++;
+        ADD_COUNT(num_unregistered_klasses);
+      }
+
+      if (AOTClassLinker::is_vm_class(src_ik)) {
+        ADD_COUNT(num_vm_klasses);
       }
 
       if (!ik->is_linked()) {
-        num_unlinked_klasses ++;
-        unlinked = " ** unlinked";
+        ADD_COUNT(num_unlinked_klasses);
+        unlinked = " unlinked";
+        if (ik->is_shared_boot_class()) {
+          boot_unlinked ++;
+        } else if (ik->is_shared_platform_class()) {
+          platform_unlinked ++;
+        } else if (ik->is_shared_app_class()) {
+          app_unlinked ++;
+        } else {
+          unreg_unlinked ++;
+        }
       }
 
       if (ik->is_hidden()) {
-        num_hidden_klasses ++;
-        hidden = " ** hidden";
+        ADD_COUNT(num_hidden_klasses);
+        hidden = " hidden";
       }
 
       if (ik->is_generated_shared_class()) {
-        generated = " ** generated";
+        generated = " generated";
       }
+      if (aotloaded) {
+        aotloaded_msg = " aot-loaded";
+      }
+
       MetaspaceShared::rewrite_nofast_bytecodes_and_calculate_fingerprints(Thread::current(), ik);
       ik->remove_unshareable_info();
     }
 
     if (log_is_enabled(Debug, cds, class)) {
       ResourceMark rm;
-      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s", i,
+      log_debug(cds, class)("klasses[%5d] = " PTR_FORMAT " %-5s %s%s%s%s%s", i,
                             p2i(to_requested(k)), type, k->external_name(),
-                            hidden, unlinked, generated);
+                            hidden, unlinked, generated, aotloaded_msg);
     }
   }
 
+#define STATS_FORMAT    "= %5d, aot-loaded = %5d"
+#define STATS_PARAMS(x) num_ ## x, num_ ## x ## _a
+
   log_info(cds)("Number of classes %d", num_instance_klasses + num_obj_array_klasses + num_type_array_klasses);
-  log_info(cds)("    instance classes   = %5d", num_instance_klasses);
-  log_info(cds)("      boot             = %5d", num_boot_klasses);
-  log_info(cds)("      app              = %5d", num_app_klasses);
-  log_info(cds)("      platform         = %5d", num_platform_klasses);
-  log_info(cds)("      unregistered     = %5d", num_unregistered_klasses);
-  log_info(cds)("      (hidden)         = %5d", num_hidden_klasses);
-  log_info(cds)("      (unlinked)       = %5d", num_unlinked_klasses);
+  log_info(cds)("    instance classes   " STATS_FORMAT, STATS_PARAMS(instance_klasses));
+  log_info(cds)("      boot             " STATS_FORMAT, STATS_PARAMS(boot_klasses));
+  log_info(cds)("       vm              " STATS_FORMAT, STATS_PARAMS(vm_klasses));
+  log_info(cds)("      platform         " STATS_FORMAT, STATS_PARAMS(platform_klasses));
+  log_info(cds)("      app              " STATS_FORMAT, STATS_PARAMS(app_klasses));
+  log_info(cds)("      unregistered     " STATS_FORMAT, STATS_PARAMS(unregistered_klasses));
+  log_info(cds)("      (hidden)         " STATS_FORMAT, STATS_PARAMS(hidden_klasses));
+  log_info(cds)("      (unlinked)       " STATS_FORMAT ", boot = %d, plat = %d, app = %d, unreg = %d",
+                                                              STATS_PARAMS(unlinked_klasses),
+                                                              boot_unlinked, platform_unlinked,
+                                                              app_unlinked, unreg_unlinked);
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());
+
+#undef STATS_FORMAT
+#undef STATS_PARAMS
 
   DynamicArchive::make_array_klasses_shareable();
 }
@@ -852,6 +924,7 @@ void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
   SymbolTable::serialize_shared_table_header(soc, false);
   SystemDictionaryShared::serialize_dictionary_headers(soc, false);
   DynamicArchive::serialize_array_klasses(soc);
+  AOTLinkedClassBulkLoader::serialize(soc, false);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {

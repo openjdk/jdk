@@ -224,6 +224,7 @@ private:
   bool   _allow_archiving_with_java_agent; // setting of the AllowArchivingWithJavaAgent option
   bool   _use_optimized_module_handling;// No module-relation VM options were specified, so we can skip
                                         // some expensive operations.
+  bool   _has_aot_linked_classes;       // Was the CDS archive created with -XX:+AOTClassLinking
   bool   _has_full_module_graph;        // Does this CDS archive contain the full archived module graph?
   size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
@@ -268,6 +269,7 @@ public:
   char* mapped_base_address()              const { return _mapped_base_address; }
   bool has_platform_or_app_classes()       const { return _has_platform_or_app_classes; }
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
+  bool has_aot_linked_classes()            const { return _has_aot_linked_classes; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
@@ -481,7 +483,8 @@ public:
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
   bool validate_shared_path_table();
-  void validate_non_existent_class_paths();
+  bool validate_non_existent_class_paths();
+  bool validate_aot_class_linking();
   static void set_shared_path_table(FileMapInfo* info) {
     _shared_path_table = info->header()->shared_path_table();
   }

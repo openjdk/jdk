@@ -2706,6 +2706,18 @@ bool InstanceKlass::methods_contain_jsr_bytecode() const {
   }
   return false;
 }
+
+int InstanceKlass::shared_class_loader_type() const {
+  if (is_shared_boot_class()) {
+    return ClassLoader::BOOT_LOADER;
+  } else if (is_shared_platform_class()) {
+    return ClassLoader::PLATFORM_LOADER;
+  } else if (is_shared_app_class()) {
+    return ClassLoader::APP_LOADER;
+  } else {
+    return ClassLoader::OTHER;
+  }
+}
 #endif // INCLUDE_CDS
 
 #if INCLUDE_JVMTI

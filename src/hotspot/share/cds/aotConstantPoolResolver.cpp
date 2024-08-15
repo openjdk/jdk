@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/aotConstantPoolResolver.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/regeneratedClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
@@ -39,41 +39,15 @@
 #include "runtime/handles.inline.hpp"
 
 AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_processed_classes = nullptr;
-AOTConstantPoolResolver::ClassesTable* AOTConstantPoolResolver::_vm_classes = nullptr;
-
-bool AOTConstantPoolResolver::is_vm_class(InstanceKlass* ik) {
-  return (_vm_classes->get(ik) != nullptr);
-}
-
-void AOTConstantPoolResolver::add_one_vm_class(InstanceKlass* ik) {
-  bool created;
-  _vm_classes->put_if_absent(ik, &created);
-  if (created) {
-    InstanceKlass* super = ik->java_super();
-    if (super != nullptr) {
-      add_one_vm_class(super);
-    }
-    Array<InstanceKlass*>* ifs = ik->local_interfaces();
-    for (int i = 0; i < ifs->length(); i++) {
-      add_one_vm_class(ifs->at(i));
-    }
-  }
-}
 
 void AOTConstantPoolResolver::initialize() {
-  assert(_vm_classes == nullptr, "must be");
-  _vm_classes = new (mtClass)ClassesTable();
+  assert(_processed_classes == nullptr, "must be");
   _processed_classes = new (mtClass)ClassesTable();
-  for (auto id : EnumRange<vmClassID>{}) {
-    add_one_vm_class(vmClasses::klass_at(id));
-  }
 }
 
 void AOTConstantPoolResolver::dispose() {
-  assert(_vm_classes != nullptr, "must be");
-  delete _vm_classes;
+  assert(_processed_classes != nullptr, "must be");
   delete _processed_classes;
-  _vm_classes = nullptr;
   _processed_classes = nullptr;
 }
 
@@ -133,7 +107,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
       return true;
     }
 
-    if (is_vm_class(ik)) {
+    if (!CDSConfig::is_dumping_aot_linked_classes() && AOTClassLinker::is_vm_class(ik)) {
       if (ik->class_loader() != cp_holder->class_loader()) {
         // At runtime, cp_holder() may not be able to resolve to the same
         // ik. For example, a different version of ik may be defined in
@@ -142,6 +116,8 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
       } else {
         return true;
       }
+    } else if (CDSConfig::is_dumping_aot_linked_classes() && AOTClassLinker::try_add_candidate(ik)) {
+      return true;
     }
   } else if (resolved_class->is_objArray_klass()) {
     Klass* elem = ObjArrayKlass::cast(resolved_class)->bottom_klass();

@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "cds/aotConstantPoolResolver.hpp"
+#include "cds/aotClassLinker.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
@@ -135,6 +135,11 @@ public:
 
     verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
+    sort_methods();
+
+    log_info(cds)("Make classes shareable");
+    make_klasses_shareable();
+
     char* serialized_data;
     {
       // Write the symbol table and system dictionaries to the RO space.
@@ -147,6 +152,7 @@ public:
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
       DynamicArchive::dump_array_klasses();
+      AOTClassLinker::write_to_archive();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
@@ -154,11 +160,6 @@ public:
     }
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
-
-    sort_methods();
-
-    log_info(cds)("Make classes shareable");
-    make_klasses_shareable();
 
     log_info(cds)("Adjust lambda proxy class dictionary");
     SystemDictionaryShared::adjust_lambda_proxy_class_dictionary();
@@ -234,7 +235,7 @@ void DynamicArchiveBuilder::release_header() {
 
 void DynamicArchiveBuilder::post_dump() {
   ArchivePtrMarker::reset_map_and_vs();
-  AOTConstantPoolResolver::dispose();
+  AOTClassLinker::dispose();
 }
 
 void DynamicArchiveBuilder::sort_methods() {

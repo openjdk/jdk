@@ -43,6 +43,7 @@ bool CDSConfig::_is_dumping_dynamic_archive = false;
 bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
+bool CDSConfig::_has_aot_linked_classes = false;
 bool CDSConfig::_old_cds_flags_used = false;
 
 char* CDSConfig::_default_archive_path = nullptr;
@@ -529,5 +530,25 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
       log_info(cds)("full module graph cannot be loaded: %s", reason);
     }
   }
+}
+
+bool CDSConfig::is_dumping_aot_linked_classes() {
+  if (is_dumping_dynamic_archive()) {
+    return is_using_full_module_graph() && AOTClassLinking;
+  } else if (is_dumping_static_archive()) {
+    return is_dumping_full_module_graph() && AOTClassLinking;
+  } else {
+    return false;
+  }
+}
+
+bool CDSConfig::is_using_aot_linked_classes() {
+  // Make sure we have the exact same module graph as in the assembly phase, or else
+  // some aot-linked classes may not be visible so cannot be loaded.
+  return is_using_full_module_graph() && _has_aot_linked_classes;
+}
+
+void CDSConfig::set_has_aot_linked_classes(bool is_static_archive, bool has_aot_linked_classes) {
+  _has_aot_linked_classes |= has_aot_linked_classes;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP

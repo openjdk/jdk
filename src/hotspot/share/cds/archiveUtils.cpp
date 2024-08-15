@@ -39,6 +39,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/klass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
@@ -369,3 +370,34 @@ void ArchiveUtils::log_to_classlist(BootstrapInfo* bootstrap_specifier, TRAPS) {
     }
   }
 }
+
+// Used in logging: "boot", "boot2", "plat", "app" and "unreg";
+const char* ArchiveUtils::class_category(Klass* k) {
+  if (ArchiveBuilder::is_active() && ArchiveBuilder::current()->is_in_buffer_space(k)) {
+    k = ArchiveBuilder::current()->get_source_addr(k);
+  }
+
+  if (k->is_array_klass()) {
+    return "array";
+  } else {
+    oop loader = k->class_loader();
+    if (loader == nullptr) {
+      if (k->module() != nullptr &&
+          k->module()->name() != nullptr &&
+          k->module()->name()->equals("java.base")) {
+        return "boot"; // boot classes in java.base
+      } else {
+        return "boot2"; // boot classes outside of java.base
+      }
+    } else {
+      if (loader == SystemDictionary::java_platform_loader()) {
+        return "plat";
+      } else if (loader == SystemDictionary::java_system_loader()) {
+        return "app";
+      } else {
+        return "unreg";
+      }
+    }
+  }
+}
+

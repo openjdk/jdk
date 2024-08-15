@@ -54,18 +54,14 @@ template <typename T> class GrowableArray;
 class AOTConstantPoolResolver :  AllStatic {
   using ClassesTable = ResourceHashtable<InstanceKlass*, bool, 15889, AnyObj::C_HEAP, mtClassShared> ;
   static ClassesTable* _processed_classes;
-  static ClassesTable* _vm_classes;
-
-  static void add_one_vm_class(InstanceKlass* ik);
 
 #ifdef ASSERT
+  template <typename T> static bool is_in_archivebuilder_buffer(T p) {
+    return is_in_archivebuilder_buffer((address)(p));
+  }
   static bool is_in_archivebuilder_buffer(address p);
 #endif
 
-  template <typename T>
-  static bool is_in_archivebuilder_buffer(T p) {
-    return is_in_archivebuilder_buffer((address)(p));
-  }
   static void resolve_string(constantPoolHandle cp, int cp_index, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_class_resolution_deterministic(InstanceKlass* cp_holder, Klass* resolved_class);
 
@@ -82,11 +78,6 @@ public:
   static void preresolve_class_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
   static void preresolve_field_and_method_cp_entries(JavaThread* current, InstanceKlass* ik, GrowableArray<bool>* preresolve_list);
 
-  // Is this class resolved as part of vmClasses::resolve_all()? If so, these
-  // classes are guatanteed to be loaded at runtime (and cannot be replaced by JVMTI)
-  // when CDS is enabled. Therefore, we can safely keep a direct reference to these
-  // classes.
-  static bool is_vm_class(InstanceKlass* ik);
 
   // Resolve all constant pool entries that are safe to be stored in the
   // CDS archive.

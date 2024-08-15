@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -858,5 +858,20 @@ public class CDSTestUtils {
         Path destPath = newDir.resolve(jarName);
         Files.copy(srcPath, destPath, REPLACE_EXISTING, COPY_ATTRIBUTES);
         return destPath;
+    }
+
+    // Some tests were initially written without the knowledge of -XX:+AOTClassLinking. These tests need to
+    // be adjusted if -XX:+AOTClassLinking is specified in jtreg -vmoptions or -javaoptions:
+    public static boolean isAOTClassLinkingEnabled() {
+        String vmopts = System.getProperty("test.vm.opts");
+        String javaopts = System.getProperty("test.java.opts");
+        if (vmopts != null && vmopts.contains("-XX:+AOTClassLinking")) {
+            return true;
+        }
+        if (javaopts != null && javaopts.contains("-XX:+AOTClassLinking")) {
+            return true;
+        }
+
+        return false;
     }
 }

@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -317,6 +318,19 @@ static void call_initPhase2(TRAPS) {
   }
 
   universe_post_module_init();
+
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // is_using_aot_linked_classes() requires is_using_full_module_graph(). As a result,
+    // the platform/system class loader should already have been initialized as part
+    // of the FMG support.
+    assert(CDSConfig::is_using_full_module_graph(), "must be");
+    assert(SystemDictionary::java_platform_loader() != nullptr, "must be");
+    assert(SystemDictionary::java_system_loader() != nullptr,   "must be");
+
+    AOTLinkedClassBulkLoader::load_non_javabase_boot_classes(THREAD);
+    AOTLinkedClassBulkLoader::load_platform_classes(THREAD);
+    AOTLinkedClassBulkLoader::load_app_classes(THREAD);
+  }
 }
 
 // Phase 3. final setup - set security manager, system class loader and TCCL

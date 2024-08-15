@@ -109,6 +109,11 @@
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+                                                                            \
+  product(bool, AOTClassLinking, false,                                     \
+          "Load/link all archived classes for the boot/platform/app "       \
+          "loaders before application main")                                \
+
 // end of CDS_FLAGS
 
 DECLARE_FLAGS(CDS_FLAGS)
