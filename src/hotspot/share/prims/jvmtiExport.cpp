@@ -929,9 +929,8 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _cached_class_file_ptr = cache_ptr;
     _has_been_modified = false;
 
-    if (_thread->is_in_any_VTMS_transition()) {
-      return; // no events should be posted if thread is in any VTMS transition
-    }
+    assert(!_thread->is_in_any_VTMS_transition(), "CFLH events are not allowed in any VTMS transition");
+
     _state = JvmtiExport::get_jvmti_thread_state(_thread);
     if (_state != nullptr) {
       _class_being_redefined = _state->get_class_being_redefined();
@@ -1091,8 +1090,9 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return false;
   }
-  if (JavaThread::current()->is_in_tmp_VTMS_transition()) {
-    return false; // skip CFLH events in tmp VTMS transition
+
+  if (JavaThread::current()->is_in_any_VTMS_transition()) {
+    return false; // no events should be posted if thread is in any VTMS transition
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,

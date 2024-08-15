@@ -1780,6 +1780,7 @@ void Assembler::call(Register dst) {
 
 
 void Assembler::call(Address adr) {
+  assert(!adr._rspec.reloc()->is_data(), "should not use ExternalAddress for call");
   InstructionMark im(this);
   prefix(adr);
   emit_int8((unsigned char)0xFF);
