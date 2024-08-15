@@ -89,8 +89,8 @@ public final class StringPool {
     }
 
     private static long storeString(String s) {
+        pinVirtualThread();
         try {
-            pinVirtualThread();
             /* synchronized because of writing the string to the JVM. */
             synchronized (StringPool.class) {
                 Long lsid = cache.get(s);
@@ -168,8 +168,8 @@ public final class StringPool {
     }
 
     private static void reset() {
+        pinVirtualThread();
         try {
-            pinVirtualThread();
             synchronized (StringPool.class) {
                 cache.clear();
                 currentSizeUTF16 = 0;
