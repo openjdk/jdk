@@ -123,7 +123,6 @@ public:
   static void notifyall(Handle obj, TRAPS);
 
   static bool quick_notify(oopDesc* obj, JavaThread* current, bool All);
-
   static inline bool quick_enter(oop obj, BasicLock* Lock, JavaThread* current);
 
   // Special internal-use-only method for use by JVM infrastructure
