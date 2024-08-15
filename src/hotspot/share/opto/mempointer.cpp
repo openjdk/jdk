@@ -43,9 +43,24 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     parse_sub_expression(_worklist.pop());
   }
 
+  // Sort summands by variable->_idx
   _summands.sort(MemPointerSummand::cmp_for_sort);
 
-  // TODO: sort and combine summands!
+  // Combine summands for the same variable, adding up the scales.
+  int pos_put = 0;
+  int pos_get = 0;
+  while (pos_get < _summands.length()) {
+    MemPointerSummand summand = _summands.at(pos_get++);
+    Node* variable      = summand.variable();
+    NoOverflowInt scale = summand.scale();
+    while (pos_get < _summands.length() && _summands.at(pos_get).variable() == variable) {
+      MemPointerSummand s = _summands.at(pos_get++);
+      scale = scale + s.scale();
+      // TODO test with overflow or zero
+    }
+    _summands.at_put(pos_put++, MemPointerSummand(variable, scale LP64_ONLY( COMMA NoOverflowInt(1) )));
+  }
+  _summands.trunc_to(pos_put);
 
   return MemPointerSimpleForm::make(pointer, _summands, _con);
 }

@@ -169,6 +169,8 @@ public class TestMergeStores {
         testGroups.get("test10").put("test10R", (_,_) -> { return test10R(aB.clone()); });
         testGroups.get("test10").put("test10a", (_,_) -> { return test10a(aB.clone()); });
         testGroups.get("test10").put("test10b", (_,_) -> { return test10b(aB.clone()); });
+        testGroups.get("test10").put("test10c", (_,_) -> { return test10c(aB.clone()); });
+        testGroups.get("test10").put("test10d", (_,_) -> { return test10d(aB.clone()); });
 
         testGroups.put("test100", new HashMap<String,TestFunction>());
         testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aS.clone(), offset1); });
@@ -296,6 +298,8 @@ public class TestMergeStores {
                  "test7a",
                  "test10a",
                  "test10b",
+                 "test10c",
+                 "test10d",
                  "test7aBE",
                  "test100a",
                  "test101a",
@@ -1201,6 +1205,48 @@ public class TestMergeStores {
         a[zero + 5] = ' ';
         a[zero + 6] = ':';
         a[zero + 7] = ')';
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // 1 left in uncommon trap path of RangeCheck
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test10c(byte[] a) {
+        int zero = 7 * zero0 + 7 * zero1 + 7 * zero2 + 7 * zero3 + 7 * zero4
+                 + 7 * zero5 + 7 * zero6 + 7 * zero7 + 7 * zero8;
+        // The "7 * zero" is split into "zero << 3 - zero". But the parsing combines it again, lowering the summand count.
+        // We have 10 summands: 9x zero variable + 1x array base.
+        // Parsing allows 10 summands, so this should merge the stores.
+        a[zero + 0] = 'h';
+        a[zero + 1] = 'e';
+        a[zero + 2] = 'l';
+        a[zero + 3] = 'l';
+        a[zero + 4] = 'o';
+        a[zero + 5] = ' ';
+        a[zero + 6] = ':';
+        a[zero + 7] = ')';
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // 1 left in uncommon trap path of RangeCheck
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test10d(byte[] a) {
+        // Summand is subtracted from itself -> scale = 0 -> should be removed from list.
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 0) - zero0, (byte)'h');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 1) - zero0, (byte)'e');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 2) - zero0, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 3) - zero0, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 4) - zero0, (byte)'o');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 5) - zero0, (byte)' ');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 6) - zero0, (byte)':');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 7) - zero0, (byte)')');
         return new Object[]{ a };
     }
 

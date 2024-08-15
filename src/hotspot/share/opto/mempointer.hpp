@@ -219,7 +219,9 @@ private:
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
-      _summands[i] = summands.at(i);
+      MemPointerSummand s = summands.at(i);
+      assert(s.variable() != nullptr, "variable cannot be null");
+      _summands[i] = s;
     }
   }
 
