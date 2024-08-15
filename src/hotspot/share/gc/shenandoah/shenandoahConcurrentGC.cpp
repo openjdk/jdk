@@ -633,10 +633,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   if (_do_old_gc_bootstrap) {
     shenandoah_assert_generational();
     // Update region state for both young and old regions
-    // TODO: We should be able to pull this out of the safepoint for the bootstrap
-    // cycle. The top of an old region will only move when a GC cycle evacuates
-    // objects into it. When we start an old cycle, we know that nothing can touch
-    // the top of old regions.
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_update_region_states);
     ShenandoahInitMarkUpdateRegionStateClosure cl;
     heap->parallel_heap_region_iterate(&cl);
@@ -867,11 +863,9 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
     if (!_mark_context->is_marked(obj)) {
       shenandoah_assert_generations_reconciled();
       if (_heap->is_in_active_generation(obj)) {
-        // TODO: This worries me. Here we are asserting that an unmarked from-space object is 'correct'.
-        // Normally, I would call this a bogus assert, but there seems to be a legitimate use-case for
-        // accessing from-space objects during class unloading. However, the from-space object may have
-        // been "filled". We've made no effort to prevent old generation classes being unloaded by young
-        // gen (and vice-versa).
+        // Here we are asserting that an unmarked from-space object is 'correct'. There seems to be a legitimate
+        // use-case for accessing from-space objects during concurrent class unloading. In all modes of Shenandoah,
+        // concurrent class unloading only happens during a global collection.
         shenandoah_assert_correct(p, obj);
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }

@@ -74,7 +74,6 @@ void ShenandoahBarrierSetC1::pre_barrier(LIRGenerator* gen, CodeEmitInfo* info, 
   __ load(gc_state_addr, flag_val);
 
   // Create a mask to test if the marking bit is set.
-  // TODO: can we directly test if bit is set?
   LIR_Opr mask = LIR_OprFact::intConst(ShenandoahHeap::MARKING);
   LIR_Opr mask_reg = gen->new_register(T_INT);
   __ move(mask, mask_reg);

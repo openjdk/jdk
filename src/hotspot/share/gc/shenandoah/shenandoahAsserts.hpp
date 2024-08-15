@@ -73,7 +73,6 @@ public:
   static void assert_heaplocked(const char* file, int line);
   static void assert_not_heaplocked(const char* file, int line);
   static void assert_heaplocked_or_safepoint(const char* file, int line);
-  static void assert_heaplocked_or_fullgc_safepoint(const char* file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
@@ -166,8 +165,6 @@ public:
 #define shenandoah_assert_heaplocked_or_safepoint() \
                     ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
 
-#define shenandoah_assert_heaplocked_or_fullgc_safepoint() \
-                    ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(__FILE__, __LINE__)
 #define shenandoah_assert_control_or_vm_thread() \
                     assert(Thread::current()->is_VM_thread() || Thread::current() == ShenandoahHeap::heap()->control_thread(), "Expected control thread or vm thread")
 // A stronger version of the above that checks that we are at a safepoint if the vm thread
@@ -238,7 +235,6 @@ public:
 #define shenandoah_assert_heaplocked()
 #define shenandoah_assert_not_heaplocked()
 #define shenandoah_assert_heaplocked_or_safepoint()
-#define shenandoah_assert_heaplocked_or_fullgc_safepoint()
 #define shenandoah_assert_control_or_vm_thread()
 #define shenandoah_assert_control_or_vm_thread_at_safepoint()
 #define shenandoah_assert_generational()

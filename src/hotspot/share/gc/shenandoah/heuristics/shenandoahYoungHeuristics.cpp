@@ -209,15 +209,6 @@ size_t ShenandoahYoungHeuristics::bytes_of_allocation_runway_before_gc_trigger(s
   // but evac_slack_spiking is only relevant if is_spiking, as defined below.
 
   double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
-
-  // TODO: Consider making conservative adjustments to avg_cycle_time, such as: (avg_cycle_time *= 2) in cases where
-  // we expect a longer-than-normal GC duration.  This includes mixed evacuations, evacuation that perform promotion
-  // including promotion in place, and OLD GC bootstrap cycles.  It has been observed that these cycles sometimes
-  // require twice or more the duration of "normal" GC cycles.  We have experimented with this approach.  While it
-  // does appear to reduce the frequency of degenerated cycles due to late triggers, it also has the effect of reducing
-  // evacuation slack so that there is less memory available to be transferred to OLD.  The result is that we
-  // throttle promotion and it takes too long to move old objects out of the young generation.
-
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
   size_t evac_slack_avg;
   if (anticipated_available > avg_cycle_time * avg_alloc_rate + penalties + spike_headroom) {

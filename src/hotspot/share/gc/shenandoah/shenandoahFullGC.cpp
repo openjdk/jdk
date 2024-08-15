@@ -43,6 +43,7 @@
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -181,7 +182,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
 
     // b. Cancel all concurrent marks, if in progress
     if (heap->is_concurrent_mark_in_progress()) {
-      // TODO: Send cancel_concurrent_mark upstream? Does it really not have it already?
       heap->cancel_concurrent_mark();
     }
     assert(!heap->is_concurrent_mark_in_progress(), "sanity");
@@ -214,7 +214,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 
   if (UseTLAB) {
-    // TODO: Do we need to explicitly retire PLABs?
+    // Note: PLABs are also retired with GCLABs in generational mode.
     heap->gclabs_retire(ResizeTLAB);
     heap->tlabs_retire(ResizeTLAB);
   }
@@ -289,15 +289,12 @@ private:
 public:
   ShenandoahPrepareForMarkClosure() : _ctx(ShenandoahHeap::heap()->marking_context()) {}
 
-  void heap_region_do(ShenandoahHeapRegion *r) {
-    // TODO: Add API to heap to skip free regions
-    if (r->is_affiliated()) {
-      _ctx->capture_top_at_mark_start(r);
-      r->clear_live_data();
-    }
+  void heap_region_do(ShenandoahHeapRegion *r) override {
+    _ctx->capture_top_at_mark_start(r);
+    r->clear_live_data();
   }
 
-  bool is_thread_safe() { return true; }
+  bool is_thread_safe() override { return true; }
 };
 
 void ShenandoahFullGC::phase1_mark_heap() {
@@ -306,7 +303,8 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  ShenandoahPrepareForMarkClosure cl;
+  ShenandoahPrepareForMarkClosure prepare_for_mark;
+  ShenandoahExcludeRegionClosure<FREE> cl(&prepare_for_mark);
   heap->parallel_heap_region_iterate(&cl);
 
   heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
@@ -570,27 +568,18 @@ public:
     _heap(ShenandoahHeap::heap()),
     _ctx(ShenandoahHeap::heap()->complete_marking_context()) {}
 
-  void heap_region_do(ShenandoahHeapRegion* r) {
-    if (!r->is_affiliated()) {
-      // Ignore free regions
-      // TODO: change iterators so they do not process FREE regions.
-      return;
-    }
-
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->is_humongous_start()) {
       oop humongous_obj = cast_to_oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
-        assert(!r->has_live(),
-               "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
+        assert(!r->has_live(), "Region " SIZE_FORMAT " is not marked, should not have live", r->index());
         _heap->trash_humongous_region_at(r);
       } else {
-        assert(r->has_live(),
-               "Region " SIZE_FORMAT " should have live", r->index());
+        assert(r->has_live(), "Region " SIZE_FORMAT " should have live", r->index());
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(),
-             "Region " SIZE_FORMAT " should have live", r->index());
+      assert(r->humongous_start_region()->has_live(), "Region " SIZE_FORMAT " should have live", r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
@@ -758,8 +747,9 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
 
   {
     // Trash the immediately collectible regions before computing addresses
-    ShenandoahTrashImmediateGarbageClosure tigcl;
-    heap->heap_region_iterate(&tigcl);
+    ShenandoahTrashImmediateGarbageClosure trash_immediate_garbage;
+    ShenandoahExcludeRegionClosure<FREE> cl(&trash_immediate_garbage);
+    heap->heap_region_iterate(&cl);
 
     // Make sure regions are in good state: committed, active, clean.
     // This is needed because we are potentially sliding the data through them.
@@ -773,8 +763,6 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
 
     distribute_slices(worker_slices);
 
-    // TODO: This is ResourceMark is missing upstream.
-    ResourceMark rm;
     ShenandoahPrepareForCompactionTask task(_preserved_marks, worker_slices);
     heap->workers()->run_task(&task);
   }

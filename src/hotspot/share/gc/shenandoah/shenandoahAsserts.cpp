@@ -440,23 +440,6 @@ void ShenandoahAsserts::assert_heaplocked_or_safepoint(const char* file, int lin
     return;
   }
 
-  if (ShenandoahSafepoint::is_at_shenandoah_safepoint() && Thread::current()->is_VM_thread()) {
-    return;
-  }
-
-  ShenandoahMessageBuffer msg("Heap lock must be owned by current thread, or be at safepoint");
-  report_vm_error(file, line, msg.buffer());
-}
-
-// Unlike assert_heaplocked_or_safepoint(), this does not require current thread in safepoint to be a VM thread
-// TODO: This should be more aptly named. Nothing in this method checks we are actually in Full GC.
-void ShenandoahAsserts::assert_heaplocked_or_fullgc_safepoint(const char* file, int line) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  if (heap->lock()->owned_by_self()) {
-    return;
-  }
-
   if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
     return;
   }
