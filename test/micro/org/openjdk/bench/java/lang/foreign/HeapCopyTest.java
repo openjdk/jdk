@@ -447,7 +447,7 @@ public class HeapCopyTest {
     public void vector256() {
         final int len = ELEM_SIZE;
         for (long i = 0; i < len; i += 32) {
-            var vs = ByteVector.fromMemorySegment(SPECIES, srcSegment, i, ByteOrder.nativeOrder());
+            var vs = ByteVector.fromMemorySegment(SPECIES128, srcSegment, i, ByteOrder.nativeOrder());
             vs.intoMemorySegment(dstSegment, i, ByteOrder.nativeOrder());
         }
         // Todo: handle tail
@@ -459,7 +459,7 @@ public class HeapCopyTest {
     public void vectorUnroll256() {
         // Precondition ELEM_SIZE < 512 and SPECIES256 exists
 
-        int i = ELEM_SIZE;
+        int i = ELEM_SIZE & ~31;
         switch (i >> 5) {
             case 15: ByteVector.fromMemorySegment(SPECIES256, srcSegment, 14 * 32, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 14 * 32, ByteOrder.nativeOrder());
             case 14: ByteVector.fromMemorySegment(SPECIES256, srcSegment, 13 * 32, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 13 * 32, ByteOrder.nativeOrder());
@@ -478,37 +478,37 @@ public class HeapCopyTest {
             case 1: ByteVector.fromMemorySegment(SPECIES256, srcSegment, 0, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 0, ByteOrder.nativeOrder());
                 // case 0: do nothing
         }
-        final int i2 = (ELEM_SIZE & 31);
+        final int i2 = (ELEM_SIZE & (31 - 7));
         switch (i2 >> 3) {
             case 3: dstSegment.set(JAVA_LONG_UNALIGNED, i + 16, srcSegment.get(JAVA_LONG_UNALIGNED, i + 16));
             case 2: dstSegment.set(JAVA_LONG_UNALIGNED, i + 8, srcSegment.get(JAVA_LONG_UNALIGNED, i + 8));
             case 1: dstSegment.set(JAVA_LONG_UNALIGNED, i, srcSegment.get(JAVA_LONG_UNALIGNED, i));
                 // case 0: do nothing
         }
-        final int o = i + i2;
+        final int i3 = i + i2;
         switch (ELEM_SIZE & 7) {
-            case 1 : dstSegment.set(JAVA_BYTE, o, srcSegment.get(JAVA_BYTE, o)); break;
-            case 2 : dstSegment.set(JAVA_SHORT_UNALIGNED, o, srcSegment.get(JAVA_SHORT_UNALIGNED, o)); break;
+            case 1 : dstSegment.set(JAVA_BYTE, i3, srcSegment.get(JAVA_BYTE, i3)); break;
+            case 2 : dstSegment.set(JAVA_SHORT_UNALIGNED, i3, srcSegment.get(JAVA_SHORT_UNALIGNED, i3)); break;
             case 3 : {
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o, srcSegment.get(JAVA_SHORT_UNALIGNED, o));
-                dstSegment.set(JAVA_BYTE, o + 2, srcSegment.get(JAVA_BYTE, o + 2));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3, srcSegment.get(JAVA_SHORT_UNALIGNED, i3));
+                dstSegment.set(JAVA_BYTE, i3 + 2, srcSegment.get(JAVA_BYTE, i3 + 2));
                 break;
             }
-            case 4 : dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o)); break;
+            case 4 : dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3)); break;
             case 5 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_BYTE, o + 4, srcSegment.get(JAVA_BYTE, o + 4));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_BYTE, i3 + 4, srcSegment.get(JAVA_BYTE, i3 + 4));
                 break;
             }
             case 6 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, o + 4));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3 + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, i3 + 4));
                 break;
             }
             case 7 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, o + 4));
-                dstSegment.set(JAVA_BYTE, o + 6, srcSegment.get(JAVA_BYTE, o + 6));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3 + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, i3 + 4));
+                dstSegment.set(JAVA_BYTE, i3 + 6, srcSegment.get(JAVA_BYTE, i3 + 6));
                 break;
             }
         }
@@ -522,7 +522,7 @@ public class HeapCopyTest {
         // 64 is hardcoded....
         // Precondition ELEM_SIZE < 512
 
-        int i = ELEM_SIZE;
+        int i = ELEM_SIZE & ~31;
         switch (i >> 6) {
             case 7: ByteVector.fromMemorySegment(SPECIES512, srcSegment, 6 * 64, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 6 * 64, ByteOrder.nativeOrder());
             case 6: ByteVector.fromMemorySegment(SPECIES512, srcSegment, 5 * 64, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 5 * 64, ByteOrder.nativeOrder());
@@ -537,37 +537,37 @@ public class HeapCopyTest {
             ByteVector.fromMemorySegment(SPECIES256, srcSegment, 7 * 64, ByteOrder.nativeOrder()).intoMemorySegment(dstSegment, 7 * 64, ByteOrder.nativeOrder());
             i += 16;
         }
-        final int i2 = (ELEM_SIZE & 31);
+        final int i2 = (ELEM_SIZE & (31 - 7));
         switch (i2 >> 3) {
             case 3: dstSegment.set(JAVA_LONG_UNALIGNED, i + 16, srcSegment.get(JAVA_LONG_UNALIGNED, i + 16));
             case 2: dstSegment.set(JAVA_LONG_UNALIGNED, i + 8, srcSegment.get(JAVA_LONG_UNALIGNED, i + 8));
             case 1: dstSegment.set(JAVA_LONG_UNALIGNED, i, srcSegment.get(JAVA_LONG_UNALIGNED, i));
             // case 0: do nothing
         }
-        final int o = i + i2;
+        final int i3 = i + i2;
         switch (ELEM_SIZE & 7) {
-            case 1 : dstSegment.set(JAVA_BYTE, o, srcSegment.get(JAVA_BYTE, o)); break;
-            case 2 : dstSegment.set(JAVA_SHORT_UNALIGNED, o, srcSegment.get(JAVA_SHORT_UNALIGNED, o)); break;
+            case 1 : dstSegment.set(JAVA_BYTE, i3, srcSegment.get(JAVA_BYTE, i3)); break;
+            case 2 : dstSegment.set(JAVA_SHORT_UNALIGNED, i3, srcSegment.get(JAVA_SHORT_UNALIGNED, i3)); break;
             case 3 : {
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o, srcSegment.get(JAVA_SHORT_UNALIGNED, o));
-                dstSegment.set(JAVA_BYTE, o + 2, srcSegment.get(JAVA_BYTE, o + 2));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3, srcSegment.get(JAVA_SHORT_UNALIGNED, i3));
+                dstSegment.set(JAVA_BYTE, i3 + 2, srcSegment.get(JAVA_BYTE, i3 + 2));
                 break;
             }
-            case 4 : dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o)); break;
+            case 4 : dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3)); break;
             case 5 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_BYTE, o + 4, srcSegment.get(JAVA_BYTE, o + 4));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_BYTE, i3 + 4, srcSegment.get(JAVA_BYTE, i3 + 4));
                 break;
             }
             case 6 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, o + 4));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3 + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, i3 + 4));
                 break;
             }
             case 7 : {
-                dstSegment.set(JAVA_INT_UNALIGNED, o, srcSegment.get(JAVA_INT_UNALIGNED, o));
-                dstSegment.set(JAVA_SHORT_UNALIGNED, o + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, o + 4));
-                dstSegment.set(JAVA_BYTE, o + 6, srcSegment.get(JAVA_BYTE, o + 6));
+                dstSegment.set(JAVA_INT_UNALIGNED, i3, srcSegment.get(JAVA_INT_UNALIGNED, i3));
+                dstSegment.set(JAVA_SHORT_UNALIGNED, i3 + 4, srcSegment.get(JAVA_SHORT_UNALIGNED, i3 + 4));
+                dstSegment.set(JAVA_BYTE, i3 + 6, srcSegment.get(JAVA_BYTE, i3 + 6));
                 break;
             }
         }
@@ -918,7 +918,7 @@ public class HeapCopyTest {
 
     private static VectorSpecies<Byte> vectorSpeciesOrNull(VectorShape shape) {
         try {
-            return VectorSpecies.of(byte.class, VectorShape.S_512_BIT);
+            return VectorSpecies.of(byte.class, shape);
         } catch (IllegalArgumentException _) {
             return null;
         }
