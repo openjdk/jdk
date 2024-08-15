@@ -75,6 +75,17 @@ public class TestMergeStores {
     long vL1;
     long vL2;
 
+    static int zero0 = 0;
+    static int zero1 = 0;
+    static int zero2 = 0;
+    static int zero3 = 0;
+    static int zero4 = 0;
+    static int zero5 = 0;
+    static int zero6 = 0;
+    static int zero7 = 0;
+    static int zero8 = 0;
+    static int zero9 = 0;
+
     interface TestFunction {
         Object[] run(boolean isWarmUp, int rnd);
     }
@@ -153,6 +164,11 @@ public class TestMergeStores {
         testGroups.put("test7BE", new HashMap<String,TestFunction>());
         testGroups.get("test7BE").put("test7RBE", (_,_) -> { return test7RBE(aB.clone(), offset1, vI1); });
         testGroups.get("test7BE").put("test7aBE", (_,_) -> { return test7aBE(aB.clone(), offset1, vI1); });
+
+        testGroups.put("test10", new HashMap<String,TestFunction>());
+        testGroups.get("test10").put("test10R", (_,_) -> { return test10R(aB.clone()); });
+        testGroups.get("test10").put("test10a", (_,_) -> { return test10a(aB.clone()); });
+        testGroups.get("test10").put("test10b", (_,_) -> { return test10b(aB.clone()); });
 
         testGroups.put("test100", new HashMap<String,TestFunction>());
         testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aS.clone(), offset1); });
@@ -278,6 +294,8 @@ public class TestMergeStores {
                  "test5a",
                  "test6a",
                  "test7a",
+                 "test10a",
+                 "test10b",
                  "test7aBE",
                  "test100a",
                  "test101a",
@@ -1125,6 +1143,64 @@ public class TestMergeStores {
         a[offset1 +  1] = (byte)(v1 >> 24);
         a[offset1 +  2] = (byte)(v1 >> 16);
         a[offset1 +  3] = (byte)(v1 >> 8);
+        return new Object[]{ a };
+    }
+
+    @DontCompile
+    static Object[] test10R(byte[] a) {
+        int zero = zero0 + zero1 + zero2 + zero3 + zero4
+                 + zero5 + zero6 + zero7 + zero8 + zero9;
+        a[zero + 0] = 'h';
+        a[zero + 1] = 'e';
+        a[zero + 2] = 'l';
+        a[zero + 3] = 'l';
+        a[zero + 4] = 'o';
+        a[zero + 5] = ' ';
+        a[zero + 6] = ':';
+        a[zero + 7] = ')';
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // no merge
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test10a(byte[] a) {
+        // We have 11 summands: 10x zero variable + 1x array base.
+        // Parsing only allows 10 summands -> does not merge the stores.
+        int zero = zero0 + zero1 + zero2 + zero3 + zero4
+                 + zero5 + zero6 + zero7 + zero8 + zero9;
+        a[zero + 0] = 'h';
+        a[zero + 1] = 'e';
+        a[zero + 2] = 'l';
+        a[zero + 3] = 'l';
+        a[zero + 4] = 'o';
+        a[zero + 5] = ' ';
+        a[zero + 6] = ':';
+        a[zero + 7] = ')';
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // 1 left in uncommon trap path of RangeCheck
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test10b(byte[] a) {
+        int zero = zero0 + zero1 + zero2 + zero3 + zero4
+                 + zero5 + zero6 + zero7 + zero8;
+        // We have 10 summands: 9x zero variable + 1x array base.
+        // Parsing allows 10 summands, so this should merge the stores.
+        a[zero + 0] = 'h';
+        a[zero + 1] = 'e';
+        a[zero + 2] = 'l';
+        a[zero + 3] = 'l';
+        a[zero + 4] = 'o';
+        a[zero + 5] = ' ';
+        a[zero + 6] = ':';
+        a[zero + 7] = ')';
         return new Object[]{ a };
     }
 

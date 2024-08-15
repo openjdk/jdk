@@ -192,7 +192,13 @@ public:
 //
 class MemPointerSimpleForm : public StackObj {
 private:
-  static const int SUMMANDS_SIZE = 10; // TODO good?
+  // We limit the number of summands to 10. Usually, a pointer contains a base pointer
+  // (e.g. array pointer or null for native memory) and a few variables. For example:
+  //
+  //   array[j]                      ->  array_base + j + con              -> 2 summands
+  //   nativeMemorySegment.get(j)    ->  null + address + offset + j + con -> 3 summands
+  //
+  static const int SUMMANDS_SIZE = 10;
 
   Node* _pointer; // pointer node associated with this (sub)pointer
 
@@ -212,7 +218,6 @@ private:
   MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
-    // TODO test with more summands?
     for (int i = 0; i < summands.length(); i++) {
       _summands[i] = summands.at(i);
     }
