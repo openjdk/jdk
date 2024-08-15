@@ -51,44 +51,35 @@ As the `logger` field is private, the only way for clients to access it is to ca
 
 Unfortunately, the above solution does not work in a multithreaded environment. For instance, updates to the `logger` field made by one thread may not be immediately visible to other threads. This condition might result in multiple concurrent calls to the `Logger::create` method, thereby violating the "at-most-once" update guarantee.
 
-##### Thread safety with double-checked locking
+##### Thread safety with synchronized
 
-One possible way to achieve thread safety would be to serialize access to the `Application::getLogger` method - i.e. by marking that method as `synchronized`. However, doing so has a performance cost, as multiple threads cannot concurrently obtain the application's logger object, even *long after* this object has been computed, and safely stored in the `logger` field. In other words, using  `synchronized` amounts at applying a *permanent* performance tax on *all* logger accesses, in the rare event that a race occurs during the initial update of the `logger` field.
-
-A more efficient solution is the so-called [class holder idiom](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), which achieves thread safe "at-most-once" update guarantees by leaning on the lazy semantics of class initialization. However, for this approach to work correctly, the memoized data should be `static`, which is not the case here.
-
-In order to achieve thread safety without compromising performance, developers often resort to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking):
+One possible way to achieve thread safety would be to serialize access to the `Application::getLogger` method - i.e. by marking that method as `synchronized`.
 
 ```
-class Application {
+public class Application {
 
-    private volatile Logger logger;
+  private Logger logger;
 
-    public Logger logger() {
-        Logger v = logger;
-        if (v == null) {
-            synchronized (this) {
-                v = logger;
-                if (v == null) {
-                    logger = v = Logger.create("com.company.Application");
-                }
-            }
-        }
-        return v;
+  public synchronized Logger getLogger() {
+    if (logger == null) {
+      logger = Logger.create("com.company.Application");
     }
+    return logger;
+  }
 }
 ```
 
-The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or initialized (its value set to the final logger object). That is, no *dirty reads* are possible.
+However, doing so has a performance cost, as multiple threads cannot concurrently obtain the application's logger object, even *long after* this object has been computed, and safely stored in the `logger` field. In other words, using  `synchronized` amounts at applying a *permanent* performance tax on *all* logger accesses, in the rare event that a race occurs during the initial update of the `logger` field.
 
-##### Problems with double-checked locking
+A more efficient solution is the so-called [class holder idiom](https://en.wikipedia.org/wiki/Initialization-on-demand_holder_idiom), which achieves thread safe "at-most-once" update guarantees by leaning on the lazy semantics of class initialization. However, for this approach to work correctly, the memoized data should be `static`, which is not the case here. Instead, for instance variables, it is also possible to resort to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking) further described in the Alternative section below. 
 
-Unfortunately, double-checked locking has several inherent design flaws:
+##### Problems with synchronized
 
-* *brittleness* - the convoluted nature of the code required to write a correct double-checked locking makes it all too easy for developers to make subtle mistakes. A very common one is forgetting to add the `volatile` keyword to the `logger` field.
-* *lack of expressiveness* - even when written correctly, the double-checked idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that is impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
+Unfortunately, synchronized locking has several inherent design flaws:
+
+* *lack of expressiveness* - he synchronized idiom leaves a lot to be desired. The "at-most-once" mutation guarantee is not explicitly manifest in the code: after all the `logger` field is just a plain mutable field. This leaves important semantics gaps that is impossible to plug. For example, the `logger` field can be accidentally mutated in another method of the `Application` class. In another example, the field might be reflectively mutated using `setAccessible`. Avoiding these pitfalls is ultimately left to developers.
 * *lack of optimizations* - as the `logger` field is updated at most once, one might expect the JVM to optimize access to this field accordingly, e.g. by [constant-folding](https://en.wikipedia.org/wiki/Constant_folding) access to an already-initialized `logger` field. Unfortunately, since `logger` is just a plan mutable field, the JVM cannot trust the field to never be updated again. As such, access to at-most-once fields, when realized with double-checked locking is not as efficient as it could be.
-* *limited applicability* - double-checked locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. In this case, marking the array field as `volatile` is not enough, as the `volatile` modifier doesn't apply to the array *elements* but to the array as a whole. Instead, clients would have to resort to even more complex solutions using where at-most-once array elements are accessed using `VarHandles`. Needless to say, such solutions are even more brittle and error-prone, and should be avoided at all costs.
+* *limited applicability* - synchronized locking fails to scale to more complex use cases where e.g. the client might need an *array* of values where each element can be updated at most once. Access to one element will block access to _all_ the other elements unless there is a distinct synchronization object for each element. 
 
 ##### At-most-once as a first-class concept
 
@@ -428,6 +419,30 @@ To use the Stable Value APIs, the JVM flag `--enable-preview` must be passed in,
 There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
 and `ThreadLocal` all of which, unfortunately, support arbitrary mutation and thus, hinder the JVM from reasoning
 about constantness thereby preventing constant folding and other optimizations.
+
+Another alternative is to resort to the brittle [double-checked idiom](https://en.wikipedia.org/wiki/Double-checked_locking):
+
+```
+class Application {
+
+    private volatile Logger logger;
+
+    public Logger logger() {
+        Logger v = logger;
+        if (v == null) {
+            synchronized (this) {
+                v = logger;
+                if (v == null) {
+                    logger = v = Logger.create("com.company.Application");
+                }
+            }
+        }
+        return v;
+    }
+}
+```
+
+The basic idea behind double-checked locking is to reduce the chances for callers to enter a `synchronized` block. After all, in the common case, we expect the `logger` field to already contain a logger object, in which case we can just return that object, without any performance hit. In the rare event where `logger` is not set, we must enter a `synchronized` block, and check its value again (as such value might have changed upon entering the block). For the double-checked idiom to work correctly, it is necessary for the `logger` field is marked as `volatile`. This ensures that reading that field across multiple threads can result in one of two outcomes: the field either appears to be uninitialized (its value set to `null`), or initialized (its value set to the final logger object). That is, no *dirty reads* are possible. As with all existing solutions, the double-checked locking idiom does not provide constant folding.
 
 So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes,
 and third-party frameworks. Another alternative would be to add language support for immutable value holders.
