@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public final class StringPool {
     public static final int MIN_LIMIT = 16;
-    public static final int MAX_LIMIT = 128; /* 0 MAX means disabled */
-
+    public static final int MAX_LIMIT = 131072; /* 0 MAX means disabled */
+    private static final int PRECACHE_THRESHOLD = 128;
     private static final long DO_NOT_POOL = -1;
     /* max size */
     private static final int MAX_SIZE = 32 * 1024;
@@ -114,7 +114,7 @@ public final class StringPool {
         if (lsid != null) {
             return ensureCurrentGeneration(s, lsid);
         }
-        if (!preCache(s)) {
+        if (s.length() <= PRECACHE_THRESHOLD && !preCache(s)) {
             /* we should not pool this string */
             return DO_NOT_POOL;
         }
