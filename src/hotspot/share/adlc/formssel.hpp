@@ -616,7 +616,7 @@ public:
 //------------------------------OperandForm------------------------------------
 class OperandForm : public OpClassForm {
 public:
-  static constexpr int EXPANDED_OPER_LIMIT = 8;
+  static constexpr uint EXPANDED_OPER_LIMIT = 8;
 
 private:
   bool         _ideal_only; // Not a user-defined instruction

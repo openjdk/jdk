@@ -2047,7 +2047,7 @@ public:
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
             assert(operand->get_expanded_operands_num() > 0, "sanity");
-            for (int i = 0; i < operand->get_expanded_operands_num(); i++) {
+            for (int i = 0; i < (int)operand->get_expanded_operands_num(); i++) {
               const char* expanded = OperandForm::get_expanded_oper_name(inst_rep_var, i);
               int expanded_idx  = _inst.operand_position_format(expanded);
               assert(expanded_idx >= 0 && (uint)expanded_idx < _inst.num_unique_opnds(), "sanity");

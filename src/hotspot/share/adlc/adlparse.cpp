@@ -4976,7 +4976,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
     }
 
     if (oper != nullptr && oper->get_expanded_operands_num() > 0) {
-      for (int i = 0; oper != nullptr && i < (int)oper->get_expanded_operands_num(); i++) {
+      for (int i = 0; i < (int)oper->get_expanded_operands_num(); i++) {
         const char* expanded = OperandForm::get_expanded_oper_name(ident, i);
         if( _globalNames[expanded] != nullptr ) {
           parse_err(SYNERR, "Reuse of global name %s as operand.\n", expanded);
@@ -4986,7 +4986,6 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
           parse_err(SYNERR, "Reuse of local name %s as operand.\n", expanded);
           return;
         }
-        // operands.Insert(expanded, oper->_expanded_operands[i]);
         operands.Insert(expanded, oper->get_expanded_operand(i));
         parameters.addName(expanded);
       }

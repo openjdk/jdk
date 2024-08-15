@@ -2617,7 +2617,7 @@ const char *OperandForm::reduce_left(FormDict &globals)   const {
 void OperandForm::append_expanded_operand(OperandForm *oper) {
   assert(oper != nullptr, "sanity");
   assert(_expanded_operands_num < EXPANDED_OPER_LIMIT, "sanity");
-  _expanded_operands[_expanded_operands_num++] = oper->is_operand();
+  _expanded_operands[(int)_expanded_operands_num++] = oper->is_operand();
 }
 
 OperandForm* OperandForm::get_expanded_operand(int idx) {
