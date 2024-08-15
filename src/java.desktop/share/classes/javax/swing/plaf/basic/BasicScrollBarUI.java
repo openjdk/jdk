@@ -1608,15 +1608,25 @@ public class BasicScrollBarUI
 
         /** {@inheritDoc} */
         public void actionPerformed(ActionEvent e) {
-            // Stop the timer if handledEvent is still set indicating
-            // mouseReleased is not called after mousePressed when
-            // this AcionEvent is being processed
-            if (buttonListener.handledEvent) {
-                scrollTimer.stop();
-                buttonListener.handledEvent = false;
-                scrollbar.setValueIsAdjusting(false);
-                return;
-            }
+            // If frame is disabled and time is started in mousePressed
+            // and mouseReleased is not called, then timer will not be stopped
+            // Stop the timer if frame is disabled
+            Component parent = scrollbar.getParent();
+            do {
+                if (parent instanceof javax.swing.JFrame par) {
+                    if (!par.isEnabled()) {
+                        ((Timer)e.getSource()).stop();
+                        buttonListener.handledEvent = false;
+                        scrollbar.setValueIsAdjusting(false);
+                        return;
+                    }
+                    break;
+                } else {
+                    if (parent != null) {
+                        parent = parent.getParent();
+                    }
+                }
+            } while (parent != null);
             if(useBlockIncrement)       {
                 scrollByBlock(direction);
                 // Stop scrolling if the thumb catches up with the mouse

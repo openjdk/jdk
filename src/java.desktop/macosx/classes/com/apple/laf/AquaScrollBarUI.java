@@ -527,12 +527,21 @@ public class AquaScrollBarUI extends ScrollBarUI {
         }
 
         public void actionPerformed(final ActionEvent e) {
-            if (fTrackHighlight != Hit.NONE && !fTrackListener.fStillInTrack) {
-                fScrollTimer.stop();
-                fTrackHighlight = Hit.NONE;
-                fScrollBar.setValueIsAdjusting(false);
-                return;
-            }
+            Component parent = fScrollBar.getParent();
+            do {
+                if (parent instanceof javax.swing.JFrame par) {
+                    if (!par.isEnabled()) {
+                        ((Timer)e.getSource()).stop();
+                        fScrollBar.setValueIsAdjusting(false);
+                        return;
+                    }
+                    break;
+                } else {
+                    if (parent != null) {
+                        parent = parent.getParent();
+                    }
+                }
+            } while (parent != null);
             if (fUseBlockIncrement) {
                 Hit newPart = getPartHit(fTrackListener.fCurrentMouseX, fTrackListener.fCurrentMouseY);
 
