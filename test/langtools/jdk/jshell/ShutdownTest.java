@@ -41,6 +41,7 @@ import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
+import org.testng.annotations.BeforeMethod;
 
 public class ShutdownTest extends KullaTesting {
 
@@ -145,9 +146,21 @@ public class ShutdownTest extends KullaTesting {
         assertFalse(Files.exists(temporary));
     }
 
+    private Method currentTestMethod;
+
+    @BeforeMethod
+    public void setUp(Method testMethod) {
+        currentTestMethod = testMethod;
+        super.setUp();
+    }
+
+    @BeforeMethod
+    public void setUp() {
+    }
+
     @Override
-    public void setUp(Method testMethod, Consumer<JShell.Builder> bc) {
-        Consumer<JShell.Builder> augmentedBuilder = switch (testMethod.getName()) {
+    public void setUp(Consumer<JShell.Builder> bc) {
+        Consumer<JShell.Builder> augmentedBuilder = switch (currentTestMethod.getName()) {
             case "testRunShutdownHooks" -> builder -> {
                 builder.executionEngine(Presets.TEST_STANDARD_EXECUTION);
                 bc.accept(builder);

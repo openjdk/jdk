@@ -167,12 +167,8 @@ public class KullaTesting {
     }
 
     @BeforeMethod
-    public void setUp(Method testMethod) {
-        setUp(testMethod, b -> {});
-    }
-
-    public void setUp(Method testMethod, Consumer<JShell.Builder> bc) {
-        setUp(bc);
+    public void setUp() {
+        setUp(b -> {});
     }
 
     public void setUp(Consumer<JShell.Builder> bc) {
