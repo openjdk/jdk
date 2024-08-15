@@ -2706,7 +2706,7 @@ void SharedRuntime::generate_deopt_blob() {
 
 #ifdef COMPILER2
 //------------------------------generate_uncommon_trap_blob--------------------
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code
   ResourceMark rm;
   // Setup code generation tools
@@ -2769,7 +2769,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   } else {
     __ z_cliy(unpack_kind_byte_offset, unroll_block_reg, Deoptimization::Unpack_uncommon_trap);
   }
-  __ asm_assert(Assembler::bcondEqual, "SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+  __ asm_assert(Assembler::bcondEqual, "OptoRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
 #endif
 
   __ zap_from_to(Z_SP, Z_SP, Z_R0_scratch, Z_R1, 500, -1);

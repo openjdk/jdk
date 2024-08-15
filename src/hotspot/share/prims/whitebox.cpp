@@ -433,7 +433,8 @@ WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
 #endif
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
-    return Universe::heap()->is_in(p);
+    ShenandoahHeap* sh = ShenandoahHeap::heap();
+    return sh->mode()->is_generational() ?  sh->is_in_old(p) : sh->is_in(p);
   }
 #endif
 #if INCLUDE_SERIALGC
@@ -590,7 +591,7 @@ WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
     return JNIHandles::make_local(THREAD, h());
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1ActiveMemoryNodeCount(JNIEnv* env, jobject o))

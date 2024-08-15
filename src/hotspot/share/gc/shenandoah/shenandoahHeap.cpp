@@ -1260,7 +1260,6 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
       if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
         // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
         // the desired GCLAB size and retry GCLAB allocation to avoid cascading of shared memory allocations.
-        // TODO: is this right? using PLAB::min_size() here for gc lab size?
         ShenandoahThreadLocalData::set_gclab_size(thread, PLAB::min_size());
         copy = allocate_from_gclab(thread, size);
         // If we still get nullptr, we'll try a shared allocation below.

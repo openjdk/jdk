@@ -424,7 +424,7 @@ inline void ShenandoahHeap::assert_lock_for_affiliation(ShenandoahAffiliation or
   // Note: during full GC, all transitions between states are possible.  During Full GC, we should be in a safepoint.
 
   if ((orig_affiliation == ShenandoahAffiliation::FREE) || (new_affiliation == ShenandoahAffiliation::FREE)) {
-    shenandoah_assert_heaplocked_or_fullgc_safepoint();
+    shenandoah_assert_heaplocked_or_safepoint();
   }
 }
 

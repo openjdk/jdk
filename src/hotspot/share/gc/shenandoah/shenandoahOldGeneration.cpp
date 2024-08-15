@@ -26,9 +26,10 @@
 #include "precompiled.hpp"
 
 #include "gc/shared/strongRootsScope.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -190,7 +191,6 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
   ref_processor()->set_soft_reference_policy(true);
 
   if (ShenandoahCardBarrier) {
-    // TODO: Old and young generations should only be instantiated for generational mode
     ShenandoahCardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
     size_t card_count = card_table->cards_required(ShenandoahHeap::heap()->reserved_region().word_size());
     auto rs = new ShenandoahDirectCardMarkRememberedSet(card_table, card_count);

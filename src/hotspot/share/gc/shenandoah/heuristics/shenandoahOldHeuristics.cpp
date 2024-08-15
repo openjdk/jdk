@@ -367,21 +367,12 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   _old_generation->set_live_bytes_after_last_mark(live_data);
 
-  // TODO: Consider not running mixed collects if we recovered some threshold percentage of memory from immediate garbage.
-  // This would be similar to young and global collections shortcutting evacuation, though we'd probably want a separate
-  // threshold for the old generation.
-
   // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
   // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
   // old-gen, we want to pack these underutilized regions together so we can have more unaffiliated (unfragmented) free regions
   // in old-gen.
 
   QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_live);
-
-  // Any old-gen region that contains (ShenandoahOldGarbageThreshold (default value 25)% garbage or more is to be
-  // added to the list of candidates for subsequent mixed evacuations.
-  //
-  // TODO: allow ShenandoahOldGarbageThreshold to be determined adaptively, by heuristics.
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 

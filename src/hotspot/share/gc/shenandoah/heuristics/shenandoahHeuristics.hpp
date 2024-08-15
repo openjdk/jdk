@@ -111,10 +111,6 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
-  // TODO: We need to enhance this API to give visibility to accompanying old-gen evacuation effort.
-  // In the case that the old-gen evacuation effort is small or zero, the young-gen heuristics
-  // should feel free to dedicate increased efforts to young-gen evacuation.
-
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                                      RegionData* data, size_t data_size,
                                                      size_t free) = 0;

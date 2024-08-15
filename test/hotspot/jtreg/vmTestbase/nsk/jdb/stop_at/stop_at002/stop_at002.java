@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,17 +82,10 @@ public class stop_at002 extends JdbTest {
     static final String DEBUGGEE_CLASS = TEST_CLASS + "a";
     static final String FIRST_BREAK        = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK         = DEBUGGEE_CLASS + ".lastBreak";
-    static final String DEBUGGEE_LOCATION1 = DEBUGGEE_CLASS + "$Nested$DeeperNested$DeepestNested:43";
-    static final String DEBUGGEE_LOCATION2 = DEBUGGEE_CLASS + "$Inner$MoreInner:57";
-    static final String FAILURE_PATTERN = "Unable to set";
+    static final String DEBUGGEE_LOCATION1 = DEBUGGEE_CLASS + "$Nested$DeeperNested$DeepestNested:64";
+    static final String DEBUGGEE_LOCATION2 = DEBUGGEE_CLASS + "$Inner$MoreInner:78";
 
     protected void runCases() {
-        String[] reply;
-        Paragrep grep;
-        int count;
-        Vector v;
-        String found;
-
         if (!checkStop(DEBUGGEE_LOCATION1)) {
             success = false;
         }
@@ -101,25 +94,62 @@ public class stop_at002 extends JdbTest {
             success = false;
         }
 
-        jdb.contToExit(3);
+        if (!checkBreakpointHit(DEBUGGEE_LOCATION1)) {
+            success = false;
+        }
+
+        if (!checkBreakpointHit(DEBUGGEE_LOCATION2)) {
+            success = false;
+        }
+
+        jdb.contToExit(1);
     }
 
-    private boolean checkStop (String location) {
+    private boolean checkStop(String location) {
         Paragrep grep;
         String[] reply;
         String found;
-        boolean result = true;
 
         log.display("Trying to set breakpoint at line: " + location);
         reply = jdb.receiveReplyFor(JdbCommand.stop_at + location);
 
         grep = new Paragrep(reply);
-        found = grep.findFirst(FAILURE_PATTERN);
-        if (found.length() > 0) {
-            log.complain("jdb failed to set line breakpoint at line: " + found);
-            result = false;
+        found = grep.findFirst("Deferring breakpoint " + location);
+        if (found.length() == 0) {
+            log.complain("jdb failed to setup deferred breakpoint at line: " + location);
+            return false;
         }
 
-        return result;
+        return true;
+    }
+
+    private boolean checkBreakpointHit(String location) {
+        Paragrep grep;
+        String[] reply;
+        String found;
+
+        log.display("continuing to breakpoint at line: " + location);
+        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        grep = new Paragrep(reply);
+
+        found = grep.findFirst("Unable to set deferred breakpoint");
+        if (found.length() > 0) {
+            log.complain("jdb failed to set deferred breakpoint at line: " + location);
+            return false;
+        }
+
+        found = grep.findFirst("Set deferred breakpoint " + location);
+        if (found.length() == 0) {
+            log.complain("jdb failed to set deferred breakpoint at line: " + location);
+            return false;
+        }
+
+        found = grep.findFirst("Breakpoint hit: \"thread=main\", ");
+        if (found.length() == 0) {
+            log.complain("jdb failed to hit breakpoint at line: " + location);
+            return false;
+        }
+
+        return true;
     }
 }

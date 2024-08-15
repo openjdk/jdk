@@ -2779,9 +2779,9 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records
-  if (breakpoints() != 0x0) {
+  if (breakpoints() != nullptr) {
     methods_do(clear_all_breakpoints);
-    assert(breakpoints() == 0x0, "should have cleared breakpoints");
+    assert(breakpoints() == nullptr, "should have cleared breakpoints");
   }
 
   // deallocate the cached class file

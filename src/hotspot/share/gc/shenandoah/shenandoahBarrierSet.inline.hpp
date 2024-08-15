@@ -31,6 +31,7 @@
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
@@ -425,7 +426,6 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
 
   if (_heap->mode()->is_generational()) {
     assert(ShenandoahSATBBarrier, "Generational mode assumes SATB mode");
-    // TODO: Could we optimize here by checking that dst is in an old region?
     if ((gc_state & ShenandoahHeap::OLD_MARKING) != 0) {
       // Note that we can't do the arraycopy marking using the 'src' array when
       // SATB mode is enabled (so we can't do this as part of the iteration for
@@ -476,14 +476,6 @@ void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count, bool 
       }
     } else if (array_addr < _heap->marking_context()->top_at_mark_start(r)) {
       // Non-generational, marking
-      arraycopy_work<T, false, false, true>(array, count);
-    }
-  } else {
-    // Incremental Update mode, marking
-    T* array = src;
-    HeapWord* array_addr = reinterpret_cast<HeapWord*>(array);
-    ShenandoahHeapRegion* r = _heap->heap_region_containing(array_addr);
-    if (array_addr < _heap->marking_context()->top_at_mark_start(r)) {
       arraycopy_work<T, false, false, true>(array, count);
     }
   }
