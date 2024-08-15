@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models an annotation on a type use, as defined in {@jvms 4.7.19} and {@jvms 4.7.20}.
+ * Models an annotation on a type use, as defined in JVMS {@jvms 4.7.19} and {@jvms 4.7.20}.
  *
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute
@@ -73,7 +73,7 @@ public sealed interface TypeAnnotation
         permits UnboundAttribute.UnboundTypeAnnotation {
 
     /**
-     * The kind of target on which the annotation appears, as defined in {@jvms 4.7.20.1}.
+     * The kind of target on which the annotation appears, as defined in JVMS {@jvms 4.7.20.1}.
      *
      * @since 22
      */
@@ -773,7 +773,7 @@ public sealed interface TypeAnnotation
 
     /**
      * JVMS: Type_path structure identifies which part of the type is annotated,
-     * as defined in {@jvms 4.7.20.2}
+     * as defined in JVMS {@jvms 4.7.20.2}
      *
      * @since 22
      */
@@ -782,7 +782,7 @@ public sealed interface TypeAnnotation
             permits UnboundAttribute.TypePathComponentImpl {
 
         /**
-         * Type path kind, as defined in {@jvms 4.7.20.2}
+         * Type path kind, as defined in JVMS {@jvms 4.7.20.2}
          *
          * @since 22
          */

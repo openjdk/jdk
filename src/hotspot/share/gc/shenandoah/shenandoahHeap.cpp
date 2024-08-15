@@ -2493,7 +2493,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
 
   // Easy case: a single regular region, no further adjustments needed.
-  if (size < ShenandoahHeapRegion::humongous_threshold_words()) {
+  if (!ShenandoahHeapRegion::requires_humongous(size)) {
     return allocate_memory(req);
   }
 

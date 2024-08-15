@@ -426,7 +426,7 @@ public sealed interface AnnotationValue {
     }
 
     /**
-     * {@return the tag character for this type as per {@jvms 4.7.16.1}}
+     * {@return the tag character for this type as per JVMS {@jvms 4.7.16.1}}
      */
     char tag();
 
