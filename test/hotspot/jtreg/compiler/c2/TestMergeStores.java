@@ -1240,8 +1240,7 @@ public class TestMergeStores {
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
-        applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to struggle folding ConvI2L / ConvL2I cases
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test10d(byte[] a) {
         // Summand is subtracted from itself -> scale = 0 -> should be removed from list.
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 0) - zero0, (byte)'h');
@@ -1260,8 +1259,7 @@ public class TestMergeStores {
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
-        applyIf = {"UseUnalignedAccesses", "true"},
-        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to struggle folding ConvI2L / ConvL2I cases
+        applyIf = {"UseUnalignedAccesses", "true"})
     static Object[] test10e(byte[] a) {
         // Summand is subtracted from itself -> scale = 0 -> should be removed from list. Thus equal to if not present at all.
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 0) - zero0, (byte)'h');
@@ -2080,7 +2078,13 @@ public class TestMergeStores {
                   IRNode.STORE_C_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"},
-        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to fold some cases, but not others.
+        applyIfPlatform = {"64-bit", "true"})
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "bottom\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"32-bit", "true"})
     static Object[] test601a(byte[] aB, int[] aI, int i, int offset1) {
         Object a = null;
         long base = 0;
@@ -2092,7 +2096,7 @@ public class TestMergeStores {
             base = UNSAFE.ARRAY_INT_BASE_OFFSET;
         }
         // Array type is unknown, i.e. bottom[]. Hence we do not know the element size of the array.
-        // Thus, merging is not always safe, there could be overflows.
+        // Thus, on 64-bits systems merging is not safe, there could be overflows.
         UNSAFE.putByte(a, base + (offset1 + 0), (byte)0xbe);
         UNSAFE.putByte(a, base + (offset1 + 1), (byte)0xba);
         UNSAFE.putByte(a, base + (offset1 + 2), (byte)0xad);

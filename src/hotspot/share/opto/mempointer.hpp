@@ -85,6 +85,8 @@
 //   are terminal, see MemPointerLinearFormParser::parse_sub_expression. This effectively parses
 //   the pointer expression recursively.
 
+// TODO why not everything linear?
+
 // TODO
 // For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:
 //

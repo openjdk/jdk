@@ -162,6 +162,12 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_CastLL:
       case Op_CastX2P:
       case Op_ConvI2L:
+      // On 32bit systems we can also look through ConvI2L, since the final result will always
+      // be truncated back with ConvL2I. On 64bit systems this is not linear:
+      //
+      //   ConvI2L(ConvL2I(max_jint + 1)) = ConvI2L(min_jint) = min_jint
+      //
+      NOT_LP64( case Op_ConvL2I: )
       {
         // Decompose: look through.
         Node* a = n->in(1);
