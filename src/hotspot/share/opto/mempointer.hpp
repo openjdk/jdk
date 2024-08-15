@@ -142,7 +142,7 @@ public:
   {
     assert(_variable != nullptr, "must have variable");
     assert(!_scale.is_zero(), "non-zero scale");
-    LP64_ONLY( assert(!_scaleL.is_zero(), "non-zero scale") );
+    LP64_ONLY( assert(!_scaleL.is_zero(), "non-zero scaleL") );
   }
 
   Node* variable() const { return _variable; }
@@ -190,6 +190,7 @@ public:
 //
 //   pointer = sum(summands) + con
 //
+// TODO summands scale 30 bits
 class MemPointerSimpleForm : public StackObj {
 private:
   // We limit the number of summands to 10. Usually, a pointer contains a base pointer
@@ -221,6 +222,8 @@ private:
     for (int i = 0; i < summands.length(); i++) {
       MemPointerSummand s = summands.at(i);
       assert(s.variable() != nullptr, "variable cannot be null");
+      assert(!s.scale().truncate_to_30_bits().is_NaN(), "non-NaN scale and fits in 30bits");
+      LP64_ONLY( assert(!s.scaleL().truncate_to_30_bits().is_NaN(), "non-NaN scaleL and fits in 30bits"); )
       _summands[i] = s;
     }
   }

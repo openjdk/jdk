@@ -53,12 +53,19 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     MemPointerSummand summand = _summands.at(pos_get++);
     Node* variable      = summand.variable();
     NoOverflowInt scale = summand.scale();
+    // Add up scale of all summands with the same variable.
     while (pos_get < _summands.length() && _summands.at(pos_get).variable() == variable) {
       MemPointerSummand s = _summands.at(pos_get++);
       scale = scale + s.scale();
-      // TODO test with overflow or zero
     }
-    _summands.at_put(pos_put++, MemPointerSummand(variable, scale LP64_ONLY( COMMA NoOverflowInt(1) )));
+    // Bail out if scale does not fit in 30bits or is NaN (i.e. overflow).
+    if (scale.truncate_to_30_bits().is_NaN()) {
+      return MemPointerSimpleForm(pointer);
+    }
+    // Keep summands with non-zero scale.
+    if (!scale.is_zero()) {
+      _summands.at_put(pos_put++, MemPointerSummand(variable, scale LP64_ONLY( COMMA NoOverflowInt(1) )));
+    }
   }
   _summands.trunc_to(pos_put);
 
@@ -143,14 +150,6 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
         // Accumulate scale.
         NoOverflowInt new_scale = scale * factor;
         LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
-
-        // Make sure abs(scale) is not larger than "1 << 30".
-        new_scale = new_scale.truncate_to_30_bits();
-        LP64_ONLY( new_scaleL = new_scaleL.truncate_to_30_bits(); )
-
-        // If anything went wrong with the scale computation: bailout.
-        if (new_scale.is_NaN()) { break; }
-        LP64_ONLY( if (new_scaleL.is_NaN()) { break; } )
 
         _worklist.push(MemPointerSummand(in1, new_scale LP64_ONLY( COMMA new_scaleL )));
         return;

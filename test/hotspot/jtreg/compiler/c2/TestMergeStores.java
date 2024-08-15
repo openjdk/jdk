@@ -171,6 +171,8 @@ public class TestMergeStores {
         testGroups.get("test10").put("test10b", (_,_) -> { return test10b(aB.clone()); });
         testGroups.get("test10").put("test10c", (_,_) -> { return test10c(aB.clone()); });
         testGroups.get("test10").put("test10d", (_,_) -> { return test10d(aB.clone()); });
+        testGroups.get("test10").put("test10e", (_,_) -> { return test10e(aB.clone()); });
+        testGroups.get("test10").put("test10f", (_,_) -> { return test10f(aB.clone()); });
 
         testGroups.put("test100", new HashMap<String,TestFunction>());
         testGroups.get("test100").put("test100R", (_,_) -> { return test100R(aS.clone(), offset1); });
@@ -300,6 +302,8 @@ public class TestMergeStores {
                  "test10b",
                  "test10c",
                  "test10d",
+                 "test10e",
+                 "test10f",
                  "test7aBE",
                  "test100a",
                  "test101a",
@@ -1232,11 +1236,12 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1", // 1 left in uncommon trap path of RangeCheck
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
-        applyIf = {"UseUnalignedAccesses", "true"})
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to struggle folding ConvI2L / ConvL2I cases
     static Object[] test10d(byte[] a) {
         // Summand is subtracted from itself -> scale = 0 -> should be removed from list.
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 0) - zero0, (byte)'h');
@@ -1247,6 +1252,46 @@ public class TestMergeStores {
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 5) - zero0, (byte)' ');
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 6) - zero0, (byte)':');
         UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 7) - zero0, (byte)')');
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "1"}, // all merged
+        applyIf = {"UseUnalignedAccesses", "true"},
+        applyIfPlatform = {"64-bit", "true"}) // 32-bit seems to struggle folding ConvI2L / ConvL2I cases
+    static Object[] test10e(byte[] a) {
+        // Summand is subtracted from itself -> scale = 0 -> should be removed from list. Thus equal to if not present at all.
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 0) - zero0, (byte)'h');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 1) - zero0, (byte)'e');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 2) - zero0, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + (long)(zero0 + 3) - zero0, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET +                4,          (byte)'o');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET +                5,          (byte)' ');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET +                6,          (byte)':');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET +                7,          (byte)')');
+        return new Object[]{ a };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // no merge
+                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test10f(byte[] a) {
+        int big = 1 << 29;
+        // Adding up the scales overflows -> no merge.
+        long offset = zero9 * big + zero9 * big + zero9 * big + zero9 * big;
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 0, (byte)'h');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 1, (byte)'e');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 2, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 3, (byte)'l');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 4, (byte)'o');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 5, (byte)' ');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 6, (byte)':');
+        UNSAFE.putByte(a, UNSAFE.ARRAY_BYTE_BASE_OFFSET + offset + 7, (byte)')');
         return new Object[]{ a };
     }
 
