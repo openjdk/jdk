@@ -4441,8 +4441,11 @@ MatchNode *ADLParser::matchNode_parse(FormDict &operands, int &depth, int &numle
     else                        name = nullptr;
   }
 
-  OperandForm *oper = opcForm ? opcForm->is_operand() : nullptr;
-  assert(oper == nullptr || oper->get_expanded_operands_num() == 0, "expanded operand not supported in match rule, %d\n");
+  {
+    OperandForm *oper = opcForm ? opcForm->is_operand() : nullptr;
+    assert(oper == nullptr || oper->get_expanded_operands_num() == 0,
+           "expanded operand not supported in match rule, %d\n");
+  }
 
   // Parse the operands
   skipws();
@@ -4989,6 +4992,9 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
         operands.Insert(expanded, oper->get_expanded_operand(i));
         parameters.addName(expanded);
       }
+      // Expanding operands are only allowed in TEMP effect, and every expanding
+      // operand should be unique in an intruct level.
+      assert(operands[ident] == nullptr, "sanity");
       operands.Insert(ident, opclass);
       if (parameters_unexpanded != nullptr) {
         parameters_unexpanded->addName(ident);
@@ -5069,12 +5075,13 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_
         return;
       }
       // Add the pair to the effects table
+      effects.Insert(ident, eForm);
+      // Add the pairs of expanded operands to the effects table
       for (int i = 0; i < (int)opForm->get_expanded_operands_num(); i++) {
         assert(eForm->isa(Component::TEMP), "only support `expand` for TEMP operand");
         const char* expanded = OperandForm::get_expanded_oper_name(ident, i);
         effects.Insert(expanded, eForm);
       }
-      effects.Insert(ident, eForm);
 
       // Debugging Stuff
       if (_AD._adl_debug > 1) fprintf(stderr, "\tOperand Name: %s\n", ident);

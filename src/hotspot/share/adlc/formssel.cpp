@@ -938,11 +938,14 @@ uint InstructForm::oper_input_base(FormDict &globals) {
 // Implementation does not modify state of internal structures
 void InstructForm::build_components() {
   // Add top-level operands to the components
+  // Match rule does not support expanding operands
   if (_matrule)  _matrule->append_components(_localNames, _components);
   bool has_temp = build_components(_parameters, _components);
   if (_parameters_unexpanded.count() > 0) {
     bool has_temp_unexpanded = build_components(_parameters_unexpanded, _components_unexpanded);
-    assert(has_temp == has_temp_unexpanded, "must");
+    // only support `expand` for TEMP operand.
+    // if one operand is expanded, has_temp must be true also.
+    assert(has_temp_unexpanded && has_temp, "sanity");
   }
 
   // Resolving the interactions between expand rules and TEMPs would
@@ -1047,6 +1050,7 @@ int   InstructForm::operand_position_format(const char *name) {
 }
 
 int   InstructForm::operand_position_format_unexpanded(const char *name) {
+  // Every expanding operand should be unique in an intruct level.
   return _components_unexpanded.operand_position_format(name, this);
 }
 
@@ -1477,8 +1481,11 @@ void InstructForm::index_temps(FILE *fp, FormDict &globals, const char *prefix, 
 
     _parameters_unexpanded.reset();
     const char  * tmp = nullptr;
+    if (_parameters_unexpanded.count() > 0) {
+      fprintf(fp,"  // Below are expanding operands\n");
+    }
     while ((tmp = _parameters_unexpanded.iter()) != nullptr) {
-      assert( *receiver == 0, "must");
+      assert( *receiver == 0, "sanity");
       fprintf(fp,"  unsigned %sidx%d = %sidx%d + opnd_array(%d)->num_edges();",
                 prefix, idx, prefix, idx-1, idx-1 );
       fprintf(fp," \t// %s\n", tmp);
@@ -1856,6 +1863,7 @@ NameAndList *InsEncode::add_encode(char *encoding) {
 
   return encode;
 }
+
 NameAndList *InsEncode::add_encode_unexpanded(char *encoding) {
   assert( encoding != nullptr, "Must provide name for encoding");
 
@@ -2617,20 +2625,21 @@ const char *OperandForm::reduce_left(FormDict &globals)   const {
 void OperandForm::append_expanded_operand(OperandForm *oper) {
   assert(oper != nullptr, "sanity");
   assert(_expanded_operands_num < EXPANDED_OPER_LIMIT, "sanity");
-  _expanded_operands[(int)_expanded_operands_num++] = oper->is_operand();
+  _expanded_operands[(int)_expanded_operands_num++] = oper;
 }
 
 OperandForm* OperandForm::get_expanded_operand(int idx) {
   assert(idx >= 0 && idx < (int)_expanded_operands_num, "sanity");
   return _expanded_operands[idx];
 }
+
 uint OperandForm::get_expanded_operands_num() {
   assert(_expanded_operands_num <= EXPANDED_OPER_LIMIT, "sanity");
   return _expanded_operands_num;
 }
 
 const char *OperandForm::get_expanded_oper_name(const char *name, int idx) {
-  assert(idx >= 0 && idx < EXPANDED_OPER_LIMIT, "must");
+  assert(idx >= 0 && idx < EXPANDED_OPER_LIMIT, "sanity");
 
   const char *suffix = "_expanded_";
   const size_t len = strlen(name) + strlen(suffix) + 2;

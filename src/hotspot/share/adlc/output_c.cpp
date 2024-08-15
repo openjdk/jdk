@@ -1753,6 +1753,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     bool declared_def  = false;
     bool declared_kill = false;
 
+    // NOTE: only plain operands or expanded operands are added here,
+    //       expanding operands are not added here.
     while ((comp = node->_components.iter()) != nullptr) {
       // Lookup register class associated with operand type
       Form *form = (Form*)_globalNames[comp->_type];
@@ -2007,7 +2009,7 @@ public:
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
         int   param_no_unexpanded = _encoding.rep_var_index_unexpanded(rep_var);
-        if ( param_no == -1 && param_no_unexpanded == -1) {
+        if ( param_no == -1 && param_no_unexpanded == -1 ) {
           _AD.syntax_err( _encoding._linenum,
                           "1 Replacement variable %s not found in enc_class %s.\n",
                           rep_var, _encoding._name);
@@ -2017,7 +2019,8 @@ public:
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
         const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
-        const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ? _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
+        const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ?
+                   _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
         if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
@@ -2406,7 +2409,7 @@ private:
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
       // $reg form or the $Register MacroAssembler type conversions
-      assert( _operand_idx != -1 || _expanded_operands_num > 0,
+      assert( (_operand_idx != -1) != (_expanded_operands_num > 0),
               "Must use this subfield after operand");
       if( _reg_status == LITERAL_NOT_SEEN ) {
         if (_processing_noninput) {
@@ -2423,9 +2426,11 @@ private:
           fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
           if (_expanded_operands_num == 0) {
+            assert(_operand_idx != -1, "sanity");
             if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           } else {
-            assert(_expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
+            assert(_operand_idx == -1, "sanity");
+            assert(_expanded_operands_num > 0 && _expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
             fprintf(_fp, ",%d", _expanded_operands_num);
             for (int i = 0; i < (int)_expanded_operands_num; i++) {
               assert(_expanded_operands[i] >= 0, "sanity");
@@ -2532,7 +2537,8 @@ private:
 
       // Lookup the corresponding ins_encode parameter
       const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
-      const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ? _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
+      const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ?
+                 _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
       if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
         _AD.syntax_err( _ins_encode._linenum,
                         "Parameter %s not passed to enc_class %s from instruct %s.\n",
@@ -2562,13 +2568,14 @@ private:
           // TODO
           if (idx != -1) {
             fprintf(_fp,"opnd_array(%d)",idx);
-          } else { // idx_unexpanded != -1
+          } else {
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
             assert(operand->get_expanded_operands_num() > 0, "sanity");
             // Pass `- 1` below, because in _inst.operand_position_format_unexpanded above
             // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
             // and for expanding operand, only TEMP is supported.
+            assert(idx_unexpanded >= 1, "sanity");
             fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst.num_unique_opnds() - 1);
             fprintf(_fp,")");
           }
@@ -4021,6 +4028,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Check if the first post-match component may be an interesting def
     int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
     if (inst->_components_unexpanded.count() > 0) {
+      fprintf(fp_cpp,"%s // Below are expanding operands\n", indent);
       assert(index + 1 == inst->num_unique_opnds(), "sanity");
       // Not pass `index + 1` as the start_index below, because in buildMachNode(..., start_idx)
       // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
