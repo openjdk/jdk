@@ -28,6 +28,45 @@
 #include "opto/memnode.hpp"
 #include "opto/noOverflowInt.hpp"
 
+// The MemPointer is a shared facility to parse pointers and check the aliasing of pointers,
+// e.g. checking if two stores are adjacent.
+//
+// MemPointerLinearForm:
+//   When the pointer is parsed, it is represented as a linear form:
+//
+//     pointer = con + sum(summands)
+//
+//   Where each summand_i in summands has the form:
+//
+//     summand_i = scale_i * variable_i
+//
+//   Hence, the full linear form is:
+//
+//     pointer = con + sum_i(scale_i * variable_i)
+//
+//   On 64bit systems, this linear form is computed with long-add/mul, on 32bit systems it is
+//   computed with int-add/mul.
+//
+// MemPointerAliasing:
+//   This linear form allows us to determine the aliasing between two pointers easily. For
+//   example, if two pointers are identical, except for their constant:
+//
+//     pointer1 = con1 + sum(summands)
+//     pointer2 = con2 + sum(summands)
+//
+//   then we can easily compute the distance between the pointers (distance = con2 - con1),
+//   and determine if they are adjacent.
+//
+// MemPointerLinearFormParser:
+//   TODO
+
+
+// TODO
+// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:
+//
+//   abs(scale) < (1 << 30)
+//
+
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
 private:
@@ -100,30 +139,34 @@ public:
 #endif
 };
 
-// Summand of a MemPointerSimpleForm.
+// Summand of a MemPointerLinearForm:
+//
+//   summand = scale * variable
 //
 // On 32-bit platforms, we trivially use 32-bit jint values for the address computation:
 //
-//   s = scaleI * variable                    // 32-bit variable
+//   summand = scaleI * variable                    // 32-bit variable
 //   scale = scaleI
 //
 // On 64-bit platforms, we have a mix of 64-bit jlong and 32-bit jint values for the
 // address computation:
 //
-//   s = scaleL * ConvI2L(scaleI * variable)  // 32-bit variable
+//   summand = scaleL * ConvI2L(scaleI * variable)  // 32-bit variable
 //   scale = scaleL * scaleI
 //
-//   s = scaleL * variable                    // 64-bit variable
+//   summand = scaleL * variable                    // 64-bit variable
 //   scale = scaleL
 //
-// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt, where:
+// For simplicity, we only allow 32-bit jint scales, wrapped in NoOverflowInt. During
+// the decomposition into the summands, we might encounter a scale that overflows the
+// jint-range. Then, the scale becomes NaN, which indicates that we cannot decompose
+// the pointer using this summand.
 //
-//   abs(scale) < (1 << 30)
+// Note: we only need scaleL during the decomposition of the pointer. We need to check
+//       if decomposing a summand further is safe (i.e. if there cannot be an overflow),
+//       see MemPointerLinearFormParser::is_safe_from_int_overflow. But during aliasing
+//       computation, we fully rely on scale, and do not need scaleL any more.
 //
-// This allows very high scales, but allows calculations with scale to
-// avoid overflows.
-//
-// TODO generalization: final product only needs to use scale, not scaleL
 class MemPointerSummand : public StackObj {
 private:
   Node* _variable;
@@ -186,12 +229,12 @@ public:
 #endif
 };
 
-// Simple form of the pointer sub-expression of "pointer".
+// Linear form of the pointer sub-expression of "pointer".
 //
-//   pointer = sum(summands) + con
+//   pointer = con + sum(summands)
 //
 // TODO summands scale 30 bits
-class MemPointerSimpleForm : public StackObj {
+class MemPointerLinearForm : public StackObj {
 private:
   // We limit the number of summands to 10. Usually, a pointer contains a base pointer
   // (e.g. array pointer or null for native memory) and a few variables. For example:
@@ -208,15 +251,15 @@ private:
 
 public:
   // Empty
-  MemPointerSimpleForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
+  MemPointerLinearForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
   // Default: pointer = variable
-  MemPointerSimpleForm(Node* variable) : _pointer(variable), _con(NoOverflowInt(0)) {
+  MemPointerLinearForm(Node* variable) : _pointer(variable), _con(NoOverflowInt(0)) {
     const NoOverflowInt one(1);
     _summands[0] = MemPointerSummand(variable, one LP64_ONLY( COMMA one ));
   }
 
 private:
-  MemPointerSimpleForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
+  MemPointerLinearForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
     for (int i = 0; i < summands.length(); i++) {
@@ -229,15 +272,15 @@ private:
   }
 
 public:
-  static MemPointerSimpleForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
+  static MemPointerLinearForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
     if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointerSimpleForm(pointer, summands, con);
+      return MemPointerLinearForm(pointer, summands, con);
     } else {
-      return MemPointerSimpleForm(pointer);
+      return MemPointerLinearForm(pointer);
     }
   }
 
-  MemPointerAliasing get_aliasing_with(const MemPointerSimpleForm& other
+  MemPointerAliasing get_aliasing_with(const MemPointerLinearForm& other
                                        NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
   const MemPointerSummand summands_at(const uint i) const {
@@ -250,10 +293,10 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     if (_pointer == nullptr) {
-      st->print_cr("MemPointerSimpleForm empty.");
+      st->print_cr("MemPointerLinearForm empty.");
       return;
     }
-    st->print("MemPointerSimpleForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
+    st->print("MemPointerLinearForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
     _con.print_on(st);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
@@ -267,7 +310,7 @@ public:
 #endif
 };
 
-class MemPointerSimpleFormParser : public StackObj {
+class MemPointerLinearFormParser : public StackObj {
 private:
   const MemNode* _mem;
 
@@ -276,18 +319,18 @@ private:
   GrowableArray<MemPointerSummand> _summands;
   NoOverflowInt _con;
 
-  // Resulting simple-form.
-  MemPointerSimpleForm _simple_form;
+  // Resulting linear-form.
+  MemPointerLinearForm _linear_form;
 
 public:
-  MemPointerSimpleFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
-    _simple_form = parse_simple_form();
+  MemPointerLinearFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
+    _linear_form = parse_linear_form();
   }
 
-  const MemPointerSimpleForm simple_form() const { return _simple_form; }
+  const MemPointerLinearForm linear_form() const { return _linear_form; }
 
 private:
-  MemPointerSimpleForm parse_simple_form();
+  MemPointerLinearForm parse_linear_form();
   void parse_sub_expression(const MemPointerSummand summand);
 
   bool is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
@@ -297,14 +340,14 @@ private:
 class MemPointer : public StackObj {
 private:
   const MemNode* _mem;
-  const MemPointerSimpleForm _simple_form;
+  const MemPointerLinearForm _linear_form;
 
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
 public:
   MemPointer(const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
     _mem(mem),
-    _simple_form(init_simple_form(_mem))
+    _linear_form(init_linear_form(_mem))
     NOT_PRODUCT( COMMA _trace(trace) )
   {
 #ifndef PRODUCT
@@ -312,21 +355,21 @@ public:
       tty->print_cr("MemPointer::MemPointer:");
       tty->print("mem: "); mem->dump();
       _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
-      _simple_form.print_on(tty);
+      _linear_form.print_on(tty);
     }
 #endif
   }
 
   const MemNode* mem() const { return _mem; }
-  const MemPointerSimpleForm simple_form() const { return _simple_form; }
+  const MemPointerLinearForm linear_form() const { return _linear_form; }
   bool is_adjacent_to_and_before(const MemPointer& other) const;
 
 private:
-  static const MemPointerSimpleForm init_simple_form(const MemNode* mem) {
+  static const MemPointerLinearForm init_linear_form(const MemNode* mem) {
     assert(mem->is_Store(), "only stores are supported");
     ResourceMark rm;
-    MemPointerSimpleFormParser parser(mem);
-    return parser.simple_form();
+    MemPointerLinearFormParser parser(mem);
+    return parser.linear_form();
   }
 };
 

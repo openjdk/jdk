@@ -26,7 +26,7 @@
 #include "utilities/resourceHash.hpp"
 
 // DFS all-path traversal (i.e. with node repetitions), starting at the pointer:
-MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
+MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
@@ -39,7 +39,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
 
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
-    if (traversal_count++ > 1000) { return MemPointerSimpleForm(pointer); }
+    if (traversal_count++ > 1000) { return MemPointerLinearForm(pointer); }
     parse_sub_expression(_worklist.pop());
   }
 
@@ -60,7 +60,7 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
     }
     // Bail out if scale does not fit in 30bits or is NaN (i.e. overflow).
     if (scale.truncate_to_30_bits().is_NaN()) {
-      return MemPointerSimpleForm(pointer);
+      return MemPointerLinearForm(pointer);
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
@@ -69,10 +69,10 @@ MemPointerSimpleForm MemPointerSimpleFormParser::parse_simple_form() {
   }
   _summands.trunc_to(pos_put);
 
-  return MemPointerSimpleForm::make(pointer, _summands, _con);
+  return MemPointerLinearForm::make(pointer, _summands, _con);
 }
 
-void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand summand) {
+void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
   LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
@@ -172,7 +172,7 @@ void MemPointerSimpleFormParser::parse_sub_expression(const MemPointerSummand su
   _summands.push(summand);
 }
 
-bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
+bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
 #ifndef _LP64
   // On 32-bit platforms, ... TODO
   return true;
@@ -224,11 +224,11 @@ bool MemPointerSimpleFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 #endif
 }
 
-MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpleForm& other
+MemPointerAliasing MemPointerLinearForm::get_aliasing_with(const MemPointerLinearForm& other
                                                            NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
 #ifndef PRODUCT
   if (trace.is_trace_aliasing()) {
-    tty->print_cr("MemPointerSimpleForm::get_aliasing_with:");
+    tty->print_cr("MemPointerLinearForm::get_aliasing_with:");
     print_on(tty);
     other.print_on(tty);
   }
@@ -269,8 +269,8 @@ MemPointerAliasing MemPointerSimpleForm::get_aliasing_with(const MemPointerSimpl
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
-  const MemPointerSimpleForm& s1 = simple_form();
-  const MemPointerSimpleForm& s2 = other.simple_form();
+  const MemPointerLinearForm& s1 = linear_form();
+  const MemPointerLinearForm& s2 = other.linear_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
   const jint size = mem()->memory_size();
   const bool is_adjacent = aliasing.is_always_at_distance(size);
