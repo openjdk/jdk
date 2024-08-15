@@ -42,4 +42,5 @@ requires.extraPropDefns.vmOpts = \
     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
     --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
-    vm.continuations
+    vm.continuations \
+    vm.debug

@@ -92,6 +92,7 @@ typedef struct {
     jboolean modifiedUtf8;
     jboolean quiet;
     jboolean rankedMonitors;
+    jboolean jvmti_data_dump; /* If true, then support JVMTI DATA_DUMP_REQUEST events. */
 
     /* Debug flags (bit mask) */
     int      debugflags;
@@ -450,9 +451,7 @@ void *jvmtiAllocate(jint numBytes);
 void jvmtiDeallocate(void *buffer);
 
 void             eventIndexInit(void);
-#ifdef DEBUG
 char*            eventIndex2EventName(EventIndex ei);
-#endif
 jdwpEvent        eventIndex2jdwp(EventIndex i);
 jvmtiEvent       eventIndex2jvmti(EventIndex i);
 EventIndex       jdwp2EventIndex(jdwpEvent eventType);

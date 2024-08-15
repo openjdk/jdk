@@ -996,6 +996,7 @@ parseOptions(char *options)
     gdata->rememberVThreadsWhenDisconnected = JNI_FALSE;
 
     gdata->rankedMonitors = JNI_TRUE;
+    gdata->jvmti_data_dump = JNI_FALSE;
 
     /* Options being NULL will end up being an error. */
     if (options == NULL) {
@@ -1171,6 +1172,13 @@ parseOptions(char *options)
             }
             if ( dopause ) {
                 do_pause();
+            }
+        } else if (strcmp(buf, "datadump") == 0) {
+          // Enable JVMTI DATA_DUMP_REQUEST support.
+          // This is not a documented flag. This feature is experimental and is only intended
+          // to be used by debug agent developers. See comment for cbDataDump() for more details.
+          if ( !get_boolean(&str, &(gdata->jvmti_data_dump)) ) {
+                goto syntax_error;
             }
         } else if (strcmp(buf, "coredump") == 0) {
             if ( !get_boolean(&str, &docoredump) ) {

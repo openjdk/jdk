@@ -2368,8 +2368,6 @@ eventIndex2jvmti(EventIndex ei)
     return event;
 }
 
-#ifdef DEBUG
-
 char*
 eventIndex2EventName(EventIndex ei)
 {
@@ -2423,8 +2421,6 @@ eventIndex2EventName(EventIndex ei)
             return "Bad EI";
     }
 }
-
-#endif
 
 EventIndex
 jdwp2EventIndex(jdwpEvent eventType)

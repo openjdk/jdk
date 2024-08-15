@@ -1790,15 +1790,17 @@ void CodeCache::log_state(outputStream* st) {
 #ifdef LINUX
 void CodeCache::write_perf_map(const char* filename, outputStream* st) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-
-  // Perf expects to find the map file at /tmp/perf-<pid>.map
-  // if the file name is not specified.
-  char fname[32];
+  char fname[JVM_MAXPATHLEN];
   if (filename == nullptr) {
-    jio_snprintf(fname, sizeof(fname), "/tmp/perf-%d.map", os::current_process_id());
+    // Invocation outside of jcmd requires pid substitution.
+    if (!Arguments::copy_expand_pid(DEFAULT_PERFMAP_FILENAME,
+                                    strlen(DEFAULT_PERFMAP_FILENAME),
+                                    fname, JVM_MAXPATHLEN)) {
+      st->print_cr("Warning: Not writing perf map as pid substitution failed.");
+      return;
+    }
     filename = fname;
   }
-
   fileStream fs(filename, "w");
   if (!fs.is_open()) {
     st->print_cr("Warning: Failed to create %s for perf map", filename);

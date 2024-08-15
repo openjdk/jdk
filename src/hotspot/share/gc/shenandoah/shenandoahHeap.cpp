@@ -72,6 +72,7 @@
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
 
+#include "cds/archiveHeapWriter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -283,14 +284,7 @@ jint ShenandoahHeap::initialize() {
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   size_t aux_bitmap_page_size = bitmap_page_size;
-#ifdef LINUX
-  // In THP "advise" mode, we refrain from advising the system to use large pages
-  // since we know these commits will be short lived, and there is no reason to trash
-  // the THP area with this bitmap.
-  if (UseTransparentHugePages) {
-    aux_bitmap_page_size = os::vm_page_size();
-  }
-#endif
+
   ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
                                           bitmap_size_orig, aux_bitmap_page_size,
@@ -386,16 +380,6 @@ jint ShenandoahHeap::initialize() {
 
     _pretouch_heap_page_size = heap_page_size;
     _pretouch_bitmap_page_size = bitmap_page_size;
-
-#ifdef LINUX
-    // UseTransparentHugePages would madvise that backing memory can be coalesced into huge
-    // pages. But, the kernel needs to know that every small page is used, in order to coalesce
-    // them into huge one. Therefore, we need to pretouch with smaller pages.
-    if (UseTransparentHugePages) {
-      _pretouch_heap_page_size = (size_t)os::vm_page_size();
-      _pretouch_bitmap_page_size = (size_t)os::vm_page_size();
-    }
-#endif
 
     // OS memory managers may want to coalesce back-to-back pages. Make their jobs
     // simpler by pre-touching continuous spaces (heap and bitmap) separately.
@@ -1744,12 +1728,12 @@ void ShenandoahHeap::parallel_heap_region_iterate(ShenandoahHeapRegionClosure* b
 
 class ShenandoahRendezvousClosure : public HandshakeClosure {
 public:
-  inline ShenandoahRendezvousClosure() : HandshakeClosure("ShenandoahRendezvous") {}
+  inline ShenandoahRendezvousClosure(const char* name) : HandshakeClosure(name) {}
   inline void do_thread(Thread* thread) {}
 };
 
-void ShenandoahHeap::rendezvous_threads() {
-  ShenandoahRendezvousClosure cl;
+void ShenandoahHeap::rendezvous_threads(const char* name) {
+  ShenandoahRendezvousClosure cl(name);
   Handshake::execute(&cl);
 }
 
@@ -2498,4 +2482,81 @@ bool ShenandoahHeap::requires_barriers(stackChunkOop obj) const {
   }
 
   return false;
+}
+
+HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
+#if INCLUDE_CDS_JAVA_HEAP
+  // CDS wants a continuous memory range to load a bunch of objects.
+  // This effectively bypasses normal allocation paths, and requires
+  // a bit of massaging to unbreak GC invariants.
+
+  ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
+
+  // Easy case: a single regular region, no further adjustments needed.
+  if (!ShenandoahHeapRegion::requires_humongous(size)) {
+    return allocate_memory(req);
+  }
+
+  // Hard case: the requested size would cause a humongous allocation.
+  // We need to make sure it looks like regular allocation to the rest of GC.
+
+  // CDS code would guarantee no objects straddle multiple regions, as long as
+  // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
+  // point to deal with case when Shenandoah runs with smaller regions.
+  // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
+  if (ShenandoahHeapRegion::region_size_bytes() < ArchiveHeapWriter::MIN_GC_REGION_ALIGNMENT) {
+    return nullptr;
+  }
+
+  HeapWord* mem = allocate_memory(req);
+  size_t start_idx = heap_region_index_containing(mem);
+  size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+
+  // Flip humongous -> regular.
+  {
+    ShenandoahHeapLocker locker(lock(), false);
+    for (size_t c = start_idx; c < start_idx + num_regions; c++) {
+      get_region(c)->make_regular_bypass();
+    }
+  }
+
+  return mem;
+#else
+  assert(false, "Archive heap loader should not be available, should not be here");
+  return nullptr;
+#endif // INCLUDE_CDS_JAVA_HEAP
+}
+
+void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
+  // Nothing to do here, except checking that heap looks fine.
+#ifdef ASSERT
+  HeapWord* start = archive_space.start();
+  HeapWord* end = archive_space.end();
+
+  // No unclaimed space between the objects.
+  // Objects are properly allocated in correct regions.
+  HeapWord* cur = start;
+  while (cur < end) {
+    oop oop = cast_to_oop(cur);
+    shenandoah_assert_in_correct_region(nullptr, oop);
+    cur += oop->size();
+  }
+
+  // No unclaimed tail at the end of archive space.
+  assert(cur == end,
+         "Archive space should be fully used: " PTR_FORMAT " " PTR_FORMAT,
+         p2i(cur), p2i(end));
+
+  // Region bounds are good.
+  ShenandoahHeapRegion* begin_reg = heap_region_containing(start);
+  ShenandoahHeapRegion* end_reg = heap_region_containing(end);
+  assert(begin_reg->is_regular(), "Must be");
+  assert(end_reg->is_regular(), "Must be");
+  assert(begin_reg->bottom() == start,
+         "Must agree: archive-space-start: " PTR_FORMAT ", begin-region-bottom: " PTR_FORMAT,
+         p2i(start), p2i(begin_reg->bottom()));
+  assert(end_reg->top() == end,
+         "Must agree: archive-space-end: " PTR_FORMAT ", end-region-top: " PTR_FORMAT,
+         p2i(end), p2i(end_reg->top()));
+#endif
 }
