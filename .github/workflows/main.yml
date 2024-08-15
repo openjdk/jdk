@@ -36,7 +36,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x86-hs, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
-      linux-x86: ${{ steps.include.outputs.linux-x86 }}
+      linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
       linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
       macos-x64: ${{ steps.include.outputs.macos-x64 }}
@@ -111,7 +111,7 @@ jobs:
           }
 
           echo "linux-x64=$(check_platform linux-x64 linux x64)" >> $GITHUB_OUTPUT
-          echo "linux-x86=$(check_platform linux-x86 linux x86)" >> $GITHUB_OUTPUT
+          echo "linux-x86-hs=$(check_platform linux-x86-hs linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
           echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
@@ -135,12 +135,13 @@ jobs:
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-x64 == 'true'
 
-  build-linux-x86:
-    name: linux-x86
+  build-linux-x86-hs:
+    name: linux-x86-hs
     needs: select
     uses: ./.github/workflows/build-linux.yml
     with:
       platform: linux-x86
+      make-target: 'hotspot'
       gcc-major-version: '10'
       gcc-package-suffix: '-multilib'
       apt-architecture: 'i386'
@@ -150,7 +151,7 @@ jobs:
       extra-conf-options: '--with-target-bits=32 --enable-fallback-linker --enable-libffi-bundling'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.linux-x86 == 'true'
+    if: needs.select.outputs.linux-x86-hs == 'true'
 
   build-linux-x64-hs-nopch:
     name: linux-x64-hs-nopch
@@ -300,16 +301,6 @@ jobs:
       bootjdk-platform: linux-x64
       runs-on: ubuntu-22.04
 
-  test-linux-x86:
-    name: linux-x86
-    needs:
-      - build-linux-x86
-    uses: ./.github/workflows/test.yml
-    with:
-      platform: linux-x86
-      bootjdk-platform: linux-x64
-      runs-on: ubuntu-22.04
-
   test-macos-x64:
     name: macos-x64
     needs:
@@ -347,7 +338,7 @@ jobs:
     if: always()
     needs:
       - build-linux-x64
-      - build-linux-x86
+      - build-linux-x86-hs
       - build-linux-x64-hs-nopch
       - build-linux-x64-hs-zero
       - build-linux-x64-hs-minimal
@@ -358,7 +349,6 @@ jobs:
       - build-windows-x64
       - build-windows-aarch64
       - test-linux-x64
-      - test-linux-x86
       - test-macos-x64
       - test-windows-x64
 
