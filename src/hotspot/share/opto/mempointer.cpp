@@ -264,14 +264,18 @@ bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
   const MemPointerSimpleForm& s1 = simple_form();
   const MemPointerSimpleForm& s2 = other.simple_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
+  const jint size = mem()->memory_size();
+  const bool is_adjacent = aliasing.is_always_at_distance(size);
 
 #ifndef PRODUCT
   if (_trace.is_trace_adjacency()) {
-    tty->print("Aliasing for adjacency: "); aliasing.print_on(tty); tty->cr();
-    // TODO
+    tty->print("Adjacent: %s, because size = %d and aliasing = ",
+               is_adjacent ? "true" : "false", size);
+    aliasing.print_on(tty);
+    tty->cr();
   }
 #endif
 
-  return aliasing.is_always_at_distance(mem()->memory_size());
+  return is_adjacent;
 }
 

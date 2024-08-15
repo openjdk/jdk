@@ -297,8 +297,7 @@ private:
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
 public:
-  // TODO no need for phase?
-  MemPointer(PhaseGVN* phase, const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
+  MemPointer(const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
     _mem(mem),
     _simple_form(init_simple_form(_mem))
     NOT_PRODUCT( COMMA _trace(trace) )
