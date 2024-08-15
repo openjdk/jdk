@@ -40,6 +40,7 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -199,6 +200,8 @@ jint SerialHeap::initialize() {
   _old_gen = new TenuredGeneration(old_rs, OldSize, MinOldSize, MaxOldSize, rem_set());
 
   GCInitLogger::print();
+
+  GCForwarding::initialize(_reserved);
 
   return JNI_OK;
 }

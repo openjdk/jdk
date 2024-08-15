@@ -31,6 +31,7 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcForwarding.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.hpp"
@@ -79,7 +80,7 @@ inline void PSParallelCompact::adjust_pointer(T* p) {
     if (!obj->is_forwarded()) {
       return;
     }
-    oop new_obj = obj->forwardee();
+    oop new_obj = GCForwarding::forwardee(obj);
     assert(new_obj != nullptr, "non-null address for live objects");
     assert(new_obj != obj, "inv");
     assert(ParallelScavengeHeap::heap()->is_in_reserved(new_obj),
