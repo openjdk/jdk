@@ -2025,7 +2025,7 @@ void FileMapInfo::map_or_load_heap_region() {
         // TODO - remove implicit knowledge of G1
         log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }
