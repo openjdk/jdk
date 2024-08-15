@@ -91,7 +91,6 @@ void ADLParser::parse() {
 
   // Iterate over the lines in the file buffer parsing Level 1 objects
   for( next_line(); _curline != nullptr; next_line()) {
-
     _ptr = _curline;             // Reset ptr to start of new line
     skipws();                    // Skip any leading whitespace
     ident = get_ident();         // Get first token
@@ -434,7 +433,6 @@ void ADLParser::oper_parse(void) {
   }
   else get_oplist(oper->_parameters, oper->_localNames); // Parse the component operand list
   skipws();
-
   // Check for block delimiter
   if ((_curchar != '%') || (*(_ptr+1) != '{')) { // If not open block
     parse_err(SYNERR, "missing '%%{' in operand definition\n");
@@ -1302,6 +1300,7 @@ void ADLParser::pipe_parse(void) {
 
   pipeline = new PipelineForm();  // Build new Source object
   _AD.addForm(pipeline);
+
   skipws();                       // Skip leading whitespace
   // Check for block delimiter
   if ( (_curchar != '%')
@@ -4977,7 +4976,7 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
     }
 
     if (oper != nullptr && oper->get_expanded_operands_num() > 0) {
-      for (int i = 0; oper != nullptr && i < oper->get_expanded_operands_num(); i++) {
+      for (int i = 0; oper != nullptr && i < (int)oper->get_expanded_operands_num(); i++) {
         const char* expanded = OperandForm::get_expanded_oper_name(ident, i);
         if( _globalNames[expanded] != nullptr ) {
           parse_err(SYNERR, "Reuse of global name %s as operand.\n", expanded);
@@ -5071,7 +5070,7 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_
         return;
       }
       // Add the pair to the effects table
-      for (int i = 0; i < opForm->get_expanded_operands_num(); i++) {
+      for (int i = 0; i < (int)opForm->get_expanded_operands_num(); i++) {
         assert(eForm->isa(Component::TEMP), "only support `expand` for TEMP operand");
         const char* expanded = OperandForm::get_expanded_oper_name(ident, i);
         effects.Insert(expanded, eForm);

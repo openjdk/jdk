@@ -1923,7 +1923,7 @@ private:
   OperandForm  *_operand;
   int           _operand_idx;
   int           _expanded_operands[OperandForm::EXPANDED_OPER_LIMIT];
-  int           _expanded_operands_num;
+  uint          _expanded_operands_num;
   const char   *_local_name;
   const char   *_operand_name;
   bool          _doing_disp;
@@ -2050,7 +2050,7 @@ public:
             for (int i = 0; i < operand->get_expanded_operands_num(); i++) {
               const char* expanded = OperandForm::get_expanded_oper_name(inst_rep_var, i);
               int expanded_idx  = _inst.operand_position_format(expanded);
-              assert(expanded_idx >= 0 && expanded_idx < _inst.num_unique_opnds(), "sanity");
+              assert(expanded_idx >= 0 && (uint)expanded_idx < _inst.num_unique_opnds(), "sanity");
               _expanded_operands[i] = expanded_idx;
             }
             _expanded_operands_num = operand->get_expanded_operands_num();
@@ -2425,9 +2425,9 @@ private:
           if (_expanded_operands_num == 0) {
             if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           } else {
-            assert(_expanded_operands_num > 0 && _expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
+            assert(_expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
             fprintf(_fp, ",%d", _expanded_operands_num);
-            for (int i = 0; i < _expanded_operands_num; i++) {
+            for (int i = 0; i < (int)_expanded_operands_num; i++) {
               assert(_expanded_operands[i] >= 0, "sanity");
               fprintf(_fp,",idx%d", _expanded_operands[i]);
             }

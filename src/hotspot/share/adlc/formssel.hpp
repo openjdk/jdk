@@ -621,7 +621,7 @@ public:
 private:
   bool         _ideal_only; // Not a user-defined instruction
   OperandForm  *_expanded_operands[EXPANDED_OPER_LIMIT];
-  int          _expanded_operands_num;
+  uint         _expanded_operands_num;
 
 public:
   // Public Data
@@ -728,7 +728,7 @@ public:
 
   void append_expanded_operand(OperandForm *oper);
   OperandForm* get_expanded_operand(int idx);
-  int get_expanded_operands_num();
+  uint get_expanded_operands_num();
   static const char  *get_expanded_oper_name(const char *name, int idx);
 
   // --------------------------- FILE *output_routines

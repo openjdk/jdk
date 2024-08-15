@@ -2616,16 +2616,16 @@ const char *OperandForm::reduce_left(FormDict &globals)   const {
 
 void OperandForm::append_expanded_operand(OperandForm *oper) {
   assert(oper != nullptr, "sanity");
-  assert(_expanded_operands_num >= 0 && _expanded_operands_num < EXPANDED_OPER_LIMIT, "sanity");
+  assert(_expanded_operands_num < EXPANDED_OPER_LIMIT, "sanity");
   _expanded_operands[_expanded_operands_num++] = oper->is_operand();
 }
 
 OperandForm* OperandForm::get_expanded_operand(int idx) {
-  assert(idx >= 0 && idx < _expanded_operands_num, "sanity");
+  assert(idx >= 0 && idx < (int)_expanded_operands_num, "sanity");
   return _expanded_operands[idx];
 }
-int OperandForm::get_expanded_operands_num() {
-  assert(_expanded_operands_num >= 0 && _expanded_operands_num <= EXPANDED_OPER_LIMIT, "sanity");
+uint OperandForm::get_expanded_operands_num() {
+  assert(_expanded_operands_num <= EXPANDED_OPER_LIMIT, "sanity");
   return _expanded_operands_num;
 }
 
