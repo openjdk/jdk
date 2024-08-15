@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @bug 8214781 8293187
  * @summary Test for the -XX:ArchiveHeapTestClass flag
  * @requires vm.debug == true & vm.cds.write.archived.java.heap
- * @modules java.base/sun.invoke.util java.logging
+ * @modules java.base/sun.invoke.util java.base/jdk.internal.misc java.logging
  * @library /test/jdk/lib/testlibrary /test/lib
  *          /test/hotspot/jtreg/runtime/cds/appcds
  *          /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -35,7 +35,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar boot.jar
  *             CDSTestClassA CDSTestClassA$XX CDSTestClassA$YY
  *             CDSTestClassB CDSTestClassC CDSTestClassD
- *             CDSTestClassE CDSTestClassF CDSTestClassG
+ *             CDSTestClassE CDSTestClassF CDSTestClassG CDSTestClassG$MyEnum
  *             pkg.ClassInPackage
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar Hello
  * @run driver ArchiveHeapTestClass
@@ -44,6 +44,7 @@
 import jdk.test.lib.Platform;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.internal.misc.CDS;
 
 public class ArchiveHeapTestClass {
     static final String bootJar = ClassFileInstaller.getJarPath("boot.jar");
@@ -159,11 +160,18 @@ public class ArchiveHeapTestClass {
         output = dumpBootAndHello(CDSTestClassF_name);
         mustFail(output, "Class java.util.logging.Level not allowed in archive heap");
 
-        if (false) { // JDK-8293187
-            testCase("sun.invoke.util.Wrapper");
-            output = dumpBootAndHello(CDSTestClassG_name);
-            mustSucceed(output);
-        }
+        testCase("sun.invoke.util.Wrapper");
+        output = dumpBootAndHello(CDSTestClassG_name,
+                                  "--add-exports", "java.base/sun.invoke.util=ALL-UNNAMED",
+                                  "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        mustSucceed(output);
+
+        TestCommon.run("-Xbootclasspath/a:" + bootJar, "-cp", appJar, "-Xlog:cds+heap",
+                       "--add-exports", "java.base/sun.invoke.util=ALL-UNNAMED",
+                       "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
+                       CDSTestClassG_name)
+            .assertNormalExit("resolve subgraph " + CDSTestClassG_name,
+                              "Initialized from CDS");
     }
 }
 
@@ -269,8 +277,104 @@ class CDSTestClassF {
 class CDSTestClassG {
     static Object[] archivedObjects;
     static {
-        // Not in java.base
-        archivedObjects = new Object[1];
-        archivedObjects[0] = sun.invoke.util.Wrapper.BOOLEAN;
+        CDS.initializeFromArchive(CDSTestClassG.class);
+        if (archivedObjects == null) {
+            archivedObjects = new Object[13];
+            archivedObjects[0] = sun.invoke.util.Wrapper.BOOLEAN;
+            archivedObjects[1] = sun.invoke.util.Wrapper.INT.zero();
+            archivedObjects[2] = sun.invoke.util.Wrapper.DOUBLE.zero();
+            archivedObjects[3] = MyEnum.DUMMY1;
+
+            archivedObjects[4] = Boolean.class;
+            archivedObjects[5] = Byte.class;
+            archivedObjects[6] = Character.class;
+            archivedObjects[7] = Short.class;
+            archivedObjects[8] = Integer.class;
+            archivedObjects[9] = Long.class;
+            archivedObjects[10] = Float.class;
+            archivedObjects[11] = Double.class;
+            archivedObjects[12] = Void.class;
+        } else {
+            System.out.println("Initialized from CDS");
+        }
+    }
+
+    public static void main(String args[]) {
+        if (archivedObjects[0] != sun.invoke.util.Wrapper.BOOLEAN) {
+            throw new RuntimeException("Huh 0");
+        }
+
+        if (archivedObjects[1] != sun.invoke.util.Wrapper.INT.zero()) {
+            throw new RuntimeException("Huh 1");
+        }
+
+        if (archivedObjects[2] != sun.invoke.util.Wrapper.DOUBLE.zero()) {
+            throw new RuntimeException("Huh 2");
+        }
+
+        if (archivedObjects[3] != MyEnum.DUMMY1) {
+            throw new RuntimeException("Huh 3");
+        }
+
+        if (MyEnum.BOOLEAN != true) {
+            throw new RuntimeException("Huh 10.1");
+        }
+        if (MyEnum.BYTE != -128) {
+            throw new RuntimeException("Huh 10.2");
+        }
+        if (MyEnum.CHAR != 'c') {
+            throw new RuntimeException("Huh 10.3");
+        }
+        if (MyEnum.SHORT != -12345) {
+            throw new RuntimeException("Huh 10.4");
+        }
+        if (MyEnum.INT != -123456) {
+            throw new RuntimeException("Huh 10.5");
+        }
+        if (MyEnum.LONG != 0x1234567890L) {
+            throw new RuntimeException("Huh 10.6");
+        }
+        if (MyEnum.LONG2 != -0x1234567890L) {
+            throw new RuntimeException("Huh 10.7");
+        }
+        if (MyEnum.FLOAT != 567891.0f) {
+            throw new RuntimeException("Huh 10.8");
+        }
+        if (MyEnum.DOUBLE != 12345678905678.890) {
+            throw new RuntimeException("Huh 10.9");
+        }
+
+        checkClass(4, Boolean.class);
+        checkClass(5, Byte.class);
+        checkClass(6, Character.class);
+        checkClass(7, Short.class);
+        checkClass(8, Integer.class);
+        checkClass(9, Long.class);
+        checkClass(10, Float.class);
+        checkClass(11, Double.class);
+        checkClass(12, Void.class);
+
+        System.out.println("Success!");
+    }
+
+  static void checkClass(int index, Class c) {
+      if (archivedObjects[index] != c) {
+          throw new RuntimeException("archivedObjects[" + index + "] should be " + c);
+      }
+  }
+
+    enum MyEnum {
+        DUMMY1,
+        DUMMY2;
+
+        static final boolean BOOLEAN = true;
+        static final byte    BYTE    = -128;
+        static final short   SHORT   = -12345;
+        static final char    CHAR    = 'c';
+        static final int     INT     = -123456;
+        static final long    LONG    =  0x1234567890L;
+        static final long    LONG2   = -0x1234567890L;
+        static final float   FLOAT   = 567891.0f;
+        static final double  DOUBLE  = 12345678905678.890;
     }
 }
