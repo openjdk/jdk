@@ -53,7 +53,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, size_t page_size, bool clear_s
       size_t size = pointer_delta(end, start, sizeof(char));
       if (clear_space) {
         // Prefer page reallocation to migration.
-        os::free_memory((char*)start, size, page_size);
+        os::disclaim_memory((char*)start, size);
       }
       os::numa_make_global((char*)start, size);
     }
@@ -189,7 +189,12 @@ bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
 
 // Only used by oldgen allocation.
 bool MutableSpace::needs_expand(size_t word_size) const {
-  assert_lock_strong(PSOldGenExpand_lock);
+#ifdef ASSERT
+  // If called by VM thread, locking is not needed.
+  if (!Thread::current()->is_VM_thread()) {
+    assert_lock_strong(PSOldGenExpand_lock);
+  }
+#endif
   // Holding the lock means end is stable.  So while top may be advancing
   // via concurrent allocations, there is no need to order the reads of top
   // and end here, unlike in cas_allocate.

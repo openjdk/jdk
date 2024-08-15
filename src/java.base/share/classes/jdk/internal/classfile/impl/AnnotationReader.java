@@ -28,6 +28,7 @@ package jdk.internal.classfile.impl;
 import java.lang.classfile.Annotation;
 import java.lang.classfile.AnnotationElement;
 import java.lang.classfile.AnnotationValue;
+import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.TypeAnnotation;
@@ -39,7 +40,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.SharedSecrets;
 
-class AnnotationReader {
+public final class AnnotationReader {
     private AnnotationReader() { }
 
     public static List<Annotation> readAnnotations(ClassReader classReader, int p) {
@@ -59,10 +60,10 @@ class AnnotationReader {
         ++p;
         return switch (tag) {
             case AEV_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readEntry(p, IntegerEntry.class));
-            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_CHAR -> new AnnotationImpl.OfCharImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readEntry(p, DoubleEntry.class));
             case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readEntry(p, FloatEntry.class));
-            case AEV_INT -> new AnnotationImpl.OfIntegerImpl(classReader.readEntry(p, IntegerEntry.class));
+            case AEV_INT -> new AnnotationImpl.OfIntImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_LONG -> new AnnotationImpl.OfLongImpl(classReader.readEntry(p, LongEntry.class));
             case AEV_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readEntry(p, IntegerEntry.class));
             case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readEntry(p, IntegerEntry.class));
@@ -279,5 +280,25 @@ class AnnotationReader {
         p += 2;
         p = skipElementValuePairs(classReader, p);
         return p;
+    }
+
+    public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
+        // handles annotations and type annotations
+        // TODO annotation cleanup later
+        ((Util.Writable) annotation).writeTo(buf);
+    }
+
+    public static void writeAnnotations(BufWriter buf, List<? extends Annotation> list) {
+        // handles annotations and type annotations
+        var internalBuf = (BufWriterImpl) buf;
+        internalBuf.writeU2(list.size());
+        for (var e : list) {
+            writeAnnotation(internalBuf, e);
+        }
+    }
+
+    public static void writeAnnotationValue(BufWriterImpl buf, AnnotationValue value) {
+        // TODO annotation cleanup later
+        ((Util.Writable) value).writeTo(buf);
     }
 }

@@ -485,7 +485,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
         writeShort(elen);
         writeBytes(nameBytes, 0, nameBytes.length);
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);
+            writeShort(EXTID_ZIP64);
             writeShort(16);
             writeLong(e.size);
             writeLong(e.csize);
@@ -643,7 +643,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
 
         // take care of EXTID_ZIP64 and EXTID_EXTT
         if (hasZip64) {
-            writeShort(ZIP64_EXTID);// Zip64 extra
+            writeShort(EXTID_ZIP64);// Zip64 extra
             writeShort(elenZIP64);
             if (size == ZIP64_MAGICVAL)
                 writeLong(e.size);

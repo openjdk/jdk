@@ -870,7 +870,7 @@ static Method* new_method(
     Symbol* sig, AccessFlags flags, int max_stack, int params,
     ConstMethod::MethodType mt, TRAPS) {
 
-  address code_start = 0;
+  address code_start = nullptr;
   int code_length = 0;
   InlineTableSizes sizes;
 
