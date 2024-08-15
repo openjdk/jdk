@@ -56,15 +56,32 @@ import jdk.test.lib.net.IPSupport;
 
 public class AfterDisconnect {
 
-    public interface RetryableTest<T extends Exception> {
+    interface RetryableTest<T extends Exception> {
         public void runTest() throws T;
+    }
+
+    // retry the given lambda (RetryableTest) if an exception
+    // that satisfies the predicate (retryOn) is caught.
+    <T extends Exception> void testWithRetry(RetryableTest<T> test,
+                                             Predicate<Throwable> retryOn,
+                                             int max) throws T {
+        for (int i=0; i < max; i++) {
+            try {
+                test.runTest();
+                break;
+            } catch (Throwable t) {
+                if (i < max -1 && retryOn.test(t)) {
+                    System.out.println("Got " + t + "; will retry");
+                } else throw t;
+            }
+        }
     }
 
     /**
      * When calling {@link DatagramChannel#disconnect()} a {@link BindException}
      * may occur. In which case we want to retry the test.
      */
-    public class BindExceptionOnDisconnect extends BindException {
+    class BindExceptionOnDisconnect extends BindException {
         BindExceptionOnDisconnect(BindException x) {
             super(x.getMessage());
             initCause(x);
@@ -79,7 +96,7 @@ public class AfterDisconnect {
 
         // test with default protocol family
         System.out.println("Test with default");
-        retry(() -> {
+        testWithRetry(() -> {
             try (DatagramChannel dc = DatagramChannel.open()) {
                 dc.bind(new InetSocketAddress(lb, 0));
                 test(dc);
@@ -90,7 +107,7 @@ public class AfterDisconnect {
         // test with IPv6 socket
         if (IPSupport.hasIPv6()) {
             System.out.println("Test with IPv6 socket");
-            retry(() -> {
+            testWithRetry(() -> {
                 try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET6)) {
                     dc.bind(new InetSocketAddress(lb, 0));
                     test(dc);
@@ -102,7 +119,7 @@ public class AfterDisconnect {
         // test with IPv4 socket
         if (IPSupport.hasIPv4() && !preferIPv6) {
             System.out.println("Test with IPv4 socket");
-            retry(() -> {
+            testWithRetry(() -> {
                 try (DatagramChannel dc = DatagramChannel.open(StandardProtocolFamily.INET)) {
                     dc.bind(new InetSocketAddress(lb, 0));
                     test(dc);
@@ -112,22 +129,6 @@ public class AfterDisconnect {
         }
     }
 
-    // retry the given lambda (RetryableTest) if an exception
-    // that satisfies the predicate (retryOn) is caught.
-    <T extends Exception> void retry(RetryableTest<T> test,
-                                     Predicate<Throwable> retryOn,
-                                     int max) throws T {
-        for (int i=0; i < max; i++) {
-            try {
-                test.runTest();
-                break;
-            } catch (Throwable t) {
-                if (i < max -1 && retryOn.test(t)) {
-                    System.out.println("Got " + t + "; will retry");
-                } else throw t;
-            }
-        }
-    }
 
     void test(DatagramChannel dc) throws IOException {
         testLocalAddress(dc);
