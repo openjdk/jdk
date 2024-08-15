@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,115 +20,139 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
-  @test
-  @bug 4902933 8197810
-  @summary Test that selecting the current item doesnot send an ItemEvent
-  @key headful
-  @run main SelectCurrentItemTest
-*/
 
-import java.awt.Choice;
-import java.awt.Robot;
-import java.awt.Frame;
-import java.awt.BorderLayout;
 import java.awt.AWTException;
-import java.awt.Point;
-import java.awt.Dimension;
+import java.awt.BorderLayout;
+import java.awt.Choice;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.WindowListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class SelectCurrentItemTest implements ItemListener, WindowListener {
-    //Declare things used in the test, like buttons and labels here
-    private Frame frame;
-    private Choice theChoice;
-    private Robot robot;
+/*
+ * @test
+ * @bug 4902933 8197810
+ * @summary Test that selecting the current item does not send an ItemEvent
+ * @key headful
+ * @run main SelectCurrentItemTest
+ */
+public final class SelectCurrentItemTest
+        extends WindowAdapter
+        implements ItemListener {
+    private static Frame frame;
+    private static Choice choice;
 
-    private CountDownLatch latch = new CountDownLatch(1);
-    private volatile boolean passed = true;
+    private final Robot robot;
 
-    private void init()
-    {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(500);
-        } catch (AWTException e) {
-            throw new RuntimeException("Unable to create Robot. Test fails.");
-        }
+    private final CountDownLatch windowOpened = new CountDownLatch(1);
+    private final CountDownLatch mouseClicked = new CountDownLatch(1);
 
+    private volatile boolean itemStateChanged;
+
+    private SelectCurrentItemTest() throws AWTException {
+        robot = new Robot();
+        robot.setAutoDelay(500);
+    }
+
+    private void createUI() {
         frame = new Frame("SelectCurrentItemTest");
         frame.setLayout(new BorderLayout());
-        theChoice = new Choice();
+
+        choice = new Choice();
         for (int i = 0; i < 10; i++) {
-            theChoice.add(new String("Choice Item " + i));
+            choice.add("Choice Item " + i);
         }
-        theChoice.addItemListener(this);
-        frame.add(theChoice);
+        choice.addItemListener(this);
+        choice.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("mouseClicked()");
+                mouseClicked.countDown();
+            }
+        });
+
+        frame.add(choice, BorderLayout.CENTER);
+
         frame.addWindowListener(this);
 
-        frame.setLocation(1,20);
-        robot.mouseMove(10, 30);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
     }
 
-    public static void main(String... args) {
-        SelectCurrentItemTest test = new SelectCurrentItemTest();
-        test.init();
-        try {
-            test.latch.await(12000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {}
-        test.robot.waitForIdle();
+    private void runTest() throws Exception {
+        EventQueue.invokeAndWait(this::createUI);
 
-        try {
-            if (!test.passed) {
-                throw new RuntimeException("TEST FAILED.");
-            }
-        } finally {
-            test.frame.dispose();
+        if (!windowOpened.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Frame is not open in time");
+        }
+        robot.waitForIdle();
+
+        Rectangle choiceRect = getChoiceRect();
+        robot.mouseMove(choiceRect.x + choiceRect.width - 10,
+                        choiceRect.y + choiceRect.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (!mouseClicked.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not clicked in time");
+        }
+        robot.waitForIdle();
+
+        robot.mouseMove(choiceRect.x + choiceRect.width / 2,
+                        choiceRect.y + choiceRect.height + 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        robot.waitForIdle();
+
+        if (itemStateChanged) {
+            throw new RuntimeException("Test failed: itemStateChanged is called");
         }
     }
 
-    private void run() {
-        try {Thread.sleep(1000);} catch (InterruptedException e){}
-        // get loc of Choice on screen
-        Point loc = theChoice.getLocationOnScreen();
-        // get bounds of Choice
-        Dimension size = theChoice.getSize();
-        robot.mouseMove(loc.x + size.width - 10, loc.y + size.height / 2);
-
-        robot.setAutoDelay(250);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-
-        robot.delay(1000);
-
-        robot.mouseMove(loc.x + size.width / 2, loc.y + size.height);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-        latch.countDown();
+    private Rectangle getChoiceRect() throws Exception {
+        AtomicReference<Rectangle> rect = new AtomicReference<>();
+        EventQueue.invokeAndWait(
+                () -> rect.set(new Rectangle(choice.getLocationOnScreen(),
+                                             choice.getSize())));
+        return rect.get();
     }
 
-    @Override public void itemStateChanged(ItemEvent e) {
+    public static void main(String... args) throws Exception {
+        try {
+            new SelectCurrentItemTest().runTest();
+        } finally {
+            EventQueue.invokeAndWait(SelectCurrentItemTest::dispose);
+        }
+    }
+
+    private static void dispose() {
+        if (frame != null) {
+            frame.dispose();
+        }
+    }
+
+    @Override
+    public void itemStateChanged(ItemEvent e) {
         System.out.println("ItemEvent received.  Test fails");
-        passed = false;
+        itemStateChanged = true;
     }
 
-    @Override public void windowOpened(WindowEvent e) {
+    @Override
+    public void windowOpened(WindowEvent e) {
         System.out.println("windowActivated()");
-        (new Thread(this::run)).start();
+        windowOpened.countDown();
     }
 
-    @Override public void windowActivated(WindowEvent e) {}
-    @Override public void windowDeactivated(WindowEvent e) {}
-    @Override public void windowClosed(WindowEvent e) {}
-    @Override public void windowClosing(WindowEvent e) {}
-    @Override public void windowIconified(WindowEvent e) {}
-    @Override public void windowDeiconified(WindowEvent e) {}
 }
