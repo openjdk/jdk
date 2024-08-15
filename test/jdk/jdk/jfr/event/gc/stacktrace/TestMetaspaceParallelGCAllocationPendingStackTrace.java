@@ -29,7 +29,9 @@ package jdk.jfr.event.gc.stacktrace;
  *
  * @requires vm.gc == "null" | vm.gc == "Parallel"
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseParallelGC -Xlog:gc* -XX:MaxMetaspaceSize=64M jdk.jfr.event.gc.stacktrace.TestMetaspaceParallelGCAllocationPendingStackTrace
+ * @run main/othervm -XX:+UseParallelGC -Xlog:gc* -XX:MaxMetaspaceSize=64M
+ *                   -XX:FlightRecorderOptions:stackdepth=256
+ *                   jdk.jfr.event.gc.stacktrace.TestMetaspaceParallelGCAllocationPendingStackTrace
  */
 public class TestMetaspaceParallelGCAllocationPendingStackTrace {
 
