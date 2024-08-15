@@ -42,7 +42,7 @@ DWORD _GetTempPathW(DWORD nBufferLength, LPWSTR lpBuffer)
     if (!_GetTempPath2WInitialized) {
         HINSTANCE _kernelbase = LoadLibrary(TEXT("kernelbase.dll"));
         if (_kernelbase != nullptr) {
-            _GetTempPath2W = 
+            _GetTempPath2W =
                 reinterpret_cast<GetTempPath2WFnPtr>(
                     GetProcAddress(_kernelbase, "GetTempPath2W"));
         }
