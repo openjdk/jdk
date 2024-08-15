@@ -71,6 +71,8 @@ import jdk.jshell.execution.impl.ConsoleImpl.ConsoleOutputStream;
  */
 public class JdiDefaultExecutionControl extends JdiExecutionControl {
 
+    private static final int SHUTDOWN_TIMEOUT = 1; //1 second
+
     private VirtualMachine vm;
     private Process process;
     private final String remoteAgent;
@@ -270,7 +272,7 @@ public class JdiDefaultExecutionControl extends JdiExecutionControl {
         super.close();
         if (process != null) {
             try {
-                process.waitFor(1, TimeUnit.SECONDS);
+                process.waitFor(SHUTDOWN_TIMEOUT, TimeUnit.SECONDS);
             } catch (InterruptedException ex) {
                 debug(ex, "waitFor remote");
             }
