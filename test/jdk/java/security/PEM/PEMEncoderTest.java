@@ -31,11 +31,9 @@
  * @modules java.base/sun.security.util
  */
 
-import sun.security.util.DerValue;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
-import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
 import java.nio.charset.StandardCharsets;
@@ -91,7 +89,8 @@ public class PEMEncoderTest {
         for (PEMCerts.Entry entry : list) {
             try {
                 if (entry.password() != null) {
-                    keymap.put(entry.name(), pemd.withDecryption(entry.password()).decode(entry.pem()));
+                    keymap.put(entry.name(), pemd.withDecryption(
+                        entry.password()).decode(entry.pem()));
                 } else {
                     keymap.put(entry.name(), pemd.decode(entry.pem()));
                 }
@@ -110,7 +109,8 @@ public class PEMEncoderTest {
         try {
             result = encoder.encode(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encoder use failure with " + entry.name(), e);
+            throw new AssertionError("Encoder use failure with " +
+                entry.name(), e);
         }
 
         checkResults(entry, new String(result, StandardCharsets.UTF_8));
@@ -123,7 +123,8 @@ public class PEMEncoderTest {
         try {
             result = encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encoder use failure with " + entry.name(), e);
+            throw new AssertionError("Encoder use failure with " +
+                entry.name(), e);
         }
 
         checkResults(entry, result);
@@ -142,7 +143,8 @@ public class PEMEncoderTest {
                         "fish".toCharArray()))
                 .encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encrypted encoder failed with " + entry.name(), e);
+            throw new AssertionError("Encrypted encoder failed with " +
+                entry.name(), e);
         }
 
         System.out.println("PASS: " + entry.name());
@@ -157,7 +159,8 @@ public class PEMEncoderTest {
         try {
             encoder.encodeToString(keymap.get(key));
         } catch (RuntimeException e) {
-            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+            throw new AssertionError("Encrypted encoder failured with " +
+                entry.name(), e);
         }
 
         System.out.println("PASS: " + entry.name());
@@ -171,15 +174,15 @@ public class PEMEncoderTest {
             EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(entry.pem(),
                 EncryptedPrivateKeyInfo.class);
             if (entry.password() != null) {
-                EncryptedPrivateKeyInfo.encryptKey(pkey,
-                    new PBEKeySpec(entry.password()),
-                    Pem.DEFAULT_ALGO,
-                    ekpi.getAlgParameters().getParameterSpec(PBEParameterSpec.class),
+                EncryptedPrivateKeyInfo.encryptKey(pkey, entry.password(),
+                    Pem.DEFAULT_ALGO, ekpi.getAlgParameters().
+                        getParameterSpec(PBEParameterSpec.class),
                     null);
             }
             result = encoder.encodeToString(ekpi);
         } catch (RuntimeException | InvalidParameterSpecException e) {
-            throw new AssertionError("Encrypted encoder failured with " + entry.name(), e);
+            throw new AssertionError("Encrypted encoder failure with " +
+                entry.name(), e);
         }
 
         checkResults(entry, result);
@@ -200,7 +203,8 @@ public class PEMEncoderTest {
                 indexDiff(pem, result);
             }
         } catch (AssertionError e) {
-            throw new AssertionError("Encoder PEM mismatch " + entry.name(), e);
+            throw new AssertionError("Encoder PEM mismatch " +
+                entry.name(), e);
         }
     }
 
@@ -214,7 +218,8 @@ public class PEMEncoderTest {
         }
         for (int i = 0; i < len; i++) {
             if (a.charAt(i) != b.charAt(i)) {
-                throw new AssertionError("Char mistmatch, index #" + i + "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
+                throw new AssertionError("Char mistmatch, index #" + i +
+                    "  (" + a.charAt(i) + " vs " + b.charAt(i) + ")" + lenerr);
             }
         }
     }
