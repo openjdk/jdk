@@ -283,10 +283,12 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
   }
 
   size_t alloc_size = obj->size();
+  HeapWord* obj_end = cast_from_oop<HeapWord*>(obj) + alloc_size;
+
   if (alloc_size > ShenandoahHeapRegion::humongous_threshold_words()) {
     size_t idx = r->index();
-    size_t num_regions = ShenandoahHeapRegion::required_regions(alloc_size * HeapWordSize);
-    for (size_t i = idx; i < idx + num_regions; i++) {
+    size_t end_idx = heap->heap_region_index_containing(obj_end - 1);
+    for (size_t i = idx; i < end_idx; i++) {
       ShenandoahHeapRegion* chain_reg = heap->get_region(i);
       if (i == idx && !chain_reg->is_humongous_start()) {
         print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
@@ -298,6 +300,12 @@ void ShenandoahAsserts::assert_in_correct_region(void* interior_loc, oop obj, co
                       "Humongous continuation should be of proper size",
                       file, line);
       }
+    }
+  } else {
+    if (obj_end > r->top()) {
+      print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_in_correct_region failed",
+                    "Object end should be within the active area of the region",
+                    file, line);
     }
   }
 }

@@ -2500,7 +2500,7 @@ HeapWord* ShenandoahHeap::allocate_loaded_archive_space(size_t size) {
   // Hard case: the requested size would cause a humongous allocation.
   // We need to make sure it looks like regular allocation to the rest of GC.
 
-  // CDS code would guarantee no objects straggle multiple regions, as long as
+  // CDS code would guarantee no objects straddle multiple regions, as long as
   // regions are as large as MIN_GC_REGION_ALIGNMENT. It is impractical at this
   // point to deal with case when Shenandoah runs with smaller regions.
   // TODO: This check can be dropped once MIN_GC_REGION_ALIGNMENT agrees more with Shenandoah.
@@ -2538,7 +2538,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
   HeapWord* cur = start;
   while (cur < end) {
     oop oop = cast_to_oop(cur);
-    shenandoah_assert_correct(nullptr, oop);
+    shenandoah_assert_in_correct_region(nullptr, oop);
     cur += oop->size();
   }
 
