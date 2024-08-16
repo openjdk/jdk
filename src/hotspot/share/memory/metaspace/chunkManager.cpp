@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,10 +41,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-namespace metaspace {
-
 #define LOGFMT         "ChkMgr @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
+
+namespace metaspace {
 
 // Return a single chunk to the freelist and adjust accounting. No merge is attempted.
 void ChunkManager::return_chunk_simple_locked(Metachunk* c) {

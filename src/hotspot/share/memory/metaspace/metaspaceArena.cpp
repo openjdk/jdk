@@ -45,10 +45,10 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-namespace metaspace {
-
 #define LOGFMT         "Arena @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
+
+namespace metaspace {
 
 // Returns the level of the next chunk to be added, acc to growth policy.
 chunklevel_t MetaspaceArena::next_chunk_level() const {

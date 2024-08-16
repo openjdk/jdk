@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -44,6 +44,9 @@ void InternalStats::print_on(outputStream* st) {
 #define PRINT_COUNTER(name)  st->print_cr("%s: " UINTX_FORMAT ".", xstr(name), _##name);
   ALL_MY_COUNTERS(PRINT_COUNTER, PRINT_COUNTER)
 #undef PRINT_COUNTER
+
+#undef xstr
+#undef str
 
 }
 

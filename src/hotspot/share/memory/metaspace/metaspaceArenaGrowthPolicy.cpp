@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,6 +99,8 @@ const ArenaGrowthPolicy* ArenaGrowthPolicy::policy_for_space_type(Metaspace::Met
   DEFINE_CLASS_FOR_ARRAY(refl_class)
   DEFINE_CLASS_FOR_ARRAY(boot_non_class)
   DEFINE_CLASS_FOR_ARRAY(boot_class)
+
+#undef DEFINE_CLASS_FOR_ARRAY
 
   if (is_class) {
     switch(space_type) {

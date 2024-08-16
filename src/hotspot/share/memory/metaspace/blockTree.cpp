@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,11 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
-
-namespace metaspace {
-
-// Needed to prevent linker errors on MacOS and AIX
-const size_t BlockTree::MinWordSize;
 
 #define NODE_FORMAT \
   "@" PTR_FORMAT \
@@ -74,6 +69,15 @@ const size_t BlockTree::MinWordSize;
 // Assert, prints tree and specific given node
 #define tree_assert_invalid_node(cond, failure_node) \
   tree_assert(cond, "Invalid node: " NODE_FORMAT, NODE_FORMAT_ARGS(failure_node))
+
+#endif // ASSERT
+
+namespace metaspace {
+
+// Needed to prevent linker errors on MacOS and AIX
+const size_t BlockTree::MinWordSize;
+
+#ifdef ASSERT
 
 // walkinfo keeps a node plus the size corridor it and its children
 //  are supposed to be in.

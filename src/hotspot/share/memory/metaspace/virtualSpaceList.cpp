@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,10 +37,10 @@
 #include "runtime/atomic.hpp"
 #include "runtime/mutexLocker.hpp"
 
-namespace metaspace {
-
 #define LOGFMT         "VsList @" PTR_FORMAT " (%s)"
 #define LOGFMT_ARGS    p2i(this), this->_name
+
+namespace metaspace {
 
 // Create a new, empty, expandable list.
 VirtualSpaceList::VirtualSpaceList(const char* name, CommitLimiter* commit_limiter) :
