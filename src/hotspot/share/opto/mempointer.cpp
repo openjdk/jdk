@@ -232,6 +232,20 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
 
     // Intuition: what happens if a AddI, SubI, MulI or LShiftI (with constant) overflows
     //            the int range? TODO: generalize this a bit and write the proof!
+    //
+    // Idea: pointer = con + sum(other_summands) + summand
+    //                 -------------------------   -------
+    //                 rest                        scale * ConvI2L(op)
+    //
+    //       thus, can we replace:
+    //
+    //         scale * ConvI2L(a + b)     ->   scale * ConvI2L(a) + scale * ConvI2L(b)
+    //         scale * ConvI2L(a - b)     ->   scale * ConvI2L(a) - scale * ConvI2L(b)
+    //         scale * ConvI2L(a * con)   ->   scale * con * ConvI2L(a)
+    //         scale * ConvI2L(a << con)  ->   scale * (1 << con) * ConvI2L(a)
+    //
+    //  TODO what scale are we talking about??? scaleI or scaleL or scale??? not sure
+    //
     BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
     if (is_java_primitive(array_element_bt)) {
       NoOverflowInt array_element_size_in_bytes = NoOverflowInt(type2aelembytes(array_element_bt));
