@@ -123,7 +123,7 @@ void ShenandoahGenerationalEvacuationTask::do_work() {
 
 // When we promote a region in place, we can continue to use the established marking context to guide subsequent remembered
 // set scans of this region's content.  The region will be coalesced and filled prior to the next old-gen marking effort.
-// We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting poitners"
+// We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting pointers"
 // contained herein.
 void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion* region) {
   ShenandoahMarkingContext* const marking_context = _heap->complete_marking_context();

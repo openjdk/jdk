@@ -1185,7 +1185,6 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   }
 
   size_t remainder = words_size & ShenandoahHeapRegion::region_size_words_mask();
-  bool is_generational = _heap->mode()->is_generational();
   // Initialize regions:
   for (idx_t i = beg; i <= end; i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
