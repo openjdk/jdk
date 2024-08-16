@@ -2776,6 +2776,17 @@ private:
       }
       return Status(found_store, cfg_status == CFGStatus::SuccessWithRangeCheck);
     }
+
+#ifndef PRODUCT
+    void print_on(outputStream* st) const {
+      if (_found_store == nullptr) {
+        st->print_cr("None");
+      } else {
+        st->print_cr("Found[%d %s, %s]", _found_store->_idx, _found_store->Name(),
+                                         _found_range_check ? "RC" : "no-RC");
+      }
+    }
+#endif
   };
 
   Status find_adjacent_use_store(const StoreNode* def_store) const;
@@ -2793,6 +2804,10 @@ private:
   // Access to TraceMergeStores tags
   bool is_trace(TraceMergeStores::Tag tag) const {
     return _trace_tags.at(tag);
+  }
+
+  bool is_trace_basic() const {
+    return is_trace(TraceMergeStores::Tag::BASIC);
   }
 
   bool is_trace_pointer() const {
@@ -2822,17 +2837,21 @@ StoreNode* MergePrimitiveStores::run() {
     return nullptr;
   }
 
+  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] MergePrimitiveStores::run: "); _store->dump(); })
+
   // TODO maybe parse pointer, see if viable? - only if cached!
 
   // The _store must be the "last" store in a chain. If we find a use we could merge with
   // then that use or a store further down is the "last" store.
   Status status_use = find_adjacent_use_store(_store);
+  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] expect no use: "); status_use.print_on(tty); })
   if (status_use.found_store() != nullptr) {
     return nullptr;
   }
 
   // Check if we can merge with at least one def, so that we have at least 2 stores to merge.
   Status status_def = find_adjacent_def_store(_store);
+  NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] expect def: "); status_def.print_on(tty); })
   if (status_def.found_store() == nullptr) {
     return nullptr;
   }
@@ -3084,21 +3103,28 @@ void MergePrimitiveStores::collect_merge_list(Node_List& merge_list) const {
   merge_list.push(current);
   while (current != nullptr && merge_list.size() < merge_list_max_size) {
     Status status = find_adjacent_def_store(current);
+    NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] find def: "); status.print_on(tty); })
+
     current = status.found_store();
     if (current != nullptr) {
       merge_list.push(current);
 
       // We can have at most one RangeCheck.
       if (status.found_range_check()) {
+        NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] found RangeCheck, stop traversal."); })
         break;
       }
     }
   }
 
+  NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] found:"); merge_list.dump(); })
+
   // Truncate the merge_list to a power of 2.
   const uint pow2size = round_down_power_of_2(merge_list.size());
   assert(pow2size >= 2, "must be merging at least 2 stores");
   while (merge_list.size() > pow2size) { merge_list.pop(); }
+
+  NOT_PRODUCT( if(is_trace_basic()) { tty->print_cr("[TraceMergeStores] truncated:"); merge_list.dump(); })
 }
 
 // Merge the input values of the smaller stores to a single larger input value.
