@@ -2804,32 +2804,39 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   { // Handle inflated monitor.
     bind(inflated);
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register tagged_monitor = mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
-    const Register owner_addr = tmp2;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register tagged_monitor = mark;
+      const uintptr_t monitor_tag = markWord::monitor_value;
+      const Register owner_addr = tmp2;
 
-    // Compute owner address.
-    addi(owner_addr, tagged_monitor, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
+      // Compute owner address.
+      addi(owner_addr, tagged_monitor, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
 
-    // CAS owner (null => current thread).
-    cmpxchgd(/*flag=*/flag,
-            /*current_value=*/t,
-            /*compare_value=*/(intptr_t)0,
-            /*exchange_value=*/R16_thread,
-            /*where=*/owner_addr,
-            MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-            MacroAssembler::cmpxchgx_hint_acquire_lock());
-    beq(flag, locked);
+      // CAS owner (null => current thread).
+      cmpxchgd(/*flag=*/flag,
+              /*current_value=*/t,
+              /*compare_value=*/(intptr_t)0,
+              /*exchange_value=*/R16_thread,
+              /*where=*/owner_addr,
+              MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+              MacroAssembler::cmpxchgx_hint_acquire_lock());
+      beq(flag, locked);
 
-    // Check if recursive.
-    cmpd(flag, t, R16_thread);
-    bne(flag, slow_path);
+      // Check if recursive.
+      cmpd(flag, t, R16_thread);
+      bne(flag, slow_path);
 
-    // Recursive.
-    ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
-    addi(tmp1, tmp1, 1);
-    std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+      // Recursive.
+      ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+      addi(tmp1, tmp1, 1);
+      std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      // Set flag to NE
+      crxor(flag, Assembler::equal, flag, Assembler::equal);
+      b(slow_path);
+    }
   }
 
   bind(locked);
@@ -2943,49 +2950,56 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     bind(check_done);
 #endif
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register monitor = mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register monitor = mark;
+      const uintptr_t monitor_tag = markWord::monitor_value;
 
-    // Untag the monitor.
-    subi(monitor, mark, monitor_tag);
+      // Untag the monitor.
+      subi(monitor, mark, monitor_tag);
 
-    const Register recursions = tmp2;
-    Label not_recursive;
+      const Register recursions = tmp2;
+      Label not_recursive;
 
-    // Check if recursive.
-    ld(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-    addic_(recursions, recursions, -1);
-    blt(CCR0, not_recursive);
+      // Check if recursive.
+      ld(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+      addic_(recursions, recursions, -1);
+      blt(CCR0, not_recursive);
 
-    // Recursive unlock.
-    std(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-    crorc(CCR0, Assembler::equal, CCR0, Assembler::equal);
-    b(unlocked);
+      // Recursive unlock.
+      std(recursions, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+      crorc(CCR0, Assembler::equal, CCR0, Assembler::equal);
+      b(unlocked);
 
-    bind(not_recursive);
+      bind(not_recursive);
 
-    Label release_;
-    const Register t2 = tmp2;
+      Label release_;
+      const Register t2 = tmp2;
 
-    // Check if the entry lists are empty.
-    ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
-    ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
-    orr(t, t, t2);
-    cmpdi(flag, t, 0);
-    beq(flag, release_);
+      // Check if the entry lists are empty.
+      ld(t, in_bytes(ObjectMonitor::EntryList_offset()), monitor);
+      ld(t2, in_bytes(ObjectMonitor::cxq_offset()), monitor);
+      orr(t, t, t2);
+      cmpdi(flag, t, 0);
+      beq(flag, release_);
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
-    b(slow_path);
+      // The owner may be anonymous and we removed the last obj entry in
+      // the lock-stack. This loses the information about the owner.
+      // Write the thread to the owner field so the runtime knows the owner.
+      std(R16_thread, in_bytes(ObjectMonitor::owner_offset()), monitor);
+      b(slow_path);
 
-    bind(release_);
-    // Set owner to null.
-    release();
-    // t contains 0
-    std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+      bind(release_);
+      // Set owner to null.
+      release();
+      // t contains 0
+      std(t, in_bytes(ObjectMonitor::owner_offset()), monitor);
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      // Set flag to NE
+      crxor(flag, Assembler::equal, flag, Assembler::equal);
+      b(slow_path);
+    }
   }
 
   bind(unlocked);
