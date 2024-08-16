@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,13 +186,13 @@
  * <a id="example"></a>
  * <h2>Example</h2>
  *
- * The following is an example doclet that displays information of a class
- * and its members, supporting an option.
+ * The following is an example doclet that displays name of a class
+ * and its source file, supporting an option.
  *
- * {@snippet lang=java id="Example.java" :
+ * {@snippet lang = java id = "Example.java":
  * // @replace region=imports replacement=" // Note: imports deleted for clarity"
- * import com.sun.source.doctree.DocCommentTree;
  * import com.sun.source.util.DocTrees;
+ * import com.sun.source.util.TreePath;
  * import jdk.javadoc.doclet.Doclet;
  * import jdk.javadoc.doclet.DocletEnvironment;
  * import jdk.javadoc.doclet.Reporter;
@@ -200,80 +200,41 @@
  * import javax.lang.model.SourceVersion;
  * import javax.lang.model.element.Element;
  * import javax.lang.model.element.TypeElement;
- * import javax.lang.model.util.ElementFilter;
- * import javax.tools.Diagnostic.Kind;
- * import java.io.IOException;
- * import java.io.PrintWriter;
+ * import javax.tools.Diagnostic;
+ * import javax.tools.JavaFileObject;
  * import java.util.List;
  * import java.util.Locale;
  * import java.util.Set;
  * // @end
  *
  *
- * public class Example implements Doclet {
- *     private Reporter reporter;
- *     private PrintWriter stdout;
+ * // A minimal doclet that displays the class name, the associated source file
+ * // (if available), and the class kind for any types that it encounters.
+ * public class SimpleDoclet implements Doclet {
  *
- *     @Override
- *     public void init(Locale locale, Reporter reporter) {
- *         reporter.print(Kind.NOTE, "Doclet using locale: " + locale);
- *         this.reporter = reporter;
- *         stdout = reporter.getStandardWriter();
- *     }
+ *    private static final boolean OK = true;
+ *    private DocTrees treeUtils;
+ *    private Reporter reporter;
+ *    private String delimiter;
  *
- *     public void printElement(DocTrees trees, Element e) {
- *         DocCommentTree docCommentTree = trees.getDocCommentTree(e);
- *         if (docCommentTree != null) {
- *             stdout.println("Element (" + e.getKind() + ": "
- *                     + e + ") has the following comments:");
- *             stdout.println("Entire body: " + docCommentTree.getFullBody());
- *             stdout.println("Block tags: " + docCommentTree.getBlockTags());
- *         }
- *     }
+ *    @Override
+ *    public void init(Locale locale, Reporter reporter) {
+ *        this.reporter = reporter;
+ *    }
  *
- *     @Override
- *     public boolean run(DocletEnvironment docEnv) {
- *         reporter.print(Kind.NOTE, "overviewFile: " + overviewFile);
+ *    @Override
+ *    public String getName() {
+ *        return getClass().getSimpleName();
+ *    }
  *
- *         // get the DocTrees utility class to access document comments
- *         DocTrees docTrees = docEnv.getDocTrees();
- *
- *         // location of an element in the same directory as overview.html
- *         try {
- *             Element e = ElementFilter.typesIn(docEnv.getSpecifiedElements()).iterator().next();
- *             DocCommentTree docCommentTree
- *                     = docTrees.getDocCommentTree(e, overviewFile);
- *             if (docCommentTree != null) {
- *                 stdout.println("Overview html: " + docCommentTree.getFullBody());
- *             }
- *         } catch (IOException missing) {
- *             reporter.print(Kind.ERROR, "No overview.html found.");
- *         }
- *
- *         for (TypeElement t : ElementFilter.typesIn(docEnv.getIncludedElements())) {
- *             stdout.println(t.getKind() + ":" + t);
- *             for (Element e : t.getEnclosedElements()) {
- *                 printElement(docTrees, e);
- *             }
- *         }
- *         return true;
- *     }
- *
- *     @Override
- *     public String getName() {
- *         return "Example";
- *     }
- *
- *     private String overviewFile;
- *
- *     @Override
- *     public Set<? extends Option> getSupportedOptions() {
- *         Option[] options = {
+ *    // Declaring doclet-specific options.
+ *    @Override
+ *    public Set<? extends Option> getSupportedOptions() {
+ *        Option[] options = {
  *             new Option() {
  *                 private final List<String> someOption = List.of(
- *                         "--overview-file",
- *                         "-overviewfile",
- *                         "-o"
+ *                         "-delimiter",
+ *                         "-d"
  *                 );
  *
  *                 @Override
@@ -283,7 +244,7 @@
  *
  *                 @Override
  *                 public String getDescription() {
- *                     return "an option with aliases";
+ *                     return "delimiter to separate the class name and type in the output";
  *                 }
  *
  *                 @Override
@@ -298,12 +259,12 @@
  *
  *                 @Override
  *                 public String getParameters() {
- *                     return "file";
+ *                     return "delimiter";
  *                 }
  *
  *                 @Override
  *                 public boolean process(String opt, List<String> arguments) {
- *                     overviewFile = arguments.get(0);
+ *                     delimiter = arguments.get(0);
  *                     return true;
  *                 }
  *             }
@@ -312,20 +273,50 @@
  *         return Set.of(options);
  *     }
  *
- *     @Override
- *     public SourceVersion getSupportedSourceVersion() {
- *         // support the latest release
- *         return SourceVersion.latest();
- *     }
+ *    @Override
+ *    public SourceVersion getSupportedSourceVersion() {
+ *        return SourceVersion.latest();
+ *    }
+ *
+ *    @Override
+ *    public boolean run(DocletEnvironment environment) {
+ *        treeUtils = environment.getDocTrees();
+ *        new ShowFileObjects(reporter).show(environment.getSpecifiedElements());
+ *        return OK;
+ *    }
+ *
+ *    // A scanner to loop through specified elements
+ *    class ShowFileObjects {
+ *        final Reporter out;
+ *
+ *        ShowFileObjects(Reporter out) {
+ *            this.out = out;
+ *        }
+ *
+ *        void show(Set<? extends Element> elements) {
+ *            for (Element element : elements) {
+ *                if (element instanceof TypeElement te) {
+ *                    TreePath dct = treeUtils.getPath(te);
+ *                    if (dct == null) {
+ *                        out.print(Diagnostic.Kind.ERROR, te + ": no source file found");
+ *                    } else {
+ *                        JavaFileObject fo = dct.getCompilationUnit().getSourceFile();
+ *                        String output = te + " " + (delimiter != null ? delimiter : "") + " " + fo.getName() + " " + te.getKind();
+ *                        out.print(Diagnostic.Kind.NOTE, output);
+ *                    }
+ *                }
+ *            }
+ *        }
+ *    }
  * }
- * }
+ *}
  *
  * <p>
  * This doclet can be invoked with a command line, such as:
  * {@snippet id="run-doclet":
  *     javadoc -docletpath doclet-classes \     // @highlight substring="doclet-classes " type=italic
  *       -doclet Example \
- *       --overview-file overview.html \
+ *       -delimiter -> \
  *       --source-path source-location \        // @highlight region substring="source-location" type=italic
  *       source-location/Example.java           // @end
  *     }
