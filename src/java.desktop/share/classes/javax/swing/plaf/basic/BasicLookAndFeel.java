@@ -727,9 +727,8 @@ public abstract class BasicLookAndFeel extends LookAndFeel implements Serializab
             "Button.highlight", controlLtHighlight,
             "Button.border", buttonBorder,
             "Button.margin", new InsetsUIResource(2, 14, 2, 14),
-            // margin is (2, 14, 2, 14) which is vastly larger in horizontal
-            // values when compared to other default LookAndFeels that do not
-            // rely on these values
+            // The above margin has vastly larger horizontal values when
+            // compared to other look and feels that don't rely on these values
             "Button.textIconGap", 4,
             "Button.textShiftOffset", zero,
             "Button.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
