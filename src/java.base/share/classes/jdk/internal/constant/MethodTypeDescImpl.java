@@ -110,7 +110,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (rightBracket <= 0 || descriptor.charAt(0) != '(' || len == 0
                 || len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length(), true)
         ) {
-            badMethodDescriptor(descriptor);
+            throw badMethodDescriptor(descriptor);
         }
         var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, len);
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
@@ -124,7 +124,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         for (int cur = start; cur < end; ) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
             if (len == 0) {
-                badMethodDescriptor(descriptor);
+                throw badMethodDescriptor(descriptor);
             }
             paramCount++;
             cur += len;
@@ -142,8 +142,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         return paramTypes;
     }
 
-    private static void badMethodDescriptor(String descriptor) {
-        throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+    private static IllegalArgumentException badMethodDescriptor(String descriptor) {
+        return new IllegalArgumentException("Bad method descriptor: " + descriptor);
     }
 
     @Override
