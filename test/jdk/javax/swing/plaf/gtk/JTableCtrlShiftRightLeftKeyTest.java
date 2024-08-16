@@ -70,20 +70,20 @@ public class JTableCtrlShiftRightLeftKeyTest {
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(20);
+            robot.delay(100);
 
-            testCtrlShift(KeyEvent.VK_RIGHT, SELECTED_COLUMN, table.getColumnCount());
+            testCtrlShift(KeyEvent.VK_RIGHT, SELECTED_COLUMN, table.getColumnCount()-1);
 
             robot.waitForIdle();
-            robot.delay(20);
+            robot.delay(100);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(20);
+            robot.delay(100);
 
-            testCtrlShift(KeyEvent.VK_LEFT, table.getColumnCount(), SELECTED_COLUMN);
+            testCtrlShift(KeyEvent.VK_LEFT, 0, SELECTED_COLUMN);
             robot.waitForIdle();
-            robot.delay(20);
+            robot.delay(100);
             System.out.println("Test Passed!");
 
         } finally {
@@ -95,7 +95,8 @@ public class JTableCtrlShiftRightLeftKeyTest {
         }
     }
 
-    private static void testCtrlShift(int keySelected, int startCellCheck, int endCellCheck) throws Exception {
+    private static void testCtrlShift(int keySelected, int startCellCheck,
+                                      int endCellCheck) throws Exception {
         robot.keyPress(KeyEvent.VK_SHIFT);
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(keySelected);
@@ -103,20 +104,22 @@ public class JTableCtrlShiftRightLeftKeyTest {
         robot.keyRelease(KeyEvent.VK_SHIFT);
         robot.keyRelease(KeyEvent.VK_CONTROL);
         robot.waitForIdle();
-        robot.delay(20);
+        robot.delay(100);
 
         SwingUtilities.invokeAndWait(() -> {
             selectedColumnAfterKeyPress = table.getSelectedColumns();
         });
 
         if (selectedColumnAfterKeyPress[0] != startCellCheck ||
-                selectedColumnAfterKeyPress[selectedColumnAfterKeyPress.length-1] != endCellCheck) {
+                selectedColumnAfterKeyPress[selectedColumnAfterKeyPress.length-1] !=
+                        endCellCheck) {
             System.out.println("Selected Columns: ");
             for (int columnAfterTabPress : selectedColumnAfterKeyPress) {
                 System.out.println(columnAfterTabPress);
             }
             String key = (keySelected == KeyEvent.VK_RIGHT)? "RIGHT" : "LEFT";
-            String failureMsg = STR."Test Failure. Failed to select cells for Ctrl Shift \{key} selection";
+            String failureMsg = "Test Failure. Failed to select cells for Ctrl" +
+                    " Shift "+key+" selection";
             throw new RuntimeException(failureMsg);
         }
     }
@@ -133,4 +136,3 @@ public class JTableCtrlShiftRightLeftKeyTest {
         frame.setVisible(true);
     }
 }
-
