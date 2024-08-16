@@ -29,6 +29,7 @@ import jdk.internal.javac.PreviewFeature;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KDFParameters;
+import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 
 /**
@@ -44,9 +45,19 @@ import java.security.spec.AlgorithmParameterSpec;
  * super(params)} passing the parameters supplied. The constructor must also
  * throw an {@code InvalidAlgorithmParameterException} if the supplied
  * parameters are inappropriate.
+ * <p>
+ * Implementations which do not support {@code KDFParameters} may require
+ * {@code null} to be passed, otherwise an {@code InvalidAlgorithmParameterException}
+ * may be thrown. On the other hand, implementations which require
+ * {@code KDFParameters} may throw an {@code InvalidAlgorithmParameterException}
+ * upon receiving a {@code null} value. Furthermore, implementations
+ * may supply default values for {@code KDFParameters}, mutating the
+ * object. In that case, {@link KDFSpi#engineGetParameters()} would supply
+ * callers with the actual {@code KDFParameters} object used.
  *
  * @see KDF
  * @see KDFParameters
+ * @see KDF#getParameters()
  * @see SecretKey
  * @since 24
  */
@@ -62,6 +73,8 @@ public abstract class KDFSpi {
      * @param kdfParameters
      *     the initialization parameters for the {@code KDF} algorithm (may be
      *     {@code null})
+     *
+     * @see KDF#getParameters()
      *
      * @throws InvalidAlgorithmParameterException
      *     if the initialization parameters are inappropriate for this
@@ -83,8 +96,8 @@ public abstract class KDFSpi {
      * @return the parameters used with this {@code KDF} object, or
      * {@code null}
      *
-     * @throws UnsupportedOperationException if this method is not overridden
-     * by a provider
+     * @throws UnsupportedOperationException if the parameters cannot be
+     * retrieved or if the provider does not support parameter retrieval
      */
     protected abstract KDFParameters engineGetParameters();
 
@@ -101,21 +114,20 @@ public abstract class KDFSpi {
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
      *     KDF output and according to the derivation parameters.
-     *     Implementations must not return a {@code null} value here. Instead,
-     *     they must throw an appropriate {@code Exception} if a value cannot
-     *     be returned.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationParameterSpec} is
-     *     invalid, if {@code alg} is invalid, or if their combination
+     *     invalid or if the combination of {@code alg} and the {@code derivationParameterSpec}
      *     results in something invalid, ie - a key of inappropriate length
      *     for the specified algorithm
+     * @throws NoSuchAlgorithmException
+     *     if {@code alg} is empty or invalid
      * @throws NullPointerException
      *     if {@code alg} or {@code derivationParameterSpec} is null
      */
     protected abstract SecretKey engineDeriveKey(String alg,
                                                  AlgorithmParameterSpec derivationParameterSpec)
-        throws InvalidAlgorithmParameterException;
+        throws InvalidAlgorithmParameterException, NoSuchAlgorithmException;
 
     /**
      * Obtains raw data from a key derivation function.
@@ -126,11 +138,8 @@ public abstract class KDFSpi {
      * @param derivationParameterSpec
      *     derivation parameters
      *
-     * @return a byte array corresponding to a key built from the
-     *     KDF output and according to the derivation parameters.
-     *     Implementations must not return a {@code null} value here. Instead,
-     *     they must throw an appropriate {@code Exception} if a value cannot
-     *     be returned.
+     * @return a byte array corresponding to the KDF output and according to
+     * the derivation parameters.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationParameterSpec} is

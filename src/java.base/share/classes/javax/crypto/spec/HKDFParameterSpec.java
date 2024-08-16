@@ -31,6 +31,7 @@ import javax.crypto.SecretKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Parameters for the combined Extract, Expand, or Extract-then-Expand
@@ -167,11 +168,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     if the {@code ikm} is null
          */
         public Builder addIKM(SecretKey ikm) {
-            if (ikm != null) {
-                ikms.add(ikm);
-            } else {
-                throw new NullPointerException("ikm must not be null");
-            }
+            Objects.requireNonNull(ikm, "ikm must not be null");
+            ikms.add(ikm);
             return this;
         }
 
@@ -198,9 +196,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     if the {@code ikm} is null
          */
         public Builder addIKM(byte[] ikm) {
-            if (ikm == null) {
-                throw new NullPointerException("ikm must not be null");
-            }
+            Objects.requireNonNull(ikm, "ikm must not be null");
             if (ikm.length != 0) {
                 return addIKM(new SecretKeySpec(ikm, "Generic"));
             } else {
@@ -228,11 +224,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     if the {@code salt} is null
          */
         public Builder addSalt(SecretKey salt) {
-            if (salt != null) {
-                salts.add(salt);
-            } else {
-                throw new NullPointerException("salt must not be null");
-            }
+            Objects.requireNonNull(salt, "salt must not be null");
+            salts.add(salt);
             return this;
         }
 
@@ -256,10 +249,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     if the {@code salt} is null
          */
         public Builder addSalt(byte[] salt) {
-            if (salt == null) {
-                throw new NullPointerException(
-                    "salt must not be null");
-            }
+            Objects.requireNonNull(salt, "salt must not be null");
             if (salt.length != 0) {
                 return addSalt(new SecretKeySpec(salt, "Generic"));
             } else {
@@ -323,7 +313,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Returns an unmodifiable {@code List} of input key material values in
-         * the order they were added.
+         * the order they were added. Returns an empty list if there are no
+         * input key material values.
          *
          * @return the unmodifiable {@code List} of input key material values
          */
@@ -333,7 +324,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Returns an unmodifiable {@code List} of salt values in the order they
-         * were added.
+         * were added. Returns an empty list if there are no salt values.
          *
          * @return the unmodifiable {@code List} of salt values
          */
@@ -423,9 +414,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Constructor that may be used to initialize an
          * {@code ExtractThenExpand} object
-         * <p>
-         * Note: {@code addIKMValue} and {@code addSaltValue} may be called
-         * afterward to supply additional values, if desired
          *
          * @param ext
          *     a pre-generated {@code Extract}
@@ -441,7 +429,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     if {@code length} is not > 0
          */
         private ExtractThenExpand(Extract ext, byte[] info, int length) {
-            // null-checked previously
+            Objects.requireNonNull(ext, "Extract object must not be null");
             this.ext = ext;
             // - null prk is ok here (it's a signal)
             // - {@code Expand} constructor can deal with a null info
@@ -451,7 +439,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Returns an unmodifiable {@code List} of input key material values in
-         * the order they were added.
+         * the order they were added. Returns an empty list if there are no
+         * input key material values.
          *
          * @return the unmodifiable {@code List} of input key material values
          */
@@ -461,7 +450,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
         /**
          * Returns an unmodifiable {@code List} of salt values in the order they
-         * were added.
+         * were added. Returns an empty list if there are no salt values.
          *
          * @return the unmodifiable {@code List} of salt values
          */
