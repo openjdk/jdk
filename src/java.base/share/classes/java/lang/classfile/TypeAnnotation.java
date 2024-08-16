@@ -80,7 +80,7 @@ public sealed interface TypeAnnotation
         permits UnboundAttribute.UnboundTypeAnnotation {
 
     /**
-     * The kind of target on which the annotation appears, as defined in {@jvms 4.7.20.1}.
+     * The kind of target on which the annotation appears, as defined in JVMS {@jvms 4.7.20.1}.
      *
      * @since 22
      */
@@ -745,7 +745,7 @@ public sealed interface TypeAnnotation
 
     /**
      * JVMS: Type_path structure identifies which part of the type is annotated,
-     * as defined in {@jvms 4.7.20.2}
+     * as defined in JVMS {@jvms 4.7.20.2}
      *
      * @since 22
      */
@@ -754,7 +754,7 @@ public sealed interface TypeAnnotation
             permits UnboundAttribute.TypePathComponentImpl {
 
         /**
-         * Type path kind, as defined in {@jvms 4.7.20.2}
+         * Type path kind, as defined in JVMS {@jvms 4.7.20.2}
          *
          * @since 22
          */
