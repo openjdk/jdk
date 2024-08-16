@@ -209,12 +209,10 @@ bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ON
     case Op_CastII:
     case Op_CastLL:
     case Op_CastX2P:
-    // TODO CastPP ?
+    case Op_CastPP:
     case Op_ConvI2L:
       return true;
   }
-
-  // TODO tests with native memory, etc.
 
   const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
   if (ary_ptr_t != nullptr) {

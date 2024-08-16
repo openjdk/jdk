@@ -2839,8 +2839,6 @@ StoreNode* MergePrimitiveStores::run() {
 
   NOT_PRODUCT( if(is_trace_basic()) { tty->print("[TraceMergeStores] MergePrimitiveStores::run: "); _store->dump(); })
 
-  // TODO maybe parse pointer, see if viable? - only if cached!
-
   // The _store must be the "last" store in a chain. If we find a use we could merge with
   // then that use or a store further down is the "last" store.
   Status status_use = find_adjacent_use_store(_store);
@@ -2881,7 +2879,6 @@ bool MergePrimitiveStores::is_compatible_store(const StoreNode* other_store) con
     return false;
   }
 
-  // TODO: check if same base or both no base???
   return true;
 }
 
