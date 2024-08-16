@@ -958,6 +958,8 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   // Accumulator for the remembered set size
   size_t _total_remset_bytes;
 
+  size_t _young_cardset_bytes_per_region;
+
   // Accumulator for code roots memory size
   size_t _total_code_roots_bytes;
 

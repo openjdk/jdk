@@ -43,7 +43,7 @@ import static java.lang.classfile.ClassFile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
-        implements CodeModel, LabelContext {
+        implements LabelContext {
 
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 

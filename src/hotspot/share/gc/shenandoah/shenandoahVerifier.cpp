@@ -212,6 +212,21 @@ private:
       fwd_reg = obj_reg;
     }
 
+    // Do additional checks for special objects: their fields can hold metadata as well.
+    // We want to check class loading/unloading did not corrupt them.
+
+    if (java_lang_Class::is_instance(obj)) {
+      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            klass == nullptr || Metaspace::contains(klass),
+            "Instance class mirror should point to Metaspace");
+
+      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            array_klass == nullptr || Metaspace::contains(array_klass),
+            "Array class mirror should point to Metaspace");
+    }
+
     // ------------ obj and fwd are safe at this point --------------
 
     switch (_options._verify_marked) {
@@ -838,18 +853,6 @@ void ShenandoahVerifier::verify_during_evacuation() {
           _verify_liveness_disable,   // liveness data might be already stale after pre-evacs
           _verify_regions_disable,    // trash regions not yet recycled
           _verify_gcstate_evacuation  // evacuation is in progress
-  );
-}
-
-void ShenandoahVerifier::verify_after_evacuation() {
-  verify_at_safepoint(
-          "After Evacuation",
-          _verify_forwarded_allow,     // objects are still forwarded
-          _verify_marked_complete,     // bitmaps might be stale, but alloc-after-mark should be well
-          _verify_cset_forwarded,      // all cset refs are fully forwarded
-          _verify_liveness_disable,    // no reliable liveness data anymore
-          _verify_regions_notrash,     // trash regions have been recycled already
-          _verify_gcstate_forwarded    // evacuation produced some forwarded objects
   );
 }
 
