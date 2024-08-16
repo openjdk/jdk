@@ -241,10 +241,8 @@ public final class AnnotationReader {
             };
         }
         // the annotation info for this annotation
-        Utf8Entry type = classReader.readEntry(p, Utf8Entry.class);
-        p += 2;
-        return TypeAnnotation.of(targetInfo, List.of(typePath), type,
-                                 readAnnotationElementValuePairs(classReader, p));
+        var anno = readAnnotation(classReader, p);
+        return TypeAnnotation.of(targetInfo, List.of(typePath), anno);
     }
 
     private static List<TypeAnnotation.LocalVarTargetInfo> readLocalVarEntries(ClassReader classReader, int p, LabelContext lc, int targetType) {
@@ -283,17 +281,75 @@ public final class AnnotationReader {
     }
 
     public static void writeAnnotation(BufWriterImpl buf, Annotation annotation) {
-        // handles annotations and type annotations
         // TODO annotation cleanup later
         ((Util.Writable) annotation).writeTo(buf);
     }
 
-    public static void writeAnnotations(BufWriter buf, List<? extends Annotation> list) {
-        // handles annotations and type annotations
+    public static void writeAnnotations(BufWriter buf, List<Annotation> list) {
         var internalBuf = (BufWriterImpl) buf;
         internalBuf.writeU2(list.size());
         for (var e : list) {
             writeAnnotation(internalBuf, e);
+        }
+    }
+
+    private static int labelToBci(LabelContext lr, Label label, TypeAnnotation ta) {
+        //helper method to avoid NPE
+        if (lr == null) throw new IllegalArgumentException("Illegal targetType '%s' in TypeAnnotation outside of Code attribute".formatted(ta.targetInfo().targetType()));
+        return lr.labelToBci(label);
+    }
+
+    public static void writeTypeAnnotation(BufWriterImpl buf, TypeAnnotation ta) {
+        LabelContext lr = buf.labelContext();
+        // target_type
+        buf.writeU1(ta.targetInfo().targetType().targetTypeValue());
+
+        // target_info
+        switch (ta.targetInfo()) {
+            case TypeAnnotation.TypeParameterTarget tpt -> buf.writeU1(tpt.typeParameterIndex());
+            case TypeAnnotation.SupertypeTarget st -> buf.writeU2(st.supertypeIndex());
+            case TypeAnnotation.TypeParameterBoundTarget tpbt -> {
+                buf.writeU1(tpbt.typeParameterIndex());
+                buf.writeU1(tpbt.boundIndex());
+            }
+            case TypeAnnotation.EmptyTarget _ -> {
+                // nothing to write
+            }
+            case TypeAnnotation.FormalParameterTarget fpt -> buf.writeU1(fpt.formalParameterIndex());
+            case TypeAnnotation.ThrowsTarget tt -> buf.writeU2(tt.throwsTargetIndex());
+            case TypeAnnotation.LocalVarTarget lvt -> {
+                buf.writeU2(lvt.table().size());
+                for (var e : lvt.table()) {
+                    int startPc = labelToBci(lr, e.startLabel(), ta);
+                    buf.writeU2(startPc);
+                    buf.writeU2(labelToBci(lr, e.endLabel(), ta) - startPc);
+                    buf.writeU2(e.index());
+                }
+            }
+            case TypeAnnotation.CatchTarget ct -> buf.writeU2(ct.exceptionTableIndex());
+            case TypeAnnotation.OffsetTarget ot -> buf.writeU2(labelToBci(lr, ot.target(), ta));
+            case TypeAnnotation.TypeArgumentTarget tat -> {
+                buf.writeU2(labelToBci(lr, tat.target(), ta));
+                buf.writeU1(tat.typeArgumentIndex());
+            }
+        }
+
+        // target_path
+        buf.writeU1(ta.targetPath().size());
+        for (TypeAnnotation.TypePathComponent component : ta.targetPath()) {
+            buf.writeU1(component.typePathKind().tag());
+            buf.writeU1(component.typeArgumentIndex());
+        }
+
+        // annotation data
+        writeAnnotation(buf, ta.annotation());
+    }
+
+    public static void writeTypeAnnotations(BufWriter buf, List<TypeAnnotation> list) {
+        var internalBuf = (BufWriterImpl) buf;
+        internalBuf.writeU2(list.size());
+        for (var e : list) {
+            writeTypeAnnotation(internalBuf, e);
         }
     }
 
