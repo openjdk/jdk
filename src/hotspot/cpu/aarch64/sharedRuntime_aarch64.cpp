@@ -1811,7 +1811,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ br(Assembler::NE, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
+      __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
     }
     __ bind(count);
     __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
