@@ -5112,7 +5112,7 @@ class StubGenerator: public StubCodeGenerator {
    * NOTE: each field will occupy a single vector register group
    */
   void base64_vector_decode_round(Register src, Register dst, Register codec,
-                    Register size, Register stepSrc, Register stepDst, Register failedIdx,
+                    Register size, Register stepSrc, Register stepDst, Register failedIdx, Register minusOne,
                     VectorRegister inputV1, VectorRegister inputV2, VectorRegister inputV3, VectorRegister inputV4,
                     VectorRegister idxV1, VectorRegister idxV2, VectorRegister idxV3, VectorRegister idxV4,
                     VectorRegister outputV1, VectorRegister outputV2, VectorRegister outputV3,
@@ -5134,14 +5134,17 @@ class StubGenerator: public StubCodeGenerator {
     __ vluxei8_v(idxV4, codec, inputV4);
 
     //   2. check wrong data
-    __ vmseq_vi(v23, idxV1, -1);
-    __ vmseq_vi(v24, idxV2, -1);
-    __ vmor_mm(v23, v24, v23);
-    __ vmseq_vi(v24, idxV3, -1);
-    __ vmseq_vi(v25, idxV4, -1);
-    __ vmor_mm(v24, v25, v24);
-    __ vmor_mm(v23, v24, v23);
-    __ vfirst_m(failedIdx, v23);
+    __ vor_vv(outputV1, idxV1, idxV2);
+    __ vor_vv(outputV2, idxV3, idxV4);
+    __ vor_vv(outputV1, outputV1, outputV2);
+    __ vmseq_vi(v0, outputV1, -1);
+    __ vfirst_m(failedIdx, v0);
+    Label NoFailure;
+    __ beq(failedIdx, minusOne, NoFailure);
+    __ vsetvli(x0, failedIdx, Assembler::e8, lmul, Assembler::mu, Assembler::tu);
+    __ slli(stepDst, failedIdx, 1);
+    __ add(stepDst, failedIdx, stepDst);
+    __ BIND(NoFailure);
 
     //   3. compute the decoded data: vr(4) => vr(3)
     __ vsll_vi(idxV1, idxV1, 2);
@@ -5157,13 +5160,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // segmented store encoded data in v registers back to dst: vr(3) => mem(dst)
     __ vsseg3e8_v(outputV1, dst);
-
-    Label NoFailure;
-    __ mv(t0, -1);
-    __ beq(failedIdx, t0, NoFailure);
-    __ slli(stepDst, failedIdx, 1);
-    __ add(stepDst, failedIdx, stepDst);
-    __ BIND(NoFailure);
 
     // dst = dst + register_group_len_bytes * 3
     __ add(dst, dst, stepDst);
@@ -5239,6 +5235,7 @@ class StubGenerator: public StubCodeGenerator {
     Register length    = x28;     // t3, total length of src data in bytes
 
     Label ProcessData, Exit;
+    Label ProcessScalar, ProcessVector;
 
     // length should be multiple of 4
     __ sub(length, send, soff);
@@ -5254,67 +5251,17 @@ class StubGenerator: public StubCodeGenerator {
     __ la(codec, ExternalAddress((address) fromBase64URL));
     __ BIND(ProcessData);
 
-    // vector version
-    if (UseRVV) {
-      Label ProcessM1, ProcessM2, ProcessScalar;
-
-      Register failedIdx = soff;
-      Register stepSrcM1 = send;
-      Register stepSrcM2 = doff;
-      Register stepDst   = isURL;
-      Register size      = x29;   // t4
-
-      __ mv(size, MaxVectorSize * 2);
-      __ mv(stepSrcM1, MaxVectorSize * 4);
-      __ slli(stepSrcM2, stepSrcM1, 1);
-      __ mv(stepDst, MaxVectorSize * 2 * 3);
-
-      // vector version
-
-      __ blt(length, stepSrcM2, ProcessM1);
-
-      __ BIND(ProcessM2);
-      __ mv(failedIdx, 0);
-      base64_vector_decode_round(src, dst, codec,
-                    size, stepSrcM2, stepDst, failedIdx,
-                    v2, v4, v6, v8,      // inputs
-                    v10, v12, v14, v16,  // indexes
-                    v18, v20, v22,       // outputs
-                    Assembler::m2);
-      __ sub(length, length, stepSrcM2);
-
-      // error check
-      __ mv(t1, -1);
-      __ bne(failedIdx, t1, Exit);
-
-      __ bge(length, stepSrcM2, ProcessM2);
-
-
-      __ BIND(ProcessM1);
-      __ blt(length, stepSrcM1, ProcessScalar);
-
-      __ mv(failedIdx, 0);
-      __ srli(size, size, 1);
-      __ srli(stepDst, stepDst, 1);
-      base64_vector_decode_round(src, dst, codec,
-                    size, stepSrcM1, stepDst, failedIdx,
-                    v1, v2, v3, v4,      // inputs
-                    v5, v6, v7, v8,      // indexes
-                    v9, v10, v11,        // outputs
-                    Assembler::m1);
-      __ sub(length, length, stepSrcM1);
-
-      // error check
-      __ mv(t1, -1);
-      __ bne(failedIdx, t1, Exit);
-
-      __ BIND(ProcessScalar);
-    }
 
     // scalar version
     {
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
       Register combined32Bits = x29; // t5
+
+      if (UseRVV) {
+        __ mv(t0, MAX2((int)MaxVectorSize * 4, 76));
+        __ bge(length, t0, ProcessVector);
+        __ BIND(ProcessScalar);
+      }
 
       __ beqz(length, Exit);
 
@@ -5350,10 +5297,9 @@ class StubGenerator: public StubCodeGenerator {
         // error check
         __ bltz(combined32Bits, Exit);
 
+        // store 3 bytes decoded data
         __ sraiw(byte0, combined32Bits, 16);
         __ sraiw(byte1, combined32Bits, 8);
-
-        // store 3 bytes decoded data
         __ sb(byte0, Address(dst, 0));
         __ sb(byte1, Address(dst, 1));
         __ sb(combined32Bits, Address(dst, 2));
@@ -5362,7 +5308,66 @@ class StubGenerator: public StubCodeGenerator {
         __ addi(dst, dst, 3);
         // loop back
         __ bnez(length, ScalarLoop);
+
+        __ j(Exit);
       }
+    }
+
+
+    // vector version
+    if (UseRVV) {
+      __ BIND(ProcessVector);
+
+      Label ProcessM1, ProcessM2;
+
+      Register failedIdx = soff;
+      Register stepSrcM1 = send;
+      Register stepSrcM2 = doff;
+      Register stepDst   = isURL;
+      Register size      = x29;   // t4
+      Register minusOne  = x30;   // t5
+
+      __ mv(minusOne, -1);
+      __ mv(size, MaxVectorSize * 2);
+      __ mv(stepSrcM1, MaxVectorSize * 4);
+      __ slli(stepSrcM2, stepSrcM1, 1);
+      __ mv(stepDst, MaxVectorSize * 2 * 3);
+
+      __ blt(length, stepSrcM2, ProcessM1);
+
+
+      // Assembler::m2
+      __ BIND(ProcessM2);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM2, stepDst, failedIdx, minusOne,
+                    v2, v4, v6, v8,      // inputs
+                    v10, v12, v14, v16,  // indexes
+                    v18, v20, v22,       // outputs
+                    Assembler::m2);
+      __ sub(length, length, stepSrcM2);
+
+      // error check
+      __ bne(failedIdx, minusOne, Exit);
+
+      __ bge(length, stepSrcM2, ProcessM2);
+
+
+      // Assembler::m2
+      __ BIND(ProcessM1);
+      __ blt(length, stepSrcM1, ProcessScalar);
+
+      __ srli(size, size, 1);
+      __ srli(stepDst, stepDst, 1);
+      base64_vector_decode_round(src, dst, codec,
+                    size, stepSrcM1, stepDst, failedIdx, minusOne,
+                    v1, v2, v3, v4,      // inputs
+                    v5, v6, v7, v8,      // indexes
+                    v9, v10, v11,        // outputs
+                    Assembler::m1);
+      __ sub(length, length, stepSrcM1);
+
+      // error check
+      __ beq(failedIdx, minusOne, ProcessScalar);
     }
 
     __ BIND(Exit);
