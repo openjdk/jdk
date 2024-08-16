@@ -129,27 +129,27 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
       case Op_LShiftL:
       case Op_LShiftI:
       {
-        // Only multiplication with constants is allowed: factor * in2
-        Node* in1 = n->in(1);
-        Node* in2 = n->in(2);
-        if (!in2->is_Con()) { break; }
+        // Only multiplication with constants is allowed: factor * variable
+        Node* variable = n->in(1);
+        Node* con      = n->in(2);
+        if (!con->is_Con()) { break; }
         NoOverflowInt factor;
         LP64_ONLY( NoOverflowInt factorL; )
         switch (opc) {
-          case Op_MulL:
-            factor = NoOverflowInt(in2->get_long());
+          case Op_MulL:    // variable * con
+            factor = NoOverflowInt(con->get_long());
             LP64_ONLY( factorL = factor; )
             break;
-          case Op_MulI:
-            factor = NoOverflowInt(in2->get_int());
+          case Op_MulI:    // variable * con
+            factor = NoOverflowInt(con->get_int());
             LP64_ONLY( factorL = one; )
             break;
-          case Op_LShiftL:
-            factor = one << NoOverflowInt(in2->get_int());
+          case Op_LShiftL: // variable << con = variable * (1 << con)
+            factor = one << NoOverflowInt(con->get_int());
             LP64_ONLY( factorL = factor; )
             break;
-          case Op_LShiftI:
-            factor = one << NoOverflowInt(in2->get_int());
+          case Op_LShiftI: // variable << con = variable * (1 << con)
+            factor = one << NoOverflowInt(con->get_int());
             LP64_ONLY( factorL = one; )
             break;
         }
@@ -158,7 +158,7 @@ void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSumman
         NoOverflowInt new_scale = scale * factor;
         LP64_ONLY( NoOverflowInt new_scaleL = scaleL * factorL; )
 
-        _worklist.push(MemPointerSummand(in1, new_scale LP64_ONLY( COMMA new_scaleL )));
+        _worklist.push(MemPointerSummand(variable, new_scale LP64_ONLY( COMMA new_scaleL )));
         return;
       }
       case Op_CastII:
@@ -194,14 +194,8 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
   return true;
 #else
 
-  // But on 64-bit platforms, these operations are not trivially safe:
-  //   AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
-  //   SubI:     ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
-  //   MulI:     ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
-  //   LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
-  //
-  // But these are always safe:
   switch(opc) {
+    // These operations are always safe to decompose:
     case Op_ConI:
     case Op_ConL:
     case Op_AddP:
@@ -215,6 +209,17 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
     case Op_CastPP:
     case Op_ConvI2L:
       return true;
+
+    // But on 64-bit platforms, these operations are not trivially safe to decompose:
+    case Op_AddI:    // ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
+    case Op_SubI:    // ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
+    case Op_MulI:    // ConvI2L(a *  conI) != ConvI2L(a) *  ConvI2L(conI)
+    case Op_LShiftI: // ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
+      break; // Analysis below.
+
+    default:
+      assert(false, "case not covered explicitly");
+      return false;
   }
 
   const TypeAryPtr* ary_ptr_t = _mem->adr_type()->isa_aryptr();
@@ -225,7 +230,8 @@ bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_
       return true;
     }
 
-    // TODO
+    // Intuition: what happens if a AddI, SubI, MulI or LShiftI (with constant) overflows
+    //            the int range? TODO: generalize this a bit and write the proof!
     BasicType array_element_bt = ary_ptr_t->elem()->array_element_basic_type();
     if (is_java_primitive(array_element_bt)) {
       NoOverflowInt array_element_size_in_bytes = NoOverflowInt(type2aelembytes(array_element_bt));
