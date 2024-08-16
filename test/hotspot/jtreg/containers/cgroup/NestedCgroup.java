@@ -65,9 +65,8 @@ public class NestedCgroup {
 
         public static String memory_max_filename;
         public static boolean isCgroup2;
-        public static String controller;
 
-        public static void args_add_cgexec(List<String> args) {
+        public static void args_add_cgexec(String controller, List<String> args) {
             args.add("cgexec");
             args.add("-g");
             args.add(controller + ":" + CGROUP_OUTER + "/" + CGROUP_INNER);
@@ -87,8 +86,7 @@ public class NestedCgroup {
             args.add("-Xlog:os+container=trace");
         }
 
-        public Test(String controller_) throws Exception {
-            controller = controller_;
+        public Test(String controller) throws Exception {
             OutputAnalyzer output;
 
             List<String> cgdelete = new ArrayList<>();
@@ -112,10 +110,6 @@ public class NestedCgroup {
             cgcreate1.add("-g");
             cgcreate1.add(controller + ":" + CGROUP_OUTER);
             output = ProcessTools.executeProcess(new ProcessBuilder(cgcreate1));
-            if (output.contains("cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, operation not allowed")
-             || output.contains("cgcreate: can't create cgroup " + CGROUP_OUTER + ": Cgroup, requested group parameter does not exist")) {
-                throw new SkippedException("Missing root permission: " + output.getStderr());
-            }
             output.stdoutShouldBeEmpty();
             output.stderrShouldBeEmpty();
 
@@ -127,23 +121,10 @@ public class NestedCgroup {
             output.stdoutShouldBeEmpty();
             output.stderrShouldBeEmpty();
 
-            String provider = Metrics.systemMetrics().getProvider();
-            System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
-            boolean isCgroup2;
-            if ("cgroupv1".equals(provider)) {
-              isCgroup2 = false;
-            } else if ("cgroupv2".equals(provider)) {
-              isCgroup2 = true;
-            } else {
-              throw new IllegalArgumentException();
-            }
-            System.err.println("isCgroup2 = " + isCgroup2);
-
             memory_max_filename = isCgroup2 ? "memory.max" : "memory.limit_in_bytes";
             ProcessTools.executeProcess("cgset", "-r", memory_max_filename + "=" + MEMORY_MAX_OUTER, "/" + CGROUP_OUTER);
 
-            HookResult hookResult = hook();
-            // C++ CgroupController
+            HookResult hookResult = hook(controller);
             hookResult.output.shouldMatch("\\[trace\\]\\[os,container\\] Memory Limit is: " + hookResult.integerLimit + "$");
 
             output = ProcessTools.executeProcess(new ProcessBuilder(cgdelete));
@@ -151,17 +132,16 @@ public class NestedCgroup {
             output.stderrShouldBeEmpty();
         }
 
-        public abstract HookResult hook() throws Exception;
+        public abstract HookResult hook(String controller) throws Exception;
     }
     private static class TestTwoLimits extends Test {
-        public HookResult hook() throws Exception {
+        public HookResult hook(String controller) throws Exception {
             HookResult hookResult = new HookResult();
 
-            // CgroupV1Subsystem::read_memory_limit_in_bytes considered hierarchical_memory_limit only when inner memory.limit_in_bytes is unlimited.
             ProcessTools.executeProcess("cgset", "-r", memory_max_filename + "=" + MEMORY_MAX_INNER, "/" + CGROUP_OUTER + "/" + CGROUP_INNER);
 
             List<String> cgexec = new ArrayList<>();
-            args_add_cgexec(cgexec);
+            args_add_cgexec(controller, cgexec);
             args_add_self_verbose(cgexec);
             cgexec.add("-version");
             hookResult.output = ProcessTools.executeProcess(new ProcessBuilder(cgexec));
@@ -176,11 +156,11 @@ public class NestedCgroup {
         }
     }
     private static class TestNoController extends Test {
-        public HookResult hook() throws Exception {
+        public HookResult hook(String controller) throws Exception {
             HookResult hookResult = new HookResult();
 
             List<String> cgexec = new ArrayList<>();
-            args_add_cgexec(cgexec);
+            args_add_cgexec(controller, cgexec);
             args_add_self(cgexec);
             cgexec.add("NestedCgroup");
             cgexec.add("TestNoController");
@@ -201,6 +181,21 @@ public class NestedCgroup {
         }
     }
     public static void main(String[] args) throws Exception {
+        if (!Platform.isRoot()) {
+            throw new SkippedException("Missing root permission");
+        }
+
+        String provider = Metrics.systemMetrics().getProvider();
+        System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
+        if ("cgroupv1".equals(provider)) {
+          isCgroup2 = false;
+        } else if ("cgroupv2".equals(provider)) {
+          isCgroup2 = true;
+        } else {
+          throw new IllegalArgumentException();
+        }
+        System.err.println("isCgroup2 = " + isCgroup2);
+
         switch (args.length) {
             case 0:
                 Test.jdkTool = JDKToolFinder.getJDKTool("java");
