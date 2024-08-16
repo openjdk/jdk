@@ -824,10 +824,10 @@ static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg
                         address code_start, address code_end,
                         Label& L_ok) {
   Label L_fail;
-  __ lea(temp_reg, ExternalAddress(code_start));
+  __ lea(temp_reg, AddressLiteral(code_start, relocInfo::none));
   __ cmpptr(pc_reg, temp_reg);
   __ jcc(Assembler::belowEqual, L_fail);
-  __ lea(temp_reg, ExternalAddress(code_end));
+  __ lea(temp_reg, AddressLiteral(code_end, relocInfo::none));
   __ cmpptr(pc_reg, temp_reg);
   __ jcc(Assembler::below, L_ok);
   __ bind(L_fail);
@@ -2266,7 +2266,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ lightweight_lock(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
+      __ lightweight_lock(lock_reg, obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
     }
     __ bind(count_mon);
     __ inc_held_monitor_count();
