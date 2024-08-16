@@ -34,10 +34,10 @@ class ShenandoahOldGeneration;
 class ShenandoahOldGC : public ShenandoahConcurrentGC {
  public:
   ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption);
-  bool collect(GCCause::Cause cause);
+  bool collect(GCCause::Cause cause) override;
 
  protected:
-  virtual void op_final_mark();
+  void op_final_mark() override;
 
  private:
   ShenandoahOldGeneration* _old_generation;

@@ -454,7 +454,6 @@ inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   return collection_set()->is_in_loc(p);
 }
 
-
 inline bool ShenandoahHeap::is_stable() const {
   return _gc_state.is_clear();
 }

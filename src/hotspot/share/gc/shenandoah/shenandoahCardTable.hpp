@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
 
 #include "gc/shared/cardTable.hpp"
 #include "memory/virtualspace.hpp"
@@ -33,7 +33,7 @@
 class ShenandoahCardTable: public CardTable {
   friend class VMStructs;
 
-protected:
+private:
   // We maintain two copies of the card table to facilitate concurrent remembered set scanning
   // and concurrent clearing of stale remembered set information.  During the init_mark safepoint,
   // we copy the contents of _write_byte_map to _read_byte_map and clear _write_byte_map.
@@ -56,11 +56,13 @@ protected:
   CardValue* _write_byte_map_base;
 
 public:
-  ShenandoahCardTable(MemRegion whole_heap) : CardTable(whole_heap) { }
+  explicit ShenandoahCardTable(MemRegion whole_heap) : CardTable(whole_heap),
+    _read_byte_map(nullptr), _write_byte_map(nullptr),
+    _read_byte_map_base(nullptr), _write_byte_map_base(nullptr) {}
 
-  virtual void initialize();
+  void initialize();
 
-  virtual bool is_in_young(const void* obj) const;
+  bool is_in_young(const void* obj) const override;
 
   CardValue* read_byte_for(const void* p);
 
@@ -87,4 +89,4 @@ private:
   void initialize(const ReservedSpace& card_table);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP

@@ -22,6 +22,7 @@
  * questions.
  *
  */
+
 #include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
