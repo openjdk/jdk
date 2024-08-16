@@ -27,7 +27,7 @@
 
 // Recursively parse the pointer expression with a DFS all-path traversal
 // (i.e. with node repetitions), starting at the pointer.
-MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
+MemPointerDecomposedForm MemPointerDecomposedFormParser::parse_decomposed_form() {
   assert(_worklist.is_empty(), "no prior parsing");
   assert(_summands.is_empty(), "no prior parsing");
 
@@ -41,12 +41,12 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
   // parses the pointer expression recursively.
   int traversal_count = 0;
   while (_worklist.is_nonempty()) {
-    if (traversal_count++ > 1000) { return MemPointerLinearForm(pointer); }
+    if (traversal_count++ > 1000) { return MemPointerDecomposedForm(pointer); }
     parse_sub_expression(_worklist.pop());
   }
 
   // Check for constant overflow.
-  if (_con.is_NaN()) { return MemPointerLinearForm(pointer); }
+  if (_con.is_NaN()) { return MemPointerDecomposedForm(pointer); }
 
   // Sort summands by variable->_idx
   _summands.sort(MemPointerSummand::cmp_for_sort);
@@ -65,7 +65,7 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
     }
     // Bail out if scale is NaN.
     if (scale.is_NaN()) {
-      return MemPointerLinearForm(pointer);
+      return MemPointerDecomposedForm(pointer);
     }
     // Keep summands with non-zero scale.
     if (!scale.is_zero()) {
@@ -74,20 +74,20 @@ MemPointerLinearForm MemPointerLinearFormParser::parse_linear_form() {
   }
   _summands.trunc_to(pos_put);
 
-  return MemPointerLinearForm::make(pointer, _summands, _con);
+  return MemPointerDecomposedForm::make(pointer, _summands, _con);
 }
 
 // Parse a sub-expression of the pointer, starting at the current summand. We parse the
 // current node, and see if it can be decomposed into further summands, or if the current
 // summand is terminal.
-void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand summand) {
+void MemPointerDecomposedFormParser::parse_sub_expression(const MemPointerSummand summand) {
   Node* n = summand.variable();
   const NoOverflowInt scale = summand.scale();
   LP64_ONLY( const NoOverflowInt scaleL = summand.scaleL(); )
   const NoOverflowInt one(1);
 
   int opc = n->Opcode();
-  if (is_safe_from_int_overflow(opc LP64_ONLY( COMMA scaleL ))) {
+  if (is_safe_to_decompose_op(opc LP64_ONLY( COMMA scaleL ))) {
     switch (opc) {
       case Op_ConI:
       case Op_ConL:
@@ -129,7 +129,7 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_LShiftL:
       case Op_LShiftI:
       {
-        // Form must be linear: only multiplication with constants can be decomposed.
+        // Only multiplication with constants is allowed: factor * in2
         Node* in1 = n->in(1);
         Node* in2 = n->in(2);
         if (!in2->is_Con()) { break; }
@@ -165,10 +165,12 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
       case Op_CastLL:
       case Op_CastX2P:
       case Op_ConvI2L:
-      // On 32bit systems we can also look through ConvI2L, since the final result will always
-      // be truncated back with ConvL2I. On 64bit systems this is not linear:
+      // On 32bit systems we can also look through ConvL2I, since the final result will always
+      // be truncated back with ConvL2I. On 64bit systems we cannot decompose ConvL2I because
+      // such int values will eventually be expanded to long with a ConvI2L:
       //
-      //   ConvI2L(ConvL2I(max_jint + 1)) = ConvI2L(min_jint) = min_jint
+      //   valL = max_jint + 1
+      //   ConvI2L(ConvL2I(valL)) = ConvI2L(min_jint) = min_jint != max_jint + 1 = valL
       //
       NOT_LP64( case Op_ConvL2I: )
       {
@@ -184,9 +186,8 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
   _summands.push(summand);
 }
 
-// Check if the decomposition of operation opc is guaranteed to be safe from int overflows.
-// TODO maybe use linearity in name? BC what is safe and why int-overflow???
-bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
+// Check if the decomposition of operation opc is guaranteed to be safe.
+bool MemPointerDecomposedFormParser::is_safe_to_decompose_op(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
   // be truncated. Thus, it does not matter if we have int or long overflows.
@@ -238,11 +239,11 @@ bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ON
 #endif
 }
 
-MemPointerAliasing MemPointerLinearForm::get_aliasing_with(const MemPointerLinearForm& other
-                                                           NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
+MemPointerAliasing MemPointerDecomposedForm::get_aliasing_with(const MemPointerDecomposedForm& other
+                                                               NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const {
 #ifndef PRODUCT
   if (trace.is_trace_aliasing()) {
-    tty->print_cr("MemPointerLinearForm::get_aliasing_with:");
+    tty->print_cr("MemPointerDecomposedForm::get_aliasing_with:");
     print_on(tty);
     other.print_on(tty);
   }
@@ -285,8 +286,8 @@ MemPointerAliasing MemPointerLinearForm::get_aliasing_with(const MemPointerLinea
 }
 
 bool MemPointer::is_adjacent_to_and_before(const MemPointer& other) const {
-  const MemPointerLinearForm& s1 = linear_form();
-  const MemPointerLinearForm& s2 = other.linear_form();
+  const MemPointerDecomposedForm& s1 = decomposed_form();
+  const MemPointerDecomposedForm& s2 = other.decomposed_form();
   const MemPointerAliasing aliasing = s1.get_aliasing_with(s2 NOT_PRODUCT( COMMA _trace ));
   const jint size = mem()->memory_size();
   const bool is_adjacent = aliasing.is_always_at_distance(size);

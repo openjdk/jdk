@@ -31,8 +31,8 @@
 // The MemPointer is a shared facility to parse pointers and check the aliasing of pointers,
 // e.g. checking if two stores are adjacent.
 //
-// MemPointerLinearForm:
-//   When the pointer is parsed, it is represented as a linear form:
+// MemPointerDecomposedForm:
+//   When the pointer is parsed, it is decomposed into a constant and a sum of summands:
 //
 //     pointer = con + sum(summands)
 //
@@ -40,15 +40,15 @@
 //
 //     summand_i = scale_i * variable_i
 //
-//   Hence, the full linear form is:
+//   Hence, the full decomposed form is:
 //
 //     pointer = con + sum_i(scale_i * variable_i)
 //
-//   On 64bit systems, this linear form is computed with long-add/mul, on 32bit systems it is
-//   computed with int-add/mul.
+//   On 64bit systems, this decomposed form is computed with long-add/mul, on 32bit systems
+//   it is computed with int-add/mul.
 //
 // MemPointerAliasing:
-//   The linear form allows us to determine the aliasing between two pointers easily. For
+//   The decomposed form allows us to determine the aliasing between two pointers easily. For
 //   example, if two pointers are identical, except for their constant:
 //
 //     pointer1 = con1 + sum(summands)
@@ -57,8 +57,8 @@
 //   then we can easily compute the distance between the pointers (distance = con2 - con1),
 //   and determine if they are adjacent.
 //
-// MemPointerLinearFormParser:
-//   Any pointer can be parsed into this (default / trivial) linear form:
+// MemPointerDecomposedFormParser:
+//   Any pointer can be parsed into this (default / trivial) decomposed form:
 //
 //     pointer = 0   + 1     * pointer
 //               con   scale
@@ -72,21 +72,21 @@
 //     pointer2 = array[i + 1] = array_base + array_int_base_offset + 4L * ConvI2L(i + 1)
 //
 //     At first, computing aliasing is difficult because the distance is hidden inside the
-//     ConvI2L. we can convert this (with array_int_base_offset = 16) into these linear forms:
+//     ConvI2L. we can convert this (with array_int_base_offset = 16) into these decomposed forms:
 //
 //     pointer1 = 16L + 1L * array_base + 4L * i
 //     pointer2 = 20L + 1L * array_base + 4L * i
 //
 //     This allows us to easily see that these two pointers are adjacent (distance = 4).
 //
-//   Hence, in MemPointerLinearFormParser::parse_linear_form, we start with the pointer as
+//   Hence, in MemPointerDecomposedFormParser::parse_decomposed_form, we start with the pointer as
 //   a trivial summand. A summand can either be decomposed further or it is terminal (cannot
 //   be decomposed further). We decompose the summands recursively until all remaining summands
-//   are terminal, see MemPointerLinearFormParser::parse_sub_expression. This effectively parses
+//   are terminal, see MemPointerDecomposedFormParser::parse_sub_expression. This effectively parses
 //   the pointer expression recursively.
 //
 //   We have to be careful on 64bit systems with ConvI2L: decomposing its input is not
-//   correct in general, overflows may not be preserved in the linear form:
+//   correct in general, overflows may not be preserved in the decomposed form:
 //
 //     AddI:     ConvI2L(a +  b)    != ConvI2L(a) +  ConvI2L(b)
 //     SubI:     ConvI2L(a -  b)    != ConvI2L(a) -  ConvI2L(b)
@@ -94,7 +94,7 @@
 //     LShiftI:  ConvI2L(a << conI) != ConvI2L(a) << ConvI2L(conI)
 //
 //   However, there are some cases where we can prove that the decomposition is safe,
-//   see MemPointerLinearFormParser::is_safe_from_int_overflow.
+//   see MemPointerDecomposedFormParser::is_safe_to_decompose_op.
 
 #ifndef PRODUCT
 class TraceMemPointer : public StackObj {
@@ -168,7 +168,7 @@ public:
 #endif
 };
 
-// Summand of a MemPointerLinearForm:
+// Summand of a MemPointerDecomposedForm:
 //
 //   summand = scale * variable
 //
@@ -193,7 +193,7 @@ public:
 //
 // Note: we only need scaleL during the decomposition of the pointer. We need to check
 //       if decomposing a summand further is safe (i.e. if there cannot be an overflow),
-//       see MemPointerLinearFormParser::is_safe_from_int_overflow. But during aliasing
+//       see MemPointerDecomposedFormParser::is_safe_to_decompose_op. But during aliasing
 //       computation, we fully rely on scale, and do not need scaleL any more.
 //
 class MemPointerSummand : public StackObj {
@@ -258,11 +258,11 @@ public:
 #endif
 };
 
-// Linear form of the pointer sub-expression of "pointer".
+// Decomposed form of the pointer sub-expression of "pointer".
 //
 //   pointer = con + sum(summands)
 //
-class MemPointerLinearForm : public StackObj {
+class MemPointerDecomposedForm : public StackObj {
 private:
   // We limit the number of summands to 10. Usually, a pointer contains a base pointer
   // (e.g. array pointer or null for native memory) and a few variables. For example:
@@ -279,16 +279,16 @@ private:
 
 public:
   // Empty
-  MemPointerLinearForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
+  MemPointerDecomposedForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
   // Default / trivial: pointer = 0 + 1 * pointer
-  MemPointerLinearForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
+  MemPointerDecomposedForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
     assert(pointer != nullptr, "pointer must be non-null");
     const NoOverflowInt one(1);
     _summands[0] = MemPointerSummand(pointer, one LP64_ONLY( COMMA one ));
   }
 
 private:
-  MemPointerLinearForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
+  MemPointerDecomposedForm(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con)
     :_pointer(pointer), _con(con) {
     assert(!_con.is_NaN(), "non-NaN constant");
     assert(summands.length() <= SUMMANDS_SIZE, "summands must fit");
@@ -302,15 +302,15 @@ private:
   }
 
 public:
-  static MemPointerLinearForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
+  static MemPointerDecomposedForm make(Node* pointer, const GrowableArray<MemPointerSummand>& summands, const NoOverflowInt con) {
     if (summands.length() <= SUMMANDS_SIZE) {
-      return MemPointerLinearForm(pointer, summands, con);
+      return MemPointerDecomposedForm(pointer, summands, con);
     } else {
-      return MemPointerLinearForm(pointer);
+      return MemPointerDecomposedForm(pointer);
     }
   }
 
-  MemPointerAliasing get_aliasing_with(const MemPointerLinearForm& other
+  MemPointerAliasing get_aliasing_with(const MemPointerDecomposedForm& other
                                        NOT_PRODUCT( COMMA const TraceMemPointer& trace) ) const;
 
   const MemPointerSummand summands_at(const uint i) const {
@@ -323,10 +323,10 @@ public:
 #ifndef PRODUCT
   void print_on(outputStream* st) const {
     if (_pointer == nullptr) {
-      st->print_cr("MemPointerLinearForm empty.");
+      st->print_cr("MemPointerDecomposedForm empty.");
       return;
     }
-    st->print("MemPointerLinearForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
+    st->print("MemPointerDecomposedForm[%d %s:  con = ", _pointer->_idx, _pointer->Name());
     _con.print_on(st);
     for (int i = 0; i < SUMMANDS_SIZE; i++) {
       const MemPointerSummand& summand = _summands[i];
@@ -340,7 +340,7 @@ public:
 #endif
 };
 
-class MemPointerLinearFormParser : public StackObj {
+class MemPointerDecomposedFormParser : public StackObj {
 private:
   const MemNode* _mem;
 
@@ -349,21 +349,21 @@ private:
   GrowableArray<MemPointerSummand> _worklist;
   GrowableArray<MemPointerSummand> _summands;
 
-  // Resulting linear-form.
-  MemPointerLinearForm _linear_form;
+  // Resulting decomposed-form.
+  MemPointerDecomposedForm _decomposed_form;
 
 public:
-  MemPointerLinearFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
-    _linear_form = parse_linear_form();
+  MemPointerDecomposedFormParser(const MemNode* mem) : _mem(mem), _con(NoOverflowInt(0)) {
+    _decomposed_form = parse_decomposed_form();
   }
 
-  const MemPointerLinearForm linear_form() const { return _linear_form; }
+  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
 
 private:
-  MemPointerLinearForm parse_linear_form();
+  MemPointerDecomposedForm parse_decomposed_form();
   void parse_sub_expression(const MemPointerSummand summand);
 
-  bool is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
+  bool is_safe_to_decompose_op(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const;
 };
 
 // Facility to parse the pointer of a Load or Store, so that aliasing between two such
@@ -371,14 +371,14 @@ private:
 class MemPointer : public StackObj {
 private:
   const MemNode* _mem;
-  const MemPointerLinearForm _linear_form;
+  const MemPointerDecomposedForm _decomposed_form;
 
   NOT_PRODUCT( const TraceMemPointer& _trace; )
 
 public:
   MemPointer(const MemNode* mem NOT_PRODUCT( COMMA const TraceMemPointer& trace)) :
     _mem(mem),
-    _linear_form(init_linear_form(_mem))
+    _decomposed_form(init_decomposed_form(_mem))
     NOT_PRODUCT( COMMA _trace(trace) )
   {
 #ifndef PRODUCT
@@ -386,21 +386,21 @@ public:
       tty->print_cr("MemPointer::MemPointer:");
       tty->print("mem: "); mem->dump();
       _mem->in(MemNode::Address)->dump_bfs(5, 0, "d");
-      _linear_form.print_on(tty);
+      _decomposed_form.print_on(tty);
     }
 #endif
   }
 
   const MemNode* mem() const { return _mem; }
-  const MemPointerLinearForm linear_form() const { return _linear_form; }
+  const MemPointerDecomposedForm decomposed_form() const { return _decomposed_form; }
   bool is_adjacent_to_and_before(const MemPointer& other) const;
 
 private:
-  static const MemPointerLinearForm init_linear_form(const MemNode* mem) {
+  static const MemPointerDecomposedForm init_decomposed_form(const MemNode* mem) {
     assert(mem->is_Store(), "only stores are supported");
     ResourceMark rm;
-    MemPointerLinearFormParser parser(mem);
-    return parser.linear_form();
+    MemPointerDecomposedFormParser parser(mem);
+    return parser.decomposed_form();
   }
 };
 
