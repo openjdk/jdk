@@ -188,13 +188,13 @@ public class NestedCgroup {
         String provider = Metrics.systemMetrics().getProvider();
         System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
         if ("cgroupv1".equals(provider)) {
-          isCgroup2 = false;
+          Test.isCgroup2 = false;
         } else if ("cgroupv2".equals(provider)) {
-          isCgroup2 = true;
+          Test.isCgroup2 = true;
         } else {
           throw new IllegalArgumentException();
         }
-        System.err.println("isCgroup2 = " + isCgroup2);
+        System.err.println("isCgroup2 = " + Test.isCgroup2);
 
         switch (args.length) {
             case 0:
