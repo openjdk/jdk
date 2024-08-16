@@ -120,20 +120,43 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
+        /*
+         * When the length of each parameter is <= 256 and the number is <= 8,
+         * it is saved in lengths to avoid a second scan.
+         */
+        boolean largeParm = false;
+        long lengths = 0;
+
         int paramCount = 0;
         for (int cur = start; cur < end; ) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
+            lengths = (lengths << 8) | len;
+            if (len > 0xFF) {
+                largeParm = true;
+            }
             paramCount++;
             cur += len;
         }
+
         if (paramCount == 0) {
             return ConstantUtils.EMPTY_CLASSDESC;
         }
 
         var paramTypes = new ClassDesc[paramCount];
+
+        if (!largeParm && paramCount <= 8) {
+            for (int i = 0, cur = start; i < paramCount; i++) {
+                int shift = (paramCount - i - 1) << 3;
+                int len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
+                paramTypes[i] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+                cur += len;
+            }
+            return paramTypes;
+        }
+
         for (int cur = start, paramIndex = 0; cur < end; ) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
