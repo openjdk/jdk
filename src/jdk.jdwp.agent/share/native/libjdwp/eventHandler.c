@@ -97,6 +97,23 @@ static DebugRawMonitor* callbackBlock;
  *            block. This will mess up the active_callbacks count.
  */
 
+static void allowSelfSuspend() {
+#if 0
+  struct timespec req;
+  req.tv_sec = 0;
+  req.tv_nsec = 1;
+
+  nanosleep(&req, NULL);
+
+  jthread current_thread = threadControl_currentThread();
+  JNIEnv *env = getEnv();
+  if (!FUNC_PTR(env,IsSameObject)(env, current_thread, current_thread)) {
+    EXIT_ERROR(-1, "on isSameObject");
+  }
+  JNI_FUNC_PTR(env,DeleteLocalRef)(env, current_thread);
+#endif
+}
+
 #define BEGIN_CALLBACK()                                                \
 { /* BEGIN OF CALLBACK */                                               \
     jboolean bypass = JNI_TRUE;                                         \
@@ -110,6 +127,7 @@ static DebugRawMonitor* callbackBlock;
         } else {                                                        \
             active_callbacks++;                                         \
             bypass = JNI_FALSE;                                         \
+            allowSelfSuspend();                                         \
             debugMonitorExit(callbackLock);                             \
         }                                                               \
     }                                                                   \
@@ -136,6 +154,7 @@ static DebugRawMonitor* callbackBlock;
                 if (active_callbacks == 0) {                            \
                     debugMonitorNotifyAll(callbackLock);                \
                 }                                                       \
+                allowSelfSuspend();                                     \
                 debugMonitorExit(callbackLock);                         \
             }                                                           \
         }                                                               \
@@ -1364,6 +1383,7 @@ cbDataDump(jvmtiEnv *jvmti_env)
     tty_message("Debug Agent Data Dump");
     tty_message("=== START DUMP ===");
     threadControl_dumpAllThreads();
+    dumpRawMonitors();
     eventHandler_dumpAllHandlers(JNI_TRUE);
     tty_message("=== END DUMP ===");
 }
