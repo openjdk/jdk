@@ -231,7 +231,8 @@ jobs:
       platform: alpine-linux-x64
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-    if: needs.select.outputs.alpine-linux-x64 == 'true'
+    # We only run this job on manual triggers to save resources
+    if: ${{ github.event_name == 'workflow_dispatch' && needs.select.outputs.alpine-linux-x64 == 'true' }}
 
   build-macos-x64:
     name: macos-x64
