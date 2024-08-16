@@ -97,7 +97,7 @@ public class DataDumpTest {
 
             out.waitFor(); // Wait for the debuggee to exit
 
-            System.out.println("Deuggee output:");
+            System.out.println("Debuggee output:");
             System.out.println(firstChar + out.getOutput());
 
             // All these strings are part of the debug agent data dump output.
