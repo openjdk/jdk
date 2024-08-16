@@ -280,10 +280,11 @@ private:
 public:
   // Empty
   MemPointerLinearForm() : _pointer(nullptr), _con(NoOverflowInt::make_NaN()) {}
-  // Default: pointer = variable
-  MemPointerLinearForm(Node* variable) : _pointer(variable), _con(NoOverflowInt(0)) {
+  // Default / trivial: pointer = 0 + 1 * pointer
+  MemPointerLinearForm(Node* pointer) : _pointer(pointer), _con(NoOverflowInt(0)) {
+    assert(pointer != nullptr, "pointer must be non-null");
     const NoOverflowInt one(1);
-    _summands[0] = MemPointerSummand(variable, one LP64_ONLY( COMMA one ));
+    _summands[0] = MemPointerSummand(pointer, one LP64_ONLY( COMMA one ));
   }
 
 private:
@@ -344,9 +345,9 @@ private:
   const MemNode* _mem;
 
   // Internal data-structures for parsing.
+  NoOverflowInt _con;
   GrowableArray<MemPointerSummand> _worklist;
   GrowableArray<MemPointerSummand> _summands;
-  NoOverflowInt _con;
 
   // Resulting linear-form.
   MemPointerLinearForm _linear_form;

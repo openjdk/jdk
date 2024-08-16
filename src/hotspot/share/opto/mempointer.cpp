@@ -184,6 +184,8 @@ void MemPointerLinearFormParser::parse_sub_expression(const MemPointerSummand su
   _summands.push(summand);
 }
 
+// Check if the decomposition of operation opc is guaranteed to be safe from int overflows.
+// TODO maybe use linearity in name? BC what is safe and why int-overflow???
 bool MemPointerLinearFormParser::is_safe_from_int_overflow(const int opc LP64_ONLY( COMMA const NoOverflowInt scaleL )) const {
 #ifndef _LP64
   // On 32-bit platforms, the pointer has 32bits, and thus any higher bits will always
