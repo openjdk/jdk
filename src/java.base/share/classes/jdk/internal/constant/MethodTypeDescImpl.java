@@ -105,18 +105,46 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        // Implicit null-check of descriptor
-        List<ClassDesc> ptypes = ConstantUtils.parseMethodDescriptor(descriptor);
-        int args = ptypes.size() - 1;
-        ClassDesc[] paramTypes = args > 0
-                ? ptypes.subList(1, args + 1).toArray(ConstantUtils.EMPTY_CLASSDESC)
-                : ConstantUtils.EMPTY_CLASSDESC;
-
-        MethodTypeDescImpl result = ofValidated(ptypes.get(0), paramTypes);
+        int rightBracket = descriptor.indexOf(')');
+        int len = descriptor.length() - rightBracket - 1;
+        if (rightBracket <= 0 || descriptor.charAt(0) != '(' || len == 0
+                || len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length(), true)
+        ) {
+            badMethodDescriptor(descriptor);
+        }
+        var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, len);
+        var paramTypes = paramTypes(descriptor, 1, rightBracket);
+        var result = new MethodTypeDescImpl(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
 
+    private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
+        int paramCount = 0;
+        for (int cur = start; cur < end; ) {
+            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            if (len == 0) {
+                badMethodDescriptor(descriptor);
+            }
+            paramCount++;
+            cur += len;
+        }
+        if (paramCount == 0) {
+            return ConstantUtils.EMPTY_CLASSDESC;
+        }
+
+        var paramTypes = new ClassDesc[paramCount];
+        for (int cur = start, paramIndex = 0; cur < end; ) {
+            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+            cur += len;
+        }
+        return paramTypes;
+    }
+
+    private static void badMethodDescriptor(String descriptor) {
+        throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
+    }
 
     @Override
     public ClassDesc returnType() {

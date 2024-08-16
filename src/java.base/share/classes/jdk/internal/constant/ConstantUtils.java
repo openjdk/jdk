@@ -304,7 +304,7 @@ public final class ConstantUtils {
         return ptypes;
     }
 
-    private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
+    static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
             return Wrapper.forPrimitiveType(descriptor.charAt(start)).basicClassDescriptor();
         }
