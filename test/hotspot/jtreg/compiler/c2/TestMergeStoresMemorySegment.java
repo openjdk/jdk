@@ -34,7 +34,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteArray
  */
@@ -42,7 +42,7 @@ import java.lang.foreign.*;
 /*
  * @test id=char-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment CharArray
  */
@@ -50,7 +50,7 @@ import java.lang.foreign.*;
 /*
  * @test id=short-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ShortArray
  */
@@ -58,7 +58,7 @@ import java.lang.foreign.*;
 /*
  * @test id=int-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment IntArray
  */
@@ -66,7 +66,7 @@ import java.lang.foreign.*;
 /*
  * @test id=long-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment LongArray
  */
@@ -74,7 +74,7 @@ import java.lang.foreign.*;
 /*
  * @test id=float-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment FloatArray
  */
@@ -82,7 +82,7 @@ import java.lang.foreign.*;
 /*
  * @test id=double-array
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment DoubleArray
  */
@@ -90,7 +90,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-buffer
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteBuffer
  */
@@ -98,7 +98,7 @@ import java.lang.foreign.*;
 /*
  * @test id=byte-buffer-direct
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment ByteBufferDirect
  */
@@ -106,16 +106,16 @@ import java.lang.foreign.*;
 /*
  * @test id=native
  * @bug 8335392
- * @summary Test vectorization of loops over MemorySegment
+ * @summary Test MergeStores optimization for MemorySegment
  * @library /test/lib /
  * @run driver compiler.c2.TestMergeStoresMemorySegment Native
  */
 
-// FAILS: mixed providers currently do not vectorize. Maybe there is some inlining issue.
+// FAILS: mixed providers currently do not merge stores. Maybe there is some inlining issue.
 // /*
 //  * @test id=mixed-array
 //  * @bug 8335392
-//  * @summary Test vectorization of loops over MemorySegment
+//  * @summary Test MergeStores optimization for MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.c2.TestMergeStoresMemorySegment MixedArray
 //  */
@@ -123,7 +123,7 @@ import java.lang.foreign.*;
 // /*
 //  * @test id=MixedBuffer
 //  * @bug 8335392
-//  * @summary Test vectorization of loops over MemorySegment
+//  * @summary Test MergeStores optimization for MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.c2.TestMergeStoresMemorySegment MixedBuffer
 //  */
@@ -131,17 +131,19 @@ import java.lang.foreign.*;
 // /*
 //  * @test id=mixed
 //  * @bug 8335392
-//  * @summary Test vectorization of loops over MemorySegment
+//  * @summary Test MergeStores optimization for MemorySegment
 //  * @library /test/lib /
 //  * @run driver compiler.c2.TestMergeStoresMemorySegment Mixed
 //  */
 
 public class TestMergeStoresMemorySegment {
     public static void main(String[] args) {
-        TestFramework framework = new TestFramework(TestMergeStoresMemorySegmentImpl.class);
-        framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0]);
-        framework.setDefaultWarmup(100);
-        framework.start();
+        for (String unaligned : new String[]{"-XX:-UseUnalignedAccesses", "-XX:+UseUnalignedAccesses"}) {
+            TestFramework framework = new TestFramework(TestMergeStoresMemorySegmentImpl.class);
+            framework.addFlags("-DmemorySegmentProviderNameForTestVM=" + args[0], unaligned);
+            framework.setDefaultWarmup(100);
+            framework.start();
+        }
     }
 }
 
@@ -149,6 +151,15 @@ class TestMergeStoresMemorySegmentImpl {
     static final int BACKING_SIZE = 1024 * 8;
     static final Random RANDOM = Utils.getRandomInstance();
 
+    private static final String START = "(\\d+(\\s){2}(";
+    private static final String MID = ".*)+(\\s){2}===.*";
+    private static final String END = ")";
+
+    // Custom Regex: allows us to only match Store that come from MemorySegment internals.
+    private static final String REGEX_STORE_B_TO_MS_FROM_B = START + "StoreB" + MID + END + "ScopedMemoryAccess::putByteInternal";
+    private static final String REGEX_STORE_C_TO_MS_FROM_B = START + "StoreC" + MID + END + "ScopedMemoryAccess::putByteInternal";
+    private static final String REGEX_STORE_I_TO_MS_FROM_B = START + "StoreI" + MID + END + "ScopedMemoryAccess::putByteInternal";
+    private static final String REGEX_STORE_L_TO_MS_FROM_B = START + "StoreL" + MID + END + "ScopedMemoryAccess::putByteInternal";
 
     interface TestFunction {
         Object[] run();
@@ -193,32 +204,19 @@ class TestMergeStoresMemorySegmentImpl {
         fillRandom(a);
         fillRandom(b);
 
-        // Add all tests to list
-        tests.put("testMemorySegmentBadExitCheck",                 () -> testMemorySegmentBadExitCheck(copy(a)));
-        tests.put("testIntLoop_iv_byte",                           () -> testIntLoop_iv_byte(copy(a)));
-        tests.put("testIntLoop_longIndex_intInvar_sameAdr_byte",   () -> testIntLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0));
-        tests.put("testIntLoop_longIndex_longInvar_sameAdr_byte",  () -> testIntLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0));
-        tests.put("testIntLoop_longIndex_intInvar_byte",           () -> testIntLoop_longIndex_intInvar_byte(copy(a), 0));
-        tests.put("testIntLoop_longIndex_longInvar_byte",          () -> testIntLoop_longIndex_longInvar_byte(copy(a), 0));
-        tests.put("testIntLoop_intIndex_intInvar_byte",            () -> testIntLoop_intIndex_intInvar_byte(copy(a), 0));
-        tests.put("testIntLoop_iv_int",                            () -> testIntLoop_iv_int(copy(a)));
-        tests.put("testIntLoop_longIndex_intInvar_sameAdr_int",    () -> testIntLoop_longIndex_intInvar_sameAdr_int(copy(a), 0));
-        tests.put("testIntLoop_longIndex_longInvar_sameAdr_int",   () -> testIntLoop_longIndex_longInvar_sameAdr_int(copy(a), 0));
-        tests.put("testIntLoop_longIndex_intInvar_int",            () -> testIntLoop_longIndex_intInvar_int(copy(a), 0));
-        tests.put("testIntLoop_longIndex_longInvar_int",           () -> testIntLoop_longIndex_longInvar_int(copy(a), 0));
-        tests.put("testIntLoop_intIndex_intInvar_int",             () -> testIntLoop_intIndex_intInvar_int(copy(a), 0));
-        tests.put("testLongLoop_iv_byte",                          () -> testLongLoop_iv_byte(copy(a)));
-        tests.put("testLongLoop_longIndex_intInvar_sameAdr_byte",  () -> testLongLoop_longIndex_intInvar_sameAdr_byte(copy(a), 0));
-        tests.put("testLongLoop_longIndex_longInvar_sameAdr_byte", () -> testLongLoop_longIndex_longInvar_sameAdr_byte(copy(a), 0));
-        tests.put("testLongLoop_longIndex_intInvar_byte",          () -> testLongLoop_longIndex_intInvar_byte(copy(a), 0));
-        tests.put("testLongLoop_longIndex_longInvar_byte",         () -> testLongLoop_longIndex_longInvar_byte(copy(a), 0));
-        tests.put("testLongLoop_intIndex_intInvar_byte",           () -> testLongLoop_intIndex_intInvar_byte(copy(a), 0));
-        tests.put("testLongLoop_iv_int",                           () -> testLongLoop_iv_int(copy(a)));
-        tests.put("testLongLoop_longIndex_intInvar_sameAdr_int",   () -> testLongLoop_longIndex_intInvar_sameAdr_int(copy(a), 0));
-        tests.put("testLongLoop_longIndex_longInvar_sameAdr_int",  () -> testLongLoop_longIndex_longInvar_sameAdr_int(copy(a), 0));
-        tests.put("testLongLoop_longIndex_intInvar_int",           () -> testLongLoop_longIndex_intInvar_int(copy(a), 0));
-        tests.put("testLongLoop_longIndex_longInvar_int",          () -> testLongLoop_longIndex_longInvar_int(copy(a), 0));
-        tests.put("testLongLoop_intIndex_intInvar_int",            () -> testLongLoop_intIndex_intInvar_int(copy(a), 0));
+        // Future Work: add more test cases. For now, the issue seems to be that
+        //              RangeCheck smearing does not remove the RangeChecks, thus
+        //              we can only ever merge two stores.
+        //
+        // Ideas for more test cases, once they are better optimized:
+        //
+        //   Have about 3 variables, each either int or long. Add all in int or
+        //   long. Give them different scales. Compute the address in the same
+        //   expression or separately. Use different element store sizes (BCIL).
+        //
+        tests.put("test_xxx",       () -> test_xxx(copy(a), 5, 11, 31));
+        tests.put("test_yyy",       () -> test_yyy(copy(a), 5, 11, 31));
+        tests.put("test_zzz",       () -> test_zzz(copy(a), 5, 11, 31));
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -353,31 +351,7 @@ class TestMergeStoresMemorySegmentImpl {
         }
     }
 
-    @Run(test = {"testMemorySegmentBadExitCheck",
-                 "testIntLoop_iv_byte",
-                 "testIntLoop_longIndex_intInvar_sameAdr_byte",
-                 "testIntLoop_longIndex_longInvar_sameAdr_byte",
-                 "testIntLoop_longIndex_intInvar_byte",
-                 "testIntLoop_longIndex_longInvar_byte",
-                 "testIntLoop_intIndex_intInvar_byte",
-                 "testIntLoop_iv_int",
-                 "testIntLoop_longIndex_intInvar_sameAdr_int",
-                 "testIntLoop_longIndex_longInvar_sameAdr_int",
-                 "testIntLoop_longIndex_intInvar_int",
-                 "testIntLoop_longIndex_longInvar_int",
-                 "testIntLoop_intIndex_intInvar_int",
-                 "testLongLoop_iv_byte",
-                 "testLongLoop_longIndex_intInvar_sameAdr_byte",
-                 "testLongLoop_longIndex_longInvar_sameAdr_byte",
-                 "testLongLoop_longIndex_intInvar_byte",
-                 "testLongLoop_longIndex_longInvar_byte",
-                 "testLongLoop_intIndex_intInvar_byte",
-                 "testLongLoop_iv_int",
-                 "testLongLoop_longIndex_intInvar_sameAdr_int",
-                 "testLongLoop_longIndex_longInvar_sameAdr_int",
-                 "testLongLoop_longIndex_intInvar_int",
-                 "testLongLoop_longIndex_longInvar_int",
-                 "testLongLoop_intIndex_intInvar_int"})
+    @Run(test = { "test_xxx", "test_yyy", "test_zzz" })
     void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -392,419 +366,62 @@ class TestMergeStoresMemorySegmentImpl {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS
-    // Exit check: iv < long_limit      ->     (long)iv < long_limit
-    // Thus, we have an int-iv, but a long-exit-check.
-    // Is not properly recognized by either CountedLoop or LongCountedLoop
-    static Object[] testMemorySegmentBadExitCheck(MemorySegment a) {
-        for (int i = 0; i < a.byteSize(); i++) {
-            long adr = i;
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
+    @IR(counts = {REGEX_STORE_B_TO_MS_FROM_B, "<=5", // 4x RC
+                  REGEX_STORE_C_TO_MS_FROM_B, ">=3", // 4x merged
+                  REGEX_STORE_I_TO_MS_FROM_B, "0",
+                  REGEX_STORE_L_TO_MS_FROM_B, "0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test_xxx(MemorySegment a, int xI, int yI, int zI) {
+         // All RangeChecks remain -> RC smearing not good enough?
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 0), (byte)'h');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 1), (byte)'e');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 2), (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 3), (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 4), (byte)'o');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 5), (byte)' ');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 6), (byte)':');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI + yI + zI + 7), (byte)')');
+         return new Object[]{ a };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_iv_byte(MemorySegment a) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr = i;
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
+    @IR(counts = {REGEX_STORE_B_TO_MS_FROM_B, "<=5", // 4x RC
+                  REGEX_STORE_C_TO_MS_FROM_B, ">=3", // 4x merged
+                  REGEX_STORE_I_TO_MS_FROM_B, "0",
+                  REGEX_STORE_L_TO_MS_FROM_B, "0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test_yyy(MemorySegment a, int xI, int yI, int zI) {
+         // All RangeChecks remain -> RC smearing not good enough?
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 0L, (byte)'h');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 1L, (byte)'e');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 2L, (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 3L, (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 4L, (byte)'o');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 5L, (byte)' ');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 6L, (byte)':');
+         a.set(ValueLayout.JAVA_BYTE, (long)(xI) + (long)(yI) + (long)(zI) + 7L, (byte)')');
+         return new Object[]{ a };
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_longIndex_intInvar_sameAdr_byte(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_longIndex_longInvar_sameAdr_byte(MemorySegment a, long invar) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testIntLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr1 = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
-            long adr2 = (long)(i) + (long)(invar);
-            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testIntLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            long adr1 = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
-            long adr2 = (long)(i) + (long)(invar);
-            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
-    static Object[] testIntLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize(); i++) {
-            int int_index = i + invar;
-            byte v = a.get(ValueLayout.JAVA_BYTE, int_index);
-            a.set(ValueLayout.JAVA_BYTE, int_index, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_iv_int(MemorySegment a) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++ ) {
-            long adr = 4L * i;
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++) {
-            long adr = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testIntLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++) {
-            long adr = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testIntLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++) {
-            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
-            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testIntLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++) {
-            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
-            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
-    static Object[] testIntLoop_intIndex_intInvar_int(MemorySegment a, int invar) {
-        for (int i = 0; i < (int)a.byteSize()/4; i++) {
-            int int_index = i + invar;
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testLongLoop_iv_byte(MemorySegment a) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            long adr = i;
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testLongLoop_longIndex_intInvar_sameAdr_byte(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            long adr = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-                  IRNode.ADD_VB,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testLongLoop_longIndex_longInvar_sameAdr_byte(MemorySegment a, long invar) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            long adr = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr);
-            a.set(ValueLayout.JAVA_BYTE, adr, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testLongLoop_longIndex_intInvar_byte(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            long adr1 = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
-            long adr2 = (long)(i) + (long)(invar);
-            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testLongLoop_longIndex_longInvar_byte(MemorySegment a, long invar) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            long adr1 = (long)(i) + (long)(invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, adr1);
-            long adr2 = (long)(i) + (long)(invar);
-            a.set(ValueLayout.JAVA_BYTE, adr2, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_B, "= 0",
-                  IRNode.ADD_VB,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
-    static Object[] testLongLoop_intIndex_intInvar_byte(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize(); i++) {
-            int int_index = (int)(i + invar);
-            byte v = a.get(ValueLayout.JAVA_BYTE, int_index);
-            a.set(ValueLayout.JAVA_BYTE, int_index, (byte)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-                  IRNode.ADD_VI,        "> 0",
-                  IRNode.STORE_VECTOR,  "> 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIf = {"AlignVector", "false"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    static Object[] testLongLoop_iv_int(MemorySegment a) {
-        for (long i = 0; i < a.byteSize()/4; i++ ) {
-            long adr = 4L * i;
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    //@IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-    //              IRNode.ADD_VI,        "> 0",
-    //              IRNode.STORE_VECTOR,  "> 0"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: for native memory. I think it is because of invariants, but need investigation.
-    //        The long -> int loop conversion introduces extra invariants.
-    static Object[] testLongLoop_longIndex_intInvar_sameAdr_int(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize()/4; i++) {
-            long adr = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    //@IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
-    //              IRNode.ADD_VI,        "> 0",
-    //              IRNode.STORE_VECTOR,  "> 0"},
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: for native memory. I think it is because of invariants, but need investigation.
-    //        The long -> int loop conversion introduces extra invariants.
-    static Object[] testLongLoop_longIndex_longInvar_sameAdr_int(MemorySegment a, long invar) {
-        for (long i = 0; i < a.byteSize()/4; i++) {
-            long adr = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testLongLoop_longIndex_intInvar_int(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize()/4; i++) {
-            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
-            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: invariants are sorted differently, because of differently inserted Cast.
-    // See: JDK-8330274
-    static Object[] testLongLoop_longIndex_longInvar_int(MemorySegment a, long invar) {
-        for (long i = 0; i < a.byteSize()/4; i++) {
-            long adr1 = 4L * (long)(i) + 4L * (long)(invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, adr1);
-            long adr2 = 4L * (long)(i) + 4L * (long)(invar);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, adr2, (int)(v + 1));
-        }
-        return new Object[]{ a };
-    }
-
-    @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I, "= 0",
-                  IRNode.ADD_VI,        "= 0",
-                  IRNode.STORE_VECTOR,  "= 0"},
-        applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // FAILS: RangeCheck cannot be eliminated because of int_index
-    static Object[] testLongLoop_intIndex_intInvar_int(MemorySegment a, int invar) {
-        for (long i = 0; i < a.byteSize()/4; i++) {
-            int int_index = (int)(i + invar);
-            int v = a.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index);
-            a.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * int_index, (int)(v + 1));
-        }
-        return new Object[]{ a };
+    @IR(counts = {REGEX_STORE_B_TO_MS_FROM_B, "<=5", // 4x RC
+                  REGEX_STORE_C_TO_MS_FROM_B, ">=3", // 4x merged
+                  REGEX_STORE_I_TO_MS_FROM_B, "0",
+                  REGEX_STORE_L_TO_MS_FROM_B, "0"},
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIf = {"UseUnalignedAccesses", "true"})
+    static Object[] test_zzz(MemorySegment a, long xL, long yL, long zL) {
+         // All RangeChecks remain -> RC smearing not good enough?
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 0L, (byte)'h');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 1L, (byte)'e');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 2L, (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 3L, (byte)'l');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 4L, (byte)'o');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 5L, (byte)' ');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 6L, (byte)':');
+         a.set(ValueLayout.JAVA_BYTE, xL + yL + zL + 7L, (byte)')');
+         return new Object[]{ a };
     }
 }
