@@ -269,46 +269,11 @@ public final class ConstantUtils {
         return s.substring(1, s.length() - 1);
     }
 
-    /**
-     * Parses a method descriptor string, and return a list of field descriptor
-     * strings, return type first, then parameter types
-     *
-     * @param descriptor the descriptor string
-     * @return the list of types
-     * @throws IllegalArgumentException if the descriptor string is not valid
-     */
-    public static List<ClassDesc> parseMethodDescriptor(String descriptor) {
-        int cur = 0, end = descriptor.length();
-        ArrayList<ClassDesc> ptypes = new ArrayList<>();
-        ptypes.add(null); // placeholder for return type
-
-        if (cur >= end || descriptor.charAt(cur) != '(')
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-
-        ++cur;  // skip '('
-        while (cur < end && descriptor.charAt(cur) != ')') {
-            int len = skipOverFieldSignature(descriptor, cur, end, false);
-            if (len == 0)
-                throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-            ptypes.add(resolveClassDesc(descriptor, cur, len));
-            cur += len;
-        }
-        if (cur >= end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ++cur;  // skip ')'
-
-        int rLen = skipOverFieldSignature(descriptor, cur, end, true);
-        if (rLen == 0 || cur + rLen != end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ptypes.set(0, resolveClassDesc(descriptor, cur, rLen));
-        return ptypes;
-    }
-
     static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
             return Wrapper.forPrimitiveType(descriptor.charAt(start)).basicClassDescriptor();
         }
-        // Pre-verified in parseMethodDescriptor; avoid redundant verification
+        // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
         return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
     }
 
