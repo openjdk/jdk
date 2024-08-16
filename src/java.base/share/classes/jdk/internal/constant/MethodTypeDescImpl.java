@@ -133,9 +133,11 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
-            lengths = (lengths << 8) | len;
-            if (len > 0xFF) {
-                largeParm = true;
+            if (paramCount < 8) {
+                lengths = (lengths << 8) | len;
+                if (len > 0xFF) {
+                    largeParm = true;
+                }
             }
             paramCount++;
             cur += len;
@@ -147,17 +149,21 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
         var paramTypes = new ClassDesc[paramCount];
 
-        if (!largeParm && paramCount <= 8) {
-            for (int i = 0, cur = start; i < paramCount; i++) {
-                int shift = (paramCount - i - 1) << 3;
+        int cur = start;
+        int paramIndex = 0;
+        if (!largeParm) {
+            for (int lengthsParamCount = Math.min(paramCount, 8); paramIndex < lengthsParamCount; ) {
+                int shift = (lengthsParamCount - paramIndex - 1) << 3;
                 int len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
-                paramTypes[i] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+                paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
                 cur += len;
             }
-            return paramTypes;
+            if (paramCount <= 8) {
+                return paramTypes;
+            }
         }
 
-        for (int cur = start, paramIndex = 0; cur < end; ) {
+        for (; cur < end; ) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
             cur += len;
