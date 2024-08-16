@@ -205,19 +205,15 @@ public class LayoutPath {
                     String.format("Path does not select a value layout: %s", breadcrumbs()));
         }
 
-        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);
-        handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
-
-        // we only have to check the alignment of the root layout for the first dereference we do,
-        // as each dereference checks the alignment of the target address when constructing its segment
-        // (see Utils::longToAddress)
-        if (derefAdapters.length == 0) {
-            // insert align check for the root layout on the initial MS + offset
-            List<Class<?>> coordinateTypes = handle.coordinateTypes();
-            MethodHandle alignCheck = MethodHandles.insertArguments(MH_CHECK_ENCL_LAYOUT, 2, rootLayout());
-            handle = MethodHandles.collectCoordinates(handle, 0, alignCheck);
-            int[] reorder = IntStream.concat(IntStream.of(0, 1), IntStream.range(0, coordinateTypes.size())).toArray();
-            handle = MethodHandles.permuteCoordinates(handle, coordinateTypes, reorder);
+        VarHandle handle = Utils.makeRawSegmentViewVarHandle(valueLayout);              // (MS, ML, long, long)
+        handle = MethodHandles.insertCoordinates(handle, 1, rootLayout());          // (MS, long, long)
+        if (strides.length > 0) {
+            MethodHandle offsetAdapter = offsetHandle();
+            offsetAdapter = MethodHandles.insertArguments(offsetAdapter, 0, 0L);
+            handle = MethodHandles.collectCoordinates(handle, 2, offsetAdapter);    // (MS, long)
+        } else {
+            // simpler adaptation
+            handle = MethodHandles.insertCoordinates(handle, 2, offset);            // (MS, long)
         }
 
         if (adapt) {
@@ -241,6 +237,10 @@ public class LayoutPath {
     @ForceInline
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
+        // note: the below can overflow, depending on 'base'. When constructing var handles
+        // through the layout API, this is never the case, as the segment offset is checked
+        // against the segment size. But when using 'byteOffsetHandle' this might return a
+        // negative value. Seems incompatible also with scale(), which use exact operations.
         return base + (stride * index);
     }
 
