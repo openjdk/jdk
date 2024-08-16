@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -573,8 +573,6 @@ final class SocketTube implements FlowTube {
                     debug.log("read publisher: dropping pending subscriber: "
                               + previous.subscriber);
                 previous.errorRef.compareAndSet(null, errorRef.get());
-                // make sure no data will be routed to the old subscriber.
-                previous.stopReading();
                 previous.signalOnSubscribe();
                 if (subscriptionImpl.completed) {
                     previous.signalCompletion();
@@ -608,7 +606,6 @@ final class SocketTube implements FlowTube {
             volatile boolean subscribed;
             volatile boolean cancelled;
             volatile boolean completed;
-            volatile boolean stopped;
 
             public ReadSubscription(InternalReadSubscription impl,
                                     TubeSubscriber subscriber) {
@@ -626,11 +623,11 @@ final class SocketTube implements FlowTube {
 
             @Override
             public void request(long n) {
-                if (!cancelled && !stopped) {
+                if (!cancelled) {
                     impl.request(n);
                 } else {
                     if (debug.on())
-                        debug.log("subscription stopped or cancelled, ignoring request %d", n);
+                        debug.log("subscription cancelled, ignoring request %d", n);
                 }
             }
 
@@ -663,20 +660,6 @@ final class SocketTube implements FlowTube {
                 if (errorRef.get() != null) {
                     signalCompletion();
                 }
-            }
-
-            /**
-             * Called when switching subscriber on the {@link InternalReadSubscription}.
-             * This subscriber is the old subscriber. Demand on the internal
-             * subscription will be reset and reading will be paused until the
-             * new subscriber is subscribed.
-             * This should ensure that no data is routed to this subscriber
-             * until the new subscriber is subscribed.
-             */
-            void stopReading() {
-                stopped = true;
-                impl.demand.reset();
-                impl.pauseReadEvent();
             }
         }
 

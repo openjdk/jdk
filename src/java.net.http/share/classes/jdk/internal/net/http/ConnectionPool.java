@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,6 @@ import java.util.stream.Collectors;
 
 import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.FlowTube;
-import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.TimeLine;
 import jdk.internal.net.http.common.TimeSource;
@@ -493,13 +492,13 @@ final class ConnectionPool {
 
     // Remove a connection from the pool.
     // should only be called while holding the ConnectionPool stateLock.
-    private boolean removeFromPool(HttpConnection c) {
+    private void removeFromPool(HttpConnection c) {
         assert stateLock.isHeldByCurrentThread();
         if (c instanceof PlainHttpConnection) {
-            return removeFromPool(c, plainPool);
+            removeFromPool(c, plainPool);
         } else {
             assert c.isSecure() : "connection " + c + " is not secure!";
-            return removeFromPool(c, sslPool);
+            removeFromPool(c, sslPool);
         }
     }
 
@@ -530,29 +529,13 @@ final class ConnectionPool {
             debug.log("%s : ConnectionPool.cleanup(%s)",
                     String.valueOf(c.getConnectionFlow()), error);
         stateLock.lock();
-        boolean removed;
         try {
-            removed = removeFromPool(c);
+            removeFromPool(c);
             expiryList.remove(c);
         } finally {
             stateLock.unlock();
         }
-        if (!removed) {
-            // this should not happen; the cleanup may have consumed
-            // some data that wasn't supposed to be consumed, so
-            // the only thing we can do is log it and close the
-            // connection.
-            if (Log.errors()) {
-                Log.logError("WARNING: CleanupTrigger triggered for" +
-                        " a connection not found in the pool: closing {0}", c);
-            } else if (debug.on()) {
-                debug.log("WARNING: CleanupTrigger triggered for" +
-                        " a connection not found in the pool: closing %s", c);
-            }
-            c.close(new IOException("Unexpected cleanup triggered for non pooled connection"));
-        } else {
-            c.close();
-        }
+        c.close();
     }
 
     /**
@@ -566,7 +549,6 @@ final class ConnectionPool {
 
         private final HttpConnection connection;
         private volatile boolean done;
-        private volatile boolean dropped;
 
         public CleanupTrigger(HttpConnection connection) {
             this.connection = connection;
@@ -584,7 +566,6 @@ final class ConnectionPool {
 
         @Override
         public void onSubscribe(Flow.Subscription subscription) {
-            if (dropped || done) return;
             subscription.request(1);
         }
         @Override
@@ -604,11 +585,6 @@ final class ConnectionPool {
         @Override
         public String toString() {
             return "CleanupTrigger(" + connection.getConnectionFlow() + ")";
-        }
-
-        @Override
-        public void dropSubscription() {
-            dropped = true;
         }
     }
 }
