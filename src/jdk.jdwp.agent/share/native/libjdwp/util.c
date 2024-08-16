@@ -1258,7 +1258,7 @@ dumpRawMonitor(DebugRawMonitor *dbg_monitor) {
 
 void
 dumpRawMonitors() {
-    tty_message("Raw Monitor Dump:");
+    tty_message("\nRaw Monitor Dump:");
     int i;
     for (i = 0; i < NUM_DEBUG_RAW_MONITORS; i++) {
         DebugRawMonitor* dbg_monitor = &dbg_monitors[i];
