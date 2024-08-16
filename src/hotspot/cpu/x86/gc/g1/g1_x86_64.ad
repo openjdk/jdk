@@ -176,9 +176,12 @@ instruct g1CompareAndExchangeP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp
             "cmpxchgq $newval, $mem" %}
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
+    // Pass $oldval to the pre-barrier (instead of loading from $mem), because
+    // $oldval is the only value that can be overwritten.
+    // The same holds for g1CompareAndSwapP.
     write_barrier_pre(masm, this,
-                      $mem$$Register /* obj */,
-                      $tmp2$$Register /* pre_val */,
+                      noreg /* obj */,
+                      $oldval$$Register /* pre_val */,
                       $tmp3$$Register /* tmp */,
                       RegSet::of($mem$$Register, $newval$$Register, $oldval$$Register) /* preserve */);
     __ movq($tmp1$$Register, $newval$$Register);
@@ -233,8 +236,8 @@ instruct g1CompareAndSwapP(rRegI res, indirect mem, rRegP newval, rRegP tmp1, rR
   ins_encode %{
     assert_different_registers($oldval$$Register, $mem$$Register);
     write_barrier_pre(masm, this,
-                      $mem$$Register /* obj */,
-                      $tmp2$$Register /* pre_val */,
+                      noreg /* obj */,
+                      $oldval$$Register /* pre_val */,
                       $tmp3$$Register /* tmp */,
                       RegSet::of($mem$$Register, $newval$$Register, $oldval$$Register) /* preserve */,
                       RegSet::of($res$$Register) /* no_preserve */);
