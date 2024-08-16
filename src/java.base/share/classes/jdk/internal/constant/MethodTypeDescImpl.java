@@ -105,7 +105,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        int rightBracket = descriptor.indexOf(')');
+        int rightBracket = descriptor.lastIndexOf(')');
         int len = descriptor.length() - rightBracket - 1;
         if (rightBracket <= 0 || descriptor.charAt(0) != '(' || len == 0
                 || len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length(), true)
