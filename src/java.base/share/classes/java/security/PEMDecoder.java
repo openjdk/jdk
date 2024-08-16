@@ -176,9 +176,7 @@ public final class PEMDecoder {
                     yield kf.generatePrivate(
                         RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(pem.pem())));
                 }
-                default -> {
-                    yield pem;
-                }
+                default -> pem;
             };
         } catch (GeneralSecurityException e) {
             throw new IllegalArgumentException(e);
@@ -404,9 +402,7 @@ public final class PEMDecoder {
                 list.add(pem);
             } else {
                 Class c = getClassFromId(pem.id());
-//                Class c = o.getClass();
                 if (c.isAssignableFrom(tClass)) {
-                //if (getClassFromId(pem.id()).getClass().isAssignableFrom(tClass)) {
                     DEREncodable o = decode(pem);
                     if (tClass.isAssignableFrom(o.getClass())) {
                         list.add(o);

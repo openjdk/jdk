@@ -288,8 +288,9 @@ class PEMCerts {
         -----END CERTIFICATE REQUEST-----
         """, PEMRecord.class);
 
-    public static final String preData = "TEXT BLAH TEXT BLAH";
-    public static final String postData = "FINISHED";  // This should be a non-base64 value
+    public static final String preData = "TEXT BLAH TEXT BLAH" +
+        System.lineSeparator();
+    public static final String postData = "FINISHED" + System.lineSeparator();
 
     public static final Entry ecCSRWithData = new Entry("ecCSRWithData",
         preData + """

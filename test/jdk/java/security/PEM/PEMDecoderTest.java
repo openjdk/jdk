@@ -108,7 +108,6 @@ public class PEMDecoderTest {
         OutputStreamWriter os = new OutputStreamWriter(ba);
         os.write(PEMCerts.preData);
         os.write(PEMCerts.pubecpem.pem());
-        os.write(System.lineSeparator());
         os.write(PEMCerts.preData);
         os.write(PEMCerts.pubecpem.pem());
         os.write(PEMCerts.postData);
@@ -130,17 +129,14 @@ public class PEMDecoderTest {
         }
 
         os.write(PEMCerts.preData);
-        os.write(System.lineSeparator());
         os.write(PEMCerts.ecprivpem.pem());
         os.write(PEMCerts.preData);
-        os.write(System.lineSeparator());
         os.write(PEMCerts.privpem.pem());
         os.flush();
         stream = PEMDecoder.of().decodeFromStream(
             new ByteArrayInputStream(ba.toByteArray()), ECPrivateKey.class);
         list = new ArrayList<>(stream.toList());
 
-        //Supplier<Stream<DEREncodable>> list = (Supplier<Stream<DEREncodable>>) stream;
         if (list.size() != 1) {
             throw new AssertionError("count should be 2.  Was " +
                 list.size());
@@ -150,6 +146,20 @@ public class PEMDecoderTest {
                 throw new AssertionError("item in stream did not" +
                     " contain ECPrivateKey.  Was " + d.toString());
             }
+        }
+        os.write(PEMCerts.pubrsapem.pem(), 0, 120);
+        os.flush();
+        try {
+            stream = PEMDecoder.of().decodeFromStream(
+                new ByteArrayInputStream(ba.toByteArray()));
+            throw new AssertionError("Should have got a IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            ;
+        }
+        list = new ArrayList<>(stream.toList());
+        if (list.size() != 4) {
+            throw new AssertionError("count should be 4.  Was " +
+                list.size());
         }
     }
 
