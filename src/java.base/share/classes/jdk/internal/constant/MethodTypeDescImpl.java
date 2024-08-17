@@ -137,6 +137,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 throw badMethodDescriptor(descriptor);
             }
             if (paramCount < 8) {
+                // use 0 to indicate that the current parameter length is greater than 256 and needs to be reparsed
                 lengths = (lengths << 8) | (len > 0xFF ? 0 : len);
             }
             paramCount++;
@@ -147,15 +148,13 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         int paramIndex = 0,
             lengthsEnd = Math.min(paramCount, 8) - 1;
         for (int cur = start; cur < end; ) {
-            int len;
-            int num = lengthsEnd - paramIndex;
+            int len = 0,
+                num = lengthsEnd - paramIndex;
             if (num >= 0) {
                 int shift = num << 3;
-                len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
-                if (len == 0) {
-                    len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
-                }
-            } else {
+                len = (int) ((lengths & (0xFFL << shift)) >>> shift);
+            }
+            if (len == 0) {
                 len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             }
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
