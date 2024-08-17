@@ -1816,7 +1816,17 @@ bool Arguments::check_vm_args_consistency() {
     FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
     warning("New lightweight locking not supported on this platform");
   }
+  if (UseObjectMonitorTable) {
+    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
+    warning("UseObjectMonitorTable not supported on this platform");
+  }
 #endif
+
+  if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
+    // ObjectMonitorTable requires lightweight locking.
+    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
+    warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
+  }
 
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
