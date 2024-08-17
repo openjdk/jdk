@@ -114,18 +114,21 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             throw badMethodDescriptor(descriptor);
         }
         var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, len);
-        var paramTypes = rightBracket == 1 ? ConstantUtils.EMPTY_CLASSDESC : paramTypes(descriptor, 1, rightBracket);
+        var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
         return result;
     }
 
     private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
+        if (start == end) {
+            return ConstantUtils.EMPTY_CLASSDESC;
+        }
+
         /*
          * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning
          */
         long lengths = 0;
-
         int paramCount = 0;
         for (int cur = start; cur < end; ) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
@@ -141,9 +144,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         var paramTypes = new ClassDesc[paramCount];
-
-        int cur = start;
         int paramIndex = 0;
+        int cur = start;
         int lengthsParamCount = Math.min(paramCount, 8);
         while (cur < end) {
             int len = 0;
