@@ -286,7 +286,23 @@ public final class ConstantUtils {
     private static final char JVM_SIGNATURE_INT = 'I';
     private static final char JVM_SIGNATURE_LONG = 'J';
     private static final char JVM_SIGNATURE_SHORT = 'S';
+    private static final char JVM_SIGNATURE_VOID = 'V';
     private static final char JVM_SIGNATURE_BOOLEAN = 'Z';
+
+    static boolean isNotPrimitiveOrVoid(char ch) {
+        return switch (ch) {
+            case JVM_SIGNATURE_BYTE,
+                 JVM_SIGNATURE_CHAR,
+                 JVM_SIGNATURE_FLOAT,
+                 JVM_SIGNATURE_DOUBLE,
+                 JVM_SIGNATURE_INT,
+                 JVM_SIGNATURE_LONG,
+                 JVM_SIGNATURE_SHORT,
+                 JVM_SIGNATURE_VOID,
+                 JVM_SIGNATURE_BOOLEAN -> false;
+            default -> true;
+        };
+    }
 
     /**
      * Validates that the characters at [start, end) within the provided string

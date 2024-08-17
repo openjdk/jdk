@@ -106,15 +106,17 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      * @jvms 4.3.3 Method Descriptors
      */
     public static MethodTypeDescImpl ofDescriptor(String descriptor) {
-        int rightBracket, len;
+        int length = descriptor.length();
+        int rightBracket, retTypeLength;
         if (descriptor.charAt(0) != '('
                 || (rightBracket = (descriptor.charAt(1) == ')' ? 1 : descriptor.lastIndexOf(')'))) <= 0
-                || (len = descriptor.length() - rightBracket - 1) == 0
-                || (len != 1 && len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length()))
+                || (retTypeLength = length - rightBracket - 1) == 0
+                || (retTypeLength == 1 && ConstantUtils.isNotPrimitiveOrVoid(descriptor.charAt(length - 1)))
+                || (retTypeLength != 1 && retTypeLength != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, length))
         ) {
             throw badMethodDescriptor(descriptor);
         }
-        var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, len);
+        var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
