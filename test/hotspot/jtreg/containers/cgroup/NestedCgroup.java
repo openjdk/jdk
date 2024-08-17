@@ -77,7 +77,8 @@ public class NestedCgroup {
         public static void args_add_self(List<String> args) {
             args.add(jdkTool);
             args.add("-cp");
-            args.add(System.getProperty("test.classes"));
+            // "test.classes" does not work during spawning our own Java process.
+            args.add(System.getProperty("java.class.path"));
         }
 
         public static void args_add_self_verbose(List<String> args) {
@@ -177,14 +178,15 @@ public class NestedCgroup {
             List<String> self_verbose = new ArrayList<>();
             args_add_self_verbose(self_verbose);
             self_verbose.add("-version");
-            ProcessTools.executeProcess(new ProcessBuilder(self_verbose));
+            OutputAnalyzer output = ProcessTools.executeProcess(new ProcessBuilder(self_verbose));
+            System.out.println(output.getStdout());
+            System.err.println(output.getStderr());
         }
     }
-    public static void main(String[] args) throws Exception {
-        if (!Platform.isRoot()) {
-            throw new SkippedException("Missing root permission");
-        }
 
+    // This initialization requires jtreg parameter @modules.
+    // The spawned child Java does not have the proper command line parameters.
+    public static void jtregSetup() {
         String provider = Metrics.systemMetrics().getProvider();
         System.err.println("Metrics.systemMetrics().getProvider() = " + provider);
         if ("cgroupv1".equals(provider)) {
@@ -196,9 +198,17 @@ public class NestedCgroup {
         }
         System.err.println("isCgroup2 = " + Test.isCgroup2);
 
+        Test.jdkTool = JDKToolFinder.getJDKTool("java");
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (!Platform.isRoot()) {
+            throw new SkippedException("Missing root permission");
+        }
+
         switch (args.length) {
             case 0:
-                Test.jdkTool = JDKToolFinder.getJDKTool("java");
+                jtregSetup();
                 new TestTwoLimits();
                 if (Test.isCgroup2) {
                     new TestNoController();
