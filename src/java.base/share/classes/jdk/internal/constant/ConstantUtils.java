@@ -346,8 +346,7 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_ARRAY:
                     arrayDim++;
                     if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-                        throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
-                                ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
+                        throw maxArrayTypeDescDimensions();
                     }
                     // The rest of what's there better be a legal descriptor
                     index++;
@@ -358,5 +357,11 @@ public final class ConstantUtils {
             }
         }
         return 0;
+    }
+
+    private static IllegalArgumentException maxArrayTypeDescDimensions() {
+        return new IllegalArgumentException(String.format(
+                        "Cannot create an array type descriptor with more than %d dimensions",
+                        ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
     }
 }
