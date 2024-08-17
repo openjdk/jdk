@@ -281,16 +281,11 @@ public final class ConstantUtils {
     private static final char JVM_SIGNATURE_BYTE = 'B';
     private static final char JVM_SIGNATURE_CHAR = 'C';
     private static final char JVM_SIGNATURE_CLASS = 'L';
-    private static final char JVM_SIGNATURE_ENDCLASS = ';';
-    private static final char JVM_SIGNATURE_ENUM = 'E';
     private static final char JVM_SIGNATURE_FLOAT = 'F';
     private static final char JVM_SIGNATURE_DOUBLE = 'D';
-    private static final char JVM_SIGNATURE_FUNC = '(';
-    private static final char JVM_SIGNATURE_ENDFUNC = ')';
     private static final char JVM_SIGNATURE_INT = 'I';
     private static final char JVM_SIGNATURE_LONG = 'J';
     private static final char JVM_SIGNATURE_SHORT = 'S';
-    private static final char JVM_SIGNATURE_VOID = 'V';
     private static final char JVM_SIGNATURE_BOOLEAN = 'Z';
 
     /**
@@ -299,17 +294,15 @@ public final class ConstantUtils {
      * @param descriptor the descriptor string
      * @param start the starting index into the string
      * @param end the ending index within the string
-     * @param voidOK is void acceptable?
      * @return the length of the descriptor, or 0 if it is not a descriptor
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
     @SuppressWarnings("fallthrough")
-    static int skipOverFieldSignature(String descriptor, int start, int end, boolean voidOK) {
+    static int skipOverFieldSignature(String descriptor, int start, int end) {
         int arrayDim = 0;
         int index = start;
         while (index < end) {
             switch (descriptor.charAt(index)) {
-                case JVM_SIGNATURE_VOID: if (!voidOK) { return 0; }
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
                 case JVM_SIGNATURE_CHAR:
@@ -350,7 +343,6 @@ public final class ConstantUtils {
                     }
                     // The rest of what's there better be a legal descriptor
                     index++;
-                    voidOK = false;
                     break;
                 default:
                     return 0;

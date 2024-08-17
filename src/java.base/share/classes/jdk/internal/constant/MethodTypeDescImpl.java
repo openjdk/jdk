@@ -110,7 +110,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (descriptor.charAt(0) != '('
                 || (rightBracket = (descriptor.charAt(1) == ')' ? 1 : descriptor.lastIndexOf(')'))) <= 0
                 || (len = descriptor.length() - rightBracket - 1) == 0
-                || len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length(), true)
+                || (len != 1 && len != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, descriptor.length()))
         ) {
             throw badMethodDescriptor(descriptor);
         }
@@ -132,7 +132,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         long lengths = 0;
         int paramCount = 0;
         for (int cur = start; cur < end; ) {
-            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
@@ -156,7 +156,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
             }
             if (len == 0) {
-                len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+                len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             }
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
             cur += len;
