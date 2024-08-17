@@ -121,8 +121,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
     private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
         /*
-         * When the length of each parameter is <= 256 and the number is <= 8,
-         * it is saved in lengths to avoid a second scan.
+         * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning
          */
         boolean largeParm = false;
         long lengths = 0;
