@@ -111,8 +111,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (descriptor.charAt(0) != '('
                 || (rightBracket = (descriptor.charAt(1) == ')' ? 1 : descriptor.lastIndexOf(')'))) <= 0
                 || (retTypeLength = length - rightBracket - 1) == 0
-                || (retTypeLength == 1 && ConstantUtils.isNotPrimitiveOrVoid(descriptor.charAt(length - 1)))
-                || (retTypeLength != 1 && retTypeLength != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, length))
+                || (!(retTypeLength == 1 && descriptor.charAt(length - 1) == 'V')
+                    && retTypeLength != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, length))
         ) {
             throw badMethodDescriptor(descriptor);
         }
