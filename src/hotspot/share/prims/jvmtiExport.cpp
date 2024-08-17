@@ -2068,7 +2068,7 @@ void JvmtiExport::post_exception_throw(JavaThread *thread, Method* method, addre
 
         jmethodID catch_jmethodID;
         if (current_bci < 0) {
-          catch_jmethodID = 0;
+          catch_jmethodID = nullptr;
           current_bci = 0;
         } else {
           catch_jmethodID = jem.to_jmethodID(current_mh);
@@ -2105,8 +2105,8 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
                      JvmtiTrace::safe_get_thread_name(thread),
                      (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                      (mh() == nullptr) ? "null" : mh()->name()->as_C_string(),
-                     location==0? "no location:" : "",
-                     location==0? 0 : location - mh()->code_base(),
+                     location == nullptr ? "no location:" : "",
+                     location == nullptr ? 0 : location - mh()->code_base(),
                      in_handler_frame? "in handler frame" : "not handler frame" ));
 
   if (state->is_exception_detected()) {

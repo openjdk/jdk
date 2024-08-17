@@ -2591,7 +2591,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* stride_m = phase->intcon(stride_con - (stride_con > 0 ? 1 : -1));
     Node *range = phase->transform(new SubINode(in(Limit), in(Init)));
     Node *bias  = phase->transform(new AddINode(range, stride_m));
-    Node *trip  = phase->transform(new DivINode(0, bias, in(Stride)));
+    Node *trip  = phase->transform(new DivINode(nullptr, bias, in(Stride)));
     Node *span  = phase->transform(new MulINode(trip, in(Stride)));
     return new AddINode(span, in(Init)); // exact limit
   }
@@ -2620,7 +2620,7 @@ Node *LoopLimitNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       Node* neg_stride   = phase->longcon(-stride_con);
       span = phase->transform(new AndLNode(bias, neg_stride));
     } else {
-      Node *trip  = phase->transform(new DivLNode(0, bias, stride));
+      Node *trip  = phase->transform(new DivLNode(nullptr, bias, stride));
       span = phase->transform(new MulLNode(trip, stride));
     }
     // Convert back to int
@@ -5248,6 +5248,7 @@ bool IdealLoopTree::verify_tree(IdealLoopTree* loop_verify) const {
 
 //------------------------------set_idom---------------------------------------
 void PhaseIdealLoop::set_idom(Node* d, Node* n, uint dom_depth) {
+  _nesting.check(); // Check if a potential reallocation in the resource arena is safe
   uint idx = d->_idx;
   if (idx >= _idom_size) {
     uint newsize = next_power_of_2(idx);
@@ -5473,7 +5474,8 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
 
     } else {                    // Else not a nested loop
       if (!_loop_or_ctrl[m->_idx]) continue; // Dead code has no loop
-      l = get_loop(m);          // Get previously determined loop
+      IdealLoopTree* m_loop = get_loop(m);
+      l = m_loop;          // Get previously determined loop
       // If successor is header of a loop (nest), move up-loop till it
       // is a member of some outer enclosing loop.  Since there are no
       // shared headers (I've split them already) I only need to go up
@@ -5499,10 +5501,10 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           // Insert the NeverBranch between 'm' and it's control user.
           NeverBranchNode *iff = new NeverBranchNode( m );
           _igvn.register_new_node_with_optimizer(iff);
-          set_loop(iff, l);
+          set_loop(iff, m_loop);
           Node *if_t = new CProjNode( iff, 0 );
           _igvn.register_new_node_with_optimizer(if_t);
-          set_loop(if_t, l);
+          set_loop(if_t, m_loop);
 
           Node* cfg = nullptr;       // Find the One True Control User of m
           for (DUIterator_Fast jmax, j = m->fast_outs(jmax); j < jmax; j++) {
@@ -6338,7 +6340,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
     }
   } else {                      // No slot zero
     if( n->is_CFG() ) {         // CFG with no slot 0 is dead
-      _loop_or_ctrl.map(n->_idx,0);    // No block setting, it's globally dead
+      _loop_or_ctrl.map(n->_idx,nullptr); // No block setting, it's globally dead
       return;
     }
     assert(!n->is_CFG() || n->outcnt() == 0, "");
@@ -6356,7 +6358,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
       assert(_loop_or_ctrl[n->out(i1)->_idx] == nullptr, "all uses must also be dead");
     }
 #endif
-    _loop_or_ctrl.map(n->_idx, 0);     // This node is useless
+    _loop_or_ctrl.map(n->_idx, nullptr); // This node is useless
     _deadlist.push(n);
     return;
   }

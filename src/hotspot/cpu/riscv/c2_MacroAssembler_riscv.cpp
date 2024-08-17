@@ -1040,7 +1040,7 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
     stub = RuntimeAddress(StubRoutines::riscv::string_indexof_linear_uu());
     assert(stub.target() != nullptr, "string_indexof_linear_uu stub has not been generated");
   }
-  address call = trampoline_call(stub);
+  address call = reloc_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(LINEARSEARCH, DONE, NOMATCH));
     ciEnv::current()->record_failure("CodeCache is full");
@@ -1322,7 +1322,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("string_compare {");
 
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
+  // Bizarrely, the counts are passed in bytes, regardless of whether they
   // are L or U strings, however the result is always in characters.
   if (!str1_isL) {
     sraiw(cnt1, cnt1, 1);
@@ -1478,7 +1478,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
       ShouldNotReachHere();
   }
   assert(stub.target() != nullptr, "compare_long_string stub has not been generated");
-  address call = trampoline_call(stub);
+  address call = reloc_call(stub);
   if (call == nullptr) {
     DEBUG_ONLY(reset_labels(DONE, SHORT_LOOP, SHORT_STRING, SHORT_LAST, SHORT_LOOP_TAIL, SHORT_LAST2, SHORT_LAST_INIT, SHORT_LOOP_START));
     ciEnv::current()->record_failure("CodeCache is full");

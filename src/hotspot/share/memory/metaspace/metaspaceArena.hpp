@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,28 +99,6 @@ class MetaspaceArena : public CHeapObj<mtClass> {
 
   // A name for purely debugging/logging purposes.
   const char* const _name;
-
-#ifdef ASSERT
-  // Allocation guards: When active, arena allocations are interleaved with
-  //  fence allocations. An overwritten fence indicates a buffer overrun in either
-  //  the preceding or the following user block. All fences are linked together;
-  //  validating the fences just means walking that linked list.
-  // Note that for the Arena, fence blocks are just another form of user blocks.
-  class Fence {
-    static const uintx EyeCatcher =
-      NOT_LP64(0x77698465) LP64_ONLY(0x7769846577698465ULL); // "META" resp "METAMETA"
-    // Two eyecatchers to easily spot a corrupted _next pointer
-    const uintx _eye1;
-    const Fence* const _next;
-    NOT_LP64(uintx _dummy;)
-    const uintx _eye2;
-  public:
-    Fence(const Fence* next) : _eye1(EyeCatcher), _next(next), _eye2(EyeCatcher) {}
-    const Fence* next() const { return _next; }
-    void verify() const;
-  };
-  const Fence* _first_fence;
-#endif // ASSERT
 
   ChunkManager* chunk_manager() const           { return _chunk_manager; }
 

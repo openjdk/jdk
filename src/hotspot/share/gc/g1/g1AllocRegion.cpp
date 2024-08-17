@@ -236,9 +236,7 @@ void G1AllocRegion::trace(const char* str, size_t min_word_size, size_t desired_
 }
 #endif // PRODUCT
 
-G1AllocRegion::G1AllocRegion(const char* name,
-                             bool bot_updates,
-                             uint node_index)
+G1AllocRegion::G1AllocRegion(const char* name, uint node_index)
   : _alloc_region(nullptr),
     _count(0),
     _name(name),

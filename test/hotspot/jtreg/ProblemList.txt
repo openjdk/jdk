@@ -69,6 +69,8 @@ compiler/startup/StartupOutput.java 8326615 generic-x64
 
 compiler/codecache/CodeCacheFullCountTest.java 8332954 generic-all
 
+compiler/interpreter/Test6833129.java 8335266 generic-i586
+
 #############################################################################
 
 # :hotspot_gc

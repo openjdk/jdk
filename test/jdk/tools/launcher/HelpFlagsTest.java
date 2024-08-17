@@ -141,6 +141,7 @@ public class HelpFlagsTest extends TestHelper {
         new ToolHelpSpec("jlink",       1,   1,   1,   0,         0,    0,     2),     // -?, -h, --help
         new ToolHelpSpec("jmap",        1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jmod",        1,   1,   1,   0,         1,    0,     2),     // -?, -h, --help, -help accepted but not documented.
+        new ToolHelpSpec("jnativescan", 1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
         new ToolHelpSpec("jps",         1,   1,   1,   0,         1,    1,     1),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jrunscript",  1,   1,   1,   0,         1,    1,     7),     // -?, -h, --help -help, Documents -help
         new ToolHelpSpec("jshell",      1,   1,   1,   0,         1,    0,     1),     // -?, -h, --help, -help accepted but not documented.
