@@ -145,15 +145,14 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         var paramTypes = new ClassDesc[paramCount];
-        int cur = start,
-            paramIndex = 0,
-            lengthsParamEnd = Math.min(paramCount, 8) - 1;
-        while (cur < end) {
-            int len = 0;
-            int n = lengthsParamEnd - paramIndex;
-            if (n >= 0) {
-                int shift = n << 3;
-                len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
+        int paramIndex = 0;
+        int lengthsParamEnd = Math.min(paramCount, 8) - 1;
+        for (int cur = start; cur < end; ) {
+            int len = 0,
+                num = lengthsParamEnd - paramIndex;
+            if (num >= 0) {
+                int shift = num << 3;
+                len = (int) ((lengths & (0xFFL << shift)) >>> shift);
             }
             if (len == 0) {
                 len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
