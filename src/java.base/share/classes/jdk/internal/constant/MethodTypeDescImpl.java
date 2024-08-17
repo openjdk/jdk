@@ -145,11 +145,11 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         var paramTypes = new ClassDesc[paramCount];
-        int paramIndex = 0;
-        int lengthsParamEnd = Math.min(paramCount, 8) - 1;
+        int paramIndex = 0,
+            lengthsEnd = Math.min(paramCount, 8) - 1;
         for (int cur = start; cur < end; ) {
             int len = 0,
-                num = lengthsParamEnd - paramIndex;
+                num = lengthsEnd - paramIndex;
             if (num >= 0) {
                 int shift = num << 3;
                 len = (int) ((lengths & (0xFFL << shift)) >>> shift);
