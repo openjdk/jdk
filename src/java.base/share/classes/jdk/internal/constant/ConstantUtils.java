@@ -297,12 +297,16 @@ public final class ConstantUtils {
      * @return the length of the descriptor, or 0 if it is not a descriptor
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
-    @SuppressWarnings("fallthrough")
     static int skipOverFieldSignature(String descriptor, int start, int end) {
-        int arrayDim = 0;
         int index = start;
-        while (index < end) {
-            switch (descriptor.charAt(index)) {
+        if (index < end) {
+            char ch = descriptor.charAt(index);
+            for (int arrayDim = 0; ch == JVM_SIGNATURE_ARRAY; ch = descriptor.charAt(++index)) {
+                if (++arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                    throw maxArrayTypeDescDimensions();
+                }
+            }
+            switch (ch) {
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
                 case JVM_SIGNATURE_CHAR:
@@ -336,14 +340,6 @@ public final class ConstantUtils {
                         }
                     }
                     return 0;
-                case JVM_SIGNATURE_ARRAY:
-                    arrayDim++;
-                    if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-                        throw maxArrayTypeDescDimensions();
-                    }
-                    // The rest of what's there better be a legal descriptor
-                    index++;
-                    break;
                 default:
                     return 0;
             }
