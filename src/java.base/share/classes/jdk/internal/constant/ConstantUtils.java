@@ -303,10 +303,12 @@ public final class ConstantUtils {
         if (index < end) {
             char ch;
             while ((ch = descriptor.charAt(index++)) == JVM_SIGNATURE_ARRAY) {
-                if (++arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-                    throw maxArrayTypeDescDimensions();
-                }
+                arrayDim++;
             }
+            if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                throw maxArrayTypeDescDimensions();
+            }
+
             switch (ch) {
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
