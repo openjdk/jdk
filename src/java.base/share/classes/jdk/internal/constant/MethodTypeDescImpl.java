@@ -148,7 +148,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         int cur = start;
         int paramIndex = 0;
         if (!largeParm) {
-            for (int lengthsParamCount = Math.min(paramCount, 8); paramIndex < lengthsParamCount; ) {
+            int lengthsParamCount = Math.min(paramCount, 8);
+            while (paramIndex < lengthsParamCount) {
                 int shift = (lengthsParamCount - paramIndex - 1) << 3;
                 int len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
                 paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
@@ -159,7 +160,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             }
         }
 
-        for (; cur < end; ) {
+        while (cur < end) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
             cur += len;
