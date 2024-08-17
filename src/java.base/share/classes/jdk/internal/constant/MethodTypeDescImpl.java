@@ -124,7 +124,6 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         /*
          * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning
          */
-        boolean largeParm = false;
         long lengths = 0;
 
         int paramCount = 0;
@@ -134,10 +133,8 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 throw badMethodDescriptor(descriptor);
             }
             if (paramCount < 8) {
-                lengths = (lengths << 8) | len;
-                if (len > 0xFF) {
-                    largeParm = true;
-                }
+                // use 0 to indicate that the current parameter length is greater than 256 and needs to be reparsed
+                lengths = (lengths << 8) | (len > 0xFF ? 0 : len);
             }
             paramCount++;
             cur += len;
@@ -147,21 +144,16 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
         int cur = start;
         int paramIndex = 0;
-        if (!largeParm) {
-            int lengthsParamCount = Math.min(paramCount, 8);
-            while (paramIndex < lengthsParamCount) {
-                int shift = (lengthsParamCount - paramIndex - 1) << 3;
-                int len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
-                paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
-                cur += len;
-            }
-            if (paramCount <= 8) {
-                return paramTypes;
-            }
-        }
-
+        int lengthsParamCount = Math.min(paramCount, 8);
         while (cur < end) {
-            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            int len = 0;
+            if (paramIndex < 8) {
+                int shift = (lengthsParamCount - paramIndex - 1) << 3;
+                len = (int) ((lengths & (0xFFL << shift)) >> shift) & 0xFF;
+            }
+            if (len == 0) {
+                len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end, false);
+            }
             paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
             cur += len;
         }
