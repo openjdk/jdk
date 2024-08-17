@@ -298,10 +298,11 @@ public final class ConstantUtils {
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
     static int skipOverFieldSignature(String descriptor, int start, int end) {
+        int arrayDim = 0;
         int index = start;
         if (index < end) {
-            char ch = descriptor.charAt(index);
-            for (int arrayDim = 0; ch == JVM_SIGNATURE_ARRAY; ch = descriptor.charAt(++index)) {
+            char ch;
+            while ((ch = descriptor.charAt(index++)) == JVM_SIGNATURE_ARRAY) {
                 if (++arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
                     throw maxArrayTypeDescDimensions();
                 }
@@ -315,16 +316,16 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_FLOAT:
                 case JVM_SIGNATURE_LONG:
                 case JVM_SIGNATURE_DOUBLE:
-                    return index - start + 1;
+                    return index - start;
                 case JVM_SIGNATURE_CLASS:
                     // state variable for detection of illegal states, such as:
                     // empty unqualified name, '//', leading '/', or trailing '/'
                     boolean legal = false;
-                    while (++index < end) {
-                        switch (descriptor.charAt(index)) {
+                    while (index < end) {
+                        switch (descriptor.charAt(index++)) {
                             case ';' -> {
                                 // illegal state on parser exit indicates empty unqualified name or trailing '/'
-                                return legal ? index - start + 1 : 0;
+                                return legal ? index - start : 0;
                             }
                             case '.', '[' -> {
                                 // do not permit '.' or '['
@@ -339,9 +340,9 @@ public final class ConstantUtils {
                                 legal = true;
                         }
                     }
-                    return 0;
+                    break;
                 default:
-                    return 0;
+                    break;
             }
         }
         return 0;
