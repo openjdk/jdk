@@ -58,6 +58,8 @@ public class MethodTypeDescFactories {
     @Param({
             "(Ljava/lang/Object;Ljava/lang/String;)I",
             "()V",
+            "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+            "()Ljava/lang/Object;",
             "([IJLjava/lang/String;Z)Ljava/util/List;",
             "()[Ljava/lang/String;",
             "(..IIJ)V",
