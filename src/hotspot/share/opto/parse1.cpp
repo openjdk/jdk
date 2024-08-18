@@ -990,7 +990,7 @@ void Parse::do_exits() {
   // node. Macro expansion will emit a trailing barrier for Initialize nodes,
   // so we do not need to emit here.
   //
-  // Given a constructor without an object Initialize nodes, the trailing
+  // Given a constructor without an object Initialize node, the trailing
   // barrier is needed in three cases:
   //
   // 1. The constructor wrote a final or a @Stable field. All these
