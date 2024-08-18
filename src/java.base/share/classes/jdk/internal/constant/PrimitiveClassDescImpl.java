@@ -79,7 +79,7 @@ public final class PrimitiveClassDescImpl
      * describe a valid primitive type
      * @jvms 4.3 Descriptors
      */
-    public PrimitiveClassDescImpl(String descriptor) {
+    private PrimitiveClassDescImpl(String descriptor) {
         super(ConstantDescs.BSM_PRIMITIVE_CLASS, requireNonNull(descriptor), ConstantDescs.CD_Class);
         if (descriptor.length() != 1
             || "VIJCSBFDZ".indexOf(descriptor.charAt(0)) < 0)
