@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static jdk.internal.constant.PrimitiveClassDescImpl.*;
+
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
  */
@@ -271,10 +273,25 @@ public final class ConstantUtils {
 
     static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forPrimitiveType(descriptor.charAt(start)).basicClassDescriptor();
+            return switch (descriptor.charAt(start)) {
+                case JVM_SIGNATURE_BYTE    -> CD_byte;
+                case JVM_SIGNATURE_CHAR    -> CD_char;
+                case JVM_SIGNATURE_FLOAT   -> CD_float;
+                case JVM_SIGNATURE_DOUBLE  -> CD_double;
+                case JVM_SIGNATURE_INT     -> CD_int;
+                case JVM_SIGNATURE_LONG    -> CD_long;
+                case JVM_SIGNATURE_SHORT   -> CD_short;
+                case JVM_SIGNATURE_VOID    -> CD_void;
+                case JVM_SIGNATURE_BOOLEAN -> CD_boolean;
+                default -> throw badMethodDescriptor(descriptor);
+            };
         }
         // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
         return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
+    }
+
+    static IllegalArgumentException badMethodDescriptor(String descriptor) {
+        return new IllegalArgumentException("Bad method descriptor: " + descriptor);
     }
 
     private static final char JVM_SIGNATURE_ARRAY = '[';
@@ -286,6 +303,7 @@ public final class ConstantUtils {
     private static final char JVM_SIGNATURE_INT = 'I';
     private static final char JVM_SIGNATURE_LONG = 'J';
     private static final char JVM_SIGNATURE_SHORT = 'S';
+    private static final char JVM_SIGNATURE_VOID = 'V';
     private static final char JVM_SIGNATURE_BOOLEAN = 'Z';
 
     /**

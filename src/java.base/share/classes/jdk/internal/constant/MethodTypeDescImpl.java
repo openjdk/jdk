@@ -40,12 +40,26 @@ import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
+import static jdk.internal.constant.ConstantUtils.badMethodDescriptor;
+import static jdk.internal.constant.ConstantUtils.resolveClassDesc;
+import static jdk.internal.constant.ConstantUtils.skipOverFieldSignature;
+import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
+
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
  * {@link MethodType}.  A {@linkplain MethodTypeDescImpl} corresponds to a
  * {@code Constant_MethodType_info} entry in the constant pool of a classfile.
  */
 public final class MethodTypeDescImpl implements MethodTypeDesc {
+//    public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(PrimitiveClassDescImpl.CD_void, new ClassDesc[0]);
+    public interface Constants {
+        /**
+         * Nominal descriptor representing the method descriptor {@code ()V},
+         * taking no argument and returning {@code void}.
+         */
+        public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(PrimitiveClassDescImpl.CD_void, EMPTY_CLASSDESC);
+    }
+
     private final ClassDesc returnType;
     private final @Stable ClassDesc[] argTypes;
     private @Stable String cachedDescriptorString;
@@ -93,7 +107,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
      */
     public static MethodTypeDescImpl ofValidated(ClassDesc returnType, ClassDesc... trustedArgTypes) {
         if (trustedArgTypes.length == 0)
-            return new MethodTypeDescImpl(returnType, ConstantUtils.EMPTY_CLASSDESC);
+            return new MethodTypeDescImpl(returnType, EMPTY_CLASSDESC);
         return new MethodTypeDescImpl(returnType, trustedArgTypes);
     }
 
@@ -112,12 +126,17 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (descriptor.charAt(0) != '('
                 || (rightBracket = (descriptor.charAt(1) == ')' ? 1 : descriptor.lastIndexOf(')'))) <= 0
                 || (retTypeLength = length - rightBracket - 1) == 0
-                || (!(retTypeLength == 1 && descriptor.charAt(length - 1) == 'V')
-                    && retTypeLength != ConstantUtils.skipOverFieldSignature(descriptor, rightBracket + 1, length))
+                || (retTypeLength != 1
+                    && retTypeLength != skipOverFieldSignature(descriptor, rightBracket + 1, length))
         ) {
             throw badMethodDescriptor(descriptor);
         }
-        var returnType = ConstantUtils.resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
+
+        if (length == 3 && descriptor.charAt(length - 1) == 'V') {
+            return Constants.MTD_void;
+        }
+
+        var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
@@ -126,7 +145,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
     private static ClassDesc[] paramTypes(String descriptor, int start, int end) {
         if (start == end) {
-            return ConstantUtils.EMPTY_CLASSDESC;
+            return EMPTY_CLASSDESC;
         }
 
         /*
@@ -137,7 +156,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         int paramCount = 0;
         int cur = start;
         while (cur < end) {
-            int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
+            int len = skipOverFieldSignature(descriptor, cur, end);
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
@@ -167,10 +186,10 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
                 len = (int) ((lengths & (0xFFL << shift)) >>> shift);
             }
             if (len == 0) {
-                len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
+                len = skipOverFieldSignature(descriptor, cur, end);
             }
 
-            var classDesc = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+            var classDesc = resolveClassDesc(descriptor, cur, len);
             if (paramTypes != null) {
                 paramTypes[paramIndex] = classDesc;
             } else {
@@ -182,13 +201,9 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         if (paramTypes == null) {
-            paramTypes = paramTypeList.toArray(ConstantUtils.EMPTY_CLASSDESC);
+            paramTypes = paramTypeList.toArray(EMPTY_CLASSDESC);
         }
         return paramTypes;
-    }
-
-    private static IllegalArgumentException badMethodDescriptor(String descriptor) {
-        return new IllegalArgumentException("Bad method descriptor: " + descriptor);
     }
 
     @Override

@@ -40,6 +40,33 @@ import static java.util.Objects.requireNonNull;
 public final class PrimitiveClassDescImpl
         extends DynamicConstantDesc<Class<?>> implements ClassDesc {
 
+    /** {@link ClassDesc} representing the primitive type {@code int} */
+    public static final PrimitiveClassDescImpl CD_int = new PrimitiveClassDescImpl("I");
+
+    /** {@link ClassDesc} representing the primitive type {@code long} */
+    public static final PrimitiveClassDescImpl CD_long = new PrimitiveClassDescImpl("J");
+
+    /** {@link ClassDesc} representing the primitive type {@code float} */
+    public static final PrimitiveClassDescImpl CD_float = new PrimitiveClassDescImpl("F");
+
+    /** {@link ClassDesc} representing the primitive type {@code double} */
+    public static final PrimitiveClassDescImpl CD_double = new PrimitiveClassDescImpl("D");
+
+    /** {@link ClassDesc} representing the primitive type {@code short} */
+    public static final PrimitiveClassDescImpl CD_short = new PrimitiveClassDescImpl("S");
+
+    /** {@link ClassDesc} representing the primitive type {@code byte} */
+    public static final PrimitiveClassDescImpl CD_byte = new PrimitiveClassDescImpl("B");
+
+    /** {@link ClassDesc} representing the primitive type {@code char} */
+    public static final PrimitiveClassDescImpl CD_char = new PrimitiveClassDescImpl("C");
+
+    /** {@link ClassDesc} representing the primitive type {@code boolean} */
+    public static final PrimitiveClassDescImpl CD_boolean = new PrimitiveClassDescImpl("Z");
+
+    /** {@link ClassDesc} representing the primitive type {@code void} */
+    public static final PrimitiveClassDescImpl CD_void = new PrimitiveClassDescImpl("V");
+
     private final String descriptor;
 
     /**
