@@ -710,7 +710,8 @@ C2V_END
 
 C2V_VMENTRY_0(jlong, getJObjectValue, (JNIEnv* env, jobject, jobject constant_jobject))
     requireNotInHotSpot("getJObjectValue", JVMCI_CHECK_0);
-    // Ensure that we are not using the top-most JNIHandleBlock, which is never released.
+    // Ensure that current JNI handle scope is not the top-most JNIHandleBlock as handles
+    // in that scope are only released when the thread exits.
     if (!THREAD->has_last_Java_frame() && THREAD->active_handles()->pop_frame_link() == nullptr) {
         JVMCI_THROW_MSG_0(IllegalStateException, err_msg("Cannot call getJObjectValue without Java frame anchor or a pushed JNI handle block"));
     }
