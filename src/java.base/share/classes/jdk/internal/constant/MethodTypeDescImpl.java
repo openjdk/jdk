@@ -126,7 +126,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         if (descriptor.charAt(0) != '('
                 || (rightBracket = (descriptor.charAt(1) == ')' ? 1 : descriptor.lastIndexOf(')'))) <= 0
                 || (retTypeLength = length - rightBracket - 1) == 0
-                || (retTypeLength != 1
+                || (retTypeLength != 1 // if retTypeLength == 1, check correctness in resolveClassDesc
                     && retTypeLength != skipOverFieldSignature(descriptor, rightBracket + 1, length))
         ) {
             throw badMethodDescriptor(descriptor);
