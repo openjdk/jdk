@@ -61,6 +61,7 @@ public class MethodTypeDescFactories {
             "([IJLjava/lang/String;Z)Ljava/util/List;",
             "()[Ljava/lang/String;",
             "(..IIJ)V",
+            "([III.Z[B..[.[B).",
             "(.....................)."
     })
     public String descString;
