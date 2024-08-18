@@ -264,9 +264,10 @@ static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
     if (sizeof(time_t) > 4) {
         func_ptr = dlsym(RTLD_DEFAULT, symbol64);
     }
-    if (func_ptr == NULL)
+    if (func_ptr == NULL) {
         return dlsym(RTLD_DEFAULT, symbol);
-   return func_ptr;
+    }
+    return func_ptr;
 }
 #endif
 
