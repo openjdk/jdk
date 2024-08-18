@@ -271,20 +271,24 @@ public final class ConstantUtils {
         return s.substring(1, s.length() - 1);
     }
 
+    public static PrimitiveClassDescImpl forPrimitiveType(String descriptor, int offset) {
+        return switch (descriptor.charAt(offset)) {
+            case JVM_SIGNATURE_BYTE    -> CD_byte;
+            case JVM_SIGNATURE_CHAR    -> CD_char;
+            case JVM_SIGNATURE_FLOAT   -> CD_float;
+            case JVM_SIGNATURE_DOUBLE  -> CD_double;
+            case JVM_SIGNATURE_INT     -> CD_int;
+            case JVM_SIGNATURE_LONG    -> CD_long;
+            case JVM_SIGNATURE_SHORT   -> CD_short;
+            case JVM_SIGNATURE_VOID    -> CD_void;
+            case JVM_SIGNATURE_BOOLEAN -> CD_boolean;
+            default -> throw badMethodDescriptor(descriptor);
+        };
+    }
+
     static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return switch (descriptor.charAt(start)) {
-                case JVM_SIGNATURE_BYTE    -> CD_byte;
-                case JVM_SIGNATURE_CHAR    -> CD_char;
-                case JVM_SIGNATURE_FLOAT   -> CD_float;
-                case JVM_SIGNATURE_DOUBLE  -> CD_double;
-                case JVM_SIGNATURE_INT     -> CD_int;
-                case JVM_SIGNATURE_LONG    -> CD_long;
-                case JVM_SIGNATURE_SHORT   -> CD_short;
-                case JVM_SIGNATURE_VOID    -> CD_void;
-                case JVM_SIGNATURE_BOOLEAN -> CD_boolean;
-                default -> throw badMethodDescriptor(descriptor);
-            };
+            return forPrimitiveType(descriptor, start);
         }
 
         // objectDesc appears a lot during the bootstrap process, so optimize it
