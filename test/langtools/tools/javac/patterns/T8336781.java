@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,24 +19,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
-
-#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
-#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
-
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-
-class ShenandoahHeuristics;
-
-class ShenandoahIUMode : public ShenandoahMode {
-public:
-  virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics() const;
-
-  virtual const char* name()     { return "Incremental-Update (IU)"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return true; }
-};
-
-#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHIUMODE_HPP
+/*
+ * @test
+ * @bug 8336781
+ * @summary Erroneous exhaustivity check with boolean switch
+ * @enablePreview
+ * @compile -XDshould-stop.at=FLOW T8336781.java
+ */
+public class T8336781 {
+    public static void test() {
+        Boolean bool = null;
+        var _ = switch (bool) {
+            case null -> "nothing";
+            case true -> "something true";
+            case false -> "something false";
+        };
+    }
+}

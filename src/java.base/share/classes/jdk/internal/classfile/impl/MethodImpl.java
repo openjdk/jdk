@@ -28,13 +28,14 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.Utf8Entry;
 
+import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
 public final class MethodImpl
         extends AbstractElement
-        implements MethodModel, MethodInfo {
+        implements MethodModel, MethodInfo, Util.Writable {
 
     private final ClassReader reader;
     private final int startPos, endPos, attributesPos;
@@ -51,7 +52,7 @@ public final class MethodImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofMethod(reader.readU2(startPos));
+        return new AccessFlagsImpl(AccessFlag.Location.METHOD, reader.readU2(startPos));
     }
 
     @Override
@@ -101,8 +102,7 @@ public final class MethodImpl
     }
 
     @Override
-    public void writeTo(BufWriter b) {
-        BufWriterImpl buf = (BufWriterImpl) b;
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(reader)) {
             reader.copyBytesTo(buf, startPos, endPos - startPos);
         }
@@ -110,7 +110,7 @@ public final class MethodImpl
             buf.writeU2(flags().flagsMask());
             buf.writeIndex(methodName());
             buf.writeIndex(methodType());
-            buf.writeList(attributes());
+            Util.writeAttributes(buf, attributes());
         }
     }
 

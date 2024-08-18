@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,5 +206,28 @@ class AnnotationTest {
         assertAnno(annos.get(0), "LAnno;", true);
         assertAnno(mannos.get(0), "LAnno;", true);
         assertAnno(fannos.get(0), "LAnno;", true);
+    }
+
+    @Test
+    void testEquality() {
+        assertEquals(Annotation.of(CD_Object), Annotation.of(ClassDesc.of("java.lang.Object")));
+        assertNotEquals(Annotation.of(CD_Object), Annotation.of(CD_String));
+        assertEquals(Annotation.of(CD_Object, AnnotationElement.of("fly", AnnotationValue.ofInt(5))),
+                Annotation.of(CD_Object, AnnotationElement.ofInt("fly", 5)));
+        assertEquals(AnnotationElement.ofFloat("one", 1.2F),
+                AnnotationElement.ofFloat("one", 1.2F));
+        assertEquals(AnnotationElement.ofFloat("one", 1.2F),
+                AnnotationElement.of("one", AnnotationValue.ofFloat(1.2F)));
+        assertNotEquals(AnnotationElement.ofFloat("one", 1.2F),
+                AnnotationElement.ofFloat("two", 1.2F));
+        assertNotEquals(AnnotationElement.ofFloat("one", 1.2F),
+                AnnotationElement.ofFloat("one", 2.1F));
+        assertNotEquals(AnnotationElement.ofFloat("one", 1.2F),
+                AnnotationElement.ofDouble("one", 1.2F));
+        assertEquals(AnnotationValue.ofInt(23), AnnotationValue.ofInt(23));
+        assertNotEquals(AnnotationValue.ofInt(23), AnnotationValue.ofInt(42));
+        assertNotEquals(AnnotationValue.ofInt(23), AnnotationValue.ofLong(23));
+        assertEquals(AnnotationValue.ofAnnotation(Annotation.of(CD_Object)),
+                AnnotationValue.ofAnnotation(Annotation.of(Object.class.describeConstable().orElseThrow())));
     }
 }

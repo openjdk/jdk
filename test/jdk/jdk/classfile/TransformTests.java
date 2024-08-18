@@ -23,18 +23,27 @@
 
 /*
  * @test
- * @bug 8336010
+ * @bug 8336010 8336588
  * @summary Testing ClassFile transformations.
  * @run junit TransformTests
  */
+
 import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CodeTransform;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.FieldTransform;
 import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
 import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
 import java.lang.classfile.instruction.LabelTarget;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
@@ -43,18 +52,10 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import helpers.ByteArrayClassLoader;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
-import java.lang.classfile.ClassFile;
-import java.lang.classfile.CodeModel;
-import java.lang.classfile.CodeTransform;
-import java.lang.classfile.MethodModel;
-import java.lang.classfile.instruction.ConstantInstruction;
 import java.util.HashSet;
 import java.util.Set;
 
+import helpers.ByteArrayClassLoader;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.classfile.ClassFile.*;
@@ -287,6 +288,45 @@ class TransformTests {
 
         leaveLabels.removeIf(targetedLabels::contains);
         assertTrue(leaveLabels.isEmpty(), () -> "Some labels are not bounded: " + leaveLabels);
+    }
+
+    @Test
+    void testStateOrder() throws Exception {
+        var bytes = Files.readAllBytes(testClassPath);
+        var cf = ClassFile.of();
+        var cm = cf.parse(bytes);
+
+        int[] counter = {0};
+
+        enum TransformState { START, ONGOING, ENDED }
+
+        var ct = ClassTransform.ofStateful(() -> new ClassTransform() {
+            TransformState state = TransformState.START;
+
+            @Override
+            public void atStart(ClassBuilder builder) {
+                assertSame(TransformState.START, state);
+                builder.withField("f" + counter[0]++, CD_int, 0);
+                state = TransformState.ONGOING;
+            }
+
+            @Override
+            public void atEnd(ClassBuilder builder) {
+                assertSame(TransformState.ONGOING, state);
+                builder.withField("f" + counter[0]++, CD_int, 0);
+                state = TransformState.ENDED;
+            }
+
+            @Override
+            public void accept(ClassBuilder builder, ClassElement element) {
+                assertSame(TransformState.ONGOING, state);
+                builder.with(element);
+            }
+        });
+
+        cf.transformClass(cm, ct);
+        cf.transformClass(cm, ct.andThen(ct));
+        cf.transformClass(cm, ct.andThen(ct).andThen(ct));
     }
 
     public static class TestClass {

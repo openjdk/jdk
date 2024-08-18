@@ -437,6 +437,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_monitors(true);
   }
 
+  if (parse_method->is_scoped()) {
+    C->set_has_scoped_access(true);
+  }
+
   _iter.reset_to_method(method());
   C->set_has_loops(C->has_loops() || method()->has_loops());
 
@@ -1009,7 +1013,7 @@ void Parse::do_exits() {
   // such unusual early publications.  But no barrier is needed on
   // exceptional returns, since they cannot publish normally.
   //
-  if (method()->is_initializer() &&
+  if (method()->is_object_initializer() &&
        (wrote_final() ||
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {

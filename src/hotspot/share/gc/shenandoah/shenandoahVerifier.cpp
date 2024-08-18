@@ -212,6 +212,21 @@ private:
       fwd_reg = obj_reg;
     }
 
+    // Do additional checks for special objects: their fields can hold metadata as well.
+    // We want to check class loading/unloading did not corrupt them.
+
+    if (java_lang_Class::is_instance(obj)) {
+      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            klass == nullptr || Metaspace::contains(klass),
+            "Instance class mirror should point to Metaspace");
+
+      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      check(ShenandoahAsserts::_safe_oop, obj,
+            array_klass == nullptr || Metaspace::contains(array_klass),
+            "Array class mirror should point to Metaspace");
+    }
+
     // ------------ obj and fwd are safe at this point --------------
 
     switch (_options._verify_marked) {

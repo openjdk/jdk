@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2024, Alphabet LLC. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,52 +23,41 @@
 
 /*
  * @test
- * bug 8280885
- * @summary Shenandoah: Some tests failed with "EA: missing allocation reference path"
- * @requires vm.gc.Shenandoah
- *
- * @run main/othervm -XX:-BackgroundCompilation -XX:+UseShenandoahGC -XX:+UnlockExperimentalVMOptions -XX:ShenandoahGCMode=iu
- *                   -XX:CompileCommand=dontinline,TestUnexpectedIUBarrierEA::notInlined TestUnexpectedIUBarrierEA
+ * @bug 8336491
+ * @summary Verify that void returning expression lambdas don't box their result
+ * @modules jdk.compiler
+ *          jdk.jdeps/com.sun.tools.javap
  */
 
-public class TestUnexpectedIUBarrierEA {
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.Path;
 
-    private static Object field;
+public class VoidReturnBoxing {
 
     public static void main(String[] args) {
-        for (int i = 0; i < 20_000; i++) {
-            test(false);
+        new VoidReturnBoxing().run();
+    }
+
+    void run() {
+        Path path = Path.of(System.getProperty("test.classes"), "T.class");
+        StringWriter s;
+        String out;
+        try (PrintWriter pw = new PrintWriter(s = new StringWriter())) {
+            com.sun.tools.javap.Main.run(new String[] {"-p", "-c", path.toString()}, pw);
+            out = s.toString();
+        }
+        if (out.contains("java/lang/Integer.valueOf")) {
+            throw new AssertionError(
+                    "Unnecessary boxing of void returning expression lambda result:\n\n" + out);
         }
     }
+}
 
-    private static void test(boolean flag) {
-        A a = new A();
-        B b = new B();
-        b.field = a;
-        notInlined();
-        Object o = b.field;
-        if (!(o instanceof A)) {
-
-        }
-        C c = new C();
-        c.field = o;
-        if (flag) {
-            field = c.field;
-        }
+class T {
+    int g() {
+        return 0;
     }
 
-    private static void notInlined() {
-
-    }
-
-    private static class A {
-    }
-
-    private static class B {
-        public Object field;
-    }
-
-    private static class C {
-        public Object field;
-    }
+    Runnable r = () -> g();
 }

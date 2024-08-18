@@ -628,7 +628,7 @@ JRT_LEAF(oopDesc*, JVMCIRuntime::load_and_clear_exception(JavaThread* thread))
   oop exception = thread->exception_oop();
   assert(exception != nullptr, "npe");
   thread->set_exception_oop(nullptr);
-  thread->set_exception_pc(0);
+  thread->set_exception_pc(nullptr);
   return exception;
 JRT_END
 
@@ -2183,6 +2183,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         nm->set_has_unsafe_access(has_unsafe_access);
         nm->set_has_wide_vectors(has_wide_vector);
         nm->set_has_monitors(has_monitors);
+        nm->set_has_scoped_access(true); // conservative
 
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");
