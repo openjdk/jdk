@@ -44,6 +44,7 @@ import static jdk.internal.constant.ConstantUtils.badMethodDescriptor;
 import static jdk.internal.constant.ConstantUtils.resolveClassDesc;
 import static jdk.internal.constant.ConstantUtils.skipOverFieldSignature;
 import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
+import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
@@ -51,13 +52,12 @@ import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
  * {@code Constant_MethodType_info} entry in the constant pool of a classfile.
  */
 public final class MethodTypeDescImpl implements MethodTypeDesc {
-//    public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(PrimitiveClassDescImpl.CD_void, new ClassDesc[0]);
     public interface Constants {
         /**
          * Nominal descriptor representing the method descriptor {@code ()V},
          * taking no argument and returning {@code void}.
          */
-        public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(PrimitiveClassDescImpl.CD_void, EMPTY_CLASSDESC);
+        public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(CD_void, EMPTY_CLASSDESC);
     }
 
     private final ClassDesc returnType;
@@ -132,11 +132,10 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             throw badMethodDescriptor(descriptor);
         }
 
-        if (length == 3 && descriptor.charAt(length - 1) == 'V') {
+        var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
+        if (length == 3 && returnType == CD_void) {
             return Constants.MTD_void;
         }
-
-        var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);
         result.cachedDescriptorString = descriptor;
