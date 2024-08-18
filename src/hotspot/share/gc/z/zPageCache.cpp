@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,7 +308,7 @@ public:
 };
 
 size_t ZPageCache::flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64_t* timeout) {
-  const uint64_t now = os::elapsedTime();
+  const uint64_t now = (uint64_t)os::elapsedTime();
   const uint64_t expires = _last_commit + ZUncommitDelay;
   if (expires > now) {
     // Delay uncommit, set next timeout
@@ -329,5 +329,5 @@ size_t ZPageCache::flush_for_uncommit(size_t requested, ZList<ZPage>* to, uint64
 }
 
 void ZPageCache::set_last_commit() {
-  _last_commit = ceil(os::elapsedTime());
+  _last_commit = (uint64_t)ceil(os::elapsedTime());
 }

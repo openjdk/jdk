@@ -54,6 +54,7 @@ uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
 }
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
+  assert(length <= max_length(), "SymbolTable should have caught this!");
   _hash_and_refcount =  pack_hash_and_refcount((short)os::random(), refcount);
   _length = (u2)length;
   // _body[0..1] are allocated in the header just by coincidence in the current

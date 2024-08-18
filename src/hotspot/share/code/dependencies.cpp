@@ -72,7 +72,7 @@ void Dependencies::initialize(ciEnv* env) {
 #endif
   DEBUG_ONLY(_deps[end_marker] = nullptr);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
-    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
+    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, nullptr);
   }
   _content_bytes = nullptr;
   _size_in_bytes = (size_t)-1;
@@ -113,11 +113,7 @@ void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm)
 void Dependencies::assert_unique_concrete_method(ciKlass* ctxk, ciMethod* uniqm, ciKlass* resolved_klass, ciMethod* resolved_method) {
   check_ctxk(ctxk);
   check_unique_method(ctxk, uniqm);
-  if (UseVtableBasedCHA) {
-    assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
-  } else {
-    assert_common_2(unique_concrete_method_2, ctxk, uniqm);
-  }
+  assert_common_4(unique_concrete_method_4, ctxk, uniqm, resolved_klass, resolved_method);
 }
 
 void Dependencies::assert_unique_implementor(ciInstanceKlass* ctxk, ciInstanceKlass* uniqk) {
@@ -1474,7 +1470,6 @@ class LinkedConcreteMethodFinder : public AbstractClassHierarchyWalker {
   // Optionally, a method which was previously determined as a unique target (uniqm) is added as a participant
   // to enable dependency spot-checking and speed up the search.
   LinkedConcreteMethodFinder(InstanceKlass* resolved_klass, Method* resolved_method, Method* uniqm = nullptr) : AbstractClassHierarchyWalker(nullptr) {
-    assert(UseVtableBasedCHA, "required");
     assert(resolved_klass->is_linked(), "required");
     assert(resolved_method->method_holder()->is_linked(), "required");
     assert(!resolved_method->can_be_statically_bound(), "no vtable index available");
@@ -1948,7 +1943,6 @@ Klass* Dependencies::check_unique_concrete_method(InstanceKlass* ctxk,
                                                   Klass* resolved_klass,
                                                   Method* resolved_method,
                                                   KlassDepChange* changes) {
-  assert(UseVtableBasedCHA, "required");
   assert(!ctxk->is_interface() || ctxk == resolved_klass, "sanity");
   assert(!resolved_method->can_be_statically_bound() || resolved_method == uniqm, "sanity");
   assert(resolved_klass->is_subtype_of(resolved_method->method_holder()), "sanity");
@@ -2129,7 +2123,7 @@ Klass* Dependencies::DepStream::check_klass_dependency(KlassDepChange* changes) 
   Dependencies::check_valid_dependency_type(type());
 
   if (changes != nullptr) {
-    if (UseVtableBasedCHA && changes->is_klass_init_change()) {
+    if (changes->is_klass_init_change()) {
       return check_klass_init_dependency(changes->as_klass_init_change());
     } else {
       return check_new_klass_dependency(changes->as_new_klass_change());
