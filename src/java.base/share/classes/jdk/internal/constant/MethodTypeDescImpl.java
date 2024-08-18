@@ -169,7 +169,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             if (len == 0) {
                 len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             }
-            
+
             var classDesc = ConstantUtils.resolveClassDesc(descriptor, cur, len);
             if (paramTypes != null) {
                 paramTypes[paramIndex] = classDesc;
