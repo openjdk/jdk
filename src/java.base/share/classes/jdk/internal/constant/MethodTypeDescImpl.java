@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -129,27 +130,36 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         /*
-         * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning
+         * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning,
+         * use 0 to indicate that the current parameter length is greater than 256 and needs to be reparsed
          */
         long lengths = 0;
         int paramCount = 0;
-        for (int cur = start; cur < end; ) {
+        int cur = start;
+        while (cur < end) {
             int len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
-            if (paramCount < 8) {
-                // use 0 to indicate that the current parameter length is greater than 256 and needs to be reparsed
-                lengths = (lengths << 8) | (len > 0xFF ? 0 : len);
-            }
-            paramCount++;
+            lengths = (lengths << 8) | (len > 0xFF ? 0 : len);
             cur += len;
+            if (++paramCount == 8) {
+                break;
+            }
         }
 
-        var paramTypes = new ClassDesc[paramCount];
-        int paramIndex = 0,
-            lengthsEnd = Math.min(paramCount, 8) - 1;
-        for (int cur = start; cur < end; ) {
+        ClassDesc[]     paramTypes    = null;
+        List<ClassDesc> paramTypeList = null;
+        if (cur == end) {
+            paramTypes = new ClassDesc[paramCount];
+        } else {
+            paramTypeList = new ArrayList<>(32);
+        }
+
+        int paramIndex  = 0,
+            lengthsEnd  = Math.min(paramCount, 8) - 1;
+        cur = start;
+        while (cur < end) {
             int len = 0,
                 num = lengthsEnd - paramIndex;
             if (num >= 0) {
@@ -159,8 +169,20 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
             if (len == 0) {
                 len = ConstantUtils.skipOverFieldSignature(descriptor, cur, end);
             }
-            paramTypes[paramIndex++] = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+            
+            var classDesc = ConstantUtils.resolveClassDesc(descriptor, cur, len);
+            if (paramTypes != null) {
+                paramTypes[paramIndex] = classDesc;
+            } else {
+                paramTypeList.add(classDesc);
+            }
+
+            paramIndex++;
             cur += len;
+        }
+
+        if (paramTypes == null) {
+            paramTypes = paramTypeList.toArray(ConstantUtils.EMPTY_CLASSDESC);
         }
         return paramTypes;
     }
