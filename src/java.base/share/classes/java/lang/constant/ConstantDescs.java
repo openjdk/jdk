@@ -68,7 +68,7 @@ public final class ConstantDescs {
     // Don't change the order of these declarations!
 
     /** {@link ClassDesc} representing {@link Object} */
-    public static final ClassDesc CD_Object = ReferenceClassDescImpl.ofValidated("Ljava/lang/Object;");
+    public static final ClassDesc CD_Object = ReferenceClassDescImpl.CD_Object;
 
     /** {@link ClassDesc} representing {@link String} */
     public static final ClassDesc CD_String = ReferenceClassDescImpl.ofValidated("Ljava/lang/String;");
