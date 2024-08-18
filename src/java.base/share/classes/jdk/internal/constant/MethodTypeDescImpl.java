@@ -52,14 +52,6 @@ import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
  * {@code Constant_MethodType_info} entry in the constant pool of a classfile.
  */
 public final class MethodTypeDescImpl implements MethodTypeDesc {
-    public interface Constants {
-        /**
-         * Nominal descriptor representing the method descriptor {@code ()V},
-         * taking no argument and returning {@code void}.
-         */
-        public static final MethodTypeDescImpl MTD_void = new MethodTypeDescImpl(CD_void, EMPTY_CLASSDESC);
-    }
-
     private final ClassDesc returnType;
     private final @Stable ClassDesc[] argTypes;
     private @Stable String cachedDescriptorString;
@@ -134,7 +126,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
         var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         if (length == 3 && returnType == CD_void) {
-            return Constants.MTD_void;
+            return (MethodTypeDescImpl) java.lang.constant.ConstantDescs.MTD_void;
         }
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);
