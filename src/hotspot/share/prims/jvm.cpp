@@ -3557,6 +3557,10 @@ JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   HeapShared::initialize_from_archived_subgraph(THREAD, k);
 JVM_END
 
+JVM_LEAF(jboolean, JVM_IsUsingOptimizedModuleHandling(void))
+  return CDSConfig::is_using_optimized_module_handling() ? JNI_TRUE : JNI_FALSE;
+JVM_END
+
 JVM_ENTRY(void, JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env,
                                               jclass caller,
                                               jstring interfaceMethodName,

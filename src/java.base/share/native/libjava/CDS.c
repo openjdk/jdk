@@ -63,3 +63,8 @@ JNIEXPORT void JNICALL
 Java_jdk_internal_misc_CDS_dumpDynamicArchive(JNIEnv *env, jclass jcls, jstring archiveName) {
     JVM_DumpDynamicArchive(env, archiveName);
 }
+
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_misc_CDS_isUsingOptimizedModuleHandling(JNIEnv *env, jclass jcls) {
+    return JVM_IsUsingOptimizedModuleHandling();
+}

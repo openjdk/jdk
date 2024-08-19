@@ -270,6 +270,7 @@ public:
   bool has_non_jar_in_classpath()          const { return _has_non_jar_in_classpath; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  bool has_full_module_graph()             const { return _has_full_module_graph; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
   size_t heap_oopmap_start_pos()           const { return _heap_oopmap_start_pos; }
   size_t heap_ptrmap_start_pos()           const { return _heap_ptrmap_start_pos; }
@@ -343,6 +344,7 @@ private:
 
   static SharedPathTable       _shared_path_table;
   static bool                  _validating_shared_path_table;
+  static bool                  _mismatched_module_paths;
 
   // FileMapHeader describes the shared space data in the file to be
   // mapped.  This structure gets written to a file.  It is not a class, so
@@ -406,6 +408,7 @@ public:
   bool is_mapped()                            const { return _is_mapped; }
   void set_is_mapped(bool v)                        { _is_mapped = v; }
   const char* full_path()                     const { return _full_path; }
+  bool mismatched_module_paths()              const { return _mismatched_module_paths; }
 
   void set_requested_base(char* b)                  { header()->set_requested_base(b); }
   char* requested_base_address()           const    { return header()->requested_base_address(); }
@@ -554,6 +557,10 @@ public:
                     GrowableArray<const char*>* rp_array,
                     unsigned int dumptime_prefix_len,
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
+  bool  check_paths_unordered(int shared_path_start_idx, int num_paths,
+                              GrowableArray<const char*>* rp_array) NOT_CDS_RETURN_(false);
+  bool  is_jar_suffix(const char* filename);
+  void  extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
   bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);

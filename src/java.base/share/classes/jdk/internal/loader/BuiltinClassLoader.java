@@ -1085,4 +1085,9 @@ public class BuiltinClassLoader
         ucp = null;
         resourceCache = null;
     }
+
+    // Called during -Xshare:dump from AppClassLoader.resetArchivedStates().
+    void clearModuleToReader() {
+        if (!moduleToReader.isEmpty()) moduleToReader.clear();
+    }
 }

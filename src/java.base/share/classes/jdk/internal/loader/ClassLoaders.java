@@ -216,6 +216,7 @@ public class ClassLoaders {
          */
         private void resetArchivedStates() {
             setClassPath(null);
+            clearModuleToReader();
         }
     }
 

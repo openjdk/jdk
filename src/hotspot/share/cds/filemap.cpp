@@ -786,6 +786,35 @@ bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, Growable
   return false;
 }
 
+bool FileMapInfo::check_paths_unordered(int shared_path_start_idx, int num_paths,
+                                        GrowableArray<const char*>* rp_array) {
+  int i = 0;
+  int j;
+  int paths_checked;
+  int archived_num_module_paths = header()->num_module_paths();
+  while (i < num_paths) {
+    j = shared_path_start_idx;
+    paths_checked = 0;
+    bool checked = false;
+    const char* runtime_path = rp_array->at(i);
+    while (paths_checked < archived_num_module_paths) {
+      const char* dumptime_path = shared_path(j)->name();
+
+      log_info(class, path)("Checking module paths, dump: %s, run: %s", dumptime_path, runtime_path);
+      if (os::same_files(dumptime_path, runtime_path)) {
+        checked = true;
+      }
+      j++;
+      paths_checked++;
+      if (!checked && paths_checked >= archived_num_module_paths) {
+        return true;
+      }
+    }
+    i++;
+  }
+  return false;
+}
+
 bool FileMapInfo::validate_boot_class_paths() {
   //
   // - Archive contains boot classes only - relaxed boot path check:
@@ -923,15 +952,57 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
   }
 }
 
+bool FileMapInfo::is_jar_suffix(const char* filename) {
+  const char* dot = strrchr(filename, '.');
+  if (strcmp(dot + 1, "jar") == 0) {
+    return true;
+  }
+  return false;
+}
+
+void FileMapInfo::extract_module_paths(const char* runtime_path, GrowableArray<const char*>* module_paths) {
+  GrowableArray<const char*>* path_array = create_path_array(runtime_path);
+  int num_paths = path_array->length();
+  for (int i = 0; i < num_paths; i++) {
+    const char* name = path_array->at(i);
+    DIR* dirp = os::opendir(name);
+    if (dirp == nullptr && errno == ENOTDIR && is_jar_suffix(name)) {
+      module_paths->append(name);
+    } else {
+      struct dirent* dentry;
+      while ((dentry = os::readdir(dirp)) != nullptr) {
+        const char* file_name = dentry->d_name;
+        if (is_jar_suffix(file_name)) {
+          size_t full_name_len = strlen(name) + strlen(file_name) + strlen(os::file_separator()) + 1;
+          char* full_name = NEW_RESOURCE_ARRAY(char, full_name_len);
+          int n = os::snprintf(full_name, full_name_len, "%s%s%s", name, os::file_separator(), file_name);
+          assert((size_t)n == full_name_len - 1, "Unexpected number of characters in string");
+          module_paths->append(full_name);
+        }
+      }
+      os::closedir(dirp);
+    }
+  }
+}
+
 bool FileMapInfo::check_module_paths() {
-  const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = CDSConfig::num_archives(rp);
-  if (num_paths != header()->num_module_paths()) {
+  const char* runtime_path = Arguments::get_property("jdk.module.path");
+  int archived_num_module_paths = header()->num_module_paths();
+  if (runtime_path == nullptr && archived_num_module_paths == 0) {
     return false;
   }
+  if ((runtime_path == nullptr && archived_num_module_paths > 0) ||
+      (runtime_path != nullptr && archived_num_module_paths == 0)) {
+    return true;
+  }
   ResourceMark rm;
-  GrowableArray<const char*>* rp_array = create_path_array(rp);
-  return check_paths(header()->app_module_paths_start_index(), num_paths, rp_array, 0, 0);
+  GrowableArray<const char*>* module_paths = new GrowableArray<const char*>(3);
+  extract_module_paths(runtime_path, module_paths);
+  int num_paths = module_paths->length();
+  if (num_paths < archived_num_module_paths) {
+    return true;
+  }
+  return check_paths_unordered(header()->app_module_paths_start_index(), num_paths, module_paths);
 }
 
 bool FileMapInfo::validate_shared_path_table() {
@@ -941,6 +1012,15 @@ bool FileMapInfo::validate_shared_path_table() {
 
   // Load the shared path table info from the archive header
   _shared_path_table = header()->shared_path_table();
+
+  if (CDSConfig::is_dumping_dynamic_archive() || header()->has_full_module_graph()) {
+    _mismatched_module_paths = check_module_paths();
+  }
+  if (header()->has_full_module_graph() && _mismatched_module_paths) {
+    CDSConfig::stop_using_optimized_module_handling();
+    log_info(cds)("optimized module handling: disabled because mismatched module paths");
+  }
+
   if (CDSConfig::is_dumping_dynamic_archive()) {
     // Only support dynamic dumping with the usage of the default CDS archive
     // or a simple base archive.
@@ -956,7 +1036,7 @@ bool FileMapInfo::validate_shared_path_table() {
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
     if (header()->num_module_paths() > 0) {
-      if (!check_module_paths()) {
+      if (_mismatched_module_paths) {
         CDSConfig::disable_dumping_dynamic_archive();
         log_warning(cds)(
           "Dynamic archiving is disabled because base layer archive has a different module path");
@@ -2319,6 +2399,7 @@ bool FileMapInfo::_heap_pointers_need_patching = false;
 SharedPathTable FileMapInfo::_shared_path_table;
 bool FileMapInfo::_validating_shared_path_table = false;
 bool FileMapInfo::_memory_mapping_failed = false;
+bool FileMapInfo::_mismatched_module_paths = false;
 GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 
 // Open the shared archive file, read and validate the header

@@ -183,6 +183,9 @@ JVM_IsForeignLinkerSupported(void);
 JNIEXPORT void JNICALL
 JVM_InitializeFromArchive(JNIEnv* env, jclass cls);
 
+JNIEXPORT jboolean JNICALL
+JVM_IsUsingOptimizedModuleHandling(void);
+
 JNIEXPORT void JNICALL
 JVM_RegisterLambdaProxyClassForArchiving(JNIEnv* env, jclass caller,
                                          jstring interfaceMethodName,

@@ -139,7 +139,6 @@ public final class ModuleBootstrap {
      */
     private static boolean canUseArchivedBootLayer() {
         return getProperty("jdk.module.upgrade.path") == null &&
-               getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
@@ -204,6 +203,7 @@ public final class ModuleBootstrap {
         ModuleFinder systemModuleFinder;
 
         boolean haveModulePath = (appModulePath != null || upgradeModulePath != null);
+        boolean haveUpgradeModulePath = (upgradeModulePath != null);
         boolean needResolution = true;
         boolean canArchive = false;
         boolean hasSplitPackages;
@@ -214,7 +214,7 @@ public final class ModuleBootstrap {
         // system modules and finder.
         ArchivedModuleGraph archivedModuleGraph = ArchivedModuleGraph.get(mainModule);
         if (archivedModuleGraph != null
-                && !haveModulePath
+                && !haveUpgradeModulePath
                 && addModules.isEmpty()
                 && limitModules.isEmpty()
                 && !isPatched) {
@@ -223,14 +223,22 @@ public final class ModuleBootstrap {
             hasIncubatorModules = archivedModuleGraph.hasIncubatorModules();
             needResolution = (traceOutput != null);
         } else {
-            if (!haveModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
-                systemModules = SystemModuleFinders.systemModules(mainModule);
-                if (systemModules != null && !isPatched) {
-                    needResolution = (traceOutput != null);
-                    if (CDS.isDumpingStaticArchive())
-                        canArchive = true;
+            if (!haveUpgradeModulePath && addModules.isEmpty() && limitModules.isEmpty()) {
+                if (appModulePath == null) {
+                    systemModules = SystemModuleFinders.systemModules(mainModule);
+                }
+                if (!isPatched) {
+                    if (systemModules != null) {
+                        needResolution = (traceOutput != null);
+                    }
+                    if ((systemModules != null) || (appModulePath != null)) {
+                        if (CDS.isDumpingStaticArchive()) {
+                            canArchive = true;
+                        }
+                    }
                 }
             }
+
             if (systemModules == null) {
                 // all system modules are observable
                 systemModules = SystemModuleFinders.allSystemModules();
@@ -493,7 +501,7 @@ public final class ModuleBootstrap {
                                         cf,
                                         clf,
                                         mainModule);
-            if (!hasSplitPackages && !hasIncubatorModules) {
+            if (!hasSplitPackages) {
                 ArchivedBootLayer.archive(bootLayer);
             }
         }

@@ -108,6 +108,8 @@ class ArchivedModuleGraph {
     }
 
     static {
-        CDS.initializeFromArchive(ArchivedModuleGraph.class);
+        if (CDS.isUsingOptimizedModuleHandling()) {
+            CDS.initializeFromArchive(ArchivedModuleGraph.class);
+        }
     }
 }

@@ -1103,6 +1103,13 @@ bool HeapShared::archive_reachable_objects_from(int level,
     // these objects that are referenced (directly or indirectly) by static fields.
     ResourceMark rm;
     log_error(cds, heap)("Cannot archive object of class %s", orig_obj->klass()->external_name());
+    if (log_is_enabled(Trace, cds, heap)) {
+      WalkOopAndArchiveClosure* walker = WalkOopAndArchiveClosure::current();
+      if (walker != nullptr) {
+        LogStream ls(Log(cds, heap)::trace());
+        CDSHeapVerifier::trace_to_root(&ls, walker->referencing_obj());
+      }
+    }
     MetaspaceShared::unrecoverable_writing_error();
   }
 

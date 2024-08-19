@@ -110,19 +110,17 @@ public class ModuleOption {
             "-m", incubatorModule,
             "-version");
         oa.shouldHaveExitValue(0)
-          // module graph won't be archived with an incubator module
-          .shouldContain("archivedBootLayer not available, disabling full module graph");
+          // module graph will be archived with an incubator module
+          .shouldNotContain("archivedBootLayer not available, disabling full module graph");
 
         // run with the same incubator module
         oa = TestCommon.execCommon(
             loggingOption,
             "-m", incubatorModule,
             "-version");
-        oa.shouldContain("full module graph: disabled")
-          // module is not restored from archive
-          .shouldContain("define_module(): creation of module: jdk.incubator.vector")
-          .shouldContain("WARNING: Using incubator modules: jdk.incubator.vector")
-          .shouldContain("subgraph jdk.internal.module.ArchivedBootLayer is not recorde")
+        oa.shouldContain("use_full_module_graph = true")
+          .shouldMatch(".*Restored from archive:.*jdk.incubator.vector.*")
+          .shouldContain("resolve subgraph jdk.internal.module.ArchivedBootLayer")
           .shouldContain("module jdk.incubator.vector does not have a ModuleMainClass attribute, use -m <module>/<main-class>")
           .shouldHaveExitValue(1);
     }

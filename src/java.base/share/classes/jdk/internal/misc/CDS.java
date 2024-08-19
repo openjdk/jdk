@@ -104,6 +104,11 @@ public class CDS {
     public static native long getRandomSeedForDumping();
 
     /**
+     * Returns the value of CDSConfig::_is_using_optimized_module_handling.
+     */
+    public static native boolean isUsingOptimizedModuleHandling();
+
+    /**
      * log lambda form invoker holder, name and method type
      */
     public static void logLambdaFormInvoker(String prefix, String holder, String name, String type) {

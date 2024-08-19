@@ -333,6 +333,17 @@ bool Arguments::is_internal_module_property(const char* property) {
   return false;
 }
 
+// Return true if the key matches the --module-path property name ("jdk.module.path").
+bool Arguments::is_module_path_property(const char* key) {
+  if (strncmp(key, MODULE_PROPERTY_PREFIX, MODULE_PROPERTY_PREFIX_LEN) == 0) {
+    const char* property_suffix = key + MODULE_PROPERTY_PREFIX_LEN;
+    if (matches_property_suffix(property_suffix, PATH, PATH_LEN)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Process java launcher properties.
 void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
   // See if sun.java.launcher or sun.java.launcher.is_altjvm is defined.
