@@ -850,9 +850,9 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register frame_
 
   // Note also that the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  AddressLiteral stub(StubRoutines::throw_StackOverflowError_entry());
-  __ load_absolute_address(tmp1, StubRoutines::throw_StackOverflowError_entry());
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  AddressLiteral stub(SharedRuntime::throw_StackOverflowError_entry());
+  __ load_absolute_address(tmp1, SharedRuntime::throw_StackOverflowError_entry());
   __ z_br(tmp1);
 
   // If you get to here, then there is enough stack space.
