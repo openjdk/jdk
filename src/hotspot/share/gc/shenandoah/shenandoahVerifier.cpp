@@ -1278,7 +1278,7 @@ class ShenandoahVerifyRemSetClosure : public BasicOopIterateClosure {
 protected:
   bool                        const _init_mark;
   ShenandoahGenerationalHeap* const _heap;
-  RememberedScanner*          const _scanner;
+  ShenandoahScanRemembered*   const _scanner;
 
 public:
   // Argument distinguishes between initial mark or start of update refs verification.
@@ -1311,7 +1311,7 @@ public:
 
 void ShenandoahVerifier::help_verify_region_rem_set(ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx, HeapWord* from,
                                                     HeapWord* top, HeapWord* registration_watermark, const char* message) {
-  RememberedScanner* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
+  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
   ShenandoahVerifyRemSetClosure check_interesting_pointers(false);
 
   HeapWord* obj_addr = from;
@@ -1368,7 +1368,7 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
   shenandoah_assert_safepoint();
   assert(_heap->mode()->is_generational(), "Only verify remembered set for generational operational modes");
 
-  RememberedScanner* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
+  ShenandoahScanRemembered* scanner = ShenandoahGenerationalHeap::heap()->old_generation()->card_scan();
   ShenandoahVerifyRemSetClosure check_interesting_pointers(true);
   ShenandoahMarkingContext* ctx;
 

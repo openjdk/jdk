@@ -523,7 +523,7 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice(OopIterateClosure* blk, b
          "slice must be integral number of cards");
 
   oop obj = cast_to_oop(r->bottom());
-  RememberedScanner* scanner = heap->old_generation()->card_scan();
+  ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
   size_t card_index = scanner->card_index_for_addr(start);
   size_t num_cards = words / CardTable::card_size_in_words();
 

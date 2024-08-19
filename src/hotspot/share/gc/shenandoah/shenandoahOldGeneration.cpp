@@ -194,7 +194,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     ShenandoahCardTable* card_table = ShenandoahBarrierSet::barrier_set()->card_table();
     size_t card_count = card_table->cards_required(ShenandoahHeap::heap()->reserved_region().word_size());
     auto rs = new ShenandoahDirectCardMarkRememberedSet(card_table, card_count);
-    _card_scan = new ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet>(rs);
+    _card_scan = new ShenandoahScanRemembered(rs);
   }
 }
 
