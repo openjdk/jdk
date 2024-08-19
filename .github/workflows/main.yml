@@ -74,11 +74,16 @@ jobs:
       - name: 'Check what jobs to run'
         id: include
         run: |
+          set -x
           # Determine which platform jobs to run
 
           # Returns 'true' if the input platform list matches any of the platform monikers given as argument,
           # 'false' otherwise.
           # arg $1: platform name or names to look for
+
+          # List of platforms to exclude by default
+          EXCLUDED_PLATFORMS=("alpine-linux-x64")
+
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
@@ -95,7 +100,13 @@ jobs:
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
             if [[ "$normalized_input" == ",," ]]; then
-              # For an empty input, assume all platforms should run
+              # For an empty input, assume all platforms should run, except those in the EXCLUDED_PLATFORMS list
+              for excluded in "${EXCLUDED_PLATFORMS[@]}"; do
+                if [[ "$1" == "$excluded" ]]; then
+                  echo 'false'
+                  return
+                fi
+              done
               echo 'true'
               return
             else
@@ -103,6 +114,14 @@ jobs:
               for part in $* ; do
                 if echo "$normalized_input" | grep -q -e ",$part," ; then
                   echo 'true'
+                  return
+                fi
+              done
+
+              # If not explicitly included, check against the EXCLUDED_PLATFORMS list
+              for excluded in "${EXCLUDED_PLATFORMS[@]}"; do
+                if [[ "$1" == "$excluded" ]]; then
+                  echo 'false'
                   return
                 fi
               done
@@ -232,7 +251,7 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     # We only run this job on manual triggers to save resources
-    if: ${{ github.event_name == 'workflow_dispatch' && needs.select.outputs.alpine-linux-x64 == 'true' }}
+    if: needs.select.outputs.alpine-linux-x64 == 'true'
 
   build-macos-x64:
     name: macos-x64
