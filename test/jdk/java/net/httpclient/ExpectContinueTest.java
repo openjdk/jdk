@@ -356,7 +356,7 @@ public class ExpectContinueTest implements HttpServerAdapters {
     }
 
     private void verifyRequest(String path, int expectedStatusCode, HttpResponse<String> resp, boolean exceptionally, Throwable testThrowable) {
-        if(!exceptionally){
+        if (!exceptionally) {
             err.printf("Response code %s received for path %s %n", resp.statusCode(), path);
         }
         if (exceptionally && testThrowable != null) {
