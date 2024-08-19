@@ -180,6 +180,10 @@ public interface FlowTube extends
             public void onComplete() {
                 delegate.onComplete();
             }
+            @Override
+            public String toString() {
+                return "TubeSubscriberWrapper("+delegate.toString()+")";
+            }
         }
 
     }

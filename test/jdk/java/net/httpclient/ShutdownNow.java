@@ -213,7 +213,10 @@ public class ShutdownNow implements HttpServerAdapters {
             if (client.awaitTermination(Duration.ofMillis(2000))) {
                 out.println("Client terminated within expected delay");
             } else {
-                throw new AssertionError("client still running");
+                System.out.println(TRACKER.diagnose(client));
+                if (client.awaitTermination(Duration.ofMillis(500))) {
+                    throw new AssertionError("client still running: " + TRACKER.diagnose(client));
+                }
             }
             assertTrue(client.isTerminated());
         }
@@ -275,7 +278,10 @@ public class ShutdownNow implements HttpServerAdapters {
             if (client.awaitTermination(Duration.ofMillis(2000))) {
                 out.println("Client terminated within expected delay");
             } else {
-                throw new AssertionError("client still running");
+                System.out.println(TRACKER.diagnose(client));
+                if (client.awaitTermination(Duration.ofMillis(500))) {
+                    throw new AssertionError("client still running: " + TRACKER.diagnose(client));
+                }
             }
             assertTrue(client.isTerminated());
         }
