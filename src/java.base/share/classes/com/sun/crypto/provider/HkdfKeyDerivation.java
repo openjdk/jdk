@@ -31,6 +31,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.ByteArrayOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KDFParameters;
@@ -99,11 +100,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
 
         if (alg == null) {
             throw new NullPointerException(
-                "the algorithm for the SecretKey return value may not be null");
+                "the algorithm for the SecretKey return value should not be null");
         }
         if (alg.isEmpty()) {
             throw new NoSuchAlgorithmException(
-                "the algorithm for the SecretKey return value may not be "
+                "the algorithm for the SecretKey return value should not be "
                 + "empty");
         }
 
@@ -141,9 +142,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.Extract) derivationParameterSpec;
             ikms = anExtract.ikms();
             salts = anExtract.salts();
-            // we should be able to combine these Lists of keys into single
-            // SecretKey Objects,
-            // unless we were passed something bogus or an unexportable P11 key
+            // we should be able to combine these Lists of key segments into
+            // single SecretKey Objects, unless we were passed something bogus
+            // or an unexportable P11 key
             try {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
@@ -205,9 +206,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.ExtractThenExpand) derivationParameterSpec;
             ikms = anExtractThenExpand.ikms();
             salts = anExtractThenExpand.salts();
-            // we should be able to combine these Lists of keys into single
-            // SecretKey Objects,
-            // unless we were passed something bogus or an unexportable P11 key
+            // we should be able to combine these Lists of key segments into
+            // single SecretKey Objects, unless we were passed something bogus
+            // or an unexportable P11 key
             try {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
@@ -230,7 +231,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             try {
                 byte[] extractResult = hkdfExtract(inputKeyMaterial, (salt
                                                                       == null) ? null : salt.getEncoded());
-                pseudoRandomKey = new SecretKeySpec(extractResult, "RAW");
+                pseudoRandomKey = new SecretKeySpec(extractResult, hmacAlgName);
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
@@ -259,22 +260,17 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 byte[] workItemBytes = CipherCore.getKeyBytes(checkIt);
                 return new SecretKeySpec(workItemBytes, "Generic");
             } else {
-                byte[] bb = new byte[0];
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
                 for (SecretKey workItem : localKeys) {
-                    byte[] workItemBytes = CipherCore.getKeyBytes(workItem);
-
-                    bb = Arrays.copyOf(bb, bb.length + workItemBytes.length);
-                    System.arraycopy(workItemBytes, 0, bb,
-                                     bb.length - workItemBytes.length,
-                                     workItemBytes.length);
+                    os.writeBytes(CipherCore.getKeyBytes(workItem));
                 }
-                return new SecretKeySpec(bb, "Generic");
+                return new SecretKeySpec(os.toByteArray(), "Generic");
             }
-        } else if (keys.isEmpty()) {
-            return null;
+        } else if(keys != null) {
+                return null;
         } else {
             throw new InvalidKeyException(
-                "List of keys could not be consolidated");
+                "List of key segments could not be consolidated");
         }
     }
 
@@ -300,7 +296,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             salt = new byte[hmacLen];
         }
         Mac hmacObj = Mac.getInstance(hmacAlgName);
-        hmacObj.init(new SecretKeySpec(salt, "HKDF-Salt"));
+        hmacObj.init(new SecretKeySpec(salt, hmacAlgName));
 
         if (inputKeyMaterial == null) {
             return hmacObj.doFinal();
@@ -326,8 +322,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     output length.
      *
      * @throws InvalidKeyException
-     *     if an invalid key was provided through the {@code HkdfParameterSpec}
-     *     or derived during the generation of the PRK.
+     *     if an invalid PRK was provided through the {@code HKDFParameterSpec}
+     *     or derived during the extract phase.
      */
     private byte[] hkdfExpand(SecretKey prk, byte[] info, int outLen)
         throws InvalidKeyException, NoSuchAlgorithmException {

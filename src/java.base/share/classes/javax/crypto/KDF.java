@@ -119,9 +119,6 @@ public final class KDF {
 
     private final Object lock;
 
-    int DERIVE_KEY = 0;
-    int DERIVE_DATA = 1;
-
     /**
      * Instantiates a {@code KDF} object. This constructor is called when a
      * provider is supplied to {@code getInstance}.
@@ -224,7 +221,7 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm)
         throws NoSuchAlgorithmException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
         try {
             return getInstance(algorithm, (KDFParameters) null);
         } catch (InvalidAlgorithmParameterException e) {
@@ -259,8 +256,8 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
-        Objects.requireNonNull(provider, "provider may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
+        Objects.requireNonNull(provider, "provider should not be null");
         try {
             return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
@@ -292,8 +289,8 @@ public final class KDF {
      */
     public static KDF getInstance(String algorithm, Provider provider)
         throws NoSuchAlgorithmException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
-        Objects.requireNonNull(provider, "provider may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
+        Objects.requireNonNull(provider, "provider should not be null");
         try {
             return getInstance(algorithm, null, provider);
         } catch (InvalidAlgorithmParameterException e) {
@@ -331,7 +328,7 @@ public final class KDF {
     public static KDF getInstance(String algorithm,
                                   KDFParameters kdfParameters)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = GetInstance.getServices("KDF", algorithm);
         while (t.hasNext()) {
@@ -381,8 +378,8 @@ public final class KDF {
                                   String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException,
                InvalidAlgorithmParameterException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
-        Objects.requireNonNull(provider, "provider may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
+        Objects.requireNonNull(provider, "provider should not be null");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
@@ -433,8 +430,8 @@ public final class KDF {
                                   KDFParameters kdfParameters,
                                   Provider provider)
         throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        Objects.requireNonNull(algorithm, "algorithm may not be null");
-        Objects.requireNonNull(provider, "provider may not be null");
+        Objects.requireNonNull(algorithm, "algorithm should not be null");
+        Objects.requireNonNull(provider, "provider should not be null");
         try {
             Instance instance = GetInstance.getInstance("KDF", KDFSpi.class,
                                                         algorithm,
@@ -491,11 +488,11 @@ public final class KDF {
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         if (alg == null) {
             throw new NullPointerException(
-                "the algorithm for the SecretKey return value may not be null");
+                "the algorithm for the SecretKey return value should not be null");
         }
         if (alg.isEmpty()) {
             throw new NoSuchAlgorithmException(
-                "the algorithm for the SecretKey return value may not be "
+                "the algorithm for the SecretKey return value should not be "
                 + "empty");
         }
         Objects.requireNonNull(derivationParameterSpec);
@@ -601,11 +598,11 @@ public final class KDF {
                                   AlgorithmParameterSpec derivationParameterSpec)
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
 
-        int mechanism = (algorithm == null) ? DERIVE_DATA : DERIVE_KEY;
+        boolean isDeriveData = (algorithm == null);
 
         synchronized (lock) {
             if (spi != null) {
-                return (mechanism == DERIVE_DATA) ? spi.engineDeriveData(
+                return (isDeriveData) ? spi.engineDeriveData(
                     derivationParameterSpec) : spi.engineDeriveKey(algorithm,
                                                                    derivationParameterSpec);
             }
@@ -625,7 +622,7 @@ public final class KDF {
                 try {
                     KDFSpi spi = (KDFSpi) s.newInstance(kdfParameters);
                     Object o =
-                        (mechanism == DERIVE_DATA) ? spi.engineDeriveData(
+                        (isDeriveData) ? spi.engineDeriveData(
                             derivationParameterSpec) : spi.engineDeriveKey(
                             algorithm, derivationParameterSpec);
                     this.provider = s.getProvider();
@@ -648,11 +645,8 @@ public final class KDF {
             }
         }
         throw new InvalidAlgorithmParameterException(
-            "No installed provider supports the " + ((mechanism
-                                                      == DERIVE_DATA) ?
-                                                         "deriveData" :
-                                                         "deriveKey")
-            + " method with"
-            + " these parameters");
+            "No installed provider supports the " +
+            ((isDeriveData) ? "deriveData" : "deriveKey")
+            + " method with these parameters");
     }
 }

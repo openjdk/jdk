@@ -350,7 +350,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Constructor that may be used to initialize an {@code Expand} object
          *
          * @param prk
-         *     the pseudorandom key; may be {@code null}
+         *     the pseudorandom key; in the case of {@code ExtractThenExpand},
+         *     prk may be {@null} since the output of extract phase is used
          * @param info
          *     the optional context and application specific information (may be
          *     {@code null}); the byte[] is copied to prevent subsequent
