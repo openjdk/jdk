@@ -1,10 +1,10 @@
-import java.io.Serializable;
-
 /*
  * @test /nodynamiccopyright/
  * @bug 4986256
  * @compile/ref=Serial.out -XDrawDiagnostics -Xlint:all Serial.java
  */
+
+import java.io.Serializable;
 
 // control: this class should generate warnings
 class Serial implements Serializable
