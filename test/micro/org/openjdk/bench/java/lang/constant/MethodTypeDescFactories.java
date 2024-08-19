@@ -59,6 +59,8 @@ public class MethodTypeDescFactories {
             "(Ljava/lang/Object;Ljava/lang/String;)I",
             "()V",
             "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;",
+            "(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
+            "(Ljava/lang/Integer;Ljava/lang/Integer;)Ljava/lang/Integer;",
             "()Ljava/lang/Object;",
             "([IJLjava/lang/String;Z)Ljava/util/List;",
             "()[Ljava/lang/String;",
