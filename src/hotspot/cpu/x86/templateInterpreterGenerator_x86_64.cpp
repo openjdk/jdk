@@ -465,6 +465,13 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     } else {
       __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
     }
+  } else if (kind == Interpreter::java_lang_math_tanh) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    if (StubRoutines::dtanh() != nullptr) {
+      __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtanh())));
+    } else {
+      __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtanh));
+    }
   } else if (kind == Interpreter::java_lang_math_abs) {
     assert(StubRoutines::x86::double_sign_mask() != nullptr, "not initialized");
     __ movdbl(xmm0, Address(rsp, wordSize));

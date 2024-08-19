@@ -433,6 +433,16 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
         }
         __ addptr(rsp, 2 * wordSize);
         break;
+    case Interpreter::java_lang_math_tanh :
+        __ subptr(rsp, 2 * wordSize);
+        __ fstp_d(Address(rsp, 0));
+        if (StubRoutines::dtanh() != nullptr) {
+          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtanh())));
+        } else {
+          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtanh));
+        }
+        __ addptr(rsp, 2 * wordSize);
+        break;
     case Interpreter::java_lang_math_sqrt:
         __ fsqrt();
         break;

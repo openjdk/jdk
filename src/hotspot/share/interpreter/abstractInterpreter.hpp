@@ -72,6 +72,7 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_sin,                                         // implementation of java.lang.Math.sin   (x)
     java_lang_math_cos,                                         // implementation of java.lang.Math.cos   (x)
     java_lang_math_tan,                                         // implementation of java.lang.Math.tan   (x)
+    java_lang_math_tanh,                                        // implementation of java.lang.Math.tanh  (x)
     java_lang_math_abs,                                         // implementation of java.lang.Math.abs   (x)
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
     java_lang_math_sqrt_strict,                                 // implementation of java.lang.StrictMath.sqrt(x)
@@ -151,7 +152,7 @@ class AbstractInterpreter: AllStatic {
       case vmIntrinsics::_dsin  : // fall thru
       case vmIntrinsics::_dcos  : // fall thru
       case vmIntrinsics::_dtan  : // fall thru
-      //case vmIntrinsics::_dtanh : // fall thru
+      case vmIntrinsics::_dtanh : // fall thru
       case vmIntrinsics::_dabs  : // fall thru
       case vmIntrinsics::_dsqrt : // fall thru
       case vmIntrinsics::_dsqrt_strict : // fall thru
