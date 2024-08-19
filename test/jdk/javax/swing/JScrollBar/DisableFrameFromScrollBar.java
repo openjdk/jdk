@@ -49,7 +49,6 @@ public class DisableFrameFromScrollBar {
 
     private static JFrame frame;
     private static JScrollBar bar;
-    private static Robot robot;
     private static int oldValue;
     private static volatile boolean doCheck;
     private static volatile boolean isAdjusting;
@@ -81,7 +80,7 @@ public class DisableFrameFromScrollBar {
     public static void main(String[] args) throws Exception {
         for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
             System.out.println("Testing LAF : " + laf.getClassName());
-            robot = new Robot();
+            Robot robot = new Robot();
             robot.setAutoDelay(100);
             try {
                 SwingUtilities.invokeAndWait(() -> {
@@ -117,7 +116,7 @@ public class DisableFrameFromScrollBar {
                     Thread.sleep(200);
                 } while(isAdjusting && !doCheck);
                 if (bar.getValue() == (bar.getMaximum() - bar.getVisibleAmount())) {
-                    throw new RuntimeException("ScrollBar did't disable timer");
+                    throw new RuntimeException("ScrollBar didn't disable timer");
                 }
             } finally {
                 SwingUtilities.invokeAndWait(() -> {
