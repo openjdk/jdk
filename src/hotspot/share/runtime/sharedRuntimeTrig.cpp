@@ -886,5 +886,5 @@ JRT_LEAF(jdouble, SharedRuntime::dtan(jdouble x))
 JRT_END
 
 JRT_LEAF(jdouble, SharedRuntime::dtanh(jdouble x))
-  return 0.0; // dummy
+  return 0.0; // TODO: what to implement here?
 JRT_END
