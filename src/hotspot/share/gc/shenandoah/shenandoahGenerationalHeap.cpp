@@ -78,17 +78,6 @@ protected:
   }
 };
 
-ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::heap() {
-  shenandoah_assert_generational();
-  CollectedHeap* heap = Universe::heap();
-  return cast(heap);
-}
-
-ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::cast(CollectedHeap* heap) {
-  shenandoah_assert_generational();
-  return checked_cast<ShenandoahGenerationalHeap*>(heap);
-}
-
 size_t ShenandoahGenerationalHeap::calculate_min_plab() {
   return align_up(PLAB::min_size(), CardTable::card_size_in_words());
 }
@@ -248,7 +237,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
           break;
         }
         case OLD_GENERATION: {
-          assert(mode()->is_generational(), "OLD Generation only exists in generational mode");
           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
           if (plab != nullptr) {
             has_plab = true;
@@ -258,11 +246,8 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
               ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
             // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
             // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
-            // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try resetting the desired
-            // PLAB size and retry PLAB allocation to avoid cascading of shared memory allocations.
-
-            // In this situation, PLAB memory is precious.  We'll try to preserve our existing PLAB by forcing
-            // this particular allocation to be shared.
+            // where abundance is defined as >= ShenGenHeap::plab_min_size().  In the former case, we try shrinking the
+            // desired PLAB size to the minimum and retry PLAB allocation to avoid cascading of shared memory allocations.
             if (plab->words_remaining() < plab_min_size()) {
               ShenandoahThreadLocalData::set_plab_size(thread, plab_min_size());
               copy = allocate_from_plab(thread, size, is_promotion);
@@ -322,20 +307,28 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   // Copy the object:
   evac_tracker()->begin_evacuation(thread, size * HeapWordSize);
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-
   oop copy_val = cast_to_oop(copy);
 
+  // Update the age of the evacuated object
   if (target_gen == YOUNG_GENERATION && is_aging_cycle()) {
     ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
   }
 
   // Try to install the new forwarding pointer.
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
+
+    // This is necessary for virtual thread support. This uses the mark word without
+    // considering that it may now be a forwarding pointer (and could therefore crash).
+    // Secondarily, we do not want to spend cycles relativizing stack chunks for oops
+    // that lost the evacuation race (and will therefore not become visible). It is
+    // safe to do this on the public copy (this is also done during concurrent mark).
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
+
+    // Record that the evacuation succeeded
     evac_tracker()->end_evacuation(thread, size * HeapWordSize);
+
     if (target_gen == OLD_GENERATION) {
       old_generation()->handle_evacuation(copy, size, from_region->is_young());
     } else {
@@ -525,10 +518,6 @@ HeapWord* ShenandoahGenerationalHeap::allocate_new_plab(size_t min_size, size_t 
   return res;
 }
 
-// TODO: It is probably most efficient to register all objects (both promotions and evacuations) that were allocated within
-// this plab at the time we retire the plab.  A tight registration loop will run within both code and data caches.  This change
-// would allow smaller and faster in-line implementation of alloc_from_plab().  Since plabs are aligned on card-table boundaries,
-// this object registration loop can be performed without acquiring a lock.
 void ShenandoahGenerationalHeap::retire_plab(PLAB* plab, Thread* thread) {
   // We don't enforce limits on plab evacuations.  We let it consume all available old-gen memory in order to reduce
   // probability of an evacuation failure.  We do enforce limits on promotion, to make sure that excessive promotion
@@ -803,7 +792,7 @@ private:
     bool is_mixed = _heap->collection_set()->has_old_regions();
     while (r != nullptr) {
       HeapWord* update_watermark = r->get_update_watermark();
-      assert (update_watermark >= r->bottom(), "sanity");
+      assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region " SIZE_FORMAT, worker_id, r->index());
       bool region_progress = false;
@@ -813,12 +802,7 @@ private:
           region_progress = true;
         } else if (r->is_old()) {
           if (gc_generation->is_global()) {
-            // Note that GLOBAL collection is not as effectively balanced as young and mixed cycles.  This is because
-            // concurrent GC threads are parceled out entire heap regions of work at a time and there
-            // is no "catchup phase" consisting of remembered set scanning, during which parcels of work are smaller
-            // and more easily distributed more fairly across threads.
 
-            // TODO: Consider an improvement to load balance GLOBAL GC.
             _heap->marked_object_oop_iterate(r, &cl, update_watermark);
             region_progress = true;
           }
@@ -840,12 +824,15 @@ private:
                  r->affiliation_name(), r->index());
         }
       }
+
       if (region_progress && ShenandoahPacing) {
         _heap->pacer()->report_updaterefs(pointer_delta(update_watermark, r->bottom()));
       }
+
       if (_heap->check_cancelled_gc_and_yield(CONCURRENT)) {
         return;
       }
+
       r = _regions->next();
     }
 
@@ -853,115 +840,117 @@ private:
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 
-      // After this thread has exhausted its traditional update-refs work, it continues with updating refs within remembered set.
-      // The remembered set workload is better balanced between threads, so threads that are "behind" can catch up with other
-      // threads during this phase, allowing all threads to work more effectively in parallel.
-      struct ShenandoahRegionChunk assignment;
-      ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
+      // After this thread has exhausted its traditional update-refs work, it continues with updating refs within
+      // remembered set. The remembered set workload is better balanced between threads, so threads that are "behind"
+      // can catch up with other threads during this phase, allowing all threads to work more effectively in parallel.
+      update_references_in_remembered_set(worker_id, cl, ctx, is_mixed);
+    }
+  }
 
-      while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
-        // Keep grabbing next work chunk to process until finished, or asked to yield
-        ShenandoahHeapRegion* r = assignment._r;
-        if (r->is_active() && !r->is_cset() && r->is_old()) {
-          HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
-          HeapWord* end_of_range = r->get_update_watermark();
-          if (end_of_range > start_of_range + assignment._chunk_size) {
-            end_of_range = start_of_range + assignment._chunk_size;
-          }
+  template<class T>
+  void update_references_in_remembered_set(uint worker_id, T &cl, const ShenandoahMarkingContext* ctx, bool is_mixed) {
 
-          // Old region in a young cycle or mixed cycle.
-          if (is_mixed) {
-            // TODO: For mixed evac, consider building an old-gen remembered set that allows restricted updating
-            // within old-gen HeapRegions.  This remembered set can be constructed by old-gen concurrent marking
-            // and augmented by card marking.  For example, old-gen concurrent marking can remember for each old-gen
-            // card which other old-gen regions it refers to: none, one-other specifically, multiple-other non-specific.
-            // Update-references when _mixed_evac processess each old-gen memory range that has a traditional DIRTY
-            // card or if the "old-gen remembered set" indicates that this card holds pointers specifically to an
-            // old-gen region in the most recent collection set, or if this card holds pointers to other non-specific
-            // old-gen heap regions.
+    struct ShenandoahRegionChunk assignment;
+    ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
-            if (r->is_humongous()) {
-              if (start_of_range < end_of_range) {
-                // Need to examine both dirty and clean cards during mixed evac.
-                r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true);
-              }
-            } else {
-              // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
-              // and filled.  Use mark bits to find objects that need to be updated.
-              //
-              // Future TODO: establish a second remembered set to identify which old-gen regions point to other old-gen
-              // regions which are in the collection set for a particular mixed evacuation.
-              if (start_of_range < end_of_range) {
-                HeapWord* p = nullptr;
-                size_t card_index = scanner->card_index_for_addr(start_of_range);
-                // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
-                ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
+    while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {
+      // Keep grabbing next work chunk to process until finished, or asked to yield
+      ShenandoahHeapRegion* r = assignment._r;
+      if (r->is_active() && !r->is_cset() && r->is_old()) {
+        HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
+        HeapWord* end_of_range = r->get_update_watermark();
+        if (end_of_range > start_of_range + assignment._chunk_size) {
+          end_of_range = start_of_range + assignment._chunk_size;
+        }
 
-                // Any object that begins in a previous range is part of a different scanning assignment.  Any object that
-                // starts after end_of_range is also not my responsibility.  (Either allocated during evacuation, so does
-                // not hold pointers to from-space, or is beyond the range of my assigned work chunk.)
+        if (start_of_range >= end_of_range) {
+          continue;
+        }
 
-                // Find the first object that begins in my range, if there is one.
-                p = start_of_range;
-                oop obj = cast_to_oop(p);
-                HeapWord* tams = ctx->top_at_mark_start(r);
-                if (p >= tams) {
-                  // We cannot use ctx->is_marked(obj) to test whether an object begins at this address.  Instead,
-                  // we need to use the remembered set crossing map to advance p to the first object that starts
-                  // within the enclosing card.
-
-                  while (true) {
-                    HeapWord* first_object = scanner->first_object_in_card(card_index);
-                    if (first_object != nullptr) {
-                      p = first_object;
-                      break;
-                    } else if (scanner->addr_for_card_index(card_index + 1) < end_of_range) {
-                      card_index++;
-                    } else {
-                      // Force the loop that follows to immediately terminate.
-                      p = end_of_range;
-                      break;
-                    }
-                  }
-                  obj = cast_to_oop(p);
-                  // Note: p may be >= end_of_range
-                } else if (!ctx->is_marked(obj)) {
-                  p = ctx->get_next_marked_addr(p, tams);
-                  obj = cast_to_oop(p);
-                  // If there are no more marked objects before tams, this returns tams.
-                  // Note that tams is either >= end_of_range, or tams is the start of an object that is marked.
-                }
-                while (p < end_of_range) {
-                  // p is known to point to the beginning of marked object obj
-                  objs.do_object(obj);
-                  HeapWord* prev_p = p;
-                  p += obj->size();
-                  if (p < tams) {
-                    p = ctx->get_next_marked_addr(p, tams);
-                    // If there are no more marked objects before tams, this returns tams.  Note that tams is
-                    // either >= end_of_range, or tams is the start of an object that is marked.
-                  }
-                  assert(p != prev_p, "Lack of forward progress");
-                  obj = cast_to_oop(p);
-                }
-              }
-            }
+        // Old region in a young cycle or mixed cycle.
+        if (is_mixed) {
+          if (r->is_humongous()) {
+            // Need to examine both dirty and clean cards during mixed evac.
+            r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true);
           } else {
-            // This is a young evac..
-            if (start_of_range < end_of_range) {
-              size_t cluster_size =
-                      CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-              size_t clusters = assignment._chunk_size / cluster_size;
-              assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
-              scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
-            }
+            // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
+            // and filled.  This will use mark bits to find objects that need to be updated.
+            update_references_in_old_region(cl, ctx, scanner, r, start_of_range, end_of_range);
           }
-          if (ShenandoahPacing && (start_of_range < end_of_range)) {
-            _heap->pacer()->report_updaterefs(pointer_delta(end_of_range, start_of_range));
-          }
+        } else {
+          // This is a young evacuation
+          size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+          size_t clusters = assignment._chunk_size / cluster_size;
+          assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
+          scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
+        }
+
+        if (ShenandoahPacing) {
+          _heap->pacer()->report_updaterefs(pointer_delta(end_of_range, start_of_range));
         }
       }
     }
+  }
+
+  template<class T>
+  void update_references_in_old_region(T &cl, const ShenandoahMarkingContext* ctx, ShenandoahScanRemembered* scanner,
+                                    const ShenandoahHeapRegion* r, HeapWord* start_of_range,
+                                    HeapWord* end_of_range) const {
+    // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
+    ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
+
+    // Any object that begins in a previous range is part of a different scanning assignment.  Any object that
+    // starts after end_of_range is also not my responsibility.  (Either allocated during evacuation, so does
+    // not hold pointers to from-space, or is beyond the range of my assigned work chunk.)
+
+    // Find the first object that begins in my range, if there is one. Note that `p` will be set to `end_of_range`
+    // when no live object is found in the range.
+    HeapWord* tams = ctx->top_at_mark_start(r);
+    HeapWord* p = get_first_object_start_word(ctx, scanner, tams, start_of_range, end_of_range);
+
+    while (p < end_of_range) {
+      // p is known to point to the beginning of marked object obj
+      oop obj = cast_to_oop(p);
+      objs.do_object(obj);
+      HeapWord* prev_p = p;
+      p += obj->size();
+      if (p < tams) {
+        p = ctx->get_next_marked_addr(p, tams);
+        // If there are no more marked objects before tams, this returns tams.  Note that tams is
+        // either >= end_of_range, or tams is the start of an object that is marked.
+      }
+      assert(p != prev_p, "Lack of forward progress");
+    }
+  }
+
+  HeapWord* get_first_object_start_word(const ShenandoahMarkingContext* ctx, ShenandoahScanRemembered* scanner, HeapWord* tams,
+                                        HeapWord* start_of_range, HeapWord* end_of_range) const {
+    HeapWord* p = start_of_range;
+
+    if (p >= tams) {
+      // We cannot use ctx->is_marked(obj) to test whether an object begins at this address.  Instead,
+      // we need to use the remembered set crossing map to advance p to the first object that starts
+      // within the enclosing card.
+      size_t card_index = scanner->card_index_for_addr(start_of_range);
+      while (true) {
+        HeapWord* first_object = scanner->first_object_in_card(card_index);
+        if (first_object != nullptr) {
+          p = first_object;
+          break;
+        } else if (scanner->addr_for_card_index(card_index + 1) < end_of_range) {
+          card_index++;
+        } else {
+          // Signal that no object was found in range
+          p = end_of_range;
+          break;
+        }
+      }
+    } else if (!ctx->is_marked(cast_to_oop(p))) {
+      p = ctx->get_next_marked_addr(p, tams);
+      // If there are no more marked objects before tams, this returns tams.
+      // Note that tams is either >= end_of_range, or tams is the start of an object that is marked.
+    }
+    return p;
   }
 };
 
