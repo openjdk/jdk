@@ -751,14 +751,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
               region == Region.EDITOR_PANE) {
             return true;
         }
-        if (!GTKLookAndFeel.is3()) {
-            if (region == Region.FORMATTED_TEXT_FIELD ||
-                  region == Region.PASSWORD_FIELD ||
-                  region == Region.SPINNER ||
-                  region == Region.TEXT_FIELD) {
-                return true;
-            }
-        }
+
         Component c = context.getComponent();
         String name = c.getName();
         if (name == "ComboBox.renderer" || name == "ComboBox.listRenderer") {
@@ -884,7 +877,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             int focusPad =
                 getClassSpecificIntValue(context, "focus-padding", 1);
             return indicatorSpacing + focusSize + focusPad;
-        } else if (GTKLookAndFeel.is3() && "ComboBox.forceOpaque".equals(key)) {
+        } else if ("ComboBox.forceOpaque".equals(key)) {
             return true;
         } else if ("Tree.expanderSize".equals(key)) {
             Object value = getClassSpecificValue("expander-size");

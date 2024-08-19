@@ -53,13 +53,13 @@ const char* VM_Version::_features_names[] = { CPU_FEATURE_FLAGS(DECLARE_CPU_FEAT
 #undef DECLARE_CPU_FEATURE_FLAG
 
 // Address of instruction which causes SEGV
-address VM_Version::_cpuinfo_segv_addr = 0;
+address VM_Version::_cpuinfo_segv_addr = nullptr;
 // Address of instruction after the one which causes SEGV
-address VM_Version::_cpuinfo_cont_addr = 0;
+address VM_Version::_cpuinfo_cont_addr = nullptr;
 // Address of instruction which causes APX specific SEGV
-address VM_Version::_cpuinfo_segv_addr_apx = 0;
+address VM_Version::_cpuinfo_segv_addr_apx = nullptr;
 // Address of instruction after the one which causes APX specific SEGV
-address VM_Version::_cpuinfo_cont_addr_apx = 0;
+address VM_Version::_cpuinfo_cont_addr_apx = nullptr;
 
 static BufferBlob* stub_blob;
 static const int stub_size = 2000;

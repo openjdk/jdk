@@ -1075,7 +1075,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   TempNewSymbol signature = SymbolTable::probe(sig, (int)strlen(sig));
 
   if (name == nullptr || signature == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), name_str);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), name_str);
   }
 
   oop mirror = JNIHandles::resolve_non_null(clazz);
@@ -1085,7 +1085,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   // primitive java.lang.Class
   if (java_lang_Class::is_primitive(mirror)) {
     ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
 
   // Make sure class is linked and initialized before handing id's out to
@@ -1109,7 +1109,7 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   }
   if (m == nullptr || (m->is_static() != is_static)) {
     ResourceMark rm(THREAD);
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchMethodError(), err_msg("%s%s.%s%s", is_static ? "static " : "", klass->signature_name(), name_str, sig));
   }
   return m->jmethod_id();
 }
@@ -1149,7 +1149,7 @@ JNI_ENTRY(ResultType, \
           jni_Call##Result##Method(JNIEnv *env, jobject obj, jmethodID methodID, ...)) \
 \
   EntryProbe; \
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, Call##Result##Method, ResultType, \
                      (const ResultType&)ret);\
 \
@@ -1157,7 +1157,7 @@ JNI_ENTRY(ResultType, \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1204,13 +1204,13 @@ JNI_ENTRY(ResultType, \
           jni_Call##Result##MethodV(JNIEnv *env, jobject obj, jmethodID methodID, va_list args)) \
 \
   EntryProbe;\
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, Call##Result##MethodV, ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
 JNI_END
@@ -1255,13 +1255,13 @@ DEFINE_CALLMETHODV(jdouble,  Double,  T_DOUBLE
 JNI_ENTRY(ResultType, \
           jni_Call##Result##MethodA(JNIEnv *env, jobject obj, jmethodID methodID, const jvalue *args)) \
   EntryProbe; \
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, Call##Result##MethodA, ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherArray ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_VIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
 JNI_END
@@ -1354,7 +1354,7 @@ JNI_ENTRY(ResultType, \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1407,7 +1407,7 @@ JNI_ENTRY(ResultType, \
 \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
 JNI_END
@@ -1459,7 +1459,7 @@ JNI_ENTRY(ResultType, \
 \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherArray ap(methodID, args); \
-  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_0); \
+  jni_invoke_nonstatic(env, &jvalue, obj, JNI_NONVIRTUAL, methodID, &ap, CHECK_(ResultType{})); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
 JNI_END
@@ -1547,7 +1547,7 @@ JNI_ENTRY(ResultType, \
           jni_CallStatic##Result##Method(JNIEnv *env, jclass cls, jmethodID methodID, ...)) \
 \
   EntryProbe; \
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, CallStatic##Result##Method, ResultType, \
                      (const ResultType&)ret);\
 \
@@ -1555,7 +1555,7 @@ JNI_ENTRY(ResultType, \
   va_start(args, methodID); \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
-  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_0); \
+  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_(ResultType{})); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1602,7 +1602,7 @@ JNI_ENTRY(ResultType, \
           jni_CallStatic##Result##MethodV(JNIEnv *env, jclass cls, jmethodID methodID, va_list args)) \
 \
   EntryProbe; \
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, CallStatic##Result##MethodV, ResultType, \
                      (const ResultType&)ret);\
 \
@@ -1610,8 +1610,8 @@ JNI_ENTRY(ResultType, \
   JNI_ArgumentPusherVaArg ap(methodID, args); \
   /* Make sure class is initialized before trying to invoke its method */ \
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls)); \
-  k->initialize(CHECK_0); \
-  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_0); \
+  k->initialize(CHECK_(ResultType{})); \
+  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_(ResultType{})); \
   va_end(args); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
@@ -1658,13 +1658,13 @@ JNI_ENTRY(ResultType, \
           jni_CallStatic##Result##MethodA(JNIEnv *env, jclass cls, jmethodID methodID, const jvalue *args)) \
 \
   EntryProbe; \
-  ResultType ret = 0;\
+  ResultType ret{}; \
   DT_RETURN_MARK_FOR(Result, CallStatic##Result##MethodA, ResultType, \
                      (const ResultType&)ret);\
 \
   JavaValue jvalue(Tag); \
   JNI_ArgumentPusherArray ap(methodID, args); \
-  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_0); \
+  jni_invoke_static(env, &jvalue, nullptr, JNI_STATIC, methodID, &ap, CHECK_(ResultType{})); \
   ret = jvalue.get_##ResultType(); \
   return ret;\
 JNI_END
@@ -1751,7 +1751,7 @@ DT_RETURN_MARK_DECL(GetFieldID, jfieldID
 JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
           const char *name, const char *sig))
   HOTSPOT_JNI_GETFIELDID_ENTRY(env, clazz, (char *) name, (char *) sig);
-  jfieldID ret = 0;
+  jfieldID ret = nullptr;
   DT_RETURN_MARK(GetFieldID, jfieldID, (const jfieldID&)ret);
 
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
@@ -1763,7 +1763,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
   if (fieldname == nullptr || signame == nullptr) {
     ResourceMark rm;
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
   }
 
   // Make sure class is initialized before handing id's out to fields
@@ -1773,7 +1773,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   if (!k->is_instance_klass() ||
       !InstanceKlass::cast(k)->find_field(fieldname, signame, false, &fd)) {
     ResourceMark rm;
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), err_msg("%s.%s %s", k->external_name(), name, sig));
   }
 
   // A jfieldID for a non-static field is simply the offset of the field within the instanceOop
@@ -1987,7 +1987,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   TempNewSymbol fieldname = SymbolTable::probe(name, (int)strlen(name));
   TempNewSymbol signame = SymbolTable::probe(sig, (int)strlen(sig));
   if (fieldname == nullptr || signame == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   // Make sure class is initialized before handing id's out to static fields
@@ -1996,7 +1996,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   fieldDescriptor fd;
   if (!k->is_instance_klass() ||
       !InstanceKlass::cast(k)->find_field(fieldname, signame, true, &fd)) {
-    THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
+    THROW_MSG_NULL(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
 
   // A jfieldID for a static field is a JNIid specifying the field holder and the offset within the Klass*
@@ -2310,7 +2310,7 @@ JNI_ENTRY(jobject, jni_GetObjectArrayElement(JNIEnv *env, jobjectArray array, js
     ResourceMark rm(THREAD);
     stringStream ss;
     ss.print("Index %d out of bounds for length %d", index, a->length());
-    THROW_MSG_0(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
+    THROW_MSG_NULL(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), ss.as_string());
   }
 JNI_END
 
@@ -3036,12 +3036,12 @@ extern "C" void* JNICALL jni_GetDirectBufferAddress(JNIEnv *env, jobject buf)
 
   if (!directBufferSupportInitializeEnded) {
     if (!initializeDirectBufferSupport(env, thread)) {
-      return 0;
+      return nullptr;
     }
   }
 
   if ((buf != nullptr) && (!env->IsInstanceOf(buf, directBufferClass))) {
-    return 0;
+    return nullptr;
   }
 
   ret = (void*)(intptr_t)env->GetLongField(buf, directBufferAddressField);
@@ -3648,8 +3648,8 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     }
 
     // Creation failed. We must reset vm_created
-    *vm = 0;
-    *(JNIEnv**)penv = 0;
+    *vm = nullptr;
+    *(JNIEnv**)penv = nullptr;
     // reset vm_created last to avoid race condition. Use OrderAccess to
     // control both compiler and architectural-based reordering.
     assert(vm_created == IN_PROGRESS, "must be");

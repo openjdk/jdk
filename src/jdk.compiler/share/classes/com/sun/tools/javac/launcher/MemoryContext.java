@@ -184,10 +184,9 @@ final class MemoryContext {
      * @param parent the class loader to be used as the parent loader
      * @param mainClassName the fully-qualified name of the application class to load
      * @return class loader object able to find and load the desired class
-     * @throws ClassNotFoundException if the class cannot be located
      * @throws Fault if a modular application class is in the unnamed package
      */
-    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws ClassNotFoundException, Fault {
+    ClassLoader newClassLoaderFor(ClassLoader parent, String mainClassName) throws Fault {
         var moduleInfoBytes = inMemoryClasses.get("module-info");
         if (moduleInfoBytes == null) {
             // Trivial case: no compiled module descriptor available, no extra module layer required
