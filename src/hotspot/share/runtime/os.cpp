@@ -1016,7 +1016,7 @@ static void print_hex_location(outputStream* st, const_address p, int unitsize, 
 }
 
 void os::print_hex_dump(outputStream* st, const_address start, const_address end, int unitsize,
-                        bool print_ascii, int bytes_per_line, const_address logical_start,  const_address highlight_address) {
+                        bool print_ascii, int bytes_per_line, const_address logical_start, const_address highlight_address) {
   constexpr int max_bytes_per_line = 64;
   assert(unitsize == 1 || unitsize == 2 || unitsize == 4 || unitsize == 8, "just checking");
   assert(bytes_per_line > 0 && bytes_per_line <= max_bytes_per_line &&
