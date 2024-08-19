@@ -57,6 +57,9 @@ jobs:
   select:
     name: 'Select platforms'
     runs-on: ubuntu-22.04
+    env:
+      # List of platforms to exclude by default
+      EXCLUDED_PLATFORMS: 'alpine-linux-x64'
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
@@ -80,8 +83,8 @@ jobs:
           # 'false' otherwise.
           # arg $1: platform name or names to look for
 
-          # List of platforms to exclude by default
-          EXCLUDED_PLATFORMS=("alpine-linux-x64")
+          # Convert EXCLUDED_PLATFORMS from a comma-separated string to an array
+          IFS=',' read -r -a excluded_array <<< "$EXCLUDED_PLATFORMS"
 
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
@@ -100,7 +103,7 @@ jobs:
             normalized_input="$(echo ,$input, | tr -d ' ')"
             if [[ "$normalized_input" == ",," ]]; then
               # For an empty input, assume all platforms should run, except those in the EXCLUDED_PLATFORMS list
-              for excluded in "${EXCLUDED_PLATFORMS[@]}"; do
+              for excluded in "${excluded_array[@]}"; do
                 if [[ "$1" == "$excluded" ]]; then
                   echo 'false'
                   return
@@ -118,7 +121,7 @@ jobs:
               done
 
               # If not explicitly included, check against the EXCLUDED_PLATFORMS list
-              for excluded in "${EXCLUDED_PLATFORMS[@]}"; do
+              for excluded in "${excluded_array[@]}"; do
                 if [[ "$1" == "$excluded" ]]; then
                   echo 'false'
                   return
