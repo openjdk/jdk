@@ -86,6 +86,7 @@ public final class SelectCurrentItemTest
         frame.addWindowListener(this);
 
         frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
         frame.pack();
         frame.setVisible(true);
     }
