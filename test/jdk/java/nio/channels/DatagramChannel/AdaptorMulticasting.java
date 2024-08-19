@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import static java.net.StandardSocketOptions.*;
 import static java.net.StandardProtocolFamily.*;
+import static jdk.test.lib.NetworkConfiguration.isSameInterface;
 
 import jdk.test.lib.NetworkConfiguration;
 import jdk.test.lib.net.IPSupport;
@@ -295,8 +296,8 @@ public class AdaptorMulticasting {
 
         // setNetworkInterface
         s.setNetworkInterface(ni);
-        assertTrue(s.getNetworkInterface().equals(ni));
-        assertTrue(s.getOption(IP_MULTICAST_IF).equals(ni));
+        assertTrue(isSameInterface(s.getNetworkInterface(), ni));
+        assertTrue(isSameInterface(s.getOption(IP_MULTICAST_IF), ni));
         InetAddress address = s.getInterface();
         assertTrue(ni.inetAddresses().filter(address::equals).findAny().isPresent());
 
@@ -315,8 +316,8 @@ public class AdaptorMulticasting {
 
         // setOption(IP_MULTICAST_IF)
         s.setOption(IP_MULTICAST_IF, ni);
-        assertTrue(s.getOption(IP_MULTICAST_IF).equals(ni));
-        assertTrue(s.getNetworkInterface().equals(ni));
+        assertTrue(isSameInterface(s.getOption(IP_MULTICAST_IF), ni));
+        assertTrue(isSameInterface(s.getNetworkInterface(), ni));
 
         // bad values for IP_MULTICAST_IF
         assertThrows(IllegalArgumentException.class,
@@ -412,7 +413,8 @@ public class AdaptorMulticasting {
         assertTrue(s.getOption(IP_MULTICAST_IF) != null);
 
         SocketAddress target = new InetSocketAddress(group, s.getLocalPort());
-        byte[] message = "hello".getBytes("UTF-8");
+        String msg = "AdaptorMulticasting:  " + System.nanoTime();
+        byte[] message = msg.getBytes("UTF-8");
 
         // send message to multicast group
         DatagramPacket p = new DatagramPacket(message, message.length);
@@ -421,8 +423,22 @@ public class AdaptorMulticasting {
 
         // receive message
         s.setSoTimeout(0);
-        p = new DatagramPacket(new byte[1024], 100);
-        s.receive(p);
+        while (true) {
+            p = new DatagramPacket(new byte[1024], 100);
+            s.receive(p);
+            if (p.getPort() == s.getLocalPort()) {
+                String str = new String(p.getData(), p.getOffset(), p.getLength(), "UTF-8");
+                if (Arrays.equals(p.getData(), p.getOffset(), p.getLength(), message, 0, message.length)) {
+                    System.out.format("Got expected message \"%s\" from %s%n", str, p.getSocketAddress());
+                    break;
+                }
+                System.out.println("Unexpected message received. Expected: " + msg);
+                System.out.println("Received message doesn't match - skipping: " + str);
+            } else {
+                System.out.println("Unexpected message received. Expected message from: " + s.getLocalAddress());
+                System.out.println("Received message sender doesn't match - skipping: " + p.getSocketAddress());
+            }
+        }
 
         assertTrue(p.getLength() == message.length);
         assertTrue(p.getPort() == s.getLocalPort());
