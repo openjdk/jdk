@@ -68,6 +68,8 @@
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_polling_page_return_handler,                                            \
                                                                                        address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_throw_delayed_StackOverflowError_entry,                                 \
+                                                                                       address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             nmethod_entry_barrier, address)                                                       \
   static_field(CompilerToVM::Data,             thread_disarmed_guard_value_offset, int)                                              \
@@ -327,8 +329,6 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
-                                                                                                                                     \
-  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \

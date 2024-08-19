@@ -1501,7 +1501,7 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), R16_thread);
   pop_frame();
   mtlr(return_pc);
-  load_const_optimized(R0, StubRoutines::throw_delayed_StackOverflowError_entry());
+  load_const_optimized(R0, SharedRuntime::throw_delayed_StackOverflowError_entry());
   mtctr(R0);
   bctr();
 
