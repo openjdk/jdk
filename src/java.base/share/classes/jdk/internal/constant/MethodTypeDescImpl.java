@@ -140,61 +140,70 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
         }
 
         /*
-         * If the length of the first 8 parameters is <= 256, save them in lengths to avoid secondary scanning,
-         * use 0 to indicate that the current parameter length is greater than 256 and needs to be reparsed
+         * If the length of the first 8 parameters is < 256, save them in lengths to avoid ArrayList allocation
+         * Stop storing for the last parameter (we can compute length), or if too many parameters or too long.
          */
-        long lengths = 0;
-        int paramCount = 0;
+        // little endian storage - lowest byte is encoded length 0
+        long packedLengths = 0;
+        int packedCount = 0;
         int cur = start;
         while (cur < end) {
             int len = skipOverFieldSignature(descriptor, cur, end);
             if (len == 0) {
                 throw badMethodDescriptor(descriptor);
             }
-            lengths = (lengths << 8) | (len > 0xFF ? 0 : len);
             cur += len;
-            if (++paramCount == 8) {
+            if (len > 0xFF || packedCount >= Long.SIZE / Byte.SIZE || cur == end) {
+                // Cannot or do not have to pack this item, but is already scanned and valid
                 break;
             }
+            packedLengths = packedLengths | (((long) len) << (Byte.SIZE * packedCount++));
         }
 
+        // Invariant: packedCount parameters encoded in packedLengths,
+        // And another valid parameter pointed by cur
+
+        // Recover encoded elements
         ClassDesc[]     paramTypes    = null;
         List<ClassDesc> paramTypeList = null;
         if (cur == end) {
-            paramTypes = new ClassDesc[paramCount];
+            paramTypes = new ClassDesc[packedCount + 1];
         } else {
             paramTypeList = new ArrayList<>(32);
         }
 
-        int paramIndex  = 0,
-            lengthsEnd  = Math.min(paramCount, 8) - 1;
-        cur = start;
-        while (cur < end) {
-            int len = 0,
-                num = lengthsEnd - paramIndex;
-            if (num >= 0) {
-                int shift = num << 3;
-                len = (int) ((lengths & (0xFFL << shift)) >>> shift);
-            }
-            if (len == 0) {
-                len = skipOverFieldSignature(descriptor, cur, end);
-            }
-
-            var classDesc = resolveClassDesc(descriptor, cur, len);
+        int last = start;
+        for (int i = 0; i < packedCount; i++) {
+            int len = Byte.toUnsignedInt((byte) (packedLengths >> (Byte.SIZE * i)));
+            var cd = resolveClassDesc(descriptor, last, len);
             if (paramTypes != null) {
-                paramTypes[paramIndex] = classDesc;
+                paramTypes[i] = cd;
             } else {
-                paramTypeList.add(classDesc);
+                paramTypeList.add(cd);
             }
+            last += len;
+        }
+        var lastCd = resolveClassDesc(descriptor, last, cur - last);
 
-            paramIndex++;
+        if (paramTypes != null) {
+            paramTypes[packedCount] = lastCd;
+            return paramTypes;
+        }
+        paramTypeList.add(lastCd);
+        return buildParamTypes(descriptor, cur, end, paramTypeList);
+    }
+
+    // slow path
+    private static ClassDesc[] buildParamTypes(String descriptor, int cur, int end, List<ClassDesc> list) {
+        while (cur < end) {
+            int len = skipOverFieldSignature(descriptor, cur, end);
+            if (len == 0)
+                throw badMethodDescriptor(descriptor);
+            list.add(resolveClassDesc(descriptor, cur, len));
             cur += len;
         }
 
-        if (paramTypes == null) {
-            paramTypes = paramTypeList.toArray(EMPTY_CLASSDESC);
-        }
-        return paramTypes;
+        return list.toArray(EMPTY_CLASSDESC);
     }
 
     @Override

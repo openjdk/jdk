@@ -29,6 +29,7 @@ import java.lang.constant.ConstantDescs;
 import java.lang.constant.DynamicConstantDesc;
 import java.lang.invoke.MethodHandles;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
 import static java.util.Objects.requireNonNull;
@@ -68,6 +69,7 @@ public final class PrimitiveClassDescImpl
     public static final PrimitiveClassDescImpl CD_void = new PrimitiveClassDescImpl("V");
 
     private final String descriptor;
+    private @Stable Wrapper lazyWrapper; // initialized only after this
 
     /**
      * Creates a {@linkplain ClassDesc} given a descriptor string for a primitive
@@ -84,6 +86,13 @@ public final class PrimitiveClassDescImpl
         this.descriptor = descriptor;
     }
 
+    public Wrapper wrapper() {
+        var wrapper = this.lazyWrapper;
+        if (wrapper != null)
+            return wrapper;
+        return this.lazyWrapper = Wrapper.forBasicType(descriptorString().charAt(0));
+    }
+
     @Override
     public String descriptorString() {
         return descriptor;
@@ -91,7 +100,7 @@ public final class PrimitiveClassDescImpl
 
     @Override
     public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup) {
-        return Wrapper.forBasicType(descriptorString().charAt(0)).primitiveType();
+        return wrapper().primitiveType();
     }
 
     @Override

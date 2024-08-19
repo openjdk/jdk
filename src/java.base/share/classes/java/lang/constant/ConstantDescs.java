@@ -328,7 +328,7 @@ public final class ConstantDescs {
      *
      * @since 21
      */
-    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);;
+    public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
 
     static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
             = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",
