@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,161 +20,153 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
-  @test
-  @bug 8215921
-  @summary Test that selecting a different item does send an ItemEvent
-  @key headful
-  @run main SelectNewItemTest
-*/
 
-import java.awt.Choice;
-import java.awt.Robot;
-import java.awt.Frame;
-import java.awt.BorderLayout;
 import java.awt.AWTException;
-import java.awt.Point;
-import java.awt.Dimension;
+import java.awt.BorderLayout;
+import java.awt.Choice;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.event.InputEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.WindowListener;
 import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class SelectNewItemTest implements ItemListener, WindowListener {
-    //Declare things used in the test, like buttons and labels here
-    private Frame frame;
-    private Choice theChoice;
-    private Robot robot;
+/*
+ * @test
+ * @bug 8215921
+ * @summary Test that selecting a different item does send an ItemEvent
+ * @key headful
+ * @run main SelectNewItemTest
+*/
+public final class SelectNewItemTest
+        extends WindowAdapter
+        implements ItemListener {
+    private static Frame frame;
+    private static Choice choice;
 
-    private CountDownLatch latch = new CountDownLatch(1);
-    private volatile boolean passed = false;
+    private final Robot robot;
 
-    private void init()
-    {
-        try {
-            robot = new Robot();
-            robot.setAutoDelay(500);
-        } catch (AWTException e) {
-            throw new RuntimeException("Unable to create Robot. Test fails.");
-        }
+    private final CountDownLatch windowOpened = new CountDownLatch(1);
+    private final CountDownLatch mouseClicked = new CountDownLatch(1);
+    private final CountDownLatch itemStateChanged = new CountDownLatch(1);
 
+    private SelectNewItemTest() throws AWTException {
+        robot = new Robot();
+        robot.setAutoDelay(500);
+    }
+
+    private void createUI() {
         frame = new Frame("SelectNewItemTest");
         frame.setLayout(new BorderLayout());
-        theChoice = new Choice();
+
+        choice = new Choice();
         for (int i = 0; i < 10; i++) {
-            theChoice.add(new String("Choice Item " + i));
+            choice.add("Choice Item " + i);
         }
-        theChoice.addItemListener(this);
-        frame.add(theChoice);
+        choice.addItemListener(this);
+        choice.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                System.out.println("mouseClicked()");
+                mouseClicked.countDown();
+            }
+        });
+
+        frame.add(choice, BorderLayout.CENTER);
+
         frame.addWindowListener(this);
 
-        frame.setLocation(1,20);
-        frame.setSize(200, 50);
-        robot.mouseMove(10, 30);
+        frame.setLocationRelativeTo(null);
+        frame.setResizable(false);
         frame.pack();
         frame.setVisible(true);
     }
 
-    public static void main(String... args) {
-        SelectNewItemTest test = new SelectNewItemTest();
-        test.init();
-        try {
-            test.latch.await(12000, TimeUnit.MILLISECONDS);
-        } catch (InterruptedException e) {}
-        test.robot.waitForIdle();
+    private void runTest() throws Exception {
+        EventQueue.invokeAndWait(this::createUI);
 
+        if (!windowOpened.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Frame is not open in time");
+        }
+        robot.waitForIdle();
+
+        final int selectedIndex = getSelectedIndex();
+
+        final Rectangle choiceRect = getChoiceRect();
+        robot.mouseMove(choiceRect.x + choiceRect.width - 10,
+                        choiceRect.y + choiceRect.height / 2);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (!mouseClicked.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Mouse is not clicked in time");
+        }
+        robot.waitForIdle();
+
+        robot.mouseMove(choiceRect.x + choiceRect.width / 2,
+                        choiceRect.y + choiceRect.height * 3);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+
+        if (!itemStateChanged.await(2, TimeUnit.SECONDS)) {
+            throw new RuntimeException("ItemEvent is received");
+        }
+
+        if (selectedIndex == getSelectedIndex()) {
+            throw new RuntimeException("Selected index in Choice should've changed");
+        }
+    }
+
+    private int getSelectedIndex()
+            throws InterruptedException, InvocationTargetException {
+        AtomicInteger index = new AtomicInteger();
+        EventQueue.invokeAndWait(() -> index.set(choice.getSelectedIndex()));
+        return index.get();
+    }
+
+    private Rectangle getChoiceRect()
+            throws InterruptedException, InvocationTargetException {
+        AtomicReference<Rectangle> rect = new AtomicReference<>();
+        EventQueue.invokeAndWait(
+                () -> rect.set(new Rectangle(choice.getLocationOnScreen(),
+                                             choice.getSize())));
+        return rect.get();
+    }
+
+    public static void main(String... args) throws Exception {
         try {
-            if (!test.passed) {
-                throw new RuntimeException("TEST FAILED.");
-            }
+            new SelectNewItemTest().runTest();
         } finally {
-            test.frame.dispose();
+            EventQueue.invokeAndWait(SelectNewItemTest::dispose);
         }
     }
 
-    private void run() {
-        try {
-            Thread.sleep(1000);
-
-            Point loc = theChoice.getLocationOnScreen();
-            int selectedIndex = theChoice.getSelectedIndex();
-            Dimension size = theChoice.getSize();
-
-            robot.mouseMove(loc.x + size.width - 10, loc.y + size.height / 2);
-
-            robot.setAutoDelay(250);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-            robot.delay(1000);
-
-            //make sure that the mouse moves to a different item, so that
-            //itemStateChanged is called.
-            robot.mouseMove(loc.x + size.width / 2, loc.y + 3 * size.height);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-
-            if (selectedIndex == theChoice.getSelectedIndex())
-                throw new RuntimeException("Test case failed - expected to select" +
-                " a different item than " + selectedIndex);
-
-            selectedIndex = theChoice.getSelectedIndex();
-            //now click on the same item and make sure that item event is
-            //not generated.
-            robot.delay(1000);
-            robot.mouseMove(loc.x + size.width - 10, loc.y + size.height / 2);
-
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            //Make sure that the popup menu scrolls back to show the index from
-            //beginning, so that the second mouse click happens on the previously
-            //selected item.
-            //For example, on windows, it automatically scrolls the list to show
-            //the currently selected item just below the choice, which can
-            //throw off the test.
-            if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
-                robot.mouseWheel(-100);
-            }
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-
-            robot.delay(1000);
-            robot.mouseMove(loc.x + size.width / 2, loc.y + 3 * size.height);
-            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
-
-            if (selectedIndex != theChoice.getSelectedIndex())
-                throw new RuntimeException("Test failed. Expected to select the same item " +
-                "located at: " + selectedIndex + " but got an item selected at: " + theChoice.getSelectedIndex());
-        } catch(InterruptedException e) {
-            throw new RuntimeException(e.getCause());
-        } finally {
-            latch.countDown();
+    private static void dispose() {
+        if (frame != null) {
+            frame.dispose();
         }
     }
 
-    @Override public void itemStateChanged(ItemEvent e) {
-        if (!passed) {
-            System.out.println("ItemEvent received.  Test passes");
-            passed = true;
-        } else {
-            System.out.println("ItemEvent received for second click. Test fails");
-            passed = false;
-        }
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+        System.out.println("itemStateChanged: " + e);
+        itemStateChanged.countDown();
     }
 
-    @Override public void windowOpened(WindowEvent e) {
+    @Override
+    public void windowOpened(WindowEvent e) {
         System.out.println("windowActivated()");
-        (new Thread(this::run)).start();
+        windowOpened.countDown();
     }
 
-    @Override public void windowActivated(WindowEvent e) {}
-    @Override public void windowDeactivated(WindowEvent e) {}
-    @Override public void windowClosed(WindowEvent e) {}
-    @Override public void windowClosing(WindowEvent e) {}
-    @Override public void windowIconified(WindowEvent e) {}
-    @Override public void windowDeiconified(WindowEvent e) {}
 }
