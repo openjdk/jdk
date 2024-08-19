@@ -210,7 +210,7 @@
  *
  * // A minimal doclet that displays the class name, the associated source file
  * // (if available), and the class kind for any types that it encounters.
- * public class SimpleDoclet implements Doclet {
+ * public class Example implements Doclet {
  *
  *    private static final boolean OK = true;
  *    private DocTrees treeUtils;
