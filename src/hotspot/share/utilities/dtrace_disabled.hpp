@@ -1082,6 +1082,8 @@
 #define HOTSPOT_JNI_GETMODULE_RETURN(arg0)
 #define HOTSPOT_JNI_GETMODULE_RETURN_ENABLED()
 
+#define HOTSPOT_GC_ALLOCOBJECT_SAMPLE(arg0, arg1, arg2)
+
 #else /* !defined(DTRACE_ENABLED) */
 #error This file should only be included when dtrace is not enabled
 #endif /* !defined(DTRACE_ENABLED) */

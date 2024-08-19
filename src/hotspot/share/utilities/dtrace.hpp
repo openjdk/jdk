@@ -36,6 +36,7 @@
 
 #include "dtracefiles/hotspot.h"
 #include "dtracefiles/hotspot_jni.h"
+#include "dtracefiles/hotspot_gc.h"
 #include "dtracefiles/hs_private.h"
 
 #else /* defined(DTRACE_ENABLED) */
