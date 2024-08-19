@@ -921,8 +921,11 @@ void ShenandoahConcurrentGC::op_init_updaterefs() {
   heap->set_evacuation_in_progress(false);
   heap->set_concurrent_weak_root_in_progress(false);
   heap->prepare_update_heap_references(true /*concurrent*/);
-  heap->set_update_refs_in_progress(true);
+  if (ShenandoahVerify) {
+    heap->verifier()->verify_before_updaterefs();
+  }
 
+  heap->set_update_refs_in_progress(true);
   if (ShenandoahPacing) {
     heap->pacer()->setup_for_updaterefs();
   }
