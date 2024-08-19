@@ -37,6 +37,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import java.io.File;
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,9 +51,10 @@ import java.util.concurrent.atomic.AtomicReference;
  * resized back to normal.  The test case simulates this operation using
  * a JButton.  A file image of the component will be saved before and after
  * window resize. The test passes if both button images are the same.
- * @run main/othervm SwingButtonResizeTestWithOpenGL
  * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm SwingButtonResizeTestWithOpenGL
  */
+
 public class SwingButtonResizeTestWithOpenGL {
     private static Robot robot;
     private static CountDownLatch focusGainedLatch;
@@ -72,8 +74,9 @@ public class SwingButtonResizeTestWithOpenGL {
         frame = new JFrame("SwingButtonResizeTestWithOpenGL");
         button = new JButton("Button A");
         frame.setLocationRelativeTo(null);
+        frame.setLocation(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        button.setPreferredSize(new Dimension(300, 400));
+        button.setPreferredSize(new Dimension(300, 300));
         button.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent fe) {
                 focusGainedLatch.countDown();
@@ -169,8 +172,8 @@ public class SwingButtonResizeTestWithOpenGL {
             AtomicReference<Point> buttonLocRef = new AtomicReference<>();
             SwingUtilities.invokeAndWait(() -> buttonLocRef.set(button.getLocationOnScreen()));
             Point buttonLoc = buttonLocRef.get();
+            System.out.println("Button loc: " + buttonLoc);
             bimage = robot.createScreenCapture(new Rectangle(buttonLoc.x, buttonLoc.y, button.getWidth(), button.getHeight()));
-
         } catch (Exception e) {
             throw new RuntimeException("Problems capturing button image from " + "Robot", e);
         }
@@ -198,7 +201,7 @@ public class SwingButtonResizeTestWithOpenGL {
         }
     }
 
-    private class DiffImage extends java.awt.image.BufferedImage {
+    private class DiffImage extends BufferedImage {
 
         public boolean diff = false;
         public int nDiff = -1;
@@ -209,11 +212,6 @@ public class SwingButtonResizeTestWithOpenGL {
 
         public DiffImage(int w, int h) {
             super(w, h, BufferedImage.TYPE_INT_ARGB);
-
-            // Get the user requested background color (default is gray). The
-            // string value of this property
-            // is then interpreted as an integer which is then converted to a
-            // Color object.
             bgColor = Color.LIGHT_GRAY;
         }
 
@@ -221,7 +219,7 @@ public class SwingButtonResizeTestWithOpenGL {
             return nDiff;
         }
 
-        public void compare(BufferedImage img1, BufferedImage img2) {
+        public void compare(BufferedImage img1, BufferedImage img2) throws IOException {
 
             int minx1 = img1.getMinX();
             int minx2 = img2.getMinX();
@@ -237,7 +235,7 @@ public class SwingButtonResizeTestWithOpenGL {
                 // image sizes are different
                 throw new RuntimeException("img1: <" + minx1 + "," + miny1 + "," + w1 + "x" + h1 + ">" + " img2: " + minx2 + "," + miny2 + "," + w2 + "x" + h2 + ">" + " are different sizes");
             }
-
+            System.out.println("Going to compare the images with a threshold of " + threshold + " pixels");
             // Get the actual data behind the images
             Raster ras1 = img1.getData();
             Raster ras2 = img2.getData();
@@ -272,8 +270,7 @@ public class SwingButtonResizeTestWithOpenGL {
                     b1 = cm1.getBlue(o1);
                     b2 = cm2.getBlue(o2);
 
-                    if ((Math.abs(r1 - r2) > threshold) || (Math.abs(g1 - g2) > threshold) || (Math.abs(b1 - b2) > threshold) /*|| (a1 !=
-                            a2)*/) {
+                    if ((Math.abs(r1 - r2) > threshold) || (Math.abs(g1 - g2) > threshold) || (Math.abs(b1 - b2) > threshold)) {
                         // pixel is different
                         setDiffPixel(x, y, Math.abs(r1 - r2), Math.abs(g1 - g2), Math.abs(b1 - b2));
                         nDiff++;
@@ -282,6 +279,9 @@ public class SwingButtonResizeTestWithOpenGL {
                     }
 
                 }
+            }
+            if (nDiff != 0) {
+                ImageIO.write(this, "png", new File("diffImage.png"));
             }
         }
 
@@ -307,6 +307,5 @@ public class SwingButtonResizeTestWithOpenGL {
     }
 
 }
-
 
 
