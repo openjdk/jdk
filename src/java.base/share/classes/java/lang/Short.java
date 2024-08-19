@@ -704,7 +704,7 @@ public final class Short extends Number implements Comparable<Short>, Constable 
     public static short addSaturatingUnsigned(short a, short b) {
         short res = (short)(a + b);
         boolean overflow = Short.compareUnsigned(res, (short)(a | b)) < 0;
-        if (overflow)  {
+        if (overflow) {
            return Short.UNSIGNED_MAX;
         } else {
            return res;

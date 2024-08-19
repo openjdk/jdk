@@ -90,7 +90,7 @@ public final class Long extends Number
     /**
      * A constant holding polarity(sign) mask used by saturating operations.
      */
-    public static final long POLARITY_MASK_LONG  = 1L << 63;
+    public static final long POLARITY_MASK_LONG = 1L << 63;
 
     /**
      * A constant holding maximum unsigned value used by saturating unsigned operations.
@@ -2030,7 +2030,7 @@ public final class Long extends Number
     public static long addSaturatingUnsigned(long a, long b) {
         long res = a + b;
         boolean overflow = Long.compareUnsigned(res, (a | b)) < 0;
-        if (overflow)  {
+        if (overflow) {
            return Long.UNSIGNED_MAX;
         } else {
            return res;

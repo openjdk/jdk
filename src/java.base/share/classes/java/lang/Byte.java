@@ -78,7 +78,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     /**
      * A constant holding polarity(sign) mask used by saturating operations.
      */
-    public static final byte POLARITY_MASK_BYTE  = (byte)(1 << 7);
+    public static final byte POLARITY_MASK_BYTE = (byte)(1 << 7);
 
     /**
      * A constant holding maximum unsigned value used by saturating unsigned operations.
@@ -669,7 +669,7 @@ public final class Byte extends Number implements Comparable<Byte>, Constable {
     public static byte addSaturatingUnsigned(byte a, byte b) {
         byte res = (byte)(a + b);
         boolean overflow = Byte.compareUnsigned(res, (byte)(a | b)) < 0;
-        if (overflow)  {
+        if (overflow) {
            return Byte.UNSIGNED_MAX;
         } else {
            return res;
