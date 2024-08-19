@@ -54,7 +54,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _TWOMASK[] =
 
 ATTRIBUTE_ALIGNED(16) static const juint _MASK3[] =
 {
-  0,    
+  0,
 	4294967280,
 	0,
 	4294967280
@@ -119,7 +119,7 @@ ATTRIBUTE_ALIGNED(4) static const juint _pv[] =
 
 
 ATTRIBUTE_ALIGNED(16) static const juint _T2_neg_f[] =
-{ 
+{
   0,
   1072693248,
   0,
@@ -1156,7 +1156,7 @@ address StubGenerator::generate_libmTanh() {
   address start = __ pc();
 
   Label L_2TAG_PACKET_0_0_1, L_2TAG_PACKET_1_0_1, L_2TAG_PACKET_2_0_1, L_2TAG_PACKET_3_0_1;
-  Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1; 
+  Label L_2TAG_PACKET_4_0_1, L_2TAG_PACKET_5_0_1, L_2TAG_PACKET_6_0_1;
   Label B1_2, B1_4;
 
   address HALFMASK     = (address)_HALFMASK;
@@ -1169,8 +1169,6 @@ address StubGenerator::generate_libmTanh() {
   address cv           = (address)_cv;
   address pv           = (address)_pv;
   address T2_neg_f     = (address) _T2_neg_f;
- 
- 
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
@@ -1277,7 +1275,7 @@ address StubGenerator::generate_libmTanh() {
   __ mulsd(xmm3, xmm4);
   __ movq(xmm0, xmm6);
   __ mulsd(xmm6, xmm4);
-  __ subsd(xmm1, xmm3); //TODO: BUG FIXED 
+  __ subsd(xmm1, xmm3); //TODO: BUG FIXED
   __ subsd(xmm1, xmm6);
   __ addsd(xmm0, xmm1);
   __ xorpd(xmm0, xmm2);
