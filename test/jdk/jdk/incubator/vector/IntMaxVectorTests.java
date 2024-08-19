@@ -333,7 +333,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
             int idx = i + j;
             boolean is_exceptional_idx = (int)order[idx] >= vector_len;
             int oidx = is_exceptional_idx ? ((int)order[idx] - vector_len) : (int)order[idx];
-            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " +  b[i + oidx]);
+            Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]), "at index #" + idx + ", order = " + (int)order[idx] + ", a = " + a[i + oidx] + ", b = " + b[i + oidx]);
         }
     }
 
