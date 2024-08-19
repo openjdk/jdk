@@ -28,6 +28,7 @@ package jdk.internal.constant;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -126,7 +127,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
 
         var returnType = resolveClassDesc(descriptor, rightBracket + 1, retTypeLength);
         if (length == 3 && returnType == CD_void) {
-            return (MethodTypeDescImpl) java.lang.constant.ConstantDescs.MTD_void;
+            return (MethodTypeDescImpl) ConstantDescs.MTD_void;
         }
         var paramTypes = paramTypes(descriptor, 1, rightBracket);
         var result = new MethodTypeDescImpl(returnType, paramTypes);

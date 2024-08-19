@@ -35,9 +35,6 @@ import static jdk.internal.constant.ConstantUtils.*;
  * {@code Constant_Class_info} entry in the constant pool of a classfile.
  */
 public final class ReferenceClassDescImpl implements ClassDesc {
-    /** {@link ClassDesc} representing {@link Object} */
-    public static final ReferenceClassDescImpl CD_Object = new ReferenceClassDescImpl("Ljava/lang/Object;");
-
     private final String descriptor;
 
     private ReferenceClassDescImpl(String descriptor) {

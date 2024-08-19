@@ -294,7 +294,7 @@ public final class ConstantUtils {
         // objectDesc appears a lot during the bootstrap process, so optimize it
         String objectDesc = "Ljava/lang/Object;";
         if (len == objectDesc.length() && descriptor.regionMatches(start, objectDesc, 0, len)) {
-            return ReferenceClassDescImpl.CD_Object;
+            return ConstantDescs.CD_Object;
         }
 
         // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
