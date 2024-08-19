@@ -34,6 +34,8 @@ import java.util.Objects;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
+import static java.lang.Math.min;
+
 /**
  * This class implements the Secure Hash Algorithm SHA-3 developed by
  * the National Institute of Standards and Technology along with the
@@ -46,7 +48,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @since       9
  * @author      Valerie Peng
  */
-abstract class SHA3 extends DigestBase {
+public abstract class SHA3 extends DigestBase {
 
     private static final int WIDTH = 200; // in bytes, e.g. 1600 bits
     private static final int DM = 5; // dimension of state matrix
@@ -68,6 +70,12 @@ abstract class SHA3 extends DigestBase {
     private final byte suffix;
     private long[] state = new long[DM*DM];
 
+    // The following array is allocated to size WIDTH bytes, but we only
+    // ever use the first blockSize bytes it (for bytes <-> long conversions)
+//    private byte[] byteState = new byte[WIDTH];
+
+    private int squeezeOffset = -1;
+
     static final VarHandle asLittleEndian
             = MethodHandles.byteArrayViewVarHandle(long[].class,
             ByteOrder.LITTLE_ENDIAN).withInvokeExactBehavior();
@@ -75,7 +83,7 @@ abstract class SHA3 extends DigestBase {
     /**
      * Creates a new SHA-3 object.
      */
-    SHA3(String name, int digestLength, byte suffix, int c) {
+    private SHA3(String name, int digestLength, byte suffix, int c) {
         super(name, digestLength, (WIDTH - c));
         this.suffix = suffix;
     }
@@ -103,22 +111,33 @@ abstract class SHA3 extends DigestBase {
         keccak();
     }
 
+     void finishAbsorb() {
+        int numOfPadding =
+                setPaddingBytes(suffix, buffer, (int)(bytesProcessed % blockSize));
+        if (numOfPadding < 1) {
+            throw new ProviderException("Incorrect pad size: " + numOfPadding);
+        }
+        implCompress(buffer, 0);
+    }
+
     /**
      * Return the digest. Subclasses do not need to reset() themselves,
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
         byte[] byteState = new byte[8];
-        int numOfPadding =
-            setPaddingBytes(suffix, buffer, (int)(bytesProcessed % blockSize));
-        if (numOfPadding < 1) {
-            throw new ProviderException("Incorrect pad size: " + numOfPadding);
+        if (engineGetDigestLength() == 0) {
+            // this is an XOF, so the digest() call is illegal
+            throw new ProviderException("Calling digest() is not allowed in an XOF");
         }
-        implCompress(buffer, 0);
-        int availableBytes = blockSize; // i.e. buffer.length
+
+        finishAbsorb();
+
+        int availableBytes = blockSize;
         int numBytes = engineGetDigestLength();
+
         while (numBytes > availableBytes) {
-            for (int i = 0; i < availableBytes / 8 ; i++) {
+            for (int i = 0; i < availableBytes / 8; i++) {
                 asLittleEndian.set(out, ofs, state[i]);
                 ofs += 8;
             }
@@ -140,11 +159,92 @@ abstract class SHA3 extends DigestBase {
         }
     }
 
+    void implSqueeze(byte[]output, int offset, int numBytes) {
+        byte[] byteState = new byte[8];
+        if (engineGetDigestLength() != 0) {
+            // this is not an XOF, so the squeeze() call is illegal
+            throw new ProviderException("Squeezing is only allowed in XOF mode");
+        }
+
+        if (squeezeOffset == -1) {
+            finishAbsorb();
+            squeezeOffset = 0;
+        }
+
+        int availableBytes = blockSize - squeezeOffset;
+
+        if (availableBytes == 0) {
+            keccak();
+            squeezeOffset = 0;
+            availableBytes = blockSize;
+        }
+
+        while (numBytes > availableBytes) {
+            int longOffset = squeezeOffset / 8;
+            int bytesToCopy = 0;
+
+            if (longOffset * 8 < squeezeOffset) {
+                asLittleEndian.set(byteState, 0, state[longOffset]);
+                longOffset++;
+                bytesToCopy = longOffset * 8 - squeezeOffset;
+                System.arraycopy(byteState, 8 - bytesToCopy,
+                        output, offset, bytesToCopy);
+                offset += bytesToCopy;
+            }
+            for (int i = longOffset; i < blockSize / 8; i++) {
+                asLittleEndian.set(output, offset, state[i]);
+                offset += 8;
+            }
+            keccak();
+            squeezeOffset = 0;
+            numBytes -= availableBytes;
+            availableBytes = blockSize;
+        }
+        // Now numBytes <= availableBytes
+        int longOffset = squeezeOffset / 8;
+
+        if (longOffset * 8 < squeezeOffset) {
+            asLittleEndian.set(byteState, 0, state[longOffset]);
+            int bytesToCopy = min((longOffset + 1) * 8 - squeezeOffset, numBytes);
+            System.arraycopy(byteState, squeezeOffset - 8 * longOffset,
+                    output, offset, bytesToCopy);
+            longOffset++;
+            numBytes -= bytesToCopy;
+            offset += bytesToCopy;
+            squeezeOffset += bytesToCopy;
+        }
+
+        int longsToConvert =
+                ((squeezeOffset + numBytes - longOffset * 8) + 7) / 8;
+
+        int limit = longOffset + longsToConvert - (numBytes % 8 == 0 ? 0 : 1);
+
+        for (int i = longOffset; i < limit; i++) {
+            asLittleEndian.set(output, offset, state[i]);
+            offset += 8;
+            numBytes -= 8;
+            squeezeOffset += 8;
+        }
+
+        if (numBytes > 0) {
+            asLittleEndian.set(byteState, 0, state[squeezeOffset / 8]);
+            System.arraycopy(byteState, 0, output, offset, numBytes);
+            squeezeOffset += numBytes;
+        }
+    }
+
+    byte[] implSqueeze(int numBytes) {
+        byte[] result = new byte[numBytes];
+        implSqueeze(result, 0, numBytes);
+        return result;
+    }
+
     /**
      * Resets the internal state to start a new hash.
      */
     void implReset() {
         Arrays.fill(state, 0L);
+        squeezeOffset = -1;
     }
 
     /**
@@ -169,16 +269,20 @@ abstract class SHA3 extends DigestBase {
      * rate r = 1600 and capacity c.
      */
     private void keccak() {
+        keccak(state);
+    }
+
+    public static void keccak(long[] stateArr) {
         long a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12;
         long a13, a14, a15, a16, a17, a18, a19, a20, a21, a22, a23, a24;
         // move data into local variables
-        a0 = state[0]; a1 = state[1]; a2 = state[2]; a3 = state[3]; a4 = state[4];
-        a5 = state[5]; a6 = state[6]; a7 = state[7]; a8 = state[8]; a9 = state[9];
-        a10 = state[10]; a11 = state[11]; a12 = state[12]; a13 = state[13]; a14 = state[14];
-        a15 = state[15]; a16 = state[16]; a17 = state[17]; a18 = state[18]; a19 = state[19];
-        a20 = state[20]; a21 = state[21]; a22 = state[22]; a23 = state[23]; a24 = state[24];
+        a0 = stateArr[0]; a1 = stateArr[1]; a2 = stateArr[2]; a3 = stateArr[3]; a4 = stateArr[4];
+        a5 = stateArr[5]; a6 = stateArr[6]; a7 = stateArr[7]; a8 = stateArr[8]; a9 = stateArr[9];
+        a10 = stateArr[10]; a11 = stateArr[11]; a12 = stateArr[12]; a13 = stateArr[13]; a14 = stateArr[14];
+        a15 = stateArr[15]; a16 = stateArr[16]; a17 = stateArr[17]; a18 = stateArr[18]; a19 = stateArr[19];
+        a20 = stateArr[20]; a21 = stateArr[21]; a22 = stateArr[22]; a23 = stateArr[23]; a24 = stateArr[24];
 
-        // process the lanes through step mappings
+        // process the stateArr through step mappings
         for (int ir = 0; ir < NR; ir++) {
             // Step mapping Theta as defined in section 3.2.1.
             long c0 = a0^a5^a10^a15^a20;
@@ -280,16 +384,17 @@ abstract class SHA3 extends DigestBase {
             a0 ^= RC_CONSTANTS[ir];
         }
 
-        state[0] = a0; state[1] = a1; state[2] = a2; state[3] = a3; state[4] = a4;
-        state[5] = a5; state[6] = a6; state[7] = a7; state[8] = a8; state[9] = a9;
-        state[10] = a10; state[11] = a11; state[12] = a12; state[13] = a13; state[14] = a14;
-        state[15] = a15; state[16] = a16; state[17] = a17; state[18] = a18; state[19] = a19;
-        state[20] = a20; state[21] = a21; state[22] = a22; state[23] = a23; state[24] = a24;
+        stateArr[0] = a0; stateArr[1] = a1; stateArr[2] = a2; stateArr[3] = a3; stateArr[4] = a4;
+        stateArr[5] = a5; stateArr[6] = a6; stateArr[7] = a7; stateArr[8] = a8; stateArr[9] = a9;
+        stateArr[10] = a10; stateArr[11] = a11; stateArr[12] = a12; stateArr[13] = a13; stateArr[14] = a14;
+        stateArr[15] = a15; stateArr[16] = a16; stateArr[17] = a17; stateArr[18] = a18; stateArr[19] = a19;
+        stateArr[20] = a20; stateArr[21] = a21; stateArr[22] = a22; stateArr[23] = a23; stateArr[24] = a24;
     }
 
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
+//        copy.byteState = copy.byteState.clone();
         return copy;
     }
 
@@ -308,7 +413,7 @@ abstract class SHA3 extends DigestBase {
     public static final class SHA256 extends SHA3 {
         public SHA256() {
             super("SHA3-256", 32, (byte)0x06, 64);
-        }
+        } 
     }
 
     /**
@@ -328,4 +433,97 @@ abstract class SHA3 extends DigestBase {
             super("SHA3-512", 64, (byte)0x06, 128);
         }
     }
+
+
+    /*
+     * The SHAKE128 extendable output function.
+     */
+    public static final class SHAKE128 extends SHA3 {
+        // d is the required number of output bytes.
+        // If this constructor is used with d > 0, the squeezing methods
+        // will throw a ProviderException
+        public SHAKE128(int d) {
+            super("SHAKE128", d, (byte) 0x1F, 32);
+        }
+
+        // If this constructor is used to get an instance of the class, then,
+        // after the last update, one can get the generated bytes using the
+        // squeezing methods.
+        // Calling digest method will throw a ProviderException.
+        public SHAKE128() {
+            super("SHAKE128", 0, (byte) 0x1F, 32);
+        }
+
+        public void update(byte in) {
+            engineUpdate(in);
+        }
+        public void update(byte[] in, int off, int len) {
+            engineUpdate(in, off, len);
+        }
+
+        public void update(byte[] in) {
+            engineUpdate(in, 0, in.length);
+        }
+
+        public byte[] digest() {
+            return engineDigest();
+        }
+
+        public void squeeze(byte[] output, int offset, int numBytes) {
+            implSqueeze(output, offset, numBytes);
+        }
+        public byte[] squeeze(int numBytes) {
+            return implSqueeze(numBytes);
+        }
+
+        public void reset() {
+            engineReset();
+        }
+    }
+    /*
+     * The SHAKE256 extendable output function.
+     */
+    public static final class SHAKE256 extends SHA3 {
+        // d is the required number of output bytes.
+        // If this constructor is used with d > 0, the squeezing methods will
+        // throw a ProviderException.
+        public SHAKE256(int d) {
+            super("SHAKE256", d, (byte) 0x1F, 64);
+        }
+
+        // If this constructor is used to get an instance of the class, then,
+        // after the last update, one can get the generated bytes using the
+        // squeezing methods.
+        // Calling a digest method will throw a ProviderException.
+        public SHAKE256() {
+            super("SHAKE256", 0, (byte) 0x1F, 64);
+        }
+
+        public void update(byte in) {
+            engineUpdate(in);
+        }
+        public void update(byte[] in, int off, int len) {
+            engineUpdate(in, off, len);
+        }
+
+        public void update(byte[] in) {
+            engineUpdate(in, 0, in.length);
+        }
+
+        public byte[] digest() {
+            return engineDigest();
+        }
+
+        public void squeeze(byte[] output, int offset, int numBytes) {
+            implSqueeze(output, offset, numBytes);
+        }
+        public byte[] squeeze(int numBytes) {
+            return implSqueeze(numBytes);
+        }
+
+        public void reset() {
+            engineReset();
+        }
+    }
+
 }
