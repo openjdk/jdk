@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -883,8 +883,4 @@ JRT_LEAF(jdouble, SharedRuntime::dtan(jdouble x))
     return __kernel_tan(y[0],y[1],1-((n&1)<<1)); /*   1 -- n even
                                                      -1 -- n odd */
   }
-JRT_END
-
-JRT_LEAF(jdouble, SharedRuntime::dtanh(jdouble x))
-  return 0.0; // TODO: what to implement here?
 JRT_END

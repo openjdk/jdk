@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -430,16 +430,6 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
           __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtan())));
         } else {
           __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtan));
-        }
-        __ addptr(rsp, 2 * wordSize);
-        break;
-    case Interpreter::java_lang_math_tanh :
-        __ subptr(rsp, 2 * wordSize);
-        __ fstp_d(Address(rsp, 0));
-        if (StubRoutines::dtanh() != nullptr) {
-          __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dtanh())));
-        } else {
-          __ call_VM_leaf0(CAST_FROM_FN_PTR(address, SharedRuntime::dtanh));
         }
         __ addptr(rsp, 2 * wordSize);
         break;

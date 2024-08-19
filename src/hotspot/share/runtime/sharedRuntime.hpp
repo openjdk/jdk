@@ -134,7 +134,6 @@ class SharedRuntime: AllStatic {
   static jdouble dsin(jdouble x);
   static jdouble dcos(jdouble x);
   static jdouble dtan(jdouble x);
-  static jdouble dtanh(jdouble x);
   static jdouble dlog(jdouble x);
   static jdouble dlog10(jdouble x);
   static jdouble dexp(jdouble x);

@@ -941,13 +941,6 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
       }
       break;
-    case vmIntrinsics::_dtanh:
-      if (StubRoutines::dtanh() != nullptr) {
-        __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtanh), getThreadTemp(), result_reg, cc->args());
-      }
-      break;
     default:  ShouldNotReachHere();
   }
 #else
@@ -1004,9 +997,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
     case vmIntrinsics::_dtanh:
        if (StubRoutines::dtanh() != nullptr) {
       __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
-      } else {
-        __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtanh), getThreadTemp(), result_reg, cc->args());
-      }
+      } // TODO: else clause?
       break;
     default:  ShouldNotReachHere();
   }

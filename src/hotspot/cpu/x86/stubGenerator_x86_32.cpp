@@ -4180,9 +4180,6 @@ class StubGenerator: public StubCodeGenerator {
         StubRoutines::_dlibm_tan_cot_huge = generate_libm_tan_cot_huge();
         StubRoutines::_dtan = generate_libmTan();
       }
-      if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
-        StubRoutines::_dtanh = generate_libmTanh();
-      }
     }
   }
 
