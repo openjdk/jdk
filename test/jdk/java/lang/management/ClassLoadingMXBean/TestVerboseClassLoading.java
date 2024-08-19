@@ -51,9 +51,12 @@
  * @run main/othervm -Xlog:class+load*=info,class+load+cause=warning TestVerboseClassLoading false
  * @run main/othervm -Xlog:class+load*=info,class+load+cause=error TestVerboseClassLoading false
  * @run main/othervm -Xlog:class+load*=info,class+load+cause=off TestVerboseClassLoading false
+ *
+ * @run main/othervm -Xlog:all=trace:file=vm.log TestVerboseClassLoading false
  */
 
-import java.lang.management.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ClassLoadingMXBean;
 
 public class TestVerboseClassLoading {
 

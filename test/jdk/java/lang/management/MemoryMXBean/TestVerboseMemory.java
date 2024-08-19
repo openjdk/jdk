@@ -45,9 +45,12 @@
  *
  * @run main/othervm -Xlog:gc=info,gc+init=off TestVerboseMemory true
  * @run main/othervm -Xlog:gc=off,gc+init=info TestVerboseMemory false
+ *
+ * @run main/othervm -Xlog:all=trace:file=vm.log TestVerboseMemory false
  */
 
-import java.lang.management.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 
 public class TestVerboseMemory {
 
