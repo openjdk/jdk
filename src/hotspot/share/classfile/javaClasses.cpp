@@ -583,7 +583,7 @@ Symbol* java_lang_String::as_symbol(oop java_string) {
   } else {
     ResourceMark rm;
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     const char* base = UNICODE::as_utf8(position, utf8_len);
     Symbol* sym = SymbolTable::new_symbol(base, checked_cast<int>(utf8_len));
     return sym;
