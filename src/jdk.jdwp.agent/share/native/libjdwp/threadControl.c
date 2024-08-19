@@ -137,11 +137,6 @@ typedef struct {
 
 static DeferredEventModeList deferredEventModes;
 
-#ifdef DEBUG
-static void dumpThreadList(ThreadList *list);
-static void dumpThread(ThreadNode *node);
-#endif
-
 /* Get the state of the thread direct from JVMTI */
 static jvmtiError
 threadState(jthread thread, jint *pstate)
@@ -2561,13 +2556,15 @@ threadControl_allVThreads(jint *numVThreads)
     return vthreads;
 }
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
+static void dumpThreadList(ThreadList *list);
+static void dumpThread(ThreadNode *node);
 
 void
 threadControl_dumpAllThreads()
 {
+    tty_message("suspendAllCount: %d", suspendAllCount);
     tty_message("Dumping runningThreads:");
     dumpThreadList(&runningThreads);
     tty_message("\nDumping runningVThreads:");
@@ -2652,5 +2649,3 @@ dumpThread(ThreadNode *node) {
     tty_message("\tobjID: %d", commonRef_refToID(getEnv(), node->thread));
 #endif
 }
-
-#endif /* DEBUG */

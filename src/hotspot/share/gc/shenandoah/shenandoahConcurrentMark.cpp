@@ -206,7 +206,10 @@ void ShenandoahConcurrentMark::concurrent_mark() {
     }
 
     size_t before = qset.completed_buffers_num();
-    Handshake::execute(&flush_satb);
+    {
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_satb_flush, true);
+      Handshake::execute(&flush_satb);
+    }
     size_t after = qset.completed_buffers_num();
 
     if (before == after) {

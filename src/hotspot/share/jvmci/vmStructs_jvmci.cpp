@@ -68,6 +68,8 @@
   static_field(CompilerToVM::Data,             SharedRuntime_deopt_blob_uncommon_trap, address)                                      \
   static_field(CompilerToVM::Data,             SharedRuntime_polling_page_return_handler,                                            \
                                                                                        address)                                      \
+  static_field(CompilerToVM::Data,             SharedRuntime_throw_delayed_StackOverflowError_entry,                                 \
+                                                                                       address)                                      \
                                                                                                                                      \
   static_field(CompilerToVM::Data,             nmethod_entry_barrier, address)                                                       \
   static_field(CompilerToVM::Data,             thread_disarmed_guard_value_offset, int)                                              \
@@ -151,7 +153,7 @@
   nonstatic_field(Array<Klass*>,               _length,                                int)                                          \
   nonstatic_field(Array<Klass*>,               _data[0],                               Klass*)                                       \
                                                                                                                                      \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                      markWord)                                     \
+  volatile_nonstatic_field(BasicLock,          _metadata,                              uintptr_t)                                    \
                                                                                                                                      \
   static_field(CodeCache,                      _low_bound,                             address)                                      \
   static_field(CodeCache,                      _high_bound,                            address)                                      \
@@ -241,6 +243,7 @@
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
   nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
+  nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
@@ -326,8 +329,6 @@
   volatile_nonstatic_field(oopDesc,            _metadata._klass,                              Klass*)                                \
                                                                                                                                      \
   static_field(StubRoutines,                _verify_oop_count,                                jint)                                  \
-                                                                                                                                     \
-  static_field(StubRoutines,                _throw_delayed_StackOverflowError_entry,          address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _jbyte_arraycopy,                                 address)                               \
   static_field(StubRoutines,                _jshort_arraycopy,                                address)                               \
@@ -531,6 +532,8 @@
                                                                           \
   declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
   declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
+  declare_constant_with_value("OMCache::oop_to_oop_difference", OMCache::oop_to_oop_difference()) \
+  declare_constant_with_value("OMCache::oop_to_monitor_difference", OMCache::oop_to_monitor_difference()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \

@@ -752,8 +752,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
