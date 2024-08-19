@@ -177,10 +177,10 @@ public:
   void abandon_mixed_evacuations();
 
 private:
-  RememberedScanner* _card_scan;
+  ShenandoahScanRemembered* _card_scan;
 
 public:
-  RememberedScanner* card_scan() { return _card_scan; }
+  ShenandoahScanRemembered* card_scan() { return _card_scan; }
 
   // Clear cards for given region
   void clear_cards_for(ShenandoahHeapRegion* region);

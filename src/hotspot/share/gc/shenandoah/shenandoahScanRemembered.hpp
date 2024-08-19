@@ -100,9 +100,7 @@
 //  Let region_size = ShenandoahHeapRegion::region_size_bytes()
 //    represent the number of bytes in each region
 //  Let clusters_per_region = region_size / 512
-//  Let rs represent the relevant RememberedSet implementation
-//    (an instance of ShenandoahDirectCardMarkRememberedSet or an instance
-//     of a to-be-implemented ShenandoahBufferWithSATBRememberedSet)
+//  Let rs represent the ShenandoahDirectCardMarkRememberedSet
 //
 //  for each ShenandoahHeapRegion old_region in the whole heap
 //    determine the cluster number of the first cluster belonging
@@ -225,7 +223,10 @@ public:
   size_t total_cards() const;
   size_t card_index_for_addr(HeapWord *p) const;
   HeapWord *addr_for_card_index(size_t card_index) const;
-  inline const CardValue* get_card_table_byte_map(bool write_table) const;
+  inline const CardValue* get_card_table_byte_map(bool use_write_table) const {
+    return use_write_table ? _card_table->write_byte_map() : _card_table->read_byte_map();
+  }
+
   inline bool is_card_dirty(size_t card_index) const;
   inline bool is_write_card_dirty(size_t card_index) const;
   inline void mark_card_as_dirty(size_t card_index);
@@ -344,21 +345,17 @@ public:
 // resolution of object start addresses.
 //
 // ShenandoahCardCluster supports all of the services of
-// RememberedSet, plus it supports register_object() and lookup_object().
+// DirectCardMarkRememberedSet, plus it supports register_object() and lookup_object().
 // Note that we only need to register the start addresses of the object that
 // overlays the first address of a card; we need to do this for every card.
 // In other words, register_object() checks if the object crosses a card boundary,
 // and updates the offset value for each card that the object crosses into.
 // For objects that don't straddle cards, nothing needs to be done.
 //
-// The RememberedSet template parameter is intended to represent either
-//     ShenandoahDirectCardMarkRememberedSet, or a to-be-implemented
-//     ShenandoahBufferWithSATBRememberedSet.
-template<typename RememberedSet>
 class ShenandoahCardCluster: public CHeapObj<mtGC> {
 
 private:
-  RememberedSet *_rs;
+  ShenandoahDirectCardMarkRememberedSet* _rs;
 
 public:
   static const size_t CardsPerCluster = 64;
@@ -410,7 +407,7 @@ public:
       object_starts[card_index++].short_word = 0;
   }
 
-  ShenandoahCardCluster(RememberedSet *rs) {
+  ShenandoahCardCluster(ShenandoahDirectCardMarkRememberedSet *rs) {
     _rs = rs;
     // TODO: We don't really need object_starts entries for every card entry.  We only need these for
     // the card entries that correspond to old-gen memory.  But for now, let's be quick and dirty.
@@ -684,12 +681,11 @@ public:
 // in the range from 0 to (numRegions() - 1) inclusive.
 //
 
-template<typename RememberedSet>
 class ShenandoahScanRemembered: public CHeapObj<mtGC> {
 
 private:
-  RememberedSet* _rs;
-  ShenandoahCardCluster<RememberedSet>* _scc;
+  ShenandoahDirectCardMarkRememberedSet* _rs;
+  ShenandoahCardCluster* _scc;
 
   // Global card stats (cumulative)
   HdrSeq _card_stats_scan_rs[MAX_CARD_STAT_TYPE];
@@ -715,24 +711,9 @@ private:
   int _card_stats_log_counter[2] = {0, 0};
 
 public:
-  // How to instantiate this object?
-  //   ShenandoahDirectCardMarkRememberedSet *rs =
-  //       new ShenandoahDirectCardMarkRememberedSet();
-  //   scr = new
-  //     ShenandoahScanRememberd<ShenandoahDirectCardMarkRememberedSet>(rs);
-  //
-  // or, after the planned implementation of
-  // ShenandoahBufferWithSATBRememberedSet has been completed:
-  //
-  //   ShenandoahBufferWithSATBRememberedSet *rs =
-  //       new ShenandoahBufferWithSATBRememberedSet();
-  //   scr = new
-  //     ShenandoahScanRememberd<ShenandoahBufferWithSATBRememberedSet>(rs);
-
-
-  ShenandoahScanRemembered(RememberedSet *rs) {
+  ShenandoahScanRemembered(ShenandoahDirectCardMarkRememberedSet *rs) {
     _rs = rs;
-    _scc = new ShenandoahCardCluster<RememberedSet>(rs);
+    _scc = new ShenandoahCardCluster(rs);
 
     // We allocate ParallelGCThreads worth even though we usually only
     // use up to ConcGCThreads, because degenerate collections may employ
@@ -797,7 +778,7 @@ public:
   size_t card_index_for_addr(HeapWord *p);
   HeapWord *addr_for_card_index(size_t card_index);
   bool is_card_dirty(size_t card_index);
-  bool is_write_card_dirty(size_t card_index) { return _rs->is_write_card_dirty(card_index); }
+  bool is_write_card_dirty(size_t card_index);
   void mark_card_as_dirty(size_t card_index);
   void mark_range_as_dirty(size_t card_index, size_t num_cards);
   void mark_card_as_clean(size_t card_index);
@@ -871,18 +852,16 @@ public:
   // At the start of a concurrent evacuation phase, we invoke process_clusters with
   // ClosureType ShenandoahEvacuateUpdateRootsClosure.
 
-  // All template expansions require methods to be defined in the inline.hpp file, but larger
-  // such methods need not be declared as inline.
   template <typename ClosureType>
   void process_clusters(size_t first_cluster, size_t count, HeapWord *end_of_range, ClosureType *oops,
                                bool use_write_table, uint worker_id);
 
   template <typename ClosureType>
-  inline void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
+  void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
                                          HeapWord *end_of_range, ClosureType *oops, bool use_write_table);
 
   template <typename ClosureType>
-  inline void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
+  void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
                                    ClosureType *cl, bool use_write_table, uint worker_id);
 
   // To Do:
@@ -915,7 +894,7 @@ private:
   void log_worker_card_stats(uint worker_id, HdrSeq* sum_stats) PRODUCT_RETURN;
 
   // Log given stats
-  inline void log_card_stats(HdrSeq* stats) PRODUCT_RETURN;
+  void log_card_stats(HdrSeq* stats) PRODUCT_RETURN;
 
   // Merge the stats from worked_id into the given summary stats, and clear the worker_id's stats.
   void merge_worker_card_stats_cumulative(HdrSeq* worker_stats, HdrSeq* sum_stats) PRODUCT_RETURN;
@@ -951,11 +930,10 @@ private:
   static const size_t _clusters_in_smallest_chunk = 4;
 
   // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
-  // This is computed from CardTable::card_size_in_words() *
-  //      ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+  // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   static size_t smallest_chunk_size_words() {
       return _clusters_in_smallest_chunk * CardTable::card_size_in_words() *
-             ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
+             ShenandoahCardCluster::CardsPerCluster;
   }
 
   // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
@@ -1025,7 +1003,6 @@ public:
   inline bool has_next() const;
 };
 
-typedef ShenandoahScanRemembered<ShenandoahDirectCardMarkRememberedSet> RememberedScanner;
 
 class ShenandoahScanRememberedTask : public WorkerTask {
  private:

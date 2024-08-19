@@ -89,9 +89,9 @@ class ShenandoahResetBitmapTask : public ShenandoahHeapRegionClosure {
 // write-copy.
 class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
  private:
-  RememberedScanner* _scanner;
+  ShenandoahScanRemembered* _scanner;
  public:
-  ShenandoahMergeWriteTable(RememberedScanner* scanner) : _scanner(scanner) {}
+  ShenandoahMergeWriteTable(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* r) override {
     assert(r->is_old(), "Don't waste time doing this for non-old regions");
@@ -105,9 +105,9 @@ class ShenandoahMergeWriteTable: public ShenandoahHeapRegionClosure {
 
 class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
  private:
-  RememberedScanner* _scanner;
+  ShenandoahScanRemembered* _scanner;
  public:
-  ShenandoahCopyWriteCardTableToRead(RememberedScanner* scanner) : _scanner(scanner) {}
+  ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
 
   void heap_region_do(ShenandoahHeapRegion* region) override {
     assert(region->is_old(), "Don't waste time doing this for non-old regions");
@@ -850,7 +850,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
   if (ShenandoahEnableCardStats) {
-    RememberedScanner* scanner = heap->old_generation()->card_scan();
+    ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
     assert(scanner != nullptr, "Not generational");
     scanner->log_card_stats(nworkers, CARD_STAT_SCAN_RS);
   }

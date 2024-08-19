@@ -25,7 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP
 
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
+#include "memory/universe.hpp"
+#include "utilities/checkedCast.hpp"
 
 class PLAB;
 class ShenandoahRegulatorThread;
@@ -38,8 +41,16 @@ public:
   void post_initialize() override;
   void initialize_heuristics() override;
 
-  static ShenandoahGenerationalHeap* heap();
-  static ShenandoahGenerationalHeap* cast(CollectedHeap* heap);
+  static ShenandoahGenerationalHeap* heap() {
+    shenandoah_assert_generational();
+    CollectedHeap* heap = Universe::heap();
+    return cast(heap);
+  }
+
+  static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
+    shenandoah_assert_generational();
+    return checked_cast<ShenandoahGenerationalHeap*>(heap);
+  }
 
   void print_init_logger() const override;
   size_t unsafe_max_tlab_alloc(Thread *thread) const override;
