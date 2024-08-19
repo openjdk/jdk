@@ -23,6 +23,7 @@
  * questions.
  */
 
+import javax.management.MBeanAttributeInfo;
 
 import jdk.internal.management.remote.rest.json.JSONElement;
 import jdk.internal.management.remote.rest.json.JSONObject;
@@ -99,43 +100,63 @@ public class JsonMapperTest {
         return data;
     }
     
-/*    @Test (dataProvider = "getJsonString")
-    public void parserTest(String input) throws ParseException {
-        JSONParser jsonParser = new JSONParser(input);
-        JSONElement parse = jsonParser.parse();
-        String output = parse.toJsonString();
-        System.out.println("\t: " + input);
-        System.out.println("\t: " + output);
-//        Assert.assertEquals(input, output);
-    } */
 
     @Test
     public void mapperTest() throws Exception {
-        toJsonAndBack("hi there");
-        toJsonAndBack(0);
-        toJsonAndBack(123);
-        toJsonAndBack(new String[] { "a", "b", "c" } );
-        
-    } 
+        Object o = null;
 
-    public void toJsonAndBack(Object o) throws Exception {
-        System.out.println("Test toJsonAndBack: Java Object: " + o);
+        javaToJsonAndBack("a");
+        javaToJsonAndBack("hi there");
+        javaToJsonAndBack("");
+        javaToJsonAndBack(0);
+        javaToJsonAndBack(123);
+        javaToJsonAndBack(123L);
+        javaToJsonAndBack(false);
+        javaToJsonAndBack(true);
+        javaToJsonAndBack(123.456D);
+        javaToJsonAndBack(123.45678D);
+
+        javaToJsonAndBack(new String[] { "a", "b", "c" } );
+        o = javaToJsonAndBack(new Long[] { 1L, 2L, 43434312443L} );
+        System.out.println(o);
+        Assert.assertEquals("class [Ljava.lang.Long;", o.getClass().toString());
+
+        o = javaToJsonAndBack(new long[] { 3L, 4L, 43434312443L} );
+        System.out.println(o);
+        Assert.assertEquals("class [J", o.getClass().toString());
+        // Will we need...
+        //MBeanAttributeInfo mbai = new MBeanAttributeInfo("myAttribute", "myType", "description", false, false, false, null);
+        //javaToJsonAndBack(mbai);
+
+    }
+
+    public static JSONMapper getMapper(Object o) throws Exception {
+        System.out.println("Mapper for: " + o);
         JSONMapper mapper = JSONMappingFactory.INSTANCE.getTypeMapper(o);
         if (mapper == null) throw new RuntimeException("no mapper for: " + o);        
         System.out.println("Mapper = " + mapper);
+        return mapper;
+    }
+
+    public Object javaToJsonAndBack(Object o) throws Exception {
+        JSONMapper mapper = getMapper(o);
         JSONElement j = mapper.toJsonValue(o);
+        System.out.println();
         System.out.println("  mapper gives JsonValue ->" + j);
         System.out.println("          which is Class ->" + j.getClass());
         System.out.println("            asJsonString ->" + j.toJsonString());
 
-        // mapper = JSONMappingFactory.INSTANCE.getTypeMapper(o);
-        mapper = JSONMappingFactory.INSTANCE.getTypeMapper(j);
-        if (mapper == null) throw new RuntimeException("no mapper for: " + j);
-        System.out.println("Mapper = " + mapper);
         Object oo = mapper.toJavaObject((JSONElement) j);
         //Object oo = mapper.toJavaObject(j.toJsonString());
         System.out.println("mapper gives Java Object ->" + oo);
         System.out.println("          which is Class ->" + oo.getClass());
-    }
 
+        if (o instanceof Comparable) {
+            System.out.println(((Comparable)o).compareTo((Comparable) oo) == 0 ? "Objects EQUAL." : "Objects NOT equal.");
+        } else {
+            // Likely an array, could look inside.
+            System.out.println("Not Comparable.");
+        }
+        return oo;
+    }
 }

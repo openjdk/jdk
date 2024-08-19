@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ public final class JSONMappingFactory {
     public static final JSONMappingFactory INSTANCE;
     private static final Map<Class<?>, JSONMapper> typeMapper;
     private static final Map<String, Class<?>> primitiveMap = new HashMap<>();
+    private static final Map<String, JSONMapper> descriptorMapper;
 
     static {
         // Make order of Initialization explicit
@@ -64,7 +65,14 @@ public final class JSONMappingFactory {
         primitiveMap.put("void", Void.TYPE);
         primitiveMap.put("short", Short.TYPE);
 
+        descriptorMapper = new HashMap<>();
+    
         INSTANCE = new JSONMappingFactory();
+
+
+        descriptorMapper.put(
+            "javax.management.openmbean.ArrayType(name=[J,dimension=1,elementType=javax.management.openmbean.SimpleType(name=java.lang.Long),primitiveArray=true)",
+            new GenericArrayMapper((new Long[0]).getClass()));
     }
 
     private JSONMappingFactory() {
@@ -101,6 +109,30 @@ public final class JSONMappingFactory {
         typeMapper.put(BigDecimal.class, new BigDecimalMapper());
         typeMapper.put(ObjectName.class, new ObjectNameMapper());
         typeMapper.put(Date.class, new DateMapper());
+
+        descriptorMapper.put("void", new VoidMapper());
+        descriptorMapper.put("boolean", new BooleanMapper());
+        descriptorMapper.put("byte", new ByteMapper());
+        descriptorMapper.put("short", new ShortMapper());
+        descriptorMapper.put("int", new IntegerMapper());
+        descriptorMapper.put("long", new LongMapper());
+        descriptorMapper.put("float", new FloatMapper());
+        descriptorMapper.put("double", new DoubleMapper());
+        descriptorMapper.put("char", new CharacterMapper());
+
+        descriptorMapper.put("String", new StringMapper());
+        descriptorMapper.put("BigInteger", new BigIntegerMapper());
+        descriptorMapper.put("BigDecimal", new BigDecimalMapper());
+        descriptorMapper.put("ObjectName", new ObjectNameMapper());
+        descriptorMapper.put("Date", new StringMapper());
+
+//        descriptorMapper.put("javax.management.openmbean.CompositeData", new CompositeDataMapper());
+
+        descriptorMapper.put("javax.management.openmbean.SimpleType(name=java.lang.Integer)", new IntegerMapper());
+        descriptorMapper.put("javax.management.openmbean.SimpleType(name=java.lang.Long)", new LongMapper());
+        descriptorMapper.put("javax.management.openmbean.SimpleType(name=java.lang.Boolean)", new BooleanMapper());
+
+//        descriptorMapper.put("javax.management.openmbean.SimpleType(name=javax.management.ObjectName)", new BooleanMapper());
     }
 
     private Class<?> getArrayComponent(Class<?> cls) {
@@ -236,6 +268,49 @@ public final class JSONMappingFactory {
         return null; //keep compiler happy
     }
 
+    /**
+     * Return a JSONMapper for the type described by the given text descriptor.
+     * e.g. "int"
+     * e.g. "javax.management.openmbean.SimpleType(name=java.lang.Long)"
+     */
+    public JSONMapper getTypeMapper(String descriptor) {
+        if (descriptor == null) return null;
+
+        JSONMapper result = null;
+        if (descriptor.equals("[J")) {
+            // descriptorMapper.put("[J", getTypeMapper(new long[0]));
+            result = getTypeMapper(new long[0]);
+        } 
+        if (result != null) {
+            return result;
+        }
+
+        // KJW XXX
+        // Primitive array
+        // Other OpenTypes
+        result = descriptorMapper.get(descriptor);
+        if (result == null) {
+            if (descriptor.startsWith("[")) {
+               long [] x = new long[0]; // NOT Long[]
+               result = getTypeMapper(x);
+            }
+        }
+
+        if (result == null) {
+            try {
+                System.err.println("TRYING " + descriptor);
+                Class<?> c = Class.forName(descriptor);
+                Object o = c.getDeclaredConstructor().newInstance();
+                result = getTypeMapper(o);
+                System.err.println("TRYING got (" + c + ") " + result);
+            } catch (Exception e) {
+                e.printStackTrace(System.err);
+            }
+        }
+        return result;
+        //descriptorMapper.get(descriptor);
+    }
+
     public boolean isTypeMapped(String type) throws ClassNotFoundException {
         if (primitiveMap.get(type) != null) {
             return true;
@@ -275,7 +350,7 @@ public final class JSONMappingFactory {
             JSONArray jarr = (JSONArray) jsonValue;
             Class<?> compType = classType.getComponentType();
             Object resultArray = Array.newInstance(compType, jarr.size());
-
+            
             for (int i = 0; i < jarr.size(); i++) {
                 if (compType != null && compType.isArray()) {
                     Array.set(resultArray, i, handleArrayType(compType, jarr.get(i)));
@@ -332,6 +407,7 @@ public final class JSONMappingFactory {
 
         @Override
         public CompositeDataSupport toJavaObject(JSONElement jsonValue) throws JSONDataException {
+            new Exception("ZZZZZZ").printStackTrace(System.err);
             if (!(jsonValue instanceof JSONObject)) {
                 throw new JSONDataException("JSON String not an object");
             }
@@ -352,6 +428,7 @@ public final class JSONMappingFactory {
 
         @Override
         public JSONElement toJsonValue(Object d) throws JSONMappingException {
+            new Exception("ZZZZZZ").printStackTrace(System.err);
             CompositeData data = (CompositeData) d;
             if (data == null) {
                 return null;
@@ -512,7 +589,7 @@ public final class JSONMappingFactory {
 
         @Override
         public Float toJavaObject(JSONElement jsonValue) throws JSONDataException {
-            if (jsonValue instanceof JSONPrimitive && ((JSONPrimitive) jsonValue).getValue() instanceof Double) {
+            if (jsonValue instanceof JSONPrimitive && ((JSONPrimitive) jsonValue).getValue() instanceof Float) {
                 return ((Double) ((JSONPrimitive) jsonValue).getValue()).floatValue();
             } else {
                 throw new JSONDataException("Invalid JSON");
@@ -529,7 +606,7 @@ public final class JSONMappingFactory {
 
         @Override
         public Double toJavaObject(JSONElement jsonValue) throws JSONDataException {
-            if (jsonValue instanceof JSONPrimitive && ((JSONPrimitive) jsonValue).getValue() instanceof Long) {
+            if (jsonValue instanceof JSONPrimitive && ((JSONPrimitive) jsonValue).getValue() instanceof Double) {
                 return (Double) ((JSONPrimitive) jsonValue).getValue();
             } else {
                 throw new JSONDataException("Invalid JSON");
