@@ -49,17 +49,97 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
 }
 
 CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
-  if (mem->needs_hierarchy_adjustment()) {
-    julong phys_mem = os::Linux::physical_memory();
-    return mem->adjust_controller(phys_mem);
+  if (!mem->needs_hierarchy_adjustment()) {
+    // nothing to do
+    return mem;
   }
+  log_trace(os, container)("Adjusting controller path for memory: %s", mem->subsystem_path());
+  assert(mem->cgroup_path() != nullptr, "invariant");
+  char* orig = os::strdup(mem->cgroup_path());
+  char* cg_path = os::strdup(orig);
+  char* last_slash;
+  julong phys_mem = os::Linux::physical_memory();
+  jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
+  bool path_iterated = false;
+  while (limit < 0 && (last_slash = strrchr(cg_path, '/')) != cg_path) {
+    *last_slash = '\0'; // strip path
+    // update to shortened path and try again
+    mem->set_subsystem_path(cg_path);
+    limit = mem->read_memory_limit_in_bytes(phys_mem);
+    path_iterated = true;
+    if (limit > 0) {
+      log_trace(os, container)("Adjusted controller path for memory to: %s", mem->subsystem_path());
+      os::free(cg_path);
+      os::free(orig);
+      return mem;
+    }
+  }
+  // no lower limit found or limit at leaf
+  os::free(cg_path);
+  if (path_iterated) {
+    mem->set_subsystem_path((char*)"/");
+    limit = mem->read_memory_limit_in_bytes(phys_mem);
+    if (limit > 0) {
+      // handle limit set at mount point
+      log_trace(os, container)("Adjusted controller path for memory to: %s", mem->subsystem_path());
+      os::free(orig);
+      return mem;
+    }
+    log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
+                              mem->mount_point(), orig);
+    mem->set_subsystem_path(orig);
+  } else {
+    log_trace(os, container)("Lowest limit for memory at leaf: %s",
+                              mem->subsystem_path());
+  }
+  os::free(orig);
   return mem;
 }
 
 CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
-  if (cpu->needs_hierarchy_adjustment()) {
-    int cpu_total = os::Linux::active_processor_count();
-    return cpu->adjust_controller(cpu_total);
+  if (!cpu->needs_hierarchy_adjustment()) {
+    // nothing to do
+    return cpu;
   }
+  log_trace(os, container)("Adjusting controller path for cpu: %s", cpu->subsystem_path());
+  assert(cpu->cgroup_path() != nullptr, "invariant");
+  char* orig = os::strdup(cpu->cgroup_path());
+  char* cg_path = os::strdup(orig);
+  char* last_slash;
+  int host_cpus = os::Linux::active_processor_count();
+  int cpus = CgroupUtil::processor_count(cpu, host_cpus);
+  bool path_iterated = false;
+  while (cpus == host_cpus && (last_slash = strrchr(cg_path, '/')) != cg_path) {
+    *last_slash = '\0'; // strip path
+    // update to shortened path and try again
+    cpu->set_subsystem_path((char*)cg_path);
+    cpus = CgroupUtil::processor_count(cpu, host_cpus);
+    path_iterated = true;
+    if (cpus != host_cpus) {
+      log_trace(os, container)("Adjusted controller path for cpu to: %s", cpu->subsystem_path());
+      os::free(cg_path);
+      os::free(orig);
+      return cpu;
+    }
+  }
+  // no lower limit found or limit at leaf
+  os::free(cg_path);
+  if (path_iterated) {
+    cpu->set_subsystem_path((char*)"/");
+    cpus = CgroupUtil::processor_count(cpu, host_cpus);
+    if (cpus != host_cpus) {
+      // handle limit set at mount point
+      log_trace(os, container)("Adjusted controller path for cpu to: %s", cpu->subsystem_path());
+      os::free(orig);
+      return cpu;
+    }
+    log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
+                              cpu->mount_point(), orig);
+    cpu->set_subsystem_path(orig);
+  } else {
+    log_trace(os, container)("Lowest limit for cpu at leaf: %s",
+                              cpu->subsystem_path());
+  }
+  os::free(orig);
   return cpu;
 }

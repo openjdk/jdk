@@ -36,7 +36,6 @@ class CgroupV1Controller: public CgroupController {
   private:
     /* mountinfo contents */
     char* _root;
-    char* _mount_point;
     bool _read_only;
 
     /* Constructed subsystem directory */
@@ -46,17 +45,17 @@ class CgroupV1Controller: public CgroupController {
     CgroupV1Controller(char *root,
                        char *mountpoint,
                        bool ro) : _root(os::strdup(root)),
-                                  _mount_point(os::strdup(mountpoint)),
                                   _read_only(ro),
                                   _path(nullptr) {
       _cgroup_path = nullptr;
+      _mount_point = os::strdup(mountpoint);
     }
     // Shallow copy constructor
     CgroupV1Controller(const CgroupV1Controller& o) : _root(o._root),
-                                                      _mount_point(o._mount_point),
                                                       _read_only(o._read_only),
                                                       _path(o._path) {
       _cgroup_path = o._cgroup_path;
+      _mount_point = o._mount_point;
     }
     ~CgroupV1Controller() {
       // At least one subsystem controller exists with paths to malloc'd path
@@ -67,7 +66,6 @@ class CgroupV1Controller: public CgroupController {
     char* subsystem_path() override { return _path; }
     bool is_read_only() override { return _read_only; }
     bool needs_hierarchy_adjustment() override;
-    char* mount_point() { return _mount_point; }
 };
 
 class CgroupV1MemoryController final : public CgroupMemoryController {
@@ -76,7 +74,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
   public:
-    void set_subsystem_path(char *cgroup_path) {
+    void set_subsystem_path(char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
@@ -91,11 +89,15 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong kernel_memory_limit_in_bytes(julong host_mem);
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong host_mem) override;
-    bool needs_hierarchy_adjustment() override;
-    CgroupV1MemoryController* adjust_controller(julong phys_mem) override;
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    char* subsystem_path() override { return reader()->subsystem_path(); }
+    char* mount_point() override { return reader()->mount_point(); }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
   private:
     jlong read_mem_swappiness();
     jlong read_mem_swap(julong host_total_memsw);
@@ -116,18 +118,26 @@ class CgroupV1CpuController final : public CgroupCpuController {
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
-    void set_subsystem_path(char *cgroup_path) {
+    void set_subsystem_path(char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     bool is_read_only() override {
       return reader()->is_read_only();
     }
+    char* subsystem_path() override {
+      return reader()->subsystem_path();
+    }
+    char* mount_point() override {
+      return reader()->mount_point();
+    }
+    bool needs_hierarchy_adjustment() override {
+      return reader()->needs_hierarchy_adjustment();
+    }
+    char* cgroup_path() override { return reader()->cgroup_path(); }
 
   public:
     CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
     }
-    bool needs_hierarchy_adjustment() override;
-    CgroupV1CpuController* adjust_controller(int host_cpus) override;
 };
 
 class CgroupV1Subsystem: public CgroupSubsystem {
