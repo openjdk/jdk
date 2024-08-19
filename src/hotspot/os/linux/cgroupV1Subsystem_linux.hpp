@@ -67,7 +67,7 @@ class CgroupV1Controller: public CgroupController {
     char* subsystem_path() override { return _path; }
     bool is_read_only() override { return _read_only; }
     bool needs_hierarchy_adjustment() override;
-    char *mount_point() { return _mount_point; }
+    char* mount_point() { return _mount_point; }
 };
 
 class CgroupV1MemoryController final : public CgroupMemoryController {
