@@ -443,4 +443,5 @@ ATTRIBUTE_ALIGNED(64) const julong StubRoutines::x86::_k512_W[] =
     0x4cc5d4becb3e42b6ULL, 0x597f299cfc657e2aULL,
     0x5fcb6fab3ad6faecULL, 0x6c44198c4a475817ULL,
 };
+
 #endif

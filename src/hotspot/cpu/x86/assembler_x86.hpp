@@ -2207,6 +2207,9 @@ private:
   void sha256rnds2(XMMRegister dst, XMMRegister src);
   void sha256msg1(XMMRegister dst, XMMRegister src);
   void sha256msg2(XMMRegister dst, XMMRegister src);
+  void sha512rnds2(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void sha512msg1(XMMRegister dst, XMMRegister src);
+  void sha512msg2(XMMRegister dst, XMMRegister src);
 
   void shldl(Register dst, Register src);
   void shldl(Register dst, Register src, int8_t imm8);
@@ -2849,6 +2852,7 @@ private:
   void evbroadcasti32x4(XMMRegister dst, Address src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, XMMRegister src, int vector_len);
   void evbroadcasti64x2(XMMRegister dst, Address src, int vector_len);
+  void vbroadcasti128(XMMRegister dst, Address src);
 
   // scalar single/double/128bit precision replicate
   void vbroadcastss(XMMRegister dst, XMMRegister src, int vector_len);

@@ -3482,6 +3482,17 @@ void MacroAssembler::vpbroadcastd(XMMRegister dst, AddressLiteral src, int vecto
   }
 }
 
+void MacroAssembler::vbroadcasti128(XMMRegister dst, AddressLiteral src, Register rscratch) {
+  assert(rscratch != noreg || always_reachable(src), "missing");
+
+  if (reachable(src)) {
+    Assembler::vbroadcasti128(dst, as_Address(src));
+  } else {
+    lea(rscratch, src);
+    Assembler::vbroadcasti128(dst, Address(rscratch, 0));
+  }
+}
+
 void MacroAssembler::vpbroadcastq(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch) {
   assert(rscratch != noreg || always_reachable(src), "missing");
 
