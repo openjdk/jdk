@@ -250,6 +250,17 @@ public final class ConstantUtils {
             throw new IllegalArgumentException("not a class or interface type: " + classDesc);
     }
 
+    public static void validateArrayDepth(int rank) {
+        if (rank <= 0) {
+            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
+        }
+        if (rank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+            throw new IllegalArgumentException("rank: " + rank +
+                    " exceeds maximum supported dimension of " +
+                    MAX_ARRAY_TYPE_DESC_DIMENSIONS);
+        }
+    }
+
     public static int arrayDepth(String descriptorString) {
         int depth = 0;
         while (descriptorString.charAt(depth) == '[')

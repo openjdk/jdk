@@ -26,17 +26,13 @@ package java.lang.constant;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.TypeDescriptor;
-import java.util.stream.Stream;
 
+import jdk.internal.constant.ArrayClassDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
 import sun.invoke.util.Wrapper;
 
-import static java.util.stream.Collectors.joining;
-import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
-import static jdk.internal.constant.ConstantUtils.arrayDepth;
 import static jdk.internal.constant.ConstantUtils.binaryToInternal;
-import static jdk.internal.constant.ConstantUtils.internalToBinary;
 import static jdk.internal.constant.ConstantUtils.validateBinaryClassName;
 import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
 import static jdk.internal.constant.ConstantUtils.validateMemberName;
@@ -62,7 +58,8 @@ public sealed interface ClassDesc
         extends ConstantDesc,
                 TypeDescriptor.OfField<ClassDesc>
         permits PrimitiveClassDescImpl,
-                ReferenceClassDescImpl {
+                ReferenceClassDescImpl,
+                ArrayClassDescImpl {
 
     /**
      * Returns a {@linkplain ClassDesc} for a class or interface type,
@@ -178,20 +175,7 @@ public sealed interface ClassDesc
      * ClassDesc} would have an array rank of greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
-    default ClassDesc arrayType() {
-        String desc = descriptorString();
-        int depth = arrayDepth(desc);
-        if (depth >= MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalStateException(
-                    "Cannot create an array type descriptor with more than " +
-                    MAX_ARRAY_TYPE_DESC_DIMENSIONS + " dimensions");
-        }
-        String newDesc = "[".concat(desc);
-        if (desc.length() == 1 && desc.charAt(0) == 'V') {
-            throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
-        }
-        return ReferenceClassDescImpl.ofValidated(newDesc);
-    }
+    ClassDesc arrayType();
 
     /**
      * Returns a {@linkplain ClassDesc} for an array type of the specified rank,
@@ -204,24 +188,7 @@ public sealed interface ClassDesc
      * greater than 255
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
      */
-    default ClassDesc arrayType(int rank) {
-        if (rank <= 0) {
-            throw new IllegalArgumentException("rank " + rank + " is not a positive value");
-        }
-        String desc = descriptorString();
-        long currentDepth = arrayDepth(desc);
-        long netRank = currentDepth + rank;
-        if (netRank > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-            throw new IllegalArgumentException("rank: " + netRank +
-                    " exceeds maximum supported dimension of " +
-                    MAX_ARRAY_TYPE_DESC_DIMENSIONS);
-        }
-        String newDesc = new StringBuilder(desc.length() + rank).repeat('[', rank).append(desc).toString();
-        if (desc.length() == 1 && desc.charAt(0) == 'V') {
-            throw new IllegalArgumentException("not a valid reference type descriptor: " + newDesc);
-        }
-        return ReferenceClassDescImpl.ofValidated(newDesc);
-    }
+    ClassDesc arrayType(int rank);
 
     /**
      * Returns a {@linkplain ClassDesc} for a nested class of the class or
@@ -241,13 +208,7 @@ public sealed interface ClassDesc
      * @throws IllegalArgumentException if the nested class name is invalid
      */
     default ClassDesc nested(String nestedName) {
-        validateMemberName(nestedName, false);
-        if (!isClassOrInterface())
-            throw new IllegalStateException("Outer class is not a class or interface type");
-        String desc = descriptorString();
-        StringBuilder sb = new StringBuilder(desc.length() + nestedName.length() + 1);
-        sb.append(desc, 0, desc.length() - 1).append('$').append(nestedName).append(';');
-        return ReferenceClassDescImpl.ofValidated(sb.toString());
+        throw new IllegalStateException("Outer class is not a class or interface type");
     }
 
     /**
@@ -264,16 +225,7 @@ public sealed interface ClassDesc
      * @throws IllegalArgumentException if the nested class name is invalid
      */
     default ClassDesc nested(String firstNestedName, String... moreNestedNames) {
-        if (!isClassOrInterface())
-            throw new IllegalStateException("Outer class is not a class or interface type");
-        validateMemberName(firstNestedName, false);
-        // implicit null-check
-        for (String addNestedNames : moreNestedNames) {
-            validateMemberName(addNestedNames, false);
-        }
-        return moreNestedNames.length == 0
-               ? nested(firstNestedName)
-               : nested(firstNestedName + Stream.of(moreNestedNames).collect(joining("$", "$", "")));
+        throw new IllegalStateException("Outer class is not a class or interface type");
     }
 
     /**
@@ -282,7 +234,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes an array type
      */
     default boolean isArray() {
-        return descriptorString().charAt(0) == '[';
+        return false;
     }
 
     /**
@@ -291,7 +243,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes a primitive type
      */
     default boolean isPrimitive() {
-        return descriptorString().length() == 1;
+        return false;
     }
 
     /**
@@ -300,7 +252,7 @@ public sealed interface ClassDesc
      * @return whether this {@linkplain ClassDesc} describes a class or interface type
      */
     default boolean isClassOrInterface() {
-        return descriptorString().charAt(0) == 'L';
+        return false;
     }
 
     /**
@@ -311,14 +263,6 @@ public sealed interface ClassDesc
      * if this descriptor does not describe an array type
      */
     default ClassDesc componentType() {
-        if (isArray()) {
-            String desc = descriptorString();
-            if (desc.length() == 2) {
-                return Wrapper.forBasicType(desc.charAt(1)).basicClassDescriptor();
-            } else {
-                return ReferenceClassDescImpl.ofValidated(desc.substring(1));
-            }
-        }
         return null;
     }
 
@@ -330,41 +274,21 @@ public sealed interface ClassDesc
      * default package, or this {@linkplain ClassDesc} does not describe a class or interface type
      */
     default String packageName() {
-        if (!isClassOrInterface())
-            return "";
-        String desc = descriptorString();
-        int index = desc.lastIndexOf('/');
-        return (index == -1) ? "" : internalToBinary(desc.substring(1, index));
+        return "";
     }
 
     /**
      * Returns a human-readable name for the type described by this descriptor.
      *
      * @implSpec
-     * <p>The default implementation returns the simple name
+     * <p>The implementations return the simple name
      * (e.g., {@code int}) for primitive types, the unqualified class name
      * for class or interface types, or the display name of the component type
      * suffixed with the appropriate number of {@code []} pairs for array types.
      *
      * @return the human-readable name
      */
-    default String displayName() {
-        if (isPrimitive())
-            return Wrapper.forBasicType(descriptorString().charAt(0)).primitiveSimpleName();
-        else if (isClassOrInterface()) {
-            String desc = descriptorString();
-            return desc.substring(Math.max(1, desc.lastIndexOf('/') + 1), desc.length() - 1);
-        }
-        else if (isArray()) {
-            int depth = arrayDepth(descriptorString());
-            ClassDesc c = this;
-            for (int i=0; i<depth; i++)
-                c = c.componentType();
-            return c.displayName() + "[]".repeat(depth);
-        }
-        else
-            throw new IllegalStateException(descriptorString());
-    }
+    String displayName();
 
     /**
      * Returns a field type descriptor string for this type

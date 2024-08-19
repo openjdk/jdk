@@ -30,9 +30,7 @@ import java.lang.invoke.MethodHandles;
 import static jdk.internal.constant.ConstantUtils.*;
 
 /**
- * A <a href="package-summary.html#nominal">nominal descriptor</a> for a class,
- * interface, or array type.  A {@linkplain ReferenceClassDescImpl} corresponds to a
- * {@code Constant_Class_info} entry in the constant pool of a classfile.
+ * A class or interface descriptor.
  */
 public final class ReferenceClassDescImpl implements ClassDesc {
     private final String descriptor;
@@ -50,11 +48,14 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * field descriptor string, or does not describe a class or interface type
      * @jvms 4.3.2 Field Descriptors
      */
-    public static ReferenceClassDescImpl of(String descriptor) {
+    public static ClassDesc of(String descriptor) {
         int dLen = descriptor.length();
         int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen, false);
         if (len <= 1 || len != dLen)
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
         return new ReferenceClassDescImpl(descriptor);
     }
 
@@ -65,10 +66,64 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * @param descriptor a field descriptor string for a class or interface type
      * @jvms 4.3.2 Field Descriptors
      */
-    public static ReferenceClassDescImpl ofValidated(String descriptor) {
+    public static ClassDesc ofValidated(String descriptor) {
         assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false)
                 == descriptor.length() : descriptor;
+        if (descriptor.charAt(0) == '[') {
+            return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);
+        }
         return new ReferenceClassDescImpl(descriptor);
+    }
+
+    @Override
+    public ClassDesc arrayType(int rank) {
+        ConstantUtils.validateArrayDepth(rank);
+        return ArrayClassDescImpl.ofValidated(this, rank);
+    }
+
+    @Override
+    public ClassDesc arrayType() {
+        return ArrayClassDescImpl.ofValidated(this, 1);
+    }
+
+    @Override
+    public ClassDesc nested(String nestedName) {
+        validateMemberName(nestedName, false);
+        String desc = descriptorString();
+        StringBuilder sb = new StringBuilder(desc.length() + nestedName.length() + 1);
+        sb.append(desc, 0, desc.length() - 1).append('$').append(nestedName).append(';');
+        return ReferenceClassDescImpl.ofValidated(sb.toString());
+    }
+
+    @Override
+    public ClassDesc nested(String firstNestedName, String... moreNestedNames) {
+        validateMemberName(firstNestedName, false);
+        // implicit null-check
+        for (String addNestedNames : moreNestedNames) {
+            validateMemberName(addNestedNames, false);
+        }
+        return moreNestedNames.length == 0
+                ? nested(firstNestedName)
+                : nested(firstNestedName + "$" + String.join("$", moreNestedNames));
+
+    }
+
+    @Override
+    public boolean isClassOrInterface() {
+        return true;
+    }
+
+    @Override
+    public String packageName() {
+        String desc = descriptorString();
+        int index = desc.lastIndexOf('/');
+        return (index == -1) ? "" : internalToBinary(desc.substring(1, index));
+    }
+
+    @Override
+    public String displayName() {
+        String desc = descriptorString();
+        return desc.substring(Math.max(1, desc.lastIndexOf('/') + 1), desc.length() - 1);
     }
 
     @Override
@@ -79,28 +134,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
     @Override
     public Class<?> resolveConstantDesc(MethodHandles.Lookup lookup)
             throws ReflectiveOperationException {
-        if (isArray()) {
-            if (isPrimitiveArray()) {
-                return lookup.findClass(descriptor);
-            }
-            // Class.forName is slow on class or interface arrays
-            int depth = ConstantUtils.arrayDepth(descriptor);
-            Class<?> clazz = lookup.findClass(internalToBinary(descriptor.substring(depth + 1, descriptor.length() - 1)));
-            for (int i = 0; i < depth; i++)
-                clazz = clazz.arrayType();
-            return clazz;
-        }
         return lookup.findClass(internalToBinary(dropFirstAndLastChar(descriptor)));
-    }
-
-    /**
-     * Whether the descriptor is one of a primitive array, given this is
-     * already a valid reference type descriptor.
-     */
-    private boolean isPrimitiveArray() {
-        // All L-type descriptors must end with a semicolon; same for reference
-        // arrays, leaving primitive arrays the only ones without a final semicolon
-        return descriptor.charAt(descriptor.length() - 1) != ';';
     }
 
     /**

@@ -1040,7 +1040,7 @@ abstract class MethodHandleImpl {
     // That way we can lazily load the code and set up the constants.
     private static class BindCaller {
 
-        private static final ClassDesc CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;");
+        private static final ClassDesc CD_Object_array = CD_Object.arrayType();
         private static final MethodType INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
         private static final MethodType REFLECT_INVOKER_MT = MethodType.methodType(Object.class, MethodHandle.class, Object.class, Object[].class);
 

@@ -65,7 +65,7 @@ final class ProxyGenerator {
 
     private static final ClassDesc
             CD_ClassLoader = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassLoader;"),
-            CD_Class_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Class;"),
+            CD_Class_array = CD_Class.arrayType(),
             CD_ClassNotFoundException = ReferenceClassDescImpl.ofValidated("Ljava/lang/ClassNotFoundException;"),
             CD_NoClassDefFoundError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoClassDefFoundError;"),
             CD_IllegalAccessException = ReferenceClassDescImpl.ofValidated("Ljava/lang/IllegalAccessException;"),
@@ -73,7 +73,7 @@ final class ProxyGenerator {
             CD_Method = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Method;"),
             CD_NoSuchMethodError = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodError;"),
             CD_NoSuchMethodException = ReferenceClassDescImpl.ofValidated("Ljava/lang/NoSuchMethodException;"),
-            CD_Object_array = ReferenceClassDescImpl.ofValidated("[Ljava/lang/Object;"),
+            CD_Object_array = CD_Object.arrayType(),
             CD_Proxy = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/Proxy;"),
             CD_UndeclaredThrowableException = ReferenceClassDescImpl.ofValidated("Ljava/lang/reflect/UndeclaredThrowableException;");
 

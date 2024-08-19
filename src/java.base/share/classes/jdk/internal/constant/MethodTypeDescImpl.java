@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.constant.ConstantDescs.CD_void;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -77,7 +78,7 @@ public final class MethodTypeDescImpl implements MethodTypeDesc {
     }
 
     private static ClassDesc validateArgument(ClassDesc arg) {
-        if (arg.descriptorString().charAt(0) == 'V') // implicit null check
+        if (requireNonNull(arg) == CD_void)
             throw new IllegalArgumentException("Void parameters not permitted");
         return arg;
     }
