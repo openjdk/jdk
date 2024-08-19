@@ -766,7 +766,7 @@ static Handle new_type(Symbol* signature, Klass* k, TRAPS) {
 }
 
 oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
-  // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
+  // Allow jdk.internal.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
   assert(!method()->is_object_initializer() &&
          (for_constant_pool_access || !method()->is_static_initializer()),
          "Should not be the initializer");

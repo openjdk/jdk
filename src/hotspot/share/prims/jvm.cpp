@@ -1867,7 +1867,7 @@ static jobjectArray get_class_declared_methods_helper(
     if (!want_constructor &&
         (method->is_object_initializer() || method->is_static_initializer() ||
          method->is_overpass())) {
-        continue;
+      continue;
     }
     if (publicOnly && !method->is_public()) {
       continue;
