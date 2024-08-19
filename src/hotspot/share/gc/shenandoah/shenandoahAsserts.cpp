@@ -210,10 +210,9 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file,line);
   }
 
-  ShenandoahHeapRegion* obj_reg = heap->heap_region_containing(obj);
-  if (!heap->is_full_gc_move_in_progress() && !obj_reg->is_active()) {
+  if (!heap->is_in(obj)) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                  "Object should be in active region",
+                  "Object should be in active region area",
                   file, line);
   }
 
@@ -242,21 +241,17 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
 
-    ShenandoahHeapRegion* fwd_reg = heap->heap_region_containing(fwd);
+    // Step 3. Check that forwardee points to correct region
+    if (!heap->is_in(fwd)) {
+      print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Forwardee should be in active region area",
+                    file, line);
+    }
 
-    // Step 3. Check that forwardee points to correct region, unless we are in Full GC.
-    if (!heap->is_full_gc_move_in_progress()) {
-      if (!fwd_reg->is_active()) {
-        print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                      "Forwardee should be in active region",
-                      file, line);
-      }
-
-      if (fwd_reg == obj_reg) {
-        print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
-                      "Non-trivial forwardee should be in another region",
-                      file, line);
-      }
+    if (heap->heap_region_index_containing(fwd) == heap->heap_region_index_containing(obj)) {
+      print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
+                    "Non-trivial forwardee should be in another region",
+                    file, line);
     }
 
     // Step 4. Check for multiple forwardings
