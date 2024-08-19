@@ -74,7 +74,6 @@ jobs:
       - name: 'Check what jobs to run'
         id: include
         run: |
-          set -x
           # Determine which platform jobs to run
 
           # Returns 'true' if the input platform list matches any of the platform monikers given as argument,
@@ -250,7 +249,6 @@ jobs:
       platform: alpine-linux-x64
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
-    # We only run this job on manual triggers to save resources
     if: needs.select.outputs.alpine-linux-x64 == 'true'
 
   build-macos-x64:
