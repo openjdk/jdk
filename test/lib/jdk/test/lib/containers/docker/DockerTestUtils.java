@@ -322,7 +322,8 @@ public class DockerTestUtils {
     private static void generateDockerFile(Path dockerfile, String baseImage,
                                            String baseImageVersion) throws Exception {
         String template = "FROM %s:%s\n";
-        if (baseImage.contains("ubuntu")) {
+        boolean isUbsan = Boolean.getBoolean("jdk.test.docker.image.isUbsan");
+        if (baseImage.contains("ubuntu") && isUbsan) {
             template += "RUN apt-get update && apt-get install -y libubsan1\n";
         }
         template = template + "COPY /jdk /jdk\n" +
