@@ -3320,7 +3320,7 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   NearLabel L_huge;
 
   // The bitmap is full to bursting.
-  z_cghi(r_array_length, Klass::SECONDARY_SUPERS_BITMAP_FULL - 2);
+  z_chi(r_array_length, Klass::SECONDARY_SUPERS_BITMAP_FULL - 2);
   z_brh(L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
