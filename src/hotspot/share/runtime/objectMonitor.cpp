@@ -255,7 +255,6 @@ ObjectMonitor::ObjectMonitor(oop object) :
   _EntryList(nullptr),
   _cxq(nullptr),
   _succ(nullptr),
-  _Responsible(nullptr),
   _SpinDuration(ObjectMonitor::Knob_SpinLimit),
   _contentions(0),
   _WaitSet(nullptr),
@@ -717,8 +716,6 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   return ss->base();
 }
 
-#define MAX_RECHECK_INTERVAL 1000
-
 void ObjectMonitor::EnterI(JavaThread* current) {
   assert(current->thread_state() == _thread_blocked, "invariant");
 
@@ -726,7 +723,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   if (TryLock(current) == TryLockResult::Success) {
     assert(_succ != current, "invariant");
     assert(owner_raw() == current, "invariant");
-    assert(_Responsible != current, "invariant");
     return;
   }
 
@@ -742,14 +738,12 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   if (TrySpin(current)) {
     assert(owner_raw() == current, "invariant");
     assert(_succ != current, "invariant");
-    assert(_Responsible != current, "invariant");
     return;
   }
 
   // The Spin failed -- Enqueue and park the thread ...
   assert(_succ != current, "invariant");
   assert(owner_raw() != current, "invariant");
-  assert(_Responsible != current, "invariant");
 
   // Enqueue "current" on ObjectMonitor's _cxq.
   //
@@ -779,44 +773,8 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     if (TryLock(current) == TryLockResult::Success) {
       assert(_succ != current, "invariant");
       assert(owner_raw() == current, "invariant");
-      assert(_Responsible != current, "invariant");
       return;
     }
-  }
-
-  // Check for cxq|EntryList edge transition to non-null.  This indicates
-  // the onset of contention.  While contention persists exiting threads
-  // will use a ST:MEMBAR:LD 1-1 exit protocol.  When contention abates exit
-  // operations revert to the faster 1-0 mode.  This enter operation may interleave
-  // (race) a concurrent 1-0 exit operation, resulting in stranding, so we
-  // arrange for one of the contending thread to use a timed park() operations
-  // to detect and recover from the race.  (Stranding is form of progress failure
-  // where the monitor is unlocked but all the contending threads remain parked).
-  // That is, at least one of the contended threads will periodically poll _owner.
-  // One of the contending threads will become the designated "Responsible" thread.
-  // The Responsible thread uses a timed park instead of a normal indefinite park
-  // operation -- it periodically wakes and checks for and recovers from potential
-  // strandings admitted by 1-0 exit operations.   We need at most one Responsible
-  // thread per-monitor at any given moment.  Only threads on cxq|EntryList may
-  // be responsible for a monitor.
-  //
-  // Currently, one of the contended threads takes on the added role of "Responsible".
-  // A viable alternative would be to use a dedicated "stranding checker" thread
-  // that periodically iterated over all the threads (or active monitors) and unparked
-  // successors where there was risk of stranding.  This would help eliminate the
-  // timer scalability issues we see on some platforms as we'd only have one thread
-  // -- the checker -- parked on a timer.
-
-  if (nxt == nullptr && _EntryList == nullptr
-      X86_ONLY    (  && (LockingMode != LM_LEGACY) && (LockingMode != LM_LIGHTWEIGHT))
-      RISCV_ONLY  (  && (LockingMode != LM_LEGACY) && (LockingMode != LM_LIGHTWEIGHT))
-      AARCH64_ONLY(  && (LockingMode != LM_LEGACY) && (LockingMode != LM_LIGHTWEIGHT))
-      PPC_ONLY    (  && (LockingMode != LM_LEGACY) && (LockingMode != LM_LIGHTWEIGHT))
-      S390_ONLY   (  && (LockingMode != LM_LEGACY) && (LockingMode != LM_LIGHTWEIGHT))
-      ) {
-    // Try to assume the role of responsible thread for the monitor.
-    // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=current }
-    Atomic::replace_if_null(&_Responsible, current);
   }
 
   // The lock might have been released while this thread was occupied queueing
@@ -830,8 +788,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // to defer the state transitions until absolutely necessary,
   // and in doing so avoid some transitions ...
 
-  int recheckInterval = 1;
-
   for (;;) {
 
     if (TryLock(current) == TryLockResult::Success) {
@@ -840,16 +796,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
     assert(owner_raw() != current, "invariant");
 
     // park self
-    if (_Responsible == current) {
-      current->_ParkEvent->park((jlong) recheckInterval);
-      // Increase the recheckInterval, but clamp the value.
-      recheckInterval *= 8;
-      if (recheckInterval > MAX_RECHECK_INTERVAL) {
-        recheckInterval = MAX_RECHECK_INTERVAL;
-      }
-    } else {
-      current->_ParkEvent->park();
-    }
+    current->_ParkEvent->park();
 
     if (TryLock(current) == TryLockResult::Success) {
       break;
@@ -899,29 +846,6 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   if (_succ == current) _succ = nullptr;
 
   assert(_succ != current, "invariant");
-  if (_Responsible == current) {
-    _Responsible = nullptr;
-    OrderAccess::fence(); // Dekker pivot-point
-
-    // We may leave threads on cxq|EntryList without a designated
-    // "Responsible" thread.  This is benign.  When this thread subsequently
-    // exits the monitor it can "see" such preexisting "old" threads --
-    // threads that arrived on the cxq|EntryList before the fence, above --
-    // by LDing cxq|EntryList.  Newly arrived threads -- that is, threads
-    // that arrive on cxq after the ST:MEMBAR, above -- will set Responsible
-    // non-null and elect a new "Responsible" timer thread.
-    //
-    // This thread executes:
-    //    ST Responsible=null; MEMBAR    (in enter epilogue - here)
-    //    LD cxq|EntryList               (in subsequent exit)
-    //
-    // Entering threads in the slow/contended path execute:
-    //    ST cxq=nonnull; MEMBAR; LD Responsible (in enter prolog)
-    //    The (ST cxq; MEMBAR) is accomplished with CAS().
-    //
-    // The MEMBAR, above, prevents the LD of cxq|EntryList in the subsequent
-    // exit operation from floating above the ST Responsible=null.
-  }
 
   // We've acquired ownership with CAS().
   // CAS is serializing -- it has MEMBAR/FENCE-equivalent semantics.
@@ -1191,10 +1115,6 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     _recursions--;        // this is simple recursive enter
     return;
   }
-
-  // Invariant: after setting Responsible=null a thread must execute
-  // a MEMBAR or other serializing instruction before fetching EntryList|cxq.
-  _Responsible = nullptr;
 
 #if INCLUDE_JFR
   // get the owner's thread id for the MonitorEnter event
@@ -1550,8 +1470,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   Thread::SpinAcquire(&_WaitSetLock, "WaitSet - add");
   AddWaiter(&node);
   Thread::SpinRelease(&_WaitSetLock);
-
-  _Responsible = nullptr;
 
   intx save = _recursions;     // record the old recursion count
   _waiters++;                  // increment the number of waiters
@@ -2230,7 +2148,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 //   _EntryList = 0x0000000000000000
 //   _cxq = 0x0000000000000000
 //   _succ = 0x0000000000000000
-//   _Responsible = 0x0000000000000000
 //   _SpinDuration = 5000
 //   _contentions = 0
 //   _WaitSet = 0x0000700009756248
@@ -2259,7 +2176,6 @@ void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("  _EntryList = " INTPTR_FORMAT, p2i(_EntryList));
   st->print_cr("  _cxq = " INTPTR_FORMAT, p2i(_cxq));
   st->print_cr("  _succ = " INTPTR_FORMAT, p2i(_succ));
-  st->print_cr("  _Responsible = " INTPTR_FORMAT, p2i(_Responsible));
   st->print_cr("  _SpinDuration = %d", _SpinDuration);
   st->print_cr("  _contentions = %d", contentions());
   st->print_cr("  _WaitSet = " INTPTR_FORMAT, p2i(_WaitSet));

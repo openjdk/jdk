@@ -1922,7 +1922,9 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   // monitor before going slow path.
   ObjectMonitor* m = current->unlocked_inflated_monitor();
   if (m != nullptr) {
+    assert(m->owner_raw() != current, "must be");
     current->clear_unlocked_inflated_monitor();
+
     // We need to reacquire the lock before we can call ObjectSynchronizer::exit().
     if (m->TryLock(current) != ObjectMonitor::TryLockResult::Success) {
       // Some other thread acquired the lock (or the monitor was
@@ -1931,6 +1933,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
       return;
     }
 #ifdef ASSERT
+    assert(m->owner_raw() == current, "invariant");
     markWord mark = obj->mark();
     assert(mark.has_monitor(), "Must have a monitor");
     ObjectMonitor* mon = mark.monitor();

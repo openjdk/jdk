@@ -173,7 +173,6 @@ private:
 
   ObjectWaiter* volatile _cxq;      // LL of recently-arrived threads blocked on entry.
   JavaThread* volatile _succ;       // Heir presumptive thread - used for futile wakeup throttling
-  JavaThread* volatile _Responsible;
 
   volatile int _SpinDuration;
 
@@ -338,7 +337,6 @@ private:
   void      notifyAll(TRAPS);
 
   enum class TryLockResult { Interference = -1, HasOwner = 0, Success = 1 };
-
   TryLockResult  TryLock(JavaThread* current);
 
   void      print() const;
