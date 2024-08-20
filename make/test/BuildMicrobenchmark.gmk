@@ -93,7 +93,7 @@ $(eval $(call SetupJavaCompilation, BUILD_INDIFY, \
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK_UPGRADED), \
     SMALL_JAVA := false, \
-    CLASSPATH := $(JMH_COMPILE_JARS), \
+    CLASSPATH := $(JMH_COMPILE_JARS) $(MICROBENCHMARK_CLASSES), \
     CREATE_API_DIGEST := true, \
     DISABLED_WARNINGS := restricted this-escape processing rawtypes removal cast \
         serial preview dangling-doc-comments, \
