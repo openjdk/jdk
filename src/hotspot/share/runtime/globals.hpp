@@ -952,9 +952,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, EnableThreadSMRStatistics, trueInDebug, DIAGNOSTIC,         \
              "Enable Thread SMR Statistics")                                \
                                                                             \
-  product(bool, UseNotificationThread, true,                                \
-          "(Deprecated) Use Notification Thread")                           \
-                                                                            \
   product(bool, Inline, true,                                               \
           "Enable inlining")                                                \
                                                                             \
@@ -1958,6 +1955,17 @@ const int ObjectAlignmentInBytes = 8;
           "1: (Deprecated) monitors & legacy stack-locking (LM_LEGACY), "   \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT, default)") \
           range(0, 2)                                                       \
+                                                                            \
+  product(bool, UseObjectMonitorTable, false, DIAGNOSTIC,                   \
+          "With Lightweight Locking mode, use a table to record inflated "  \
+          "monitors rather than the first word of the object.")             \
+                                                                            \
+  product(int, LightweightFastLockingSpins, 13, DIAGNOSTIC,                 \
+          "Specifies the number of times lightweight fast locking will "    \
+          "attempt to CAS the markWord before inflating. Between each "     \
+          "CAS it will spin for exponentially more time, resulting in "     \
+          "a total number of spins on the order of O(2^value)")             \
+          range(1, 30)                                                      \
                                                                             \
   product(uint, TrimNativeHeapInterval, 0,                                  \
           "Interval, in ms, at which the JVM will trim the native heap if " \

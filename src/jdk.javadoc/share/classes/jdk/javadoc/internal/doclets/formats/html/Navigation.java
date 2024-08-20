@@ -35,19 +35,19 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Factory for navigation bar.
@@ -326,7 +326,7 @@ public class Navigation {
 
     private void addActivePageLink(Content target, Content label, boolean display) {
         if (display) {
-            target.add(HtmlTree.LI(HtmlStyle.navBarCell1Rev, label));
+            target.add(HtmlTree.LI(HtmlStyles.navBarCell1Rev, label));
         }
     }
 
@@ -409,7 +409,7 @@ public class Navigation {
             default -> throw new IllegalArgumentException(Objects.toString(elem));
         };
         if (selected) {
-            link.setStyle(HtmlStyle.currentSelection);
+            link.setStyle(HtmlStyles.currentSelection);
         }
         contents.add(link);
     }
@@ -499,7 +499,7 @@ public class Navigation {
                 .put(HtmlAttr.AUTOCOMPLETE, "off");
         var inputReset = HtmlTree.INPUT(HtmlAttr.InputType.RESET, HtmlIds.RESET_SEARCH)
                 .put(HtmlAttr.VALUE, resources.getText("doclet.search_reset"));
-        var searchDiv = HtmlTree.DIV(HtmlStyle.navListSearch)
+        var searchDiv = HtmlTree.DIV(HtmlStyles.navListSearch)
                 .add(inputText)
                 .add(inputReset);
         target.add(searchDiv);
@@ -516,36 +516,36 @@ public class Navigation {
         }
         var navigationBar = HtmlTree.NAV();
 
-        var navContent = new HtmlTree(TagName.DIV);
+        var navContent = new HtmlTree(HtmlTag.DIV);
         Content skipNavLinks = contents.getContent("doclet.Skip_navigation_links");
         String toggleNavLinks = configuration.getDocResources().getText("doclet.Toggle_navigation_links");
         navigationBar.add(MarkerComments.START_OF_TOP_NAVBAR);
         // The mobile menu button uses three empty spans to produce its animated icon
-        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyle.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
-        navContent.setStyle(HtmlStyle.navContent).add(HtmlTree.DIV(HtmlStyle.navMenuButton,
-                        new HtmlTree(TagName.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
+        HtmlTree iconSpan = HtmlTree.SPAN(HtmlStyles.navBarToggleIcon).add(Entity.NO_BREAK_SPACE);
+        navContent.setStyle(HtmlStyles.navContent).add(HtmlTree.DIV(HtmlStyles.navMenuButton,
+                        new HtmlTree(HtmlTag.BUTTON).setId(HtmlIds.NAVBAR_TOGGLE_BUTTON)
                                 .put(HtmlAttr.ARIA_CONTROLS, HtmlIds.NAVBAR_TOP.name())
                                 .put(HtmlAttr.ARIA_EXPANDED, String.valueOf(false))
                                 .put(HtmlAttr.ARIA_LABEL, toggleNavLinks)
                                 .add(iconSpan)
                                 .add(iconSpan)
                                 .add(iconSpan)))
-                .add(HtmlTree.DIV(HtmlStyle.skipNav,
+                .add(HtmlTree.DIV(HtmlStyles.skipNav,
                         links.createLink(HtmlIds.SKIP_NAVBAR_TOP, skipNavLinks,
                                 skipNavLinks.toString())));
         Content aboutContent = userHeader;
 
-        var navList = new HtmlTree(TagName.UL)
+        var navList = new HtmlTree(HtmlTag.UL)
                 .setId(HtmlIds.NAVBAR_TOP_FIRSTROW)
-                .setStyle(HtmlStyle.navList)
+                .setStyle(HtmlStyles.navList)
                 .put(HtmlAttr.TITLE, rowListTitle);
         addMainNavLinks(navList);
         navContent.add(navList);
-        var aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, aboutContent);
+        var aboutDiv = HtmlTree.DIV(HtmlStyles.aboutLanguage, aboutContent);
         navContent.add(aboutDiv);
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
-        var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
+        var subNavContent = HtmlTree.DIV(HtmlStyles.navContent);
         List<Content> subNavLinks = new ArrayList<>();
         switch (documentedPage) {
             case MODULE, PACKAGE, CLASS, USE, DOC_FILE, TREE -> {
@@ -553,17 +553,17 @@ public class Navigation {
             }
         }
         // Add the breadcrumb navigation links if present.
-        var breadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
+        var breadcrumbNav = HtmlTree.OL(HtmlStyles.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
         subNavContent.addUnchecked(breadcrumbNav);
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);
         }
-        navigationBar.add(HtmlTree.DIV(HtmlStyle.subNav, subNavContent));
+        navigationBar.add(HtmlTree.DIV(HtmlStyles.subNav, subNavContent));
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyle.skipNav)
+        navigationBar.add(HtmlTree.SPAN(HtmlStyles.skipNav)
                 .addUnchecked(Text.EMPTY)
                 .setId(HtmlIds.SKIP_NAVBAR_TOP));
 

@@ -32,7 +32,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code Code} attribute {@jvms 4.7.3}, appears on non-native,
+ * Models the {@code Code} attribute (JVMS {@jvms 4.7.3}), appears on non-native,
  * non-abstract methods and contains the bytecode of the method body.  Delivered
  * as a {@link java.lang.classfile.MethodElement} when traversing the elements of a
  * {@link java.lang.classfile.MethodModel}.

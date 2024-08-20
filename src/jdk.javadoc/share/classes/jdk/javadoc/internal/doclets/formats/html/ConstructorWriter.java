@@ -33,15 +33,16 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -111,7 +112,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
                 Content constructorContent = getConstructorHeaderContent(currentConstructor);
-                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
                 buildSignature(div);
                 buildDeprecationInfo(div);
                 buildPreviewInfo(div);
@@ -193,7 +194,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.constructorSummary,
+        writer.addSummary(HtmlStyles.constructorSummary,
                 HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
@@ -216,7 +217,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             heading.setId(anchors.getLast());
         }
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
                 .setId(anchors.getFirst());
     }
 
@@ -247,7 +248,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     protected Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails) {
         return writer.getDetailsListItem(
-                HtmlTree.SECTION(HtmlStyle.constructorDetails)
+                HtmlTree.SECTION(HtmlStyles.constructorDetails)
                         .setId(HtmlIds.CONSTRUCTOR_DETAIL)
                         .add(memberDetailsHeader)
                         .add(memberDetails));
@@ -279,14 +280,14 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
         List<HtmlStyle> bodyRowStyles;
 
         if (threeColumnSummary()) {
-            bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colConstructorName,
-                    HtmlStyle.colLast);
+            bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colConstructorName,
+                    HtmlStyles.colLast);
         } else {
-            bodyRowStyles = Arrays.asList(HtmlStyle.colConstructorName, HtmlStyle.colLast);
+            bodyRowStyles = Arrays.asList(HtmlStyles.colConstructorName, HtmlStyles.colLast);
         }
 
         return new Table<Element>(
-                HtmlStyle.summaryTable)
+                HtmlStyles.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);
@@ -299,7 +300,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     @Override
     protected void addSummaryType(Element member, Content content) {
         if (threeColumnSummary()) {
-            var code = new HtmlTree(TagName.CODE);
+            var code = new HtmlTree(HtmlTag.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {

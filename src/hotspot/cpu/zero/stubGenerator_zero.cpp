@@ -203,22 +203,6 @@ class StubGenerator: public StubCodeGenerator {
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
 
-    // These entry points require SharedInfo::stack0 to be set up in
-    // non-core builds and need to be relocatable, so they each
-    // fabricate a RuntimeStub internally.
-    StubRoutines::_throw_AbstractMethodError_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_NullPointerException_at_call_entry =
-      ShouldNotCallThisStub();
-
-    StubRoutines::_throw_StackOverflowError_entry =
-      ShouldNotCallThisStub();
-
-    // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry =
-      ShouldNotCallThisStub();
-
     // arraycopy stubs used by compilers
     generate_arraycopy_stubs();
 
