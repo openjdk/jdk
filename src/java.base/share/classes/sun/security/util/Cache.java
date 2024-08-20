@@ -364,7 +364,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
                 nextExpirationTime = entry.getExpirationTime();
                 // If this is a queue, check for some expired entries
                 if (entry instanceof QueueCacheEntry<K,V> qe) {
-                    qe.getQueue().removeIf(e -> e.isValid(time));
+                    qe.getQueue().removeIf(e -> !e.isValid(time));
                 }
             }
         }
@@ -465,7 +465,7 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
     }
 
-    synchronized public V get(Object key) {
+    public synchronized V get(Object key) {
         emptyQueue();
         CacheEntry<K,V> entry = cacheMap.get(key);
         if (entry == null) {
@@ -473,9 +473,9 @@ class MemoryCache<K,V> extends Cache<K,V> {
         }
 
         if (lifetime > 0 && !entry.isValid(System.currentTimeMillis())) {
-            removeImpl(key);
+            cacheMap.remove(key);
             if (DEBUG) {
-                System.out.println("Ignoring expired entry: ");
+                System.out.println("Ignoring expired entry");
             }
             return null;
         }
@@ -491,12 +491,12 @@ class MemoryCache<K,V> extends Cache<K,V> {
         return entry.getValue();
     }
 
-    public void remove(Object key) {
+    public synchronized void remove(Object key) {
         emptyQueue();
         removeImpl(key);
     }
 
-    private synchronized void removeImpl(Object key) {
+    private void removeImpl(Object key) {
         CacheEntry<K,V> entry = cacheMap.remove(key);
         if (entry != null) {
             entry.invalidate();

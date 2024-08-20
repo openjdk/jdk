@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is a base setup for creating a server and clients.  All clients will
@@ -41,7 +42,7 @@ import java.util.concurrent.Executors;
  * first.  The idea is for the test code to be minimal as possible without
  * this library class being complicated.
  *
- * Server.done() must be called or the server will never exit and hang the test.
+ * Server.close() must be called so the server will exit and end threading.
  *
  * After construction, reading and writing are allowed from either side,
  * or a combination write/read from both sides for verifying text.
@@ -231,15 +232,16 @@ abstract public class TLSBase {
                 ;
             }
         }
-        void close() {
+        void close() throws InterruptedException {
             clientMap.values().stream().forEach(s -> {
                 try {
                     s.close();
                 } catch (IOException e) {}
             });
+            threadPool.awaitTermination(500, TimeUnit.MILLISECONDS);
         }
 
-        List<Exception>  getExceptionList() {
+        List<Exception> getExceptionList() {
             return exceptionList;
         }
     }
