@@ -103,20 +103,6 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // Allocate and returns a block of the requested size, or returns "null".
-  // Assumes the caller has done any necessary locking.
-  virtual HeapWord* allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Like "allocate", but performs any necessary locking internally.
-  virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Perform a heap collection, attempting to create (at least) enough
-  // space to support an allocation of the given "word_size".  If
-  // successful, perform the allocation and return the resulting
-  // "oop" (initializing the allocated block). If the allocation is
-  // still unsuccessful, return "null".
-  virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
@@ -128,8 +114,7 @@ class Generation: public CHeapObj<mtGC> {
 
 public:
   // Performance Counter support
-  virtual void update_counters() = 0;
-  virtual CollectorCounters* counters() { return _gc_counters; }
+  CollectorCounters* counters() { return _gc_counters; }
 
   GCMemoryManager* gc_manager() const {
     assert(_gc_manager != nullptr, "not initialized yet");

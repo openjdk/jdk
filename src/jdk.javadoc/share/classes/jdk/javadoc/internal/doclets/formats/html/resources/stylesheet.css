@@ -63,7 +63,7 @@
     --search-input-text-color: #000000;
     --search-input-placeholder-color: #909090;
     /* Highlight color for active search tag target */
-    --search-tag-highlight-color: #ffff00;
+    --search-tag-highlight-color: #ffff66;
     /* Adjustments for icon and active background colors of copy-to-clipboard buttons */
     --copy-icon-brightness: 100%;
     --copy-button-background-color-active: rgba(168, 168, 176, 0.3);
@@ -307,7 +307,7 @@ ol.sub-nav-list a.current-selection {
  */
 .title {
     color:var(--title-color);
-    margin:10px 0;
+    margin:10px 0 12px 0;
 }
 .sub-title {
     margin:5px 0 0 0;
@@ -988,6 +988,22 @@ input::placeholder {
 .search-tag-result:target {
     background-color:var(--search-tag-highlight-color);
 }
+dd > span:target,
+h1 > span:target {
+    animation: 2.4s ease-out highlight;
+}
+section.class-description dd > span:target,
+section.class-description h1 > span:target {
+    scroll-margin-top: 20em;
+}
+@keyframes highlight {
+    from {
+        background-color: var(--search-tag-highlight-color);
+    }
+    60% {
+        background-color: var(--search-tag-highlight-color);
+    }
+}
 details.page-search-details {
     display: inline-block;
 }
@@ -1040,7 +1056,7 @@ span#page-search-link {
     z-index: 5;
 }
 .inherited-list {
-    margin: 10px 0 10px 0;
+    margin: 10px 0;
 }
 .horizontal-scroll {
     overflow: auto hidden;
