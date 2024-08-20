@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,15 +102,23 @@ class SystemDictionary : AllStatic {
     return resolve_or_null(class_name, Handle(), Handle(), THREAD);
   }
 
+  static InstanceKlass* resolve_with_circularity_detection(Symbol* class_name,
+                                                           Symbol* next_name,
+                                                           Handle class_loader,
+                                                           Handle protection_domain,
+                                                           bool is_superclass,
+                                                           TRAPS);
+
   // Resolve a superclass or superinterface. Called from ClassFileParser,
   // parse_interfaces, resolve_instance_class_or_null, load_shared_class
   // "class_name" is the class whose super class or interface is being resolved.
-  static InstanceKlass* resolve_super_or_fail(Symbol* class_name,
-                                              Symbol* super_name,
+  static InstanceKlass* resolve_super_or_fail(Symbol* class_name, Symbol* super_name,
                                               Handle class_loader,
-                                              Handle protection_domain,
-                                              bool is_superclass,
-                                              TRAPS);
+                                              Handle protection_domain, bool is_superclass, TRAPS) {
+    return resolve_with_circularity_detection(class_name, super_name, class_loader, protection_domain,
+                                              is_superclass, THREAD);
+  }
+
  private:
   // Parse the stream to create a hidden class.
   // Used by jvm_lookup_define_class.
@@ -177,7 +185,7 @@ class SystemDictionary : AllStatic {
 
   static void classes_do(MetaspaceClosure* it);
   // Iterate over all methods in all klasses
-
+  // Will not keep metadata alive. See ClassLoaderDataGraph::methods_do.
   static void methods_do(void f(Method*));
 
   // Garbage collection support

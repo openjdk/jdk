@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2024 IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -707,6 +708,31 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch);
+
+  void lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register r_temp1,
+                                     Register r_temp2,
+                                     Register r_temp3,
+                                     Register r_temp4,
+                                     Register r_result,
+                                     u1 super_klass_slot);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register r_result,
+                                               Register r_temp1);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register r_result /* expected */,
+                                     Register r_temp1,
+                                     Register r_temp2,
+                                     Register r_temp3);
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
@@ -726,8 +752,10 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register obj, Register hdr, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 
@@ -1021,6 +1049,19 @@ class MacroAssembler: public Assembler {
                        Register z,
                        Register tmp1, Register tmp2,
                        Register tmp3, Register tmp4, Register tmp5);
+
+  // These generate optimized code for all supported s390 implementations, and are preferred for most uses.
+  void pop_count_int(Register dst, Register src, Register tmp);
+  void pop_count_long(Register dst, Register src, Register tmp);
+
+  // For legacy (pre-z15) use, but will work on all supported s390 implementations.
+  void pop_count_int_without_ext3(Register dst, Register src, Register tmp);
+  void pop_count_long_without_ext3(Register dst, Register src, Register tmp);
+
+  // Only for use on z15 or later s390 implementations.
+  void pop_count_int_with_ext3(Register dst, Register src);
+  void pop_count_long_with_ext3(Register dst, Register src);
+
 };
 
 /**

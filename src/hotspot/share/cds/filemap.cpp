@@ -371,7 +371,7 @@ void SharedClassPathEntry::copy_from(SharedClassPathEntry* ent, ClassLoaderData*
 }
 
 const char* SharedClassPathEntry::name() const {
-  if (UseSharedSpaces && is_modules_image()) {
+  if (CDSConfig::is_using_archive() && is_modules_image()) {
     // In order to validate the runtime modules image file size against the archived
     // size information, we need to obtain the runtime modules image path. The recorded
     // dump time modules image path in the archive may be different from the runtime path
@@ -383,7 +383,7 @@ const char* SharedClassPathEntry::name() const {
 }
 
 bool SharedClassPathEntry::validate(bool is_class_path) const {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   struct stat st;
   const char* name = this->name();
@@ -935,7 +935,7 @@ bool FileMapInfo::check_module_paths() {
 }
 
 bool FileMapInfo::validate_shared_path_table() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
 
   _validating_shared_path_table = true;
 
@@ -981,7 +981,7 @@ bool FileMapInfo::validate_shared_path_table() {
         log_info(class, path)("ok");
       } else {
         if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
         }
         return false;
       }
@@ -990,7 +990,7 @@ bool FileMapInfo::validate_shared_path_table() {
         log_info(class, path)("ok");
       } else {
         if (_dynamic_archive_info != nullptr && _dynamic_archive_info->_is_static) {
-          assert(!UseSharedSpaces, "UseSharedSpaces should be disabled");
+          assert(!CDSConfig::is_using_archive(), "UseSharedSpaces should be disabled");
         }
         return false;
       }
@@ -1038,7 +1038,7 @@ void FileMapInfo::validate_non_existent_class_paths() {
   // loading of archived platform/app classes (currently there's no way to disable just the
   // app classes).
 
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   for (int i = header()->app_module_paths_start_index() + header()->num_module_paths();
        i < get_number_of_shared_paths();
        i++) {
@@ -1406,7 +1406,8 @@ void FileMapInfo::open_for_write() {
   if (fd < 0) {
     log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
                    os::strerror(errno));
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
+    return;
   }
   _fd = fd;
   _file_open = true;
@@ -1659,7 +1660,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    MetaspaceShared::unrecoverable_writing_error("Unable to write to shared archive file.");
+    MetaspaceShared::writing_error("Unable to write to shared archive file.");
   }
   _file_offset += nbytes;
 }
@@ -2024,7 +2025,7 @@ void FileMapInfo::map_or_load_heap_region() {
         // TODO - remove implicit knowledge of G1
         log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }
@@ -2087,7 +2088,7 @@ bool FileMapInfo::can_use_heap_region() {
 // The actual address of this region during dump time.
 address FileMapInfo::heap_region_dumptime_address() {
   FileMapRegion* r = region_at(MetaspaceShared::hp);
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   if (UseCompressedOops) {
     return /*dumptime*/ narrow_oop_base() + r->mapping_offset();
@@ -2099,7 +2100,7 @@ address FileMapInfo::heap_region_dumptime_address() {
 // The address where this region can be mapped into the runtime heap without
 // patching any of the pointers that are embedded in this region.
 address FileMapInfo::heap_region_requested_address() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
   assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
@@ -2177,21 +2178,35 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base = map_memory(_fd, _full_path, r->file_offset(),
-                          addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                          r->allow_exec());
-  if (base == nullptr || base != addr) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
-                  INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
-                  p2i(addr), _mapped_heap_memregion.byte_size());
-    return false;
-  }
+  char* base;
 
-  if (VerifySharedSpaces && !r->check_region_crc(base)) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
-    return false;
+  if (MetaspaceShared::use_windows_memory_mapping()) {
+    if (!read_region(MetaspaceShared::hp, addr,
+                     align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
+                     /* do_commit = */ true)) {
+      dealloc_heap_region();
+      log_error(cds)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
+      return false;
+    }
+    // Checks for VerifySharedSpaces is already done inside read_region()
+    base = addr;
+  } else {
+    base = map_memory(_fd, _full_path, r->file_offset(),
+                      addr, _mapped_heap_memregion.byte_size(), r->read_only(),
+                      r->allow_exec());
+    if (base == nullptr || base != addr) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
+                    INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
+                    p2i(addr), _mapped_heap_memregion.byte_size());
+      return false;
+    }
+
+    if (VerifySharedSpaces && !r->check_region_crc(base)) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
+      return false;
+    }
   }
 
   r->set_mapped_base(base);
@@ -2227,7 +2242,7 @@ bool FileMapInfo::map_heap_region_impl() {
 }
 
 narrowOop FileMapInfo::encoded_heap_region_dumptime_address() {
-  assert(UseSharedSpaces, "runtime only");
+  assert(CDSConfig::is_using_archive(), "runtime only");
   assert(UseCompressedOops, "sanity");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   return CompressedOops::narrow_oop_cast(r->mapping_offset() >> narrow_oop_shift());
@@ -2316,7 +2331,7 @@ GrowableArray<const char*>* FileMapInfo::_non_existent_class_paths = nullptr;
 // [2] validate_shared_path_table - this is done later, because the table is in the RW
 //     region of the archive, which is not mapped yet.
 bool FileMapInfo::initialize() {
-  assert(UseSharedSpaces, "UseSharedSpaces expected.");
+  assert(CDSConfig::is_using_archive(), "UseSharedSpaces expected.");
   assert(Arguments::has_jimage(), "The shared archive file cannot be used with an exploded module build.");
 
   if (JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()) {

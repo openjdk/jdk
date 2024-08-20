@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,8 +205,6 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
                                            bool   is_full_gc) {
 
   // Update statistics
-  // Time statistics are updated as we go, update footprint stats here
-  _avg_base_footprint->sample(BaseFootPrintEstimate);
   avg_young_live()->sample(young_live);
   avg_eden_live()->sample(eden_live);
 
@@ -363,8 +361,7 @@ void PSAdaptiveSizePolicy::compute_eden_space_size(
   log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 
@@ -535,8 +532,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
   log_debug(gc, ergo)("Live_space: " SIZE_FORMAT " free_space: " SIZE_FORMAT,
                       live_space(), free_space());
 
-  log_trace(gc, ergo)("Base_footprint: " SIZE_FORMAT " avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
-                      (size_t)_avg_base_footprint->average(),
+  log_trace(gc, ergo)("avg_young_live: " SIZE_FORMAT " avg_old_live: " SIZE_FORMAT,
                       (size_t)avg_young_live()->average(),
                       (size_t)avg_old_live()->average());
 

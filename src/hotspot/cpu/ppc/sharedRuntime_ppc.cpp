@@ -44,6 +44,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
 #include "utilities/macros.hpp"
@@ -290,9 +291,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ std(R30, frame_size_in_bytes - 2*reg_size - vsregstosave_num * vs_reg_size, R1_SP);
 
   // save the flags
-  // Do the save_LR_CR by hand and adjust the return pc if requested.
-  __ mfcr(R30);
-  __ std(R30, frame_size_in_bytes + _abi0(cr), R1_SP);
+  // Do the save_LR by hand and adjust the return pc if requested.
   switch (return_pc_location) {
     case return_pc_is_lr: __ mflr(R31); break;
     case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
@@ -435,9 +434,6 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   // restore link and the flags
   __ ld(R31, frame_size_in_bytes + _abi0(lr), R1_SP);
   __ mtlr(R31);
-
-  __ ld(R31, frame_size_in_bytes + _abi0(cr), R1_SP);
-  __ mtcr(R31);
 
   // restore scratch register's value
   __ ld(R31, frame_size_in_bytes - reg_size - vsregstosave_num * vs_reg_size, R1_SP);
@@ -2241,7 +2237,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ bind(L_skip_barrier);
   }
 
-  __ save_LR_CR(r_temp_1);
+  __ save_LR(r_temp_1);
   __ generate_stack_overflow_check(frame_size_in_bytes); // Check before creating frame.
   __ mr(r_callers_sp, R1_SP);                            // Remember frame pointer.
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
@@ -2477,11 +2473,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     case T_ARRAY:   break;
 
     case T_BOOLEAN: {             // 0 -> false(0); !0 -> true(1)
-      Label skip_modify;
-      __ cmpwi(CCR0, R3_RET, 0);
-      __ beq(CCR0, skip_modify);
-      __ li(R3_RET, 1);
-      __ bind(skip_modify);
+      __ normalize_bool(R3_RET);
       break;
       }
     case T_BYTE: {                // sign extension
@@ -2694,7 +2686,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   // --------------------------------------------------------------------------
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ blr();
 
 
@@ -2706,7 +2698,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ bind(handle_pending_exception);
 
   __ pop_frame();
-  __ restore_LR_CR(R11);
+  __ restore_LR(R11);
   __ b64_patchable((address)StubRoutines::forward_exception_entry(),
                        relocInfo::runtime_call_type);
 
@@ -3064,7 +3056,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Pop the unpack frame.
   __ pop_frame();
-  __ restore_LR_CR(R0);
+  __ restore_LR(R0);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
@@ -3087,7 +3079,7 @@ void SharedRuntime::generate_deopt_blob() {
 }
 
 #ifdef COMPILER2
-void SharedRuntime::generate_uncommon_trap_blob() {
+void OptoRuntime::generate_uncommon_trap_blob() {
   // Allocate space for the code.
   ResourceMark rm;
   // Setup code generation tools.
@@ -3111,7 +3103,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // vframe array and return the `UnrollBlock' information.
 
   // Save LR to compiled frame.
-  __ save_LR_CR(R11_scratch1);
+  __ save_LR(R11_scratch1);
 
   // Push an "uncommon_trap" frame.
   __ push_frame_reg_args(0, R11_scratch1);
@@ -3153,7 +3145,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   __ lwz(R22_tmp2, in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset()), unroll_block_reg);
   __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
-  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+  __ asm_assert_eq("OptoRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
 #endif
 
   // Freezing continuation frames requires that the caller is trimmed to unextended sp if compiled.
@@ -3201,7 +3193,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // Pop the `unpack frame'.
   __ pop_frame();
   // Restore LR from top interpreter frame.
-  __ restore_LR_CR(R11_scratch1);
+  __ restore_LR(R11_scratch1);
 
   // stack: (top interpreter frame, ..., optional interpreter frame,
   // optional c2i, caller of deoptee, ...).
@@ -3413,6 +3405,100 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
                                        oop_maps, true);
 }
 
+// Continuation point for throwing of implicit exceptions that are
+// not handled in the current activation. Fabricates an exception
+// oop and initiates normal exception dispatching in this
+// frame. Only callee-saved registers are preserved (through the
+// normal register window / RegisterMap handling).  If the compiler
+// needs all registers to be preserved between the fault point and
+// the exception handler then it must assume responsibility for that
+// in AbstractCompiler::continuation_for_implicit_null_exception or
+// continuation_for_implicit_division_by_zero_exception. All other
+// implicit exceptions (e.g., NullPointerException or
+// AbstractMethodError on entry) are either at call sites or
+// otherwise assume that stack unwinding will be initiated, so
+// caller saved registers were assumed volatile in the compiler.
+//
+// Note that we generate only this stub into a RuntimeStub, because
+// it needs to be properly traversed and ignored during GC, so we
+// change the meaning of the "__" macro within this method.
+//
+// Note: the routine set_pc_not_at_call_for_caller in
+// SharedRuntime.cpp requires that this code be generated into a
+// RuntimeStub.
+RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBuffer code(name, 1024 DEBUG_ONLY(+ 512), 0);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  OopMapSet* oop_maps  = new OopMapSet();
+  int frame_size_in_bytes = frame::native_abi_reg_args_size;
+  OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
+
+  address start = __ pc();
+
+  __ save_LR(R11_scratch1);
+
+  // Push a frame.
+  __ push_frame_reg_args(0, R11_scratch1);
+
+  address frame_complete_pc = __ pc();
+
+  // Note that we always have a runtime stub frame on the top of
+  // stack by this point. Remember the offset of the instruction
+  // whose address will be moved to R11_scratch1.
+  address gc_map_pc = __ get_PC_trash_LR(R11_scratch1);
+
+  __ set_last_Java_frame(/*sp*/R1_SP, /*pc*/R11_scratch1);
+
+  __ mr(R3_ARG1, R16_thread);
+#if defined(ABI_ELFv2)
+  __ call_c(runtime_entry, relocInfo::none);
+#else
+  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, runtime_entry), relocInfo::none);
+#endif
+
+  // Set an oopmap for the call site.
+  oop_maps->add_gc_map((int)(gc_map_pc - start), map);
+
+  __ reset_last_Java_frame();
+
+#ifdef ASSERT
+  // Make sure that this code is only executed if there is a pending
+  // exception.
+  {
+    Label L;
+    __ ld(R0,
+          in_bytes(Thread::pending_exception_offset()),
+          R16_thread);
+    __ cmpdi(CCR0, R0, 0);
+    __ bne(CCR0, L);
+    __ stop("SharedRuntime::throw_exception: no pending exception");
+    __ bind(L);
+  }
+#endif
+
+  // Pop frame.
+  __ pop_frame();
+
+  __ restore_LR(R11_scratch1);
+
+  __ load_const(R11_scratch1, StubRoutines::forward_exception_entry());
+  __ mtctr(R11_scratch1);
+  __ bctr();
+
+  // Create runtime stub with OopMap.
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name, &code,
+                                  /*frame_complete=*/ (int)(frame_complete_pc - start),
+                                  frame_size_in_bytes/wordSize,
+                                  oop_maps,
+                                  false);
+  return stub;
+}
 
 //------------------------------Montgomery multiplication------------------------
 //
@@ -3656,3 +3742,81 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
 
   reverse_words(m, (unsigned long *)m_ints, longwords);
 }
+
+#if INCLUDE_JFR
+
+// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+// It returns a jobject handle to the event writer.
+// The handle is dereferenced and the return value is the event writer oop.
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  CodeBuffer code("jfr_write_checkpoint", 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  Register tmp1 = R10_ARG8;
+  Register tmp2 = R9_ARG7;
+
+  int framesize = frame::native_abi_reg_args_size / VMRegImpl::stack_slot_size;
+  address start = __ pc();
+  __ mflr(tmp1);
+  __ std(tmp1, _abi0(lr), R1_SP);  // save return pc
+  __ push_frame_reg_args(0, tmp1);
+  int frame_complete = __ pc() - start;
+  __ set_last_Java_frame(R1_SP, noreg);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), R16_thread);
+  address calls_return_pc = __ last_calls_return_pc();
+  __ reset_last_Java_frame();
+  // The handle is dereferenced through a load barrier.
+  __ resolve_global_jobject(R3_RET, tmp1, tmp2, MacroAssembler::PRESERVATION_NONE);
+  __ pop_frame();
+  __ ld(tmp1, _abi0(lr), R1_SP);
+  __ mtlr(tmp1);
+  __ blr();
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 0);
+  oop_maps->add_gc_map(calls_return_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  return stub;
+}
+
+// For c2: call to return a leased buffer.
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  CodeBuffer code("jfr_return_lease", 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  Register tmp1 = R10_ARG8;
+  Register tmp2 = R9_ARG7;
+
+  int framesize = frame::native_abi_reg_args_size / VMRegImpl::stack_slot_size;
+  address start = __ pc();
+  __ mflr(tmp1);
+  __ std(tmp1, _abi0(lr), R1_SP);  // save return pc
+  __ push_frame_reg_args(0, tmp1);
+  int frame_complete = __ pc() - start;
+  __ set_last_Java_frame(R1_SP, noreg);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), R16_thread);
+  address calls_return_pc = __ last_calls_return_pc();
+  __ reset_last_Java_frame();
+  __ pop_frame();
+  __ ld(tmp1, _abi0(lr), R1_SP);
+  __ mtlr(tmp1);
+  __ blr();
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 0);
+  oop_maps->add_gc_map(calls_return_pc - start, map);
+
+  RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code, frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps, false);
+  return stub;
+}
+
+#endif // INCLUDE_JFR

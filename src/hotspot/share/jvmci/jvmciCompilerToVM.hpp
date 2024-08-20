@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ class CompilerToVM {
     static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
     static address SharedRuntime_polling_page_return_handler;
+    static address SharedRuntime_throw_delayed_StackOverflowError_entry;
 
     static address nmethod_entry_barrier;
     static int thread_disarmed_guard_value_offset;
@@ -67,6 +68,10 @@ class CompilerToVM {
     static address ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded;
     static address ZBarrierSetRuntime_load_barrier_on_oop_array;
     static address ZBarrierSetRuntime_clone;
+
+    static address ZPointerVectorLoadBadMask_address;
+    static address ZPointerVectorStoreBadMask_address;
+    static address ZPointerVectorStoreGoodMask_address;
 
     static bool continuations_enabled;
 
@@ -100,6 +105,13 @@ class CompilerToVM {
     static int sizeof_narrowKlass;
     static int sizeof_arrayOopDesc;
     static int sizeof_BasicLock;
+#if INCLUDE_ZGC
+    static int sizeof_ZStoreBarrierEntry;
+#endif
+
+#ifdef X86
+    static int L1_line_size;
+#endif
 
     static address dsin;
     static address dcos;
@@ -115,12 +127,14 @@ class CompilerToVM {
     // Minimum alignment of an offset into CodeBuffer::SECT_CONSTS
     static int data_section_item_alignment;
 
+#if INCLUDE_JVMTI
     /*
      * Pointer to JvmtiExport::_should_notify_object_alloc.
      * Exposed as an int* instead of an address so the
      * underlying type is part of the JVMCIVMStructs definition.
      */
     static int* _should_notify_object_alloc;
+#endif
 
    public:
      static void initialize(JVMCI_TRAPS);

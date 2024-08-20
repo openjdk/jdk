@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,7 +318,7 @@ final class HotSpotMethodData implements MetaspaceObject {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        String nl = String.format("%n");
+        String nl = System.lineSeparator();
         String nlIndent = String.format("%n%38s", "");
         sb.append("Raw method data for ");
         sb.append(method.format("%H.%n(%p)"));
