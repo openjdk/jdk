@@ -5079,7 +5079,7 @@ public class JavacParser implements Parser {
      * the code as a block.
      *
      * The estimate is as follows:
-     * - tokens are skipped until member, statement of identifier is found,
+     * - tokens are skipped until member, statement or identifier is found,
      * - then, if there is a left brace, parse as a block,
      * - otherwise, if the head was broken, do not parse as a block,
      * - otherwise, look at the next token and:
