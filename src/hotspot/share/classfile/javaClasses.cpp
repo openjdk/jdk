@@ -304,7 +304,7 @@ Handle java_lang_String::create_from_unicode(const jchar* unicode, int length, T
 #ifdef ASSERT
   {
     ResourceMark rm;
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     char* expected = UNICODE::as_utf8(unicode, utf8_len);
     char* actual = as_utf8_string(h_obj());
     if (strcmp(expected, actual) != 0) {
@@ -600,7 +600,7 @@ Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   } else {
     ResourceMark rm;
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     const char* base = UNICODE::as_utf8(position, utf8_len);
     return SymbolTable::probe(base, checked_cast<int>(utf8_len));
   }
