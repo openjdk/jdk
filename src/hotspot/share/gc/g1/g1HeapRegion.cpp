@@ -55,20 +55,20 @@ size_t G1HeapRegion::GrainWords        = 0;
 size_t G1HeapRegion::CardsPerRegion    = 0;
 
 size_t G1HeapRegion::max_region_size() {
-  return HeapRegionBounds::max_size();
+  return G1HeapRegionBounds::max_size();
 }
 
 size_t G1HeapRegion::min_region_size_in_words() {
-  return HeapRegionBounds::min_size() >> LogHeapWordSize;
+  return G1HeapRegionBounds::min_size() >> LogHeapWordSize;
 }
 
 void G1HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   size_t region_size = G1HeapRegionSize;
   // G1HeapRegionSize = 0 means decide ergonomically.
   if (region_size == 0) {
-    region_size = clamp(max_heap_size / HeapRegionBounds::target_number(),
-                        HeapRegionBounds::min_size(),
-                        HeapRegionBounds::max_ergonomics_size());
+    region_size = clamp(max_heap_size / G1HeapRegionBounds::target_number(),
+                        G1HeapRegionBounds::min_size(),
+                        G1HeapRegionBounds::max_ergonomics_size());
   }
 
   // Make sure region size is a power of 2. Rounding up since this
@@ -76,7 +76,7 @@ void G1HeapRegion::setup_heap_region_size(size_t max_heap_size) {
   region_size = round_up_power_of_2(region_size);
 
   // Now make sure that we don't go over or under our limits.
-  region_size = clamp(region_size, HeapRegionBounds::min_size(), HeapRegionBounds::max_size());
+  region_size = clamp(region_size, G1HeapRegionBounds::min_size(), G1HeapRegionBounds::max_size());
 
   // Now, set up the globals.
   guarantee(LogOfHRGrainBytes == 0, "we should only set it once");
@@ -119,6 +119,7 @@ void G1HeapRegion::hr_clear(bool clear_space) {
   clear_young_index_in_cset();
   clear_index_in_opt_cset();
   uninstall_surv_rate_group();
+  uninstall_group_cardset();
   set_free();
   reset_pre_dummy_top();
 
@@ -215,6 +216,9 @@ void G1HeapRegion::clear_humongous() {
 }
 
 void G1HeapRegion::prepare_remset_for_scan() {
+  if (is_young()) {
+    uninstall_group_cardset();
+  }
   _rem_set->reset_table_scanner();
 }
 
@@ -247,7 +251,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new HeapRegionRemSet(this, config);
+  _rem_set = new G1HeapRegionRemSet(this, config);
   initialize();
 }
 
@@ -264,11 +268,11 @@ void G1HeapRegion::initialize(bool clear_space, bool mangle_space) {
 }
 
 void G1HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
-  HeapRegionTracer::send_region_type_change(_hrm_index,
-                                            get_trace_type(),
-                                            to,
-                                            (uintptr_t)bottom(),
-                                            used());
+  G1HeapRegionTracer::send_region_type_change(_hrm_index,
+                                              get_trace_type(),
+                                              to,
+                                              (uintptr_t)bottom(),
+                                              used());
 }
 
  void G1HeapRegion::note_evacuation_failure() {
@@ -377,7 +381,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
     return false;
   }
 
-  HeapRegionRemSet* hrrs = rem_set();
+  G1HeapRegionRemSet* hrrs = rem_set();
   size_t code_roots_length = hrrs->code_roots_list_length();
 
   // if this region is empty then there should be no entries
@@ -547,7 +551,10 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     }
 
     bool failed() const {
-      return !_is_in_heap || this->_g1h->is_obj_dead_cond(this->_obj, _vo);
+      return !_is_in_heap ||
+             // is_obj_dead* assume that obj is not in a Free region.
+             this->_g1h->heap_region_containing(this->_obj)->is_free() ||
+             this->_g1h->is_obj_dead_cond(this->_obj, _vo);
     }
 
     void report_error() {

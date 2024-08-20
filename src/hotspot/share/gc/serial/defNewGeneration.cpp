@@ -229,7 +229,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
     _promotion_failed(false),
     _preserved_marks_set(false /* in_c_heap */),
     _promo_failure_drain_in_progress(false),
-    _should_allocate_from_space(false),
     _string_dedup_requests()
 {
   MemRegion cmr((HeapWord*)_virtual_space.low(),
@@ -534,11 +533,6 @@ size_t DefNewGeneration::capacity_before_gc() const {
   return eden()->capacity();
 }
 
-size_t DefNewGeneration::contiguous_available() const {
-  return eden()->free();
-}
-
-
 void DefNewGeneration::object_iterate(ObjectClosure* blk) {
   eden()->object_iterate(blk);
   from()->object_iterate(blk);
@@ -576,11 +570,6 @@ HeapWord* DefNewGeneration::block_start(const void* p) const {
   }
   assert(to()->is_in_reserved(p), "inv");
   return block_start_const(to(), p);
-}
-
-HeapWord* DefNewGeneration::expand_and_allocate(size_t size, bool is_tlab) {
-  // We don't attempt to expand the young generation (but perhaps we should.)
-  return allocate(size, is_tlab);
 }
 
 void DefNewGeneration::adjust_desired_tenuring_threshold() {
@@ -768,25 +757,25 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   bool new_obj_is_tenured = false;
   // Otherwise try allocating obj tenured
   if (obj == nullptr) {
-    obj = _old_gen->promote(old, s);
+    obj = _old_gen->allocate_for_promotion(old, s);
     if (obj == nullptr) {
       handle_promotion_failure(old);
       return old;
     }
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
-
     new_obj_is_tenured = true;
-  } else {
-    // Prefetch beyond obj
-    const intx interval = PrefetchCopyIntervalInBytes;
-    Prefetch::write(obj, interval);
+  }
 
-    // Copy obj
-    Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
+  // Prefetch beyond obj
+  const intx interval = PrefetchCopyIntervalInBytes;
+  Prefetch::write(obj, interval);
 
-    ContinuationGCSupport::transform_stack_chunk(obj);
+  // Copy obj
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
 
+  ContinuationGCSupport::transform_stack_chunk(obj);
+
+  if (!new_obj_is_tenured) {
     // Increment age if obj still in new generation
     obj->incr_age();
     age_table()->add(obj, s);
@@ -835,22 +824,10 @@ void DefNewGeneration::reset_scratch() {
   }
 }
 
-bool DefNewGeneration::collection_attempt_is_safe() {
-  if (!to()->is_empty()) {
-    log_trace(gc)(":: to is not empty ::");
-    return false;
-  }
-  if (_old_gen == nullptr) {
-    _old_gen = SerialHeap::heap()->old_gen();
-  }
-  return _old_gen->promotion_attempt_is_safe(used());
-}
-
 void DefNewGeneration::gc_epilogue(bool full) {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();
-  SerialHeap::heap()->counters()->update_counters();
 }
 
 void DefNewGeneration::update_counters() {
@@ -883,7 +860,7 @@ const char* DefNewGeneration::name() const {
   return "def new generation";
 }
 
-HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
+HeapWord* DefNewGeneration::allocate(size_t word_size) {
   // This is the slow-path allocation for the DefNewGeneration.
   // Most allocations are fast-path in compiled code.
   // We try to allocate from the eden.  If that works, we are happy.
@@ -893,8 +870,7 @@ HeapWord* DefNewGeneration::allocate(size_t word_size, bool is_tlab) {
   return result;
 }
 
-HeapWord* DefNewGeneration::par_allocate(size_t word_size,
-                                         bool is_tlab) {
+HeapWord* DefNewGeneration::par_allocate(size_t word_size) {
   return eden()->par_allocate(word_size);
 }
 

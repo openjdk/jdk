@@ -2723,13 +2723,13 @@ uint StoreNode::hash() const {
 //
 class ArrayPointer {
 private:
-  const bool _is_valid;          // The parsing succeeded
   const Node* _pointer;          // The final pointer to the position in the array
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
   const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
-  const jint  _int_offset_shift; // (optional) Shift value for int_offset
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
+  const jint _int_offset_shift; // (optional) Shift value for int_offset
+  const bool _is_valid;          // The parsing succeeded
 
   ArrayPointer(const bool is_valid,
                const Node* pointer,
@@ -2738,13 +2738,13 @@ private:
                const Node* int_offset,
                const jint int_offset_shift,
                const GrowableArray<Node*>* other_offsets) :
-      _is_valid(is_valid),
       _pointer(pointer),
       _base(base),
       _constant_offset(constant_offset),
       _int_offset(int_offset),
+      _other_offsets(other_offsets),
       _int_offset_shift(int_offset_shift),
-      _other_offsets(other_offsets)
+      _is_valid(is_valid)
   {
     assert(_pointer != nullptr, "must always have pointer");
     assert(is_valid == (_base != nullptr), "have base exactly if valid");
@@ -2862,7 +2862,7 @@ public:
                _pointer->_idx, _pointer->Name(),
                _base->_idx, _base->Name(),
                (long long)_constant_offset);
-    if (_int_offset != 0) {
+    if (_int_offset != nullptr) {
       tty->print(" + I2L[%d %s] << %d",
                  _int_offset->_idx, _int_offset->Name(), _int_offset_shift);
     }
@@ -2984,6 +2984,9 @@ StoreNode* MergePrimitiveArrayStores::run() {
       type2aelembytes(bt) != _store->memory_size()) {
     return nullptr;
   }
+  if (_store->is_unsafe_access()) {
+    return nullptr;
+  }
 
   // The _store must be the "last" store in a chain. If we find a use we could merge with
   // then that use or a store further down is the "last" store.
@@ -3017,11 +3020,13 @@ bool MergePrimitiveArrayStores::is_compatible_store(const StoreNode* other_store
   int opc = _store->Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
   assert(_store->adr_type()->isa_aryptr() != nullptr, "must be array store");
+  assert(!_store->is_unsafe_access(), "no unsafe accesses");
 
   if (other_store == nullptr ||
       _store->Opcode() != other_store->Opcode() ||
       other_store->adr_type() == nullptr ||
-      other_store->adr_type()->isa_aryptr() == nullptr) {
+      other_store->adr_type()->isa_aryptr() == nullptr ||
+      other_store->is_unsafe_access()) {
     return false;
   }
 
