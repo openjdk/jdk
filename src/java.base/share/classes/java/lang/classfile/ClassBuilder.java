@@ -276,10 +276,7 @@ public sealed interface ClassBuilder
                                         MethodTypeDesc descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethodBody(constantPool().utf8Entry(name),
-                              constantPool().utf8Entry(descriptor),
-                              methodFlags,
-                              handler);
+        return withMethod(name, descriptor, methodFlags, mb -> mb.withCode(handler));
     }
 
     /**

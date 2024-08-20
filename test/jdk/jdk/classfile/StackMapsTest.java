@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Classfile stack maps generator.
- * @bug 8305990 8320222 8320618 8335475
+ * @bug 8305990 8320222 8320618 8335475 8338623
  * @build testdata.*
  * @run junit StackMapsTest
  */
@@ -40,10 +40,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.junit.jupiter.api.Assertions.*;
 import static helpers.TestUtil.assertEmpty;
 import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
@@ -339,6 +339,33 @@ class StackMapsTest {
                 assertEquals(1, code.maxLocals()); // instance method
                 assertEquals(0, code.maxStack());
             }
+        }
+    }
+
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_int_String = MethodTypeDesc.of(CD_int, CD_String);
+
+    @ParameterizedTest
+    @EnumSource(ClassFile.StackMapsOption.class)
+    void testInvocationCounters(ClassFile.StackMapsOption option) {
+        var cf = ClassFile.of(option);
+        var cd = ClassDesc.of("Test");
+        var bytes = cf.build(cd, clb -> clb
+            .withMethodBody("a", MTD_int_String, ACC_STATIC, cob -> cob
+                    .aload(0)
+                    .invokevirtual(CD_String, "hashCode", MTD_int)
+                    .ireturn())
+            .withMethodBody("b", MTD_int, 0, cob -> cob
+                    .aload(0)
+                    .invokevirtual(cd, "hashCode", MTD_int)
+                    .ireturn())
+        );
+
+        var cm = ClassFile.of().parse(bytes);
+        for (var method : cm.methods()) {
+            var code = method.findAttribute(Attributes.code()).orElseThrow();
+            assertEquals(1, code.maxLocals());
+            assertEquals(1, code.maxStack());
         }
     }
 }
