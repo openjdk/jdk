@@ -365,14 +365,14 @@ void RegClass::build_register_masks(FILE* fp) {
   for(i = 0; i < len - 1; i++) {
     fprintf(fp," 0x%x,", regs_in_word(i, false));
   }
-  fprintf(fp," 0x%x );\n", regs_in_word(i, false));
+  fprintf(fp," 0x%x, false );\n", regs_in_word(i, false));
 
   if (_stack_or_reg) {
     fprintf(fp, "const RegMask _%sSTACK_OR_%s_mask(", prefix, rc_name_to_upper);
     for(i = 0; i < len - 1; i++) {
       fprintf(fp," 0x%x,", regs_in_word(i, true));
     }
-    fprintf(fp," 0x%x );\n", regs_in_word(i, true));
+    fprintf(fp," 0x%x, true );\n", regs_in_word(i, true));
   }
   delete[] rc_name_to_upper;
 }

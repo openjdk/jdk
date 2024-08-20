@@ -78,7 +78,16 @@ class RegMask {
   };
 
   // In rare situations (e.g., "more than 90+ parameters on Intel"), we need to
-  // extend the register mask with dynamically allocated memory.
+  // extend the register mask with dynamically allocated memory. We could use a
+  // GrowableArray here, but there are currently some GrowableArray limitations
+  // that have a negative performance impact for our use case:
+  //
+  // - There is no efficient copy/clone operation.
+  // - GrowableArray construction currently default-initializes everything
+  //   within their capacity, which is unnecessary in our case.
+  //
+  // After addressing these limitations, we should consider using a
+  // GrowableArray here.
   uintptr_t* _RM_UP_EXT = nullptr;
 
 #ifdef ASSERT
@@ -119,6 +128,31 @@ class RegMask {
   unsigned int _lwm;
   unsigned int _hwm;
 
+  // The following diagram illustrates the internal representation of a RegMask
+  // (with _offset = 0, for a made-up platform with 10 registers and 4-bit
+  // words) that has been extended with two additional words to represent more
+  // stack locations:
+  //                                   _hwm=3
+  //            _lwm=1                RM_SIZE=3                _rm_size=5
+  //              |                       |                        |
+  //   r0 r1 r2 r3 r4 r5 r6 r7 r8 r9 s0 s1   s2 s3 s4 s5 s6 s7 s8 s9 s10 s11 ...
+  //  [0  0  0  0 |0  1  1  0 |0  0  1  0 ] [1  1  0  1 |0  0  0  0] as  as  as
+  // [0]         [1]         [2]           [0]         [1]
+  //
+  // \____________________________________/ \______________________/
+  //                        |                           |
+  //                      RM_UP                     RM_UP_EXT
+  // \_____________________________________________________________/
+  //                                 |
+  //                             _rm_size
+  //
+  // In this example, registers {r5, r6} and stack locations {s0, s2, s3, s5}
+  // are included in the register mask. Depending on the value of _all_stack,
+  // (s10, s11, ...) are all included (as = 1) or excluded (as = 0). Note that
+  // all registers/stack locations under _lwm and over _hwm are excluded.
+  // The exception is (s10, s11, ...), where the value is decided solely by
+  // _all_stack, regardless of the value of _hwm.
+
   // Access word i in the register mask.
   const uintptr_t& _rm_up(unsigned int i) const {
     assert(orig_const || orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
@@ -126,7 +160,6 @@ class RegMask {
       return _RM_UP[i];
     } else {
       assert(_RM_UP_EXT != nullptr, "sanity");
-      assert( i >= _RM_SIZE, "sanity");
       return _RM_UP_EXT[i - _RM_SIZE];
     }
   }
@@ -145,7 +178,7 @@ class RegMask {
 
   // Grow the register mask to ensure it can fit at least min_size words.
   void _grow(unsigned int min_size, bool init = true) {
-    if(min_size > _rm_size) {
+    if (min_size > _rm_size) {
       Arena* _arena = _get_arena();
       min_size = round_up_power_of_2(min_size);
       unsigned int old_size = _rm_size;
@@ -162,7 +195,7 @@ class RegMask {
       }
       if (init) {
         int fill = 0;
-        if(is_AllStack()) {
+        if (is_AllStack()) {
           fill = 0xFF;
           _hwm = _rm_max();
         }
@@ -192,7 +225,7 @@ class RegMask {
 
     // If the source is smaller than us, we need to set the gap according to
     // the sources all_stack flag.
-    if (src._rm_size < _rm_size ) {
+    if (src._rm_size < _rm_size) {
       int value = 0;
       if (src.is_AllStack()) {
         value = 0xFF;
@@ -204,18 +237,18 @@ class RegMask {
     assert(valid_watermarks(), "post-condition");
   }
 
-  // Set a range of words in the register mask to a given value.
-  void _set_range(unsigned int start, int value, unsigned int range) {
+  // Set a span of words in the register mask to a given value.
+  void _set_range(unsigned int start, int value, unsigned int length) {
     if (start < _RM_SIZE) {
       memset(_RM_UP + start, value,
-             sizeof(uintptr_t) * MIN2((int)range,(int)_RM_SIZE-(int)start));
+             sizeof(uintptr_t) * MIN2((int)length,(int)_RM_SIZE-(int)start));
     }
-    if (start + range > _RM_SIZE) {
+    if (start + length > _RM_SIZE) {
       assert(_RM_UP_EXT != nullptr, "sanity");
       assert(orig_ext_adr == &_RM_UP_EXT, "clone sanity check");
       memset(_RM_UP_EXT + MAX2((int)start-(int)_RM_SIZE,0), value,
-             sizeof(uintptr_t) * MIN2((int)range,
-                                      (int)range-((int)_RM_SIZE-(int)start)));
+             sizeof(uintptr_t) * MIN2((int)length,
+                                      (int)length-((int)_RM_SIZE-(int)start)));
     }
   }
 
@@ -259,7 +292,7 @@ class RegMask {
 #   define BODY(I) int a##I,
     FORALL_BODY
 #   undef BODY
-    int dummy = 0): _rm_size(_RM_SIZE), _offset(0) {
+    bool all_stack): _rm_size(_RM_SIZE), _offset(0), _all_stack(all_stack) {
 #if defined(VM_LITTLE_ENDIAN) || !defined(_LP64)
 #   define BODY(I) _RM_I[I] = a##I;
 #else
@@ -272,10 +305,6 @@ class RegMask {
     _hwm = _RM_MAX;
     while (_hwm > 0      && _RM_UP[_hwm] == 0) _hwm--;
     while ((_lwm < _hwm) && _RM_UP[_lwm] == 0) _lwm++;
-    // For historical reasons, this constructor uses the last bit of the mask
-    // itself as the _all_stack flag. We need to record this fact using the now
-    // separate _all_stack flag.
-    set_AllStack(_RM_UP[_RM_MAX] & (uintptr_t(1) << _WordBitMask));
     assert(valid_watermarks(), "post-condition");
   }
 
@@ -429,7 +458,7 @@ class RegMask {
     unsigned hwm = MIN2(_hwm, rm._hwm);
     unsigned lwm = MAX2(_lwm, rm._lwm);
     for (unsigned i = lwm; i <= hwm; i++) {
-      if(_rm_up(i) & rm._rm_up(i)) {
+      if (_rm_up(i) & rm._rm_up(i)) {
         return true;
       }
     }
@@ -525,7 +554,7 @@ class RegMask {
     }
     // If rm is smaller than us and has the all-stack flag set, we need to set
     // all bits in the gap to 1.
-    if (rm.is_AllStack() && rm._rm_size < _rm_size ) {
+    if (rm.is_AllStack() && rm._rm_size < _rm_size) {
       _set_range(rm._rm_size, 0xFF, _rm_size - rm._rm_size);
       _hwm = _rm_max();
     }
@@ -546,7 +575,7 @@ class RegMask {
     }
     // If rm is smaller than our high watermark and has the all-stack flag not
     // set, we need to set all bits in the gap to 0.
-    if (!rm.is_AllStack() && _hwm > rm._rm_max() ) {
+    if (!rm.is_AllStack() && _hwm > rm._rm_max()) {
       _set_range(rm._rm_size, 0, _hwm - rm._rm_max());
       _hwm = rm._rm_max();
     }
@@ -576,7 +605,7 @@ class RegMask {
     }
     // If rm is smaller than our high watermark and has the all-stack flag set,
     // we need to set all bits in the gap to 0.
-    if (rm.is_AllStack() && _hwm > rm._rm_max() ) {
+    if (rm.is_AllStack() && _hwm > rm._rm_max()) {
       _set_range(rm.rm_size(), 0, _hwm - rm._rm_max());
       _hwm = rm._rm_max();
     }
