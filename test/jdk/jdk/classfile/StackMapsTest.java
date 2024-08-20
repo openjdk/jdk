@@ -30,6 +30,7 @@
  */
 
 import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.components.ClassPrinter;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -329,7 +330,7 @@ class StackMapsTest {
         var cm = ClassFile.of().parse(bytes);
         for (var method : cm.methods()) {
             var name = method.methodName();
-            var code = method.code().orElseThrow();
+            var code = (CodeAttribute) method.code().orElseThrow();
             if (name.equalsString("a")) {
                 assertEquals(0, code.maxLocals()); // static method
                 assertEquals(0, code.maxStack());
