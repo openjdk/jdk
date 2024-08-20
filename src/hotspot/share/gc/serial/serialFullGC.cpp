@@ -594,7 +594,7 @@ void SerialFullGC::mark_object(oop obj) {
   // some marks may contain information we need to preserve so we store them away
   // and overwrite the mark.  We'll restore it at the end of serial full GC.
   markWord mark = obj->mark();
-  obj->set_mark(markWord::prototype().set_marked());
+  obj->set_mark(obj->prototype_mark().set_marked());
 
   ContinuationGCSupport::transform_stack_chunk(obj);
 

@@ -82,8 +82,13 @@ private:
   // declared nonstatic fields in arrayOopDesc if not compressed, otherwise
   // it occupies the second half of the _klass field in oopDesc.
   static int length_offset_in_bytes() {
-    return UseCompressedClassPointers ? klass_gap_offset_in_bytes() :
-                               (int)sizeof(arrayOopDesc);
+    if (UseCompactObjectHeaders) {
+      return oopDesc::base_offset_in_bytes();
+    } else if (UseCompressedClassPointers) {
+      return klass_gap_offset_in_bytes();
+    } else {
+      return (int)sizeof(arrayOopDesc);
+    }
   }
 
   // Returns the offset of the first element.

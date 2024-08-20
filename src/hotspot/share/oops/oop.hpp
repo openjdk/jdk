@@ -80,6 +80,9 @@ class oopDesc {
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark);
   inline markWord cas_set_mark(markWord new_mark, markWord old_mark, atomic_memory_order order);
 
+  // Returns the prototype mark that should be used for this object.
+  inline markWord prototype_mark() const;
+
   // Used only to re-initialize the mark word (e.g., of promoted
   // objects during a GC) -- requires a valid klass pointer
   inline void init_mark();
@@ -98,7 +101,13 @@ class oopDesc {
   static inline void set_klass_gap(HeapWord* mem, int z);
 
   // size of object header, aligned to platform wordSize
-  static constexpr int header_size() { return sizeof(oopDesc)/HeapWordSize; }
+  static int header_size() {
+    if (UseCompactObjectHeaders) {
+      return sizeof(markWord) / HeapWordSize;
+    } else {
+      return sizeof(oopDesc)/HeapWordSize;
+    }
+  }
 
   // Returns whether this is an instance of k or an instance of a subclass of k
   inline bool is_a(Klass* k) const;
@@ -109,6 +118,20 @@ class oopDesc {
   // Sometimes (for complicated concurrency-related reasons), it is useful
   // to be able to figure out the size of an object knowing its klass.
   inline size_t size_given_klass(Klass* klass);
+
+  // The following set of methods is used to access the mark-word and related
+  // properties when the object may be forwarded. Be careful where and when
+  // using this method. It assumes that the forwardee is installed in
+  // the header as a plain pointer (or self-forwarded). In particular,
+  // those methods can not deal with the encoded forwarding that is used
+  // in Serial, Parallel, G1 and Shenandoah full-GCs.
+private:
+  inline Klass*   forward_safe_klass_impl(markWord m) const;
+public:
+  inline Klass*   forward_safe_klass() const;
+  inline Klass*   forward_safe_klass(markWord m) const;
+  inline size_t   forward_safe_size();
+  inline void     forward_safe_init_mark();
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()    const;
@@ -319,16 +342,49 @@ class oopDesc {
 
   // for code generation
   static int mark_offset_in_bytes()      { return (int)offset_of(oopDesc, _mark); }
-  static int klass_offset_in_bytes()     { return (int)offset_of(oopDesc, _metadata._klass); }
+  static int klass_offset_in_bytes()     {
+#ifdef _LP64
+    if (UseCompactObjectHeaders) {
+      // NOTE: The only place where this is used with compact headers is
+      // the C2 compiler, and even there we don't use it to access the (narrow)Klass*
+      // directly. It is used only as a placeholder to identify the special memory slice
+      // of LoadNKlass instructions. This value could be any value that is not a valid
+      // field offset. Also, if it weren't for C2, we could
+      // assert(!UseCompactObjectHeaders) here.
+      STATIC_ASSERT(markWord::klass_shift % 8 == 0);
+      return mark_offset_in_bytes() + markWord::klass_shift / 8;
+    } else
+#endif
+    {
+      return (int)offset_of(oopDesc, _metadata._klass);
+    }
+  }
   static int klass_gap_offset_in_bytes() {
     assert(has_klass_gap(), "only applicable to compressed klass pointers");
+    assert(!UseCompactObjectHeaders, "don't use klass_gap_offset_in_bytes() with compact headers");
     return klass_offset_in_bytes() + sizeof(narrowKlass);
+  }
+
+  static int base_offset_in_bytes() {
+#ifdef _LP64
+    if (UseCompactObjectHeaders) {
+      // With compact headers, the Klass* field is not used for the Klass*
+      // and is used for the object fields instead.
+      STATIC_ASSERT(sizeof(markWord) == 8);
+      return sizeof(markWord);
+    } else if (UseCompressedClassPointers) {
+      return sizeof(markWord) + sizeof(narrowKlass);
+    } else
+#endif
+    {
+      return sizeof(oopDesc);
+    }
   }
 
   // for error reporting
   static void* load_oop_raw(oop obj, int offset);
 
-  DEBUG_ONLY(bool size_might_change();)
+  DEBUG_ONLY(bool size_might_change(Klass* klass);)
 };
 
 // An oopDesc is not initialized via a constructor.  Space is allocated in

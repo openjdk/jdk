@@ -963,7 +963,7 @@ static intptr_t get_next_hash(Thread* current, oop obj) {
     value = v;
   }
 
-  value &= markWord::hash_mask;
+  value &= UseCompactObjectHeaders ? markWord::hash_mask_compact : markWord::hash_mask;
   if (value == 0) value = 0xBAD;
   assert(value != markWord::no_hash, "invariant");
   return value;

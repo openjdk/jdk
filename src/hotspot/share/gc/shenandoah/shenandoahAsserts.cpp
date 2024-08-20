@@ -197,7 +197,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                   file, line);
   }
 
-  Klass* obj_klass = obj->klass_or_null();
+  Klass* obj_klass = obj->forward_safe_klass();
   if (obj_klass == nullptr) {
     print_failure(_safe_unknown, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                   "Object klass pointer should not be null",
@@ -235,7 +235,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
                     file, line);
     }
 
-    if (obj_klass != fwd->klass()) {
+    if (obj_klass != fwd->forward_safe_klass()) {
       print_failure(_safe_oop, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
                     "Forwardee klass disagrees with object class",
                     file, line);
@@ -266,7 +266,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   // Do additional checks for special objects: their fields can hold metadata as well.
   // We want to check class loading/unloading did not corrupt them.
 
-  if (Universe::is_fully_initialized() && java_lang_Class::is_instance(obj)) {
+  if (Universe::is_fully_initialized() && obj_klass == vmClasses::Class_klass()) {
     Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",

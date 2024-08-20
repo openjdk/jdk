@@ -4369,6 +4369,7 @@ instruct loadKlass(rRegP dst, memory mem)
 // Load narrow Klass Pointer
 instruct loadNKlass(rRegN dst, memory mem)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set dst (LoadNKlass mem));
 
   ins_cost(125); // XXX
@@ -4377,6 +4378,21 @@ instruct loadNKlass(rRegN dst, memory mem)
     __ movl($dst$$Register, $mem$$Address);
   %}
   ins_pipe(ialu_reg_mem); // XXX
+%}
+
+instruct loadNKlassCompactHeaders(rRegN dst, memory mem, rFlagsReg cr)
+%{
+  predicate(UseCompactObjectHeaders);
+  match(Set dst (LoadNKlass mem));
+  effect(KILL cr);
+  ins_cost(125); // XXX
+  format %{ "movl    $dst, $mem\t# compressed klass ptr" %}
+  ins_encode %{
+    Register index = $mem$$index != 4 ? $mem$$index$$Register : noreg;
+    Address::ScaleFactor sf = (index != noreg) ? static_cast<Address::ScaleFactor>($mem$$scale) : Address::no_scale;
+    __ load_nklass_compact_c2($dst$$Register, $mem$$base$$Register, index, sf, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow); // XXX
 %}
 
 // Load Float
@@ -11716,6 +11732,7 @@ instruct compN_rReg_imm_klass(rFlagsRegU cr, rRegN op1, immNKlass op2) %{
 
 instruct compN_mem_imm_klass(rFlagsRegU cr, memory mem, immNKlass src)
 %{
+  predicate(!UseCompactObjectHeaders);
   match(Set cr (CmpN src (LoadNKlass mem)));
 
   format %{ "cmpl    $mem, $src\t# compressed klass ptr" %}

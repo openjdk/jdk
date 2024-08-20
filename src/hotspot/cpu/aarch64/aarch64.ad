@@ -6438,7 +6438,7 @@ instruct loadKlass(iRegPNoSp dst, memory mem)
 instruct loadNKlass(iRegNNoSp dst, memory mem)
 %{
   match(Set dst (LoadNKlass mem));
-  predicate(!needs_acquiring_load(n));
+  predicate(!needs_acquiring_load(n) && !UseCompactObjectHeaders);
 
   ins_cost(4 * INSN_COST);
   format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
@@ -6446,6 +6446,20 @@ instruct loadNKlass(iRegNNoSp dst, memory mem)
   ins_encode(aarch64_enc_ldrw(dst, mem));
 
   ins_pipe(iload_reg_mem);
+%}
+
+instruct loadNKlassCompactHeaders(iRegNNoSp dst, memory mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadNKlass mem));
+  effect(KILL cr);
+  predicate(!needs_acquiring_load(n) && UseCompactObjectHeaders);
+
+  ins_cost(4 * INSN_COST);
+  format %{ "ldrw  $dst, $mem\t# compressed class ptr" %}
+  ins_encode %{
+    __ load_nklass_compact($dst$$Register, $mem$$base$$Register, $mem$$index$$Register, $mem$$scale, $mem$$disp);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // Load Float
