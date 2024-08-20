@@ -80,7 +80,7 @@ public class LayoutPath {
             MH_CHECK_ENCL_LAYOUT = lookup.findStatic(LayoutPath.class, "checkEnclosingLayout",
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
-                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class));
             MH_ADD = lookup.findStatic(Long.class, "sum",
                     MethodType.methodType(long.class, long.class, long.class));
         } catch (Throwable ex) {
@@ -180,13 +180,14 @@ public class LayoutPath {
         }
         MemoryLayout derefLayout = addressLayout.targetLayout().get();
         MethodHandle handle = dereferenceHandle(false).toMethodHandle(VarHandle.AccessMode.GET);
-        handle = MethodHandles.filterReturnValue(handle,
-                MethodHandles.insertArguments(MH_SEGMENT_RESIZE, 1, derefLayout));
+        handle = MethodHandles.filterReturnValue(handle, MH_SEGMENT_RESIZE);
         return derefPath(derefLayout, handle, this);
     }
 
-    private static MemorySegment resizeSegment(MemorySegment segment, MemoryLayout layout) {
-        return Utils.longToAddress(segment.address(), layout.byteSize(), layout.byteAlignment());
+    private static MemorySegment resizeSegment(MemorySegment segment) {
+        // Avoid adapting for specific target layout. The check for the root layout
+        // size and alignment will be inserted by LayoutPath::dereferenceHandle anyway.
+        return Utils.longToAddress(segment.address(), Long.MAX_VALUE, 1);
     }
 
     // Layout path projections
