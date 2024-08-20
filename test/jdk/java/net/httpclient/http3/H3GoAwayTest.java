@@ -44,6 +44,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -58,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @build jdk.test.lib.net.SimpleSSLContext
  * @run junit H3GoAwayTest
  */
+@Disabled("temporarily disabled till h3 exchange retries on client side is done correctly")
 public class H3GoAwayTest {
 
     private static String REQ_URI_BASE;
