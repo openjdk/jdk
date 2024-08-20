@@ -25,19 +25,46 @@
 
 package com.apple.laf;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
-import java.util.*;
+import java.awt.Adjustable;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Insets;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 
-import javax.swing.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.swing.BoundedRangeModel;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JScrollBar;
+import javax.swing.LookAndFeel;
 import javax.swing.Timer;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.plaf.ComponentUI;
+import javax.swing.plaf.ScrollBarUI;
 
-import apple.laf.*;
-import apple.laf.JRSUIConstants.*;
+import apple.laf.JRSUIStateFactory;
+import apple.laf.JRSUIConstants.Hit;
+import apple.laf.JRSUIConstants.Orientation;
+import apple.laf.JRSUIConstants.NothingToScroll;
+import apple.laf.JRSUIConstants.ScrollBarHit;
+import apple.laf.JRSUIConstants.ScrollBarPart;
+import apple.laf.JRSUIConstants.ShowArrows;
+import apple.laf.JRSUIConstants.State;
 import apple.laf.JRSUIState.ScrollBarState;
+import apple.laf.JRSUIUtils;
 
 import com.apple.laf.AquaUtils.RecyclableSingleton;
 
