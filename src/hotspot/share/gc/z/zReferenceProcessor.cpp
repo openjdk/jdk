@@ -113,7 +113,7 @@ static void list_append(zaddress& head, zaddress& tail, zaddress reference) {
 ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers)
   : _workers(workers),
     _soft_reference_policy(nullptr),
-    _uses_clear_all_soft_references_policy(false),
+    _uses_clear_all_soft_reference_policy(false),
     _encountered_count(),
     _discovered_count(),
     _enqueued_count(),
@@ -125,7 +125,7 @@ void ZReferenceProcessor::set_soft_reference_policy(bool clear_all_soft_referenc
   static AlwaysClearPolicy always_clear_policy;
   static LRUMaxHeapPolicy lru_max_heap_policy;
 
-  _uses_clear_all_soft_references_policy = clear_all_soft_references;
+  _uses_clear_all_soft_reference_policy = clear_all_soft_references;
 
   if (clear_all_soft_references) {
     _soft_reference_policy = &always_clear_policy;
@@ -137,7 +137,7 @@ void ZReferenceProcessor::set_soft_reference_policy(bool clear_all_soft_referenc
 }
 
 bool ZReferenceProcessor::uses_clear_all_soft_reference_policy() const {
-  return _uses_clear_all_soft_references_policy;
+  return _uses_clear_all_soft_reference_policy;
 }
 
 bool ZReferenceProcessor::is_inactive(zaddress reference, oop referent, ReferenceType type) const {
@@ -444,7 +444,7 @@ public:
 void ZReferenceProcessor::process_references() {
   ZStatTimerOld timer(ZSubPhaseConcurrentReferencesProcess);
 
-  if (_uses_clear_all_soft_references_policy) {
+  if (_uses_clear_all_soft_reference_policy) {
     log_info(gc, ref)("Clearing All SoftReferences");
   }
 

@@ -41,7 +41,7 @@ private:
 
   ZWorkers* const      _workers;
   ReferencePolicy*     _soft_reference_policy;
-  bool                 _uses_clear_all_soft_references_policy;
+  bool                 _uses_clear_all_soft_reference_policy;
   ZPerWorker<Counters> _encountered_count;
   ZPerWorker<Counters> _discovered_count;
   ZPerWorker<Counters> _enqueued_count;
