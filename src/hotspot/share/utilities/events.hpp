@@ -209,7 +209,7 @@ class ExceptionsEventLog : public ExtendedStringEventLog {
 
   // Message length limit of zero means no limit.
   void log(Thread* thread, Handle h_exception, const char* message,
-           const char* file, int line, int message_length_limit=0);
+           const char* file, int line, int message_length_limit = 0);
 };
 
 
@@ -277,7 +277,7 @@ class Events : AllStatic {
 
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line, int message_length_limit=0);
+  static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line, int message_length_limit = 0);
 
   static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
