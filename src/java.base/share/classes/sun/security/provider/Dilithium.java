@@ -26,10 +26,6 @@
 package sun.security.provider;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
-import sun.security.provider.SHAKE128;
-import sun.security.provider.SHAKE256;
-import sun.security.provider.SHA3Parallel;
-import java.security.PublicKey;
 import java.util.Arrays;
 
 public class Dilithium {
