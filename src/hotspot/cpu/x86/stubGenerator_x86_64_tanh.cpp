@@ -323,8 +323,6 @@ address StubGenerator::generate_libmTanh() {
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  //__ push(rsi);
-
   __ bind(B1_2);
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
   __ xorpd(xmm4, xmm4);
@@ -493,11 +491,8 @@ address StubGenerator::generate_libmTanh() {
   __ cmpl(rcx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
   __ addsd(xmm0, xmm0);
-  //__ movq(Address(rsp, 0), xmm0);
 
   __ bind(B1_4);
-  //__ pop(rcx);
-
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
 
