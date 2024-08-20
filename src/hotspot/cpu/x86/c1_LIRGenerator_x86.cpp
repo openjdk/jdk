@@ -989,14 +989,14 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dtan:
        if (StubRoutines::dtan() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dtan(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtan), getThreadTemp(), result_reg, cc->args());
       }
       break;
     case vmIntrinsics::_dtanh:
        if (StubRoutines::dtanh() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dtanh(), getThreadTemp(), result_reg, cc->args());
       } // TODO: else clause?
       break;
     default:  ShouldNotReachHere();
