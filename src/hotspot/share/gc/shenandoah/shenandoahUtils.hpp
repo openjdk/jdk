@@ -82,11 +82,12 @@ private:
 
   ShenandoahPhaseTimings* const         _timings;
   const ShenandoahPhaseTimings::Phase   _phase;
+  const bool                            _should_aggregate;
   ShenandoahPhaseTimings::Phase         _parent_phase;
   double _start;
 
 public:
-  ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase);
+  ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase, bool should_aggregate = false);
   ~ShenandoahTimingsTracker();
 
   static ShenandoahPhaseTimings::Phase current_phase() { return _current_phase; }

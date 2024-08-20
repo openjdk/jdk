@@ -113,8 +113,8 @@ ShenandoahConcurrentPhase::~ShenandoahConcurrentPhase() {
   _timer->register_gc_concurrent_end();
 }
 
-ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase) :
-  _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase) {
+ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase phase, bool should_aggregate) :
+  _timings(ShenandoahHeap::heap()->phase_timings()), _phase(phase), _should_aggregate(should_aggregate) {
   assert(Thread::current()->is_VM_thread() || Thread::current()->is_ConcurrentGC_thread(),
           "Must be set by these threads");
   _parent_phase = _current_phase;
@@ -123,7 +123,7 @@ ShenandoahTimingsTracker::ShenandoahTimingsTracker(ShenandoahPhaseTimings::Phase
 }
 
 ShenandoahTimingsTracker::~ShenandoahTimingsTracker() {
-  _timings->record_phase_time(_phase, os::elapsedTime() - _start);
+  _timings->record_phase_time(_phase, os::elapsedTime() - _start, _should_aggregate);
   _current_phase = _parent_phase;
 }
 
