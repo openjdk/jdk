@@ -5322,12 +5322,6 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-
-
-
-
-
-
   /**
    * vector registers:
    * input VectorRegister's:  intputV1-V4, for m2 they could be v2, v4, v6, for m1 they could be v2, v4, v6, v8
