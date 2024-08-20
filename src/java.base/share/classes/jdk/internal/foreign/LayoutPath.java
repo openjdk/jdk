@@ -77,7 +77,7 @@ public class LayoutPath {
                     MethodType.methodType(MemorySegment.class, long.class, long.class));
             MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
                     MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
-            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(LayoutPath.class, "checkEnclosingLayout",
+            MH_CHECK_ENCL_LAYOUT = lookup.findStatic(Utils.class, "checkEnclosingLayout",
                     MethodType.methodType(void.class, MemorySegment.class, long.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class));
@@ -283,15 +283,6 @@ public class LayoutPath {
         }
 
         return sliceHandle;
-    }
-
-    private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
-        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
-        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
-            throw new IllegalArgumentException(String.format(
-                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , offset, enclosing.byteAlignment(), enclosing, segment));
-        }
     }
 
     public MemoryLayout layout() {

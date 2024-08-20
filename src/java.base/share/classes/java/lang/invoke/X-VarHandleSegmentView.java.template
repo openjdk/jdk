@@ -25,6 +25,7 @@
 package java.lang.invoke;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.Utils;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -100,13 +101,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
     @ForceInline
     static AbstractMemorySegmentImpl checkSegment(Object obb, Object encl, long base, boolean ro) {
         AbstractMemorySegmentImpl oo = (AbstractMemorySegmentImpl)Objects.requireNonNull(obb);
-        MemoryLayout layout = (MemoryLayout)encl;
-        oo.checkAccess(base, layout.byteSize(), ro);
-        if (!oo.isAlignedForElement(base, layout)) {
-            throw new IllegalArgumentException(String.format(
-                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
-                    , base, layout.byteAlignment(), layout, oo));
-        }
+        Utils.checkEnclosingLayout(oo, base, (MemoryLayout)encl);
         return oo;
     }
 

@@ -241,6 +241,16 @@ public final class Utils {
         }
     }
 
+    @ForceInline
+    public static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
+        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
+        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, enclosing.byteAlignment(), enclosing, segment));
+        }
+    }
+
     private static long computePadding(long offset, long align) {
         boolean isAligned = offset == 0 || offset % align == 0;
         if (isAligned) {
