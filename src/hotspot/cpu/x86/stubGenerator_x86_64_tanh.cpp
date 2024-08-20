@@ -1172,24 +1172,22 @@ address StubGenerator::generate_libmTanh() {
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
+  __ push(rsi);
 #ifdef _WIN64
-  //__ push(rsi);
   __ push(rdi);
 #endif
 
-  __ push(rsi);
-
   __ bind(B1_2);
-  __ movsd(xmm3, ExternalAddress(HALFMASK));
+  __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
   __ xorpd(xmm4, xmm4);
-  __ movsd(xmm1, ExternalAddress(L2E));
-  __ movsd(xmm2, ExternalAddress(L2E + 8));
-  __ movl(rax, 32768); // eax
+  __ movsd(xmm1, ExternalAddress(L2E), r11 /*rscratch*/);
+  __ movsd(xmm2, ExternalAddress(L2E + 8), r11 /*rscratch*/);
+  __ movl(rax, 32768);
   __ pinsrw(xmm4, rax, 3);
-  __ movsd(xmm6,  ExternalAddress(Shifter)); //resume
+  __ movsd(xmm6,  ExternalAddress(Shifter), r11 /*rscratch*/);
   __ pextrw(rcx, xmm0, 3);
   __ andpd(xmm3, xmm0);
-  __ andnpd(xmm4, xmm0); //TODO: macroassembler.cpp
+  __ andnpd(xmm4, xmm0);
   __ pshufd(xmm5, xmm4, 68);
   __ movl(rdx, 32768);
   __ andl(rdx, rcx);
@@ -1200,31 +1198,31 @@ address StubGenerator::generate_libmTanh() {
   __ subsd(xmm4, xmm3);
   __ mulsd(xmm3, xmm1);
   __ mulsd(xmm2, xmm5);
-  __ cvtsd2siq(rax, xmm3); // TODO: verify
+  __ cvtsd2siq(rax, xmm3);
   __ movq(xmm7, xmm3);
   __ addsd(xmm3, xmm6);
   __ mulsd(xmm1, xmm4);
-  __ movsd(xmm4, ExternalAddress(ONEMASK));
+  __ movsd(xmm4, ExternalAddress(ONEMASK), r11 /*rscratch*/);
   __ subsd(xmm3, xmm6);
   __ xorpd(xmm0, xmm0);
   __ addsd(xmm2, xmm1);
-  __ subsd(xmm7, xmm3); //TODO: BUG FIXED : registers interchanged
-  __ movdqu(xmm6, ExternalAddress(cv)); //TODO: movapd
+  __ subsd(xmm7, xmm3);
+  __ movdqu(xmm6, ExternalAddress(cv), r11 /*rscratch*/);
   __ addsd(xmm2, xmm7);
-  __ movl(rcx, 255); //TODO: BUG FIXED
+  __ movl(rcx, 255);
   __ andl(rcx, rax);
   __ addl(rcx, rcx);
   __ lea(r8, ExternalAddress(T2_neg_f));
-  __ movdqu(xmm5, Address(r8, rcx, Address::times(8))); // TODO: verify?
+  __ movdqu(xmm5, Address(r8, rcx, Address::times(8)));
   __ shrl(rax, 4);
   __ andl(rax, 65520);
   __ subl(rax, 16368);
   __ negl(rax);
   __ pinsrw(xmm0, rax, 3);
-  __ movdqu(xmm1, ExternalAddress(cv + 16));
+  __ movdqu(xmm1, ExternalAddress(cv + 16), r11 /*rscratch*/);
   __ pshufd(xmm0, xmm0, 68);
   __ mulpd(xmm0, xmm5);
-  __ movsd(xmm7, ExternalAddress(cv + 32));
+  __ movsd(xmm7, ExternalAddress(cv + 32), r11 /*rscratch*/);
   __ pshufd(xmm2, xmm2, 68);
   __ movq(xmm5, xmm4);
   __ addsd(xmm4, xmm0);
@@ -1233,7 +1231,7 @@ address StubGenerator::generate_libmTanh() {
   __ mulpd(xmm2, xmm2);
   __ addpd(xmm1, xmm6);
   __ mulsd(xmm2, xmm2);
-  __ movsd(xmm3, ExternalAddress(ONEMASK));
+  __ movsd(xmm3, ExternalAddress(ONEMASK), r11 /*rscratch*/);
   __ mulpd(xmm1, xmm2);
   __ pshufd(xmm6, xmm1, 78);
   __ addsd(xmm1, xmm6);
@@ -1241,7 +1239,7 @@ address StubGenerator::generate_libmTanh() {
   __ addsd(xmm1, xmm7);
   __ mulsd(xmm1, xmm0);
   __ addsd(xmm1, xmm4);
-  __ andpd(xmm4, ExternalAddress(MASK3));
+  __ andpd(xmm4, ExternalAddress(MASK3), r11 /*rscratch*/);
   __ divsd(xmm5, xmm1);
   __ subsd(xmm3, xmm4);
   __ pshufd(xmm1, xmm0, 238);
@@ -1252,20 +1250,20 @@ address StubGenerator::generate_libmTanh() {
   __ mulsd(xmm7, xmm0);
   __ addsd(xmm3, xmm1);
   __ addsd(xmm4, xmm7);
-  __ movsd(xmm1, ExternalAddress(RMASK));
+  __ movsd(xmm1, ExternalAddress(RMASK), r11 /*rscratch*/);
   __ mulsd(xmm6, xmm0);
-  __ andpd(xmm4, ExternalAddress(MASK3));
+  __ andpd(xmm4, ExternalAddress(MASK3), r11 /*rscratch*/);
   __ addsd(xmm3, xmm6);
   __ movq(xmm6, xmm4);
   __ subsd(xmm2, xmm4);
   __ addsd(xmm2, xmm7);
-  __ movsd(xmm7, ExternalAddress(ONEMASK));
+  __ movsd(xmm7, ExternalAddress(ONEMASK), r11 /*rscratch*/);
   __ andpd(xmm5, xmm1);
   __ addsd(xmm3, xmm2);
   __ mulsd(xmm4, xmm5);
   __ xorpd(xmm2, xmm2);
   __ mulsd(xmm3, xmm5);
-  __ subsd(xmm6, ExternalAddress(TWOMASK));
+  __ subsd(xmm6, ExternalAddress(TWOMASK), r11 /*rscratch*/);
   __ subsd(xmm4, xmm7);
   __ xorl(rdx, 32768);
   __ pinsrw(xmm2, rdx, 3);
@@ -1275,22 +1273,21 @@ address StubGenerator::generate_libmTanh() {
   __ mulsd(xmm3, xmm4);
   __ movq(xmm0, xmm6);
   __ mulsd(xmm6, xmm4);
-  __ subsd(xmm1, xmm3); //TODO: BUG FIXED
+  __ subsd(xmm1, xmm3);
   __ subsd(xmm1, xmm6);
   __ addsd(xmm0, xmm1);
   __ xorpd(xmm0, xmm2);
   __ jmp(B1_4);
-  // --- end main
 
   __ bind(L_2TAG_PACKET_0_0_1);
   __ addl(rcx, 960);
   __ cmpl(rcx, 1104);
   __ jcc(Assembler::aboveEqual, L_2TAG_PACKET_1_0_1);
-  __ movdqu(xmm2, ExternalAddress(pv));
+  __ movdqu(xmm2, ExternalAddress(pv), r11 /*rscratch*/);
   __ pshufd(xmm1, xmm0, 68);
-  __ movdqu(xmm3, ExternalAddress(pv + 16));
+  __ movdqu(xmm3, ExternalAddress(pv + 16), r11 /*rscratch*/);
   __ mulpd(xmm1, xmm1);
-  __ movdqu(xmm4, ExternalAddress(pv + 32));
+  __ movdqu(xmm4, ExternalAddress(pv + 32), r11 /*rscratch*/);
   __ mulpd(xmm2, xmm1);
   __ pshufd(xmm5, xmm1, 68);
   __ addpd(xmm2, xmm3);
@@ -1303,7 +1300,7 @@ address StubGenerator::generate_libmTanh() {
   __ addsd(xmm2, xmm5);
   __ mulsd(xmm2, xmm0);
   __ addsd(xmm0, xmm2);
-  __ jmp(B1_4); // end L_2TAG_PACKET_0_0_1
+  __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_1_0_1);
   __ addl(rcx, 15344);
@@ -1316,12 +1313,12 @@ address StubGenerator::generate_libmTanh() {
   __ pinsrw(xmm2, rax, 3);
   __ mulsd(xmm2, xmm0);
   __ addsd(xmm2, xmm0);
-  __ jmp(B1_4); // end L_2TAG_PACKET_1_0_1
+  __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_3_0_1);
   __ movq(xmm2, xmm0);
   __ mulsd(xmm2, xmm2);
-  __ jmp(B1_4); // end L_2TAG_PACKET_3_0_1
+  __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_2_0_1);
   __ cmpl(rcx, 32752);
@@ -1331,35 +1328,31 @@ address StubGenerator::generate_libmTanh() {
   __ pinsrw(xmm2, rcx, 3);
   __ movq(xmm3, xmm2);
   __ mulsd(xmm2, xmm2);
-  __ addsd(xmm2, xmm3); // end L_2TAG_PACKET_2_0_1
+  __ addsd(xmm2, xmm3);
 
   __ bind(L_2TAG_PACKET_5_0_1);
   __ xorpd(xmm0, xmm0);
   __ orl(rdx, 16368);
   __ pinsrw(xmm0, rdx, 3);
-  __ jmp(B1_4); // end L_2TAG_PACKET_5_0_1
+  __ jmp(B1_4);
 
   __ bind(L_2TAG_PACKET_4_0_1);
   __ movq(xmm2, xmm0);
-  __ movdl(rax, xmm0); // TODO: check movd
+  __ movdl(rax, xmm0);
   __ psrlq(xmm2, 20);
-  __ movdl(rcx, xmm2); // TODO: check movd
-  __ orl(rax, rcx); // TODO: BUG fixed
+  __ movdl(rcx, xmm2);
+  __ orl(rax, rcx);
   __ cmpl(rcx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
   __ addsd(xmm0, xmm0);
-  __ movq(Address(rsp, 0), xmm0); // end L_2TAG_PACKET_4_0_1
+  __ movq(Address(rsp, 0), xmm0);
 
-  // --- exit
   __ bind(B1_4);
-  __ pop(rcx);
-
-
+  //__ pop(rcx);
 #ifdef _WIN64
   __ pop(rdi);
- //__ pop(rsi); //TODO: what to do?
 #endif
-  // __ pop(rsi);
+  __ pop(rsi);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
