@@ -82,6 +82,7 @@
 #include "services/diagnosticCommand.hpp"
 #include "services/finalizerService.hpp"
 #include "services/threadService.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/utf8.hpp"
 #if INCLUDE_CDS
@@ -2035,6 +2036,46 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
   }
   return nullptr;
 }
+
+#if INCLUDE_CDS
+void SystemDictionary::get_all_method_handle_intrinsics(GrowableArray<Method*>* methods) {
+  auto do_method = [&] (InvokeMethodKey& key, Method*& m) {
+    methods->append(m);
+  };
+  _invoke_method_intrinsic_table->iterate_all(do_method);
+}
+
+void SystemDictionary::restore_archived_method_handle_intrinsics() {
+  if (UseSharedSpaces) {
+    EXCEPTION_MARK;
+    restore_archived_method_handle_intrinsics_impl(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      vm_exit_during_initialization(err_msg("Failed to restore archived method handle intrinsics"));
+    }
+  }
+}
+
+void SystemDictionary::restore_archived_method_handle_intrinsics_impl(TRAPS) {
+  Array<Method*>* list = MetaspaceShared::archived_method_handle_intrinsics();
+  for (int i = 0; i < list->length(); i++) {
+    methodHandle m(THREAD, list->at(i));
+    Method::restore_archived_method_handle_intrinsic(m, CHECK);
+    m->constants()->restore_unshareable_info(CHECK);
+    if (!Arguments::is_interpreter_only() || m->intrinsic_id() == vmIntrinsics::_linkToNative) {
+      AdapterHandlerLibrary::create_native_wrapper(m);
+      if (!m->has_compiled_code()) {
+        ResourceMark rm(THREAD);
+        vm_exit_during_initialization(err_msg("Failed to initialize method %s", m->external_name()));
+      }
+    }
+
+    const int iid_as_int = vmIntrinsics::as_int(m->intrinsic_id());
+    InvokeMethodKey key(m->signature(), iid_as_int);
+    bool created = _invoke_method_intrinsic_table->put(key, m());
+    assert(created, "must be");
+  }
+}
+#endif
 
 // Helper for unpacking the return value from linkMethod and linkCallSite.
 static Method* unpack_method_and_appendix(Handle mname,
