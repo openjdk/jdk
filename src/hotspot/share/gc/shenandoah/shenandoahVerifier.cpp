@@ -51,13 +51,6 @@ static bool is_instance_ref_klass(Klass* k) {
   return k->is_instance_klass() && InstanceKlass::cast(k)->reference_type() != REF_NONE;
 }
 
-class ShenandoahIgnoreReferenceDiscoverer : public ReferenceDiscoverer {
-public:
-  virtual bool discover_reference(oop obj, ReferenceType type) {
-    return true;
-  }
-};
-
 class ShenandoahVerifyOopClosure : public BasicOopIterateClosure {
 private:
   const char* _phase;
@@ -68,6 +61,7 @@ private:
   ShenandoahLivenessData* _ld;
   void* _interior_loc;
   oop _loc;
+  ReferenceIterationMode _ref_mode;
 
 public:
   ShenandoahVerifyOopClosure(ShenandoahVerifierStack* stack, MarkBitMap* map, ShenandoahLivenessData* ld,
@@ -82,8 +76,18 @@ public:
     _loc(nullptr) {
     if (options._verify_marked == ShenandoahVerifier::_verify_marked_complete_except_references ||
         options._verify_marked == ShenandoahVerifier::_verify_marked_disable) {
-      set_ref_discoverer_internal(new ShenandoahIgnoreReferenceDiscoverer());
+      // Unknown status for Reference.referent field. Do not touch it, it might be dead.
+      // Normally, barriers would prevent us from seeing the dead referents, but verifier
+      // runs with barriers disabled.
+      _ref_mode = DO_FIELDS_EXCEPT_REFERENT;
+    } else {
+      // Otherwise do all fields.
+      _ref_mode = DO_FIELDS;
     }
+  }
+
+  ReferenceIterationMode reference_iteration_mode() override {
+    return _ref_mode;
   }
 
 private:
@@ -119,8 +123,8 @@ private:
     // that failure report would not try to touch something that was not yet verified to be
     // safe to process.
 
-    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in(obj),
-              "oop must be in heap");
+    check(ShenandoahAsserts::_safe_unknown, obj, _heap->is_in_reserved(obj),
+              "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
 
@@ -177,8 +181,8 @@ private:
     ShenandoahHeapRegion* fwd_reg = nullptr;
 
     if (obj != fwd) {
-      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in(fwd),
-             "Forwardee must be in heap");
+      check(ShenandoahAsserts::_safe_oop, obj, _heap->is_in_reserved(fwd),
+             "Forwardee must be in heap bounds");
       check(ShenandoahAsserts::_safe_oop, obj, !CompressedOops::is_null(fwd),
              "Forwardee is set");
       check(ShenandoahAsserts::_safe_oop, obj, is_object_aligned(fwd),
@@ -194,6 +198,9 @@ private:
              "Forwardee klass pointer must go to metaspace");
 
       fwd_reg = _heap->heap_region_containing(fwd);
+
+      check(ShenandoahAsserts::_safe_oop, obj, fwd_reg->is_active(),
+            "Forwardee should be in active region");
 
       // Verify that forwardee is not in the dead space:
       check(ShenandoahAsserts::_safe_oop, obj, !fwd_reg->is_humongous(),
@@ -324,8 +331,8 @@ public:
     _loc = nullptr;
   }
 
-  virtual void do_oop(oop* p) { do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p) override { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) override { do_oop_work(p); }
 };
 
 class ShenandoahCalculateRegionStatsClosure : public ShenandoahHeapRegionClosure {
