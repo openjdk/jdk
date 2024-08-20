@@ -101,7 +101,7 @@ final class VarHandleSegmentAs$Type$s extends VarHandleSegmentViewBase {
     @ForceInline
     static AbstractMemorySegmentImpl checkSegment(Object obb, Object encl, long base, boolean ro) {
         AbstractMemorySegmentImpl oo = (AbstractMemorySegmentImpl)Objects.requireNonNull(obb);
-        Utils.checkEnclosingLayout(oo, base, (MemoryLayout)encl);
+        Utils.checkEnclosingLayout(oo, base, (MemoryLayout)encl, ro);
         return oo;
     }
 

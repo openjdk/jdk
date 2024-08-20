@@ -242,8 +242,8 @@ public final class Utils {
     }
 
     @ForceInline
-    public static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
-        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), true);
+    public static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing, boolean readOnly) {
+        ((AbstractMemorySegmentImpl)segment).checkAccess(offset, enclosing.byteSize(), readOnly);
         if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(offset, enclosing)) {
             throw new IllegalArgumentException(String.format(
                     "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
