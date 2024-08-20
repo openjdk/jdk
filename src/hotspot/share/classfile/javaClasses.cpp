@@ -690,16 +690,14 @@ char* java_lang_String::as_utf8_string_full(oop java_string, char* buf, size_t b
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, char* buf, size_t buflen) {
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
-  // `length` is used as the incoming number of characters to
-  // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = java_lang_String::length(java_string, value);
+  int     length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = (length == 0) ? nullptr : value->char_at_addr(0);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, length, buf, buflen);
   } else {
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, length, buf, buflen);
   }
 }
 
@@ -728,16 +726,13 @@ char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int 
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   assert(start + len <= java_lang_String::length(java_string), "just checking");
-  // `length` is used as the incoming number of characters to
-  // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = len;
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = value->char_at_addr(start);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, len, buf, buflen);
   } else {
     jbyte* position = value->byte_at_addr(start);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, len, buf, buflen);
   }
 }
 
