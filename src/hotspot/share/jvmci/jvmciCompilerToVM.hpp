@@ -50,6 +50,7 @@ class CompilerToVM {
     static address SharedRuntime_deopt_blob_unpack_with_exception_in_tls;
     static address SharedRuntime_deopt_blob_uncommon_trap;
     static address SharedRuntime_polling_page_return_handler;
+    static address SharedRuntime_throw_delayed_StackOverflowError_entry;
 
     static address nmethod_entry_barrier;
     static int thread_disarmed_guard_value_offset;

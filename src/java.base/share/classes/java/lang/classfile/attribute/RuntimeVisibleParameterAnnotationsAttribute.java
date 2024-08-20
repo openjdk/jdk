@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models the {@code RuntimeVisibleParameterAnnotations} attribute {@jvms 4.7.18}, which
+ * Models the {@code RuntimeVisibleParameterAnnotations} attribute (JVMS {@jvms 4.7.18}), which
  * can appear on methods. Delivered as a {@link java.lang.classfile.MethodElement}
  * when traversing a {@link MethodModel}.
  *

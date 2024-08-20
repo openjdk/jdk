@@ -270,7 +270,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseBASE64Intrinsics, true);
   }
 
-  // ChaCha20
   if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }

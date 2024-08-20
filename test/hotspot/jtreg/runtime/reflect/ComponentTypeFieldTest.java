@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,30 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zUtils.hpp"
-#include "utilities/debug.hpp"
+/*
+ * @test
+ * @bug 8337622
+ * @summary (reflect) java.lang.Class componentType field not found.
+ * @library /test/lib
+ * @modules java.base/java.lang:open
+ * @run main ComponentTypeFieldTest
+ */
 
-#include <malloc.h>
+import java.lang.reflect.Field;
+import static jdk.test.lib.Asserts.*;
 
-uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
-  void* const res = _aligned_malloc(size, alignment);
+public class ComponentTypeFieldTest {
 
-  if (res == nullptr) {
-    fatal("_aligned_malloc failed");
-  }
+    public static void main(String[] args) throws Exception {
+        Field f = Class.class.getDeclaredField("componentType");
+        f.setAccessible(true);
+        Object val = f.get(Runnable.class);
+        assertTrue(val == null);
+        System.out.println("val is " + val);
 
-  memset(res, 0, size);
-
-  return (uintptr_t)res;
+        Object arrayVal = f.get(Integer[].class);
+        System.out.println("val is " + arrayVal);
+        String arrayValString = arrayVal.toString();
+        assertTrue(arrayValString.equals("class java.lang.Integer"));
+    }
 }
