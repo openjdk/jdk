@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleImpl.NF_loop;
 import static java.lang.invoke.MethodHandleImpl.makeIntrinsic;
+import static java.lang.invoke.MethodHandleStatics.NO_SOFT_CACHE;
 
 /** Transforms on LFs.
  *  A lambda-form editor can derive new LFs from its base LF.
@@ -89,12 +90,17 @@ class LambdaFormEditor {
      * Tightly coupled with the TransformKey class, which is used to lookup existing
      * Transforms.
      */
-    private static final class Transform extends SoftReference<LambdaForm> {
+    private static final class Transform {
+        final Object cache;
         final long packedBytes;
         final byte[] fullBytes;
 
         private Transform(long packedBytes, byte[] fullBytes, LambdaForm result) {
-            super(result);
+            if (NO_SOFT_CACHE) {
+                cache = result;
+            } else {
+                cache = new SoftReference<LambdaForm>(result);
+            }
             this.packedBytes = packedBytes;
             this.fullBytes = fullBytes;
         }
@@ -134,6 +140,15 @@ class LambdaFormEditor {
                 buf.append(result);
             }
             return buf.toString();
+        }
+
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public LambdaForm get() {
+            if (cache instanceof LambdaForm) {
+                return (LambdaForm)cache;
+            } else {
+                return ((SoftReference<LambdaForm>)cache).get();
+            }
         }
     }
 

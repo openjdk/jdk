@@ -59,6 +59,7 @@ class MethodHandleStatics {
     static final int PROFILE_LEVEL;
     static final boolean PROFILE_GWT;
     static final int CUSTOMIZE_THRESHOLD;
+    static final boolean NO_SOFT_CACHE; // Don't use SoftReference for some tables so that they can be archived by CDS
     static final boolean VAR_HANDLE_GUARDS;
     static final int MAX_ARITY;
     static final boolean VAR_HANDLE_IDENTITY_ADAPT;
@@ -88,6 +89,8 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.MethodHandle.PROFILE_GWT", "true"));
         CUSTOMIZE_THRESHOLD = Integer.parseInt(
                 props.getProperty("java.lang.invoke.MethodHandle.CUSTOMIZE_THRESHOLD", "127"));
+        NO_SOFT_CACHE = Boolean.parseBoolean(
+                props.getProperty("java.lang.invoke.MethodHandle.NO_SOFT_CACHE", "false"));
         VAR_HANDLE_GUARDS = Boolean.parseBoolean(
                 props.getProperty("java.lang.invoke.VarHandle.VAR_HANDLE_GUARDS", "true"));
         VAR_HANDLE_IDENTITY_ADAPT = Boolean.parseBoolean(
