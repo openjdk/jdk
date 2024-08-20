@@ -2170,7 +2170,6 @@ do {                                                                  \
          (result        == R8_ARG6      || result        == noreg), "registers must match ppc64.ad"); \
 } while(0)
 
-// Return true: we succeeded in generating this code
 void MacroAssembler::lookup_secondary_supers_table(Register r_sub_klass,
                                                    Register r_super_klass,
                                                    Register temp1,
@@ -2292,9 +2291,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // The bitmap is full to bursting.
   // Implicit invariant: BITMAP_FULL implies (length > 0)
-  assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "");
-  cmpdi(CCR0, r_bitmap, -1);
-  beq(CCR0, L_huge);
+  cmpwi(CCR0, r_array_length, (int32_t)Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  bgt(CCR0, L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
