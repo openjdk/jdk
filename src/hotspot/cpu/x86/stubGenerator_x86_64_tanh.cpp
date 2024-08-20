@@ -29,8 +29,50 @@
 #include "stubGenerator_x86_64.hpp"
 
 /******************************************************************************/
-//                     ALGORITHM DESCRIPTION - TANH()
+//                     ALGORITHM DESCRIPTION
 //                     ---------------------
+//
+// tanh(x)=(exp(x)-exp(-x))/(exp(x)+exp(-x))=(1-exp(-2*x))/(1+exp(-2*x))
+//
+// Let |x|=xH+xL (upper 26 bits, lower 27 bits)
+// log2(e) rounded to 26 bits (high part) plus a double precision low part is
+//         L2EH+L2EL (upper 26, lower 53 bits)
+//
+// Let xH*L2EH=k+f+r`, where (k+f)*2^8*2=int(xH*L2EH*2^9),
+//                             f=0.b1 b2 ... b8, k integer
+// 2^{-f} is approximated as Tn[f]+Dn[f]
+// Tn stores the high 53 bits, Dn stores (2^{-f}-Tn[f]) rounded to double precision
+//
+//  r=r`+xL*L2EH+|x|*L2EL, |r|<2^{-9}+2^{-14},
+//                      for |x| in [23/64,3*2^7)
+// e^{-2*|x|}=2^{-k-f}*2^{-r} ~ 2^{-k}*(Tn+Dn)*(1+p)=(T0+D0)*(1+p)
+//
+// For |x| in [2^{-4},2^5):
+//         2^{-r}-1 ~ p=c1*r+c2*r^2+..+c5*r^5
+//      Let R=1/(1+T0+p*T0), truncated to 35 significant bits
+//  R=1/(1+T0+D0+p*(T0+D0))*(1+eps), |eps|<2^{-33}
+//  1+T0+D0+p*(T0+D0)=KH+KL, where
+//       KH=(1+T0+c1*r*T0)_high (leading 17 bits)
+//       KL=T0_low+D0+(c1*r*T0)_low+c1*r*D0+(c2*r^2+..c5*r^5)*T0
+//  eps ~ (R*KH-1)+R*KL
+//  1/(1+T0+D0+p*(T0+D0)) ~ R-R*eps
+//  The result is approximated as (1-T0-D0-(T0+D0)*p)*(R-R*eps)
+//  1-T0-D0-(T0+D0)*p=-((KH-2)+KL)
+//    The result is formed as
+//    (KH-2)*R+(-(KH-2)*R*eps+(KL*R-KL*R*eps)), with the correct sign
+//                                                  set at the end
+//
+// For |x| in [2^{-64},2^{-4}):
+//  A Taylor series expansion is used  (x+p3*x^3+..+p13*x^{13})
+//
+// For |x|<2^{-64}:  x is returned
+//
+// For |x|>=2^32: return +/-1
+//
+// Special cases:
+//  tanh(NaN) = quiet NaN, and raise invalid exception
+//  tanh(INF) = that INF
+//  tanh(+/-0) = +/-0
 //
 /******************************************************************************/
 
@@ -281,10 +323,7 @@ address StubGenerator::generate_libmTanh() {
 
   __ enter(); // required for proper stackwalking of RuntimeStub frame
 
-  __ push(rsi);
-#ifdef _WIN64
-  __ push(rdi);
-#endif
+  //__ push(rsi);
 
   __ bind(B1_2);
   __ movsd(xmm3, ExternalAddress(HALFMASK), r11 /*rscratch*/);
@@ -454,14 +493,10 @@ address StubGenerator::generate_libmTanh() {
   __ cmpl(rcx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
   __ addsd(xmm0, xmm0);
-  __ movq(Address(rsp, 0), xmm0);
+  //__ movq(Address(rsp, 0), xmm0);
 
   __ bind(B1_4);
   //__ pop(rcx);
-#ifdef _WIN64
-  __ pop(rdi);
-#endif
-  __ pop(rsi);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
   __ ret(0);
