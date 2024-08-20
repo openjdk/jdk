@@ -5228,10 +5228,10 @@ class StubGenerator: public StubCodeGenerator {
     Register dst    = c_rarg3;
     Register doff   = c_rarg4;
     Register isURL  = c_rarg5;
+    Register isMIME = c_rarg6;
 
-    // isMIME = c_rarg6, which is not used in this code.
-    Register codec     = c_rarg6;
-    Register dstBackup = c_rarg7;
+    Register codec     = c_rarg7;
+    Register dstBackup = x31;
     Register length    = x28;     // t3, total length of src data in bytes
 
     Label ProcessData, Exit;
@@ -5254,18 +5254,19 @@ class StubGenerator: public StubCodeGenerator {
 
     // scalar version
     {
+      Label ScalarLoop;
+
       Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
       Register combined32Bits = x29; // t5
 
       if (UseRVV) {
-        __ mv(t0, MAX2((int)MaxVectorSize * 4, 76));
+        __ bnez(isMIME, ScalarLoop);
+        __ mv(t0, MaxVectorSize * 4);
         __ bge(length, t0, ProcessVector);
         __ BIND(ProcessScalar);
+        __ beqz(length, Exit);
       }
 
-      __ beqz(length, Exit);
-
-      Label ScalarLoop;
       __ BIND(ScalarLoop);
       {
         // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>

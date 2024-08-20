@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class Base64Decode {
             "112", "512", "1000", "20000", "50000"})
     private int maxNumBytes;
 
-    @Param({"4"})
+    @Param({"4", "32", "76"})
     private int lineSize;
 
     private byte[] lineSeparator = {'\r', '\n'};
