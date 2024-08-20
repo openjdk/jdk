@@ -69,11 +69,6 @@ public abstract class SHA3 extends DigestBase {
 
     private final byte suffix;
     private long[] state = new long[DM*DM];
-
-    // The following array is allocated to size WIDTH bytes, but we only
-    // ever use the first blockSize bytes it (for bytes <-> long conversions)
-//    private byte[] byteState = new byte[WIDTH];
-
     private int squeezeOffset = -1;
 
     static final VarHandle asLittleEndian
@@ -127,7 +122,7 @@ public abstract class SHA3 extends DigestBase {
     void implDigest(byte[] out, int ofs) {
         byte[] byteState = new byte[8];
         if (engineGetDigestLength() == 0) {
-            // this is an XOF, so the digest() call is illegal
+            // This is an XOF, so the digest() call is illegal.
             throw new ProviderException("Calling digest() is not allowed in an XOF");
         }
 
@@ -162,8 +157,8 @@ public abstract class SHA3 extends DigestBase {
     void implSqueeze(byte[]output, int offset, int numBytes) {
         byte[] byteState = new byte[8];
         if (engineGetDigestLength() != 0) {
-            // this is not an XOF, so the squeeze() call is illegal
-            throw new ProviderException("Squeezing is only allowed in XOF mode");
+            // This is not an XOF, so the squeeze() call is illegal.
+            throw new ProviderException("Squeezing is only allowed in XOF mode.");
         }
 
         if (squeezeOffset == -1) {
@@ -200,7 +195,7 @@ public abstract class SHA3 extends DigestBase {
             numBytes -= availableBytes;
             availableBytes = blockSize;
         }
-        // Now numBytes <= availableBytes
+        // now numBytes <= availableBytes
         int longOffset = squeezeOffset / 8;
 
         if (longOffset * 8 < squeezeOffset) {
@@ -394,7 +389,6 @@ public abstract class SHA3 extends DigestBase {
     public Object clone() throws CloneNotSupportedException {
         SHA3 copy = (SHA3) super.clone();
         copy.state = copy.state.clone();
-//        copy.byteState = copy.byteState.clone();
         return copy;
     }
 
@@ -413,7 +407,7 @@ public abstract class SHA3 extends DigestBase {
     public static final class SHA256 extends SHA3 {
         public SHA256() {
             super("SHA3-256", 32, (byte)0x06, 64);
-        } 
+        }
     }
 
     /**
@@ -441,7 +435,7 @@ public abstract class SHA3 extends DigestBase {
     public static final class SHAKE128 extends SHA3 {
         // d is the required number of output bytes.
         // If this constructor is used with d > 0, the squeezing methods
-        // will throw a ProviderException
+        // will throw a ProviderException.
         public SHAKE128(int d) {
             super("SHAKE128", d, (byte) 0x1F, 32);
         }
