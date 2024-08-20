@@ -109,9 +109,9 @@ public final class KDF {
     // Additional KDF configuration parameters
     private final KDFParameters kdfParameters;
 
-    // next service to try in provider selection
-    // null once provider is selected
-    private Service firstService;
+    // the first KDFSpi and provider supporting the specified configuration parameters
+    private KDFSpi firstSpi;
+    private Provider firstProv;
 
     // remaining services to try in provider selection
     // null once provider is selected
@@ -138,7 +138,6 @@ public final class KDF {
         this.provider = provider;
         this.algorithm = algorithm;
         this.kdfParameters = kdfParameters;
-        firstService = null;
         serviceIterator = null;
         lock = new Object();
     }
@@ -147,14 +146,16 @@ public final class KDF {
      * Instantiates a {@code KDF} object. This constructor is called when a
      * provider is not supplied to {@code getInstance}.
      *
-     * @param s the service
+     * @param firstSpi the first matching Spi
+     * @param firstProv the first matching provider
      * @param t the service iterator
      * @param algorithm the algorithm
      * @param kdfParameters the algorithm parameters
      */
-    private KDF(Service s, Iterator<Service> t, String algorithm,
+    private KDF(KDFSpi firstSpi, Provider firstProv, Iterator<Service> t, String algorithm,
                 KDFParameters kdfParameters) {
-        firstService = s;
+        this.firstSpi = firstSpi;
+        this.firstProv = firstProv;
         serviceIterator = t;
         this.algorithm = algorithm;
         this.kdfParameters = kdfParameters;
@@ -176,7 +177,7 @@ public final class KDF {
      * @return the name of the provider
      */
     public String getProviderName() {
-        chooseFirstProvider();
+        useFirstSpi();
         return provider.getName();
     }
 
@@ -197,7 +198,7 @@ public final class KDF {
      * retrieved or if the provider does not support parameter retrieval
      */
     public KDFParameters getParameters() {
-        chooseFirstProvider();
+        useFirstSpi();
         return spi.engineGetParameters();
     }
 
@@ -336,7 +337,16 @@ public final class KDF {
             if (!JceSecurity.canUseProvider(s.getProvider())) {
                 continue;
             }
-            return new KDF(s, t, algorithm, kdfParameters);
+            try {
+                Object obj = s.newInstance(kdfParameters);
+                if (!(obj instanceof KDFSpi spiObj)) {
+                    continue;
+                }
+                return new KDF(spiObj, s.getProvider(), t, algorithm, kdfParameters);
+            } catch (NoSuchAlgorithmException e) {
+                // ignore
+                continue;
+            }
         }
         throw new NoSuchAlgorithmException(
             "Algorithm " + algorithm + " not available");
@@ -540,50 +550,20 @@ public final class KDF {
     }
 
     /**
-     * Selects the first provider in the list that supports the
-     * {@code KDFParameters}.
+     * Use the firstSpi as the chosen KDFSpi and set the fields accordingly
      */
-    private void chooseFirstProvider() {
-        if ((spi != null) || (serviceIterator == null)) {
-            return;
-        }
+    private void useFirstSpi() {
+        if ((spi != null) || (serviceIterator == null)) return;
+
         synchronized (lock) {
-            if (spi != null) {
-                return;
+            if ((spi == null) && (serviceIterator != null)) {
+                spi = firstSpi;
+                provider = firstProv;
+                // not needed any more
+                firstSpi = null;
+                firstProv = null;
+                serviceIterator = null;
             }
-            Exception lastException = null;
-            while ((firstService != null) || serviceIterator.hasNext()) {
-                Service s;
-                if (firstService != null) {
-                    s = firstService;
-                    firstService = null;
-                } else {
-                    s = serviceIterator.next();
-                }
-                if (!JceSecurity.canUseProvider(s.getProvider())) {
-                    continue;
-                }
-                try {
-                    Object obj = s.newInstance(kdfParameters);
-                    if (!(obj instanceof KDFSpi)) {
-                        continue;
-                    }
-                    spi = (KDFSpi) obj;
-                    provider = s.getProvider();
-                    // not needed any more
-                    firstService = null;
-                    serviceIterator = null;
-                    return;
-                } catch (NoSuchAlgorithmException e) {
-                    lastException = e;
-                }
-            }
-            ProviderException e = new ProviderException(
-                "Could not construct KDFSpi instance");
-            if (lastException != null) {
-                e.initCause(lastException);
-            }
-            throw e;
         }
     }
 
@@ -608,28 +588,42 @@ public final class KDF {
             }
 
             Exception lastException = null;
-            while ((firstService != null) || serviceIterator.hasNext()) {
-                Service s;
-                if (firstService != null) {
-                    s = firstService;
-                    firstService = null;
+            while ((firstSpi != null) || serviceIterator.hasNext()) {
+                KDFSpi currSpi;
+                Provider currProv;
+                if (firstSpi != null) {
+                    currSpi = firstSpi;
+                    currProv = firstProv;
+                    firstSpi = null;
+                    firstProv = null;
                 } else {
-                    s = serviceIterator.next();
+                    Service s = serviceIterator.next();
+                    currProv = s.getProvider();
+                    if (!JceSecurity.canUseProvider(currProv)) {
+                        continue;
+                    }
+                    try {
+                        Object obj = s.newInstance(kdfParameters);
+                        if (!(obj instanceof KDFSpi)) {
+                            continue;
+                        }
+                        currSpi = (KDFSpi) obj;
+                    } catch (Exception e) {
+                        // continue to the next provider
+                        continue;
+                    }
                 }
-                if (!JceSecurity.canUseProvider(s.getProvider())) {
-                    continue;
-                }
+
                 try {
-                    KDFSpi spi = (KDFSpi) s.newInstance(kdfParameters);
-                    Object o =
-                        (isDeriveData) ? spi.engineDeriveData(
-                            derivationParameterSpec) : spi.engineDeriveKey(
-                            algorithm, derivationParameterSpec);
-                    this.provider = s.getProvider();
-                    this.spi = spi;
-                    firstService = null;
+                    Object result = (isDeriveData) ? currSpi.engineDeriveData(
+                        derivationParameterSpec) : currSpi.engineDeriveKey(
+                        algorithm, derivationParameterSpec);
+                    // found a working KDFSpi
+                    this.provider = currProv;
+                    this.spi = currSpi;
+                    // not looking further
                     serviceIterator = null;
-                    return o;
+                    return result;
                 } catch (Exception e) {
                     if (lastException == null) {
                         lastException = e;
