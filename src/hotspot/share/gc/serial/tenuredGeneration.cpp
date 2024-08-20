@@ -449,6 +449,6 @@ void TenuredGeneration::print_on(outputStream* st)  const {
                p2i(_virtual_space.high()),
                p2i(_virtual_space.high_boundary()));
 
-  st->print("  the");
+  st->print("   the");
   _the_space->print_on(st);
 }
