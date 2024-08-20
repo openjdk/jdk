@@ -35,7 +35,6 @@ import java.util.Set;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
-import javax.swing.UIManager;
 
 /**
  * A {@code TextArea} object is a multi-line region
