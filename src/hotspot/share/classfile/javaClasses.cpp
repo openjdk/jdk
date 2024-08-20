@@ -709,7 +709,7 @@ char* java_lang_String::as_utf8_string(oop java_string, char* buf, size_t buflen
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   // `length` is used as the incoming number of characters to
   // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = len;
+  size_t  length = static_cast<int>(len);
   typeArrayOop value  = java_lang_String::value(java_string);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   assert(start + len <= java_lang_String::length(java_string), "just checking");
