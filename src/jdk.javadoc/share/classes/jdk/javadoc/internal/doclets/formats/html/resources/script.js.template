@@ -461,7 +461,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         })
     }
     // Resize handler
-    function handleResize(e) {
+    new ResizeObserver((entries) => {
         if (expanded) {
             if (windowWidth !== window.innerWidth) {
                 collapse();
@@ -475,7 +475,5 @@ document.addEventListener("DOMContentLoaded", function(e) {
             handleScroll();
         }
         setTopMargin();
-    }
-    window.addEventListener("orientationchange", handleResize);
-    window.addEventListener("resize", handleResize);
+    }).observe(document.body);
 });
