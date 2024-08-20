@@ -28,8 +28,9 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JavaCompilation.gmk
+include CopyFiles.gmk
 include Execute.gmk
+include JavaCompilation.gmk
 
 ifeq ($(call isTargetOs, macosx), true)
   ##############################################################################
@@ -74,7 +75,15 @@ ifeq ($(call isTargetOs, macosx), true)
           $(LINKER_FLAGS_FILE) $(XCODE_PROJ_DEBUG_OPTION), \
   ))
 
-  TARGETS += $(build_xcode_project_TARGET)
+  TARGETS += $(build_xcode_project)
+
+  $(eval $(call SetupCopyFiles, copy_xcode_project, \
+      DEST := $(IDE_OUTPUTDIR), \
+      FILES := $(PROJECT_MAKER_DIR)/data/script_before.sh $(PROJECT_MAKER_DIR)/data/script_after.sh , \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  TARGETS += $(copy_xcode_project)
 
   $(eval $(call SetupExecute, open_xcode_project, \
       INFO := Opening Xcode project file, \
@@ -83,14 +92,14 @@ ifeq ($(call isTargetOs, macosx), true)
       COMMAND := open $(IDE_OUTPUTDIR)/$(PROJECT_FILE_NAME), \
   ))
 
-  TARGETS += $(open_xcode_project_TARGET)
+  TARGETS += $(open_xcode_project)
 
   # Always call open without considering dependencies being up to date
   FORCE:
 
-  build: $(build_xcode_project_TARGET)
+  build: $(build_xcode_project) $(copy_xcode_project)
 
-  open: $(open_xcode_project_TARGET)
+  open: $(open_xcode_project)
 
   all: $(TARGETS)
 else

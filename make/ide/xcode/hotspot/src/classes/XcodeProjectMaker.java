@@ -55,8 +55,6 @@ public final class XcodeProjectMaker {
     private static final String COMMAND_TOKEN = "\"command\": ";
     private static final String QUOTE_START_TOKEN = "'\\\"";
     private static final String QUOTE_END_TOKEN = "\\\"'";
-    private static final String SCRIPT_BEFORE = "script_before.sh";
-    private static final String SCRIPT_AFTER = "script_after.sh";
     private static final String VERSION = "2.0.0";
     private static final String EXCLUDE_PARSE_TOKEN_1 = "gtest";
     private static final String TEMPLATE_FRAMEWORK_SEARCH_PATHS = "TEMPLATE_FRAMEWORK_SEARCH_PATHS";
@@ -144,7 +142,6 @@ public final class XcodeProjectMaker {
         maker.makeXcodeProj(outputDir, workspaceRootPathFromOutputDir);
 
         String pathToBuild = getFileParent(outputDir);
-        maker.copyFiles(outputDir);
         maker.makeAliases(outputDir, pathToBuild);
 
         System.out.println();
@@ -678,23 +675,6 @@ public final class XcodeProjectMaker {
         writeFile(jvmXcschemeFile, makeTemplateXcscheme(outputDir, jvmXcschemeString));
         writeFile(j2DemoXcschemeFile, makeTemplateXcscheme(outputDir, j2DemoXcschemeString));
         writeFile(jBreakpointsV2XcbkptlistFile, jBreakpointsV2XcbkptlistString);
-    }
-
-    public void copyFiles(String outputDir) {
-        File scriptBeforeFile = new File(outputDir + "/" + SCRIPT_BEFORE);
-        File scriptAfterFile = new File(outputDir + "/" + SCRIPT_AFTER);
-        try {
-            if (!scriptBeforeFile.exists()) {
-                Files.copy(Paths.get(projectMakerDataPath + "/" + SCRIPT_BEFORE), scriptBeforeFile.toPath());
-            }
-            if (!scriptAfterFile.exists()) {
-                Files.copy(Paths.get(projectMakerDataPath + "/" + SCRIPT_AFTER), scriptAfterFile.toPath());
-            }
-        } catch (IOException ex) {
-            System.err.println("Error: copying script files");
-            System.err.println(ex);
-            System.exit(EXIT7);
-        }
     }
 
     public void makeAliases(String outputDir, String pathToBuild) {
