@@ -313,13 +313,14 @@ public final class StackCounter {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
                         var mtd = Util.methodTypeSymbol(nameAndType);
-                        addStackSlot(Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd));
+                        var delta = Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd);
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-                            addStackSlot(-1);
+                            delta--;
                         }
+                        addStackSlot(delta);
                     }
                     case MULTIANEWARRAY ->
-                        addStackSlot (1 - bcs.getU1(bcs.bci + 3));
+                        addStackSlot(1 - bcs.getU1(bcs.bci + 3));
                     case JSR -> {
                         addStackSlot(+1);
                         jump(bcs.dest()); //here we lost track of the exact stack size after return from subroutine
