@@ -1,0 +1,5 @@
+T8337976.java:8:5: compiler.err.statement.not.expected
+T8337976.java:9:5: compiler.err.statement.not.expected
+T8337976.java:8:27: compiler.err.cant.resolve.location: kindname.class, undefined, , , (compiler.misc.location: kindname.class, T8337976, null)
+T8337976.java:9:17: compiler.err.cant.resolve.location: kindname.class, undefined, , , (compiler.misc.location: kindname.class, T8337976, null)
+4 errors
