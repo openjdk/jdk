@@ -400,7 +400,7 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
-  void rendezvous_threads();
+  void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
   void notify_gc_progress();
@@ -493,6 +493,8 @@ private:
 public:
   bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
 
+  // Check the pointer is in active part of Java heap.
+  // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
 
   bool requires_barriers(stackChunkOop obj) const override;
@@ -538,6 +540,12 @@ public:
 
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
+
+// ---------- CDS archive support
+
+  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size) override;
+  void complete_loaded_archive_space(MemRegion archive_space) override;
 
 // ---------- Allocation support
 //

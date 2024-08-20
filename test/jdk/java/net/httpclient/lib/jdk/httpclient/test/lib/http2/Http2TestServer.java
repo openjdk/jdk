@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SNIMatcher;
@@ -84,6 +85,8 @@ public final class Http2TestServer implements AutoCloseable {
     private final SNIMatcher sniMatcher;
     volatile boolean altSvcAsRespHeader;
     private final ReentrantLock serverLock = new ReentrantLock();
+    // request approver which takes the server connection key as the input
+    private volatile Predicate<String> newRequestApprover;
 
     private static final AtomicLong threadCount = new AtomicLong();
     private static final ThreadFactory defaultThreadFac =
@@ -471,6 +474,14 @@ public final class Http2TestServer implements AutoCloseable {
         } finally {
             serverLock.unlock();
         }
+    }
+
+    public void setRequestApprover(final Predicate<String> approver) {
+        this.newRequestApprover = approver;
+    }
+
+    Predicate<String> getRequestApprover() {
+        return this.newRequestApprover;
     }
 
     private void removeConnection(InetSocketAddress addr, Http2TestServerConnection c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.net.http.HttpHeaders;
 import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLSession;
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestExchange;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.quic.VariableLengthEncoder;
 
@@ -199,16 +198,6 @@ public interface Http2TestExchange {
     }
 
     /**
-     * {@return a string that identifies the underlying connection for this exchange}
-     * @apiNote
-     * This connection key can be useful to figure out whether two exchanges
-     * were performed on the same underlying connection.
-     */
-    default String getConnectionKey() {
-        return "{local=%s, remote=%s}".formatted(getLocalAddress(), getRemoteAddress());
-    }
-
-    /**
      * Send a PING on this exchange connection, and completes the returned CF
      * with the number of milliseconds it took to get a valid response.
      * It may also complete exceptionally
@@ -226,4 +215,10 @@ public interface Http2TestExchange {
     default void resetStream(long code) throws IOException {
         throw new UnsupportedOperationException("resetStream with " + getExchangeVersion());
     }
+
+    /**
+     * {@return the identification of the connection on which this exchange is being
+     * processed}
+     */
+    String getConnectionKey();
 }

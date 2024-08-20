@@ -39,7 +39,6 @@ import javax.net.ssl.SSLContext;
 
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
-import jdk.httpclient.test.lib.http3.Http3ServerConnection;
 import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
@@ -132,13 +131,13 @@ public class H3GoAwayTest {
 
     private static final class RequestApprover {
         private static final int MAX_REQS_PER_CONN = 6;
-        private final Map<Http3ServerConnection, AtomicInteger> numApproved =
+        private final Map<String, AtomicInteger> numApproved =
                 new ConcurrentHashMap<>();
-        private final Map<Http3ServerConnection, AtomicInteger> numDisapproved =
+        private final Map<String, AtomicInteger> numDisapproved =
                 new ConcurrentHashMap<>();
 
-        public boolean allowNewRequest(final Http3ServerConnection serverConn) {
-            final AtomicInteger approved = numApproved.computeIfAbsent(serverConn,
+        public boolean allowNewRequest(final String connKey) {
+            final AtomicInteger approved = numApproved.computeIfAbsent(connKey,
                     (k) -> new AtomicInteger());
             int curr = approved.get();
             while (curr < MAX_REQS_PER_CONN) {
@@ -147,19 +146,12 @@ public class H3GoAwayTest {
                 }
                 curr = approved.get();
             }
-            final AtomicInteger disapproved = numDisapproved.computeIfAbsent(serverConn,
+            final AtomicInteger disapproved = numDisapproved.computeIfAbsent(connKey,
                     (k) -> new AtomicInteger());
             final int numUnprocessed = disapproved.incrementAndGet();
             System.out.println(approved.get() + " processed, "
                     + numUnprocessed + " unprocessed requests so far," +
-                    " sending GOAWAY on connection " + serverConn);
-            try {
-                serverConn.sendGoAway();
-            } catch (IOException e) {
-                System.err.println("Failed to send GOAWAY on server connection: "
-                        + serverConn + ", due to: " + e);
-                e.printStackTrace();
-            }
+                    " sending GOAWAY on connection " + connKey);
             return false;
         }
     }

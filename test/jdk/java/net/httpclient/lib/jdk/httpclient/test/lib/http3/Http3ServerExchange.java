@@ -314,11 +314,7 @@ public final class Http3ServerExchange implements Http2TestExchange {
 
     @Override
     public String getConnectionKey() {
-        // assuming the localConnectionId never changes;
-        // this will return QuicServerConnectionId(NNN), which should
-        // be enough to detect whether two exchanges are made on the
-        // same connection
-        return serverConn.quicConnection().logTag();
+        return serverConn.connectionKey();
     }
 
     @Override

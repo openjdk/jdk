@@ -3403,7 +3403,7 @@ JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name, jboolean throwExceptio
                                   vmSymbols::java_lang_UnsatisfiedLinkError(),
                                   msg, Exceptions::unsafe_to_utf8);
 
-      THROW_HANDLE_0(h_exception);
+      THROW_HANDLE_NULL(h_exception);
     } else {
       log_info(library)("Failed to load library %s", name);
       return load_result;

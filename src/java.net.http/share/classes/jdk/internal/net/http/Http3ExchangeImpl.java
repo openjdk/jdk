@@ -140,9 +140,6 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     private String dbgTag = null;
     long receivedQuicBytes;
     long sentQuicBytes;
-    // this will be set to true only when the peer explicitly states (through a GOAWAY frame)
-    // that the corresponding stream (id) wasn't processed
-    private volatile boolean unprocessedByPeer;
 
     Http3ExchangeImpl(final Http3Connection connection, final Exchange<T> exchange,
                       final QuicBidiStream stream) {
@@ -923,16 +920,11 @@ public final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     void closeAsUnprocessed() {
         // We arrange for the request to be retried on a new connection as allowed
         // by RFC-9114, section 5.2
-        this.unprocessedByPeer = true;
+        markUnprocessedByPeer();
         this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
         // close the exchange and complete the response CF exceptionally
         close();
         completeResponseExceptionally(this.errorRef.get());
-    }
-
-    @Override
-    boolean isUnprocessedByPeer() {
-        return this.unprocessedByPeer;
     }
 
     // This method doesn't send any frame

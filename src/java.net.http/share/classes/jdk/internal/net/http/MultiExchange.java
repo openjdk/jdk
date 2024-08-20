@@ -95,7 +95,7 @@ class MultiExchange<T> implements Cancelable {
     Exchange<T> exchange; // the current exchange
     Exchange<T> previous;
     volatile Throwable retryCause;
-    volatile boolean expiredOnce;
+    volatile boolean retriedOnce;
     volatile HttpResponse<T> response;
 
     // Maximum number of times a request will be retried/redirected
@@ -499,7 +499,7 @@ class MultiExchange<T> implements Cancelable {
                             return exch.ignoreBody().handle((r,t) -> {
                                 previousreq = currentreq;
                                 currentreq = newrequest;
-                                expiredOnce = false;
+                                retriedOnce = false;
                                 setExchange(new Exchange<>(currentreq, this, acc));
                                 return responseAsyncImpl();
                             }).thenCompose(Function.identity());
@@ -627,12 +627,12 @@ class MultiExchange<T> implements Cancelable {
             var retryStreamLimitReached = (t instanceof StreamLimitException)
                     && streamLimitRetries.get() >= max_stream_limit_attempts;
             retryCause = cause;
-            if (!expiredOnce && !retryStreamLimitReached) {
+            if (!retriedOnce && !retryStreamLimitReached) {
                 if (debug.on()) {
                     debug.log(t.getClass().getSimpleName()
                             + " (async): retrying " + currentreq + " " + id + " due to: ", t);
                 }
-                expiredOnce = !(t instanceof StreamLimitException);
+                retriedOnce = !(t instanceof StreamLimitException);
                 // The connection was abruptly closed.
                 // We return null to retry the same request a second time.
                 // The request filters have already been applied to the

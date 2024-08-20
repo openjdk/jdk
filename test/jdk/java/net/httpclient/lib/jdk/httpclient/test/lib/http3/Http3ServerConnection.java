@@ -252,6 +252,14 @@ public class Http3ServerConnection {
         return this.server;
     }
 
+    String connectionKey() {
+        // assuming the localConnectionId never changes;
+        // this will return QuicServerConnectionId(NNN), which should
+        // be enough to detect whether two exchanges are made on the
+        // same connection
+        return quicConnection.logTag();
+    }
+
     // The local control stream write loop
     private void lcsWriterLoop() {
         var controlStreams = this.controlStreams;
