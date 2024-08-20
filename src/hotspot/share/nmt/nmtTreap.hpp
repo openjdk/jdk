@@ -317,7 +317,7 @@ public:
         head = head->left();
       }
       head = to_visit.pop();
-      if(!f(head))
+      if (!f(head))
         return;
       head = head->right();
     }
@@ -345,7 +345,7 @@ public:
       const int cmp_from = COMPARATOR::cmp(head->key(), from);
       const int cmp_to = COMPARATOR::cmp(head->key(), to);
       if (cmp_from >= 0 && cmp_to < 0) {
-        if(!f(head))
+        if (!f(head))
           return;
       }
       if (cmp_to < 0) {
@@ -353,7 +353,6 @@ public:
       } else {
         head = nullptr;
       }
-
     }
   }
 };

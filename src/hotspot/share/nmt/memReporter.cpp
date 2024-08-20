@@ -479,7 +479,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
         out->cr();
       } else {
         out->print_cr(" from");
-        INDENT_BY(4, stack->print_on(out);)
+        INDENT_BY(4, _stackprinter.print_stack(stack);)
       }
     )
   };
