@@ -5339,7 +5339,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    auto unreachable_mark_name = [this](BasicType eltype) -> const char * {
+    auto unreachable_mark_name = [this]() -> const char * {
       __ should_not_reach_here();
       static const char *mark_name = "_large_arrays_hashcode_incorrect_type";
       return mark_name;
@@ -5350,7 +5350,7 @@ class StubGenerator: public StubCodeGenerator {
                       : eltype == T_CHAR  ? "_large_arrays_hashcode_char"
                       : eltype == T_SHORT ? "_large_arrays_hashcode_short"
                       : eltype == T_INT   ? "_large_arrays_hashcode_int"
-                                          : unreachable_mark_name(eltype));
+                                          : unreachable_mark_name());
 
     address entry = __ pc();
     __ enter();
