@@ -39,11 +39,11 @@ import java.awt.event.InputEvent;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollBar;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 public class DisableFrameFromScrollBar {
 
@@ -114,7 +114,7 @@ public class DisableFrameFromScrollBar {
                 });
                 do {
                     Thread.sleep(200);
-                } while(isAdjusting && !doCheck);
+                } while (isAdjusting && !doCheck);
                 if (bar.getValue() == (bar.getMaximum() - bar.getVisibleAmount())) {
                     throw new RuntimeException("ScrollBar didn't disable timer");
                 }

@@ -529,7 +529,7 @@ public class AquaScrollBarUI extends ScrollBarUI {
         public void actionPerformed(final ActionEvent e) {
             Component parent = fScrollBar.getParent();
             do {
-                if (parent instanceof javax.swing.JFrame par) {
+                if (parent instanceof JFrame par) {
                     if (!par.isEnabled()) {
                         ((Timer)e.getSource()).stop();
                         fScrollBar.setValueIsAdjusting(false);
