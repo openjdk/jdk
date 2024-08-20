@@ -36,10 +36,11 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/dtrace.hpp"
 
+volatile int ThreadHeapSamplers::_jvmti_sampling_interval = 512 * 1024; // 512KiB default
+volatile int ThreadHeapSamplers::_jfr_sampling_interval = -1; // disabled
+
 // Cheap random number generator.
 uint64_t ThreadHeapSampler::_rnd;
-// Default is 512kb.
-volatile int ThreadHeapSampler::_sampling_interval = 512 * 1024;
 
 // Statics for the fast log
 static const int FastLogNumBits = 10;
@@ -397,7 +398,7 @@ void ThreadHeapSampler::pick_next_geometric_sample() {
   // negative answer.
   double log_val = (fast_log2(q) - 26);
   double result =
-      (0.0 < log_val ? 0.0 : log_val) * (-log(2.0) * (get_sampling_interval())) + 1;
+      (0.0 < log_val ? 0.0 : log_val) * (-log(2.0) * (get_interval())) + 1;
   assert(result > 0 && result < static_cast<double>(SIZE_MAX), "Result is not in an acceptable range.");
   size_t interval = static_cast<size_t>(result);
   _bytes_until_sample = interval;
@@ -411,35 +412,68 @@ void ThreadHeapSampler::pick_next_sample(size_t overflowed_bytes) {
 #endif
   // Explicitly test if the sampling interval is 0, return 0 to sample every
   // allocation.
-  if (get_sampling_interval() == 0) {
+  int interval = get_interval();
+  if (interval == 0) {
     _bytes_until_sample = 0;
+    return;
+  } else if (interval < 0) {
+    _bytes_until_sample = static_cast<size_t>(-1);
     return;
   }
 
   pick_next_geometric_sample();
 }
 
-void ThreadHeapSampler::check_for_sampling(oop obj, size_t allocation_size, size_t bytes_since_allocation) {
-  size_t total_allocated_bytes = bytes_since_allocation + allocation_size;
+bool ThreadHeapSampler::check_for_sampling(size_t* bytes_since_allocation, size_t allocation_size, bool in_tlab) {
+  if (_bytes_until_sample == static_cast<size_t>(-1)) {
+    return false;
+  }
+
+  *bytes_since_allocation = in_tlab ? _bytes_since_last_sample_point : 0;
+  size_t total_allocated_bytes = *bytes_since_allocation + allocation_size;
 
   // If not yet time for a sample, skip it.
   if (total_allocated_bytes < _bytes_until_sample) {
     _bytes_until_sample -= total_allocated_bytes;
-    return;
+    return false;
   }
-
-  HOTSPOT_GC_ALLOCOBJECT_SAMPLE(obj->klass()->name()->as_C_string(), allocation_size, bytes_since_allocation);
-
-  JvmtiExport::sampled_object_alloc_event_collector(obj);
 
   size_t overflow_bytes = total_allocated_bytes - _bytes_until_sample;
   pick_next_sample(overflow_bytes);
+  return true;
 }
 
 int ThreadHeapSampler::get_sampling_interval() {
-  return Atomic::load_acquire(&_sampling_interval);
+  return ThreadHeapSamplers::get_jvmti_sampling_interval();
 }
 
 void ThreadHeapSampler::set_sampling_interval(int sampling_interval) {
-  Atomic::release_store(&_sampling_interval, sampling_interval);
+  ThreadHeapSamplers::set_jvmti_sampling_interval(sampling_interval);
+}
+
+void ThreadHeapSampler::update_bytes(size_t bytes, bool reset) {
+  if (reset) {
+    _bytes_since_last_sample_point = 0;
+  }
+  _bytes_since_last_sample_point += bytes;
+}
+
+void ThreadHeapSamplers::set_jvmti_sampling_interval(int interval) {
+  Atomic::release_store(&_jvmti_sampling_interval, interval);
+}
+
+int ThreadHeapSamplers::get_jvmti_sampling_interval() {
+  return Atomic::load_acquire(&_jvmti_sampling_interval);
+}
+
+void ThreadHeapSamplers::set_jfr_sampling_interval(int interval) {
+  Atomic::release_store(&_jfr_sampling_interval, interval);
+}
+
+int ThreadHeapSamplers::get_jfr_sampling_interval() {
+  return Atomic::load_acquire(&_jfr_sampling_interval);
+}
+
+int ThreadHeapSampler::get_interval() {
+  return Atomic::load_acquire(_sampling_interval_ref);
 }

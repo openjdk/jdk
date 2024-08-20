@@ -27,6 +27,7 @@
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/utilities/jfrSpinlockHelper.hpp"
 #include "logging/log.hpp"
+#include "runtime/threadHeapSampler.hpp"
 
 constexpr static const JfrSamplerParams _disabled_params = {
                                                              0, // sample points per window
@@ -72,6 +73,9 @@ void JfrEventThrottler::configure(JfrEventId event_id, int64_t sample_size, int6
   }
   assert(_throttler != nullptr, "JfrEventThrottler has not been properly initialized");
   _throttler->configure(sample_size, period_ms);
+
+  // TODO: Hack to get the allocation sampler going
+  ThreadHeapSamplers::set_jfr_sampling_interval(512 * 1024);
 }
 
 /*

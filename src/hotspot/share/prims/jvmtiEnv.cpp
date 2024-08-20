@@ -3760,7 +3760,7 @@ JvmtiEnv::SetHeapSamplingInterval(jint sampling_interval) {
   if (sampling_interval < 0) {
     return JVMTI_ERROR_ILLEGAL_ARGUMENT;
   }
-  ThreadHeapSampler::set_sampling_interval(sampling_interval);
+  ThreadHeapSamplers::set_jvmti_sampling_interval(sampling_interval);
   return JVMTI_ERROR_NONE;
 } /* end SetHeapSamplingInterval */
 

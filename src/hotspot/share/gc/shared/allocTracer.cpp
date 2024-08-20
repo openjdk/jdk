@@ -32,7 +32,6 @@
 #endif
 
 void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, JavaThread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, true, thread);)
   EventObjectAllocationOutsideTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
@@ -42,7 +41,6 @@ void AllocTracer::send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size
 }
 
 void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, JavaThread* thread) {
-  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, false, thread);)
   EventObjectAllocationInNewTLAB event;
   if (event.should_commit()) {
     event.set_objectClass(klass);
@@ -50,6 +48,10 @@ void AllocTracer::send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_
     event.set_tlabSize(tlab_size);
     event.commit();
   }
+}
+
+void AllocTracer::send_allocation_sample(Klass* klass, HeapWord* obj, size_t alloc_size, size_t weight, bool large_allocation, JavaThread* thread) {
+  JFR_ONLY(JfrAllocationTracer tracer(klass, obj, alloc_size, large_allocation, thread);)
 }
 
 void AllocTracer::send_allocation_requiring_gc_event(size_t size, uint gcId) {

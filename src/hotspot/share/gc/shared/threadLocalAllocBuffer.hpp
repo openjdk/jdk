@@ -51,12 +51,12 @@ private:
   HeapWord* _top;                                // address after last allocation
   HeapWord* _pf_top;                             // allocation prefetch watermark
   HeapWord* _end;                                // allocation end (can be the sampling end point or _allocation_end)
+  HeapWord* _end_backup;                         // backup of _end for interleaved jvmti and jfr sampling
   HeapWord* _allocation_end;                     // end for allocations (actual TLAB end, excluding alignment_reserve)
 
   size_t    _desired_size;                       // desired size   (including alignment_reserve)
   size_t    _refill_waste_limit;                 // hold onto tlab if free() is larger than this
   size_t    _allocated_before_last_gc;           // total bytes allocated up until the last gc
-  size_t    _bytes_since_last_sample_point;      // bytes since last sample point.
 
   static size_t   _max_size;                          // maximum size of any TLAB
   static int      _reserve_for_allocation_prefetch;   // Reserve at the end of the TLAB
@@ -124,7 +124,6 @@ public:
   size_t free() const                            { return pointer_delta(end(), top()); }
   // Don't discard tlab if remaining space is larger than this.
   size_t refill_waste_limit() const              { return _refill_waste_limit; }
-  size_t bytes_since_last_sample_point() const   { return _bytes_since_last_sample_point; }
 
   // For external inspection.
   const HeapWord* start_relaxed() const;
@@ -168,7 +167,8 @@ public:
   void initialize();
 
   void set_back_allocation_end();
-  void set_sample_end(bool reset_byte_accumulation);
+  void set_jvmti_sample_end(bool reset_byte_accumulation);
+  void set_jfr_sample_end(bool reset_byte_accumulation);
 
   static size_t refill_waste_limit_increment();
 

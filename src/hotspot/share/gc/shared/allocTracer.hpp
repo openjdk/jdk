@@ -32,6 +32,7 @@ class AllocTracer : AllStatic {
   public:
     static void send_allocation_outside_tlab(Klass* klass, HeapWord* obj, size_t alloc_size, JavaThread* thread);
     static void send_allocation_in_new_tlab(Klass* klass, HeapWord* obj, size_t tlab_size, size_t alloc_size, JavaThread* thread);
+    static void send_allocation_sample(Klass* klass, HeapWord* obj, size_t alloc_size, size_t weight, bool large_allocation, JavaThread* thread);
     static void send_allocation_requiring_gc_event(size_t size, uint gcId);
 };
 
