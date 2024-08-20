@@ -27,10 +27,11 @@ package java.util.zip;
 
 /**
  * Signals that an unrecoverable error has occurred.
- *
+ * @deprecated Use {@link ZipException} instead.
  * @author  Dave Bristor
  * @since   1.6
  */
+@Deprecated(since="24", forRemoval = true)
 public class ZipError extends InternalError {
     @java.io.Serial
     private static final long serialVersionUID = 853973422266861979L;
