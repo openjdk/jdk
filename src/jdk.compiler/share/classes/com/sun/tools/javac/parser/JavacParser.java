@@ -5027,58 +5027,7 @@ public class JavacParser implements Parser {
                     // error recovery
                     // look if there is a probable missing opening brace,
                     // and if yes, parse as a block
-                    skip(false, true, !unclosedParameterList, !unclosedParameterList);
-                    boolean parseAsBlock;
-                    if (token.kind == LBRACE) {
-                        parseAsBlock = true;
-                    } else if (unclosedParameterList) {
-                        parseAsBlock = false;
-                    } else {
-                        parseAsBlock = switch (token.kind) {
-                            //definitelly sees a statement:
-                            case CASE, DEFAULT, IF, FOR, WHILE, DO, TRY, SWITCH,
-                                 RETURN, THROW, BREAK, CONTINUE, ELSE, FINALLY,
-                                 CATCH, THIS, SUPER, NEW -> true;
-                            case RBRACE -> {
-                                //check if adding an opening brace would balance out
-                                //the opening and closing braces:
-                                int braceBalance = 1;
-                                VirtualScanner virtualScanner = new VirtualScanner(S);
-
-                                virtualScanner.nextToken();
-
-                                while (virtualScanner.token().kind != TokenKind.EOF) {
-                                    switch (virtualScanner.token().kind) {
-                                        case LBRACE -> braceBalance++;
-                                        case RBRACE -> braceBalance--;
-                                    }
-                                    virtualScanner.nextToken();
-                                }
-
-                                yield braceBalance == 0;
-                            }
-                            default -> {
-                                //speculatively try to parse as a block, and check
-                                //if the result would suggest there is a block
-                                //e.g.: it contains a statement that is not
-                                //a member declaration
-                                JavacParser speculative = new VirtualParser(this);
-                                JCBlock speculativeResult =
-                                        speculative.block();
-                                if (!speculativeResult.stats.isEmpty()) {
-                                    JCStatement last = speculativeResult.stats.last();
-                                    yield !speculativeResult.stats.stream().allMatch(s -> s.hasTag(VARDEF) ||
-                                                                                          s.hasTag(CLASSDEF) ||
-                                                                                          s.hasTag(BLOCK) ||
-                                                                                          s == last) ||
-                                          !(last instanceof JCExpressionStatement exprStatement &&
-                                            exprStatement.expr.hasTag(ERRONEOUS));
-                                } else {
-                                    yield false;
-                                }
-                            }
-                        };
-                    }
+                    boolean parseAsBlock = openingBraceMissing(unclosedParameterList);
 
                     if (parseAsBlock) {
                         body = block();
@@ -5094,6 +5043,84 @@ public class JavacParser implements Parser {
             return result;
         } finally {
             this.receiverParam = prevReceiverParam;
+        }
+    }
+
+    /**
+     * After seeing a method header, and not seeing an opening left brace,
+     * attempt to estimate if acting as if the left brace was present and
+     * parsing the upcoming code will get better results than not parsing
+     * the code as a block.
+     *
+     * The estimate is as follows:
+     * - tokens are skipped until member, statement of identifier is found,
+     * - then, if there is a left brace, parse as a block,
+     * - otherwise, if the head was broken, do not parse as a block,
+     * - otherwise, look at the next token and:
+     *   - if it definitelly starts a statement, parse as a block,
+     *   - otherwise, if it is a closing/right brace, count opening and closing
+     *     braces in the rest of the file, to see if imaginarily "adding" an opening
+     *     brace would lead to a balanced count - if yes, parse as a block,
+     *   - otherwise, speculatively parse the following code as a block, and if
+     *     it contains statements that cannot be members, parse as a block,
+     *   - otherwise, don't parse as a block.
+     *
+     * @param unclosedParameterList whether there was a serious problem in the
+     *                              parameters list
+     * @return true if and only if the following code should be parsed as a block.
+     */
+    private boolean openingBraceMissing(boolean unclosedParameterList) {
+        skip(false, true, !unclosedParameterList, !unclosedParameterList);
+
+        if (token.kind == LBRACE) {
+            return true;
+        } else if (unclosedParameterList) {
+            return false;
+        } else {
+            return switch (token.kind) {
+                //definitelly sees a statement:
+                case CASE, DEFAULT, IF, FOR, WHILE, DO, TRY, SWITCH,
+                    RETURN, THROW, BREAK, CONTINUE, ELSE, FINALLY,
+                    CATCH, THIS, SUPER, NEW -> true;
+                case RBRACE -> {
+                    //check if adding an opening brace would balance out
+                    //the opening and closing braces:
+                    int braceBalance = 1;
+                    VirtualScanner virtualScanner = new VirtualScanner(S);
+
+                    virtualScanner.nextToken();
+
+                    while (virtualScanner.token().kind != TokenKind.EOF) {
+                        switch (virtualScanner.token().kind) {
+                            case LBRACE -> braceBalance++;
+                            case RBRACE -> braceBalance--;
+                        }
+                        virtualScanner.nextToken();
+                    }
+
+                    yield braceBalance == 0;
+                }
+                default -> {
+                    //speculatively try to parse as a block, and check
+                    //if the result would suggest there is a block
+                    //e.g.: it contains a statement that is not
+                    //a member declaration
+                    JavacParser speculative = new VirtualParser(this);
+                    JCBlock speculativeResult =
+                            speculative.block();
+                    if (!speculativeResult.stats.isEmpty()) {
+                        JCStatement last = speculativeResult.stats.last();
+                        yield !speculativeResult.stats.stream().allMatch(s -> s.hasTag(VARDEF) ||
+                                s.hasTag(CLASSDEF) ||
+                                s.hasTag(BLOCK) ||
+                                s == last) ||
+                            !(last instanceof JCExpressionStatement exprStatement &&
+                            exprStatement.expr.hasTag(ERRONEOUS));
+                    } else {
+                        yield false;
+                    }
+                }
+            };
         }
     }
 
