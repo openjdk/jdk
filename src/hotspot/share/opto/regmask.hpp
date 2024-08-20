@@ -300,13 +300,19 @@ class RegMask {
     return *this;
   }
 
-  // Check for register being in mask (excluding inclusion by the all-stack flag).
-  bool Member(OptoReg::Name reg) const {
+  // Check for register being in mask.
+  bool Member(OptoReg::Name reg, bool include_all_stack = false) const {
     reg = reg - offset_bits();
     if (reg < 0) { return false; }
-    if (reg >= (int)rm_size_bits()) { return false; }
+    if (reg >= (int)rm_size_bits()) {
+      return include_all_stack ? is_AllStack() : false;
+    }
     unsigned int r = (unsigned int)reg;
     return _rm_up(r >> _LogWordBits) & (uintptr_t(1) << (r & _WordBitMask));
+  }
+
+  bool Member_including_AllStack(OptoReg::Name reg) const {
+    return Member(reg, true);
   }
 
   // Test for being a not-empty mask. Ignores registers included through the
@@ -372,6 +378,11 @@ class RegMask {
       tmp |= _rm_up(i);
     }
     return !tmp && is_AllStack();
+  }
+
+  bool can_represent(OptoReg::Name reg, unsigned int size = 1) const {
+    reg = reg - offset_bits();
+    return (int)reg <= (int)(rm_size_bits() - size) && (int)reg >= 0;
   }
 #endif // !ASSERT
 
