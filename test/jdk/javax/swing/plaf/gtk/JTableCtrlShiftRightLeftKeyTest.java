@@ -72,7 +72,8 @@ public class JTableCtrlShiftRightLeftKeyTest {
             robot.waitForIdle();
             robot.delay(100);
 
-            testCtrlShift(KeyEvent.VK_RIGHT, SELECTED_COLUMN, table.getColumnCount()-1);
+            testCtrlShift(KeyEvent.VK_RIGHT, SELECTED_COLUMN,
+                    table.getColumnCount() - 1, "RIGHT");
 
             robot.waitForIdle();
             robot.delay(100);
@@ -81,7 +82,8 @@ public class JTableCtrlShiftRightLeftKeyTest {
             robot.waitForIdle();
             robot.delay(100);
 
-            testCtrlShift(KeyEvent.VK_LEFT, 0, SELECTED_COLUMN);
+            testCtrlShift(KeyEvent.VK_LEFT, 0,
+                    SELECTED_COLUMN, "LEFT");
             robot.waitForIdle();
             robot.delay(100);
             System.out.println("Test Passed!");
@@ -96,7 +98,7 @@ public class JTableCtrlShiftRightLeftKeyTest {
     }
 
     private static void testCtrlShift(int keySelected, int startCellCheck,
-                                      int endCellCheck) throws Exception {
+                                      int endCellCheck, String key) throws Exception {
         robot.keyPress(KeyEvent.VK_SHIFT);
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(keySelected);
@@ -111,21 +113,20 @@ public class JTableCtrlShiftRightLeftKeyTest {
         });
 
         if (selectedColumnAfterKeyPress[0] != startCellCheck ||
-                selectedColumnAfterKeyPress[selectedColumnAfterKeyPress.length-1] !=
+                selectedColumnAfterKeyPress[selectedColumnAfterKeyPress.length - 1] !=
                         endCellCheck) {
             System.out.println("Selected Columns: ");
-            for (int columnAfterTabPress : selectedColumnAfterKeyPress) {
-                System.out.println(columnAfterTabPress);
+            for (int columnsSelected : selectedColumnAfterKeyPress) {
+                System.out.println(columnsSelected);
             }
-            String key = (keySelected == KeyEvent.VK_RIGHT)? "RIGHT" : "LEFT";
             String failureMsg = "Test Failure. Failed to select cells for Ctrl" +
-                    " Shift "+key+" selection";
+                    " Shift " + key + " selection";
             throw new RuntimeException(failureMsg);
         }
     }
 
     private static void createAndShowUI() {
-        frame = new JFrame("Test JTable Tab Press");
+        frame = new JFrame("Test Ctrl Shift RIGHT/LEFT Key Press");
         table = new JTable(2, 5);
         table.setColumnSelectionAllowed(true);
         frame.getContentPane().add(table);
