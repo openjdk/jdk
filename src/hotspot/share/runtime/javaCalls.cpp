@@ -409,8 +409,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
             // Must extract verified entry point from HotSpotNmethod after VM to Java
             // transition in JavaCallWrapper constructor so that it is safe with
             // respect to nmethod sweeping.
-            address
-                verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
+            address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
             if (verified_entry_point != nullptr) {
               thread->set_jvmci_alternate_call_target(verified_entry_point);
               entry_point = method->adapter()->get_i2c_entry();
