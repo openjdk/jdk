@@ -830,6 +830,8 @@ void ClassListParser::parse_constant_pool_tag() {
       // ignore
       break;
     case JVM_CONSTANT_Fieldref:
+    case JVM_CONSTANT_Methodref:
+    case JVM_CONSTANT_InterfaceMethodref:
       preresolve_fmi = true;
       break;
       break;

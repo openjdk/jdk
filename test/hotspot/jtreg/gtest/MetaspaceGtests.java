@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,8 @@
 
 /*
  * Note: This runs the metaspace-related parts of gtest in configurations which
- *  are not tested explicitly in the standard gtests.
- *
+ *  are not tested explicitly in the standard gtest. Hence, there is no "default-ndebug"
+ *  since that would be equivalent to the normal gtest for release builds.
  */
 
 /* @test id=default-debug
@@ -40,17 +40,7 @@
  * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
 
-/* @test id=balanced-with-guards
- * @summary Run metaspace-related gtests with allocation guards enabled
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.debug
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=1 -XX:+MetaspaceGuardAllocations
- */
-
-/* @test id=balanced-no-ccs
+/* @test id=no-ccs
  * @summary Run metaspace-related gtests with compressed class pointers off
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

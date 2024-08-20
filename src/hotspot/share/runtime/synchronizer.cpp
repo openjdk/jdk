@@ -596,8 +596,8 @@ bool ObjectSynchronizer::enter_fast_impl(Handle obj, BasicLock* lock, JavaThread
 
         log_info(monitorinflation)("LockStack capacity exceeded, inflating.");
         ObjectMonitor* monitor = inflate_for(locking_thread, lock_stack.bottom(), inflate_cause_vm_internal);
-        assert(monitor->owner() == Thread::current(), "must be owner=" PTR_FORMAT " current=" PTR_FORMAT " mark=" PTR_FORMAT,
-               p2i(monitor->owner()), p2i(Thread::current()), monitor->object()->mark_acquire().value());
+        assert(monitor->owner() == locking_thread, "must be owner=" PTR_FORMAT " locking_thread=" PTR_FORMAT " mark=" PTR_FORMAT,
+               p2i(monitor->owner()), p2i(locking_thread), monitor->object()->mark_acquire().value());
         assert(!lock_stack.is_full(), "must have made room here");
       }
 
@@ -2074,7 +2074,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
 void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
     stringStream ss;
-    out->print_cr("In-use monitor info:");
+    out->print_cr("In-use monitor info%s:", log_all ? "" : " (eliding idle monitors)");
     out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
                   "monitor", "BHL", "object", "object type");
