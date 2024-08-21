@@ -1254,17 +1254,6 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
-
-        long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
-        // start w/ the supported mechanisms, then remove the config disabled
-        // and known broken ones
-        Set<Long> enabledMechSet =
-                Arrays.stream(supportedMechanisms).boxed().collect
-                (Collectors.toCollection(HashSet::new));
-        if (config.getDisabledMechanisms() != null) {
-            enabledMechSet.removeAll(config.getDisabledMechanisms());
-        }
-
         Set<Long> brokenMechanisms = Set.of();
         if (P11Util.isNSS(token)) {
             CK_VERSION nssVersion = slotInfo.hardwareVersion;
@@ -1282,8 +1271,12 @@ public final class SunPKCS11 extends AuthProvider {
                         CKM_SHA3_384_RSA_PKCS_PSS,
                         CKM_SHA3_512_RSA_PKCS_PSS);
             }
-            enabledMechSet.removeAll(brokenMechanisms);
         }
+
+        long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
+        Set<Long> supportedMechSet =
+                Arrays.stream(supportedMechanisms).boxed().collect
+                (Collectors.toCollection(HashSet::new));
 
         // Create a map from the various Descriptors to the "most
         // preferred" mechanism that was defined during the
@@ -1341,15 +1334,17 @@ public final class SunPKCS11 extends AuthProvider {
             for (Descriptor d : ds) {
                 Integer oldMech = supportedAlgs.get(d);
                 if (oldMech == null) {
-                    // first time; check all required mechs are supported
+                    // check all required mechs are supported
                     if (d.requiredMechs != null) {
                         for (int reqMech : d.requiredMechs) {
                             long longReqMech = reqMech & 0xFFFFFFFFL;
-                            if (!enabledMechSet.contains(longReqMech)) {
+                            if (!config.isEnabled(longReqMech) ||
+                                    !supportedMechSet.contains(longReqMech) ||
+                                    brokenMechanisms.contains(longReqMech)) {
                                 if (showInfo) {
                                     System.out.println("DISABLED " + d.type +
                                         " " + d.algorithm +
-                                        " due to no support for " +
+                                        " due to no support for req'd mech " +
                                         Functions.getMechanismName(longReqMech));
                                 }
                                 continue descLoop;
