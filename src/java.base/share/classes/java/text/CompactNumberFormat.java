@@ -652,16 +652,16 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            roundedNumber = roundedNumber / divisor;
+            decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
 
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    roundedNumber = roundedNumber / divisor;
-                    decimalFormat.setDigitList(roundedNumber, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -734,31 +734,28 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number, divisor);
             if (checkIncrement(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
-                val = getNumberValue(number, divisor);
             }
+            var noFraction = number % divisor == 0;
+            if (noFraction) {
+                number = number / divisor;
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store
+                // the value in double and follow double path instead of
+                // long path
+                double dNumber = (double) number / divisor;
+                decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if ((number % divisor == 0)) {
-                        number = number / divisor;
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store
-                        // the value in double and follow double path instead of
-                        // long path
-                        double dNumber = (double) number / divisor;
-                        decimalFormat.setDigitList(dNumber, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                            isNegative, noFraction, getMaximumIntegerDigits(),
+                            getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                            getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
@@ -833,15 +830,15 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
+            decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                    decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
                     decimalFormat.subformatNumber(result, delegate, isNegative,
                             false, getMaximumIntegerDigits(), getMinimumIntegerDigits(),
                             getMaximumFractionDigits(), getMinimumFractionDigits());
@@ -904,34 +901,30 @@ public final class CompactNumberFormat extends NumberFormat {
             double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
-                val = getNumberValue(number.doubleValue(), divisor.doubleValue());
             }
+            var noFraction = number.mod(new BigInteger(divisor.toString()))
+                    .compareTo(BigInteger.ZERO) == 0;
+            if (noFraction) {
+                number = number.divide(new BigInteger(divisor.toString()));
+                decimalFormat.setDigitList(number, isNegative, 0);
+            } else {
+                // To avoid truncation of fractional part store the value in
+                // BigDecimal and follow BigDecimal path instead of
+                // BigInteger path
+                BigDecimal nDecimal = new BigDecimal(number)
+                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
+            }
+            val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
             String suffix = getAffix(false, false, isNegative, compactDataIndex, val);
             if (!prefix.isEmpty() || !suffix.isEmpty()) {
                 appendPrefix(result, prefix, delegate);
                 if (!placeHolderPatterns.get(compactDataIndex).get(val).isEmpty()) {
-                    if (number.mod(new BigInteger(divisor.toString()))
-                            .compareTo(BigInteger.ZERO) == 0) {
-                        number = number.divide(new BigInteger(divisor.toString()));
-
-                        decimalFormat.setDigitList(number, isNegative, 0);
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, true, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    } else {
-                        // To avoid truncation of fractional part store the value in
-                        // BigDecimal and follow BigDecimal path instead of
-                        // BigInteger path
-                        BigDecimal nDecimal = new BigDecimal(number)
-                                .divide(new BigDecimal(divisor.toString()), getRoundingMode());
-                        decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
-                        decimalFormat.subformatNumber(result, delegate,
-                                isNegative, false, getMaximumIntegerDigits(),
-                                getMinimumIntegerDigits(), getMaximumFractionDigits(),
-                                getMinimumFractionDigits());
-                    }
+                    decimalFormat.subformatNumber(result, delegate,
+                        isNegative, noFraction, getMaximumIntegerDigits(),
+                        getMinimumIntegerDigits(), getMaximumFractionDigits(),
+                        getMinimumFractionDigits());
                     appendSuffix(result, suffix, delegate);
                 }
             } else {
