@@ -332,6 +332,14 @@ public class TestLayoutPaths {
         }
     }
 
+    @Test(dataProvider = "testLayouts", expectedExceptions = ArithmeticException.class)
+    public void testOffsetHandleOverflow(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
+                                         long expectedByteOffset) throws Throwable {
+        MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
+        byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
+        byteOffsetHandle.invoke(Long.MAX_VALUE, indexes);
+    }
+
     @Test(dataProvider = "testLayouts")
     public void testVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                          long expectedByteOffset) throws Throwable {
