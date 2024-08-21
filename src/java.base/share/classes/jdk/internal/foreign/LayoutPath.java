@@ -239,9 +239,7 @@ public class LayoutPath {
     private static long addScaledOffset(long base, long index, long stride, long bound) {
         Objects.checkIndex(index, bound);
         // note: the below can overflow, depending on 'base'. When constructing var handles
-        // through the layout API, this is never the case, as the segment offset is checked
-        // against the segment size. But when using 'byteOffsetHandle' this might return a
-        // negative value. Seems incompatible also with scale(), which use exact operations.
+        // through the layout API, this is never the case, as the injected 'base' is always 0.
         return base + (stride * index);
     }
 
@@ -286,7 +284,7 @@ public class LayoutPath {
     }
 
     private static void checkEnclosingLayout(MemorySegment segment, long offset, MemoryLayout enclosing) {
-        Utils.checkEnclosingLayout(segment, offset, enclosing, true);
+        ((AbstractMemorySegmentImpl)segment).checkEnclosingLayout(offset, enclosing, true);
     }
 
     public MemoryLayout layout() {
