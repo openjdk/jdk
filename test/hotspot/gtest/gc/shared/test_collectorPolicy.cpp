@@ -67,7 +67,7 @@ class TestGenCollectorPolicy {
       MinHeapSize = 40 * M;
       FLAG_SET_ERGO(InitialHeapSize, 100 * M);
       FLAG_SET_ERGO(NewSize, 1 * M);
-      FLAG_SET_ERGO(MaxNewSize, 30 * M);
+      FLAG_SET_ERGO(MaxNewSize, 40 * M);
 
       ASSERT_NO_FATAL_FAILURE(setter1->execute());
 
