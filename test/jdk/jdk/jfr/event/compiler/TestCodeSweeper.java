@@ -27,11 +27,9 @@ import java.lang.management.MemoryPoolMXBean;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import jdk.jfr.Event;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
@@ -41,7 +39,7 @@ import jdk.test.whitebox.code.BlobType;
 import jdk.test.whitebox.code.CodeBlob;
 
 /**
- * Test for events: jdk.CodeCacheFull jdk.CompilationFailure
+ * Test for events: vm/code_cache/full vm/compiler/failure
  *
  * We verify that we should get at least one of each of the events listed above.
  *
@@ -60,15 +58,13 @@ import jdk.test.whitebox.code.CodeBlob;
  */
 
 public class TestCodeSweeper {
-    static class ProvocationEvent extends Event {
-    }
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final int COMP_LEVEL_SIMPLE = 1;
     private static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     private static final int SIZE = 1;
     private static final String METHOD_NAME = "verifyFullEvent";
-    private static final String EVENT_CODE_CACHE_FULL = EventNames.CodeCacheFull;
-    private static final String EVENT_COMPILATION_FAILURE = EventNames.CompilationFailure;
+    private static final String pathFull = EventNames.CodeCacheFull;
+    private static final String pathFailure = EventNames.CompilationFailure;
     public static final long SEGMENT_SIZE = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheSegmentSize");
     public static final long MIN_BLOCK_LENGTH = WhiteBox.getWhiteBox().getUintxVMFlag("CodeCacheMinBlockLength");
     public static final long MIN_ALLOCATION = SEGMENT_SIZE * MIN_BLOCK_LENGTH;
@@ -81,41 +77,26 @@ public class TestCodeSweeper {
         System.out.println("This test will warn that the code cache is full.");
         System.out.println("That is expected and is the purpose of the test.");
         System.out.println("************************************************");
-        List<RecordedEvent> events = Collections.synchronizedList(new ArrayList<>());
-        try (RecordingStream rs = new RecordingStream()) {
-            rs.setReuse(false);
-            rs.enable(EVENT_CODE_CACHE_FULL);
-            rs.enable(EVENT_COMPILATION_FAILURE);
-            rs.onEvent(EVENT_CODE_CACHE_FULL, events::add);
-            rs.onEvent(EVENT_COMPILATION_FAILURE, events::add);
-            rs.onEvent(ProvocationEvent.class.getName(), e -> {
-                if (!events.isEmpty()) {
-                    rs.close();
-                    return;
-                }
-                // Retry if CodeCacheFull or CompilationFailure events weren't provoked
-                try {
-                    provokeEvents();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                    rs.close();
-                }
-            });
-            rs.startAsync();
-            provokeEvents();
-            rs.awaitTermination();
-        }
+
+        Recording r = new Recording();
+        r.enable(pathFull);
+        r.enable(pathFailure);
+        r.start();
+        provokeEvents();
+        r.stop();
 
         int countEventFull = 0;
         int countEventFailure = 0;
+
+        List<RecordedEvent> events = Events.fromRecording(r);
         Events.hasEvents(events);
-        for (RecordedEvent event : new ArrayList<>(events)) {
+        for (RecordedEvent event : events) {
             switch (event.getEventType().getName()) {
-            case EVENT_CODE_CACHE_FULL:
+            case pathFull:
                 countEventFull++;
                 verifyFullEvent(event);
                 break;
-            case EVENT_COMPILATION_FAILURE:
+            case pathFailure:
                 countEventFailure++;
                 verifyFailureEvent(event);
                 break;
@@ -134,8 +115,6 @@ public class TestCodeSweeper {
     }
 
     private static void provokeEvents() throws NoSuchMethodException, InterruptedException {
-        System.out.println("provokeEvents()");
-        ProvocationEvent provocationEvent = new ProvocationEvent();
         // Prepare for later, since we don't want to trigger any compilation
         // setting this up.
         Method method = TestCodeSweeper.class.getDeclaredMethod(METHOD_NAME, new Class[] { RecordedEvent.class });
@@ -180,7 +159,6 @@ public class TestCodeSweeper {
         for (Long blob : blobs) {
             WHITE_BOX.freeCodeBlob(blob);
         }
-        provocationEvent.commit();
     }
 
     private static void verifyFullEvent(RecordedEvent event) throws Throwable {

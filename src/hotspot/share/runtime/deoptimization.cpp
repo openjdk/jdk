@@ -63,6 +63,7 @@
 #include "prims/methodHandles.hpp"
 #include "prims/vectorSupport.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/basicLock.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/deoptimization.hpp"
@@ -75,6 +76,8 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/lightweightSynchronizer.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
@@ -84,7 +87,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/synchronizer.hpp"
+#include "runtime/synchronizer.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/vframe.hpp"
@@ -1634,22 +1637,37 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              mon_info->lock()->set_displaced_header(markWord::unused_mark());
+              if (LockingMode == LM_LEGACY) {
+                mon_info->lock()->set_displaced_header(markWord::unused_mark());
+              } else if (UseObjectMonitorTable) {
+                mon_info->lock()->clear_object_monitor_cache();
+              }
+#ifdef ASSERT
+              else {
+                assert(LockingMode == LM_MONITOR || !UseObjectMonitorTable, "must be");
+                mon_info->lock()->set_bad_metadata_deopt();
+              }
+#endif
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
               continue;
             }
           }
         }
+        BasicLock* lock = mon_info->lock();
         if (LockingMode == LM_LIGHTWEIGHT) {
           // We have lost information about the correct state of the lock stack.
-          // Inflate the locks instead. Enter then inflate to avoid races with
-          // deflation.
-          ObjectSynchronizer::enter_for(obj, nullptr, deoptee_thread);
+          // Entering may create an invalid lock stack. Inflate the lock if it
+          // was fast_locked to restore the valid lock stack.
+          ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
+          if (deoptee_thread->lock_stack().contains(obj())) {
+            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+                                                                deoptee_thread, thread);
+          }
           assert(mon_info->owner()->is_locked(), "object must be locked now");
-          ObjectMonitor* mon = ObjectSynchronizer::inflate_for(deoptee_thread, obj(), ObjectSynchronizer::inflate_cause_vm_internal);
-          assert(mon->owner() == deoptee_thread, "must be");
+          assert(obj->mark().has_monitor(), "must be");
+          assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
+          assert(ObjectSynchronizer::read_monitor(thread, obj(), obj->mark())->owner() == deoptee_thread, "must be");
         } else {
-          BasicLock* lock = mon_info->lock();
           ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
           assert(mon_info->owner()->is_locked(), "object must be locked now");
         }

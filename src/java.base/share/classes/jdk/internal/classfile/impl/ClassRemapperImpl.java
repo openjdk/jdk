@@ -401,9 +401,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
 
     List<TypeAnnotation> mapTypeAnnotations(List<TypeAnnotation> typeAnnotations) {
         return typeAnnotations.stream().map(a -> TypeAnnotation.of(a.targetInfo(),
-                a.targetPath(), map(a.classSymbol()),
-                a.elements().stream().map(el -> AnnotationElement.of(el.name(),
-                        mapAnnotationValue(el.value()))).toList())).toList();
+                a.targetPath(), mapAnnotation(a.annotation()))).toList();
     }
 
     List<Signature.TypeParam> mapTypeParams(List<Signature.TypeParam> typeParams) {
