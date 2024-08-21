@@ -146,7 +146,7 @@ public class NetworkConfiguration {
             }
         }
 
-        if (Platform.isLinux()) {
+        if (Platform.isLinux() || Platform.isOSX()) {
             String dName = nif.getDisplayName();
             if (dName != null && dName.contains("docker")) {
                 return false;
