@@ -158,8 +158,8 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ bctr();
 
   __ bind(L_no_such_method);
-  assert(StubRoutines::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
-  __ load_const_optimized(target, StubRoutines::throw_AbstractMethodError_entry());
+  assert(SharedRuntime::throw_AbstractMethodError_entry() != nullptr, "not yet generated!");
+  __ load_const_optimized(target, SharedRuntime::throw_AbstractMethodError_entry());
   __ mtctr(target);
   __ bctr();
 }
@@ -489,7 +489,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
 
     if (iid == vmIntrinsics::_linkToInterface) {
       __ BIND(L_incompatible_class_change_error);
-      __ load_const_optimized(temp1, StubRoutines::throw_IncompatibleClassChangeError_entry());
+      __ load_const_optimized(temp1, SharedRuntime::throw_IncompatibleClassChangeError_entry());
       __ mtctr(temp1);
       __ bctr();
     }
