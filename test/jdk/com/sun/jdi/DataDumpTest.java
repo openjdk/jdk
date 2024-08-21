@@ -84,6 +84,11 @@ public class DataDumpTest {
         try {
             p = pb.start();
             InputStream is = p.getInputStream();
+
+            // Read the first character of output to make sure we've waited until the
+            // debuggee is ready. This will be the debug agent's "Listening..." message.
+            char firstChar = (char)is.read();
+
             out = new OutputAnalyzer(p);
 
             // Attach a debugger and do the data dump. The data dump output will appear
@@ -92,8 +97,8 @@ public class DataDumpTest {
 
             out.waitFor(); // Wait for the debuggee to exit
 
-            System.out.println("Deuggee output:");
-            System.out.println(out.getOutput());
+            System.out.println("Debuggee output:");
+            System.out.println(firstChar + out.getOutput());
 
             // All these strings are part of the debug agent data dump output.
             out.shouldHaveExitValue(0);
