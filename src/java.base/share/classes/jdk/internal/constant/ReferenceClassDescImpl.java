@@ -50,7 +50,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      */
     public static ClassDesc of(String descriptor) {
         int dLen = descriptor.length();
-        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen, false);
+        int len = ConstantUtils.skipOverFieldSignature(descriptor, 0, dLen);
         if (len <= 1 || len != dLen)
             throw new IllegalArgumentException(String.format("not a valid reference type descriptor: %s", descriptor));
         if (descriptor.charAt(0) == '[') {
@@ -67,7 +67,7 @@ public final class ReferenceClassDescImpl implements ClassDesc {
      * @jvms 4.3.2 Field Descriptors
      */
     public static ClassDesc ofValidated(String descriptor) {
-        assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length(), false)
+        assert ConstantUtils.skipOverFieldSignature(descriptor, 0, descriptor.length())
                 == descriptor.length() : descriptor;
         if (descriptor.charAt(0) == '[') {
             return ArrayClassDescImpl.ofValidatedDescriptor(descriptor);

@@ -136,13 +136,7 @@ public final class MethodImpl
             builder.withMethod(this);
         }
         else {
-            builder.withMethod(methodName(), methodType(), methodFlags(),
-                               new Consumer<>() {
-                @Override
-                public void accept(MethodBuilder mb) {
-                    MethodImpl.this.forEach(mb);
-                }
-            });
+            builder.withMethod(methodName(), methodType(), methodFlags(), Util.writingAll(this));
         }
     }
 

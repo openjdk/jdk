@@ -321,10 +321,11 @@ public class DockerTestUtils {
 
     private static void generateDockerFile(Path dockerfile, String baseImage,
                                            String baseImageVersion) throws Exception {
-        String template =
-            "FROM %s:%s\n" +
-            "RUN apt-get install libubsan1\n" +
-            "COPY /jdk /jdk\n" +
+        String template = "FROM %s:%s\n";
+        if (baseImage.contains("ubuntu") && DockerfileConfig.isUbsan()) {
+            template += "RUN apt-get update && apt-get install -y libubsan1\n";
+        }
+        template = template + "COPY /jdk /jdk\n" +
             "ENV JAVA_HOME=/jdk\n" +
             "CMD [\"/bin/bash\"]\n";
         String dockerFileStr = String.format(template, baseImage, baseImageVersion);
