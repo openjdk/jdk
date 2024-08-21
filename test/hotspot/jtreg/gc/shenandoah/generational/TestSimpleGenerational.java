@@ -28,7 +28,7 @@ import jdk.test.whitebox.WhiteBox;
 import java.util.Random;
 
 /*
- * @test TestSimpleGenerational
+ * @test id=generational
  * @requires vm.gc.Shenandoah
  * @summary Confirm that card marking and remembered set scanning do not crash.
  * @library /testlibrary /test/lib /
@@ -42,84 +42,79 @@ import java.util.Random;
  *      gc.shenandoah.generational.TestSimpleGenerational
  */
 public class TestSimpleGenerational {
-  private static WhiteBox wb = WhiteBox.getWhiteBox();
-  static private final int SeedForRandom = 46;
-  // Sequence of random numbers should end with same value
-  private static int ExpectedLastRandom = 272454100;
+    private static WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final int RANDOM_SEED = 46;
+    // Sequence of random numbers should end with same value
+    private static final int EXPECTED_LAST_RANDOM = 136227050;
 
 
-  public static class Node {
-    static private final int NeighborCount = 5;
-    static private final int IntArraySize = 8;
-    static private Random random = new Random(SeedForRandom);
+    public static class Node {
+        private static final int NEIGHBOR_COUNT = 5;
+        private static final int INT_ARRAY_SIZE = 8;
+        private static final Random RANDOM = new Random(RANDOM_SEED);
 
-    private int val;
-    private Object field_o;
+        private int val;
+        private Object objectField;
 
-    // Each Node instance holds references to two "private" arrays.
-    // One array holds raw seething bits (primitive integers) and the
-    // holds references.
+        // Each Node instance holds references to two "private" arrays.
+        // One array holds raw seething bits (primitive integers) and the other
+        // holds references.
 
-    private int[] field_ints;
-    private Node [] neighbors;
+        private int[] intsField;
+        private Node [] neighbors;
 
-    public Node(int val) {
-      this.val = val;
-      this.field_o = new Object();
-      this.field_ints = new int[IntArraySize];
-      this.field_ints[0] = 0xca;
-      this.field_ints[1] = 0xfe;
-      this.field_ints[2] = 0xba;
-      this.field_ints[3] = 0xbe;
-      this.field_ints[4] = 0xba;
-      this.field_ints[5] = 0xad;
-      this.field_ints[6] = 0xba;
-      this.field_ints[7] = 0xbe;
+        public Node(int val) {
+            this.val = val;
+            this.objectField = new Object();
+            this.intsField = new int[INT_ARRAY_SIZE];
+            this.intsField[0] = 0xca;
+            this.intsField[1] = 0xfe;
+            this.intsField[2] = 0xba;
+            this.intsField[3] = 0xbe;
+            this.intsField[4] = 0xba;
+            this.intsField[5] = 0xad;
+            this.intsField[6] = 0xba;
+            this.intsField[7] = 0xbe;
 
-      this.neighbors = new Node[NeighborCount];
+            this.neighbors = new Node[NEIGHBOR_COUNT];
+        }
+
+        public int value() {
+            return val;
+        }
+
+        // Copy each neighbor of n into a new node's neighbor array.
+        // Then overwrite arbitrarily selected neighbor with newly allocated
+        // leaf node.
+        public static Node upheaval(Node n) {
+            int firstValue = RANDOM.nextInt(Integer.MAX_VALUE);
+            Node result = new Node(firstValue);
+            if (n != null) {
+                for (int i = 0; i < NEIGHBOR_COUNT; i++) {
+                    result.neighbors[i] = n.neighbors[i];
+                }
+            }
+            int secondValue = RANDOM.nextInt(Integer.MAX_VALUE);
+            int overwriteIndex = firstValue % NEIGHBOR_COUNT;
+            result.neighbors[overwriteIndex] = new Node(secondValue);
+            return result;
+        }
     }
 
-    public int value() {
-      return val;
+    public static void main(String args[]) throws Exception {
+        Node n = null;
+
+        if (!WB.getBooleanVMFlag("UseShenandoahGC") || !WB.getStringVMFlag("ShenandoahGCMode").equals("generational")) {
+            throw new IllegalStateException("Command-line options not honored!");
+        }
+
+        for (int count = 10000; count > 0; count--) {
+            n = Node.upheaval(n);
+        }
+
+        System.out.println("Expected Last Random: [" + n.value() + "]");
+        if (n.value() != EXPECTED_LAST_RANDOM) {
+            throw new IllegalStateException("Random number sequence ended badly!");
+        }
     }
-
-    // Copy each neighbor of n into a new node's neighbor array.
-    // Then overwrite arbitrarily selected neighbor with newly allocated
-    // leaf node.
-    public static Node upheaval(Node n) {
-      int first_val = random.nextInt();
-      if (first_val < 0) first_val = -first_val;
-      if (first_val < 0) first_val = 0;
-      Node result = new Node(first_val);
-      if (n != null) {
-        for (int i = 0; i < NeighborCount; i++)
-          result.neighbors[i] = n.neighbors[i];
-      }
-      int second_val = random.nextInt();
-      if (second_val < 0) second_val = -second_val;
-      if (second_val < 0) second_val = 0;
-
-      int overwrite_index = first_val % NeighborCount;
-      result.neighbors[overwrite_index] = new Node(second_val);
-      return result;
-    }
-  }
-
-  public static void main(String args[]) throws Exception {
-    Node n = null;
-
-    if (!wb.getBooleanVMFlag("UseShenandoahGC") ||
-        !wb.getStringVMFlag("ShenandoahGCMode").equals("generational"))
-      throw new IllegalStateException("Command-line options not honored!");
-
-    for (int count = 10000; count > 0; count--) {
-      n = Node.upheaval(n);
-    }
-
-    if (n.value() != ExpectedLastRandom)
-      throw new IllegalStateException("Random number sequence ended badly!");
-
-  }
-
 }
-

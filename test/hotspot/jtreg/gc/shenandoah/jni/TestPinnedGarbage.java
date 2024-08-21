@@ -70,11 +70,11 @@
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
+ *      -XX:+ShenandoahVerify
  *      TestPinnedGarbage
  *
  * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx128m
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational
- *      -XX:+ShenandoahVerify
  *      TestPinnedGarbage
  */
 

@@ -46,11 +46,11 @@ public class TestPeriodicGC {
         OutputAnalyzer output = ProcessTools.executeLimitedTestJava(cmds);
 
         output.shouldHaveExitValue(0);
-        if (periodic && !output.getOutput().contains("Trigger (GLOBAL): Time since last GC")) {
-            throw new AssertionError(msg + ": Should have periodic GC in logs");
+        if (periodic) {
+            output.shouldContain("Trigger (GLOBAL): Time since last GC");
         }
-        if (!periodic && output.getOutput().contains("Trigger (GLOBAL): Time since last GC")) {
-            throw new AssertionError(msg + ": Should not have periodic GC in logs");
+        if (!periodic) {
+            output.shouldNotContain("Trigger (GLOBAL): Time since last GC");
         }
     }
 
@@ -63,19 +63,11 @@ public class TestPeriodicGC {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (periodic) {
-            if (!output.getOutput().contains("Trigger (YOUNG): Time since last GC")) {
-                throw new AssertionError("Generational mode: Should have periodic young GC in logs");
-            }
-            if (!output.getOutput().contains("Trigger (OLD): Time since last GC")) {
-                throw new AssertionError("Generational mode: Should have periodic old GC in logs");
-            }
+            output.shouldContain("Trigger (YOUNG): Time since last GC");
+            output.shouldContain("Trigger (OLD): Time since last GC");
         } else {
-            if (output.getOutput().contains("Trigger (YOUNG): Time since last GC")) {
-                throw new AssertionError("Generational mode: Should not have periodic young GC in logs");
-            }
-            if (output.getOutput().contains("Trigger (OLD): Time since last GC")) {
-                throw new AssertionError("Generational mode: Should not have periodic old GC in logs");
-            }
+            output.shouldNotContain("Trigger (YOUNG): Time since last GC");
+            output.shouldNotContain("Trigger (OLD): Time since last GC");
         }
     }
 

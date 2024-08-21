@@ -24,7 +24,7 @@
  */
 
 /*
- * @test default
+ * @test id=default
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
@@ -35,7 +35,7 @@
  */
 
 /*
- * @test generational
+ * @test id=generational
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -XX:+UnlockDiagnosticVMOptions -Xmx128m -XX:+ShenandoahVerify -XX:ShenandoahVerifyLevel=0 TestVerifyLevels
