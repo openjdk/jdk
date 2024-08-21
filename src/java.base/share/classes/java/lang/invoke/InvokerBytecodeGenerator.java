@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,21 +82,6 @@ class InvokerBytecodeGenerator {
 
     private static final String CLASS_PREFIX = "java/lang/invoke/LambdaForm$";
     private static final String SOURCE_PREFIX = "LambdaForm$";
-
-    // Static builders to avoid lambdas
-    private static final Consumer<FieldBuilder> STATIC_FINAL_FIELD = new Consumer<FieldBuilder>() {
-        @Override
-        public void accept(FieldBuilder fb) {
-            fb.withFlags(ACC_STATIC | ACC_FINAL);
-        }
-    };
-
-    record MethodBody(Consumer<CodeBuilder> code) implements Consumer<MethodBuilder> {
-        @Override
-        public void accept(MethodBuilder mb) {
-            mb.withCode(code);
-        }
-    };
 
     /** Name of its super class*/
     static final ClassDesc INVOKER_SUPER_DESC = CD_Object;
@@ -328,10 +313,10 @@ class InvokerBytecodeGenerator {
 
         for (ClassData p : classData) {
             // add the static field
-            clb.withField(p.name, p.desc, STATIC_FINAL_FIELD);
+            clb.withField(p.name, p.desc, ACC_STATIC | ACC_FINAL);
         }
 
-        clb.withMethod(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
+        clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, new Consumer<>() {
             @Override
             public void accept(CodeBuilder cob) {
                 cob.loadConstant(classDesc)
@@ -356,7 +341,7 @@ class InvokerBytecodeGenerator {
                 }
                 cob.return_();
             }
-        }));
+        });
     }
 
     private void emitLoadInsn(CodeBuilder cob, TypeKind type, int index) {
@@ -1671,14 +1656,14 @@ class InvokerBytecodeGenerator {
      */
     private void bogusMethod(ClassBuilder clb, Object os) {
         if (dumper().isEnabled()) {
-            clb.withMethod("dummy", MTD_void, ACC_STATIC, new MethodBody(new Consumer<CodeBuilder>() {
+            clb.withMethodBody("dummy", MTD_void, ACC_STATIC, new Consumer<>() {
                 @Override
                 public void accept(CodeBuilder cob) {
                     cob.loadConstant(os.toString());
                     cob.pop();
                     cob.return_();
                 }
-            }));
+            });
         }
     }
 
