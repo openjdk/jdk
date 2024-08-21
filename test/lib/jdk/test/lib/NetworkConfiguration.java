@@ -127,8 +127,8 @@ public class NetworkConfiguration {
 
     public static boolean isTestable(NetworkInterface nif) {
         if (Platform.isOSX()) {
-            if (nif.getName().contains("awdl")) {
-                return false; // exclude awdl
+            if (nif.getName().contains("awdl") || nif.getName().contains("docker")) {
+                return false; // exclude awdl or docker
             }
             // filter out interfaces that only have link-local IPv6 addresses
             // on macOS interfaces like 'en6' fall in this category and
@@ -146,7 +146,7 @@ public class NetworkConfiguration {
             }
         }
 
-        if (Platform.isLinux() || Platform.isOSX()) {
+        if (Platform.isLinux()) {
             String dName = nif.getDisplayName();
             if (dName != null && dName.contains("docker")) {
                 return false;
