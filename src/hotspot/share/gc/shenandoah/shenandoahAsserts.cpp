@@ -266,7 +266,7 @@ void ShenandoahAsserts::assert_correct(void* interior_loc, oop obj, const char* 
   // Do additional checks for special objects: their fields can hold metadata as well.
   // We want to check class loading/unloading did not corrupt them.
 
-  if (Universe::is_fully_initialized() && java_lang_Class::is_instance(obj)) {
+  if (Universe::is_fully_initialized() && (obj_klass == vmClasses::Class_klass())) {
     Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
     if (klass != nullptr && !Metaspace::contains(klass)) {
       print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_correct failed",
