@@ -26,15 +26,18 @@
 package jdk.internal.platform.cgroupv1;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 import jdk.internal.platform.CgroupInfo;
+import jdk.internal.platform.CgroupMetrics;
 import jdk.internal.platform.CgroupSubsystem;
 import jdk.internal.platform.CgroupSubsystemController;
+import jdk.internal.platform.CgroupUtil;
 import jdk.internal.platform.CgroupV1Metrics;
 
 public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
     private CgroupV1MemorySubSystemController memory;
-    private CgroupV1SubsystemController cpu;
+    private CgroupV1CpuSubSystemController cpu;
     private CgroupV1SubsystemController cpuacct;
     private CgroupV1SubsystemController cpuset;
     private CgroupV1SubsystemController blkio;
@@ -82,10 +85,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
                     CgroupV1MemorySubSystemController controller = new CgroupV1MemorySubSystemController(info.getMountRoot(), info.getMountPoint());
                     controller.setPath(info.getCgroupPath());
-                    boolean isHierarchial = getHierarchical(controller);
-                    controller.setHierarchical(isHierarchial);
-                    boolean isSwapEnabled = getSwapEnabled(controller);
-                    controller.setSwapEnabled(isSwapEnabled);
+                    CgroupUtil.adjustController(controller);
                     subsystem.setMemorySubSystem(controller);
                     anyActiveControllers = true;
                 }
@@ -111,8 +111,9 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
             }
             case "cpu": {
                 if (info.getMountRoot() != null && info.getMountPoint() != null) {
-                    CgroupV1SubsystemController controller = new CgroupV1SubsystemController(info.getMountRoot(), info.getMountPoint());
+                    CgroupV1CpuSubSystemController controller = new CgroupV1CpuSubSystemController(info.getMountRoot(), info.getMountPoint());
                     controller.setPath(info.getCgroupPath());
+                    CgroupUtil.adjustController(controller);
                     subsystem.setCpuController(controller);
                     anyActiveControllers = true;
                 }
@@ -149,23 +150,11 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return null;
     }
 
-    private static boolean getSwapEnabled(CgroupV1MemorySubSystemController controller) {
-        long memswBytes = getLongValue(controller, "memory.memsw.limit_in_bytes");
-        long swappiness = getLongValue(controller, "memory.swappiness");
-        return (memswBytes > 0 && swappiness > 0);
-     }
-
-
-    private static boolean getHierarchical(CgroupV1MemorySubSystemController controller) {
-        long hierarchical = getLongValue(controller, "memory.use_hierarchy");
-        return hierarchical > 0;
-    }
-
     private void setMemorySubSystem(CgroupV1MemorySubSystemController memory) {
         this.memory = memory;
     }
 
-    private void setCpuController(CgroupV1SubsystemController cpu) {
+    private void setCpuController(CgroupV1CpuSubSystemController cpu) {
         this.cpu = cpu;
     }
 
@@ -185,7 +174,7 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         this.pids = pids;
     }
 
-    private static long getLongValue(CgroupSubsystemController controller,
+    static long getLongValue(CgroupSubsystemController controller,
                               String param) {
         return CgroupSubsystemController.getLongValue(controller,
                                                       param,
@@ -193,6 +182,24 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
                                                       CgroupSubsystem.LONG_RETVAL_UNLIMITED);
     }
 
+    /**
+     * Accounts for optional controllers. If the controller is null the provided
+     * supplier will never be called.
+     *
+     * @param controller The controller to check for null
+     * @param supplier The supplier using the controller
+     * @return -1 (unlimited) when the controller is null, otherwise the supplier
+     *         value.
+     */
+    private static long valueOrUnlimited(CgroupSubsystemController controller,
+                                         Supplier<Long> supplier) {
+        if (controller == null) {
+            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
+        }
+        return supplier.get();
+    }
+
+    @Override
     public String getProvider() {
         return PROVIDER_NAME;
     }
@@ -202,10 +209,12 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      ****************************************************************/
 
 
+    @Override
     public long getCpuUsage() {
         return getLongValue(cpuacct, "cpuacct.usage");
     }
 
+    @Override
     public long[] getPerCpuUsage() {
         String usagelist = CgroupSubsystemController.getStringValue(cpuacct, "cpuacct.usage_percpu");
         if (usagelist == null) {
@@ -220,10 +229,12 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
         return percpu;
     }
 
+    @Override
     public long getCpuUserUsage() {
         return CgroupV1SubsystemController.getLongEntry(cpuacct, "cpuacct.stat", "user");
     }
 
+    @Override
     public long getCpuSystemUsage() {
         return CgroupV1SubsystemController.getLongEntry(cpuacct, "cpuacct.stat", "system");
     }
@@ -234,34 +245,37 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      ****************************************************************/
 
 
+    @Override
     public long getCpuPeriod() {
-        return getLongValue(cpu, "cpu.cfs_period_us");
+        return valueOrUnlimited(cpu, () -> cpu.getCpuPeriod());
     }
 
+    @Override
     public long getCpuQuota() {
-        return getLongValue(cpu, "cpu.cfs_quota_us");
+        return valueOrUnlimited(cpu, () -> cpu.getCpuQuota());
     }
 
+    @Override
     public long getCpuShares() {
-        long retval = getLongValue(cpu, "cpu.shares");
-        if (retval == 0 || retval == 1024)
-            return CgroupSubsystem.LONG_RETVAL_UNLIMITED;
-        else
-            return retval;
+        return valueOrUnlimited(cpu, () -> cpu.getCpuShares());
     }
 
+    @Override
     public long getCpuNumPeriods() {
-        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "nr_periods");
+        return valueOrUnlimited(cpu, () -> cpu.getCpuNumPeriods());
     }
 
+    @Override
     public long getCpuNumThrottled() {
-        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "nr_throttled");
+        return valueOrUnlimited(cpu, () -> cpu.getCpuNumThrottled());
     }
 
+    @Override
     public long getCpuThrottledTime() {
-        return CgroupV1SubsystemController.getLongEntry(cpu, "cpu.stat", "throttled_time");
+        return valueOrUnlimited(cpu, () -> cpu.getCpuThrottledTime());
     }
 
+    @Override
     public long getEffectiveCpuCount() {
         return Runtime.getRuntime().availableProcessors();
     }
@@ -271,26 +285,32 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      * CPUSet Subsystem
      ****************************************************************/
 
+    @Override
     public int[] getCpuSetCpus() {
         return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.cpus"));
     }
 
+    @Override
     public int[] getEffectiveCpuSetCpus() {
         return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.effective_cpus"));
     }
 
+    @Override
     public int[] getCpuSetMems() {
         return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.mems"));
     }
 
+    @Override
     public int[] getEffectiveCpuSetMems() {
         return CgroupSubsystemController.stringRangeToIntArray(CgroupSubsystemController.getStringValue(cpuset, "cpuset.effective_mems"));
     }
 
+    @Override
     public double getCpuSetMemoryPressure() {
         return CgroupV1SubsystemController.getDoubleValue(cpuset, "cpuset.memory_pressure");
     }
 
+    @Override
     public Boolean isCpuSetMemoryPressureEnabled() {
         long val = getLongValue(cpuset, "cpuset.memory_pressure_enabled");
         return (val == 1);
@@ -301,114 +321,102 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      * Memory Subsystem
      ****************************************************************/
 
-
+    @Override
     public long getMemoryFailCount() {
-        return getLongValue(memory, "memory.failcnt");
+        return valueOrUnlimited(memory, () -> memory.getMemoryFailCount());
     }
 
+    @Override
     public long getMemoryLimit() {
-        long retval = getLongValue(memory, "memory.limit_in_bytes");
-        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
-            if (memory.isHierarchical()) {
-                // memory.limit_in_bytes returned unlimited, attempt
-                // hierarchical memory limit
-                String match = "hierarchical_memory_limit";
-                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
-                                                            "memory.stat",
-                                                            match);
-            }
-        }
-        return CgroupV1SubsystemController.longValOrUnlimited(retval);
+        Supplier<Long> limitSupplier = () -> memory.getMemoryLimit(CgroupMetrics.getTotalMemorySize0());
+        return valueOrUnlimited(memory, limitSupplier);
     }
 
+    @Override
     public long getMemoryMaxUsage() {
-        return getLongValue(memory, "memory.max_usage_in_bytes");
+        return valueOrUnlimited(memory, () -> memory.getMemoryMaxUsage());
     }
 
+    @Override
     public long getMemoryUsage() {
-        return getLongValue(memory, "memory.usage_in_bytes");
+        return valueOrUnlimited(memory, () -> memory.getMemoryUsage());
     }
 
-    public long getKernelMemoryFailCount() {
-        return getLongValue(memory, "memory.kmem.failcnt");
-    }
-
-    public long getKernelMemoryMaxUsage() {
-        return getLongValue(memory, "memory.kmem.max_usage_in_bytes");
-    }
-
-    public long getKernelMemoryUsage() {
-        return getLongValue(memory, "memory.kmem.usage_in_bytes");
-    }
-
-    public long getTcpMemoryFailCount() {
-        return getLongValue(memory, "memory.kmem.tcp.failcnt");
-    }
-
-    public long getTcpMemoryMaxUsage() {
-        return getLongValue(memory, "memory.kmem.tcp.max_usage_in_bytes");
-    }
-
+    @Override
     public long getTcpMemoryUsage() {
-        return getLongValue(memory, "memory.kmem.tcp.usage_in_bytes");
+        return valueOrUnlimited(memory, () -> memory.getTcpMemoryUsage());
     }
 
+    @Override
     public long getMemoryAndSwapFailCount() {
-        if (memory != null && !memory.isSwapEnabled()) {
-            return getMemoryFailCount();
-        }
-        return getLongValue(memory, "memory.memsw.failcnt");
+        return valueOrUnlimited(memory, () -> memory.getMemoryAndSwapFailCount());
     }
 
+    @Override
     public long getMemoryAndSwapLimit() {
-        if (memory != null && !memory.isSwapEnabled()) {
-            return getMemoryLimit();
-        }
-        long retval = getLongValue(memory, "memory.memsw.limit_in_bytes");
-        if (retval > CgroupV1SubsystemController.UNLIMITED_MIN) {
-            if (memory.isHierarchical()) {
-                // memory.memsw.limit_in_bytes returned unlimited, attempt
-                // hierarchical memory limit
-                String match = "hierarchical_memsw_limit";
-                retval = CgroupV1SubsystemController.getLongValueMatchingLine(memory,
-                                                            "memory.stat",
-                                                            match);
-            }
-        }
-        return CgroupV1SubsystemController.longValOrUnlimited(retval);
+        Supplier<Long> limitSupplier = () -> {
+            long hostMem = CgroupMetrics.getTotalMemorySize0();
+            long hostSwap = CgroupMetrics.getTotalSwapSize0();
+            return memory.getMemoryAndSwapLimit(hostMem, hostSwap);
+        };
+        return valueOrUnlimited(memory, limitSupplier);
     }
 
+    @Override
     public long getMemoryAndSwapMaxUsage() {
-        if (memory != null && !memory.isSwapEnabled()) {
-            return getMemoryMaxUsage();
-        }
-        return getLongValue(memory, "memory.memsw.max_usage_in_bytes");
+        return valueOrUnlimited(memory, () -> memory.getMemoryAndSwapMaxUsage());
     }
 
+    @Override
     public long getMemoryAndSwapUsage() {
-        if (memory != null && !memory.isSwapEnabled()) {
-            return getMemoryUsage();
-        }
-        return getLongValue(memory, "memory.memsw.usage_in_bytes");
+        return valueOrUnlimited(memory, () -> memory.getMemoryAndSwapUsage());
     }
 
+    @Override
+    public long getKernelMemoryFailCount() {
+        return valueOrUnlimited(memory, () -> memory.getKernelMemoryFailCount());
+    }
+
+    @Override
+    public long getKernelMemoryMaxUsage() {
+        return valueOrUnlimited(memory, () -> memory.getKernelMemoryMaxUsage());
+    }
+
+    @Override
+    public long getKernelMemoryUsage() {
+        return valueOrUnlimited(memory, () -> memory.getKernelMemoryUsage());
+    }
+
+    @Override
+    public long getTcpMemoryFailCount() {
+        return valueOrUnlimited(memory, () -> memory.getTcpMemoryFailCount());
+    }
+
+    @Override
+    public long getTcpMemoryMaxUsage() {
+        return valueOrUnlimited(memory, () -> memory.getTcpMemoryMaxUsage());
+    }
+
+    @Override
     public Boolean isMemoryOOMKillEnabled() {
-        long val = CgroupV1SubsystemController.getLongEntry(memory, "memory.oom_control", "oom_kill_disable");
-        return (val == 0);
+        return memory == null ? false : memory.isMemoryOOMKillEnabled();
     }
 
+    @Override
     public long getMemorySoftLimit() {
-        return CgroupV1SubsystemController.longValOrUnlimited(getLongValue(memory, "memory.soft_limit_in_bytes"));
+        return valueOrUnlimited(memory, () -> memory.getMemorySoftLimit(CgroupMetrics.getTotalMemorySize0()));
     }
 
     /*****************************************************************
      *  pids subsystem
      ****************************************************************/
+    @Override
     public long getPidsMax() {
         String pidsMaxStr = CgroupSubsystemController.getStringValue(pids, "pids.max");
         return CgroupSubsystem.limitFromString(pidsMaxStr);
     }
 
+    @Override
     public long getPidsCurrent() {
         return getLongValue(pids, "pids.current");
     }
@@ -418,10 +426,12 @@ public class CgroupV1Subsystem implements CgroupSubsystem, CgroupV1Metrics {
      ****************************************************************/
 
 
+    @Override
     public long getBlkIOServiceCount() {
         return CgroupV1SubsystemController.getLongEntry(blkio, "blkio.throttle.io_service_bytes", "Total");
     }
 
+    @Override
     public long getBlkIOServiced() {
         return CgroupV1SubsystemController.getLongEntry(blkio, "blkio.throttle.io_serviced", "Total");
     }

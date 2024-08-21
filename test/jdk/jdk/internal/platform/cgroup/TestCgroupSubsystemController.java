@@ -214,6 +214,16 @@ public class TestCgroupSubsystemController {
             return path;
         }
 
+        @Override
+        public void setPath(String cgroupPath) {
+            // nothing;
+        }
+
+        @Override
+        public String getCgroupPath() {
+            return null; // doesn't matter
+        }
+
     }
 
 }

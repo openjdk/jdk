@@ -62,3 +62,12 @@ Java_jdk_internal_platform_CgroupMetrics_getTotalSwapSize0
     }
     return (jlong)(si.totalswap * si.mem_unit);
 }
+
+JNIEXPORT jint JNICALL
+Java_jdk_internal_platform_CgroupMetrics_getTotalCpuCount0
+  (JNIEnv *env, jclass ignored)
+{
+    // FIXME: This ought to use some JVM api to query host CPUs
+    int retval = sysconf(_SC_NPROCESSORS_ONLN);
+    return (jint)(retval);
+}

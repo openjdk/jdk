@@ -42,9 +42,7 @@ import org.junit.Test;
 import jdk.internal.platform.CgroupInfo;
 import jdk.internal.platform.CgroupSubsystemFactory;
 import jdk.internal.platform.CgroupSubsystemFactory.CgroupTypeResult;
-import jdk.internal.platform.CgroupV1MetricsImpl;
 import jdk.internal.platform.cgroupv1.CgroupV1Subsystem;
-import jdk.internal.platform.Metrics;
 import jdk.test.lib.Utils;
 import jdk.test.lib.util.FileUtils;
 

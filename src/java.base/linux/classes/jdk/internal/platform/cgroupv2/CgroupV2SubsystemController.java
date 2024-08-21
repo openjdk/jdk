@@ -32,15 +32,30 @@ import jdk.internal.platform.CgroupSubsystemController;
 
 public class CgroupV2SubsystemController implements CgroupSubsystemController {
 
-    private final String path;
+    private final String mountPath;
+    private String cgroupPath;
+    private String path;
 
     public CgroupV2SubsystemController(String mountPath, String cgroupPath) {
+        this.mountPath = mountPath;
+        this.cgroupPath = cgroupPath;
         this.path = Paths.get(mountPath, cgroupPath).toString();
     }
 
     @Override
     public String path() {
         return path;
+    }
+
+    @Override
+    public void setPath(String cgroupPath) {
+        this.cgroupPath = cgroupPath;
+        this.path = Paths.get(this.mountPath, cgroupPath).toString();
+    }
+
+    @Override
+    public String getCgroupPath() {
+        return this.cgroupPath;
     }
 
     public static long convertStringToLong(String strval) {
