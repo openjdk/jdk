@@ -117,7 +117,7 @@ public class SwingButtonResizeTestWithOpenGL {
             File file1 = new File("image1.png");
             saveButtonImage(bimage1, file1);
 
-            //some platforms may not support maximize frame
+            // some platforms may not support maximize frame
             if (frame.getToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH)) {
 
                 robot.waitForIdle();
@@ -132,30 +132,30 @@ public class SwingButtonResizeTestWithOpenGL {
                     frame.setExtendedState(JFrame.NORMAL);  //resize from
                     // maximum size to normal
 
-                    //capture image of JButton after resize
-                    System.out.println("Getting image of JButton after resize" + "..image2");
+                    // capture image of JButton after resize
+                    System.out.println("Getting image of JButton after resize..image2");
                     bimage2 = getButtonImage();
                     File file2 = new File("image2.png");
                     saveButtonImage(bimage2, file2);
 
-                    //compare button images from before and after frame resize
+                    // compare button images from before and after frame resize
                     DiffImage di = new DiffImage(bimage1.getWidth(), bimage1.getHeight());
                     di.compare(bimage1, bimage2);
-                    System.out.println("Taking the diff of two images, image1" + " and image2");
-                    //results of image comparison
+                    System.out.println("Taking the diff of two images, image1 and image2");
+                    // results of image comparison
                     int numDiffPixels = di.getNumDiffPixels();
                     if (numDiffPixels != 0) {
-                        throw new RuntimeException("Button renderings are " + "different after window resize," + " num of Diff Pixels=" + numDiffPixels);
+                        throw new RuntimeException("Button renderings are different after window resize, num of Diff Pixels=" + numDiffPixels);
                     } else {
                         System.out.println("Test passed...");
                     }
 
                 } else {
-                    System.out.println("Test skipped: JFrame.NORMAL resize is" + " not supported");
+                    System.out.println("Test skipped: JFrame.NORMAL resize is not supported");
                 }
 
             } else {
-                System.out.println("Test skipped: JFrame.MAXIMIZED_BOTH " + "resize is not supported");
+                System.out.println("Test skipped: JFrame.MAXIMIZED_BOTH resize is not supported");
             }
         } finally {
             disposeFrame();
@@ -175,7 +175,7 @@ public class SwingButtonResizeTestWithOpenGL {
             System.out.println("Button loc: " + buttonLoc);
             bimage = robot.createScreenCapture(new Rectangle(buttonLoc.x, buttonLoc.y, button.getWidth(), button.getHeight()));
         } catch (Exception e) {
-            throw new RuntimeException("Problems capturing button image from " + "Robot", e);
+            throw new RuntimeException("Problems capturing button image from Robot", e);
         }
         return bimage;
     }
@@ -250,14 +250,11 @@ public class SwingButtonResizeTestWithOpenGL {
             int b1;  // blue
             int b2;
 
-            int x;
-            int y;
-
             Object o1 = null;
             Object o2 = null;
             nDiff = 0;
-            for (x = minx1; x < (minx1 + w1); x++) {
-                for (y = miny1; y < (miny1 + h1); y++) {
+            for (int x = minx1; x < (minx1 + w1); x++) {
+                for (int y = miny1; y < (miny1 + h1); y++) {
                     o1 = ras1.getDataElements(x, y, o1);  // Causes rasters to
                     // allocate data
                     o2 = ras2.getDataElements(x, y, o2);  // and we reuse the
