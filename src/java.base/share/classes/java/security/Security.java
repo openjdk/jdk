@@ -865,7 +865,8 @@ public final class Security {
      *          access to retrieve the specified security property value
      * @throws  NullPointerException if key is {@code null}
      * @throws  IllegalArgumentException if key is reserved and cannot be
-     *          used as a Security property name.
+     *          used as a Security property name. Reserved keys are:
+     *          "include".
      *
      * @see #setProperty
      * @see java.security.SecurityPermission
@@ -898,7 +899,8 @@ public final class Security {
      *          denies access to set the specified security property value
      * @throws  NullPointerException if key or datum is {@code null}
      * @throws  IllegalArgumentException if key is reserved and cannot be
-     *          used as a Security property name.
+     *          used as a Security property name. Reserved keys are:
+     *          "include".
      *
      * @see #getProperty
      * @see java.security.SecurityPermission
