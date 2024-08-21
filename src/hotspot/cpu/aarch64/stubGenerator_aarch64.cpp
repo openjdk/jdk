@@ -5376,14 +5376,14 @@ class StubGenerator: public StubCodeGenerator {
 
     if (eltype == T_INT || eltype == T_CHAR || eltype == T_SHORT) {
       // 31^16
-      __ movw(rscratch1, intpow<uint32_t, 31, 16>::value);
+      __ movw(rscratch1, intpow(31U, 16));
       __ dup(vpowm, Assembler::T4S, rscratch1);
     } else if (eltype == T_BOOLEAN || eltype == T_BYTE) {
       // 31^4 - multiplier between lower and upper parts of a register
-      __ movw(rscratch1, intpow<uint32_t, 31, 4>::value);
+      __ movw(rscratch1, intpow(31U, 4));
       __ dup(vpow, Assembler::T4S, rscratch1);
       // 31^28 - remainder of the iteraion multiplier, 28 = 32 - 4
-      __ movw(rscratch1, intpow<uint32_t, 31, 28>::value);
+      __ movw(rscratch1, intpow(31U, 28));
       __ dup(vpowm, Assembler::T4S, rscratch1);
     } else {
       __ should_not_reach_here();
@@ -5475,12 +5475,12 @@ class StubGenerator: public StubCodeGenerator {
     __ br(Assembler::HS, LOOP);
 
     // Put 0-3'th powers of 31 into a single SIMD register together.
-    __ movw(rscratch1, intpow<uint32_t, 31, 3>::value);
-    __ movw(rscratch2, intpow<uint32_t, 31, 2>::value);
+    __ movw(rscratch1, intpow(31U, 3));
+    __ movw(rscratch2, intpow(31U, 2));
     __ mov(vpow, Assembler::S, 0, rscratch1);
     __ mov(vpow, Assembler::S, 1, rscratch2);
-    __ movw(rscratch1, intpow<uint32_t, 31, 1>::value);
-    __ movw(rscratch2, intpow<uint32_t, 31, 0>::value);
+    __ movw(rscratch1, intpow(31U, 1));
+    __ movw(rscratch2, intpow(31U, 0));
     __ mov(vpow, Assembler::S, 2, rscratch1);
     __ mov(vpow, Assembler::S, 3, rscratch2);
 
@@ -5490,11 +5490,11 @@ class StubGenerator: public StubCodeGenerator {
 
     if (eltype == T_INT || eltype == T_SHORT || eltype == T_CHAR) {
       // 31^4
-      __ movw(rscratch1, intpow<uint32_t, 31, 4>::value);
+      __ movw(rscratch1, intpow(31U, 4));
     } else {
       // 31^8 - the algorithm loads 32 elements to 4 registers per
       // iteration, so 8 = 32 / 4
-      __ movw(rscratch1, intpow<uint32_t, 31, 8>::value);
+      __ movw(rscratch1, intpow(31U, 8));
     }
     __ dup(vpowm, Assembler::T4S, rscratch1);
 

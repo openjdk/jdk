@@ -30,30 +30,17 @@
 #include <limits>
 #include <type_traits>
 
-template <typename T, T v, unsigned p, bool no_overflow = false,
-          typename = std::enable_if_t<std::is_integral<T>::value && std::is_unsigned<T>::value>>
-struct intpow {
-  static_assert(v || p, "0^0 is not defined");
+template <typename T, ENABLE_IF(std::is_integral<T>::value && std::is_unsigned<T>::value)>
+static constexpr T intpow(T v, unsigned p) {
+  if (p == 0) {
+    return 1;
+  }
 
- private:
   // We use exponentiation by squaring to calculate the required power.
-  static const T _a = intpow<T, v, p / 2, no_overflow>::value;
-  static const T _b = (p % 2) ? v : 1;
+  T a = intpow(v, p / 2);
+  T b = (p % 2) ? v : 1;
 
-  static_assert(!no_overflow || _a <= std::numeric_limits<T>::max() / _a, "Integer overflow");
-  static_assert(!no_overflow || _a * _a <= std::numeric_limits<T>::max() / _b, "Integer overflow");
+  return a * a * b;
+}
 
- public:
-  static const T value = _a * _a * _b;
-};
-
-template <typename T, T v, bool no_overflow>
-struct intpow<T, v, 0, no_overflow> {
-  static const T value = 1;
-};
-
-template <typename T, T v, bool no_overflow>
-struct intpow<T, v, 1, no_overflow> {
-  static const T value = v;
-};
 #endif // SHARE_UTILITIES_INTPOW_HPP
