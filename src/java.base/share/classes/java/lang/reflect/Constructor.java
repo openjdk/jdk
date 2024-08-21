@@ -152,7 +152,7 @@ public final class Constructor<T> extends Executable {
 
     // Creates a new root constructor with a custom accessor for serialization hooks.
     Constructor<T> newWithAccessor(ConstructorAccessor accessor) {
-        var res = new Constructor<>(clazz, parameterTypes, exceptionTypes, modifiers, slot,
+        var res = new Constructor<>(getDeclaringClass(), parameterTypes, exceptionTypes, modifiers, slot,
                 signature, annotations, parameterAnnotations);
         res.constructorAccessor = accessor;
         return res;
