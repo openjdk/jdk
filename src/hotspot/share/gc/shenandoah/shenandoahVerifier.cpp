@@ -222,7 +222,7 @@ private:
     // Do additional checks for special objects: their fields can hold metadata as well.
     // We want to check class loading/unloading did not corrupt them.
 
-    if (java_lang_Class::is_instance(obj)) {
+    if (obj_klass == vmClasses::Class_klass()) {
       Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
