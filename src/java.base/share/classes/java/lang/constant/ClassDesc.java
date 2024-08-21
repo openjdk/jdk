@@ -30,7 +30,6 @@ import java.lang.invoke.TypeDescriptor;
 import jdk.internal.constant.ArrayClassDescImpl;
 import jdk.internal.constant.PrimitiveClassDescImpl;
 import jdk.internal.constant.ReferenceClassDescImpl;
-import sun.invoke.util.Wrapper;
 
 import static jdk.internal.constant.ConstantUtils.binaryToInternal;
 import static jdk.internal.constant.ConstantUtils.forPrimitiveType;
