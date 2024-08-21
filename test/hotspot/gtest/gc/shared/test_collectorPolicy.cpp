@@ -160,7 +160,7 @@ class TestGenCollectorPolicy {
 // verify that there are some basic rules for NewSize honored by the policies.
 
 // Tests require at least 128M of MaxHeap
-// otherwise ergnomic  is different and generation sizes might be changed.
+// otherwise ergonomic is different and generation sizes might be changed.
 
 // If NewSize has been ergonomically set, the collector policy
 // should use it for min but calculate the initial young size
