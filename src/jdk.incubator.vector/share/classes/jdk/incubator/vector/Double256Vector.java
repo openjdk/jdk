@@ -142,10 +142,14 @@ final class Double256Vector extends DoubleVector {
     Double256Shuffle iotaShuffle() { return Double256Shuffle.IOTA; }
 
     @ForceInline
-    Double256Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Double256Shuffle)VectorSupport.shuffleIota(ETYPE, Double256Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Double256Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Double256Shuffle)VectorSupport.shuffleIota(ETYPE, Double256Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Double256Shuffle)VectorSupport.shuffleIota(ETYPE, Double256Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class Double256Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    Double256Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Double256Shuffle(indexes, i, partialWrap);
-    }
+    Double256Shuffle shuffleFromArray(int[] indexes, int i) { return new Double256Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Double256Shuffle shuffleFromArray(int[] indexes, int i) { return new Double256Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Double256Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Double256Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Double256Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Double256Shuffle(fn, false); }
+    Double256Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Double256Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -351,13 +345,8 @@ final class Double256Vector extends DoubleVector {
     }
 
     @ForceInline
-    public VectorShuffle<Double> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Double256Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Double> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Double256Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -445,34 +434,19 @@ final class Double256Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double256Vector rearrange(VectorShuffle<Double> s, boolean wrap) {
+    public Double256Vector rearrange(VectorShuffle<Double> s) {
         return (Double256Vector)
             super.rearrangeTemplate(Double256Shuffle.class,
-                                    (Double256Shuffle) s, wrap);  // specialize
+                                    (Double256Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Double256Vector rearrange(VectorShuffle<Double> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Double256Vector rearrange(VectorShuffle<Double> shuffle,
-                                  VectorMask<Double> m, boolean wrap) {
+                                  VectorMask<Double> m) {
         return (Double256Vector)
             super.rearrangeTemplate(Double256Shuffle.class,
                                     Double256Mask.class,
                                     (Double256Shuffle) shuffle,
-                                    (Double256Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Double256Vector rearrange(VectorShuffle<Double> shuffle,
-                                  VectorMask<Double> m) {
-        return rearrange(shuffle, m, true);
+                                    (Double256Mask) m);  // specialize
     }
 
     @Override
@@ -503,31 +477,18 @@ final class Double256Vector extends DoubleVector {
 
     @Override
     @ForceInline
-    public Double256Vector selectFrom(Vector<Double> v, boolean wrap) {
-        return (Double256Vector)
-            super.selectFromTemplate((Double256Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Double256Vector selectFrom(Vector<Double> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Double256Vector selectFrom(Vector<Double> v,
-                                   VectorMask<Double> m, boolean wrap) {
         return (Double256Vector)
-            super.selectFromTemplate((Double256Vector) v,
-                                     (Double256Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Double256Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Double256Vector selectFrom(Vector<Double> v,
                                    VectorMask<Double> m) {
-        return selectFrom(v, m, true);
+        return (Double256Vector)
+            super.selectFromTemplate((Double256Vector) v,
+                                     Double256Mask.class, (Double256Mask) m);  // specialize
     }
 
 
@@ -820,28 +781,16 @@ final class Double256Vector extends DoubleVector {
             super(VLENGTH, reorder);
         }
 
-        public Double256Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Double256Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Double256Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Double256Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Double256Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Double256Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

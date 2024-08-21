@@ -1454,7 +1454,7 @@ relativeError));
     static void smokeTest2() {
         // Do some zipping and shuffling.
         DoubleVector io = (DoubleVector) SPECIES.broadcast(0).addIndex(1);
-        DoubleVector io2 = (DoubleVector) VectorShuffle.iota(SPECIES,0,1,true).toVector();
+        DoubleVector io2 = (DoubleVector) VectorShuffle.iota(SPECIES,0,1,false).toVector();
         Assert.assertEquals(io, io2);
         DoubleVector a = io.add((double)1); //[1,2]
         DoubleVector b = a.neg();  //[-1,-2]

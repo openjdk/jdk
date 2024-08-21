@@ -196,16 +196,12 @@ abstract class AbstractVector<E> extends Vector<E> {
 
     abstract AbstractShuffle<E> iotaShuffle();
 
-    abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean partialWrap);
+    abstract AbstractShuffle<E> iotaShuffle(int start, int step, boolean wrap);
 
     /*do not alias this byte array*/
     abstract AbstractShuffle<E> shuffleFromBytes(byte[] reorder);
 
-    abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i, boolean partialWrap);
-
     abstract AbstractShuffle<E> shuffleFromArray(int[] indexes, int i);
-
-    abstract AbstractShuffle<E> shuffleFromOp(IntUnaryOperator fn, boolean partialWrap);
 
     abstract AbstractShuffle<E> shuffleFromOp(IntUnaryOperator fn);
 

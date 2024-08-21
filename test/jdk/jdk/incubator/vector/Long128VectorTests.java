@@ -1327,7 +1327,7 @@ public class Long128VectorTests extends AbstractVectorTest {
     static void smokeTest2() {
         // Do some zipping and shuffling.
         LongVector io = (LongVector) SPECIES.broadcast(0).addIndex(1);
-        LongVector io2 = (LongVector) VectorShuffle.iota(SPECIES,0,1,true).toVector();
+        LongVector io2 = (LongVector) VectorShuffle.iota(SPECIES,0,1,false).toVector();
         Assert.assertEquals(io, io2);
         LongVector a = io.add((long)1); //[1,2]
         LongVector b = a.neg();  //[-1,-2]

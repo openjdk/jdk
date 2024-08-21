@@ -204,6 +204,10 @@ public class AbstractVectorTest {
         int [] a = new int[length];
         for (int i = 0; i < length; i++) {
             int elem = fn.applyAsInt(i);
+            int wrapElem = Math.floorMod(elem, length);
+            if (elem != wrapElem) {
+                elem = wrapElem - length;
+            }
             a[i] = elem;
         }
         return a;

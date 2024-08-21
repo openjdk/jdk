@@ -142,10 +142,14 @@ final class IntMaxVector extends IntVector {
     IntMaxShuffle iotaShuffle() { return IntMaxShuffle.IOTA; }
 
     @ForceInline
-    IntMaxShuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (IntMaxShuffle)VectorSupport.shuffleIota(ETYPE, IntMaxShuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    IntMaxShuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (IntMaxShuffle)VectorSupport.shuffleIota(ETYPE, IntMaxShuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (IntMaxShuffle)VectorSupport.shuffleIota(ETYPE, IntMaxShuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
-    IntMaxShuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new IntMaxShuffle(indexes, i, partialWrap);
-    }
+    IntMaxShuffle shuffleFromArray(int[] indexes, int i) { return new IntMaxShuffle(indexes, i); }
 
     @Override
     @ForceInline
-    IntMaxShuffle shuffleFromArray(int[] indexes, int i) { return new IntMaxShuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    IntMaxShuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new IntMaxShuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    IntMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new IntMaxShuffle(fn, false); }
+    IntMaxShuffle shuffleFromOp(IntUnaryOperator fn) { return new IntMaxShuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -364,13 +358,8 @@ final class IntMaxVector extends IntVector {
     }
 
     @ForceInline
-    public VectorShuffle<Integer> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(IntMaxShuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Integer> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(IntMaxShuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -458,34 +447,19 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
-    public IntMaxVector rearrange(VectorShuffle<Integer> s, boolean wrap) {
+    public IntMaxVector rearrange(VectorShuffle<Integer> s) {
         return (IntMaxVector)
             super.rearrangeTemplate(IntMaxShuffle.class,
-                                    (IntMaxShuffle) s, wrap);  // specialize
+                                    (IntMaxShuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public IntMaxVector rearrange(VectorShuffle<Integer> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public IntMaxVector rearrange(VectorShuffle<Integer> shuffle,
-                                  VectorMask<Integer> m, boolean wrap) {
+                                  VectorMask<Integer> m) {
         return (IntMaxVector)
             super.rearrangeTemplate(IntMaxShuffle.class,
                                     IntMaxMask.class,
                                     (IntMaxShuffle) shuffle,
-                                    (IntMaxMask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public IntMaxVector rearrange(VectorShuffle<Integer> shuffle,
-                                  VectorMask<Integer> m) {
-        return rearrange(shuffle, m, true);
+                                    (IntMaxMask) m);  // specialize
     }
 
     @Override
@@ -516,31 +490,18 @@ final class IntMaxVector extends IntVector {
 
     @Override
     @ForceInline
-    public IntMaxVector selectFrom(Vector<Integer> v, boolean wrap) {
-        return (IntMaxVector)
-            super.selectFromTemplate((IntMaxVector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public IntMaxVector selectFrom(Vector<Integer> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public IntMaxVector selectFrom(Vector<Integer> v,
-                                   VectorMask<Integer> m, boolean wrap) {
         return (IntMaxVector)
-            super.selectFromTemplate((IntMaxVector) v,
-                                     (IntMaxMask) m, wrap);  // specialize
+            super.selectFromTemplate((IntMaxVector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public IntMaxVector selectFrom(Vector<Integer> v,
                                    VectorMask<Integer> m) {
-        return selectFrom(v, m, true);
+        return (IntMaxVector)
+            super.selectFromTemplate((IntMaxVector) v,
+                                     IntMaxMask.class, (IntMaxMask) m);  // specialize
     }
 
 
@@ -836,28 +797,16 @@ final class IntMaxVector extends IntVector {
             super(VLENGTH, reorder);
         }
 
-        public IntMaxShuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public IntMaxShuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public IntMaxShuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public IntMaxShuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public IntMaxShuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public IntMaxShuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

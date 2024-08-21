@@ -2285,7 +2285,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Byte> iota = iotaShuffle();
         VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, false);
+        iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2315,7 +2315,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Byte> iota = iotaShuffle();
         VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((byte)(length() - origin))));
-        iota = iotaShuffle(origin, 1, false);
+        iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2337,7 +2337,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         VectorShuffle<Byte> iota = iotaShuffle();
         VectorMask<Byte> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, false);
+        iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2377,7 +2377,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         VectorShuffle<Byte> iota = iotaShuffle();
         VectorMask<Byte> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((byte)(origin))));
-        iota = iotaShuffle(-origin, 1, false);
+        iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2393,23 +2393,13 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      */
     @Override
     public abstract
-    ByteVector rearrange(VectorShuffle<Byte> shuffle, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
     ByteVector rearrange(VectorShuffle<Byte> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Byte>>
-    ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle, boolean wrap) {
-        if (!wrap) {
-          shuffle.checkIndexes();
-        }
+    ByteVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
         @SuppressWarnings("unchecked")
         S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
@@ -2427,14 +2417,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     @Override
     public abstract
     ByteVector rearrange(VectorShuffle<Byte> s,
-                                   VectorMask<Byte> m, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    ByteVector rearrange(VectorShuffle<Byte> s,
                                    VectorMask<Byte> m);
 
     /*package-private*/
@@ -2444,16 +2426,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     ByteVector rearrangeTemplate(Class<S> shuffletype,
                                            Class<M> masktype,
                                            S shuffle,
-                                           M m, boolean wrap) {
+                                           M m) {
 
         m.check(masktype, this);
-        if (!wrap) {
-            VectorMask<Byte> valid = shuffle.laneIsValid();
-            if (m.andNot(valid).anyTrue()) {
-                shuffle.checkIndexes();
-                throw new AssertionError();
-            }
-        }
         @SuppressWarnings("unchecked")
         S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
@@ -2504,24 +2479,25 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     @ForceInline
     private final
-    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp, boolean partialWrap) {
+    VectorShuffle<Byte> toShuffle0(ByteSpecies dsp) {
         byte[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0, partialWrap);
+        return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
     /*package-private*/
     @ForceInline
     final
-    <S extends VectorShuffle<Byte>>
-    VectorShuffle<Byte> toShuffleTemplate(Class<S> shuffleType, boolean partialWrap) {
+    VectorShuffle<Byte> toShuffleTemplate(Class<?> shuffleType) {
         ByteSpecies vsp = vspecies();
-        return VectorSupport.vectorToShuffle(getClass(), byte.class, shuffleType,
-                                             this, length(), vsp, partialWrap,
-                                             (v, s, pwrap) -> v.toShuffle0(s, pwrap));
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), byte.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ByteVector::toShuffle0);
     }
 
     /**
@@ -2568,27 +2544,16 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      */
     @Override
     public abstract
-    ByteVector selectFrom(Vector<Byte> v, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
     ByteVector selectFrom(Vector<Byte> v);
 
     /*package-private*/
     @ForceInline
-    final ByteVector selectFromTemplate(ByteVector v, boolean wrap) {
-        return v.rearrange(this.toShuffle(!wrap), wrap);
+    final ByteVector selectFromTemplate(ByteVector v) {
+        return (ByteVector)VectorSupport.selectFromOp(getClass(), null, byte.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    ByteVector selectFrom(Vector<Byte> s, VectorMask<Byte> m, boolean wrap);
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -2599,9 +2564,15 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /*package-private*/
     @ForceInline
-    final ByteVector selectFromTemplate(ByteVector v,
-                                                  AbstractMask<Byte> m, boolean wrap) {
-        return v.rearrange(this.toShuffle(!wrap), m, wrap);
+    final
+    <M extends VectorMask<Byte>>
+    ByteVector selectFromTemplate(ByteVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (ByteVector)VectorSupport.selectFromOp(getClass(), masktype, byte.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations

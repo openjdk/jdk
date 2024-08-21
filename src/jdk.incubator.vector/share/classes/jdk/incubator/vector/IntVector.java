@@ -2270,7 +2270,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
         VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
-        iota = iotaShuffle(origin, 1, false);
+        iota = iotaShuffle(origin, 1, true);
         return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
     }
 
@@ -2300,7 +2300,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         Objects.checkIndex(origin, length() + 1);
         VectorShuffle<Integer> iota = iotaShuffle();
         VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.LT, (broadcast((int)(length() - origin))));
-        iota = iotaShuffle(origin, 1, false);
+        iota = iotaShuffle(origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2322,7 +2322,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         VectorShuffle<Integer> iota = iotaShuffle();
         VectorMask<Integer> blendMask = iota.toVector().compare((part == 0) ? VectorOperators.GE : VectorOperators.LT,
                                                                   (broadcast((int)(origin))));
-        iota = iotaShuffle(-origin, 1, false);
+        iota = iotaShuffle(-origin, 1, true);
         return that.blend(this.rearrange(iota), blendMask);
     }
 
@@ -2362,7 +2362,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         VectorShuffle<Integer> iota = iotaShuffle();
         VectorMask<Integer> blendMask = iota.toVector().compare(VectorOperators.GE,
                                                                   (broadcast((int)(origin))));
-        iota = iotaShuffle(-origin, 1, false);
+        iota = iotaShuffle(-origin, 1, true);
         return vspecies().zero().blend(this.rearrange(iota), blendMask);
     }
 
@@ -2378,23 +2378,13 @@ public abstract class IntVector extends AbstractVector<Integer> {
      */
     @Override
     public abstract
-    IntVector rearrange(VectorShuffle<Integer> shuffle, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
     IntVector rearrange(VectorShuffle<Integer> shuffle);
 
     /*package-private*/
     @ForceInline
     final
     <S extends VectorShuffle<Integer>>
-    IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle, boolean wrap) {
-        if (!wrap) {
-          shuffle.checkIndexes();
-        }
+    IntVector rearrangeTemplate(Class<S> shuffletype, S shuffle) {
         @SuppressWarnings("unchecked")
         S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
@@ -2412,14 +2402,6 @@ public abstract class IntVector extends AbstractVector<Integer> {
     @Override
     public abstract
     IntVector rearrange(VectorShuffle<Integer> s,
-                                   VectorMask<Integer> m, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    IntVector rearrange(VectorShuffle<Integer> s,
                                    VectorMask<Integer> m);
 
     /*package-private*/
@@ -2429,16 +2411,9 @@ public abstract class IntVector extends AbstractVector<Integer> {
     IntVector rearrangeTemplate(Class<S> shuffletype,
                                            Class<M> masktype,
                                            S shuffle,
-                                           M m, boolean wrap) {
+                                           M m) {
 
         m.check(masktype, this);
-        if (!wrap) {
-            VectorMask<Integer> valid = shuffle.laneIsValid();
-            if (m.andNot(valid).anyTrue()) {
-                shuffle.checkIndexes();
-                throw new AssertionError();
-            }
-        }
         @SuppressWarnings("unchecked")
         S ws = (S) shuffle.wrapIndexes();
         return VectorSupport.rearrangeOp(
@@ -2489,24 +2464,25 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     @ForceInline
     private final
-    VectorShuffle<Integer> toShuffle0(IntSpecies dsp, boolean partialWrap) {
+    VectorShuffle<Integer> toShuffle0(IntSpecies dsp) {
         int[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
-        return VectorShuffle.fromArray(dsp, sa, 0, partialWrap);
+        return VectorShuffle.fromArray(dsp, sa, 0);
     }
 
     /*package-private*/
     @ForceInline
     final
-    <S extends VectorShuffle<Integer>>
-    VectorShuffle<Integer> toShuffleTemplate(Class<S> shuffleType, boolean partialWrap) {
+    VectorShuffle<Integer> toShuffleTemplate(Class<?> shuffleType) {
         IntSpecies vsp = vspecies();
-        return VectorSupport.vectorToShuffle(getClass(), int.class, shuffleType,
-                                             this, length(), vsp, partialWrap,
-                                             (v, s, pwrap) -> v.toShuffle0(s, pwrap));
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), int.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     IntVector::toShuffle0);
     }
 
     /**
@@ -2553,27 +2529,16 @@ public abstract class IntVector extends AbstractVector<Integer> {
      */
     @Override
     public abstract
-    IntVector selectFrom(Vector<Integer> v, boolean wrap);
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
     IntVector selectFrom(Vector<Integer> v);
 
     /*package-private*/
     @ForceInline
-    final IntVector selectFromTemplate(IntVector v, boolean wrap) {
-        return v.rearrange(this.toShuffle(!wrap), wrap);
+    final IntVector selectFromTemplate(IntVector v) {
+        return (IntVector)VectorSupport.selectFromOp(getClass(), null, int.class,
+                                                        length(), this, v, null,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle()));
     }
-
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    IntVector selectFrom(Vector<Integer> s, VectorMask<Integer> m, boolean wrap);
 
     /**
      * {@inheritDoc} <!--workaround-->
@@ -2584,9 +2549,15 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     /*package-private*/
     @ForceInline
-    final IntVector selectFromTemplate(IntVector v,
-                                                  AbstractMask<Integer> m, boolean wrap) {
-        return v.rearrange(this.toShuffle(!wrap), m, wrap);
+    final
+    <M extends VectorMask<Integer>>
+    IntVector selectFromTemplate(IntVector v,
+                                            Class<M> masktype, M m) {
+        m.check(masktype, this);
+        return (IntVector)VectorSupport.selectFromOp(getClass(), masktype, int.class,
+                                                        length(), this, v, m,
+                                                        (v1, v2, _m) ->
+                                                         v2.rearrange(v1.toShuffle(), _m));
     }
 
     /// Ternary operations

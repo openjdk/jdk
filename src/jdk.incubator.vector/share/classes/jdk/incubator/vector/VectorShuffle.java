@@ -273,8 +273,6 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * range {@code [-VLENGTH..-1]}.
      *
      * @param species shuffle species
-     * @param partialWrap if true partially wrap any any invalid index  to an 
-     *                    exceptional index
      * @param sourceIndexes the source indexes which the shuffle will draw from
      * @param <E> the boxed element type
      * @return a shuffle where each lane's source index is set to the given
@@ -283,44 +281,19 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * @see VectorSpecies#shuffleFromValues(int...)
      */
     @ForceInline
-    public static <E> VectorShuffle<E> fromValues(VectorSpecies<E> species, boolean partialWrap,
-                                                  int... sourceIndexes) {
-        AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        VectorIntrinsics.requireLength(sourceIndexes.length, vsp.laneCount());
-        return vsp.shuffleFromArray(sourceIndexes, 0, partialWrap);
-    }
-
-    /**
-     * Creates a shuffle for a given species from
-     * a series of source indexes.
-     *
-     * <p> For each shuffle lane, where {@code N} is the shuffle lane
-     * index, the {@code N}th index value is set to the given 
-     * {@code int} value TBD (cast to byte)
-     *
-     * @param species shuffle species
-     * @param sourceIndexes the source indexes which the shuffle will draw from
-     * @param <E> the boxed element type
-     * @return a shuffle where each lane's source index is set to the given
-     *         {@code int} value
-     * @throws IndexOutOfBoundsException if {@code sourceIndexes.length != VLENGTH}
-     * @see VectorSpecies#shuffleFromValues(int...)
-     */
-    @ForceInline
     public static <E> VectorShuffle<E> fromValues(VectorSpecies<E> species,
                                                   int... sourceIndexes) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
         VectorIntrinsics.requireLength(sourceIndexes.length, vsp.laneCount());
-        return vsp.shuffleFromArray(sourceIndexes, 0, false);
+        return vsp.shuffleFromArray(sourceIndexes, 0);
     }
 
     /**
      * Creates a shuffle for a given species from
      * an {@code int} array starting at an offset.
      *
-     * <p> If {@code partialWrap} is true, for each shuffle lane,
-     * where {@code N} is the shuffle lane index, the array element
-     * at index {@code offset + N} is validated
+     * <p> For each shuffle lane, where {@code N} is the shuffle lane
+     * index, the array element at index {@code offset + N} is validated
      * against the species {@code VLENGTH}, and (if invalid)
      * is partially wrapped to an exceptional index in the
      * range {@code [-VLENGTH..-1]}.
@@ -329,82 +302,16 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * @param sourceIndexes the source indexes which the shuffle will draw from
      * @param offset the offset into the array
      * @param <E> the boxed element type
-     * @param partialWrap if true partially wrap any any invalid index to an 
-     *                    exceptional index
      * @return a shuffle where each lane's source index is set to the given
-     *         {@code int} value, optionally partially wrapped
-     * @throws IndexOutOfBoundsException if {@code offset < 0}, or
-     *         {@code offset > sourceIndexes.length - VLENGTH}
-     * @see VectorSpecies#shuffleFromArray(int[], int)
-     */
-    @ForceInline
-    public static <E> VectorShuffle<E> fromArray(VectorSpecies<E> species, int[] sourceIndexes,
-                                                 int offset, boolean partialWrap) {
-        AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        return vsp.shuffleFromArray(sourceIndexes, offset, partialWrap);
-    }
-
-    /**
-     * Creates a shuffle for a given species from
-     * an {@code int} array starting at an offset.
-     *
-     * <p> For each shuffle lane, where {@code N} is the shuffle lane
-     * index, the {@code N}th index value is set to the array element
-     * value at index {@code offset + N}
-     *
-     * @param species shuffle species
-     * @param sourceIndexes the source indexes which the shuffle will draw from
-     * @param offset the offset into the array
-     * @param <E> the boxed element type
-     * @return a shuffle where each lane's source index is set to the given
-     *         {@code int} value at index {@code offset + N}
+     *         {@code int} value, partially wrapped if exceptional
      * @throws IndexOutOfBoundsException if {@code offset < 0}, or
      *         {@code offset > sourceIndexes.length - VLENGTH}
      * @see VectorSpecies#shuffleFromArray(int[], int)
      */
     @ForceInline
     public static <E> VectorShuffle<E> fromArray(VectorSpecies<E> species, int[] sourceIndexes, int offset) {
-        return fromArray(species, sourceIndexes, offset, false);
-    }
-
-    /**
-     * Creates a shuffle for a given species from
-     * the successive values of an operator applied to
-     * the range {@code [0..VLENGTH-1]}.
-     *
-     * <p> If {@code partialWrap} is true, for each shuffle lane,
-     * where {@code N} is the shuffle lane index, the {@code N}th index
-     * value is validated against the species {@code VLENGTH}, and (if invalid)
-     * is partially wrapped to an exceptional index in the
-     * range {@code [-VLENGTH..-1]}.
-     *
-     * <p> Care should be taken to ensure {@code VectorShuffle} values
-     * produced from this method are consumed as constants to ensure
-     * optimal generation of code.  For example, shuffle values can be
-     * held in {@code static final} fields or loop-invariant local variables.
-     *
-     * <p> This method behaves as if a shuffle is created from an array of
-     * mapped indexes as follows:
-     * <pre>{@code
-     *   int[] a = new int[species.length()];
-     *   for (int i = 0; i < a.length; i++) {
-     *       a[i] = fn.applyAsInt(i);
-     *   }
-     *   return VectorShuffle.fromArray(a, 0, false);
-     * }</pre>
-     *
-     * @param species shuffle species
-     * @param fn the lane index mapping function
-     * @param partialWrap if true partially wrap any any invalid index to an 
-     *                    exceptional index
-     * @param <E> the boxed element type
-     * @return a shuffle of mapped indexes
-     * @see VectorSpecies#shuffleFromOp(IntUnaryOperator)
-     */
-    @ForceInline
-    public static <E> VectorShuffle<E> fromOp(VectorSpecies<E> species, IntUnaryOperator fn, boolean partialWrap) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        return vsp.shuffleFromOp(fn, partialWrap);
+        return vsp.shuffleFromArray(sourceIndexes, offset);
     }
 
     /**
@@ -441,10 +348,11 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      */
     @ForceInline
     public static <E> VectorShuffle<E> fromOp(VectorSpecies<E> species, IntUnaryOperator fn) {
-        return fromOp(species, fn, false);
+        AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
+        return vsp.shuffleFromOp(fn);
     }
 
-    /** TBD
+    /**
      * Creates a shuffle using source indexes set to sequential
      * values starting from {@code start} and stepping
      * by the given {@code step}.
@@ -471,7 +379,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
      * @param species shuffle species
      * @param start the starting value of the source index sequence
      * @param step the difference between adjacent source indexes
-     * @param partialWrap whether to partially wrap resulting indexes
+     * @param wrap whether to wrap resulting indexes
      * @param <E> the boxed element type
      * @return a shuffle of sequential lane indexes, possibly wrapped
      * @see VectorSpecies#iotaShuffle(int,int,boolean)
@@ -479,9 +387,9 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
     @ForceInline
     public static <E> VectorShuffle<E> iota(VectorSpecies<E> species,
                                             int start, int step,
-                                            boolean partialWrap) {
+                                            boolean wrap) {
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        return vsp.iotaShuffle(start, step, partialWrap);
+        return vsp.iotaShuffle(start, step, wrap);
     }
 
     /**
@@ -519,7 +427,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
         if ((part & 1) != part)
             throw wrongPartForZip(part, false);
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        return vsp.shuffleFromOp(i -> zipIndex(i, vsp.laneCount(), part), true);
+        return vsp.shuffleFromOp(i -> zipIndex(i, vsp.laneCount(), part));
     }
 
     /**
@@ -556,7 +464,7 @@ public abstract class VectorShuffle<E> extends jdk.internal.vm.vector.VectorSupp
         if ((part & 1) != part)
             throw wrongPartForZip(part, true);
         AbstractSpecies<E> vsp = (AbstractSpecies<E>) species;
-        return vsp.shuffleFromOp(i -> unzipIndex(i, vsp.laneCount(), part), true);
+        return vsp.shuffleFromOp(i -> unzipIndex(i, vsp.laneCount(), part));
     }
 
     private static int zipIndex(int i, int vlen, int part) {

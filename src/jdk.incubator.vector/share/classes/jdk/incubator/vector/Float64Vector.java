@@ -142,10 +142,14 @@ final class Float64Vector extends FloatVector {
     Float64Shuffle iotaShuffle() { return Float64Shuffle.IOTA; }
 
     @ForceInline
-    Float64Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Float64Shuffle)VectorSupport.shuffleIota(ETYPE, Float64Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Float64Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Float64Shuffle)VectorSupport.shuffleIota(ETYPE, Float64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Float64Shuffle)VectorSupport.shuffleIota(ETYPE, Float64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
-    Float64Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Float64Shuffle(indexes, i, partialWrap);
-    }
+    Float64Shuffle shuffleFromArray(int[] indexes, int i) { return new Float64Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Float64Shuffle shuffleFromArray(int[] indexes, int i) { return new Float64Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Float64Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Float64Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Float64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float64Shuffle(fn, false); }
+    Float64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float64Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -351,13 +345,8 @@ final class Float64Vector extends FloatVector {
     }
 
     @ForceInline
-    public VectorShuffle<Float> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Float64Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Float> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Float64Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -445,34 +434,19 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float64Vector rearrange(VectorShuffle<Float> s, boolean wrap) {
+    public Float64Vector rearrange(VectorShuffle<Float> s) {
         return (Float64Vector)
             super.rearrangeTemplate(Float64Shuffle.class,
-                                    (Float64Shuffle) s, wrap);  // specialize
+                                    (Float64Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Float64Vector rearrange(VectorShuffle<Float> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Float64Vector rearrange(VectorShuffle<Float> shuffle,
-                                  VectorMask<Float> m, boolean wrap) {
+                                  VectorMask<Float> m) {
         return (Float64Vector)
             super.rearrangeTemplate(Float64Shuffle.class,
                                     Float64Mask.class,
                                     (Float64Shuffle) shuffle,
-                                    (Float64Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Float64Vector rearrange(VectorShuffle<Float> shuffle,
-                                  VectorMask<Float> m) {
-        return rearrange(shuffle, m, true);
+                                    (Float64Mask) m);  // specialize
     }
 
     @Override
@@ -503,31 +477,18 @@ final class Float64Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float64Vector selectFrom(Vector<Float> v, boolean wrap) {
-        return (Float64Vector)
-            super.selectFromTemplate((Float64Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Float64Vector selectFrom(Vector<Float> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Float64Vector selectFrom(Vector<Float> v,
-                                   VectorMask<Float> m, boolean wrap) {
         return (Float64Vector)
-            super.selectFromTemplate((Float64Vector) v,
-                                     (Float64Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Float64Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Float64Vector selectFrom(Vector<Float> v,
                                    VectorMask<Float> m) {
-        return selectFrom(v, m, true);
+        return (Float64Vector)
+            super.selectFromTemplate((Float64Vector) v,
+                                     Float64Mask.class, (Float64Mask) m);  // specialize
     }
 
 
@@ -816,28 +777,16 @@ final class Float64Vector extends FloatVector {
             super(VLENGTH, reorder);
         }
 
-        public Float64Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Float64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Float64Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Float64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Float64Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Float64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

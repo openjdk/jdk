@@ -2614,38 +2614,12 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * elements of this vector.
      *
      * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
-     * the output lane {@code N} obtains the value from
-     * the input vector at lane {@code I}.
-     *
-     * @param s the shuffle controlling lane index selection
-     * @param wrap wrap the shuffle to vector length
-     * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if wrap is false and there
-     *        are any exceptional source indexes in the shuffle 
-     *        where the mask is set
-     * @see #rearrange(VectorShuffle,VectorMask)
-     * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
-     */
-    public abstract Vector<E> rearrange(VectorShuffle<E> s, boolean wrap);
-
-    /**
-     * Rearranges the lane elements of this vector, selecting lanes
-     * under the control of a specific shuffle.
-     *
-     * This is a cross-lane operation that rearranges the lane
-     * elements of this vector.
-     *
-     * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
+     * source index {@code I=s.wrapIndex(s.laneSource(N))} in the shuffle,
      * the output lane {@code N} obtains the value from
      * the input vector at lane {@code I}.
      *
      * @param s the shuffle controlling lane index selection
      * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if there are any exceptional
-     *        source indexes in the shuffle
      * @see #rearrange(VectorShuffle,VectorMask)
      * @see #rearrange(VectorShuffle,Vector)
      * @see VectorShuffle#laneIsValid()
@@ -2660,41 +2634,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * elements of this vector.
      *
      * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
-     * the output lane {@code N} obtains the value from
-     * the input vector at lane {@code I} if the mask is set.
-     * Otherwise the output lane {@code N} is set to zero.
-     *
-     * <p> This method returns the value of this pseudocode:
-     * <pre>{@code
-     * Vector<E> r = this.rearrange(s.wrapIndexes());
-     * VectorMask<E> valid = s.laneIsValid();
-     * if (m.andNot(valid).anyTrue()) throw ...;
-     * return broadcast(0).blend(r, m);
-     * }</pre>
-     *
-     * @param s the shuffle controlling lane index selection
-     * @param m the mask controlling application of the shuffle
-     * @param wrap wrap the shuffle to vector length
-     * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if wrap is false and there
-     *        are any exceptional source indexes in the shuffle 
-     *        where the mask is set
-     * @see #rearrange(VectorShuffle)
-     * @see #rearrange(VectorShuffle,Vector)
-     * @see VectorShuffle#laneIsValid()
-     */
-    public abstract Vector<E> rearrange(VectorShuffle<E> s, VectorMask<E> m, boolean wrap);
-
-    /**
-     * Rearranges the lane elements of this vector, selecting lanes
-     * under the control of a specific shuffle and a mask.
-     *
-     * This is a cross-lane operation that rearranges the lane
-     * elements of this vector.
-     *
-     * For each lane {@code N} of the shuffle, and for each lane
-     * source index {@code I=s.laneSource(N)} in the shuffle,
+     * source index {@code I=s.wrapIndex(s.laneSource(N))} in the shuffle,
      * the output lane {@code N} obtains the value from
      * the input vector at lane {@code I} if the mask is set.
      * Otherwise the output lane {@code N} is set to zero.
@@ -2710,8 +2650,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @param s the shuffle controlling lane index selection
      * @param m the mask controlling application of the shuffle
      * @return the rearrangement of the lane elements of this vector
-     * @throws IndexOutOfBoundsException if there are any exceptional
-     *        source indexes in the shuffle where the mask is set
      * @see #rearrange(VectorShuffle)
      * @see #rearrange(VectorShuffle,Vector)
      * @see VectorShuffle#laneIsValid()
@@ -2805,7 +2743,7 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * this vector.
      *
      * For each lane {@code N} of this vector, and for each lane
-     * value {@code I=this.lane(N)} in this vector,
+     * value {@code I=wrapIndex(this.lane(N))} in this vector,
      * the output lane {@code N} obtains the value from
      * the argument vector at lane {@code I}.
      *
@@ -2814,43 +2752,10 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * depends on the index values in {@code this}.
      *
      * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle(), wrap)}.
-     *
-     * @param v the vector supplying the result values
-     * @param wrap wrap the shuffle to vector length
-     * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this}
-     * @see #rearrange(VectorShuffle)
-     */
-    public abstract Vector<E> selectFrom(Vector<E> v, boolean wrap);
-
-    /**
-     * Using index values stored in the lanes of this vector,
-     * assemble values stored in second vector {@code v}.
-     * The second vector thus serves as a table, whose
-     * elements are selected by indexes in the current vector.
-     *
-     * This is a cross-lane operation that rearranges the lane
-     * elements of the argument vector, under the control of
-     * this vector.
-     *
-     * For each lane {@code N} of this vector, and for each lane
-     * value {@code I=this.lane(N)} in this vector,
-     * the output lane {@code N} obtains the value from
-     * the argument vector at lane {@code I}.
-     *
-     * In this way, the result contains only values stored in the
-     * argument vector {@code v}, but presented in an order which
-     * depends on the index values in {@code this}.
-     *
-     * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle())}.
+     * {@code v.rearrange(this.toShuffle().wrapIndexes())}.
      *
      * @param v the vector supplying the result values
      * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this}
      * @see #rearrange(VectorShuffle)
      */
     public abstract Vector<E> selectFrom(Vector<E> v);
@@ -2871,44 +2776,11 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * this vector and the mask.
      *
      * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle(), m, wrap)}.
-     *
-     * @param v the vector supplying the result values
-     * @param m the mask controlling selection from {@code v}
-     * @param wrap wrap the shuffle to vector length
-     * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this},
-     *         in a lane which is set in the mask
-     * @see #selectFrom(Vector)
-     * @see #rearrange(VectorShuffle,VectorMask)
-     */
-    public abstract Vector<E> selectFrom(Vector<E> v, VectorMask<E> m, boolean wrap);
-
-    /**
-     * Using index values stored in the lanes of this vector,
-     * assemble values stored in second vector, under the control
-     * of a mask.
-     * Using index values stored in the lanes of this vector,
-     * assemble values stored in second vector {@code v}.
-     * The second vector thus serves as a table, whose
-     * elements are selected by indexes in the current vector.
-     * Lanes that are unset in the mask receive a
-     * zero rather than a value from the table.
-     *
-     * This is a cross-lane operation that rearranges the lane
-     * elements of the argument vector, under the control of
-     * this vector and the mask.
-     *
-     * The result is the same as the expression
-     * {@code v.rearrange(this.toShuffle(), m)}.
+     * {@code v.rearrange(this.toShuffle().wrapIndexes(), m)}.
      *
      * @param v the vector supplying the result values
      * @param m the mask controlling selection from {@code v}
      * @return the rearrangement of the lane elements of {@code v}
-     * @throws IndexOutOfBoundsException if any invalid
-     *         source indexes are found in {@code this},
-     *         in a lane which is set in the mask
      * @see #selectFrom(Vector)
      * @see #rearrange(VectorShuffle,VectorMask)
      */
@@ -2974,28 +2846,6 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @see VectorSpecies#maskAll(boolean)
      */
     public abstract VectorMask<E> maskAll(boolean bit);
-
-    /**
-     * Converts this vector into a shuffle, converting the lane values
-     * to {@code int} and regarding them as source indexes.
-     * <p>
-     * This method behaves as if it returns the result of creating a shuffle
-     * given an array of the vector elements, as follows:
-     * <pre>{@code
-     * long[] a = this.toLongArray();
-     * int[] sa = new int[a.length];
-     * for (int i = 0; i < a.length; i++) {
-     *     sa[i] = (int) a[i];
-     * }
-     * return VectorShuffle.fromValues(this.species(), sa, partialWrap);
-     * }</pre>
-     *
-     * @param partialWrap if true partially wrap any any invalid index  to an 
-     *                    exceptional index
-     * @return a shuffle representation of this vector
-     * @see VectorShuffle#fromValues(VectorSpecies,int...)
-     */
-    public abstract VectorShuffle<E> toShuffle(boolean partialWrap);
 
     /**
      * Converts this vector into a shuffle, converting the lane values

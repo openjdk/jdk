@@ -142,10 +142,14 @@ final class Short64Vector extends ShortVector {
     Short64Shuffle iotaShuffle() { return Short64Shuffle.IOTA; }
 
     @ForceInline
-    Short64Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Short64Shuffle)VectorSupport.shuffleIota(ETYPE, Short64Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Short64Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Short64Shuffle)VectorSupport.shuffleIota(ETYPE, Short64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Short64Shuffle)VectorSupport.shuffleIota(ETYPE, Short64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
-    Short64Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Short64Shuffle(indexes, i, partialWrap);
-    }
+    Short64Shuffle shuffleFromArray(int[] indexes, int i) { return new Short64Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Short64Shuffle shuffleFromArray(int[] indexes, int i) { return new Short64Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Short64Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Short64Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Short64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short64Shuffle(fn, false); }
+    Short64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short64Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -364,13 +358,8 @@ final class Short64Vector extends ShortVector {
     }
 
     @ForceInline
-    public VectorShuffle<Short> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Short64Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Short64Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -458,34 +447,19 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short64Vector rearrange(VectorShuffle<Short> s, boolean wrap) {
+    public Short64Vector rearrange(VectorShuffle<Short> s) {
         return (Short64Vector)
             super.rearrangeTemplate(Short64Shuffle.class,
-                                    (Short64Shuffle) s, wrap);  // specialize
+                                    (Short64Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Short64Vector rearrange(VectorShuffle<Short> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Short64Vector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m, boolean wrap) {
+                                  VectorMask<Short> m) {
         return (Short64Vector)
             super.rearrangeTemplate(Short64Shuffle.class,
                                     Short64Mask.class,
                                     (Short64Shuffle) shuffle,
-                                    (Short64Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Short64Vector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m) {
-        return rearrange(shuffle, m, true);
+                                    (Short64Mask) m);  // specialize
     }
 
     @Override
@@ -516,31 +490,18 @@ final class Short64Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short64Vector selectFrom(Vector<Short> v, boolean wrap) {
-        return (Short64Vector)
-            super.selectFromTemplate((Short64Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Short64Vector selectFrom(Vector<Short> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Short64Vector selectFrom(Vector<Short> v,
-                                   VectorMask<Short> m, boolean wrap) {
         return (Short64Vector)
-            super.selectFromTemplate((Short64Vector) v,
-                                     (Short64Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Short64Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Short64Vector selectFrom(Vector<Short> v,
                                    VectorMask<Short> m) {
-        return selectFrom(v, m, true);
+        return (Short64Vector)
+            super.selectFromTemplate((Short64Vector) v,
+                                     Short64Mask.class, (Short64Mask) m);  // specialize
     }
 
 
@@ -831,28 +792,16 @@ final class Short64Vector extends ShortVector {
             super(VLENGTH, reorder);
         }
 
-        public Short64Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Short64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Short64Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Short64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Short64Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Short64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

@@ -137,10 +137,14 @@ final class Long64Vector extends LongVector {
     Long64Shuffle iotaShuffle() { return Long64Shuffle.IOTA; }
 
     @ForceInline
-    Long64Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Long64Shuffle)VectorSupport.shuffleIota(ETYPE, Long64Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Long64Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Long64Shuffle)VectorSupport.shuffleIota(ETYPE, Long64Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Long64Shuffle)VectorSupport.shuffleIota(ETYPE, Long64Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -149,21 +153,11 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
-    Long64Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Long64Shuffle(indexes, i, partialWrap);
-    }
+    Long64Shuffle shuffleFromArray(int[] indexes, int i) { return new Long64Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Long64Shuffle shuffleFromArray(int[] indexes, int i) { return new Long64Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Long64Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Long64Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Long64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long64Shuffle(fn, false); }
+    Long64Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long64Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -359,13 +353,8 @@ final class Long64Vector extends LongVector {
     }
 
     @ForceInline
-    public VectorShuffle<Long> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Long64Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Long64Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -448,34 +437,19 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long64Vector rearrange(VectorShuffle<Long> s, boolean wrap) {
+    public Long64Vector rearrange(VectorShuffle<Long> s) {
         return (Long64Vector)
             super.rearrangeTemplate(Long64Shuffle.class,
-                                    (Long64Shuffle) s, wrap);  // specialize
+                                    (Long64Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Long64Vector rearrange(VectorShuffle<Long> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Long64Vector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m, boolean wrap) {
+                                  VectorMask<Long> m) {
         return (Long64Vector)
             super.rearrangeTemplate(Long64Shuffle.class,
                                     Long64Mask.class,
                                     (Long64Shuffle) shuffle,
-                                    (Long64Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Long64Vector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m) {
-        return rearrange(shuffle, m, true);
+                                    (Long64Mask) m);  // specialize
     }
 
     @Override
@@ -506,31 +480,18 @@ final class Long64Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long64Vector selectFrom(Vector<Long> v, boolean wrap) {
-        return (Long64Vector)
-            super.selectFromTemplate((Long64Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Long64Vector selectFrom(Vector<Long> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Long64Vector selectFrom(Vector<Long> v,
-                                   VectorMask<Long> m, boolean wrap) {
         return (Long64Vector)
-            super.selectFromTemplate((Long64Vector) v,
-                                     (Long64Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Long64Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Long64Vector selectFrom(Vector<Long> v,
                                    VectorMask<Long> m) {
-        return selectFrom(v, m, true);
+        return (Long64Vector)
+            super.selectFromTemplate((Long64Vector) v,
+                                     Long64Mask.class, (Long64Mask) m);  // specialize
     }
 
 
@@ -815,28 +776,16 @@ final class Long64Vector extends LongVector {
             super(VLENGTH, reorder);
         }
 
-        public Long64Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Long64Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Long64Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Long64Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Long64Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Long64Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

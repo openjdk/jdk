@@ -230,7 +230,7 @@ public class VectorSupport {
     /* ============================================================================ */
     public interface ShuffleIotaOperation<S extends VectorSpecies<?>,
                                           SH extends VectorShuffle<?>> {
-        SH apply(int length, int start, int step, S s, boolean partialWrap);
+        SH apply(int length, int start, int step, S s);
     }
 
     @IntrinsicCandidate
@@ -240,10 +240,10 @@ public class VectorSupport {
      SH extends VectorShuffle<E>>
     SH shuffleIota(Class<E> eClass, Class<? extends SH> shClass, S s,
                    int length,
-                   int start, int step, boolean partialWrap,
+                   int start, int step, int wrap,
                    ShuffleIotaOperation<S, SH> defaultImpl) {
        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-       return defaultImpl.apply(length, start, step, s, partialWrap);
+       return defaultImpl.apply(length, start, step, s);
     }
 
     public interface ShuffleToVectorOperation<V extends Vector<?>,
@@ -265,25 +265,6 @@ public class VectorSupport {
 
     public interface ShuffleWrapIndexesOperation<SH extends VectorShuffle<?>> {
         SH apply(SH sh);
-    }
-
-    public interface VectorToShuffleOperation<V extends Vector<?>,
-                                              S extends VectorSpecies<?>,
-                                              SH extends VectorShuffle<?>> {
-       SH apply(V v, S s, Boolean partialWrap);
-    }
-
-    @IntrinsicCandidate
-    public static
-    <V extends Vector<E>,
-     SH extends VectorShuffle<E>,
-     S extends VectorSpecies<E>,
-     E>
-    SH vectorToShuffle(Class<? extends Vector<E>> vClass, Class<E> eClass, Class<? extends SH> shClass, V v,
-                      int length, S s, boolean partialWrap,
-                      VectorToShuffleOperation<V, S, SH> defaultImpl) {
-      assert isNonCapturingLambda(defaultImpl) : defaultImpl;
-      return defaultImpl.apply(v, s, partialWrap);
     }
 
     @IntrinsicCandidate
@@ -636,6 +617,23 @@ public class VectorSupport {
                   VectorRearrangeOp<V, SH, M> defaultImpl) {
         assert isNonCapturingLambda(defaultImpl) : defaultImpl;
         return defaultImpl.apply(v, sh, m);
+    }
+
+    public interface VectorSelectFromOp<V extends Vector<?>,
+                                        M extends VectorMask<?>> {
+        V apply(V v1, V v2, M m);
+    }
+
+    @IntrinsicCandidate
+    public static
+    <V extends Vector<E>,
+     M  extends VectorMask<E>,
+     E>
+    V selectFromOp(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+                   int length, V v1, V v2, M m,
+                   VectorSelectFromOp<V, M> defaultImpl) {
+        assert isNonCapturingLambda(defaultImpl) : defaultImpl;
+        return defaultImpl.apply(v1, v2, m);
     }
 
     /* ============================================================================ */

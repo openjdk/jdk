@@ -144,10 +144,14 @@ final class $vectortype$ extends $abstractvectortype$ {
     $shuffletype$ iotaShuffle() { return $shuffletype$.IOTA; }
 
     @ForceInline
-    $shuffletype$ iotaShuffle(int start, int step, boolean partialWrap) {
-      return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    $shuffletype$ iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return ($shuffletype$)VectorSupport.shuffleIota(ETYPE, $shuffletype$.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -156,21 +160,11 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    $shuffletype$ shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new $shuffletype$(indexes, i, partialWrap);
-    }
+    $shuffletype$ shuffleFromArray(int[] indexes, int i) { return new $shuffletype$(indexes, i); }
 
     @Override
     @ForceInline
-    $shuffletype$ shuffleFromArray(int[] indexes, int i) { return new $shuffletype$(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    $shuffletype$ shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new $shuffletype$(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    $shuffletype$ shuffleFromOp(IntUnaryOperator fn) { return new $shuffletype$(fn, false); }
+    $shuffletype$ shuffleFromOp(IntUnaryOperator fn) { return new $shuffletype$(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -368,13 +362,8 @@ final class $vectortype$ extends $abstractvectortype$ {
     }
 
     @ForceInline
-    public VectorShuffle<$Boxtype$> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate($shuffletype$.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<$Boxtype$> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate($shuffletype$.class); // specialize
     }
 
     // Specialized unary testing
@@ -464,34 +453,19 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    public $vectortype$ rearrange(VectorShuffle<$Boxtype$> s, boolean wrap) {
+    public $vectortype$ rearrange(VectorShuffle<$Boxtype$> s) {
         return ($vectortype$)
             super.rearrangeTemplate($shuffletype$.class,
-                                    ($shuffletype$) s, wrap);  // specialize
+                                    ($shuffletype$) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public $vectortype$ rearrange(VectorShuffle<$Boxtype$> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public $vectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle,
-                                  VectorMask<$Boxtype$> m, boolean wrap) {
+                                  VectorMask<$Boxtype$> m) {
         return ($vectortype$)
             super.rearrangeTemplate($shuffletype$.class,
                                     $masktype$.class,
                                     ($shuffletype$) shuffle,
-                                    ($masktype$) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public $vectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle,
-                                  VectorMask<$Boxtype$> m) {
-        return rearrange(shuffle, m, true);
+                                    ($masktype$) m);  // specialize
     }
 
     @Override
@@ -522,31 +496,18 @@ final class $vectortype$ extends $abstractvectortype$ {
 
     @Override
     @ForceInline
-    public $vectortype$ selectFrom(Vector<$Boxtype$> v, boolean wrap) {
-        return ($vectortype$)
-            super.selectFromTemplate(($vectortype$) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public $vectortype$ selectFrom(Vector<$Boxtype$> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public $vectortype$ selectFrom(Vector<$Boxtype$> v,
-                                   VectorMask<$Boxtype$> m, boolean wrap) {
         return ($vectortype$)
-            super.selectFromTemplate(($vectortype$) v,
-                                     ($masktype$) m, wrap);  // specialize
+            super.selectFromTemplate(($vectortype$) v);  // specialize
     }
 
     @Override
     @ForceInline
     public $vectortype$ selectFrom(Vector<$Boxtype$> v,
                                    VectorMask<$Boxtype$> m) {
-        return selectFrom(v, m, true);
+        return ($vectortype$)
+            super.selectFromTemplate(($vectortype$) v,
+                                     $masktype$.class, ($masktype$) m);  // specialize
     }
 
 
@@ -1113,28 +1074,16 @@ final class $vectortype$ extends $abstractvectortype$ {
             super(VLENGTH, reorder);
         }
 
-        public $shuffletype$(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public $shuffletype$(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public $shuffletype$(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public $shuffletype$(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public $shuffletype$(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public $shuffletype$(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

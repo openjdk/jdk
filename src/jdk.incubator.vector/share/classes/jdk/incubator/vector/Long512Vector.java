@@ -137,10 +137,14 @@ final class Long512Vector extends LongVector {
     Long512Shuffle iotaShuffle() { return Long512Shuffle.IOTA; }
 
     @ForceInline
-    Long512Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Long512Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Long512Shuffle)VectorSupport.shuffleIota(ETYPE, Long512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -149,21 +153,11 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    Long512Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Long512Shuffle(indexes, i, partialWrap);
-    }
+    Long512Shuffle shuffleFromArray(int[] indexes, int i) { return new Long512Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Long512Shuffle shuffleFromArray(int[] indexes, int i) { return new Long512Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Long512Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Long512Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Long512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long512Shuffle(fn, false); }
+    Long512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Long512Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -359,13 +353,8 @@ final class Long512Vector extends LongVector {
     }
 
     @ForceInline
-    public VectorShuffle<Long> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Long512Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Long> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Long512Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -448,34 +437,19 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long512Vector rearrange(VectorShuffle<Long> s, boolean wrap) {
+    public Long512Vector rearrange(VectorShuffle<Long> s) {
         return (Long512Vector)
             super.rearrangeTemplate(Long512Shuffle.class,
-                                    (Long512Shuffle) s, wrap);  // specialize
+                                    (Long512Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Long512Vector rearrange(VectorShuffle<Long> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Long512Vector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m, boolean wrap) {
+                                  VectorMask<Long> m) {
         return (Long512Vector)
             super.rearrangeTemplate(Long512Shuffle.class,
                                     Long512Mask.class,
                                     (Long512Shuffle) shuffle,
-                                    (Long512Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Long512Vector rearrange(VectorShuffle<Long> shuffle,
-                                  VectorMask<Long> m) {
-        return rearrange(shuffle, m, true);
+                                    (Long512Mask) m);  // specialize
     }
 
     @Override
@@ -506,31 +480,18 @@ final class Long512Vector extends LongVector {
 
     @Override
     @ForceInline
-    public Long512Vector selectFrom(Vector<Long> v, boolean wrap) {
-        return (Long512Vector)
-            super.selectFromTemplate((Long512Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Long512Vector selectFrom(Vector<Long> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Long512Vector selectFrom(Vector<Long> v,
-                                   VectorMask<Long> m, boolean wrap) {
         return (Long512Vector)
-            super.selectFromTemplate((Long512Vector) v,
-                                     (Long512Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Long512Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Long512Vector selectFrom(Vector<Long> v,
                                    VectorMask<Long> m) {
-        return selectFrom(v, m, true);
+        return (Long512Vector)
+            super.selectFromTemplate((Long512Vector) v,
+                                     Long512Mask.class, (Long512Mask) m);  // specialize
     }
 
 
@@ -829,28 +790,16 @@ final class Long512Vector extends LongVector {
             super(VLENGTH, reorder);
         }
 
-        public Long512Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Long512Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Long512Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Long512Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Long512Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Long512Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

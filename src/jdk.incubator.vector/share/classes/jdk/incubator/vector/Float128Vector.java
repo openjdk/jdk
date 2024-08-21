@@ -142,10 +142,14 @@ final class Float128Vector extends FloatVector {
     Float128Shuffle iotaShuffle() { return Float128Shuffle.IOTA; }
 
     @ForceInline
-    Float128Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Float128Shuffle)VectorSupport.shuffleIota(ETYPE, Float128Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Float128Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Float128Shuffle)VectorSupport.shuffleIota(ETYPE, Float128Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Float128Shuffle)VectorSupport.shuffleIota(ETYPE, Float128Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
-    Float128Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Float128Shuffle(indexes, i, partialWrap);
-    }
+    Float128Shuffle shuffleFromArray(int[] indexes, int i) { return new Float128Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Float128Shuffle shuffleFromArray(int[] indexes, int i) { return new Float128Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Float128Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Float128Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Float128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float128Shuffle(fn, false); }
+    Float128Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Float128Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -351,13 +345,8 @@ final class Float128Vector extends FloatVector {
     }
 
     @ForceInline
-    public VectorShuffle<Float> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Float128Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Float> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Float128Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -445,34 +434,19 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float128Vector rearrange(VectorShuffle<Float> s, boolean wrap) {
+    public Float128Vector rearrange(VectorShuffle<Float> s) {
         return (Float128Vector)
             super.rearrangeTemplate(Float128Shuffle.class,
-                                    (Float128Shuffle) s, wrap);  // specialize
+                                    (Float128Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Float128Vector rearrange(VectorShuffle<Float> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Float128Vector rearrange(VectorShuffle<Float> shuffle,
-                                  VectorMask<Float> m, boolean wrap) {
+                                  VectorMask<Float> m) {
         return (Float128Vector)
             super.rearrangeTemplate(Float128Shuffle.class,
                                     Float128Mask.class,
                                     (Float128Shuffle) shuffle,
-                                    (Float128Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Float128Vector rearrange(VectorShuffle<Float> shuffle,
-                                  VectorMask<Float> m) {
-        return rearrange(shuffle, m, true);
+                                    (Float128Mask) m);  // specialize
     }
 
     @Override
@@ -503,31 +477,18 @@ final class Float128Vector extends FloatVector {
 
     @Override
     @ForceInline
-    public Float128Vector selectFrom(Vector<Float> v, boolean wrap) {
-        return (Float128Vector)
-            super.selectFromTemplate((Float128Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Float128Vector selectFrom(Vector<Float> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Float128Vector selectFrom(Vector<Float> v,
-                                   VectorMask<Float> m, boolean wrap) {
         return (Float128Vector)
-            super.selectFromTemplate((Float128Vector) v,
-                                     (Float128Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Float128Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Float128Vector selectFrom(Vector<Float> v,
                                    VectorMask<Float> m) {
-        return selectFrom(v, m, true);
+        return (Float128Vector)
+            super.selectFromTemplate((Float128Vector) v,
+                                     Float128Mask.class, (Float128Mask) m);  // specialize
     }
 
 
@@ -820,28 +781,16 @@ final class Float128Vector extends FloatVector {
             super(VLENGTH, reorder);
         }
 
-        public Float128Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Float128Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Float128Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Float128Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Float128Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Float128Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override

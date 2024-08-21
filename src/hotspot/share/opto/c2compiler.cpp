@@ -808,7 +808,6 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorFromBitsCoerced:
   case vmIntrinsics::_VectorShuffleIota:
   case vmIntrinsics::_VectorShuffleToVector:
-  case vmIntrinsics::_VectorToShuffle:
   case vmIntrinsics::_VectorShuffleWrapIndexes:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -820,6 +819,7 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_VectorTest:
   case vmIntrinsics::_VectorBlend:
   case vmIntrinsics::_VectorRearrange:
+  case vmIntrinsics::_VectorSelectFrom:
   case vmIntrinsics::_VectorCompare:
   case vmIntrinsics::_VectorBroadcastInt:
   case vmIntrinsics::_VectorConvert:

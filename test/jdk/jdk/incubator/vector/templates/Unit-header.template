@@ -1691,7 +1691,7 @@ relativeError));
     static void smokeTest2() {
         // Do some zipping and shuffling.
         $abstractvectortype$ io = ($abstractvectortype$) SPECIES.broadcast(0).addIndex(1);
-        $abstractvectortype$ io2 = ($abstractvectortype$) VectorShuffle.iota(SPECIES,0,1,true).toVector();
+        $abstractvectortype$ io2 = ($abstractvectortype$) VectorShuffle.iota(SPECIES,0,1,false).toVector();
         Assert.assertEquals(io, io2);
         $abstractvectortype$ a = io.add(($type$)1); //[1,2]
         $abstractvectortype$ b = a.neg();  //[-1,-2]

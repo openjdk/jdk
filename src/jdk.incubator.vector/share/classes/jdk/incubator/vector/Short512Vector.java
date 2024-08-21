@@ -142,10 +142,14 @@ final class Short512Vector extends ShortVector {
     Short512Shuffle iotaShuffle() { return Short512Shuffle.IOTA; }
 
     @ForceInline
-    Short512Shuffle iotaShuffle(int start, int step, boolean partialWrap) {
-      return (Short512Shuffle)VectorSupport.shuffleIota(ETYPE, Short512Shuffle.class, VSPECIES, VLENGTH,
-              start, step, partialWrap,
-              (l, lstart, lstep, s, pwrap) -> s.shuffleFromOp(i -> (i*lstep + lstart), pwrap));
+    Short512Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Short512Shuffle)VectorSupport.shuffleIota(ETYPE, Short512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Short512Shuffle)VectorSupport.shuffleIota(ETYPE, Short512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
     }
 
     @Override
@@ -154,21 +158,11 @@ final class Short512Vector extends ShortVector {
 
     @Override
     @ForceInline
-    Short512Shuffle shuffleFromArray(int[] indexes, int i, boolean partialWrap) { 
-        return new Short512Shuffle(indexes, i, partialWrap);
-    }
+    Short512Shuffle shuffleFromArray(int[] indexes, int i) { return new Short512Shuffle(indexes, i); }
 
     @Override
     @ForceInline
-    Short512Shuffle shuffleFromArray(int[] indexes, int i) { return new Short512Shuffle(indexes, i, false); }
-
-    @Override
-    @ForceInline
-    Short512Shuffle shuffleFromOp(IntUnaryOperator fn, boolean partialWrap) { return new Short512Shuffle(fn, partialWrap); }
-
-    @Override
-    @ForceInline
-    Short512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short512Shuffle(fn, false); }
+    Short512Shuffle shuffleFromOp(IntUnaryOperator fn) { return new Short512Shuffle(fn); }
 
     // Make a vector of the same species but the given elements:
     @ForceInline
@@ -364,13 +358,8 @@ final class Short512Vector extends ShortVector {
     }
 
     @ForceInline
-    public VectorShuffle<Short> toShuffle(boolean partialWrap) {
-        return super.toShuffleTemplate(Short512Shuffle.class, partialWrap); // specialize
-    }
-
-    @ForceInline
     public VectorShuffle<Short> toShuffle() {
-        return toShuffle(false);
+        return super.toShuffleTemplate(Short512Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -458,34 +447,19 @@ final class Short512Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short512Vector rearrange(VectorShuffle<Short> s, boolean wrap) {
+    public Short512Vector rearrange(VectorShuffle<Short> s) {
         return (Short512Vector)
             super.rearrangeTemplate(Short512Shuffle.class,
-                                    (Short512Shuffle) s, wrap);  // specialize
+                                    (Short512Shuffle) s);  // specialize
     }
 
-    @Override
-    @ForceInline
-    public Short512Vector rearrange(VectorShuffle<Short> s) {
-        return rearrange(s, true);
-    }
-
-    @Override
-    @ForceInline
     public Short512Vector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m, boolean wrap) {
+                                  VectorMask<Short> m) {
         return (Short512Vector)
             super.rearrangeTemplate(Short512Shuffle.class,
                                     Short512Mask.class,
                                     (Short512Shuffle) shuffle,
-                                    (Short512Mask) m, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Short512Vector rearrange(VectorShuffle<Short> shuffle,
-                                  VectorMask<Short> m) {
-        return rearrange(shuffle, m, true);
+                                    (Short512Mask) m);  // specialize
     }
 
     @Override
@@ -516,31 +490,18 @@ final class Short512Vector extends ShortVector {
 
     @Override
     @ForceInline
-    public Short512Vector selectFrom(Vector<Short> v, boolean wrap) {
-        return (Short512Vector)
-            super.selectFromTemplate((Short512Vector) v, wrap);  // specialize
-    }
-
-    @Override
-    @ForceInline
     public Short512Vector selectFrom(Vector<Short> v) {
-        return selectFrom(v, true);
-    }
-
-    @Override
-    @ForceInline
-    public Short512Vector selectFrom(Vector<Short> v,
-                                   VectorMask<Short> m, boolean wrap) {
         return (Short512Vector)
-            super.selectFromTemplate((Short512Vector) v,
-                                     (Short512Mask) m, wrap);  // specialize
+            super.selectFromTemplate((Short512Vector) v);  // specialize
     }
 
     @Override
     @ForceInline
     public Short512Vector selectFrom(Vector<Short> v,
                                    VectorMask<Short> m) {
-        return selectFrom(v, m, true);
+        return (Short512Vector)
+            super.selectFromTemplate((Short512Vector) v,
+                                     Short512Mask.class, (Short512Mask) m);  // specialize
     }
 
 
@@ -887,28 +848,16 @@ final class Short512Vector extends ShortVector {
             super(VLENGTH, reorder);
         }
 
-        public Short512Shuffle(int[] reorder, boolean partialWrap) {
-            super(VLENGTH, reorder, partialWrap);
-        }
-
         public Short512Shuffle(int[] reorder) {
-            super(VLENGTH, reorder, false);
-        }
-
-        public Short512Shuffle(int[] reorder, int i, boolean partialWrap) {
-            super(VLENGTH, reorder, i, partialWrap);
+            super(VLENGTH, reorder);
         }
 
         public Short512Shuffle(int[] reorder, int i) {
-            super(VLENGTH, reorder, i, false);
-        }
-
-        public Short512Shuffle(IntUnaryOperator fn, boolean partialWrap) {
-            super(VLENGTH, fn, partialWrap);
+            super(VLENGTH, reorder, i);
         }
 
         public Short512Shuffle(IntUnaryOperator fn) {
-            super(VLENGTH, fn, false);
+            super(VLENGTH, fn);
         }
 
         @Override
