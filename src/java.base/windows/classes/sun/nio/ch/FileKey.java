@@ -67,4 +67,8 @@ public class FileKey {
 
     private static native void init(FileDescriptor fd, int[] finfo)
         throws IOException;
+
+    static {
+        IOUtil.load();
+    }
 }

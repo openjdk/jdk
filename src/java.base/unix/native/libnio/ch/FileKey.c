@@ -36,7 +36,7 @@ Java_sun_nio_ch_FileKey_init(JNIEnv* env, jclass clazz, jobject fdo,
 {
     struct stat fbuf;
     int res;
-    long deviceAndInode[2];
+    jlong deviceAndInode[2];
 
     int fd = fdval(env, fdo);
     RESTARTABLE(fstat(fd, &fbuf), res);
