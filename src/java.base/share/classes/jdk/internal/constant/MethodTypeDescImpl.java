@@ -46,7 +46,6 @@ import static jdk.internal.constant.ConstantUtils.badMethodDescriptor;
 import static jdk.internal.constant.ConstantUtils.resolveClassDesc;
 import static jdk.internal.constant.ConstantUtils.skipOverFieldSignature;
 import static jdk.internal.constant.ConstantUtils.EMPTY_CLASSDESC;
-import static jdk.internal.constant.PrimitiveClassDescImpl.CD_void;
 
 /**
  * A <a href="package-summary.html#nominal">nominal descriptor</a> for a
