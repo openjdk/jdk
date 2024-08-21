@@ -2432,14 +2432,23 @@ public abstract class LongVector extends AbstractVector<Long> {
     public abstract
     LongVector selectFrom(Vector<Long> v1, Vector<Long> v2);
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    LongVector selectFrom(Vector<Long> v1, Vector<Long> v2, boolean wrap);
+
     /*package-private*/
     @ForceInline
-    final LongVector selectFromTemplate(LongVector v1, LongVector v2) {
+    final LongVector selectFromTemplate(LongVector v1, LongVector v2, boolean wrap) {
         int twovectorlen = length() * 2;
-        if (this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
+        LongVector wrapped_indexes = this;
+        if (!wrap && this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
             throw checkIndexFailed(this, twovectorlen);
         }
-        return (LongVector)VectorSupport.selectFromTwoVectorOp(getClass(), long.class, length(), this, v1, v2,
+        wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        return (LongVector)VectorSupport.selectFromTwoVectorOp(getClass(), long.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);
             }

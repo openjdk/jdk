@@ -498,7 +498,15 @@ final class Double64Vector extends DoubleVector {
     public Double64Vector selectFrom(Vector<Double> v1,
                                    Vector<Double> v2) {
         return (Double64Vector)
-            super.selectFromTemplate((Double64Vector) v1, (Double64Vector) v2);  // specialize
+            super.selectFromTemplate((Double64Vector) v1, (Double64Vector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Double64Vector selectFrom(Vector<Double> v1,
+                                   Vector<Double> v2, boolean wrap) {
+        return (Double64Vector)
+            super.selectFromTemplate((Double64Vector) v1, (Double64Vector) v2, wrap);  // specialize
     }
 
     @ForceInline

@@ -501,7 +501,15 @@ final class Long64Vector extends LongVector {
     public Long64Vector selectFrom(Vector<Long> v1,
                                    Vector<Long> v2) {
         return (Long64Vector)
-            super.selectFromTemplate((Long64Vector) v1, (Long64Vector) v2);  // specialize
+            super.selectFromTemplate((Long64Vector) v1, (Long64Vector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long64Vector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2, boolean wrap) {
+        return (Long64Vector)
+            super.selectFromTemplate((Long64Vector) v1, (Long64Vector) v2, wrap);  // specialize
     }
 
     @ForceInline

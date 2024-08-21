@@ -2566,14 +2566,23 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public abstract
     IntVector selectFrom(Vector<Integer> v1, Vector<Integer> v2);
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    IntVector selectFrom(Vector<Integer> v1, Vector<Integer> v2, boolean wrap);
+
     /*package-private*/
     @ForceInline
-    final IntVector selectFromTemplate(IntVector v1, IntVector v2) {
+    final IntVector selectFromTemplate(IntVector v1, IntVector v2, boolean wrap) {
         int twovectorlen = length() * 2;
-        if (this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
+        IntVector wrapped_indexes = this;
+        if (!wrap && this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
             throw checkIndexFailed(this, twovectorlen);
         }
-        return (IntVector)VectorSupport.selectFromTwoVectorOp(getClass(), int.class, length(), this, v1, v2,
+        wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        return (IntVector)VectorSupport.selectFromTwoVectorOp(getClass(), int.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);
             }

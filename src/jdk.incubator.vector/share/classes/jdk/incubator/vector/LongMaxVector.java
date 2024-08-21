@@ -501,7 +501,15 @@ final class LongMaxVector extends LongVector {
     public LongMaxVector selectFrom(Vector<Long> v1,
                                    Vector<Long> v2) {
         return (LongMaxVector)
-            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2);  // specialize
+            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public LongMaxVector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2, boolean wrap) {
+        return (LongMaxVector)
+            super.selectFromTemplate((LongMaxVector) v1, (LongMaxVector) v2, wrap);  // specialize
     }
 
     @ForceInline

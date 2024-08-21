@@ -511,7 +511,15 @@ final class ShortMaxVector extends ShortVector {
     public ShortMaxVector selectFrom(Vector<Short> v1,
                                    Vector<Short> v2) {
         return (ShortMaxVector)
-            super.selectFromTemplate((ShortMaxVector) v1, (ShortMaxVector) v2);  // specialize
+            super.selectFromTemplate((ShortMaxVector) v1, (ShortMaxVector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public ShortMaxVector selectFrom(Vector<Short> v1,
+                                   Vector<Short> v2, boolean wrap) {
+        return (ShortMaxVector)
+            super.selectFromTemplate((ShortMaxVector) v1, (ShortMaxVector) v2, wrap);  // specialize
     }
 
     @ForceInline

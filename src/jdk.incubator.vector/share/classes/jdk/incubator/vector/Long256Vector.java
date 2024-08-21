@@ -501,7 +501,15 @@ final class Long256Vector extends LongVector {
     public Long256Vector selectFrom(Vector<Long> v1,
                                    Vector<Long> v2) {
         return (Long256Vector)
-            super.selectFromTemplate((Long256Vector) v1, (Long256Vector) v2);  // specialize
+            super.selectFromTemplate((Long256Vector) v1, (Long256Vector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Long256Vector selectFrom(Vector<Long> v1,
+                                   Vector<Long> v2, boolean wrap) {
+        return (Long256Vector)
+            super.selectFromTemplate((Long256Vector) v1, (Long256Vector) v2, wrap);  // specialize
     }
 
     @ForceInline

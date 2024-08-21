@@ -2958,21 +2958,45 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
     public abstract
     $abstractvectortype$ selectFrom(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2);
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    $abstractvectortype$ selectFrom(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2, boolean wrap);
+
     /*package-private*/
     @ForceInline
-    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v1, $abstractvectortype$ v2) {
+    final $abstractvectortype$ selectFromTemplate($abstractvectortype$ v1, $abstractvectortype$ v2, boolean wrap) {
         int twovectorlen = length() * 2;
+        $abstractvectortype$ wrapped_indexes = this;
 #if[FP]
-        if (!this.test(VectorOperators.IS_FINITE).allTrue() ||
-            this.compare(VectorOperators.LT, 0).or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue()) {
+        if (!wrap &&
+               (!this.test(VectorOperators.IS_FINITE).allTrue() ||
+                 this.compare(VectorOperators.LT, 0)
+                 .or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue())) {
             throw checkIndexFailed(this, twovectorlen);
         }
+#if[intOrFloat]
+        wrapped_indexes = wrapped_indexes.convert(VectorOperators.F2I, 0)
+                          .lanewise(VectorOperators.AND, twovectorlen - 1)
+                          .reinterpretAsInts()
+                          .convert(VectorOperators.I2F, 0)
+                          .reinterpretAsFloats();
+#else[intOrFloat]
+        wrapped_indexes = wrapped_indexes.convert(VectorOperators.D2I, 0)
+                          .lanewise(VectorOperators.AND, twovectorlen - 1)
+                          .reinterpretAsInts()
+                          .convert(VectorOperators.I2D, 0)
+                          .reinterpretAsDoubles();
+#end[intOrFloat]
 #else[FP]
-        if (this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
+        if (!wrap && this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
             throw checkIndexFailed(this, twovectorlen);
         }
+        wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
 #end[FP]
-        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), $type$.class, length(), this, v1, v2,
+        return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), $type$.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);
             }

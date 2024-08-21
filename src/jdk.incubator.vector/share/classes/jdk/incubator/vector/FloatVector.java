@@ -2435,15 +2435,30 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public abstract
     FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2);
 
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    public abstract
+    FloatVector selectFrom(Vector<Float> v1, Vector<Float> v2, boolean wrap);
+
     /*package-private*/
     @ForceInline
-    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2) {
+    final FloatVector selectFromTemplate(FloatVector v1, FloatVector v2, boolean wrap) {
         int twovectorlen = length() * 2;
-        if (!this.test(VectorOperators.IS_FINITE).allTrue() ||
-            this.compare(VectorOperators.LT, 0).or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue()) {
+        FloatVector wrapped_indexes = this;
+        if (!wrap &&
+               (!this.test(VectorOperators.IS_FINITE).allTrue() ||
+                 this.compare(VectorOperators.LT, 0)
+                 .or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue())) {
             throw checkIndexFailed(this, twovectorlen);
         }
-        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), this, v1, v2,
+        wrapped_indexes = wrapped_indexes.convert(VectorOperators.F2I, 0)
+                          .lanewise(VectorOperators.AND, twovectorlen - 1)
+                          .reinterpretAsInts()
+                          .convert(VectorOperators.I2F, 0)
+                          .reinterpretAsFloats();
+        return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);
             }

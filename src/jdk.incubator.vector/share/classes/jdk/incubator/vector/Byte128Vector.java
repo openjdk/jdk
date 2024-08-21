@@ -511,7 +511,15 @@ final class Byte128Vector extends ByteVector {
     public Byte128Vector selectFrom(Vector<Byte> v1,
                                    Vector<Byte> v2) {
         return (Byte128Vector)
-            super.selectFromTemplate((Byte128Vector) v1, (Byte128Vector) v2);  // specialize
+            super.selectFromTemplate((Byte128Vector) v1, (Byte128Vector) v2, true);  // specialize
+    }
+
+    @Override
+    @ForceInline
+    public Byte128Vector selectFrom(Vector<Byte> v1,
+                                   Vector<Byte> v2, boolean wrap) {
+        return (Byte128Vector)
+            super.selectFromTemplate((Byte128Vector) v1, (Byte128Vector) v2, wrap);  // specialize
     }
 
     @ForceInline
