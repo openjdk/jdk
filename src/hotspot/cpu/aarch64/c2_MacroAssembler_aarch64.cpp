@@ -96,7 +96,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   bind(TAIL);
 
-  assert(is_power_of_2(unroll_factor), "cant use this value to calculate the jump target PC");
+  assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
   orr(tmp2, cnt, 0x1fff ^ (unroll_factor - 1));
   adr(tmp1, RELATIVE);
   sub(tmp1, tmp1, tmp2, ext::sxtw, 3);

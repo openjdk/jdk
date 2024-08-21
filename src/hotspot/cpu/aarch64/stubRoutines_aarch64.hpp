@@ -163,7 +163,7 @@ class aarch64 {
     case T_INT:
       return _large_arrays_hashcode_int;
     default:
-      assert(0, "unsupported eltype");
+      ShouldNotReachHere();
     }
 
     return nullptr;

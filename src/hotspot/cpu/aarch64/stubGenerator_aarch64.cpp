@@ -5339,18 +5339,29 @@ class StubGenerator: public StubCodeGenerator {
 
     __ align(CodeEntryAlignment);
 
-    auto unreachable_mark_name = [this]() -> const char * {
+    const char *mark_name = "";
+    switch (eltype) {
+    case T_BOOLEAN:
+      mark_name = "_large_arrays_hashcode_boolean";
+      break;
+    case T_BYTE:
+      mark_name = "_large_arrays_hashcode_byte";
+      break;
+    case T_CHAR:
+      mark_name = "_large_arrays_hashcode_char";
+      break;
+    case T_SHORT:
+      mark_name = "_large_arrays_hashcode_short";
+      break;
+    case T_INT:
+      mark_name = "_large_arrays_hashcode_int";
+      break;
+    default:
+      mark_name = "_large_arrays_hashcode_incorrect_type";
       __ should_not_reach_here();
-      static const char *mark_name = "_large_arrays_hashcode_incorrect_type";
-      return mark_name;
     };
-    StubCodeMark mark(this, "StubRoutines",
-                      eltype == T_BOOLEAN ? "_large_arrays_hashcode_boolean"
-                      : eltype == T_BYTE  ? "_large_arrays_hashcode_byte"
-                      : eltype == T_CHAR  ? "_large_arrays_hashcode_char"
-                      : eltype == T_SHORT ? "_large_arrays_hashcode_short"
-                      : eltype == T_INT   ? "_large_arrays_hashcode_int"
-                                          : unreachable_mark_name());
+
+    StubCodeMark mark(this, "StubRoutines", mark_name);
 
     address entry = __ pc();
     __ enter();
