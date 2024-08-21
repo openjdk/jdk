@@ -118,8 +118,9 @@ void ShenandoahHeapRegion::make_regular_allocation(ShenandoahAffiliation affilia
 }
 
 // Change affiliation to YOUNG_GENERATION if _state is not _pinned_cset, _regular, or _pinned.  This implements
-// behavior previously performed as a side effect of make_regular_bypass().  This is used by Full GC
-void ShenandoahHeapRegion::make_young_maybe() {
+// behavior previously performed as a side effect of make_regular_bypass().  This is used by Full GC in non-generational
+// modes to transition regions from FREE. Note that all non-free regions in single-generational modes are young.
+void ShenandoahHeapRegion::make_affiliated_maybe() {
   shenandoah_assert_heaplocked();
   assert(!ShenandoahHeap::heap()->mode()->is_generational(), "Only call if non-generational");
   switch (_state) {
@@ -137,7 +138,7 @@ void ShenandoahHeapRegion::make_young_maybe() {
    case _pinned:
      return;
    default:
-     assert(false, "Unexpected _state in make_young_maybe");
+     assert(false, "Unexpected _state in make_affiliated_maybe");
   }
 }
 
@@ -453,9 +454,6 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
 // oop_iterate without closure, return true if completed without cancellation
 bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
 
-  // Consider yielding to cancel/preemption request after this many coalesce operations (skip marked, or coalesce free).
-  const size_t preemption_stride = 128;
-
   assert(!is_humongous(), "No need to fill or coalesce humongous regions");
   if (!is_active()) {
     end_preemptible_coalesce_and_fill();
@@ -479,7 +477,6 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   // Resume coalesce and fill from this address
   HeapWord* obj_addr = resume_coalesce_and_fill();
 
-  size_t ops_before_preempt_check = preemption_stride;
   while (obj_addr < t) {
     oop obj = cast_to_oop(obj_addr);
     if (marking_context->is_marked(obj)) {
@@ -495,12 +492,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
       heap->old_generation()->card_scan()->coalesce_objects(obj_addr, fill_size);
       obj_addr = next_marked_obj;
     }
-    if (cancellable && ops_before_preempt_check-- == 0) {
-      if (heap->cancelled_gc()) {
-        suspend_coalesce_and_fill(obj_addr);
-        return false;
-      }
-      ops_before_preempt_check = preemption_stride;
+    if (cancellable && heap->cancelled_gc()) {
+      suspend_coalesce_and_fill(obj_addr);
+      return false;
     }
   }
   // Mark that this region has been coalesced and filled
@@ -508,45 +502,49 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   return true;
 }
 
-// DO NOT CANCEL.  If this worker thread has accepted responsibility for scanning a particular range of addresses, it
-// must finish the work before it can be cancelled.
-void ShenandoahHeapRegion::oop_iterate_humongous_slice(OopIterateClosure* blk, bool dirty_only,
-                                                       HeapWord* start, size_t words, bool write_table) {
+size_t get_card_count(size_t words) {
   assert(words % CardTable::card_size_in_words() == 0, "Humongous iteration must span whole number of cards");
-  assert(is_humongous(), "only humongous region here");
-  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
-
-  // Find head.
-  ShenandoahHeapRegion* r = humongous_start_region();
-  assert(r->is_humongous_start(), "need humongous head here");
   assert(CardTable::card_size_in_words() * (words / CardTable::card_size_in_words()) == words,
          "slice must be integral number of cards");
+  return words / CardTable::card_size_in_words();
+}
 
+void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* blk,
+                                                             HeapWord* start, size_t words, bool write_table) const {
+  assert(is_humongous(), "only humongous region here");
+
+  ShenandoahHeapRegion* r = humongous_start_region();
   oop obj = cast_to_oop(r->bottom());
+  size_t num_cards = get_card_count(words);
+
+  ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
   size_t card_index = scanner->card_index_for_addr(start);
-  size_t num_cards = words / CardTable::card_size_in_words();
-
-  if (dirty_only) {
-    if (write_table) {
-      while (num_cards-- > 0) {
-        if (scanner->is_write_card_dirty(card_index++)) {
-          obj->oop_iterate(blk, MemRegion(start, start + CardTable::card_size_in_words()));
-        }
-        start += CardTable::card_size_in_words();
+  if (write_table) {
+    while (num_cards-- > 0) {
+      if (scanner->is_write_card_dirty(card_index++)) {
+        obj->oop_iterate(blk, MemRegion(start, start + CardTable::card_size_in_words()));
       }
-    } else {
-      while (num_cards-- > 0) {
-        if (scanner->is_card_dirty(card_index++)) {
-          obj->oop_iterate(blk, MemRegion(start, start + CardTable::card_size_in_words()));
-        }
-        start += CardTable::card_size_in_words();
-      }
+      start += CardTable::card_size_in_words();
     }
   } else {
-    // Scan all data, regardless of whether cards are dirty
-    obj->oop_iterate(blk, MemRegion(start, start + num_cards * CardTable::card_size_in_words()));
+    while (num_cards-- > 0) {
+      if (scanner->is_card_dirty(card_index++)) {
+        obj->oop_iterate(blk, MemRegion(start, start + CardTable::card_size_in_words()));
+      }
+      start += CardTable::card_size_in_words();
+    }
   }
+}
+
+void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const {
+  assert(is_humongous(), "only humongous region here");
+
+  ShenandoahHeapRegion* r = humongous_start_region();
+  oop obj = cast_to_oop(r->bottom());
+
+  // Scan all data, regardless of whether cards are dirty
+  obj->oop_iterate(cl, MemRegion(start, start + words));
 }
 
 ShenandoahHeapRegion* ShenandoahHeapRegion::humongous_start_region() const {

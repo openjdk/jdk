@@ -871,7 +871,7 @@ private:
         if (is_mixed) {
           if (r->is_humongous()) {
             // Need to examine both dirty and clean cards during mixed evac.
-            r->oop_iterate_humongous_slice(&cl, false, start_of_range, assignment._chunk_size, true);
+            r->oop_iterate_humongous_slice_all(&cl,start_of_range, assignment._chunk_size);
           } else {
             // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
             // and filled.  This will use mark bits to find objects that need to be updated.
