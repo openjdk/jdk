@@ -3021,15 +3021,7 @@ public final class Formatter implements Closeable, Flushable {
         String toString();
     }
 
-    private static class FixedString implements FormatString {
-        private final String s;
-        private final int start;
-        private final int end;
-        FixedString(String s, int start, int end) {
-            this.s = s;
-            this.start = start;
-            this.end = end;
-        }
+    private record FixedString(String s, int start, int end) implements FormatString {
         public int index() { return -2; }
         public void print(Formatter fmt, Object arg, Locale l)
             throws IOException { fmt.a.append(s, start, end); }

@@ -225,10 +225,6 @@ class InstanceKlass: public Klass {
 
   volatile u2     _idnum_allocated_count;   // JNI/JVMTI: increments with the addition of methods, old ids don't change
 
-  // _is_marked_dependent can be set concurrently, thus cannot be part of the
-  // _misc_flags.
-  bool            _is_marked_dependent;     // used for marking during flushing and deoptimization
-
   // Class states are defined as ClassState (see above).
   // Place the _init_state here to utilize the unused 2-byte after
   // _idnum_allocated_count.
