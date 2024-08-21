@@ -162,7 +162,7 @@ void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
 }
 
 void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
-  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+  assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
   HeapWord* end = (HeapWord*)((char*) start + (count * heapOopSize));
   // In the case of compressed oops, start and end may potentially be misaligned;

@@ -447,7 +447,7 @@ void ShenandoahBarrierSetC2::post_barrier(GraphKit* kit,
                                           Node* val,
                                           BasicType bt,
                                           bool use_precise) const {
-  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+  assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
   // No store check needed if we're storing a null.
   if (val != nullptr && val->is_Con()) {
