@@ -664,14 +664,14 @@ public sealed interface MemoryLayout
      * <p>
      * If the provided layout path has size {@code m} and contains a dereference path
      * element in position {@code k} (where {@code k <= m}) then two layout paths
-     * {@code P} and {@code P'} are derived, where P contains all the path elements from
-     * 0 to {@code k - 1} and {@code P'} contains all the path elements from {@code k + 1}
+     * {@code P} and {@code Q} are derived, where P contains all the path elements from
+     * 0 to {@code k - 1} and {@code Q} contains all the path elements from {@code k + 1}
      * to {@code m} (if any). Then, the returned var handle is computed as follows:
      *
      * {@snippet lang = "java":
      * VarHandle baseHandle = this.varHandle(P);
-     * MemoryLayout target = ((AddressLayout)this.select(P)).targetLayout().get();
-     * VarHandle targetHandle = target.varHandle(P);
+     * MemoryLayout target = ((AddressLayout)this.select(Q)).targetLayout().get();
+     * VarHandle targetHandle = target.varHandle(Q);
      * targetHandle = MethodHandles.insertCoordinates(targetHandle, 1, 0L); // always access nested targets at offset 0
      * targetHandle = MethodHandles.collectCoordinates(targetHandle, 0,
      *         baseHandle.toMethodHandle(VarHandle.AccessMode.GET));
@@ -944,7 +944,7 @@ public sealed interface MemoryLayout
          * is computed as follows:
          * <ul>
          *    <li>if {@code F > 0}, then {@code B = ceilDiv(C - S, F)}</li>
-         *    <li>if {@code F < 0}, then {@code B = ceilDiv(-(S + 1), -F)}</li>
+         *    <li>if {@code F < 0}, then {@code B = ceilDiv(S + 1, -F)}</li>
          * </ul>
          * That is, the size of the returned open path element is {@code B}.
          *
