@@ -295,12 +295,12 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   }
 
   Node* divisor = n->in(2);
-  return is_divisor_counted_loop_phi(divisor, region) &&
+  return is_divisor_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
 }
 
-bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
-  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+bool PhaseIdealLoop::is_divisor_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_Loop() && divisor->is_Phi() && divisor->in(0) == loop;
 }
 
 bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {
@@ -4670,6 +4670,9 @@ void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
   _phase->igvn().register_new_node_with_optimizer(clone);
   _orig_to_new.put(node, clone);
   _phase->set_ctrl(clone, new_ctrl);
+  if (node->is_CastII()) {
+    clone->set_req(0, new_ctrl);
+  }
 }
 
 // Rewire the data inputs of all (unprocessed) cloned nodes, whose inputs are still pointing to the same inputs as their

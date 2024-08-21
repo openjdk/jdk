@@ -246,7 +246,6 @@
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   volatile_nonstatic_field(InstanceKlass,      _init_state,                                   InstanceKlass::ClassState)             \
   volatile_nonstatic_field(InstanceKlass,      _init_thread,                                  JavaThread*)                           \
-  nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(InstanceKlass,               _itable_len,                                   int)                                   \
   nonstatic_field(InstanceKlass,               _nest_host_index,                              u2)                                    \
   nonstatic_field(InstanceKlass,               _reference_type,                               u1)                                    \
@@ -778,11 +777,11 @@
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(ObjectMonitor,      _header,                                       markWord)                              \
+  volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   unchecked_nonstatic_field(ObjectMonitor,     _owner,                                        sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
-  volatile_nonstatic_field(BasicLock,          _displaced_header,                             markWord)                              \
+  volatile_nonstatic_field(BasicLock,          _metadata,                                     uintptr_t)                             \
   nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
@@ -1422,6 +1421,7 @@
   declare_c2_type(RethrowNode, Node)                                      \
   declare_c2_type(TailCallNode, ReturnNode)                               \
   declare_c2_type(TailJumpNode, ReturnNode)                               \
+  declare_c2_type(ForwardExceptionNode, ReturnNode)                       \
   declare_c2_type(SafePointNode, MultiNode)                               \
   declare_c2_type(CallNode, SafePointNode)                                \
   declare_c2_type(CallJavaNode, CallNode)                                 \
