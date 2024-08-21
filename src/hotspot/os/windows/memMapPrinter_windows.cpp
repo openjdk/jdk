@@ -81,10 +81,10 @@ public:
     if (prot & PAGE_WRITECOMBINE) {
       out.put('W');
     }
-    const DWORD bits = PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE 
-                        | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE 
+    const DWORD bits = PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE
+                        | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE
                         | PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE;
-    
+
     assert((proc & bits) == proc, "Unknown Windows memory protection value");
   }
 
