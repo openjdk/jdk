@@ -26,6 +26,7 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import jdk.internal.classfile.impl.Util;
 import org.openjdk.jmh.annotations.*;
@@ -40,6 +41,8 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@BenchmarkMode(Mode.Throughput)
 @Fork(value = 1, jvmArgsAppend = {
         "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
