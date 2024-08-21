@@ -296,6 +296,16 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
                            char jrepath[], jint so_jrepath,
                            char jvmpath[], jint so_jvmpath,
                            char jvmcfg[],  jint so_jvmcfg) {
+    /* Compute/set the name of the executable. This is needed for macOS. */
+    SetExecname(*pargv);
+
+    if (JLI_IsStaticJDK()) {
+        // With static builds, all JDK and VM natives are statically linked
+        // with the launcher executable. No need to manipulate LD_LIBRARY_PATH
+        // by adding <jdk_path>/lib and etc. The 'jrepath', 'jvmpath' and
+        // 'jvmcfg' are not used by the caller for static builds. Simply return.
+        return;
+    }
 
     char * jvmtype = NULL;
     char **argv = *pargv;
@@ -310,35 +320,30 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
     size_t new_runpath_size;
 #endif  /* SETENV_REQUIRED */
 
-    /* Compute/set the name of the executable */
-    SetExecname(*pargv);
+    /* Check to see if the jvmpath exists */
+    /* Find out where the JRE is that we will be using. */
+    if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
+        JLI_ReportErrorMessage(JRE_ERROR1);
+        exit(2);
+    }
+    JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
+            jrepath, FILESEP, FILESEP);
+    /* Find the specified JVM type */
+    if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
+        JLI_ReportErrorMessage(CFG_ERROR7);
+        exit(1);
+    }
 
-    if (!JLI_IsStaticallyLinked()) {
-        /* Check to see if the jvmpath exists */
-        /* Find out where the JRE is that we will be using. */
-        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE)) {
-            JLI_ReportErrorMessage(JRE_ERROR1);
-            exit(2);
-        }
-        JLI_Snprintf(jvmcfg, so_jvmcfg, "%s%slib%sjvm.cfg",
-                jrepath, FILESEP, FILESEP);
-        /* Find the specified JVM type */
-        if (ReadKnownVMs(jvmcfg, JNI_FALSE) < 1) {
-            JLI_ReportErrorMessage(CFG_ERROR7);
-            exit(1);
-        }
+    jvmpath[0] = '\0';
+    jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
+    if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
+        JLI_ReportErrorMessage(CFG_ERROR9);
+        exit(4);
+    }
 
-        jvmpath[0] = '\0';
-        jvmtype = CheckJvmType(pargc, pargv, JNI_FALSE);
-        if (JLI_StrCmp(jvmtype, "ERROR") == 0) {
-            JLI_ReportErrorMessage(CFG_ERROR9);
-            exit(4);
-        }
-
-        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
-            JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
-            exit(4);
-        }
+    if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath)) {
+        JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
+        exit(4);
     }
 
     /*
