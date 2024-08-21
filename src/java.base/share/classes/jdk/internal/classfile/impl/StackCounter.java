@@ -25,20 +25,23 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.Attributes;
 import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapTableAttribute;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 import static java.lang.classfile.ClassFile.*;
-import java.lang.constant.ClassDesc;
-import java.util.stream.Collectors;
 
 public final class StackCounter {
 
@@ -47,6 +50,7 @@ public final class StackCounter {
     static StackCounter of(DirectCodeBuilder dcb, BufWriterImpl buf) {
         return new StackCounter(
                 dcb,
+                dcb.attributes.get(Attributes.stackMapTable()),
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
@@ -97,6 +101,7 @@ public final class StackCounter {
     }
 
     public StackCounter(LabelContext labelContext,
+                     StackMapTableAttribute smta,
                      ClassDesc thisClass,
                      String methodName,
                      MethodTypeDesc methodDesc,
@@ -111,8 +116,20 @@ public final class StackCounter {
         this.bytecode = bytecode;
         this.cp = cp;
         targets = new ArrayDeque<>();
-        maxStack = stack = rets = 0;
+        stack = rets = 0;
+        maxStack = handlers.isEmpty() ? 0 : 1;
         for (var h : handlers) targets.add(new Target(labelContext.labelToBci(h.handler), 1));
+        if (smta != null) {
+            for (var smfi : smta.entries()) {
+                int frameStack = smfi.stack().size();
+                for (var vti : smfi.stack()) {
+                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG
+                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_DOUBLE) frameStack++;
+                }
+                if (maxStack < frameStack) maxStack = frameStack;
+                targets.add(new Target(labelContext.labelToBci(smfi.target()), frameStack));
+            }
+        }
         maxLocals = isStatic ? 0 : 1;
         maxLocals += Util.parameterSlots(methodDesc);
         bcs = new RawBytecodeHelper(bytecode);
@@ -313,13 +330,14 @@ public final class StackCounter {
                         var cpe = cp.entryByIndex(bcs.getIndexU2());
                         var nameAndType = opcode == INVOKEDYNAMIC ? ((DynamicConstantPoolEntry)cpe).nameAndType() : ((MemberRefEntry)cpe).nameAndType();
                         var mtd = Util.methodTypeSymbol(nameAndType);
-                        addStackSlot(Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd));
+                        var delta = Util.slotSize(mtd.returnType()) - Util.parameterSlots(mtd);
                         if (opcode != INVOKESTATIC && opcode != INVOKEDYNAMIC) {
-                            addStackSlot(-1);
+                            delta--;
                         }
+                        addStackSlot(delta);
                     }
                     case MULTIANEWARRAY ->
-                        addStackSlot (1 - bcs.getU1(bcs.bci + 3));
+                        addStackSlot(1 - bcs.getU1(bcs.bci + 3));
                     case JSR -> {
                         addStackSlot(+1);
                         jump(bcs.dest()); //here we lost track of the exact stack size after return from subroutine
