@@ -139,10 +139,9 @@ public interface OperatingSystemMXBean extends
      * If the system recent cpu usage is not available, the method returns a
      * negative value.
      *
-     * <p> This method is not idempotent. The recent period of observation
-     * is the duration since the last call made to this method, or {@link #getCpuLoad()}.
-     * For the very first invocation of this method, the recent period of
-     * observation is undefined.
+     * @apiNote The recent period of observation is the duration since the last
+     * call made to this method, or {@link #getCpuLoad()}. For the very first
+     * invocation of this method, the recent period of observation is undefined.
      *
      * @deprecated Use {@link #getCpuLoad()} instead of
      * this historically named method.
@@ -167,10 +166,10 @@ public interface OperatingSystemMXBean extends
      * If the recent cpu usage is not available, the method returns a
      * negative value.
      *
-     * <p> This method is not idempotent. The recent period of observation
-     * is the duration since the last call made to this method, or {@link #getSystemCpuLoad()}.
-     * For the very first invocation of this method, the recent period of
-     * observation is undefined.
+     * @apiNote The recent period of observation is the duration since the last
+     * call made to this method, or {@link #getSystemCpuLoad()}. For the very
+     * first invocation of this method, the recent period of observation is
+     * undefined.
      *
      * @return the "recent cpu usage" for the whole operating environment;
      * a negative value if not available.
@@ -190,9 +189,9 @@ public interface OperatingSystemMXBean extends
      * in the JVM process and the whole system. If the Java Virtual Machine
      * recent CPU usage is not available, the method returns a negative value.
      *
-     * <p> This method is not idempotent. The recent period of observation
-     * is the duration since the last call made to this method. For the very first
-     * invocation of this method the recent period of observation is undefined.
+     * @apiNote The recent period of observation is the duration since the last
+     * call made to this method. For the very first invocation of this method
+     * the recent period of observation is undefined.
      *
      * @return the "recent cpu usage" for the Java Virtual Machine process;
      * a negative value if not available.
