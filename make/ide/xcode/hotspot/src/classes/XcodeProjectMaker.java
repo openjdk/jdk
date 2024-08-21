@@ -633,7 +633,7 @@ public final class XcodeProjectMaker {
 
     public void makeXcodeProj(String outputDir, String workspaceRootPathFromOutputDir) {
     /*
-     jvm.xcodeproj	                   <-- folder
+     jvm.xcodeproj                     <-- folder
        project.pbxproj                 <-- file
        xcshareddata                    <-- folder
          xcschemes                     <-- folder
