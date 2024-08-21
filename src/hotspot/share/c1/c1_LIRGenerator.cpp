@@ -1300,7 +1300,7 @@ void LIRGenerator::do_isPrimitive(Intrinsic* x) {
   }
 
   __ move(new LIR_Address(rcvr.result(), java_lang_Class::klass_offset(), T_ADDRESS), temp, info);
-  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(0));
+  __ cmp(lir_cond_notEqual, temp, LIR_OprFact::metadataConst(nullptr));
   __ cmove(lir_cond_notEqual, LIR_OprFact::intConst(0), LIR_OprFact::intConst(1), result, T_BOOLEAN);
 }
 
@@ -1333,7 +1333,7 @@ void LIRGenerator::do_getModifiers(Intrinsic* x) {
 
   // Check if this is a Java mirror of primitive type, and select the appropriate klass.
   LIR_Opr klass = new_register(T_METADATA);
-  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(0));
+  __ cmp(lir_cond_equal, recv_klass, LIR_OprFact::metadataConst(nullptr));
   __ cmove(lir_cond_equal, prim_klass, recv_klass, klass, T_ADDRESS);
 
   // Get the answer.

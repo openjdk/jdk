@@ -59,8 +59,16 @@ compiler/codecache/CheckLargePages.java 8332654 linux-x64
 
 compiler/vectorapi/reshape/TestVectorReinterpret.java 8320897 aix-ppc64,linux-ppc64le
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
+compiler/vectorapi/VectorRebracket128Test.java#ZSinglegen 8330538 generic-all
+compiler/vectorapi/VectorRebracket128Test.java#ZGenerational 8330538 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/DataPatchTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/MaxOopMapStackOffsetTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/NativeCallTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleDebugInfoTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/SimpleCodeInstallationTest.java 8331704 linux-riscv64
+compiler/jvmci/jdk.vm.ci.code.test/src/jdk/vm/ci/code/test/VirtualObjectDebugInfoTest.java 8331704 linux-riscv64
 
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
@@ -109,7 +117,9 @@ runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
+runtime/Thread/TestAlwaysPreTouchStacks.java 8335167 macosx-aarch64
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
+
 
 applications/jcstress/copy.java 8229852 linux-all
 

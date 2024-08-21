@@ -55,7 +55,9 @@ import java.lang.reflect.TypeVariable;
 import java.lang.constant.Constable;
 import java.net.URL;
 import java.security.AccessController;
+import java.security.Permissions;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -1110,8 +1112,8 @@ public final class Class<T> implements java.io.Serializable,
     // will throw NoSuchFieldException
     private final ClassLoader classLoader;
 
-    // Set by VM
-    private transient Object classData;
+    private transient Object classData; // Set by VM
+    private transient Object[] signers; // Read by VM, mutable
 
     // package-private
     Object getClassData() {
@@ -1510,14 +1512,19 @@ public final class Class<T> implements java.io.Serializable,
      *          a primitive type or void.
      * @since   1.1
      */
-    public native Object[] getSigners();
-
+    public Object[] getSigners() {
+        var signers = this.signers;
+        return signers == null ? null : signers.clone();
+    }
 
     /**
      * Set the signers of this class.
      */
-    native void setSigners(Object[] signers);
-
+    void setSigners(Object[] signers) {
+        if (!isPrimitive() && !isArray()) {
+            this.signers = signers;
+        }
+    }
 
     /**
      * If this {@code Class} object represents a local or anonymous
@@ -3215,10 +3222,6 @@ public final class Class<T> implements java.io.Serializable,
         return true;
     }
 
-
-    /** protection domain returned when the internal domain is null */
-    private static java.security.ProtectionDomain allPermDomain;
-
     /**
      * Returns the {@code ProtectionDomain} of this class.  If there is a
      * security manager installed, this method first calls the security
@@ -3239,7 +3242,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see java.lang.RuntimePermission
      * @since 1.2
      */
-    public java.security.ProtectionDomain getProtectionDomain() {
+    public ProtectionDomain getProtectionDomain() {
         @SuppressWarnings("removal")
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -3248,26 +3251,30 @@ public final class Class<T> implements java.io.Serializable,
         return protectionDomain();
     }
 
-    // package-private
-    java.security.ProtectionDomain protectionDomain() {
-        java.security.ProtectionDomain pd = getProtectionDomain0();
-        if (pd == null) {
-            if (allPermDomain == null) {
-                java.security.Permissions perms =
-                    new java.security.Permissions();
-                perms.add(SecurityConstants.ALL_PERMISSION);
-                allPermDomain =
-                    new java.security.ProtectionDomain(null, perms);
-            }
-            pd = allPermDomain;
+    /** Holder for the protection domain returned when the internal domain is null */
+    private static class Holder {
+        private static final ProtectionDomain allPermDomain;
+        static {
+            Permissions perms = new Permissions();
+            perms.add(SecurityConstants.ALL_PERMISSION);
+            allPermDomain = new ProtectionDomain(null, perms);
         }
-        return pd;
+    }
+
+    // package-private
+    ProtectionDomain protectionDomain() {
+        ProtectionDomain pd = getProtectionDomain0();
+        if (pd == null) {
+            return Holder.allPermDomain;
+        } else {
+            return pd;
+        }
     }
 
     /**
      * Returns the ProtectionDomain of this class.
      */
-    private native java.security.ProtectionDomain getProtectionDomain0();
+    private native ProtectionDomain getProtectionDomain0();
 
     /*
      * Return the Virtual Machine's Class object for the named
