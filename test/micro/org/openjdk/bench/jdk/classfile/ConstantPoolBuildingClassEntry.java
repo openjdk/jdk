@@ -126,7 +126,9 @@ public class ConstantPoolBuildingClassEntry {
     public void oldStyleLookup(Blackhole bh) {
         for (int i = 0; i < RUNS; i++) {
             int n = random.nextInt(size);
-            bh.consume(builder.classEntry(builder.utf8Entry(Util.toInternalName(classDescs.get(n)))));
+            var cd = classDescs.get(n);
+            var s = cd.isClassOrInterface() ? Util.toInternalName(cd) : cd.descriptorString();
+            bh.consume(builder.classEntry(builder.utf8Entry(s)));
         }
     }
 }
