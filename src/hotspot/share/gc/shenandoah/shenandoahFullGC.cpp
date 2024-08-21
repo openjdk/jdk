@@ -978,7 +978,7 @@ public:
     // Make empty regions that have been allocated into regular
     if (r->is_empty() && live > 0) {
       if (!_is_generational) {
-        r->make_young_maybe();
+        r->make_affiliated_maybe();
       }
       // else, generational mode compaction has already established affiliation.
       r->make_regular_bypass();

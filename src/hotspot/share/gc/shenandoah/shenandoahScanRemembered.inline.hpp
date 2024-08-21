@@ -308,7 +308,7 @@ ShenandoahScanRemembered::process_humongous_clusters(ShenandoahHeapRegion* r, si
   size_t first_card_index = first_cluster * ShenandoahCardCluster::CardsPerCluster;
   HeapWord* first_cluster_addr = _rs->addr_for_card_index(first_card_index);
   size_t spanned_words = count * ShenandoahCardCluster::CardsPerCluster * CardTable::card_size_in_words();
-  start_region->oop_iterate_humongous_slice(cl, true, first_cluster_addr, spanned_words, use_write_table);
+  start_region->oop_iterate_humongous_slice_dirty(cl, first_cluster_addr, spanned_words, use_write_table);
 }
 
 

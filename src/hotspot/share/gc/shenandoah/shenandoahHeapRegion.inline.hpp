@@ -38,7 +38,7 @@ HeapWord* ShenandoahHeapRegion::allocate_aligned(size_t size, ShenandoahAllocReq
   assert(req.is_lab_alloc(), "allocate_aligned() only applies to LAB allocations");
   assert(is_object_aligned(size), "alloc size breaks alignment: " SIZE_FORMAT, size);
   assert(is_old(), "aligned allocations are only taken from OLD regions to support PLABs");
-  assert(is_aligned(alignment_in_bytes, HeapWordSize), "Expect hea word alignment");
+  assert(is_aligned(alignment_in_bytes, HeapWordSize), "Expect heap word alignment");
 
   HeapWord* orig_top = top();
   size_t alignment_in_words = alignment_in_bytes / HeapWordSize;

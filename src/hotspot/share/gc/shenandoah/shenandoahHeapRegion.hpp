@@ -173,7 +173,7 @@ public:
 
   // Allowed transitions from the outside code:
   void make_regular_allocation(ShenandoahAffiliation affiliation);
-  void make_young_maybe();
+  void make_affiliated_maybe();
   void make_regular_bypass();
   void make_humongous_start();
   void make_humongous_cont();
@@ -400,15 +400,20 @@ public:
     return _coalesce_and_fill_boundary;
   }
 
-  // Coalesce contiguous spans of garbage objects by filling header and reregistering start locations with remembered set.
-  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable.  Return true iff
-  // region is completely coalesced and filled.  Returns false if cancelled before task is complete.
+  // Coalesce contiguous spans of garbage objects by filling header and registering start locations with remembered set.
+  // This is used by old-gen GC following concurrent marking to make old-gen HeapRegions parsable. Old regions must be
+  // parsable because the mark bitmap is not reliable during the concurrent old mark.
+  // Return true iff region is completely coalesced and filled.  Returns false if cancelled before task is complete.
   bool oop_coalesce_and_fill(bool cancellable);
 
   // Invoke closure on every reference contained within the humongous object that spans this humongous
   // region if the reference is contained within a DIRTY card and the reference is no more than words following
   // start within the humongous object.
-  void oop_iterate_humongous_slice(OopIterateClosure* cl, bool dirty_only, HeapWord* start, size_t words, bool write_table);
+  void oop_iterate_humongous_slice_dirty(OopIterateClosure* cl, HeapWord* start, size_t words, bool write_table) const;
+
+  // Invoke closure on every reference contained within the humongous object starting from start and
+  // ending at start + words.
+  void oop_iterate_humongous_slice_all(OopIterateClosure* cl, HeapWord* start, size_t words) const;
 
   HeapWord* block_start(const void* p) const;
   size_t block_size(const HeapWord* p) const;
