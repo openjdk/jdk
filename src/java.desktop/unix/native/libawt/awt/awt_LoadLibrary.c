@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,44 +116,41 @@ AWT_OnLoad(JavaVM *vm, void *reserved)
     }
 
     jvm = vm;
-#ifndef STATIC_BUILD
-    /* Get address of this library and the directory containing it. */
-    dladdr((void *)AWT_OnLoad, &dlinfo);
-    realpath((char *)dlinfo.dli_fname, buf);
-    len = strlen(buf);
-    p = strrchr(buf, '/');
-#endif
+
     /*
      * The code below is responsible for
      * loading appropriate awt library, i.e. libawt_xawt or libawt_headless
      */
 
 #ifdef MACOSX
-        tk = LWAWT_PATH;
+    tk = LWAWT_PATH;
 #else
-        tk = XAWT_PATH;
-#endif
+    tk = XAWT_PATH;
 
-#ifndef MACOSX
     if (AWTIsHeadless()) {
         tk = HEADLESS_PATH;
     }
 #endif
 
-#ifndef STATIC_BUILD
-    /* Calculate library name to load */
-    strncpy(p, tk, MAXPATHLEN-len-1);
-#endif
+    if (!JVM_IsStaticallyLinked()) {
+        /* Get address of this library and the directory containing it. */
+        dladdr((void *)AWT_OnLoad, &dlinfo);
+        realpath((char *)dlinfo.dli_fname, buf);
+        len = strlen(buf);
+        p = strrchr(buf, '/');
 
-#ifndef STATIC_BUILD
-    jstring jbuf = JNU_NewStringPlatform(env, buf);
-    CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
-    JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
-                               "(Ljava/lang/String;)V",
-                               jbuf);
+        /* Calculate library name to load */
+        strncpy(p, tk, MAXPATHLEN-len-1);
 
-    awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
-#endif
+        jstring jbuf = JNU_NewStringPlatform(env, buf);
+        CHECK_EXCEPTION_FATAL(env, "Could not allocate library name");
+        JNU_CallStaticMethodByName(env, NULL, "java/lang/System", "load",
+                                   "(Ljava/lang/String;)V",
+                                   jbuf);
+
+        awtHandle = dlopen(buf, RTLD_LAZY | RTLD_GLOBAL);
+    }
+
     return JNI_VERSION_1_2;
 }
 
