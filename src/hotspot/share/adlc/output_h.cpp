@@ -1560,7 +1560,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp,"    return _opnd_array[operand_index];\n");
     fprintf(fp,"  }\n");
     fprintf(fp,"  void      set_opnd_array(uint operand_index, MachOper *operand) {\n");
-    fprintf(fp,"    assert(operand_index < (_num_opnds + _num_opnds_unexpanded), \"invalid _opnd_array index\");\n");
+    fprintf(fp,"    assert(operand_index < (uint)(_num_opnds + _num_opnds_unexpanded), \"invalid _opnd_array index\");\n");
     fprintf(fp,"    _opnd_array[operand_index] = operand;\n");
     fprintf(fp,"  }\n");
     fprintf(fp,"  virtual uint           rule() const { return %s_rule; }\n",
