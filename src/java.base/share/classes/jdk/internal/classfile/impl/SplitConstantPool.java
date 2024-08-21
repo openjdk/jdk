@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
@@ -36,6 +37,8 @@ import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 import java.util.Objects;
+
+import jdk.internal.constant.ConstantUtils;
 
 import static java.lang.classfile.ClassFile.TAG_CLASS;
 import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
@@ -356,6 +359,89 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         return null;
     }
 
+    /**
+     * Faster checking for ClassEntry given a class or interface descriptor.
+     * <p>
+     * Check steps:
+     * <ol>
+     * <li>Compute internal name utf8 entry hash for fast utf8 lookup
+     * <li>Check length
+     * <li>Find class entry and check ClassDesc if available (has == fast path)
+     * <li>Check utf8 contents (only if ClassDesc is unavailable, only happens once if matched)
+     * </ol>
+     * Postprocessing: ensure on a match, the resulting ClassEntry has ClassDesc
+     * for faster future checking
+     * <p>
+     * The rationale of the fast path is that:
+     * <ol>
+     * <li>New String hashing is expensive, reuse if possible
+     * <li>Substringing needs allocation, but worse it discards hashes
+     * <li>String equality check is expensive too, go through other fast paths before
+     *   (like identity check in ClassDesc::equals) if possible
+     * </ol>
+     */
+    private AbstractPoolEntry.ClassEntryImpl classEntryForClassOrInterface(ClassDesc cd) {
+        var desc = cd.descriptorString();
+        int hash = AbstractPoolEntry.hashString(Util.internalNameHash(desc));
+
+        while (true) {
+            EntryMap<PoolEntry> map = map();
+            for (int token = map.firstToken(hash); token != -1; token = map.nextToken(hash, token)) {
+                PoolEntry e = map.getElementByToken(token);
+                if (e.tag() == ClassFile.TAG_UTF8
+                        && e instanceof AbstractPoolEntry.Utf8EntryImpl utf
+                        && utf.length() + 2 == desc.length()) {
+                    // now probe class entry, fast path
+                    var ce = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, utf);
+                    if (ce != null) {
+                        var sym = ce.sym;
+                        if (sym != null) {
+                            if (cd.equals(sym)) {
+                                // definite match, fully expanded class entry
+                                return ce;
+                            } else {
+                                // definite mismatch
+                                continue;
+                            }
+                        }
+                    }
+
+                    // now: ce == null or ce.sym == null
+                    // slow path for definite checks
+                    if (!utf.equalsRegion(desc, 1, desc.length() - 1)) {
+                        // definite mismatch
+                        continue;
+                    }
+
+                    // definite match of utf8
+                    // if ce != null, it's already bound to that utf8
+                    if (ce == null) {
+                        // no ClassEntry bound to that utf8 yet
+                        ce = internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, utf));
+                    }
+
+                    // with the symbol expansion, future lookups
+                    // will go to the fast path definite check with sym above
+                    assert ce.sym == null;
+                    ce.sym = cd;
+                    return ce;
+                }
+            }
+            if (!doneFullScan) {
+                fullScan();
+                continue;
+            }
+            break;
+        }
+
+        // No suitable utf8 and class entries, create both
+        var internalName = ConstantUtils.dropFirstAndLastChar(desc);
+        var utf = internalAdd(new AbstractPoolEntry.Utf8EntryImpl(this, size, internalName, hash));
+        var ce = internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, utf));
+        ce.sym = cd;
+        return ce;
+    }
+
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8Entry(String s) {
         int hash = AbstractPoolEntry.hashString(s.hashCode());
@@ -376,6 +462,21 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         AbstractPoolEntry.Utf8EntryImpl ne = maybeCloneUtf8Entry(nameEntry);
         var e = (AbstractPoolEntry.ClassEntryImpl) findEntry(TAG_CLASS, ne);
         return e == null ? internalAdd(new AbstractPoolEntry.ClassEntryImpl(this, size, ne)) : e;
+    }
+
+    @Override
+    public ClassEntry classEntry(ClassDesc cd) {
+        if (cd.isClassOrInterface()) { // implicit null check
+            return classEntryForClassOrInterface(cd);
+        }
+        if (cd.isArray()) {
+            var ret = classEntry(utf8Entry(cd.descriptorString()));
+            if (ret.sym == null) {
+                ret.sym = cd;
+            }
+            return ret;
+        }
+        throw new IllegalArgumentException("Cannot be encoded as ClassEntry: " + cd.displayName());
     }
 
     @Override
