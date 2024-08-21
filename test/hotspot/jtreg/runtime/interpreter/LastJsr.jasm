@@ -1,0 +1,11 @@
+super public class LastJsr
+{
+    public static Method test:"()V"
+    stack 100 locals 100
+    {
+        return;
+    LABEL:
+        nop;
+        jsr LABEL; // bci=2. Compute bci + length(jsr) -> bci = 5 accessed, out of bounds.
+    }
+}

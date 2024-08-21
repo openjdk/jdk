@@ -1,0 +1,13 @@
+super public class LastJsrReachable
+{
+    public static Method test:"()V"
+    stack 100 locals 100
+    {
+        goto LB2;
+    LABEL:
+        return;
+    LB2:
+        nop;
+        jsr LABEL; // bci=2. Compute bci + length(jsr) -> bci = 5 accessed, out of bounds.
+    }
+}
