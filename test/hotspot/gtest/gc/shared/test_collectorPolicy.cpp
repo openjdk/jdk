@@ -196,7 +196,7 @@ TEST_OTHER_VM(CollectorPolicy, young_cmd) {
 
   // If NewSize is set on command line, but is larger than the min
   // heap size, it should only be used for initial young size.
-  TestGenCollectorPolicy::SetNewSizeCmd setter_large(20 * M);
-  TestGenCollectorPolicy::CheckYoungInitial checker_large(20 * M);
+  TestGenCollectorPolicy::SetNewSizeCmd setter_large(40 * M);
+  TestGenCollectorPolicy::CheckYoungInitial checker_large(40 * M);
   TestGenCollectorPolicy::TestWrapper::test(&setter_large, &checker_large);
 }
