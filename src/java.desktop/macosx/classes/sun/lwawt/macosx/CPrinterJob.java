@@ -259,7 +259,9 @@ public final class CPrinterJob extends RasterPrinterJob {
             }
         }};
 
-        printerAbortExcpn = excpn;
+        if (excpn != null && excpn.toString().contains("PrinterAbortException")) {
+            printerAbortExcpn = excpn;
+        }
 
         if (onEventThread) {
             try { EventQueue.invokeAndWait(r); } catch (Exception e) { e.printStackTrace(); }

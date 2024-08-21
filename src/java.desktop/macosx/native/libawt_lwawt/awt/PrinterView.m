@@ -278,7 +278,6 @@ static jclass sjc_PAbortEx = NULL;
 
     jthrowable excpn = (*env)->ExceptionOccurred(env);
     if (excpn != NULL) {
-        (*env)->ExceptionDescribe(env);
         (*env)->ExceptionClear(env);
     }
     DECLARE_METHOD(jf_completePrintLoop, sjc_CPrinterJob, "completePrintLoop", "(Ljava/lang/Throwable;)V");
