@@ -5081,6 +5081,14 @@ public class Attr extends JCTree.Visitor {
                 }
                 owntype = types.createErrorType(tree.type);
             }
+        } else if (clazztype.hasTag(ERROR)) {
+            ErrorType parameterizedErroneous =
+                    new ErrorType(clazztype.getOriginalType(),
+                                  clazztype.tsym,
+                                  clazztype.getMetadata());
+
+            parameterizedErroneous.typarams_field = actuals;
+            owntype = parameterizedErroneous;
         }
         result = check(tree, owntype, KindSelector.TYP, resultInfo);
     }
