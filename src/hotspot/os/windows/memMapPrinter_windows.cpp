@@ -85,7 +85,7 @@ public:
                         | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE
                         | PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE;
 
-    assert((proc & bits) == proc, "Unknown Windows memory protection value");
+    assert((prot & bits) == prot, "Unknown Windows memory protection value");
   }
 
   void get_state_string(outputStream& out, MEMORY_BASIC_INFORMATION& mem_info) {
@@ -227,7 +227,7 @@ void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
   int region_count = 0;
   ::memset(&mem_info, 0, sizeof(mem_info));
   for (char* ptr = 0; VirtualQueryEx(hProcess, ptr, &mem_info, sizeof(mem_info)) == sizeof(mem_info); ) {
-    assert(mem_info.RegionSize > 0);
+    assert(mem_info.RegionSize > 0, "RegionSize is not greater than zero");
     if (++region_count > MAX_REGIONS_RETURNED) {
       st->print_cr("limit of %d regions reached (results inaccurate)", region_count);
       break;
