@@ -294,7 +294,10 @@ define SetupJavaCompilationBody
         #
 
     $1_EXTRA_DEPS := $$(BUILDTOOLS_OUTPUTDIR)/depend/_the.COMPILE_DEPEND_batch
-    $1_AUGMENTED_CLASSPATH += $$(BUILDTOOLS_OUTPUTDIR)/depend
+    # including the compilation output on the classpath, so that incremental
+    # compilations in unnamed module can refer to other classes from the same
+    # source root, which are not being recompiled in this compilation:
+    $1_AUGMENTED_CLASSPATH += $$(BUILDTOOLS_OUTPUTDIR)/depend $$($1_BIN)
   endif
 
   ifneq ($$($1_AUGMENTED_CLASSPATH), )
