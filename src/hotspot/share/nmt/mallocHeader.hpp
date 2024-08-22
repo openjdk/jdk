@@ -130,7 +130,6 @@ public:
   inline size_t   size()  const { return _size; }
   inline MEMFLAGS flags() const { return _flags; }
   inline uint32_t mst_marker() const { return _mst_marker; }
-  bool get_stack(NativeCallStack& stack) const;
 
   // Return the necessary data to deaccount the block with NMT.
   FreeInfo free_info() {

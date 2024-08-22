@@ -70,7 +70,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(obj, hdr, temp, t1, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header
@@ -282,7 +282,7 @@ void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register
   verify_oop(obj);
 }
 
-void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int base_offset_in_bytes, int f, Register klass, Label& slow_case) {
+void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1, Register tmp2, int base_offset_in_bytes, int f, Register klass, Label& slow_case, bool zero_array) {
   assert_different_registers(obj, len, tmp1, tmp2, klass);
 
   // determine alignment mask
@@ -308,7 +308,9 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   // clear rest of allocated space
   const Register len_zero = len;
-  initialize_body(obj, arr_size, base_offset, len_zero);
+  if (zero_array) {
+    initialize_body(obj, arr_size, base_offset, len_zero);
+  }
 
   membar(MacroAssembler::StoreStore);
 

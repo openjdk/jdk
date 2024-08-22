@@ -1133,7 +1133,7 @@ class MethodType
         }
     }
 
-    /// Queries which have to do with the bytecode architecture
+    //--- Queries which have to do with the bytecode architecture
 
     /** Reports the number of JVM stack slots required to invoke a method
      * of this type.  Note that (for historical reasons) the JVM requires
@@ -1291,18 +1291,24 @@ class MethodType
      */
     @Override
     public Optional<MethodTypeDesc> describeConstable() {
-        try {
-            return Optional.of(MethodTypeDesc.of(returnType().describeConstable().orElseThrow(),
-                                                 Stream.of(parameterArray())
-                                                      .map(p -> p.describeConstable().orElseThrow())
-                                                      .toArray(ClassDesc[]::new)));
-        }
-        catch (NoSuchElementException e) {
+        var retDesc = returnType().describeConstable();
+        if (retDesc.isEmpty())
             return Optional.empty();
+
+        if (parameterCount() == 0)
+            return Optional.of(MethodTypeDesc.of(retDesc.get()));
+
+        var params = new ClassDesc[parameterCount()];
+        for (int i = 0; i < params.length; i++) {
+            var paramDesc = parameterType(i).describeConstable();
+            if (paramDesc.isEmpty())
+                return Optional.empty();
+            params[i] = paramDesc.get();
         }
+        return Optional.of(MethodTypeDesc.of(retDesc.get(), params));
     }
 
-    /// Serialization.
+    //--- Serialization.
 
     /**
      * There are no serializable fields for {@code MethodType}.

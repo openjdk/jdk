@@ -154,7 +154,7 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ifeq ($(call isTargetOs, linux), true)
-  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
+  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script-$(TOOLCHAIN_TYPE).txt
 
   JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif

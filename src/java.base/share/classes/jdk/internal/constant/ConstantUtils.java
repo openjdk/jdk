@@ -29,9 +29,13 @@ import sun.invoke.util.Wrapper;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import static jdk.internal.constant.PrimitiveClassDescImpl.*;
 
 /**
  * Helper methods for the implementation of {@code java.lang.constant}.
@@ -41,11 +45,84 @@ public final class ConstantUtils {
     public static final ConstantDesc[] EMPTY_CONSTANTDESC = new ConstantDesc[0];
     public static final ClassDesc[] EMPTY_CLASSDESC = new ClassDesc[0];
     public static final int MAX_ARRAY_TYPE_DESC_DIMENSIONS = 255;
+    public static final ClassDesc CD_module_info = binaryNameToDesc("module-info");
 
     private static final Set<String> pointyNames = Set.of(ConstantDescs.INIT_NAME, ConstantDescs.CLASS_INIT_NAME);
 
     /** No instantiation */
     private ConstantUtils() {}
+
+    // Note:
+    // Non-JDK users should create their own utilities that wrap
+    // {@code .describeConstable().orElseThrow()} calls;
+    // these xxDesc methods has undefined and unsafe exceptional
+    // behavior, so they are not suitable as public APIs.
+
+    /**
+     * Creates a {@linkplain ClassDesc} from a pre-validated binary name
+     * for a class or interface type. Validated version of {@link
+     * ClassDesc#of(String)}.
+     *
+     * @param binaryName a binary name
+     */
+    public static ClassDesc binaryNameToDesc(String binaryName) {
+        return ReferenceClassDescImpl.ofValidated("L" + binaryToInternal(binaryName) + ";");
+    }
+
+    /**
+     * Creates a ClassDesc from a Class object, requires that this class
+     * can always be described nominally, i.e. this class is not a
+     * hidden class or interface or an array with a hidden component
+     * type.
+     */
+    public static ClassDesc classDesc(Class<?> type) {
+        if (type.isPrimitive()) {
+            return Wrapper.forPrimitiveType(type).basicClassDescriptor();
+        }
+        return referenceClassDesc(type);
+    }
+
+    /**
+     * Creates a ClassDesc from a Class object representing a non-hidden
+     * class or interface or an array type with a non-hidden component type.
+     */
+    public static ClassDesc referenceClassDesc(Class<?> type) {
+        return ReferenceClassDescImpl.ofValidated(type.descriptorString());
+    }
+
+    /**
+     * Creates a MethodTypeDesc from a MethodType object, requires that
+     * the type can be described nominally, i.e. all of its return
+     * type and parameter types can be described nominally.
+     */
+    public static MethodTypeDesc methodTypeDesc(MethodType type) {
+        var returnDesc = classDesc(type.returnType());
+        if (type.parameterCount() == 0) {
+            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
+        }
+        var paramDescs = new ClassDesc[type.parameterCount()];
+        for (int i = 0; i < type.parameterCount(); i++) {
+            paramDescs[i] = classDesc(type.parameterType(i));
+        }
+        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
+    }
+
+    /**
+     * Creates a MethodTypeDesc from return class and parameter
+     * class objects, requires that all of them can be described nominally.
+     * This version is mainly useful for working with Method objects.
+     */
+    public static MethodTypeDesc methodTypeDesc(Class<?> returnType, Class<?>[] parameterTypes) {
+        var returnDesc = classDesc(returnType);
+        if (parameterTypes.length == 0) {
+            return MethodTypeDescImpl.ofValidated(returnDesc, EMPTY_CLASSDESC);
+        }
+        var paramDescs = new ClassDesc[parameterTypes.length];
+        for (int i = 0; i < parameterTypes.length; i++) {
+            paramDescs[i] = classDesc(parameterTypes[i]);
+        }
+        return MethodTypeDescImpl.ofValidated(returnDesc, paramDescs);
+    }
 
     /**
      * Validates the correctness of a binary class name. In particular checks for the presence of
@@ -157,6 +234,9 @@ public final class ConstantUtils {
             throw new IllegalArgumentException("zero-length member name");
         for (int i = 0; i < len; i++) {
             char ch = name.charAt(i);
+            // common case fast-path
+            if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))
+                continue;
             if (ch == '.' || ch == ';' || ch == '[' || ch == '/')
                 throw new IllegalArgumentException("Invalid member name: " + name);
             if (method && (ch == '<' || ch == '>')) {
@@ -191,59 +271,40 @@ public final class ConstantUtils {
         return s.substring(1, s.length() - 1);
     }
 
-    /**
-     * Parses a method descriptor string, and return a list of field descriptor
-     * strings, return type first, then parameter types
-     *
-     * @param descriptor the descriptor string
-     * @return the list of types
-     * @throws IllegalArgumentException if the descriptor string is not valid
-     */
-    public static List<ClassDesc> parseMethodDescriptor(String descriptor) {
-        int cur = 0, end = descriptor.length();
-        ArrayList<ClassDesc> ptypes = new ArrayList<>();
-        ptypes.add(null); // placeholder for return type
-
-        if (cur >= end || descriptor.charAt(cur) != '(')
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-
-        ++cur;  // skip '('
-        while (cur < end && descriptor.charAt(cur) != ')') {
-            int len = skipOverFieldSignature(descriptor, cur, end, false);
-            if (len == 0)
-                throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-            ptypes.add(resolveClassDesc(descriptor, cur, len));
-            cur += len;
-        }
-        if (cur >= end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ++cur;  // skip ')'
-
-        int rLen = skipOverFieldSignature(descriptor, cur, end, true);
-        if (rLen == 0 || cur + rLen != end)
-            throw new IllegalArgumentException("Bad method descriptor: " + descriptor);
-        ptypes.set(0, resolveClassDesc(descriptor, cur, rLen));
-        return ptypes;
+    public static PrimitiveClassDescImpl forPrimitiveType(String descriptor, int offset) {
+        return switch (descriptor.charAt(offset)) {
+            case JVM_SIGNATURE_BYTE    -> CD_byte;
+            case JVM_SIGNATURE_CHAR    -> CD_char;
+            case JVM_SIGNATURE_FLOAT   -> CD_float;
+            case JVM_SIGNATURE_DOUBLE  -> CD_double;
+            case JVM_SIGNATURE_INT     -> CD_int;
+            case JVM_SIGNATURE_LONG    -> CD_long;
+            case JVM_SIGNATURE_SHORT   -> CD_short;
+            case JVM_SIGNATURE_VOID    -> CD_void;
+            case JVM_SIGNATURE_BOOLEAN -> CD_boolean;
+            default -> throw badMethodDescriptor(descriptor);
+        };
     }
 
-    private static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
+    static ClassDesc resolveClassDesc(String descriptor, int start, int len) {
         if (len == 1) {
-            return Wrapper.forPrimitiveType(descriptor.charAt(start)).classDescriptor();
+            return forPrimitiveType(descriptor, start);
         }
-        // Pre-verified in parseMethodDescriptor; avoid redundant verification
+
+        // Pre-verified in MethodTypeDescImpl#ofDescriptor; avoid redundant verification
         return ReferenceClassDescImpl.ofValidated(descriptor.substring(start, start + len));
+    }
+
+    static IllegalArgumentException badMethodDescriptor(String descriptor) {
+        return new IllegalArgumentException("Bad method descriptor: " + descriptor);
     }
 
     private static final char JVM_SIGNATURE_ARRAY = '[';
     private static final char JVM_SIGNATURE_BYTE = 'B';
     private static final char JVM_SIGNATURE_CHAR = 'C';
     private static final char JVM_SIGNATURE_CLASS = 'L';
-    private static final char JVM_SIGNATURE_ENDCLASS = ';';
-    private static final char JVM_SIGNATURE_ENUM = 'E';
     private static final char JVM_SIGNATURE_FLOAT = 'F';
     private static final char JVM_SIGNATURE_DOUBLE = 'D';
-    private static final char JVM_SIGNATURE_FUNC = '(';
-    private static final char JVM_SIGNATURE_ENDFUNC = ')';
     private static final char JVM_SIGNATURE_INT = 'I';
     private static final char JVM_SIGNATURE_LONG = 'J';
     private static final char JVM_SIGNATURE_SHORT = 'S';
@@ -256,17 +317,22 @@ public final class ConstantUtils {
      * @param descriptor the descriptor string
      * @param start the starting index into the string
      * @param end the ending index within the string
-     * @param voidOK is void acceptable?
      * @return the length of the descriptor, or 0 if it is not a descriptor
      * @throws IllegalArgumentException if the descriptor string is not valid
      */
-    @SuppressWarnings("fallthrough")
-    static int skipOverFieldSignature(String descriptor, int start, int end, boolean voidOK) {
+    static int skipOverFieldSignature(String descriptor, int start, int end) {
         int arrayDim = 0;
         int index = start;
-        while (index < end) {
-            switch (descriptor.charAt(index)) {
-                case JVM_SIGNATURE_VOID: if (!voidOK) { return 0; }
+        if (index < end) {
+            char ch;
+            while ((ch = descriptor.charAt(index++)) == JVM_SIGNATURE_ARRAY) {
+                arrayDim++;
+            }
+            if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
+                throw maxArrayTypeDescDimensions();
+            }
+
+            switch (ch) {
                 case JVM_SIGNATURE_BOOLEAN:
                 case JVM_SIGNATURE_BYTE:
                 case JVM_SIGNATURE_CHAR:
@@ -275,16 +341,16 @@ public final class ConstantUtils {
                 case JVM_SIGNATURE_FLOAT:
                 case JVM_SIGNATURE_LONG:
                 case JVM_SIGNATURE_DOUBLE:
-                    return index - start + 1;
+                    return index - start;
                 case JVM_SIGNATURE_CLASS:
                     // state variable for detection of illegal states, such as:
                     // empty unqualified name, '//', leading '/', or trailing '/'
                     boolean legal = false;
-                    while (++index < end) {
-                        switch (descriptor.charAt(index)) {
+                    while (index < end) {
+                        switch (descriptor.charAt(index++)) {
                             case ';' -> {
                                 // illegal state on parser exit indicates empty unqualified name or trailing '/'
-                                return legal ? index - start + 1 : 0;
+                                return legal ? index - start : 0;
                             }
                             case '.', '[' -> {
                                 // do not permit '.' or '['
@@ -299,21 +365,17 @@ public final class ConstantUtils {
                                 legal = true;
                         }
                     }
-                    return 0;
-                case JVM_SIGNATURE_ARRAY:
-                    arrayDim++;
-                    if (arrayDim > MAX_ARRAY_TYPE_DESC_DIMENSIONS) {
-                        throw new IllegalArgumentException(String.format("Cannot create an array type descriptor with more than %d dimensions",
-                                ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
-                    }
-                    // The rest of what's there better be a legal descriptor
-                    index++;
-                    voidOK = false;
                     break;
                 default:
-                    return 0;
+                    break;
             }
         }
         return 0;
+    }
+
+    private static IllegalArgumentException maxArrayTypeDescDimensions() {
+        return new IllegalArgumentException(String.format(
+                        "Cannot create an array type descriptor with more than %d dimensions",
+                        ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
     }
 }

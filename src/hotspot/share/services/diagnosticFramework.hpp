@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public:
   const char* cmd_addr() const    { return _cmd; }
   size_t cmd_len() const          { return _cmd_len; }
   bool is_empty() const           { return _cmd_len == 0; }
-  bool is_executable() const      { return is_empty() || _cmd[0] != '#'; }
+  bool is_executable() const      { return !is_empty() && _cmd[0] != '#'; }
   bool is_stop() const            { return !is_empty() && strncmp("stop", _cmd, _cmd_len) == 0; }
 };
 
@@ -312,6 +312,9 @@ public:
   // management.cpp every time.
   static void register_dcmds();
 
+  // Helper method to substitute help options "<cmd> -h|-help|--help"
+  // for "help <cmd>".
+  static bool reorder_help_cmd(CmdLine line, stringStream& updated_line);
 };
 
 class DCmdWithParser : public DCmd {

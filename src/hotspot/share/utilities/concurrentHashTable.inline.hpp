@@ -318,7 +318,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   } else {
     return false;
   }
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
   _resize_lock_owner = locker;
   return true;
 }
@@ -345,14 +345,14 @@ inline void ConcurrentHashTable<CONFIG, F>::
     }
   } while(true);
   _resize_lock_owner = locker;
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
 }
 
 template <typename CONFIG, MEMFLAGS F>
 inline void ConcurrentHashTable<CONFIG, F>::
   unlock_resize_lock(Thread* locker)
 {
-  _invisible_epoch = 0;
+  _invisible_epoch = nullptr;
   assert(locker == _resize_lock_owner, "Not unlocked by locker.");
   _resize_lock_owner = nullptr;
   _resize_lock->unlock();
@@ -679,7 +679,9 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         // Keep in odd list
         odd = aux->next_ptr();
       } else {
-        fatal("aux_index does not match even or odd indices");
+        const char* msg = "Cannot resize table: Node hash code has changed possibly due to corruption of the contents.";
+        DEBUG_ONLY(fatal("%s Node hash code changed from " SIZE_FORMAT " to " SIZE_FORMAT, msg, aux->saved_hash(), aux_hash);)
+        NOT_DEBUG(fatal("%s", msg);)
       }
     }
     aux = aux_next;
@@ -892,6 +894,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t i = 0;
   uintx hash = lookup_f.get_hash();
   Node* new_node = Node::create_node(_context, value, nullptr);
+  DEBUG_ONLY(new_node->set_saved_hash(hash);)
 
   while (true) {
     {
@@ -1016,7 +1019,7 @@ ConcurrentHashTable(size_t log2size, size_t log2size_limit, size_t grow_hint, bo
     : _context(context), _new_table(nullptr), _log2_size_limit(log2size_limit),
       _log2_start_size(log2size), _grow_hint(grow_hint),
       _size_limit_reached(false), _resize_lock_owner(nullptr),
-      _invisible_epoch(0)
+      _invisible_epoch(nullptr)
 {
   if (enable_statistics) {
     _stats_rate = new TableRateStatistics();
@@ -1053,6 +1056,15 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
 {
   ScopedCS cs(thread, this);
   return _table->_log2_size;
+}
+
+template <typename CONFIG, MEMFLAGS F>
+inline size_t ConcurrentHashTable<CONFIG, F>::
+  get_dynamic_node_size(size_t value_size)
+{
+  assert(Node::is_dynamic_sized_value_compatible(), "VALUE must be compatible");
+  assert(value_size >= sizeof(VALUE), "must include the VALUE");
+  return sizeof(Node) - sizeof(VALUE) + value_size;
 }
 
 template <typename CONFIG, MEMFLAGS F>
@@ -1108,6 +1120,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket* bucket = get_bucket_in(table, hash);
   assert(!bucket->have_redirect() && !bucket->is_locked(), "bad");
   Node* new_node = Node::create_node(_context, value, bucket->first());
+  DEBUG_ONLY(new_node->set_saved_hash(hash);)
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }

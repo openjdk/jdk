@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -691,7 +691,7 @@ void Metaspace::global_initialize() {
   metaspace::ChunkHeaderPool::initialize();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    assert(!UseSharedSpaces, "sanity");
+    assert(!CDSConfig::is_using_archive(), "sanity");
     MetaspaceShared::initialize_for_static_dump();
   }
 
@@ -707,7 +707,7 @@ void Metaspace::global_initialize() {
 
 #if INCLUDE_CDS
   // case (a)
-  if (UseSharedSpaces) {
+  if (CDSConfig::is_using_archive()) {
     if (!FLAG_IS_DEFAULT(CompressedClassSpaceBaseAddress)) {
       log_warning(metaspace)("CDS active - ignoring CompressedClassSpaceBaseAddress.");
     }
@@ -720,7 +720,7 @@ void Metaspace::global_initialize() {
 #ifdef _LP64
 
   if (using_class_space() && !class_space_is_initialized()) {
-    assert(!UseSharedSpaces, "CDS archive is not mapped at this point");
+    assert(!CDSConfig::is_using_archive(), "CDS archive is not mapped at this point");
 
     // case (b) (No CDS)
     ReservedSpace rs;
@@ -893,20 +893,22 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
   // If result is still null, we are out of memory.
-  Log(gc, metaspace, freelist, oom) log;
-  if (log.is_info()) {
-    log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
-             is_class_space_allocation(mdtype) ? "class" : "data", word_size);
-    ResourceMark rm;
-    if (log.is_debug()) {
-      if (loader_data->metaspace_or_null() != nullptr) {
-        LogStream ls(log.debug());
-        loader_data->print_value_on(&ls);
+  {
+    LogMessage(gc, metaspace, freelist, oom) log;
+    if (log.is_info()) {
+      log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
+               is_class_space_allocation(mdtype) ? "class" : "data", word_size);
+      ResourceMark rm;
+      if (log.is_debug()) {
+        if (loader_data->metaspace_or_null() != nullptr) {
+          NonInterleavingLogStream ls(LogLevelType::Debug, log);
+          loader_data->print_value_on(&ls);
+        }
       }
+      NonInterleavingLogStream ls(LogLevelType::Info, log);
+      // In case of an OOM, log out a short but still useful report.
+      MetaspaceUtils::print_basic_report(&ls, 0);
     }
-    LogStream ls(log.info());
-    // In case of an OOM, log out a short but still useful report.
-    MetaspaceUtils::print_basic_report(&ls, 0);
   }
 
   bool out_of_compressed_class_space = false;

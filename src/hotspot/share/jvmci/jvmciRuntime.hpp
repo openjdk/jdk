@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -431,6 +431,9 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
   // Determines if the GC identified by `name` is supported by the JVMCI compiler.
   bool is_gc_supported(JVMCIEnv* JVMCIENV, CollectedHeap::Name name);
 
+  // Determines if the intrinsic identified by `id` is supported by the JVMCI compiler.
+  bool is_intrinsic_supported(JVMCIEnv* JVMCIENV, jint id);
+
   // Register the result of a compilation.
   JVMCI::CodeInstallResult register_method(JVMCIEnv* JVMCIENV,
                                            const methodHandle&       target,
@@ -449,6 +452,7 @@ class JVMCIRuntime: public CHeapObj<mtJVMCI> {
                                            int                       compile_id,
                                            bool                      has_monitors,
                                            bool                      has_unsafe_access,
+                                           bool                      has_scoped_access,
                                            bool                      has_wide_vector,
                                            JVMCIObject               compiled_code,
                                            JVMCIObject               nmethod_mirror,
