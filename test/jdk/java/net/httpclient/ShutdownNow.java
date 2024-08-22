@@ -210,15 +210,16 @@ public class ShutdownNow implements HttpServerAdapters {
             }
             CompletableFuture.allOf(responses.toArray(new CompletableFuture<?>[0])).get();
         } finally {
-            if (client.awaitTermination(Duration.ofMillis(2000))) {
+            if (client.awaitTermination(Duration.ofMillis(2500))) {
                 out.println("Client terminated within expected delay");
+                assertTrue(client.isTerminated());
             } else {
-                System.out.println(TRACKER.diagnose(client));
-                if (client.awaitTermination(Duration.ofMillis(500))) {
-                    throw new AssertionError("client still running: " + TRACKER.diagnose(client));
-                }
+                client = null;
+                var error = TRACKER.check(500);
+                if (error != null) throw error;
+                throw new AssertionError("client was still running, but exited after further delay: "
+                        + "timeout should be adjusted");
             }
-            assertTrue(client.isTerminated());
         }
     }
 
@@ -275,15 +276,16 @@ public class ShutdownNow implements HttpServerAdapters {
                 }).thenCompose((c) -> c).get();
             }
        } finally {
-            if (client.awaitTermination(Duration.ofMillis(2000))) {
+            if (client.awaitTermination(Duration.ofMillis(2500))) {
                 out.println("Client terminated within expected delay");
+                assertTrue(client.isTerminated());
             } else {
-                System.out.println(TRACKER.diagnose(client));
-                if (client.awaitTermination(Duration.ofMillis(500))) {
-                    throw new AssertionError("client still running: " + TRACKER.diagnose(client));
-                }
+                client = null;
+                var error = TRACKER.check(500);
+                if (error != null) throw error;
+                throw new AssertionError("client was still running, but exited after further delay: "
+                        + "timeout should be adjusted");
             }
-            assertTrue(client.isTerminated());
         }
     }
 
