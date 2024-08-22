@@ -112,7 +112,7 @@ class markWord {
   static const int self_fwd_bits                  = 1;
   static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - self_fwd_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
-  static const int unused_gap_bits                = 4; // Reserved for Valhalla.
+  static const int unused_gap_bits                = LP64_ONLY(4) NOT_LP64(0); // Reserved for Valhalla.
 
   static const int lock_shift                     = 0;
   static const int self_fwd_shift                 = lock_shift + lock_bits;
