@@ -46,9 +46,10 @@ import jdk.jfr.internal.LogTag;
 import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.Repository;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.management.HiddenWait;;
 
 public final class RepositoryFiles {
-    private static final Object WAIT_OBJECT = new Object();
+    private static final HiddenWait WAIT_OBJECT = new HiddenWait();
     private static final String DIRECTORY_PATTERN = "DDDD_DD_DD_DD_DD_DD_";
     public static void notifyNewFile() {
         synchronized (WAIT_OBJECT) {
@@ -59,7 +60,7 @@ public final class RepositoryFiles {
     private final FileAccess fileAccess;
     private final NavigableMap<Long, Path> pathSet = new TreeMap<>();
     private final Map<Path, Long> pathLookup = new HashMap<>();
-    private final Object waitObject;
+    private final HiddenWait waitObject;
     private boolean allowSubDirectory;
     private volatile boolean closed;
     private Path repository;
@@ -67,7 +68,7 @@ public final class RepositoryFiles {
     public RepositoryFiles(FileAccess fileAccess, Path repository, boolean allowSubDirectory) {
         this.repository = repository;
         this.fileAccess = fileAccess;
-        this.waitObject = repository == null ? WAIT_OBJECT : new Object();
+        this.waitObject = repository == null ? WAIT_OBJECT : new HiddenWait();
         this.allowSubDirectory = allowSubDirectory;
     }
 
@@ -108,7 +109,7 @@ public final class RepositoryFiles {
                 // was accessed. Just ignore, and retry later.
             }
             if (wait) {
-                nap();
+                waitObject.takeNap(1000);
             } else {
                 return pathLookup.size() > beforeSize;
             }
@@ -154,16 +155,6 @@ public final class RepositoryFiles {
             if (!updatePaths(wait)) {
                 return null; // closed
             }
-        }
-    }
-
-    private void nap() {
-        try {
-            synchronized (waitObject) {
-                waitObject.wait(1000);
-            }
-        } catch (InterruptedException e) {
-            // ignore
         }
     }
 

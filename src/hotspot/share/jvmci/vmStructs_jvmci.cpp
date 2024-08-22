@@ -138,7 +138,7 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
-  static_field(CompilerToVM::Data,             _should_notify_object_alloc,            int*)                                         \
+  JVMTI_ONLY(static_field(CompilerToVM::Data,  _should_notify_object_alloc,            int*))                                         \
                                                                                                                                      \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
@@ -778,6 +778,7 @@
   declare_constant(vmIntrinsics::_linkToStatic)                           \
   declare_constant(vmIntrinsics::_linkToSpecial)                          \
   declare_constant(vmIntrinsics::_linkToInterface)                        \
+  declare_constant(vmIntrinsics::_linkToNative)                           \
                                                                           \
   declare_constant(vmSymbols::FIRST_SID)                                  \
   declare_constant(vmSymbols::SID_LIMIT)                                  \
