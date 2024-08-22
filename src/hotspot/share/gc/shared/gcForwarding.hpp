@@ -39,8 +39,7 @@
  * bits (to indicate 'forwarded' state as usual).
  */
 class GCForwarding : public AllStatic {
-  static const int NumKlassBits     = LP64_ONLY(markWord::klass_shift) NOT_LP64(0 /*unused*/);
-  static const int NumLowBitsNarrow = BitsPerWord - NumKlassBits;
+  static const int NumLowBitsNarrow = LP64_ONLY(markWord::klass_shift) NOT_LP64(0 /*unused*/);
   static const int NumLowBitsWide   = BitsPerWord;
   static const int Shift            = markWord::lock_bits + markWord::lock_shift;
 
