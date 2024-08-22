@@ -66,7 +66,7 @@ public class ConstantPoolBuildingClassEntry {
         );
         size = classDescs.size();
         nonIdenticalClassDescs = classDescs.stream().map(cd -> {
-            var ret = ClassDesc.ofDescriptor(cd.descriptorString());
+            var ret = ClassDesc.ofDescriptor(new String(cd.descriptorString()));
             ret.hashCode(); // pre-compute hash code for cd
             return ret;
         }).toList();
