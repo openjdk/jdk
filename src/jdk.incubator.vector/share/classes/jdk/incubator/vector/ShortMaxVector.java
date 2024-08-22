@@ -453,6 +453,8 @@ final class ShortMaxVector extends ShortVector {
                                     (ShortMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public ShortMaxVector rearrange(VectorShuffle<Short> shuffle,
                                   VectorMask<Short> m) {
         return (ShortMaxVector)

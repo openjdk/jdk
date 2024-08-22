@@ -453,6 +453,8 @@ final class IntMaxVector extends IntVector {
                                     (IntMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public IntMaxVector rearrange(VectorShuffle<Integer> shuffle,
                                   VectorMask<Integer> m) {
         return (IntMaxVector)

@@ -453,6 +453,8 @@ final class Int512Vector extends IntVector {
                                     (Int512Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Int512Vector rearrange(VectorShuffle<Integer> shuffle,
                                   VectorMask<Integer> m) {
         return (Int512Vector)

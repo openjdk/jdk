@@ -453,6 +453,8 @@ final class Short256Vector extends ShortVector {
                                     (Short256Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Short256Vector rearrange(VectorShuffle<Short> shuffle,
                                   VectorMask<Short> m) {
         return (Short256Vector)

@@ -440,6 +440,8 @@ final class Double64Vector extends DoubleVector {
                                     (Double64Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Double64Vector rearrange(VectorShuffle<Double> shuffle,
                                   VectorMask<Double> m) {
         return (Double64Vector)

@@ -453,6 +453,8 @@ final class Int128Vector extends IntVector {
                                     (Int128Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Int128Vector rearrange(VectorShuffle<Integer> shuffle,
                                   VectorMask<Integer> m) {
         return (Int128Vector)

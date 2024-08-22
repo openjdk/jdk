@@ -459,6 +459,8 @@ final class $vectortype$ extends $abstractvectortype$ {
                                     ($shuffletype$) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public $vectortype$ rearrange(VectorShuffle<$Boxtype$> shuffle,
                                   VectorMask<$Boxtype$> m) {
         return ($vectortype$)

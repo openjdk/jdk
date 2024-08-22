@@ -440,6 +440,8 @@ final class DoubleMaxVector extends DoubleVector {
                                     (DoubleMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public DoubleMaxVector rearrange(VectorShuffle<Double> shuffle,
                                   VectorMask<Double> m) {
         return (DoubleMaxVector)

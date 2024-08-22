@@ -443,6 +443,8 @@ final class Long256Vector extends LongVector {
                                     (Long256Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Long256Vector rearrange(VectorShuffle<Long> shuffle,
                                   VectorMask<Long> m) {
         return (Long256Vector)

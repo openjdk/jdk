@@ -453,6 +453,8 @@ final class Byte256Vector extends ByteVector {
                                     (Byte256Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Byte256Vector rearrange(VectorShuffle<Byte> shuffle,
                                   VectorMask<Byte> m) {
         return (Byte256Vector)

@@ -440,6 +440,8 @@ final class FloatMaxVector extends FloatVector {
                                     (FloatMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public FloatMaxVector rearrange(VectorShuffle<Float> shuffle,
                                   VectorMask<Float> m) {
         return (FloatMaxVector)

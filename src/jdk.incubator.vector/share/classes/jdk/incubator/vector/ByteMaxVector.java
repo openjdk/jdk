@@ -453,6 +453,8 @@ final class ByteMaxVector extends ByteVector {
                                     (ByteMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public ByteMaxVector rearrange(VectorShuffle<Byte> shuffle,
                                   VectorMask<Byte> m) {
         return (ByteMaxVector)

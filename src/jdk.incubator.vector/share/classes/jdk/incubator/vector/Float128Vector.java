@@ -440,6 +440,8 @@ final class Float128Vector extends FloatVector {
                                     (Float128Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Float128Vector rearrange(VectorShuffle<Float> shuffle,
                                   VectorMask<Float> m) {
         return (Float128Vector)

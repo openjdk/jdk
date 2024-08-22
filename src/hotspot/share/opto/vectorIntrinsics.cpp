@@ -2137,7 +2137,7 @@ bool LibraryCallKit::inline_vector_select_from() {
   int cast_vopc = VectorCastNode::opcode(-1, elem_bt); // from vector of type elem_bt
   if (!arch_supports_vector(Op_VectorLoadShuffle, num_elem, elem_bt, VecMaskNotUsed)||
       !arch_supports_vector(Op_AndV, num_elem, T_BYTE, VecMaskNotUsed)              ||
-      !arch_supports_vector(Op_Replicate, num_elem, T_BYTE, VecMaskNotUsed)         || 
+      !arch_supports_vector(Op_Replicate, num_elem, T_BYTE, VecMaskNotUsed)         ||
       !arch_supports_vector(cast_vopc, num_elem, T_BYTE, VecMaskNotUsed)) {
     log_if_needed("  ** not supported: arity=0 op=selectFrom vlen=%d etype=%s ismask=no",
                     num_elem, type2name(elem_bt));

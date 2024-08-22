@@ -453,6 +453,8 @@ final class Byte512Vector extends ByteVector {
                                     (Byte512Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Byte512Vector rearrange(VectorShuffle<Byte> shuffle,
                                   VectorMask<Byte> m) {
         return (Byte512Vector)

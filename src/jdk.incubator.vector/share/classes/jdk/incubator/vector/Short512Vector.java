@@ -453,6 +453,8 @@ final class Short512Vector extends ShortVector {
                                     (Short512Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Short512Vector rearrange(VectorShuffle<Short> shuffle,
                                   VectorMask<Short> m) {
         return (Short512Vector)

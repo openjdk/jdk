@@ -443,6 +443,8 @@ final class Long512Vector extends LongVector {
                                     (Long512Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Long512Vector rearrange(VectorShuffle<Long> shuffle,
                                   VectorMask<Long> m) {
         return (Long512Vector)

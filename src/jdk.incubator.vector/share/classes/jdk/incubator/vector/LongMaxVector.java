@@ -443,6 +443,8 @@ final class LongMaxVector extends LongVector {
                                     (LongMaxShuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public LongMaxVector rearrange(VectorShuffle<Long> shuffle,
                                   VectorMask<Long> m) {
         return (LongMaxVector)

@@ -440,6 +440,8 @@ final class Double512Vector extends DoubleVector {
                                     (Double512Shuffle) s);  // specialize
     }
 
+    @Override
+    @ForceInline
     public Double512Vector rearrange(VectorShuffle<Double> shuffle,
                                   VectorMask<Double> m) {
         return (Double512Vector)
