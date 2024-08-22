@@ -27,6 +27,7 @@
 
 #include "cds/archiveUtils.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "memory/metaspace.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "oops/array.hpp"
 #include "oops/klass.hpp"
@@ -43,9 +44,9 @@ class Klass;
 class MemRegion;
 class Symbol;
 
-// Metaspace::allocate() requires that all blocks must be aligned with KlassAlignmentInBytes.
-// We enforce the same alignment rule in blocks allocated from the shared space.
-const int SharedSpaceObjectAlignment = KlassAlignmentInBytes;
+// The minimum alignment for non-Klass objects inside the CDS archive. Klass objects need
+// to follow CompressedKlassPointers::klass_alignment_in_bytes().
+constexpr size_t SharedSpaceObjectAlignment = Metaspace::min_allocation_alignment_bytes;
 
 // Overview of CDS archive creation (for both static and dynamic dump):
 //
@@ -460,6 +461,25 @@ public:
 
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
+
+#ifdef _LP64
+  // Archived heap object headers (and soon, with Lilliput, markword prototypes) carry pre-computed
+  // narrow Klass ids calculated with the following scheme:
+  // 1) the encoding base must be the mapping start address.
+  // 2) shift must be large enough to result in an encoding range that covers the runtime Klass range.
+  //    That Klass range is defined by CDS archive size and runtime class space size. Luckily, the maximum
+  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
+  //    runtime we put both regions adjacent to each other. Therefore, runtime Klass range size < 4G.
+  // The value of this precomputed shift depends on the class pointer mode at dump time.
+  // Legacy Mode:
+  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
+  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
+  // TinyClassPointer Mode:
+  //    To cover the 4G, we need the highest possible shift value. That may change in the future, if
+  //    we decide to correct the pre-calculated narrow Klass IDs at load time.
+  static int precomputed_narrow_klass_shift();
+#endif // _LP64
+
 };
 
 #endif // SHARE_CDS_ARCHIVEBUILDER_HPP

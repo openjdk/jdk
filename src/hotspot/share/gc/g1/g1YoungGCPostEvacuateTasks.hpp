@@ -56,7 +56,6 @@ public:
 // - Update Derived Pointers (s)
 // - Clear Retained Region Data (on evacuation failure)
 // - Redirty Logged Cards
-// - Restore Preserved Marks (on evacuation failure)
 // - Free Collection Set
 // - Resize TLABs
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
@@ -67,7 +66,6 @@ class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
 
   class ProcessEvacuationFailedRegionsTask;
   class RedirtyLoggedCardsTask;
-  class RestorePreservedMarksTask;
   class FreeCollectionSetTask;
   class ResizeTLABsTask;
 

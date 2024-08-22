@@ -167,7 +167,7 @@ public class DynamicLoaderConstraintsTest extends DynamicArchiveTestBase {
                     String zGenerational = "-XX:" + (useZGenerational ? "+" : "-") + "ZGenerational";
                     // Add options to force eager class unloading.
                     cmdLine = TestCommon.concat(cmdLine, "-cp", loaderJar,
-                                                "-XX:+UseZGC", zGenerational, "-XX:ZCollectionInterval=0.01",
+                                                "-XX:+UseZGC", zGenerational, "-XX:ZCollectionInterval=0.01", "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders",
                                                 loaderMainClass, appJar);
                     setBaseArchiveOptions("-XX:+UseZGC", "-Xlog:cds");
                 } else {

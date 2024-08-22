@@ -538,6 +538,8 @@ void MetaspaceGC::compute_new_size() {
 //////  Metaspace methods /////
 
 const MetaspaceTracer* Metaspace::_tracer = nullptr;
+const void* Metaspace::_class_space_start = nullptr;
+const void* Metaspace::_class_space_end = nullptr;
 
 bool Metaspace::initialized() {
   return metaspace::MetaspaceContext::context_nonclass() != nullptr
@@ -570,6 +572,8 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
          "wrong alignment");
 
   MetaspaceContext::initialize_class_space_context(rs);
+  _class_space_start = rs.base();
+  _class_space_end = rs.end();
 }
 
 // Returns true if class space has been setup (initialize_class_space).
@@ -647,23 +651,44 @@ void Metaspace::ergo_initialize() {
   MaxMetaspaceSize = MAX2(MaxMetaspaceSize, commit_alignment());
 
   if (UseCompressedClassPointers) {
+    // Adjust size of the compressed class space.
+
+    const size_t res_align = reserve_alignment();
+
     // Let CCS size not be larger than 80% of MaxMetaspaceSize. Note that is
     // grossly over-dimensioned for most usage scenarios; typical ratio of
     // class space : non class space usage is about 1:6. With many small classes,
     // it can get as low as 1:2. It is not a big deal though since ccs is only
     // reserved and will be committed on demand only.
-    size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
-    size_t adjusted_ccs_size = MIN2(CompressedClassSpaceSize, max_ccs_size);
+    const size_t max_ccs_size = 8 * (MaxMetaspaceSize / 10);
+
+    // CCS is also limited by the max. possible Klass encoding range size
+    const size_t max_encoding_range = CompressedKlassPointers::max_encoding_range_size();
+    assert(max_encoding_range >= res_align,
+           "Encoding range (%zu) must cover at least a full root chunk (%zu)",
+           max_encoding_range, res_align);
+
+    size_t adjusted_ccs_size = MIN3(CompressedClassSpaceSize, max_ccs_size, max_encoding_range);
 
     // CCS must be aligned to root chunk size, and be at least the size of one
-    //  root chunk.
-    adjusted_ccs_size = align_up(adjusted_ccs_size, reserve_alignment());
-    adjusted_ccs_size = MAX2(adjusted_ccs_size, reserve_alignment());
+    //  root chunk. But impose a miminum size of 1 root chunk (16MB).
+    adjusted_ccs_size = MAX2(align_down(adjusted_ccs_size, res_align), res_align);
+
+    // Print a warning if the adjusted size differs from the users input
+    if (CompressedClassSpaceSize != adjusted_ccs_size) {
+      #define X "CompressedClassSpaceSize adjusted from user input " \
+                "%zu bytes to %zu bytes", CompressedClassSpaceSize, adjusted_ccs_size
+      if (FLAG_IS_CMDLINE(CompressedClassSpaceSize)) {
+        log_warning(metaspace)(X);
+      } else {
+        log_info(metaspace)(X);
+      }
+      #undef X
+    }
 
     // Note: re-adjusting may have us left with a CompressedClassSpaceSize
     //  larger than MaxMetaspaceSize for very small values of MaxMetaspaceSize.
     //  Lets just live with that, its not a big deal.
-
     if (adjusted_ccs_size != CompressedClassSpaceSize) {
       FLAG_SET_ERGO(CompressedClassSpaceSize, adjusted_ccs_size);
       log_info(metaspace)("Setting CompressedClassSpaceSize to " SIZE_FORMAT ".",
@@ -774,6 +799,7 @@ void Metaspace::global_initialize() {
     Metaspace::initialize_class_space(rs);
 
     // Set up compressed class pointer encoding.
+    // In CDS=off mode, we give the JVM some leeway to choose a favorable base/shift combination.
     CompressedKlassPointers::initialize((address)rs.base(), rs.size());
   }
 
@@ -842,9 +868,17 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   MetaWord* result = loader_data->metaspace_non_null()->allocate(word_size, mdtype);
 
   if (result != nullptr) {
+#ifdef ASSERT
+    if (using_class_space() && mdtype == ClassType) {
+      assert(is_in_class_space(result) &&
+             is_aligned(result, CompressedKlassPointers::klass_alignment_in_bytes()), "Sanity");
+    } else {
+      assert((is_in_class_space(result) || is_in_nonclass_metaspace(result)) &&
+             is_aligned(result, Metaspace::min_allocation_alignment_bytes), "Sanity");
+    }
+#endif
     // Zero initialize.
     Copy::fill_to_words((HeapWord*)result, word_size, 0);
-
     log_trace(metaspace)("Metaspace::allocate: type %d return " PTR_FORMAT ".", (int)type, p2i(result));
   }
 
@@ -979,17 +1013,13 @@ void Metaspace::purge(bool classes_unloaded) {
   MetaspaceCriticalAllocation::process();
 }
 
-bool Metaspace::contains(const void* ptr) {
-  if (MetaspaceShared::is_in_shared_metaspace(ptr)) {
-    return true;
-  }
-  return contains_non_shared(ptr);
+// Returns true if pointer points into one of the metaspace regions, or
+// into the class space.
+bool Metaspace::is_in_shared_metaspace(const void* ptr) {
+  return MetaspaceShared::is_in_shared_metaspace(ptr);
 }
 
-bool Metaspace::contains_non_shared(const void* ptr) {
-  if (using_class_space() && VirtualSpaceList::vslist_class()->contains((MetaWord*)ptr)) {
-     return true;
-  }
-
+// Returns true if pointer points into one of the non-class-space metaspace regions.
+bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }

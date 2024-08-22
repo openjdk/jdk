@@ -26,6 +26,7 @@
 #define SHARE_OOPS_MARKWORD_HPP
 
 #include "metaprogramming/primitiveConversions.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 
@@ -37,11 +38,15 @@
 //
 //  32 bits:
 //  --------
-//             hash:25 ------------>| age:4  unused_gap:1  lock:2 (normal object)
+//             hash:25 ------------>| age:4  self-fwd:1  lock:2 (normal object)
 //
 //  64 bits:
 //  --------
-//  unused:25 hash:31 -->| unused_gap:1  age:4  unused_gap:1  lock:2 (normal object)
+//  unused:26 hash:31 -->| unused_gap:4  age:4  self-fwd:1  lock:2 (normal object)
+//
+//  64 bits (with compact headers):
+//  -------------------------------
+//  nklass:22 hash:31 -->| unused_gap:4  age:4  self-fwd:1  lock:2 (normal object)
 //
 //  - hash contains the identity hash value: largest value is
 //    31 bits, see os::random().  Also, 64-bit vm's require
@@ -104,21 +109,45 @@ class markWord {
   // Constants
   static const int age_bits                       = 4;
   static const int lock_bits                      = 2;
-  static const int first_unused_gap_bits          = 1;
-  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - first_unused_gap_bits;
+  static const int self_fwd_bits                  = 1;
+  static const int max_hash_bits                  = BitsPerWord - age_bits - lock_bits - self_fwd_bits;
   static const int hash_bits                      = max_hash_bits > 31 ? 31 : max_hash_bits;
-  static const int second_unused_gap_bits         = LP64_ONLY(1) NOT_LP64(0);
+  static const int unused_gap_bits                = 4; // Reserved for Valhalla.
 
   static const int lock_shift                     = 0;
-  static const int age_shift                      = lock_bits + first_unused_gap_bits;
-  static const int hash_shift                     = age_shift + age_bits + second_unused_gap_bits;
+  static const int self_fwd_shift                 = lock_shift + lock_bits;
+  static const int age_shift                      = self_fwd_shift + self_fwd_bits;
+  static const int hash_shift                     = age_shift + age_bits + unused_gap_bits;
 
   static const uintptr_t lock_mask                = right_n_bits(lock_bits);
   static const uintptr_t lock_mask_in_place       = lock_mask << lock_shift;
+  static const uintptr_t self_fwd_mask            = right_n_bits(self_fwd_bits);
+  static const uintptr_t self_fwd_mask_in_place   = self_fwd_mask << self_fwd_shift;
   static const uintptr_t age_mask                 = right_n_bits(age_bits);
   static const uintptr_t age_mask_in_place        = age_mask << age_shift;
   static const uintptr_t hash_mask                = right_n_bits(hash_bits);
   static const uintptr_t hash_mask_in_place       = hash_mask << hash_shift;
+
+#ifdef _LP64
+  // Used only with compact headers:
+  // We store nKlass in the bits 38 to 60 (leaving 4 bits for later usage). When extracting,
+  // we need to read the upper 32 bits and rightshift by the lower 6 foreign bits.
+
+  // These are for loading the nKlass with a 32-bit load and subsequent masking of the lower
+  // shadow bits
+  static constexpr int klass_load_shift           = 32;
+  static constexpr int klass_load_bits            = 32;
+  static constexpr int klass_shadow_bits          = 10;
+  static constexpr uintptr_t klass_shadow_mask    = right_n_bits(klass_shadow_bits);
+  static constexpr uintptr_t klass_shadow_mask_inplace  = klass_shadow_mask << klass_load_shift;
+
+  // These are for bit-precise extraction of the nKlass from the 64-bit Markword
+  static constexpr int klass_shift                = hash_shift + hash_bits;
+  static constexpr int klass_bits                 = 22;
+  static constexpr uintptr_t klass_mask           = right_n_bits(klass_bits);
+  static constexpr uintptr_t klass_mask_in_place  = klass_mask << klass_shift;
+#endif
+
 
   static const uintptr_t locked_value             = 0;
   static const uintptr_t unlocked_value           = 1;
@@ -144,9 +173,11 @@ class markWord {
   bool is_marked()   const {
     return (mask_bits(value(), lock_mask_in_place) == marked_value);
   }
-  bool is_forwarded()   const {
-    return (mask_bits(value(), lock_mask_in_place) == marked_value);
+  bool is_forwarded() const {
+    // Returns true for normal forwarded (0b011) and self-forwarded (0b1xx).
+    return mask_bits(value(), lock_mask_in_place | self_fwd_mask_in_place) >= static_cast<intptr_t>(marked_value);
   }
+
   bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
     return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
   }
@@ -260,6 +291,13 @@ class markWord {
     return hash() == no_hash;
   }
 
+  inline Klass* klass() const;
+  inline Klass* klass_or_null() const;
+  inline Klass* klass_without_asserts() const;
+  inline narrowKlass narrow_klass() const;
+  inline markWord set_narrow_klass(narrowKlass nklass) const;
+  inline markWord set_klass(Klass* klass) const;
+
   // Prototype mark for initialization
   static markWord prototype() {
     return markWord( no_hash_in_place | no_lock_in_place );
@@ -273,6 +311,21 @@ class markWord {
 
   // Recover address of oop from encoded form used in mark
   inline void* decode_pointer() const { return (void*)clear_lock_bits().value(); }
+
+  inline bool is_self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
+    return mask_bits(value(), self_fwd_mask_in_place) != 0;
+  }
+
+  inline markWord set_self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
+    return markWord(value() | self_fwd_mask_in_place);
+  }
+
+  inline markWord unset_self_forwarded() const {
+    NOT_LP64(assert(LockingMode != LM_LEGACY, "incorrect with LM_LEGACY on 32 bit");)
+    return markWord(value() & ~self_fwd_mask_in_place);
+  }
 
   inline oop forwardee() const {
     return cast_to_oop(decode_pointer());

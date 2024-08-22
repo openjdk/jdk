@@ -35,6 +35,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
+#include "gc/shared/gcForwarding.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -247,6 +248,7 @@ void G1Arguments::initialize() {
 
 void G1Arguments::initialize_heap_flags_and_sizes() {
   GCArguments::initialize_heap_flags_and_sizes();
+  GCForwarding::initialize_flags(heap_reserved_size_bytes());
 }
 
 CollectedHeap* G1Arguments::create_heap() {

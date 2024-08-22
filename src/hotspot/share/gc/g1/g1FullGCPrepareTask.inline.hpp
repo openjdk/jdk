@@ -32,6 +32,7 @@
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCScope.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/shared/gcForwarding.inline.hpp"
 
 void G1DetermineCompactionQueueClosure::free_empty_humongous_region(G1HeapRegion* hr) {
   _g1h->free_humongous_region(hr, nullptr);
@@ -114,10 +115,10 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(G1HeapRegion* hr) 
 }
 
 inline size_t G1SerialRePrepareClosure::apply(oop obj) {
-  if (obj->is_forwarded()) {
+  if (GCForwarding::is_forwarded(obj)) {
     // We skip objects compiled into the first region or
     // into regions not part of the serial compaction point.
-    if (cast_from_oop<HeapWord*>(obj->forwardee()) < _dense_prefix_top) {
+    if (cast_from_oop<HeapWord*>(GCForwarding::forwardee(obj)) < _dense_prefix_top) {
       return obj->size();
     }
   }

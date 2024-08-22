@@ -45,6 +45,7 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcForwarding.inline.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -780,6 +781,10 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   // filler obj will extend to next region.
 
   // Note: If min-fill-size decreases to 1, this whole method becomes redundant.
+  if (UseCompactObjectHeaders) {
+    // The gap is always equal to min-fill-size, so nothing to do.
+    return;
+  }
   assert(CollectedHeap::min_fill_size() >= 2, "inv");
 #ifndef _LP64
   // In 32-bit system, each heap word is 4 bytes, so MinObjAlignment == 2.
@@ -1592,7 +1597,7 @@ void PSParallelCompact::forward_to_new_addr() {
             oop obj = cast_to_oop(cur_addr);
             if (new_addr != cur_addr) {
               cm->preserved_marks()->push_if_necessary(obj, obj->mark());
-              obj->forward_to(cast_to_oop(new_addr));
+              GCForwarding::forward_to(obj, cast_to_oop(new_addr));
             }
             size_t obj_size = obj->size();
             live_words += obj_size;
@@ -1635,7 +1640,7 @@ void PSParallelCompact::verify_forward() {
       }
       oop obj = cast_to_oop(cur_addr);
       if (cur_addr != bump_ptr) {
-        assert(obj->forwardee() == cast_to_oop(bump_ptr), "inv");
+        assert(GCForwarding::forwardee(obj) == cast_to_oop(bump_ptr), "inv");
       }
       bump_ptr += obj->size();
       cur_addr += obj->size();
@@ -2398,8 +2403,8 @@ void MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
   if (copy_destination() != source()) {
     DEBUG_ONLY(PSParallelCompact::check_new_location(source(), destination());)
     assert(source() != destination(), "inv");
-    assert(cast_to_oop(source())->is_forwarded(), "inv");
-    assert(cast_to_oop(source())->forwardee() == cast_to_oop(destination()), "inv");
+    assert(GCForwarding::is_forwarded(cast_to_oop(source())), "inv");
+    assert(GCForwarding::forwardee(cast_to_oop(source())) == cast_to_oop(destination()), "inv");
     Copy::aligned_conjoint_words(source(), copy_destination(), words);
     cast_to_oop(copy_destination())->init_mark();
   }

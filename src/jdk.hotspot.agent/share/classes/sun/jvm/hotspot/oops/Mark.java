@@ -54,12 +54,16 @@ public class Mark extends VMObject {
     lockShift           = db.lookupLongConstant("markWord::lock_shift").longValue();
     ageShift            = db.lookupLongConstant("markWord::age_shift").longValue();
     hashShift           = db.lookupLongConstant("markWord::hash_shift").longValue();
+    if (VM.getVM().isLP64()) {
+      klassShift          = db.lookupLongConstant("markWord::klass_shift").longValue();
+    }
     lockMask            = db.lookupLongConstant("markWord::lock_mask").longValue();
     lockMaskInPlace     = db.lookupLongConstant("markWord::lock_mask_in_place").longValue();
     ageMask             = db.lookupLongConstant("markWord::age_mask").longValue();
     ageMaskInPlace      = db.lookupLongConstant("markWord::age_mask_in_place").longValue();
     hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
     hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
+    hashMaskCompactInPlace = db.lookupLongConstant("markWord::hash_mask_compact_in_place").longValue();
     lockedValue         = db.lookupLongConstant("markWord::locked_value").longValue();
     unlockedValue       = db.lookupLongConstant("markWord::unlocked_value").longValue();
     monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
@@ -82,6 +86,7 @@ public class Mark extends VMObject {
   private static long lockShift;
   private static long ageShift;
   private static long hashShift;
+  private static long klassShift;
 
   private static long lockMask;
   private static long lockMaskInPlace;
@@ -89,6 +94,7 @@ public class Mark extends VMObject {
   private static long ageMaskInPlace;
   private static long hashMask;
   private static long hashMaskInPlace;
+  private static long hashMaskCompactInPlace;
 
   private static long lockedValue;
   private static long unlockedValue;
@@ -101,6 +107,10 @@ public class Mark extends VMObject {
   private static long noLockInPlace;
 
   private static long maxAge;
+
+  public static long getKlassShift() {
+    return klassShift;
+  }
 
   public Mark(Address addr) {
     super(addr);
@@ -189,6 +199,11 @@ public class Mark extends VMObject {
 
   public boolean hasNoHash() {
     return hash() == noHash;
+  }
+
+  public Klass getKlass() {
+    assert(VM.getVM().isCompactObjectHeadersEnabled());
+    return (Klass)Metadata.instantiateWrapperFor(addr.getCompKlassAddressAt(0));
   }
 
   // Debugging

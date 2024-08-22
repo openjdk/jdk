@@ -167,7 +167,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
   // This assumes that all prototype bits fitr in an int32_t
   mv(tmp1, (int32_t)(intptr_t)markWord::prototype().value());
   sd(tmp1, Address(obj, oopDesc::mark_offset_in_bytes()));
-
+// Todo UseCompactObjectHeaders
   if (UseCompressedClassPointers) { // Take care not to kill klass
     encode_klass_not_null(tmp1, klass, tmp2);
     sw(tmp1, Address(obj, oopDesc::klass_offset_in_bytes()));

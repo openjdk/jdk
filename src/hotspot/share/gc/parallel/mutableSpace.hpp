@@ -61,6 +61,9 @@ class MutableSpace: public CHeapObj<mtGC> {
   void set_last_setup_region(MemRegion mr) { _last_setup_region = mr;   }
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
+  template<bool COMPACT_HEADERS>
+  void object_iterate_impl(ObjectClosure* cl);
+
  public:
   virtual ~MutableSpace() = default;
   MutableSpace(size_t page_size);
