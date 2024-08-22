@@ -1433,6 +1433,10 @@ enum VectorMask {
   INSN(vredmaxu_vs,   0b1010111, 0b010, 0b000110);
   INSN(vredmax_vs,    0b1010111, 0b010, 0b000111);
 
+  // Vector Widening Integer Reduction Instructions
+  INSN(vwredsum_vs,    0b1010111, 0b000, 0b110001);
+  INSN(vwredsumu_vs,   0b1010111, 0b000, 0b110000);
+
   // Vector Floating-Point Compare Instructions
   INSN(vmfle_vv, 0b1010111, 0b001, 0b011001);
   INSN(vmflt_vv, 0b1010111, 0b001, 0b011011);
@@ -1470,6 +1474,10 @@ enum VectorMask {
   INSN(vmulhu_vv,  0b1010111, 0b010, 0b100100);
   INSN(vmulh_vv,   0b1010111, 0b010, 0b100111);
   INSN(vmul_vv,    0b1010111, 0b010, 0b100101);
+
+  // Vector Widening Integer Multiply Instructions
+  INSN(vwmul_vv,    0b1010111, 0b010, 0b111011);
+  INSN(vwmulu_vv,   0b1010111, 0b010, 0b111000);
 
   // Vector Integer Min/Max Instructions
   INSN(vmax_vv,  0b1010111, 0b000, 0b000111);
@@ -1835,6 +1843,19 @@ enum Nf {
   INSN(vse16_v, 0b0100111, 0b101, 0b00000, 0b00, 0b0);
   INSN(vse32_v, 0b0100111, 0b110, 0b00000, 0b00, 0b0);
   INSN(vse64_v, 0b0100111, 0b111, 0b00000, 0b00, 0b0);
+
+#undef INSN
+
+#define INSN(NAME, op, width, umop, mop, mew, nf)                                               \
+  void NAME(VectorRegister Vd_or_Vs3, Register Rs1, VectorMask vm = unmasked) { \
+    patch_VLdSt(op, Vd_or_Vs3, width, Rs1, umop, vm, mop, mew, nf);                         \
+  }
+
+  // Vector Unit-Stride Segment Load Instructions
+  INSN(vlseg3e8_v, 0b0000111, 0b000, 0b00000, 0b00, 0b0, g3);
+
+  // Vector Unit-Stride Segment Store Instructions
+  INSN(vsseg4e8_v, 0b0100111, 0b000, 0b00000, 0b00, 0b0, g4);
 
 #undef INSN
 

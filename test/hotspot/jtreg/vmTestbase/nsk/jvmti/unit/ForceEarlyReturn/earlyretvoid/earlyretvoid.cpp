@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-#define RETURN_FAILED errCode = STATUS_FAILED; fflush(0); return
+#define RETURN_FAILED errCode = STATUS_FAILED; fflush(nullptr); return
 
 static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
@@ -155,7 +155,7 @@ void check(jvmtiEnv *jvmti_env, jthread thr, jmethodID mid,
         }
         jvmti_env->Deallocate((unsigned char*)table);
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -192,7 +192,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
                TranslateError(err), err);
         RETURN_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -223,7 +223,7 @@ void JNICALL SingleStep(jvmtiEnv *jvmti_env, JNIEnv *env,
             RETURN_FAILED;
         }
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 #ifdef STATIC_BUILD
@@ -339,7 +339,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretvoid_getReady(
     } else {
         framesExpected = depth;
     }
-    fflush(0);
+    fflush(nullptr);
 }
 
 JNIEXPORT jint JNICALL
@@ -349,7 +349,7 @@ Java_nsk_jvmti_unit_ForceEarlyReturn_earlyretvoid_check(JNIEnv *env, jclass cls)
             framesCount, framesExpected);
         errCode = STATUS_FAILED;
     }
-    fflush(0);
+    fflush(nullptr);
     return errCode;
 }
 

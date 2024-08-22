@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/cdsEnumKlass.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
@@ -1576,7 +1577,7 @@ void InstanceKlass::call_class_initializer(TRAPS) {
   // This is needed to ensure the consistency of the archived heap objects.
   if (has_archived_enum_objs()) {
     assert(is_shared(), "must be");
-    bool initialized = HeapShared::initialize_enum_klass(this, CHECK);
+    bool initialized = CDSEnumKlass::initialize_enum_klass(this, CHECK);
     if (initialized) {
       return;
     }
@@ -2778,9 +2779,9 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
 
 #if INCLUDE_JVMTI
   // Deallocate breakpoint records
-  if (breakpoints() != 0x0) {
+  if (breakpoints() != nullptr) {
     methods_do(clear_all_breakpoints);
-    assert(breakpoints() == 0x0, "should have cleared breakpoints");
+    assert(breakpoints() == nullptr, "should have cleared breakpoints");
   }
 
   // deallocate the cached class file

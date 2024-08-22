@@ -159,7 +159,7 @@ public abstract sealed class AbstractMemorySegmentImpl
                 () -> cleanup.accept(SegmentFactories.makeNativeSegmentUnchecked(address(), newSize)) :
                 null;
         return SegmentFactories.makeNativeSegmentUnchecked(address(), newSize,
-                (MemorySessionImpl)scope, action);
+                (MemorySessionImpl)scope, readOnly, action);
     }
 
     private AbstractMemorySegmentImpl asSliceNoCheck(long offset, long newSize) {
@@ -371,6 +371,16 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     public void checkValidState() {
         sessionImpl().checkValidState();
+    }
+
+    @ForceInline
+    public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
+        checkAccess(offset, enclosing.byteSize(), readOnly);
+        if (!isAlignedForElement(offset, enclosing)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, enclosing.byteAlignment(), enclosing, this));
+        }
     }
 
     public abstract long unsafeGetOffset();

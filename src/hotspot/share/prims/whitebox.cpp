@@ -179,6 +179,14 @@ WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
 WB_END
 
+WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_length))
+  ResourceMark rm(THREAD);
+  stringStream sb;
+  java_lang_String::print(JNIHandles::resolve(str), &sb, max_length);
+  oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
+  return (jstring) JNIHandles::make_local(THREAD, result);
+WB_END
+
 class WBIsKlassAliveClosure : public LockedClassesDo {
     Symbol* _name;
     int _count;
@@ -582,7 +590,7 @@ WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
     Handle h = MemoryService::create_MemoryUsage_obj(usage, CHECK_NULL);
     return JNIHandles::make_local(THREAD, h());
   }
-  THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1AuxiliaryMemoryUsage: G1 GC is not enabled");
 WB_END
 
 WB_ENTRY(jint, WB_G1ActiveMemoryNodeCount(JNIEnv* env, jobject o))
@@ -608,7 +616,7 @@ WB_ENTRY(jintArray, WB_G1MemoryNodeIds(JNIEnv* env, jobject o))
   THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1MemoryNodeIds: G1 GC is not enabled");
 WB_END
 
-class OldRegionsLivenessClosure: public HeapRegionClosure {
+class OldRegionsLivenessClosure: public G1HeapRegionClosure {
 
  private:
   const int _liveness;
@@ -791,6 +799,7 @@ WB_END
 WB_ENTRY(jboolean, WB_IsFrameDeoptimized(JNIEnv* env, jobject o, jint depth))
   bool result = false;
   if (thread->has_last_Java_frame()) {
+    ResourceMark rm(THREAD);
     RegisterMap reg_map(thread,
                         RegisterMap::UpdateMap::include,
                         RegisterMap::ProcessFrames::include,
@@ -2959,6 +2968,7 @@ static JNINativeMethod methods[] = {
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
+  {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
 };
 
 

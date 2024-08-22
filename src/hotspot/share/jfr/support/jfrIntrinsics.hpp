@@ -47,7 +47,7 @@ class JfrIntrinsicSupport : AllStatic {
 #define JFR_HAVE_INTRINSICS
 
 #define JFR_TEMPLATES(template)                                                                                      \
-  template(jdk_jfr_internal_HiddenWait,                               "jdk/jfr/internal/HiddenWait")                 \
+  template(jdk_jfr_internal_management_HiddenWait,                    "jdk/jfr/internal/management/HiddenWait")      \
   template(jdk_jfr_internal_JVM,                                      "jdk/jfr/internal/JVM")                        \
   template(jdk_jfr_internal_event_EventWriterFactory,                 "jdk/jfr/internal/event/EventWriterFactory")   \
   template(jdk_jfr_internal_event_EventConfiguration_signature,       "Ljdk/jfr/internal/event/EventConfiguration;") \

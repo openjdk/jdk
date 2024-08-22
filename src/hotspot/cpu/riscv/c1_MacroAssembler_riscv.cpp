@@ -70,7 +70,7 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(obj, hdr, temp, t1, slow_case);
+    lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
     // Load object header

@@ -985,7 +985,7 @@ Node* CallNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 }
 
 bool CallNode::is_call_to_arraycopystub() const {
-  if (_name != nullptr && strstr(_name, "arraycopy") != 0) {
+  if (_name != nullptr && strstr(_name, "arraycopy") != nullptr) {
     return true;
   }
   return false;
@@ -1601,10 +1601,8 @@ AllocateNode::AllocateNode(Compile* C, const TypeFunc *atype,
 
 void AllocateNode::compute_MemBar_redundancy(ciMethod* initializer)
 {
-  assert(initializer != nullptr &&
-         initializer->is_initializer() &&
-         !initializer->is_static(),
-             "unexpected initializer method");
+  assert(initializer != nullptr && initializer->is_object_initializer(),
+         "unexpected initializer method");
   BCEscapeAnalyzer* analyzer = initializer->get_bcea();
   if (analyzer == nullptr) {
     return;
