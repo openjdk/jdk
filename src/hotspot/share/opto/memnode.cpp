@@ -429,13 +429,15 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 // control input of a memory operation predates (dominates)
 // an allocation it wants to look past.
 Node::DomResult MemNode::all_controls_dominate(Node* dom, Node* sub) {
-  if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top())
+  if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   // Check 'dom'. Skip Proj and CatchProj nodes.
   dom = dom->find_exact_control(dom);
-  if (dom == nullptr || dom->is_top())
+  if (dom == nullptr || dom->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   if (dom == sub) {
     // For the case when, for example, 'sub' is Initialize and the original
@@ -443,8 +445,9 @@ Node::DomResult MemNode::all_controls_dominate(Node* dom, Node* sub) {
     return DomResult::NotDominate;
   }
 
-  if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub)
+  if (dom->is_Con() || dom->is_Start() || dom->is_Root() || dom == sub) {
     return DomResult::Dominate;
+  }
 
   // 'dom' dominates 'sub' if its control edge and control edges
   // of all its inputs dominate or equal to sub's control edge.
@@ -458,16 +461,19 @@ Node::DomResult MemNode::all_controls_dominate(Node* dom, Node* sub) {
   // Get control edge of 'sub'.
   Node* orig_sub = sub;
   sub = sub->find_exact_control(sub->in(0));
-  if (sub == nullptr || sub->is_top())
+  if (sub == nullptr || sub->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+  }
 
   assert(sub->is_CFG(), "expecting control");
 
-  if (sub == dom)
+  if (sub == dom) {
     return DomResult::Dominate;
+  }
 
-  if (sub->is_Start() || sub->is_Root())
+  if (sub->is_Start() || sub->is_Root()) {
     return DomResult::NotDominate;
+  }
 
   {
     // Check all control edges of 'dom'.
@@ -481,37 +487,42 @@ Node::DomResult MemNode::all_controls_dominate(Node* dom, Node* sub) {
 
     for (uint next = 0; next < dom_list.size(); next++) {
       Node* n = dom_list.at(next);
-      if (n == orig_sub)
+      if (n == orig_sub) {
         return DomResult::NotDominate; // One of dom's inputs dominated by sub.
+      }
       if (!n->is_CFG() && n->pinned()) {
         // Check only own control edge for pinned non-control nodes.
         n = n->find_exact_control(n->in(0));
-        if (n == nullptr || n->is_top())
+        if (n == nullptr || n->is_top()) {
           return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+        }
         assert(n->is_CFG(), "expecting control");
         dom_list.push(n);
       } else if (n->is_Con() || n->is_Start() || n->is_Root()) {
         only_dominating_controls = true;
       } else if (n->is_CFG()) {
         DomResult dom_result = n->dominates(sub, nlist);
-        if (dom_result == DomResult::Dominate)
+        if (dom_result == DomResult::Dominate) {
           only_dominating_controls = true;
-        else
+        } else {
           return dom_result;
+        }
       } else {
         // First, own control edge.
         Node* m = n->find_exact_control(n->in(0));
         if (m != nullptr) {
-          if (m->is_top())
+          if (m->is_top()) {
             return DomResult::EncounteredDeadCode; // Conservative answer for dead code
+          }
           dom_list.push(m);
         }
         // Now, the rest of edges.
         uint cnt = n->req();
         for (uint i = 1; i < cnt; i++) {
           m = n->find_exact_control(n->in(i));
-          if (m == nullptr || m->is_top())
+          if (m == nullptr || m->is_top()) {
             continue;
+          }
           dom_list.push(m);
         }
       }
@@ -728,16 +739,18 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
     } else if (mem->is_Proj() && mem->in(0)->is_Initialize()) {
       InitializeNode* st_init = mem->in(0)->as_Initialize();
       AllocateNode*  st_alloc = st_init->allocation();
-      if (st_alloc == nullptr)
+      if (st_alloc == nullptr) {
         break;              // something degenerated
+      }
       bool known_identical = false;
       bool known_independent = false;
-      if (alloc == st_alloc)
+      if (alloc == st_alloc) {
         known_identical = true;
-      else if (alloc != nullptr)
+      } else if (alloc != nullptr) {
         known_independent = true;
-      else if (all_controls_dominate(this, st_alloc) == DomResult::Dominate)
+      } else if (all_controls_dominate(this, st_alloc) == DomResult::Dominate) {
         known_independent = true;
+      }
 
       if (known_independent) {
         // The bases are provably independent: Either they are
@@ -1568,8 +1581,9 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   }
 
   if (!mem->is_Phi()) {
-    if (MemNode::all_controls_dominate(mem, base->in(0)) != DomResult::Dominate)
+    if (MemNode::all_controls_dominate(mem, base->in(0)) != DomResult::Dominate) {
       return false;
+    }
   } else if (base->in(0) != mem->in(0)) {
     if (MemNode::all_controls_dominate(mem, base->in(0)) != DomResult::Dominate) {
       return false;
@@ -4579,8 +4593,9 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (MemNode::all_controls_dominate(n, this) != DomResult::Dominate)
+      if (MemNode::all_controls_dominate(n, this) != DomResult::Dominate) {
         return false;                  // failed to prove a good control
+      }
     }
 
     // Check data edges for possible dependencies on 'this'.
