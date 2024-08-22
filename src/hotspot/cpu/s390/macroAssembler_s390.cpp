@@ -2751,7 +2751,7 @@ void MacroAssembler::reserved_stack_check(Register return_pc) {
   pop_frame();
   restore_return_pc();
 
-  load_const_optimized(Z_R1, StubRoutines::throw_delayed_StackOverflowError_entry());
+  load_const_optimized(Z_R1, SharedRuntime::throw_delayed_StackOverflowError_entry());
   // Don't use call() or z_basr(), they will invalidate Z_R14 which contains the return pc.
   z_br(Z_R1);
 
@@ -3320,8 +3320,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
   NearLabel L_huge;
 
   // The bitmap is full to bursting.
-  z_cghi(r_bitmap, Klass::SECONDARY_SUPERS_BITMAP_FULL);
-  z_bre(L_huge);
+  z_chi(r_array_length, Klass::SECONDARY_SUPERS_BITMAP_FULL - 2);
+  z_brh(L_huge);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet

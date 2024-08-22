@@ -198,4 +198,16 @@ define CreateDynamicLibraryOrExecutable
 	      $(CODESIGN) -f -s $$($1_CODESIGN_OPTS) --entitlements \
 	          $$(call GetEntitlementsFile, $$@) $$@)
         endif
+
+  # This is for IDE integration purposes only, and is not normally generated
+  $1_LDFLAGS_FILE := $$(MAKESUPPORT_OUTPUTDIR)/compile-commands/$$($1_NAME)-ldflags.txt
+
+  $1_ALL_LD_ARGS := $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
+      $$($1_LIBS) $$($1_EXTRA_LIBS)
+
+  $$($1_LDFLAGS_FILE): $$($1_VARDEPS_FILE)
+	$$(call LogInfo, Creating compile commands linker flags output for $$($1_BASENAME))
+	$$(call MakeDir, $$(dir $$@))
+	$$(ECHO) $$($1_ALL_LD_ARGS) > $$@
+
 endef

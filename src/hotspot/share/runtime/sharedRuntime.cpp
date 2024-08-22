@@ -71,6 +71,7 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vm_version.hpp"
@@ -88,23 +89,42 @@
 #include "jfr/jfr.hpp"
 #endif
 
-// Shared stub locations
+// Shared runtime stub routines reside in their own unique blob with a
+// single entry point
+
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
 RuntimeStub*        SharedRuntime::_wrong_method_abstract_blob;
 RuntimeStub*        SharedRuntime::_ic_miss_blob;
 RuntimeStub*        SharedRuntime::_resolve_opt_virtual_call_blob;
 RuntimeStub*        SharedRuntime::_resolve_virtual_call_blob;
 RuntimeStub*        SharedRuntime::_resolve_static_call_blob;
-address             SharedRuntime::_resolve_static_call_entry;
 
 DeoptimizationBlob* SharedRuntime::_deopt_blob;
 SafepointBlob*      SharedRuntime::_polling_page_vectors_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_safepoint_handler_blob;
 SafepointBlob*      SharedRuntime::_polling_page_return_handler_blob;
 
+RuntimeStub*        SharedRuntime::_throw_AbstractMethodError_blob;
+RuntimeStub*        SharedRuntime::_throw_IncompatibleClassChangeError_blob;
+RuntimeStub*        SharedRuntime::_throw_NullPointerException_at_call_blob;
+RuntimeStub*        SharedRuntime::_throw_StackOverflowError_blob;
+RuntimeStub*        SharedRuntime::_throw_delayed_StackOverflowError_blob;
+
+#if INCLUDE_JFR
+RuntimeStub*        SharedRuntime::_jfr_write_checkpoint_blob = nullptr;
+RuntimeStub*        SharedRuntime::_jfr_return_lease_blob = nullptr;
+#endif
+
 nmethod*            SharedRuntime::_cont_doYield_stub;
 
 //----------------------------generate_stubs-----------------------------------
+void SharedRuntime::generate_initial_stubs() {
+  // Build this early so it's available for the interpreter.
+  _throw_StackOverflowError_blob =
+    generate_throw_exception("StackOverflowError throw_exception",
+                             CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
+}
+
 void SharedRuntime::generate_stubs() {
   _wrong_method_blob                   = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method),          "wrong_method_stub");
   _wrong_method_abstract_blob          = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::handle_wrong_method_abstract), "wrong_method_abstract_stub");
@@ -112,7 +132,22 @@ void SharedRuntime::generate_stubs() {
   _resolve_opt_virtual_call_blob       = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_opt_virtual_call_C),   "resolve_opt_virtual_call");
   _resolve_virtual_call_blob           = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_virtual_call_C),       "resolve_virtual_call");
   _resolve_static_call_blob            = generate_resolve_blob(CAST_FROM_FN_PTR(address, SharedRuntime::resolve_static_call_C),        "resolve_static_call");
-  _resolve_static_call_entry           = _resolve_static_call_blob->entry_point();
+
+  _throw_delayed_StackOverflowError_blob =
+    generate_throw_exception("delayed StackOverflowError throw_exception",
+                             CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError));
+
+  _throw_AbstractMethodError_blob =
+    generate_throw_exception("AbstractMethodError throw_exception",
+                             CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
+
+  _throw_IncompatibleClassChangeError_blob =
+    generate_throw_exception("IncompatibleClassChangeError throw_exception",
+                             CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError));
+
+  _throw_NullPointerException_at_call_blob =
+    generate_throw_exception("NullPointerException at call throw_exception",
+                             CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call));
 
   AdapterHandlerLibrary::initialize();
 
@@ -128,6 +163,19 @@ void SharedRuntime::generate_stubs() {
 
   generate_deopt_blob();
 }
+
+#if INCLUDE_JFR
+//------------------------------generate jfr runtime stubs ------
+void SharedRuntime::generate_jfr_stubs() {
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_jfr_stubs";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  _jfr_write_checkpoint_blob = generate_jfr_write_checkpoint();
+  _jfr_return_lease_blob = generate_jfr_return_lease();
+}
+
+#endif // INCLUDE_JFR
 
 #include <math.h>
 
@@ -867,7 +915,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
         // method stack banging.
         assert(current->deopt_mark() == nullptr, "no stack overflow from deopt blob/uncommon trap");
         Events::log_exception(current, "StackOverflowError at " INTPTR_FORMAT, p2i(pc));
-        return StubRoutines::throw_StackOverflowError_entry();
+        return SharedRuntime::throw_StackOverflowError_entry();
       }
 
       case IMPLICIT_NULL: {
@@ -893,7 +941,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
             // Assert that the signal comes from the expected location in stub code.
             assert(vt_stub->is_null_pointer_exception(pc),
                    "obtained signal from unexpected location in stub code");
-            return StubRoutines::throw_NullPointerException_at_call_entry();
+            return SharedRuntime::throw_NullPointerException_at_call_entry();
           }
         } else {
           CodeBlob* cb = CodeCache::find_blob(pc);
@@ -914,7 +962,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
             }
             Events::log_exception(current, "NullPointerException in code blob at " INTPTR_FORMAT, p2i(pc));
             // There is no handler here, so we will simply unwind.
-            return StubRoutines::throw_NullPointerException_at_call_entry();
+            return SharedRuntime::throw_NullPointerException_at_call_entry();
           }
 
           // Otherwise, it's a compiled method.  Consult its exception handlers.
@@ -925,13 +973,13 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* current,
             // is not set up yet) => use return address pushed by
             // caller => don't push another return address
             Events::log_exception(current, "NullPointerException in IC check " INTPTR_FORMAT, p2i(pc));
-            return StubRoutines::throw_NullPointerException_at_call_entry();
+            return SharedRuntime::throw_NullPointerException_at_call_entry();
           }
 
           if (nm->method()->is_method_handle_intrinsic()) {
             // exception happened inside MH dispatch code, similar to a vtable stub
             Events::log_exception(current, "NullPointerException in MH adapter " INTPTR_FORMAT, p2i(pc));
-            return StubRoutines::throw_NullPointerException_at_call_entry();
+            return SharedRuntime::throw_NullPointerException_at_call_entry();
           }
 
 #ifndef PRODUCT
@@ -1467,7 +1515,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method_abstract(JavaThread*
   assert(callerFrame.is_compiled_frame(), "must be");
 
   // Install exception and return forward entry.
-  address res = StubRoutines::throw_AbstractMethodError_entry();
+  address res = SharedRuntime::throw_AbstractMethodError_entry();
   JRT_BLOCK
     methodHandle callee(current, invoke.static_target(current));
     if (!callee.is_null()) {
@@ -2387,7 +2435,7 @@ void AdapterHandlerLibrary::initialize() {
     // AbstractMethodError for invalid invocations.
     address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
     _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, nullptr),
-                                                                StubRoutines::throw_AbstractMethodError_entry(),
+                                                                SharedRuntime::throw_AbstractMethodError_entry(),
                                                                 wrong_method_abstract, wrong_method_abstract);
 
     _buffer = BufferBlob::create("adapters", AdapterHandlerLibrary_size);

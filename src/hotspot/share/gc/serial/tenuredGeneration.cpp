@@ -440,7 +440,15 @@ void TenuredGeneration::verify() {
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
-  Generation::print_on(st);
+  st->print(" %-10s", name());
+
+  st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
+            capacity()/K, used()/K);
+  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               p2i(_virtual_space.low_boundary()),
+               p2i(_virtual_space.high()),
+               p2i(_virtual_space.high_boundary()));
+
   st->print("   the");
   _the_space->print_on(st);
 }

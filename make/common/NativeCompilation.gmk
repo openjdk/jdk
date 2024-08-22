@@ -222,7 +222,7 @@ define SetupNativeCompilationBody
 
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # Override all targets (this is a hack)
-    $1 := $$($1_ALL_OBJS_JSON)
+    $1 := $$($1_ALL_OBJS_JSON) $$($1_LDFLAGS_FILE)
   endif
 endef
 
