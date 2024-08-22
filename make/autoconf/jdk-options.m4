@@ -694,6 +694,7 @@ AC_DEFUN([JDKOPT_ENABLE_DISABLE_CDS_ARCHIVE_COH],
           AVAILABLE=false
         else
           AC_MSG_RESULT([yes])
+          AVAILABLE=true
         fi
       ])
   AC_SUBST(BUILD_CDS_ARCHIVE_COH)
