@@ -100,7 +100,7 @@ void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   while (addr < top()) {
     oop obj = cast_to_oop(addr);
     blk->do_object(obj);
-    addr += obj->size();
+    addr += obj->forward_safe_size();
   }
 }
 
