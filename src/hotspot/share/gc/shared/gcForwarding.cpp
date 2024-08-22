@@ -35,7 +35,7 @@ void GCForwarding::initialize_flags() {
   // object headers, we will disable the flag when the
   // heap size exceeds the narrow-encodable address space.
 
-  // size_t max_narrow_heap_size = (size_t(1) << (NUM_LOW_BITS_NARROW - SHIFT)) * HeapWordSize;
+  // size_t max_narrow_heap_size = (size_t(1) << (NumLowBitsNarrow - Shift)) * HeapWordSize;
   // if (UseCompactObjectHeaders && MaxHeapSize >= max_narrow_heap_size) {
   //  FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
   // }
@@ -44,11 +44,11 @@ void GCForwarding::initialize_flags() {
 void GCForwarding::initialize(MemRegion heap) {
 #ifdef _LP64
   _heap_base = heap.start();
-  if (heap.word_size() <= right_n_bits(NUM_LOW_BITS_NARROW - SHIFT)) {
-    _num_low_bits = NUM_LOW_BITS_NARROW;
+  if (heap.word_size() <= right_n_bits(NumLowBitsNarrow - Shift)) {
+    _num_low_bits = NumLowBitsNarrow;
   } else {
     // assert(!UseCompactObjectHeaders, "Compact object headers should be turned off for large heaps");
-    _num_low_bits = NUM_LOW_BITS_WIDE;
+    _num_low_bits = NumLowBitsWide;
   }
 #endif
 }

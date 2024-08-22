@@ -31,7 +31,7 @@
 
 void GCForwarding::forward_to(oop from, oop to) {
 #ifdef _LP64
-  uintptr_t encoded = pointer_delta(cast_from_oop<HeapWord*>(to), _heap_base) << SHIFT;
+  uintptr_t encoded = pointer_delta(cast_from_oop<HeapWord*>(to), _heap_base) << Shift;
   assert(encoded <= static_cast<uintptr_t>(right_n_bits(_num_low_bits)), "encoded forwardee must fit");
   uintptr_t mark = from->mark().value();
   mark &= ~right_n_bits(_num_low_bits);
@@ -45,7 +45,7 @@ void GCForwarding::forward_to(oop from, oop to) {
 oop GCForwarding::forwardee(oop from) {
 #ifdef _LP64
   uintptr_t mark = from->mark().value();
-  HeapWord* decoded = _heap_base + ((mark & right_n_bits(_num_low_bits)) >> SHIFT);
+  HeapWord* decoded = _heap_base + ((mark & right_n_bits(_num_low_bits)) >> Shift);
   return cast_to_oop(decoded);
 #else
   return from->forwardee();
@@ -53,7 +53,7 @@ oop GCForwarding::forwardee(oop from) {
 }
 
 bool GCForwarding::is_forwarded(oop obj) {
-  return obj->mark().is_marked();
+  return obj->mark().is_forwarded();
 }
 
 #endif // GC_SHARED_GCFORWARDING_INLINE_HPP
