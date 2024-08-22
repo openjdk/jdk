@@ -80,7 +80,7 @@ enum EPOLL_EVENTS {
   EPOLLWRBAND  = (int) (1U <<  9),
   EPOLLMSG     = (int) (1U << 10), /* Never reported. */
   EPOLLRDHUP   = (int) (1U << 13),
-  EPOLLONESHOT = (int) (1U << 31)
+  EPOLLONESHOT = (int) (1U << 30)
 };
 
 #define EPOLLIN      (1U <<  0)
@@ -94,7 +94,7 @@ enum EPOLL_EVENTS {
 #define EPOLLWRBAND  (1U <<  9)
 #define EPOLLMSG     (1U << 10)
 #define EPOLLRDHUP   (1U << 13)
-#define EPOLLONESHOT (1U << 31)
+#define EPOLLONESHOT (1U << 30)
 
 #define EPOLL_CTL_ADD 1
 #define EPOLL_CTL_MOD 2
