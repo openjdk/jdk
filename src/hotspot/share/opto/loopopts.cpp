@@ -1272,9 +1272,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   // Pick control right outside the loop
   for (;;) {
     Node* dom = idom(useblock);
-    if (loop->is_member(get_loop(dom)) ||
-        // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
+    if (loop->is_member(get_loop(dom))) {
       break;
     }
     useblock = dom;
