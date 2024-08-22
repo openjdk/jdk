@@ -149,8 +149,15 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         IS_WINDOWS = OperatingSystem.isWindows();
     }
 
-    public record Datagram(SocketAddress source, ByteBuffer payload) {}
-    public record QuicDatagram(QuicPacketReceiver connection, SocketAddress destination, ByteBuffer payload) {}
+    public sealed interface Datagram permits QuicDatagram, StatelessReset, SendStatelessReset, UnmatchedDatagram {
+        SocketAddress address();
+        ByteBuffer payload();
+    }
+    public record UnmatchedDatagram(SocketAddress address, ByteBuffer payload) implements Datagram {}
+    public record SendStatelessReset(SocketAddress address, ByteBuffer payload) implements Datagram {}
+    public record StatelessReset(QuicPacketReceiver connection, SocketAddress address, ByteBuffer payload) implements Datagram {}
+    public record QuicDatagram(QuicPacketReceiver connection, SocketAddress address, ByteBuffer payload)
+            implements Datagram {}
 
     /**
      * An enum identifying the type of channels used and supported by QuicEndpoint and
@@ -162,7 +169,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         public boolean isBlocking() {
             return this == BLOCKING_WITH_VIRTUAL_THREADS;
         }
-    };
+    }
 
     // A temporary internal property to switch between two QuicSelector implementation:
     // - if true, uses QuicNioSelector, an implementation based non-blocking and channels
@@ -758,15 +765,24 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                     debug.log("received %s bytes from %s", count, source);
                 }
                 if (count > 0) {
-                    if (debug.on()) {
-                        debug.log("adding %d to read queue from %s,queue size %s",
-                                count, source, readQueue.size());
+                    // Optimization: add some basic check here to drop the packet here if:
+                    // - it is too small, it is not a quic packet we would handle
+                    Datagram datagram;
+                    if ((datagram = matchDatagram(source, buffer)) == null) {
+                        if (debug.on()) {
+                            debug.log("dropping invalid packet for this instance (%s bytes)", count);
+                        }
+                        buffer.clear();
+                        continue;
                     }
-                    // TODO: add some basic check to drop the packet here if:
-                    // - it is too small,
-                    // - it is not a quic packet
-                    int buffered = buffer(count);
-                    readQueue.add(new Datagram(source, copyOnHeap(buffer)));
+                    // at this point buffer has been copied. We only buffer what's
+                    // needed.
+                    int buffered = buffer(datagram.payload().remaining());
+                    if (debug.on()) {
+                        debug.log("adding %s to read queue from %s, queue size %s, type %s",
+                                buffered, source, readQueue.size(), datagram.getClass().getSimpleName());
+                    }
+                    readQueue.add(datagram);
                     buffer.clear();
                     if (--readLoopStarted == 0 || buffered >= MAX_BUFFERED_HIGH) {
                         readLoopStarted = maxBeforeStart;
@@ -824,6 +840,65 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         }
     }
 
+    /**
+     * This method tries to figure out whether the received packet
+     * matches a connection, or a stateless reset.
+     * @param source the source address
+     * @param buffer the incoming datagram payload
+     * @return a {@link Datagram} to be processed by the read loop
+     *   if a match is found, or null if the datagram can be dropped
+     *   immediately
+     */
+    private Datagram matchDatagram(SocketAddress source, ByteBuffer buffer) {
+        HeadersType headersType = QuicPacket.peekHeaderType(buffer, buffer.position());
+        // short header packets whose length is < 21 are never valid
+        if (headersType == HeadersType.SHORT && buffer.remaining() < 21) {
+            return null;
+        }
+        ByteBuffer cidbytes = switch (headersType) {
+            case LONG, SHORT -> peekConnectionBytes(headersType, buffer);
+            default -> null;
+        };
+        if (cidbytes == null) {
+            return null;
+        }
+        int length = cidbytes.remaining();
+        if (length > QuicConnectionId.MAX_CONNECTION_ID_LENGTH) {
+            return null;
+        }
+        if (debug.on()) {
+            var cidlen = cidbytes == null ? 0 : cidbytes.remaining();
+            debug.log("headers(%s), connectionId(%d), datagram(%d)",
+                    headersType, cidlen, buffer.remaining());
+        }
+        QuicPacketReceiver connection = findQuicConnectionFor(source, cidbytes);
+        // check stateless reset
+        if (connection == null) {
+            if (headersType == HeadersType.SHORT) {
+                // a short packet may be a stateless reset, or may
+                // trigger a stateless reset
+                connection = checkStatelessReset(source, buffer);
+                if (connection != null) {
+                    // We received a stateless reset, process it later in the readLoop
+                    return new StatelessReset(connection, source, copyOnHeap(buffer));
+                } else if (buffer.remaining() >= 44) {
+                    // check if we should send a stateless reset
+                    final ByteBuffer reset = quicInstance.idFactory().statelessReset(cidbytes);
+                    if (reset != null) {
+                        // will send stateless reset later from the read loop
+                        return new SendStatelessReset(source, reset);
+                    }
+                }
+                return null; // drop unmatched short packets
+            }
+            // client can drop all unmatched long quic packets here
+            if (isClient()) return null;
+        }
+        return connection != null
+                ? new QuicDatagram(connection, source, copyOnHeap(buffer))
+                : new UnmatchedDatagram(source, copyOnHeap(buffer));
+    }
+
 
     @SuppressWarnings("removal")
     private int sendSM(ByteBuffer datagram, SocketAddress destination) throws IOException {
@@ -864,7 +939,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         int sent;
         var payload = datagram.payload();
         var tosend = payload.remaining();
-        final var dest = datagram.destination();
+        final var dest = datagram.address();
         if (isClosed() || isChannelClosed()) {
             if (debug.on()) {
                 debug.log("endpoint or channel closed; skipping sending of datagram(%d) to %s",
@@ -890,7 +965,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // close the connection this came from?
         // close all the connections whose destination is that address?
         var connection = datagram.connection();
-        var dest = datagram.destination();
+        var dest = datagram.address();
         String msg = x.getMessage();
         if (msg != null && msg.contains("too big")) {
             int max = -1;
@@ -959,8 +1034,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             while (!readQueue.isEmpty()) {
                 var datagram = readQueue.poll();
                 var payload = datagram.payload();
-                var source = datagram.source();
+                var source  = datagram.address();
                 int remaining = payload.remaining();
+                var pos = payload.position();
                 unbuffer(remaining);
                 if (debug.on()) {
                     debug.log("readLoop: type(%x) %d from %s",
@@ -968,25 +1044,37 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
                             remaining,
                             source);
                 }
-
-                // Retrieve the connection ID from the first packet in the datagram
-                // defer handling coalesced packets to the connection
-                var pos = payload.position();
-                var headersType = QuicPacket.peekHeaderType(payload, pos);
-                final ByteBuffer destConnId = peekConnectionBytes(headersType, payload);
-                if (debug.on()) {
-                    var cidlen = destConnId == null ? 0 : destConnId.remaining();
-                    debug.log("headers(%s), connectionId(%d), datagram(%d)",
-                            headersType, cidlen, payload.remaining());
-                }
-                QuicPacketReceiver connection = findQuicConnectionFor(source, destConnId);
                 try {
-                    if (connection == null) {
-                        // maybe stateless reset? or a connection attempt?
-                        unmatchedQuicPacket(datagram, headersType, payload, destConnId);
-                    } else {
-                        connection.processIncoming(datagram.source(), destConnId, headersType, payload);
+                    if (closed) {
+                        if (debug.on()) {
+                            debug.log("closed: ignoring incoming datagram");
+                        }
+                        return;
                     }
+                    switch (datagram) {
+                        case QuicDatagram(var connection, var _, var _) -> {
+                            var headersType = QuicPacket.peekHeaderType(payload, pos);
+                            var destConnId = peekConnectionBytes(headersType, payload);
+                            connection.processIncoming(source, destConnId, headersType, payload);
+                        }
+                        case UnmatchedDatagram(var _, var _) -> {
+                            var headersType = QuicPacket.peekHeaderType(payload, pos);
+                            unmatchedQuicPacket(datagram, headersType, payload);
+                        }
+                        case StatelessReset(var connection, var _, var _) -> {
+                            if (debug.on()) {
+                                debug.log("Processing stateless reset from %s", source);
+                            }
+                            connection.processStatelessReset();
+                        }
+                        case SendStatelessReset(var _, var _) -> {
+                            if (debug.on()) {
+                                debug.log("Sending stateless reset to %s", source);
+                            }
+                            send(payload, source);
+                        }
+                    }
+
                 } catch (Throwable t) {
                     if (debug.on()) debug.log("Failed to handle datagram: " + t, t);
                     Log.logError(t);
@@ -1015,16 +1103,16 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
     /**
      * checks if the received datagram contains a stateless reset token;
      * returns the associated connection if true, null otherwise
-     * @param datagram received datagram
+     * @param source the sender's address
      * @param buffer datagram contents
      * @return connection associated with the stateless token, or {@code null}
      */
-    protected QuicPacketReceiver checkStatelessReset(final Datagram datagram, final ByteBuffer buffer) {
+    protected QuicPacketReceiver checkStatelessReset(SocketAddress source, final ByteBuffer buffer) {
         // We couldn't identify the connection: maybe that's a stateless reset?
         if (closed) return null;
         if (debug.on()) {
-            debug.log("Attempting stateless reset for datagram[%d, %s]%n",
-                    buffer.remaining(), datagram.source());
+            debug.log("Check if received datagram could be stateless reset (datagram[%d, %s])",
+                    buffer.remaining(), source);
         }
         if (buffer.remaining() < 21) {
             // too short to be a stateless reset:
@@ -1032,6 +1120,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             // Endpoints MUST discard packets that are too small to be valid QUIC packets.
             // To give an example, with the set of AEAD functions defined in [QUIC-TLS],
             // short header packets that are smaller than 21 bytes are never valid.
+            if (debug.on()) {
+                debug.log("Packet too short for a stateless reset (%s bytes < 21)",
+                        buffer.remaining());
+            }
             return null;
         }
         final byte[] tokenBytes = new byte[16];
@@ -1043,6 +1135,10 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             if (debug.on()) {
                 debug.log("Received reset token: %s for connection: %s",
                         HexFormat.of().formatHex(tokenBytes), connection);
+            }
+        } else {
+            if (debug.on()) {
+                debug.log("Not a stateless reset");
             }
         }
         return connection;
@@ -1070,50 +1166,50 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * @param headersType The quic packet type
      * @param buffer     A buffer positioned at the start of the unmatched quic packet.
      *                   The buffer may contain more coalesced quic packets.
-     * @param idbytes    destination connection ID
      */
     protected void unmatchedQuicPacket(Datagram datagram,
                                        HeadersType headersType,
-                                       ByteBuffer buffer,
-                                       ByteBuffer idbytes) throws IOException {
+                                       ByteBuffer buffer) throws IOException {
         QuicInstance instance = quicInstance;
-        if (debug.on()) {
-            debug.log("Unmatched packet in datagram [%s, %d, %s] for %s", headersType,
-                    buffer.remaining(), datagram.source(), instance);
-        }
         if (closed) {
             if (debug.on()) {
                 debug.log("closed: ignoring unmatched datagram");
             }
             return;
         }
-        if (headersType == HeadersType.SHORT) {
-            if (debug.on()) debug.log("Unmatched packet: ONERTT");
-            // maybe a stateless reset?
-            final QuicPacketReceiver connection = checkStatelessReset(datagram, buffer);
+
+        var address = datagram.address();
+        if (isServer() && headersType == HeadersType.LONG ) {
+            // long packets need to be rematched here for servers.
+            // we read packets in one thread and process them here in
+            // a different thread:
+            // the connection may have been added later on when processing
+            // a previous long packet in this thread, so we need to
+            // check the connection map again here.
+            var idbytes = peekConnectionBytes(headersType, buffer);
+            var connection = findQuicConnectionFor(address, idbytes);
             if (connection != null) {
-                // it's indeed a stateless reset token. let the identified connection handle it
-                connection.processStatelessReset();
-            } else if (buffer.remaining() >= 44) {
-                // if not a stateless reset, check if we should send one
-                final ByteBuffer reset = quicInstance.idFactory().statelessReset(idbytes);
-                if (reset != null && !closed) {
-                    QuicConnectionId cid = quicInstance.idFactory().unsafeConnectionIdFor(idbytes);
-                    if (Log.quic()) {
-                        Log.logQuic("unmatched packet received on connection id {0}; sending a" +
-                                " stateless reset to {1}", cid, datagram.source);
-                    } else if (debug.on()) {
-                        debug.log("Large (size=%d) unmatched packet received on connection id %s;" +
-                                        " will send a stateless reset to %s", buffer.remaining(),
-                                cid, datagram.source);
-                    }
-                    send(reset, datagram.source);
-                }
+                // a matching connection was found, this packet is no longer
+                // unmatched
+                connection.processIncoming(address, idbytes, headersType, buffer);
+                return;
             }
-            return;
         }
-        if (debug.on()) debug.log("Unmatched packet: delegating to instance");
-        instance.unmatchedQuicPacket(datagram.source(), headersType, buffer);
+
+        if (debug.on()) {
+            debug.log("Unmatched packet in datagram [%s, %d, %s] for %s", headersType,
+                    buffer.remaining(), address, instance);
+            debug.log("Unmatched packet: delegating to instance");
+        }
+        instance.unmatchedQuicPacket(address, headersType, buffer);
+    }
+
+    private boolean isServer() {
+        return !isClient();
+    }
+
+    private boolean isClient() {
+        return quicInstance instanceof QuicClient;
     }
 
     // Parses the list of active connection
@@ -1417,7 +1513,7 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
         // remap the connection to a DrainingConnection
         if (closed) return;
         connection.connectionIds().forEach((id) ->
-                connections.compute(id, (i, r) -> remapDraining(i, r) ));
+                connections.compute(id, this::remapDraining));
         assert !connections.containsValue(connection) : connection;
     }
 
@@ -1858,7 +1954,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
          * @param timerQueue   the timer queue
          * @throws IOException if an IOException occurs
          */
-        @SuppressWarnings("removal")
         public QuicSelectableEndpoint createSelectableEndpoint(QuicInstance quicInstance,
                                                                       String name,
                                                                       SocketAddress bindAddress,
@@ -1876,7 +1971,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
          * @param timerQueue   the timer queue
          * @throws IOException if an IOException occurs
          */
-        @SuppressWarnings("removal")
         public QuicVirtualThreadedEndpoint createVirtualThreadedEndpoint(QuicInstance quicInstance,
                                                                                 String name,
                                                                                 SocketAddress bindAddress,
@@ -1901,8 +1995,6 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
      * @param endpoint the endpoint
      * @param selector the selector
      * @param debug    a logger for debugging
-     *
-     * @return the registered endpoint
      *
      * @throws IOException if an IOException occurs
      * @throws IllegalStateException if the endpoint and selector implementations
