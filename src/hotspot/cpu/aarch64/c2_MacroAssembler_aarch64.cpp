@@ -55,7 +55,17 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   Label TAIL, RELATIVE;
 
+  // Unroll factor for the scalar loop below. 4 provides good performance and moderate code size.
+  // Increasing the unroll factor to 8 does slightly improve the performance on some older CPUs but
+  // gives no performance benefits for the others, which isn't worth the increase in code size.
   const size_t unroll_factor = 4;
+
+  // Number of array elements handled by one iteration of the vectorized loop in
+  // large_arrays_hashcode stub. Each iteration, the loop loads 4 SIMD&FP registers in one load
+  // instruction. We use 4H and 4S load arrangements for chars, shorts and ints but 8B for booleans
+  // and bytes, as it's the smallest arrangement available for single-byte elements with LD1
+  // instruction. Hence, the loop handles different number of element per iteration depending on the
+  // element type.
   const size_t loop_factor = eltype == T_BOOLEAN || eltype == T_BYTE ? 32
                              : eltype == T_CHAR || eltype == T_SHORT ? 16
                              : eltype == T_INT                       ? 16
@@ -96,8 +106,12 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 
   bind(TAIL);
 
+  // At this point cnt holds (r - l) where r is the number of remaining elements, l is loop_count
+  // and 0 <= r < l. The orr performs (r - l) % u where u = unroll_factor. The subtract shifted by 3
+  // offsets past |(r - l) % u| load + madd insns i.e. it only executes r % u load + madds.
+  // Iteration eats up the remainder, u elements at a time.
   assert(is_power_of_2(unroll_factor), "can't use this value to calculate the jump target PC");
-  orr(tmp2, cnt, 0x1fff ^ (unroll_factor - 1));
+  orr(tmp2, cnt, -unroll_factor);
   adr(tmp1, RELATIVE);
   sub(tmp1, tmp1, tmp2, ext::sxtw, 3);
   movw(tmp2, 0x1f);
