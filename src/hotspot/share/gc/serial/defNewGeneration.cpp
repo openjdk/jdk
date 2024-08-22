@@ -702,8 +702,6 @@ void DefNewGeneration::remove_forwarding_pointers() {
     void do_object(oop obj) override {
       if (obj->is_self_forwarded()) {
         obj->unset_self_forwarded();
-      } else if (obj->is_forwarded()) {
-        obj->init_mark();
       }
     }
   } cl;
