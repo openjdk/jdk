@@ -33,7 +33,6 @@ public class ProcessOutput {
         this.exitCode = exitCode;
         this.output = output;
     }
-
     /* TODO:
      * improve error handling:
      * - What kind of error is it? error in Template and cannot parse with javac

@@ -6,15 +6,15 @@ import java.util.Map;
 import static compiler.lib.test_generator.InputTemplate.*;
 public class Template9 extends Template {
     public Template9() {}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 int $iFld=\\{val3}, $iFld2;
                 boolean $flag=\\{bool};
                 int $zero = \\{val1};
                 int $limit = \\{val2};
-                int[] iArr = new int[\\{size}];             
+                int[] iArr = new int[\\{size}];
                 """;
-        String nes_template="""
+        String method="""
                 for (; $limit < \\{limit1}; $limit \\{arithm}= \\{stride});
                     for (int $i = \\{var}; $i < $limit; $i++) {
                         $zero = 0;
@@ -25,24 +25,24 @@ public class Template9 extends Template {
                             $iFld = $zero;
                         }
                 \s
-                        int $k = $iFld + $i * $zero; // Loop variant before CCP
+                    int $k = $iFld + $i * $zero; // Loop variant before CCP
                 \s
-                        if ($k == \\{val1}) { // 2) After CCP: Loop invariant -> triggers Loop Unswitching             \s
-                            $iFld2 = \\{val1};
-                        }
-                        else{
-                            iArr[$i] = $zero;
-                        }
-                    }            
-                    """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
-
+                    if ($k == \\{val1}) { // 2) After CCP: Loop invariant -> triggers Loop Unswitching             \s
+                        $iFld2 = \\{val1};
+                    }
+                    else{
+                        iArr[$i] = $zero;
+                    }
+                }
+                """;
+        String template=statics+method;
+        String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String bool = getRandomValue(new String[]{"false", "true"});
@@ -54,7 +54,7 @@ public class Template9 extends Template {
         replacements.put("val2", val2);
         replacements.put("limit1", limit1);
         replacements.put("size", size);
-        replacements.put("var", c);
+        replacements.put("var", variable);
         return doReplacements(template_com,replacements);
     }
 }

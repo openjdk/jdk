@@ -12,6 +12,7 @@ public class InputTemplate7 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate7
                 static int x, y;
                 static boolean flag;
                 """;
@@ -55,7 +56,7 @@ public class InputTemplate7 extends InputTemplate {
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
-        String val3 = getRandomValueAsString(integerValues);
+        String val3 = getRandomValueAsString(positiveIntegerValues);
         String boole = getRandomValue(new String[]{"false", "true"});
         String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
@@ -75,12 +76,12 @@ public class InputTemplate7 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 
 }

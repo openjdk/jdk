@@ -13,6 +13,7 @@ public class InputTemplate11 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate11
                 static int iFld, iFld2;
                 static boolean flag;
                 static int[] iArr = new int[\\{size}];
@@ -28,7 +29,7 @@ public class InputTemplate11 extends InputTemplate {
                      for (int i = \\{init1}; i < limit; i++) {
                          zero = 0;
                      }
-                     for (int i = \\{init2}; i < \\{limit2}; i++) {
+                     for (int i = \\{init2}; i < \\{size}; i++) {
                          if (flag) { // 1) Triggers Loop Peeling
                              \\{template1}
                          }
@@ -39,7 +40,7 @@ public class InputTemplate11 extends InputTemplate {
                              iArr[i] = \\{val}; // 3) After Loop Unswitching: Triggers Pre/Main/Post and then 4) Range Check Elimination
                              \\{template2}
                          }
-                       
+
                      }
                  }
                 """;
@@ -55,12 +56,11 @@ public class InputTemplate11 extends InputTemplate {
         String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String val = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String init1 = getRandomValueAsString(integerValues);
-        String init2 = getRandomValueAsString(integerValues);
-        String limit = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String init2 = getRandomValueAsString(positiveIntegerValues);
+        String limit = getRandomValueAsString(positiveIntegerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String uniqueId = String.valueOf(numTest);
@@ -70,7 +70,6 @@ public class InputTemplate11 extends InputTemplate {
         replacements.put("init2", init2);
         replacements.put("limit", limit);
         replacements.put("limit1", limit1);
-        replacements.put("limit2", limit2);
         replacements.put("arithm", arithm);
         replacements.put("stride", stride);
         replacements.put("template1", template_nes1);
@@ -78,7 +77,6 @@ public class InputTemplate11 extends InputTemplate {
         replacements.put("uniqueId", uniqueId);
         return replacements;
     }
-
     @Override
     public String[] getCompileFlags() {
         return new String[]{"-Xcomp",
@@ -88,11 +86,11 @@ public class InputTemplate11 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

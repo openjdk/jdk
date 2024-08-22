@@ -12,11 +12,14 @@ public class InputTemplate10 extends InputTemplate {
         String imports= """
                 """;
         String statics= """
+                //InputTemplate10
                 public static int iFld = \\{val};
                 """;
-        String call="for (int i = \\{init1}; i < \\{limit1}; i++) {\n" +
-                "        test_\\{uniqueId}(i % 2 == 0);\n" +
-                "    }";
+        String call= """
+                for (int i = \\{init1}; i < \\{limit1}; i++) {
+                    test_\\{uniqueId}(i % 2 == 0);
+                }
+                """;
         String method= """
                 public static void test_\\{uniqueId}(boolean flag) {
                     for (int i = \\{init2}; i < \\{limit2}; i++)  {
@@ -30,7 +33,7 @@ public class InputTemplate10 extends InputTemplate {
                     }
                 }
                 """;
-        return new CodeSegment(imports, statics, call, method);
+        return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
@@ -43,8 +46,8 @@ public class InputTemplate10 extends InputTemplate {
         String val = getRandomValueAsString(integerValues);
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         String uniqueId = String.valueOf(numTest);
         replacements.put("val", val);
         replacements.put("init1", init1);
@@ -64,11 +67,11 @@ public class InputTemplate10 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

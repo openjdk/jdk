@@ -11,6 +11,7 @@ public class InputTemplate5 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate5
                 static int N;
                 """;
 
@@ -23,32 +24,30 @@ public class InputTemplate5 extends InputTemplate {
         String method = """
             public static void test_\\{uniqueId}(int limit) {
                 boolean a[] = new boolean[\\{size}];
-                for (int i = \\{init2}; i < limit; i++) {
+                for (int i = 0; i < \\{size}; i++) {
                     a[i] = 80.1f > i;
-                    \\{template1}
+                    \\{template2}
                 }
-                \\{template2}
+                \\{template1}
             }
-                """;
+            """;
 
         return new CodeSegment(statics, call, method,imports);
     }
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
-        Template template1 = new Template1();
+        Template template1 = new Template4();
         Template template2 = new Template10();
         String template_nes1= template1.getTemplate("j");
         String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String init1 = getRandomValueAsString(integerValues);
-        String init2 = getRandomValueAsString(integerValues);
-        String limit = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String limit = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String num = getRandomValueAsString(integerValues);
         String uniqueId = String.valueOf(numTest);
         replacements.put("init1", init1);
-        replacements.put("init2", init2);
         replacements.put("limit", limit);
         replacements.put("size", size);
         replacements.put("template1", template_nes1);
@@ -65,12 +64,12 @@ public class InputTemplate5 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 
 }

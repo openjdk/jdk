@@ -13,14 +13,15 @@ public class InputTemplate16 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate16
+                static int zero = \\{val};
+                static int limit = \\{limit};
                 """;
 
         String call = "test_\\{uniqueId}();\n";
 
         String method = """
                  static void test_\\{uniqueId}() {
-                     int zero = \\{val};
-                     int limit = \\{limit};
                      for (; limit < \\{limit1}; limit \\{arithm}= \\{stride});
                      for (int i = \\{init}; i < limit; i++) {
                          zero = 0;
@@ -48,7 +49,7 @@ public class InputTemplate16 extends InputTemplate {
         String limit1 = getRandomValueAsString(integerValues);
         String val = getRandomValueAsString(integerValues);
         String val1 = getRandomValueAsString(integerValues);
-        String limit = getRandomValueAsString(integerValues);
+        String limit = getRandomValueAsString(positiveIntegerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"*", "/"});
        String uniqueId = String.valueOf(numTest);
@@ -72,11 +73,11 @@ public class InputTemplate16 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

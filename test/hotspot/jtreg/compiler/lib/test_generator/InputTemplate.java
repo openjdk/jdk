@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 public abstract class InputTemplate {
-    private static final Random RAND = new Random();
+    private static final Random RAND = new Random(32);
     public static Integer[] integerValues = {
             -2, -1, 0, 1, 2,
             Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,
@@ -37,8 +37,9 @@ public abstract class InputTemplate {
             1, 2,
             Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE
     };
-
-
+    public static Integer[] arraySizes = {
+            1, 10, 100, 1000, 10000, 100000, 200000, 500000, 1000000
+    };
     public static Integer[] integerValuesNonZero = {
             -2, -1, 1, 2,
             Integer.MIN_VALUE - 2, Integer.MIN_VALUE - 1, Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2,

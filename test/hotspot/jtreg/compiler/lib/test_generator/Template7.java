@@ -7,13 +7,13 @@ import static compiler.lib.test_generator.InputTemplate.*;
 
 public class Template7 extends Template{
     public Template7(){}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 int $iFld=\\{val4}, $iFld2, $iFld3;
                 int $x=\\{val1};
-                int $y=\\{val2};             
+                int $y=\\{val2};
                 """;
-        String nes_template="""
+        String method="""
             for (int $i = \\{var}; $i < \\{limit1}; $i++) {
                     // Single iteration loop prevents Parallel IV for outer loop and splitting MulI thru phi
                 for (int $j = \\{init}; j < \\{limit2}; $j++) { // (**)
@@ -32,18 +32,18 @@ public class Template7 extends Template{
             }
             $iFld2 = \\{val3} * ($y - 1); // (3)
             $iFld3 = \\{val3} * ($y - 1); // (4
-        
-            """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
 
+            """;
+        String template=statics+method;
+        String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
         String val4 = getRandomValueAsString(integerValues);
         String init = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
@@ -51,9 +51,7 @@ public class Template7 extends Template{
         replacements.put("init", init);
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
-        replacements.put("var", c);
-
-
+        replacements.put("var", variable);
         return doReplacements(template_com,replacements);
     }
 

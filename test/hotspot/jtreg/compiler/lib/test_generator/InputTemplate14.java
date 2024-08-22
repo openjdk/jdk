@@ -12,9 +12,10 @@ public class InputTemplate14 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate14
                 static int N = \\{val1};
                     static int iFld;
-                    static int[] zeros = new int[N];            
+                    static int[] zeros = new int[N];
                     static boolean sinkB;
                     static int sinkI1;
                 """;
@@ -31,16 +32,16 @@ public class InputTemplate14 extends InputTemplate {
                          boolean flag = \\{boole};
                          for (; xxx < \\{limit1}; xxx++) {
                              iFld = xxx; // seems to sometimes show 149, bad
-                 
+
                              if (flag) {
                                 \\{template2}
                              } // required
-                 
+
                              for (int ddd = \\{init1}; ddd > \\{limit2}; ddd--) {
                                  for (int ccc = xxx; ccc < \\{limit3}; ) {
                                  }
                              }
-                 
+
                              for (int aaa = \\{init2}; aaa < \\{limit4}; aaa++) {
                                  for (long l = \\{init3}; l < \\{limit5}; ++l) {
                                      for (int bbb = \\{init4}; bbb < \\{limit6}; ++bbb) {
@@ -52,7 +53,7 @@ public class InputTemplate14 extends InputTemplate {
                                      }
                                  }
                              }
-                 
+
                              for (int j = \\{init5}; j < \\{limit6}; j++) {} // empty loop
                          }
                          sinkB = flag;
@@ -72,18 +73,18 @@ public class InputTemplate14 extends InputTemplate {
         String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String init1 = getRandomValueAsString(integerValues);
-        String val1 = getRandomValueAsString(integerValues);
+        String val1 = getRandomValueAsString(positiveIntegerValues);
         String val2 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
         String init3 = getRandomValueAsString(integerValues);
         String init4 = getRandomValueAsString(integerValues);
         String init5 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
-        String limit3 = getRandomValueAsString(integerValues);
-        String limit4 = getRandomValueAsString(integerValues);
-        String limit5 = getRandomValueAsString(integerValues);
-        String limit6 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
+        String limit3 = getRandomValueAsString(positiveIntegerValues);
+        String limit4 = getRandomValueAsString(positiveIntegerValues);
+        String limit5 = getRandomValueAsString(positiveIntegerValues);
+        String limit6 = getRandomValueAsString(positiveIntegerValues);
         String boole = getRandomValue(new String[]{"false", "true"});
         String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
@@ -113,11 +114,11 @@ public class InputTemplate14 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

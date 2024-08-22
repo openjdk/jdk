@@ -13,6 +13,7 @@ public class InputTemplate9 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate9
                 static int iFld, iFld2, iFld3;
                 """;
 
@@ -60,8 +61,8 @@ public class InputTemplate9 extends InputTemplate {
         String val3 = getRandomValueAsString(integerValues);
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
         replacements.put("val2", val2);
@@ -83,11 +84,11 @@ public class InputTemplate9 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

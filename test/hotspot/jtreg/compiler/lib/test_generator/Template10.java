@@ -4,31 +4,26 @@ import java.util.Map;
 import static compiler.lib.test_generator.InputTemplate.*;
 public class Template10 extends Template {
     public Template10() {}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 boolean $flag=\\{bool};
                 long $lFld=\\{val1};
-                int[]iArr=new int[\\{size}];             
+                int[]iArr=new int[\\{size}];
                 """;
-        String nes_template="""
+        String method="""
             long $l1 = \\{val2};
             long $l2 = \\{val3};
-            \s
                 int $zero = \\{val2};
                 int $limit = \\{val3};
-            \s
                 for (; $limit < \\{limit1}; $limit \\{arithm}= \\{stride});
                 for (int $i = \\{val3}; $i < $limit; $i++) {
                     $zero = 0;
                 }
-            \s
-                for (int $i = \\{var}; $i < \\{limit2}; $i++) {
+                for (int $i = \\{var}; $i < \\{size}; $i++) {
                     iArr[$i] = \\{val2}; // Just a reason to pre/main/post (trigger more loop opts)
-            \s
                     if ($flag) { // Triggers Loop Peeling before CCP
                        $l1=$zero;
                     }
-            \s
                     if ($zero > $i) { // Folded away after CCP.
                         // DivLs add 30 to the loop body count and we hit LoopUnrollLimit. Add more
                         // statements/DivLs if you want to use a higher LoopUnrollLimit value.
@@ -36,15 +31,17 @@ public class Template10 extends Template {
                         $l1 /= $lFld;
                         $l2 /= $lFld;
                     }
-                }                    """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
+                }
+            """;
+        String template=statics+method;
+        String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String bool = getRandomValue(new String[]{"false", "true"});
@@ -57,7 +54,7 @@ public class Template10 extends Template {
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
         replacements.put("size", size);
-        replacements.put("var", c);
+        replacements.put("var", variable);
         return doReplacements(template_com,replacements);
     }
 }

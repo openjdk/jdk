@@ -13,6 +13,7 @@ public class InputTemplate4 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate4
                 public static int foo = \\{fooVar1};
                 public static int bar = \\{barVar1};
                 """;
@@ -38,7 +39,7 @@ public class InputTemplate4 extends InputTemplate {
                  }
                  return result;
              }
-                """;
+             """;
 
         return new CodeSegment(statics, call, method,imports);
     }
@@ -53,7 +54,7 @@ public class InputTemplate4 extends InputTemplate {
         String fooVar1 = getRandomValueAsString(integerValues);
         String fooVar2 = getRandomValueAsString(integerValues);
         String barVar1 = getRandomValueAsString(integerValues);
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String barVar2 = getRandomValueAsString(integerValues);
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
@@ -78,12 +79,12 @@ public class InputTemplate4 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 
 }

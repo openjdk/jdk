@@ -12,7 +12,8 @@ public class InputTemplate3 extends InputTemplate {
                 """;
 
         String statics = """
-                static int iArrFld[];
+                //InputTemplate3
+                static int iArrFld[]=new int[\\{size}];
                 """;
 
         String call = "test_\\{uniqueId}();\n";
@@ -42,20 +43,24 @@ public class InputTemplate3 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
-        Template template1 = new Template1();
+        Template template1 = new Template5();
         Template template2 = new Template4();
         String template_nes1= template1.getTemplate("i19");
         String template_nes2= template2.getTemplate("i16");
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
+        String size = getRandomValueAsString(arraySizes);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String init = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         String uniqueId = String.valueOf(numTest);
         replacements.put("val1", val1);
+        replacements.put("init", init);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
+        replacements.put("size", size);
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
         replacements.put("template1", template_nes1);
@@ -70,12 +75,12 @@ public class InputTemplate3 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 
 }

@@ -9,13 +9,14 @@ public class InputTemplate17 extends InputTemplate {
         String imports= """
                 """;
         String statics = """
+            //InputTemplate17
             public static boolean flag = \\{bool};
             """;
         String call = """
                 test_\\{uniqueId}();
                 """;
         String method = """
-            public void test_\\{uniqueId}() {
+            public static void test_\\{uniqueId}() {
                 int i = \\{val};
                 while (true) {
                     // Found as loop head in ciTypeFlow, but both path inside loop -> head not cloned.
@@ -42,9 +43,9 @@ public class InputTemplate17 extends InputTemplate {
 
     @Override
     public Map<String, String> getRandomReplacements(int numTest) {
-        Template template1 = new Template1();
+        Template template1 = new Template3();
         Template template2 = new Template4();
-        String template_nes1= template1.getTemplate("j");
+        String template_nes1= template1.getTemplate("i");
         String template_nes2= template2.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
@@ -66,9 +67,9 @@ public class InputTemplate17 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
     public int getNumberOfTestMethods(){
-        return 110;
+        return 1;
     }
 }

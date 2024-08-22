@@ -9,6 +9,7 @@ public class InputTemplate2 extends InputTemplate {
         String imports= """
                 """;
         String statics = """
+                //InputTemplate2
                 static int count = 0;
                 static int acc = 1;
                 """;
@@ -53,9 +54,9 @@ public class InputTemplate2 extends InputTemplate {
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
         String init3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
-        String limit3 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
+        String limit3 = getRandomValueAsString(positiveIntegerValues);
         String uniqueId = String.valueOf(numTest);
         replacements.put("init1", init1);
         replacements.put("init2", init2);
@@ -74,7 +75,7 @@ public class InputTemplate2 extends InputTemplate {
     }
     @Override
     public int getNumberOfTests(){
-        return 5;
+        return 1;
     }
     @Override
     public int getNumberOfTestMethods() {

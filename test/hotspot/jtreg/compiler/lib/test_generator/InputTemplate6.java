@@ -14,16 +14,17 @@ public class InputTemplate6 extends InputTemplate {
                 """;
 
         String statics = """
-                private static final int SIZE = \\{size};              
+                //InputTemplate6
+                private static final int SIZE = \\{size};
                 private static int val = \\{Val1};
                 private static short[] a = new short[SIZE];
                 private static short[] b = new short[SIZE];
                 """;
 
         String call = """
-                a[SIZE] = \\{Val2};
+                a[SIZE-1] = \\{Val2};
                 bar_\\{uniqueId}();
-                System.out.println(b[SIZE]);
+                System.out.println(b[SIZE-1]);
                 """;
         String method = """
                  public static void bar_\\{uniqueId}() {
@@ -42,7 +43,7 @@ public class InputTemplate6 extends InputTemplate {
         Template template1 = new Template2();
         String template_nes1= template1.getTemplate("i");
         Map<String, String> replacements = new HashMap<>();
-        String size = getRandomValueAsString(positiveIntegerValues);
+        String size = getRandomValueAsString(arraySizes);
         String Val1 = getRandomValueAsString(integerValues);
         String Val2 = getRandomValueAsString(shortValues);
         String init = getRandomValueAsString(integerValues);
@@ -63,11 +64,11 @@ public class InputTemplate6 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

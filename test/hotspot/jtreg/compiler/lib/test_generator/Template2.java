@@ -7,12 +7,12 @@ import static compiler.lib.test_generator.InputTemplate.*;
 
 public class Template2 extends Template {
     public Template2() {}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 Integer $a;
                 boolean $flag=\\{val};
                 """;
-        String nes_template="""
+        String method="""
             if ($flag) {
                 $a = 1;
             } else {
@@ -22,7 +22,8 @@ public class Template2 extends Template {
                 // Not reachable but that's only known after Incremental Boxing Inline
             }
             """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
+        String template=statics+method;
+        String template_com= avoidConflict(template);
 
         Map<String, String> replacements = new HashMap<>();
         String val = getRandomValue(new String[]{"true", "false"});

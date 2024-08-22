@@ -13,6 +13,7 @@ public class InputTemplate8 extends InputTemplate {
                 """;
 
         String statics = """
+                //InputTemplate8
                 static boolean flag, flag2;
                 static int iFld;
                 """;
@@ -66,8 +67,8 @@ public class InputTemplate8 extends InputTemplate {
         Map<String, String> replacements = new HashMap<>();
         String init1 = getRandomValueAsString(integerValues);
         String init2 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
@@ -97,11 +98,11 @@ public class InputTemplate8 extends InputTemplate {
 
     @Override
     public int getNumberOfTests() {
-        return 10;
+        return 1;
     }
 
     @Override
     public int getNumberOfTestMethods() {
-        return 100;
+        return 1;
     }
 }

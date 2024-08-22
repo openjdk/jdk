@@ -7,7 +7,7 @@ import static compiler.lib.test_generator.InputTemplate.*;
 
 public class Template6 extends Template {
     public Template6() {}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 int $a;
                 int $b;
@@ -15,8 +15,7 @@ public class Template6 extends Template {
                 Boolean $flag2=\\{bool2};
                 int $iFld;
                 """;
-
-        String nes_template="""
+        String method="""
             for (int $i = \\{var}; $i < \\{limit}; $i \\{arithm}= \\{stride}); // Make sure to run with loop opts.
             \s
                 if ($flag) {
@@ -46,14 +45,13 @@ public class Template6 extends Template {
                     $iFld = \\{val2};
                 }
             """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),2);
-
+        String template=statics+method;
+        String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-
-        String limit = getRandomValueAsString(integerValues);
+        String limit = getRandomValueAsString(positiveIntegerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String bool1 = getRandomValue(new String[]{"false", "true"});
@@ -61,15 +59,12 @@ public class Template6 extends Template {
         replacements.put("val1", val1);
         replacements.put("val2", val2);
         replacements.put("val3", val3);
-
         replacements.put("limit", limit);
         replacements.put("stride", stride);
         replacements.put("arithm", arithm);
         replacements.put("bool1", bool1);
         replacements.put("bool2", bool2);
-        replacements.put("var", c);
-
-
+        replacements.put("var", variable);
         return doReplacements(template_com,replacements);
     }
 }

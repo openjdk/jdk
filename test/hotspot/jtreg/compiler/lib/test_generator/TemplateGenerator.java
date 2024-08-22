@@ -40,7 +40,7 @@ public class TemplateGenerator {
     static final int NUM_THREADS = Runtime.getRuntime().availableProcessors();
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 330;
     static String[] TEMPLATE_FILES = {
-            "InputTemplate1.java"
+            "InputTemplate1.java",
     };
     private static long testId = 0L;
     public static long getID() {
@@ -54,13 +54,13 @@ public class TemplateGenerator {
     **/
     public static void main(String[] args) {
         ThreadPoolExecutor threadPool = new ThreadPoolExecutor(NUM_THREADS, NUM_THREADS, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(MAX_TASKS_IN_QUEUE));
+        String out=OUTPUT_FOLDER+File.separator+"final";
+        setOutputFolder(out);
         for (String filePath : TEMPLATE_FILES) {
             try {
-                //String out=OUTPUT_FOLDER+File.separator+"final";
-               // setOutputFolder(out);
                 Class<?> inputTemplateClass = DynamicClassLoader.compileAndLoadClass(filePath);
                 InputTemplate inputTemplate = (InputTemplate) inputTemplateClass.getDeclaredConstructor().newInstance();
-                    runTestGen(inputTemplate, threadPool);
+                runTestGen(inputTemplate, threadPool);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -74,9 +74,9 @@ public class TemplateGenerator {
         for (int i = 0; i < inputTemplate.getNumberOfTests(); i++) {
             ArrayList<Map<String, String>> replacements = new ArrayList<>();
             for (int j = 0; j < inputTemplate.getNumberOfTestMethods(); j++) {
-                    Map<String, String> replacement = inputTemplate.getRandomReplacements(nextUniqueId);
-                    replacements.add(replacement);
-                    nextUniqueId++;
+                Map<String, String> replacement = inputTemplate.getRandomReplacements(nextUniqueId);
+                replacements.add(replacement);
+                nextUniqueId++;
             }
             long id = getID();
             threadPool.submit(() -> doWork(template, replacements, compileFlags, id));
@@ -110,7 +110,7 @@ public class TemplateGenerator {
         }
         return fileName;
     }
-    private static ProcessOutput executeJavaFile(String fileName, String[] compileFlags) throws Exception {
+        private static ProcessOutput executeJavaFile(String fileName, String[] compileFlags) throws Exception {
         ProcessBuilder builder = getProcessBuilder(fileName, compileFlags);
         Process process = builder.start();
         boolean exited = process.waitFor(TIMEOUT, TimeUnit.SECONDS);

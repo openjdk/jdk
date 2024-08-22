@@ -7,14 +7,14 @@ import static compiler.lib.test_generator.InputTemplate.*;
 
 public class Template8 extends Template{
     public Template8(){}
-    public String getTemplate(String c){
+    public String getTemplate(String variable){
         String statics= """
                 int $iFld=\\{val3}, $iFld2;
                 boolean $flag=\\{bool};
                 int $zero = \\{val1};
-                int $limit = \\{val2};             
+                int $limit = \\{val2};
                 """;
-        String nes_template="""
+        String method="""
                 for (; $limit < \\{limit1}; $limit \\{arithm}= \\{stride});
                     for (int $i = \\{var}; $i < $limit; $i++) {
                         $zero = 0;
@@ -30,16 +30,17 @@ public class Template8 extends Template{
                         if ($k == \\{val1}) { // 2) After CCP: Loop invariant -> triggers Loop Unswitching             \s
                             $iFld2 = \\{val1};
                         }
-                    }            
-                    """;
-        String template_com=avoid_conflict(reassemble(statics,nes_template),1);
+                }
+                """;
+        String template=statics+method;
 
+        String template_com= avoidConflict(template);
         Map<String, String> replacements = new HashMap<>();
         String val1 = getRandomValueAsString(integerValues);
         String val2 = getRandomValueAsString(integerValues);
         String val3 = getRandomValueAsString(integerValues);
-        String limit1 = getRandomValueAsString(integerValues);
-        String limit2 = getRandomValueAsString(integerValues);
+        String limit1 = getRandomValueAsString(positiveIntegerValues);
+        String limit2 = getRandomValueAsString(positiveIntegerValues);
         String stride = getRandomValueAsString(integerValuesNonZero);
         String arithm = getRandomValue(new String[]{"+", "-"});
         String bool = getRandomValue(new String[]{"false", "true"});
@@ -51,7 +52,7 @@ public class Template8 extends Template{
         replacements.put("val2", val2);
         replacements.put("limit1", limit1);
         replacements.put("limit2", limit2);
-        replacements.put("var", c);
+        replacements.put("var", variable);
         return doReplacements(template_com,replacements);
     }
 }
