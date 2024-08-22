@@ -1675,7 +1675,6 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   // Select Region to split through.
   Node* region;
   DomResult dom_result = DomResult::Dominate;
-  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (!base_is_phi) {
     assert(mem->is_Phi(), "sanity");
     region = mem->in(0);
@@ -1698,12 +1697,14 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       if (dom_result == DomResult::Dominate) {
         region = mem->in(0);
       }
-      // Otherwise we encounter a complex graph.
+      // Otherwise we encountered a complex graph.
     }
   } else {
     assert(base->in(0) == mem->in(0), "sanity");
     region = mem->in(0);
   }
+
+  PhaseIterGVN* igvn = phase->is_IterGVN();
   if (dom_result != DomResult::Dominate) {
     if (dom_result == DomResult::EncounteredDeadCode) {
       // Wait for the dead code to be removed.

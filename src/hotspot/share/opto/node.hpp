@@ -1110,7 +1110,7 @@ public:
   enum class DomResult {
     NotDominate,         // 'this' node does not dominate 'sub'.
     Dominate,            // 'this' node dominates or is equal to 'sub'.
-    EncounteredDeadCode, // Result is undefined due to encountering dead code.
+    EncounteredDeadCode  // Result is undefined due to encountering dead code.
   };
   // Check if 'this' node dominates or equal to 'sub'.
   DomResult dominates(Node* sub, Node_List &nlist);
