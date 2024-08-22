@@ -31,8 +31,7 @@
 #include "sun_nio_ch_FileKey.h"
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileKey_init(JNIEnv *env, jclass clazz, jobject fdo,
-    jintArray finfo)
+Java_sun_nio_ch_FileKey_init(JNIEnv *env, jclass clazz, jobject fdo, jintArray finfo)
 {
     HANDLE fileHandle = (HANDLE)handleval(env, fdo);
     BOOL result;
