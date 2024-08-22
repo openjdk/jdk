@@ -69,16 +69,70 @@ class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
   static const intx Full_Penalty        = 20; // how much to penalize average GC duration history on Full GC
 
+#ifdef ASSERT
+  enum UnionTag {
+    is_uninitialized, is_garbage, is_live_data
+  };
+#endif
+
 protected:
   static const uint Moving_Average_Samples = 10; // Number of samples to store in moving averages
 
-  typedef struct {
+  class RegionData {
+    private:
     ShenandoahHeapRegion* _region;
     union {
       size_t _garbage;          // Not used by old-gen heuristics.
       size_t _live_data;        // Only used for old-gen heuristics, which prioritizes retention of _live_data over garbage reclaim
-    } _u;
-  } RegionData;
+    } _region_union;
+#ifdef ASSERT
+    UnionTag _union_tag;
+#endif
+    public:
+
+#ifdef ASSERT
+    inline void clear() {
+      _union_tag = is_uninitialized;
+    }
+#endif
+
+    inline void set_region_and_garbage(ShenandoahHeapRegion* region, size_t garbage) {
+      _region = region;
+      _region_union._garbage = garbage;
+#ifdef ASSERT
+      _union_tag = is_garbage;
+#endif
+    }
+
+    inline void set_region_and_livedata(ShenandoahHeapRegion* region, size_t live) {
+      _region = region;
+      _region_union._live_data = live;
+#ifdef ASSERT
+      _union_tag = is_live_data;
+#endif
+    }
+
+    inline ShenandoahHeapRegion* get_region() const {
+#ifdef ASSERT
+      assert(_union_tag != is_uninitialized, "Cannot fetch region from uninialized RegionData");
+#endif
+      return _region;
+    }
+
+    inline size_t get_garbage() const {
+#ifdef ASSERT
+      assert(_union_tag == is_garbage, "Invalid union fetch");
+#endif
+      return _region_union._garbage;
+    }
+
+    inline size_t get_livedata() const {
+#ifdef ASSERT
+      assert(_union_tag == is_live_data, "Invalid union fetch");
+#endif
+      return _region_union._live_data;
+    }
+  };
 
   // Source of information about the memory space managed by this heuristic
   ShenandoahSpaceInfo* _space_info;

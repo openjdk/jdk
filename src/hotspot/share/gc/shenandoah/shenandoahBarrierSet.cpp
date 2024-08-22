@@ -134,9 +134,6 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
 
     if (ShenandoahCardBarrier) {
       PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-      // retire_plab may register the remnant filler object with the remembered set scanner without a lock.
-      // This is safe because it is assured that each PLAB is a whole-number multiple of card-mark memory size and each
-      // PLAB is aligned with the start of each card's memory range.
       if (plab != nullptr) {
         ShenandoahGenerationalHeap::heap()->retire_plab(plab);
       }
@@ -162,7 +159,7 @@ void ShenandoahBarrierSet::clone_barrier_runtime(oop src) {
 }
 
 void ShenandoahBarrierSet::write_ref_array(HeapWord* start, size_t count) {
-  assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+  assert(ShenandoahCardBarrier, "Should have been checked by caller");
 
   HeapWord* end = (HeapWord*)((char*) start + (count * heapOopSize));
   // In the case of compressed oops, start and end may potentially be misaligned;

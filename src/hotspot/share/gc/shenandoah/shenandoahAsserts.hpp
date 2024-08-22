@@ -73,6 +73,9 @@ public:
   static void assert_heaplocked(const char* file, int line);
   static void assert_not_heaplocked(const char* file, int line);
   static void assert_heaplocked_or_safepoint(const char* file, int line);
+  static void assert_control_or_vm_thread_at_safepoint(bool at_safepoint, const char* file, int line);
+  static void assert_generational(const char* file, int line);
+  static void assert_generations_reconciled(const char* file, int line);
 
 #ifdef ASSERT
 #define shenandoah_assert_in_heap(interior_loc, obj) \
@@ -166,24 +169,18 @@ public:
                     ShenandoahAsserts::assert_heaplocked_or_safepoint(__FILE__, __LINE__)
 
 #define shenandoah_assert_control_or_vm_thread() \
-                    assert(Thread::current()->is_VM_thread() || Thread::current() == ShenandoahHeap::heap()->control_thread(), "Expected control thread or vm thread")
+                    ShenandoahAsserts::assert_control_or_vm_thread(false /* at_safepoint */, __FILE__, __LINE__)
+
 // A stronger version of the above that checks that we are at a safepoint if the vm thread
 #define shenandoah_assert_control_or_vm_thread_at_safepoint()                                                                                                               \
-                    assert(Thread::current() == ShenandoahHeap::heap()->control_thread() || (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()), \
-                    "Expected control thread, or vm thread at a safepoint")
+                    ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(true /* at_safepoint */, __FILE__, __LINE__)
 
 #define shenandoah_assert_generational() \
-                    assert(ShenandoahHeap::heap()->mode()->is_generational(), "Must be in generational mode here.")
+                    ShenandoahAsserts::assert_generational(__FILE__, __LINE__)
 
 // Some limited sanity checking of the _gc_generation and _active_generation fields of ShenandoahHeap
 #define shenandoah_assert_generations_reconciled()                                                             \
-                    if (SafepointSynchronize::is_at_safepoint()) {                                             \
-                      ShenandoahHeap* heap = ShenandoahHeap::heap();                                           \
-                      ShenandoahGeneration* ggen = heap->gc_generation();                                      \
-                      ShenandoahGeneration* agen = heap->active_generation();                                  \
-                      assert(agen == ggen, "active_gen(%d) should be reconciled with gc_gen(%d)at safepoint",  \
-                             agen->type(), ggen->type());                                                      \
-                    }
+                    ShenandoahAsserts::assert_generations_reconciled(__FILE__, __LINE__)
 
 #else
 #define shenandoah_assert_in_heap(interior_loc, obj)

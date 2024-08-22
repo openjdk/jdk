@@ -271,7 +271,6 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     heap->verifier()->verify_after_fullgc();
   }
 
-  // Humongous regions are promoted on demand and are accounted for by normal Full GC mechanisms.
   if (VerifyAfterGC) {
     Universe::verify();
   }

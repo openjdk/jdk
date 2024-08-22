@@ -23,7 +23,7 @@
  */
 
 /*
- * @test
+ * @test id=generational
  * @summary Test that growth of old-gen triggers old-gen marking
  * @requires vm.gc.Shenandoah
  * @library /test/lib
@@ -39,77 +39,72 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestOldGrowthTriggers {
 
-  public static void makeOldAllocations() {
-    // Expect most of the BigInteger entries placed into array to be promoted, and most will eventually become garbage within old
+    public static void makeOldAllocations() {
+        // Expect most of the BigInteger entries placed into array to be promoted, and most will eventually become garbage within old
 
-    final int ArraySize = 512 * 1024;   // 512K entries
-    final int BitsInBigInteger = 128;
-    final int RefillIterations = 64;
-    BigInteger array[] = new BigInteger[ArraySize];
-    Random r = new Random(46);
+        final int ArraySize = 512 * 1024;   // 512K entries
+        final int BitsInBigInteger = 128;
+        final int RefillIterations = 64;
+        BigInteger array[] = new BigInteger[ArraySize];
+        Random r = new Random(46);
 
-    for (int i = 0; i < ArraySize; i++) {
-      array[i] = new BigInteger(BitsInBigInteger, r);
-    }
-
-    for (int refill_count = 0; refill_count < RefillIterations; refill_count++) {
-      // Each refill repopulates ArraySize randomly selected elements within array
-      for (int i = 0; i < ArraySize; i++) {
-        int replace_index = r.nextInt(ArraySize);
-        int derive_index = r.nextInt(ArraySize);
-        switch (i & 0x3) {
-          case 0:
-            // 50% chance of creating garbage
-            array[replace_index] = array[replace_index].max(array[derive_index]);
-            break;
-          case 1:
-            // 50% chance of creating garbage
-            array[replace_index] = array[replace_index].min(array[derive_index]);
-            break;
-          case 2:
-            // creates new old BigInteger, releases old BigInteger,
-            // may create ephemeral data while computing gcd
-            array[replace_index] = array[replace_index].gcd(array[derive_index]);
-            break;
-          case 3:
-            // creates new old BigInteger, releases old BigInteger
-            array[replace_index] = array[replace_index].multiply(array[derive_index]);
-            break;
+        for (int i = 0; i < ArraySize; i++) {
+            array[i] = new BigInteger(BitsInBigInteger, r);
         }
-        if ((i & 0x3) == 0x3) {
-        } else {
+
+        for (int refillCount = 0; refillCount < RefillIterations; refillCount++) {
+            // Each refill repopulates ArraySize randomly selected elements within array
+            for (int i = 0; i < ArraySize; i++) {
+                int replaceIndex = r.nextInt(ArraySize);
+                int deriveIndex = r.nextInt(ArraySize);
+                switch (i & 0x3) {
+                    case 0:
+                        // 50% chance of creating garbage
+                        array[replaceIndex] = array[replaceIndex].max(array[deriveIndex]);
+                        break;
+                    case 1:
+                        // 50% chance of creating garbage
+                        array[replaceIndex] = array[replaceIndex].min(array[deriveIndex]);
+                        break;
+                    case 2:
+                        // creates new old BigInteger, releases old BigInteger,
+                        // may create ephemeral data while computing gcd
+                        array[replaceIndex] = array[replaceIndex].gcd(array[deriveIndex]);
+                        break;
+                    case 3:
+                        // creates new old BigInteger, releases old BigInteger
+                        array[replaceIndex] = array[replaceIndex].multiply(array[deriveIndex]);
+                        break;
+                }
+            }
         }
-      }
-    }
-  }
-
-  public static void testOld(String... args) throws Exception {
-    String[] cmds = Arrays.copyOf(args, args.length + 2);
-    cmds[args.length] = TestOldGrowthTriggers.class.getName();
-    cmds[args.length + 1] = "test";
-    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldHaveExitValue(0);
-    if (!output.getOutput().contains("Trigger (OLD): Old has overgrown")) {
-      throw new AssertionError("Generational mode: Should experience OLD triggers due to growth");
-    }
-  }
-
-  public static void main(String[] args) throws Exception {
-    if (args.length > 0 && args[0].equals("test")) {
-      makeOldAllocations();
-      return;
     }
 
-    testOld("-Xlog:gc",
-            "-Xms96m",
-            "-Xmx96m",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:+UseShenandoahGC",
-            "-XX:ShenandoahGCMode=generational",
-            "-XX:ShenandoahGuaranteedYoungGCInterval=0",
-            "-XX:ShenandoahGuaranteedOldGCInterval=0"
-            );
-  }
+    public static void testOld(String... args) throws Exception {
+        String[] cmds = Arrays.copyOf(args, args.length + 2);
+        cmds[args.length] = TestOldGrowthTriggers.class.getName();
+        cmds[args.length + 1] = "test";
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(cmds);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Trigger (OLD): Old has overgrown");
+    }
+
+    public static void main(String[] args) throws Exception {
+        if (args.length > 0 && args[0].equals("test")) {
+            makeOldAllocations();
+            return;
+        }
+
+        testOld("-Xlog:gc",
+                "-Xms96m",
+                "-Xmx96m",
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+UseShenandoahGC",
+                "-XX:ShenandoahGCMode=generational",
+                "-XX:ShenandoahGuaranteedYoungGCInterval=0",
+                "-XX:ShenandoahGuaranteedOldGCInterval=0"
+        );
+    }
 }

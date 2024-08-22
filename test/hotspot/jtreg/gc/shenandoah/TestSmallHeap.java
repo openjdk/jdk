@@ -24,7 +24,7 @@
  */
 
 /*
- * @test default
+ * @test id=default
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC         TestSmallHeap
@@ -36,7 +36,7 @@
  */
 
 /*
- * @test generational
+ * @test id=generational
  * @requires vm.gc.Shenandoah
  *
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational         TestSmallHeap

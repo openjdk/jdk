@@ -997,7 +997,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
         // If our allocation request has been satisifed after it initially failed, we count this as good gc progress
         notify_gc_progress();
       }
-      if (log_is_enabled(Debug, gc, alloc)) {
+      if (log_develop_is_enabled(Debug, gc, alloc)) {
         ResourceMark rm;
         log_debug(gc, alloc)("Thread: %s, Result: " PTR_FORMAT ", Request: %s, Size: " SIZE_FORMAT
                              ", Original: " SIZE_FORMAT ", Latest: " SIZE_FORMAT,

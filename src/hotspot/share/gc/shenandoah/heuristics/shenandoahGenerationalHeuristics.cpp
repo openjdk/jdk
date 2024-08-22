@@ -116,8 +116,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
           is_candidate = true;
         }
         if (is_candidate) {
-          candidates[cand_idx]._region = region;
-          candidates[cand_idx]._u._garbage = garbage;
+          candidates[cand_idx].set_region_and_garbage(region, garbage);
           cand_idx++;
         }
       }
@@ -233,7 +232,7 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
   // from young-gen and becomes available to serve future young-gen allocation requests.
   size_t cur_young_garbage = 0;
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx]._region;
+    ShenandoahHeapRegion* r = data[idx].get_region();
     if (cset->is_preselected(r->index())) {
       assert(r->age() >= tenuring_threshold, "Preselected regions must have tenure age");
       // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
