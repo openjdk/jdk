@@ -58,10 +58,9 @@ public class TestLongStringsInPool {
         event.message = longString;
 
         Recording firstRec = new Recording();
-        firstRec.enable(StringEvent.class);
         firstRec.start();
         // commit events with empty message (both recordings
-        // will have the same number of events
+        // will have the same number of events)
         for (int i = 0; i < numEvents - 1; i++) {
             event.message = "";
             event.commit();
@@ -77,7 +76,6 @@ public class TestLongStringsInPool {
 
 
         Recording secondRec = new Recording();
-        secondRec.enable(StringEvent.class);
         secondRec.start();
         // commit events with the same long string
         for (int i = 0; i < numEvents - 1; i++) {
