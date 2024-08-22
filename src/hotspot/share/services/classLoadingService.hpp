@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class ClassLoadingService : public AllStatic {
  public:
   static void init() NOT_MANAGEMENT_RETURN;
   static bool set_verbose(bool verbose) NOT_MANAGEMENT_RETURN_(false);
+  static bool get_verbose() NOT_MANAGEMENT_RETURN_(false);
   static void reset_trace_class_unloading() NOT_MANAGEMENT_RETURN;
   static jlong loaded_class_count() NOT_MANAGEMENT_RETURN_(0L);
   static jlong unloaded_class_count() NOT_MANAGEMENT_RETURN_(0L);
@@ -63,7 +64,6 @@ class ClassLoadingService : public AllStatic {
   static jlong loaded_shared_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
   static jlong unloaded_shared_class_bytes() NOT_MANAGEMENT_RETURN_(0L);
   static jlong class_method_data_size() NOT_MANAGEMENT_RETURN_(0L);
-  static bool get_verbose() { return log_is_enabled(Info, class, load); }
 
   static void notify_class_loaded(InstanceKlass* k, bool shared_class)
       NOT_MANAGEMENT_RETURN;

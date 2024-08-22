@@ -882,12 +882,12 @@ void SerialHeap::verify(VerifyOption option /* ignored */) {
 }
 
 void SerialHeap::print_on(outputStream* st) const {
-  if (_young_gen != nullptr) {
-    _young_gen->print_on(st);
-  }
-  if (_old_gen != nullptr) {
-    _old_gen->print_on(st);
-  }
+  assert(_young_gen != nullptr, "precondition");
+  assert(_old_gen   != nullptr, "precondition");
+
+  _young_gen->print_on(st);
+  _old_gen->print_on(st);
+
   MetaspaceUtils::print_on(st);
 }
 
@@ -908,7 +908,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   log_info(gc, heap)(HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT" "
                      HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(def_new_gen->name(),
                                              pre_gc_values.young_gen_used(),
                                              pre_gc_values.young_gen_capacity(),
                                              def_new_gen->used(),
@@ -924,7 +924,7 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
                                              def_new_gen->from()->used(),
                                              def_new_gen->from()->capacity()));
   log_info(gc, heap)(HEAP_CHANGE_FORMAT,
-                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->short_name(),
+                     HEAP_CHANGE_FORMAT_ARGS(old_gen()->name(),
                                              pre_gc_values.old_gen_used(),
                                              pre_gc_values.old_gen_capacity(),
                                              old_gen()->used(),

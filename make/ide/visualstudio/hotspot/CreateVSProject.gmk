@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ ifeq ($(call isTargetOs, windows), true)
   ################################################################################
   # Build the ProjectCreator java tool.
 
-  TOOLS_OUTPUTDIR := $(HOTSPOT_OUTPUTDIR)/support/ide_classes
+  TOOLS_OUTPUTDIR := $(MAKESUPPORT_OUTPUTDIR)/ide/visualstudio
 
   $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
       TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
