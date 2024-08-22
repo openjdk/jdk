@@ -81,11 +81,10 @@ public:
     if (prot & PAGE_WRITECOMBINE) {
       out.put('W');
     }
-    const DWORD bits = PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE
+    const DWORD bits = PAGE_NOACCESS | PAGE_READONLY | PAGE_READWRITE | PAGE_EXECUTE_READ | PAGE_EXECUTE_READWRITE
                         | PAGE_WRITECOPY | PAGE_EXECUTE_WRITECOPY | PAGE_EXECUTE
                         | PAGE_GUARD | PAGE_NOCACHE | PAGE_WRITECOMBINE;
-
-    assert((prot & bits) == prot, "Unknown Windows memory protection value");
+    assert((prot & bits) == prot, "Unknown Windows memory protection value: 0x%x unknown bits: 0x%x", prot, prot & ~bits);
   }
 
   void get_state_string(outputStream& out, MEMORY_BASIC_INFORMATION& mem_info) {
@@ -124,6 +123,7 @@ class MappingInfoSummary {
         os::win32::print_windows_version(st);
         os::win32::print_uptime_info(st);
         VM_Version::print_platform_virtualization_info(st);
+        os::print_memory_info(st);
       }
   };
 public:
@@ -141,7 +141,6 @@ public:
   void print_on(const MappingPrintSession& session) const {
     outputStream* st = session.out();
     WinOsInfo::printOsInfo(st);
-    os::print_memory_info(st);
     st->print_cr("current process reserved memory: " PROPERFMT, PROPERFMTARGS(_total_region_size));
     st->print_cr("current process committed memory: " PROPERFMT, PROPERFMTARGS(_total_committed));
   }
