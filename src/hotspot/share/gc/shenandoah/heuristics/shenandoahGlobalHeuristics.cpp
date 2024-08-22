@@ -125,7 +125,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx]._region;
+    ShenandoahHeapRegion* r = data[idx].get_region();
     if (cset->is_preselected(r->index())) {
       fatal("There should be no preselected regions during GLOBAL GC");
       continue;

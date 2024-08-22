@@ -92,7 +92,6 @@ LIR_Opr ShenandoahBarrierSetC1::atomic_cmpxchg_at_resolved(LIRAccess& access, LI
       return result;
     }
   }
-
   return BarrierSetC1::atomic_cmpxchg_at_resolved(access, cmp_value, new_value);
 }
 
