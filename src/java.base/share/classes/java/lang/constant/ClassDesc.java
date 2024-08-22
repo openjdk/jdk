@@ -36,6 +36,7 @@ import static java.util.stream.Collectors.joining;
 import static jdk.internal.constant.ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS;
 import static jdk.internal.constant.ConstantUtils.arrayDepth;
 import static jdk.internal.constant.ConstantUtils.binaryToInternal;
+import static jdk.internal.constant.ConstantUtils.forPrimitiveType;
 import static jdk.internal.constant.ConstantUtils.internalToBinary;
 import static jdk.internal.constant.ConstantUtils.validateBinaryClassName;
 import static jdk.internal.constant.ConstantUtils.validateInternalClassName;
@@ -164,7 +165,7 @@ public sealed interface ClassDesc
     static ClassDesc ofDescriptor(String descriptor) {
         // implicit null-check
         return (descriptor.length() == 1)
-               ? Wrapper.forPrimitiveType(descriptor.charAt(0)).basicClassDescriptor()
+               ? forPrimitiveType(descriptor, 0)
                // will throw IAE on descriptor.length == 0 or if array dimensions too long
                : ReferenceClassDescImpl.of(descriptor);
     }

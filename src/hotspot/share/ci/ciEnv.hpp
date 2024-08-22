@@ -383,6 +383,7 @@ public:
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        bool                      has_monitors,
+                       bool                      has_scoped_access,
                        int                       immediate_oops_patched);
 
   // Access to certain well known ciObjects.

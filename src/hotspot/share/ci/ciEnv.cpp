@@ -1032,6 +1032,7 @@ void ciEnv::register_method(ciMethod* target,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             bool has_monitors,
+                            bool has_scoped_access,
                             int immediate_oops_patched) {
   VM_ENTRY_MARK;
   nmethod* nm = nullptr;
@@ -1124,6 +1125,7 @@ void ciEnv::register_method(ciMethod* target,
       nm->set_has_unsafe_access(has_unsafe_access);
       nm->set_has_wide_vectors(has_wide_vectors);
       nm->set_has_monitors(has_monitors);
+      nm->set_has_scoped_access(has_scoped_access);
       assert(!method->is_synchronized() || nm->has_monitors(), "");
 
       if (entry_bci == InvocationEntryBci) {

@@ -310,7 +310,9 @@ static void set_serialized(const T* ptr) {
   assert(ptr != nullptr, "invariant");
   if (current_epoch()) {
     CLEAR_THIS_EPOCH_CLEARED_BIT(ptr);
+    assert(!IS_THIS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
   }
+  assert(IS_PREVIOUS_EPOCH_CLEARED_BIT_SET(ptr), "invariant");
   SET_SERIALIZED(ptr);
   assert(IS_SERIALIZED(ptr), "invariant");
 }
@@ -881,6 +883,15 @@ static void do_clds(CldWriter& cldw) {
   ModuleCldWriter mcw(&cldw);
   KlassAndModuleCldWriter kmcw(&kcw, &mcw);
   _artifacts->iterate_klasses(kmcw);
+  if (is_initial_typeset_for_chunk()) {
+    CldPtr bootloader = get_cld(Universe::boolArrayKlass());
+    assert(bootloader != nullptr, "invariant");
+    if (IS_NOT_SERIALIZED(bootloader)) {
+      write__cld(_writer, bootloader);
+      assert(IS_SERIALIZED(bootloader), "invariant");
+      cldw.add(1);
+    }
+  }
   _artifacts->tally(cldw);
 }
 
@@ -929,9 +940,11 @@ void set_serialized<Method>(MethodPtr method) {
   assert(method != nullptr, "invariant");
   if (current_epoch()) {
     CLEAR_THIS_EPOCH_METHOD_CLEARED_BIT(method);
+    assert(!IS_THIS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   }
   assert(unloading() ? true : METHOD_IS_NOT_SERIALIZED(method), "invariant");
   SET_METHOD_SERIALIZED(method);
+  assert(IS_PREVIOUS_EPOCH_METHOD_CLEARED_BIT_SET(method), "invariant");
   assert(METHOD_IS_SERIALIZED(method), "invariant");
 }
 

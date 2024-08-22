@@ -212,9 +212,6 @@ public:
   };
 
 private:
-  static void check_enum_obj(int level, KlassSubGraphInfo* subgraph_info,
-                             oop orig_obj);
-
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
   typedef ResizeableResourceHashtable<oop, CachedOopInfo,
@@ -374,7 +371,9 @@ private:
                                              KlassSubGraphInfo* subgraph_info,
                                              oop orig_obj);
 
+#ifndef PRODUCT
   static ResourceBitMap calculate_oopmap(MemRegion region); // marks all the oop pointers
+#endif
   static void add_to_dumped_interned_strings(oop string);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -428,9 +427,10 @@ private:
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
+#ifndef PRODUCT
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
+#endif
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

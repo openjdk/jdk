@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,25 +25,28 @@
 
 package com.sun.crypto.provider;
 
-import java.io.*;
-import java.lang.ref.Reference;
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
-import java.util.Arrays;
-import java.util.Locale;
-import java.security.MessageDigest;
-import java.security.KeyRep;
 import java.security.GeneralSecurityException;
+import java.security.KeyRep;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
+import java.util.Locale;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
 import jdk.internal.ref.CleanerFactory;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * This class represents a PBE key derived using PBKDF2 defined

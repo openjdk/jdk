@@ -57,7 +57,7 @@ void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, boo
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   assert(current()->is_Java_thread(), "expect Java thread here");
-  bool is_humongous = req.size() > ShenandoahHeapRegion::humongous_threshold_words();
+  bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
 
   if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
@@ -80,7 +80,7 @@ void ShenandoahController::handle_alloc_failure(ShenandoahAllocRequest& req, boo
 
 void ShenandoahController::handle_alloc_failure_evac(size_t words) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_humongous = (words > ShenandoahHeapRegion::region_size_words());
+  bool is_humongous = ShenandoahHeapRegion::requires_humongous(words);
 
   if (try_set_alloc_failure_gc(is_humongous)) {
     // Only report the first allocation failure
