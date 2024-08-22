@@ -1,0 +1,112 @@
+#
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include CopyFiles.gmk
+include Execute.gmk
+include JavaCompilation.gmk
+
+ifeq ($(call isTargetOs, macosx), true)
+  ##############################################################################
+  # Build the XcodeProjectMaker java tool.
+
+  PROJECT_MAKER_DIR := $(TOPDIR)/make/ide/xcode/hotspot
+  TOOLS_OUTPUTDIR := $(MAKESUPPORT_OUTPUTDIR)/ide/xcode
+  IDE_OUTPUTDIR := $(OUTPUTDIR)/xcode
+  PROJECT_FILE_NAME := hotspot.xcodeproj
+
+  COMPILE_COMMAND_FILE := $(OUTPUTDIR)/compile_commands.json
+  LINKER_FLAGS_FILE := $(MAKESUPPORT_OUTPUTDIR)/compile-commands/jvm-ldflags.txt
+
+  $(eval $(call SetupJavaCompilation, BUILD_PROJECT_CREATOR, \
+      TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
+      SRC := $(PROJECT_MAKER_DIR)/src/classes, \
+      BIN := $(TOOLS_OUTPUTDIR), \
+      DISABLED_WARNINGS := rawtypes unchecked serial, \
+  ))
+
+  TARGETS += $(BUILD_PROJECT_CREATOR)
+
+  # Run the XcodeProjectMaker tool
+  PROJECT_CREATOR_TOOL := $(JAVA_SMALL) -cp $(TOOLS_OUTPUTDIR) XcodeProjectMaker
+
+  ifneq ($(findstring $(LOG_LEVEL), debug trace), )
+    XCODE_PROJ_DEBUG_OPTION := -d
+  endif
+
+  XCODE_PROJ_VARDEPS := $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+      $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) $(LINKER_FLAGS_FILE)
+  XCODE_PROJ_VARDEPS_FILE := $(call DependOnVariable, XCODE_PROJ_VARDEPS, \
+    $(TOOLS_OUTPUTDIR)/xcodeproj.vardeps)
+
+  $(eval $(call SetupExecute, build_xcode_project, \
+      WARN := Generating Xcode project file, \
+      DEPS := $(BUILD_PROJECT_CREATOR) $(COMPILE_COMMAND_FILE) \
+          $(LINKER_FLAGS_FILE) $(XCODE_PROJ_VARDEPS_FILE), \
+      OUTPUT_DIR := $(TOOLS_OUTPUTDIR), \
+      COMMAND := $(PROJECT_CREATOR_TOOL) $(WORKSPACE_ROOT) $(IDE_OUTPUTDIR) \
+          $(PROJECT_MAKER_DIR)/data $(COMPILE_COMMAND_FILE) \
+          $(LINKER_FLAGS_FILE) $(XCODE_PROJ_DEBUG_OPTION), \
+  ))
+
+  TARGETS += $(build_xcode_project)
+
+  $(eval $(call SetupCopyFiles, copy_xcode_project, \
+      DEST := $(IDE_OUTPUTDIR), \
+      FILES := $(PROJECT_MAKER_DIR)/data/script_before.sh $(PROJECT_MAKER_DIR)/data/script_after.sh , \
+      MACRO := copy-and-chmod-executable, \
+  ))
+
+  TARGETS += $(copy_xcode_project)
+
+  $(eval $(call SetupExecute, open_xcode_project, \
+      INFO := Opening Xcode project file, \
+      DEPS := $(build_xcodeproject_TARGET) FORCE, \
+      OUTPUT_DIR := $(TOOLS_OUTPUTDIR), \
+      COMMAND := open $(IDE_OUTPUTDIR)/$(PROJECT_FILE_NAME), \
+  ))
+
+  TARGETS += $(open_xcode_project)
+
+  # Always call open without considering dependencies being up to date
+  FORCE:
+
+  build: $(build_xcode_project) $(copy_xcode_project)
+
+  open: $(open_xcode_project)
+
+  all: $(TARGETS)
+else
+  build:
+  open:
+  all:
+	$(info Xcode projects are only supported on macOS)
+endif
+
+.PHONY: default all build open

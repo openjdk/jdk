@@ -189,6 +189,11 @@ else
   endef
 endif
 
+define copy-and-chmod-executable
+	$(install-file)
+	$(CHMOD) a+rx $@
+endef
+
 ################################################################################
 
 # Recursive wildcard function. Walks down directories recursively and matches
