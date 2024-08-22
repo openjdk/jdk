@@ -2512,9 +2512,13 @@ class Assembler : public AbstractAssembler {
   void stw( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
   void sth( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
   void stb( Register d, RegisterOrConstant roc, Register s1 = noreg, Register tmp = noreg);
-  void add( Register d, RegisterOrConstant roc, Register s1);
-  void subf(Register d, RegisterOrConstant roc, Register s1);
-  void cmpd(ConditionRegister d, RegisterOrConstant roc, Register s1);
+  void add( Register d, Register s, RegisterOrConstant roc);
+  void add( Register d, RegisterOrConstant roc, Register s) { add(d, s, roc); }
+  void sub( Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, Register s, RegisterOrConstant roc);
+  void xorr(Register d, RegisterOrConstant roc, Register s) { xorr(d, s, roc); }
+  void cmpw(ConditionRegister d, Register s, RegisterOrConstant roc);
+  void cmpd(ConditionRegister d, Register s, RegisterOrConstant roc);
   // Load pointer d from s1+roc.
   void ld_ptr(Register d, RegisterOrConstant roc, Register s1 = noreg) { ld(d, roc, s1); }
 

@@ -669,7 +669,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
   // no special processing is required.
   if (UseCompressedOops) {
     __ cmpxchgw(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag, true);
+                false, success_flag, nullptr, true);
   } else {
     __ cmpxchgd(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
                 false, success_flag, nullptr, true);
