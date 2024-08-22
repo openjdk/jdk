@@ -1532,62 +1532,62 @@ public sealed class PacketSpaceManager implements PacketSpace
                     null, frame.getTypeField(), QuicTransportErrors.PROTOCOL_VIOLATION);
         }
 
-        if (largestAckReceived(largestAcknowledged)) {
-            // if the largest acknowledged PN is newly acknowledged
-            // and at least one of the newly acked packets is ack-eliciting
-            // -> use the new RTT sample
-            // the below code only checks if largest acknowledged is ack-eliciting
-            Deadline sentTime = sendTimes.get(largestAcknowledged);
-            if (sentTime != null) {
-                long ackDelayMicros;
-                if (isApplicationSpace()) {
-                    confirmHandshake();
-                    long baseAckDelay = peerAckDelayToMicros(frame.ackDelay());
-                    // if packet was sent after handshake confirmed, use max ack delay
-                    if (largestAcknowledged >= handshakeConfirmedPN) {
-                        ackDelayMicros = Math.min(
-                                baseAckDelay,
-                                TimeUnit.MILLISECONDS.toMicros(peerMaxAckDelayMillis));
-                    } else {
-                        ackDelayMicros = baseAckDelay;
-                    }
-                } else {
-                    // acks are not delayed during handshake
-                    ackDelayMicros = 0;
-                }
-                long rttSample = sentTime.until(now, ChronoUnit.MICROS);
-                if (debug.on()) {
-                    debug.log("New RTT sample on packet %s: %s us (delay %s us)",
-                            largestAcknowledged, rttSample,
-                            ackDelayMicros);
-                }
-                rttEstimator.consumeRttSample(
-                        rttSample,
-                        ackDelayMicros,
-                        now
-                );
-            } else {
-                if (debug.on()) {
-                    debug.log("RTT sample on packet %s ignored: not ack eliciting",
-                            largestAcknowledged);
-                }
-            }
-            if (packetNumberSpace != PacketNumberSpace.INITIAL) {
-                rttEstimator.resetPtoBackoff();
-            }
-            purgeSendTimes(largestAcknowledged);
-            // complete PingRequests if needed
-            processPingResponses(largestAcknowledged);
-        } else {
-            if (debug.on()) {
-                debug.log("RTT sample on packet %s ignored: not largest",
-                        largestAcknowledged);
-            }
-        }
-
         int lostCount;
         transferLock.lock();
         try {
+            if (largestAckReceived(largestAcknowledged)) {
+                // if the largest acknowledged PN is newly acknowledged
+                // and at least one of the newly acked packets is ack-eliciting
+                // -> use the new RTT sample
+                // the below code only checks if largest acknowledged is ack-eliciting
+                Deadline sentTime = sendTimes.get(largestAcknowledged);
+                if (sentTime != null) {
+                    long ackDelayMicros;
+                    if (isApplicationSpace()) {
+                        confirmHandshake();
+                        long baseAckDelay = peerAckDelayToMicros(frame.ackDelay());
+                        // if packet was sent after handshake confirmed, use max ack delay
+                        if (largestAcknowledged >= handshakeConfirmedPN) {
+                            ackDelayMicros = Math.min(
+                                    baseAckDelay,
+                                    TimeUnit.MILLISECONDS.toMicros(peerMaxAckDelayMillis));
+                        } else {
+                            ackDelayMicros = baseAckDelay;
+                        }
+                    } else {
+                        // acks are not delayed during handshake
+                        ackDelayMicros = 0;
+                    }
+                    long rttSample = sentTime.until(now, ChronoUnit.MICROS);
+                    if (debug.on()) {
+                        debug.log("New RTT sample on packet %s: %s us (delay %s us)",
+                                largestAcknowledged, rttSample,
+                                ackDelayMicros);
+                    }
+                    rttEstimator.consumeRttSample(
+                            rttSample,
+                            ackDelayMicros,
+                            now
+                    );
+                } else {
+                    if (debug.on()) {
+                        debug.log("RTT sample on packet %s ignored: not ack eliciting",
+                                largestAcknowledged);
+                    }
+                }
+                if (packetNumberSpace != PacketNumberSpace.INITIAL) {
+                    rttEstimator.resetPtoBackoff();
+                }
+                purgeSendTimes(largestAcknowledged);
+                // complete PingRequests if needed
+                processPingResponses(largestAcknowledged);
+            } else {
+                if (debug.on()) {
+                    debug.log("RTT sample on packet %s ignored: not largest",
+                            largestAcknowledged);
+                }
+            }
+
             pendingRetransmission.removeIf((p) -> isAcknowledging(p, frame));
             triggeredForRetransmission.removeIf((p) -> isAcknowledging(p, frame));
             for (Iterator<PendingAcknowledgement> iterator = pendingAcknowledgements.iterator(); iterator.hasNext(); ) {
