@@ -26,6 +26,7 @@
 #define GC_SHARED_GCFORWARDING_INLINE_HPP
 
 #include "gc/shared/gcForwarding.hpp"
+
 #include "oops/oop.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
