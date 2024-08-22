@@ -487,7 +487,7 @@ address StubGenerator::generate_libmTanh() {
   __ movdl(rax, xmm0);
   __ psrlq(xmm2, 20);
   __ movdl(rcx, xmm2);
-  __ orl(rax, rcx);
+  __ orl(rcx, rax);
   __ cmpl(rcx, 0);
   __ jcc(Assembler::equal, L_2TAG_PACKET_5_0_1);
   __ addsd(xmm0, xmm0);
