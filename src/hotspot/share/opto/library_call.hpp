@@ -241,10 +241,7 @@ class LibraryCallKit : public GraphKit {
   const Type* scopedValueCache_type();
   Node* scopedValueCache_helper();
   bool inline_native_setScopedValueCache();
-
-  bool inline_native_Continuation_pinning_shared_impl(bool unpin);
-  bool inline_native_Continuation_pin();
-  bool inline_native_Continuation_unpin();
+  bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI

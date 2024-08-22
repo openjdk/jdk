@@ -482,8 +482,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
-  case vmIntrinsics::_Continuation_pin:          return inline_native_Continuation_pin();
-  case vmIntrinsics::_Continuation_unpin:        return inline_native_Continuation_unpin();
+  case vmIntrinsics::_Continuation_pin:          return inline_native_Continuation_pinning(false);
+  case vmIntrinsics::_Continuation_unpin:        return inline_native_Continuation_pinning(true);
 
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_start()),
@@ -3721,7 +3721,7 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
 //------------------------inline_native_Continuation_pin and unpin-----------
 
 // Shared implementation routine for both pin and unpin.
-bool LibraryCallKit::inline_native_Continuation_pinning_shared_impl(bool unpin) {
+bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
 
   // Save input memory.
@@ -3777,14 +3777,13 @@ bool LibraryCallKit::inline_native_Continuation_pinning_shared_impl(bool unpin) 
   // True branch, pin count over/underflow.
   Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
   {
-    // Deoptimize and reexecute in the interpreter to throw IllegalStateException for pin count over/underflow.
+    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
+    // which will throw IllegalStateException for pin count over/underflow.
     PreserveJVMState pjvms(this);
-    PreserveReexecuteState preexecs(this);
-    jvms()->set_should_reexecute(true);
     set_control(pin_count_over_underflow);
     set_all_memory(input_memory_state);
     uncommon_trap_exact(Deoptimization::Reason_intrinsic,
-                        Deoptimization::Action_reinterpret);
+                        Deoptimization::Action_none);
     assert(stopped(), "invariant");
   }
 
@@ -3804,14 +3803,6 @@ bool LibraryCallKit::inline_native_Continuation_pinning_shared_impl(bool unpin) 
   set_all_memory(_gvn.transform(result_mem));
 
   return true;
-}
-
-bool LibraryCallKit::inline_native_Continuation_pin() {
-  return inline_native_Continuation_pinning_shared_impl(false);
-}
-
-bool LibraryCallKit::inline_native_Continuation_unpin() {
-  return inline_native_Continuation_pinning_shared_impl(true);
 }
 
 //---------------------------load_mirror_from_klass----------------------------
