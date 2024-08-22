@@ -2206,7 +2206,7 @@ void OpClassForm::forms_do(FormClosure* f) {
 //==============================Operands=======================================
 //------------------------------OperandForm------------------------------------
 OperandForm::OperandForm(const char* id)
-  : OpClassForm(id), _ideal_only(false),
+  : OpClassForm(id), _ideal_only(false), _expanded_operands_num(0),
     _localNames(cmpstr, hashstr, Form::arena) {
       _ftype = Form::OPER;
 
@@ -2219,7 +2219,7 @@ OperandForm::OperandForm(const char* id)
       _format    = nullptr;
 }
 OperandForm::OperandForm(const char* id, bool ideal_only)
-  : OpClassForm(id), _ideal_only(ideal_only),
+  : OpClassForm(id), _ideal_only(ideal_only), _expanded_operands_num(0),
     _localNames(cmpstr, hashstr, Form::arena) {
       _ftype = Form::OPER;
 
