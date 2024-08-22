@@ -39,6 +39,8 @@ import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 
 /**
  * A thread managed by a {@link ForkJoinPool}, which executes
@@ -201,6 +203,30 @@ public class ForkJoinWorkerThread extends Thread {
             }
         }
     }
+
+    /**
+     * Returns true if the current task is being executed by a
+     * ForkJoinWorkerThread that is momentarily known to have one or
+     * more queued tasks that it could execute immediately. This
+     * method is approximate and useful only as a heuristic indicator
+     * within a running task.
+     *
+     * @return true if the current task is being executed by a worker
+     * that has queued work
+     */
+    static boolean hasKnownQueuedWork() {
+        ForkJoinWorkerThread wt; ForkJoinPool.WorkQueue q, sq;
+        ForkJoinPool p; ForkJoinPool.WorkQueue[] qs; int i;
+        Thread c = JLA.currentCarrierThread();
+        return ((c instanceof ForkJoinWorkerThread) &&
+                (p = (wt = (ForkJoinWorkerThread)c).pool) != null &&
+                (q = wt.workQueue) != null &&
+                (i = q.source) >= 0 && // check local and current source queues
+                (((qs = p.queues) != null && qs.length > i &&
+                  (sq = qs[i]) != null && sq.top - sq.base > 0) ||
+                 q.top - q.base > 0));
+    }
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /**
      * A worker thread that has no permissions, is not a member of any

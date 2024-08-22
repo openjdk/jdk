@@ -99,12 +99,7 @@ public final class FieldImpl
             builder.withField(this);
         }
         else {
-            builder.withField(fieldName(), fieldType(), new Consumer<>() {
-                @Override
-                public void accept(FieldBuilder fb) {
-                    FieldImpl.this.forEach(fb);
-                }
-            });
+            builder.withField(fieldName(), fieldType(), Util.writingAll(this));
         }
     }
 

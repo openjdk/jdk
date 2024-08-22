@@ -613,12 +613,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
       // From here on, we need to update references.
       heap->set_has_forwarded_objects(true);
 
-      // Verify before arming for concurrent processing.
-      // Otherwise, verification can trigger stack processing.
-      if (ShenandoahVerify) {
-        heap->verifier()->verify_during_evacuation();
-      }
-
       // Arm nmethods/stack for concurrent processing
       ShenandoahCodeRoots::arm_nmethods_for_evac();
       ShenandoahStackWatermark::change_epoch_id();
