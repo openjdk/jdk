@@ -30,15 +30,17 @@
 HeapWord* GCForwarding::_heap_base = nullptr;
 int GCForwarding::_num_low_bits = 0;
 
-void GCForwarding::initialize_flags() {
+void GCForwarding::initialize_flags(size_t max_heap_size) {
+#ifdef _LP64
   // Nothing to do here, yet. As soon as we have compact
   // object headers, we will disable the flag when the
   // heap size exceeds the narrow-encodable address space.
 
-  // size_t max_narrow_heap_size = (size_t(1) << (NumLowBitsNarrow - Shift)) * HeapWordSize;
-  // if (UseCompactObjectHeaders && MaxHeapSize >= max_narrow_heap_size) {
-  //  FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
+  // size_t max_narrow_heap_size = right_n_bits(NumLowBitsNarrow - Shift);
+  // if (UseCompactObjectHeaders && max_heap_size > max_narrow_heap_size * HeapWordSize) {
+  //   FLAG_SET_DEFAULT(UseCompactObjectHeaders, false);
   // }
+#endif
 }
 
 void GCForwarding::initialize(MemRegion heap) {
