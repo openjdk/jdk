@@ -428,7 +428,12 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 // Used by MemNode::find_previous_store to prove that the
 // control input of a memory operation predates (dominates)
 // an allocation it wants to look past.
-Node::DomResult MemNode::all_controls_dominate(Node* dom, Node* sub) {
+// Returns 'DomResult::Dominate' if all control inputs of 'dom'
+// dominate 'sub', 'DomResult::NotDominate' if not,
+// and 'DomResult::EncounteredDeadCode' if we can't decide due to
+// dead code, but at the end of IGVN, we know the definite result
+// once the dead code is cleaned up.
+Node::DomResult MemNode::maybe_all_controls_dominate(Node* dom, Node* sub) {
   if (dom == nullptr || dom->is_top() || sub == nullptr || sub->is_top()) {
     return DomResult::EncounteredDeadCode; // Conservative answer for dead code
   }
@@ -549,9 +554,9 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
     return (a1 != a2);
   } else if (a1 != nullptr) {                  // one allocation a1
     // (Note:  p2->is_Con implies p2->in(0)->is_Root, which dominates.)
-    return all_controls_dominate(p2, a1) == DomResult::Dominate;
+    return all_controls_dominate(p2, a1);
   } else { //(a2 != null)                   // one allocation a2
-    return all_controls_dominate(p1, a2) == DomResult::Dominate;
+    return all_controls_dominate(p1, a2);
   }
   return false;
 }
@@ -748,7 +753,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
         known_identical = true;
       } else if (alloc != nullptr) {
         known_independent = true;
-      } else if (all_controls_dominate(this, st_alloc) == DomResult::Dominate) {
+      } else if (all_controls_dominate(this, st_alloc)) {
         known_independent = true;
       }
 
@@ -1581,11 +1586,11 @@ bool LoadNode::can_split_through_phi_base(PhaseGVN* phase) {
   }
 
   if (!mem->is_Phi()) {
-    if (MemNode::all_controls_dominate(mem, base->in(0)) != DomResult::Dominate) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
     }
   } else if (base->in(0) != mem->in(0)) {
-    if (MemNode::all_controls_dominate(mem, base->in(0)) != DomResult::Dominate) {
+    if (!MemNode::all_controls_dominate(mem, base->in(0))) {
       return false;
     }
   }
@@ -1680,20 +1685,20 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
     region = mem->in(0);
     // Skip if the region dominates some control edge of the address.
     // We will check `dom_result` later.
-    dom_result = MemNode::all_controls_dominate(address, region);
+    dom_result = MemNode::maybe_all_controls_dominate(address, region);
   } else if (!mem->is_Phi()) {
     assert(base_is_phi, "sanity");
     region = base->in(0);
     // Skip if the region dominates some control edge of the memory.
     // We will check `dom_result` later.
-    dom_result = MemNode::all_controls_dominate(mem, region);
+    dom_result = MemNode::maybe_all_controls_dominate(mem, region);
   } else if (base->in(0) != mem->in(0)) {
     assert(base_is_phi && mem->is_Phi(), "sanity");
-    dom_result = MemNode::all_controls_dominate(mem, base->in(0));
+    dom_result = MemNode::maybe_all_controls_dominate(mem, base->in(0));
     if (dom_result == DomResult::Dominate) {
       region = base->in(0);
     } else {
-      dom_result = MemNode::all_controls_dominate(address, mem->in(0));
+      dom_result = MemNode::maybe_all_controls_dominate(address, mem->in(0));
       if (dom_result == DomResult::Dominate) {
         region = mem->in(0);
       }
@@ -1708,6 +1713,8 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   if (dom_result != DomResult::Dominate) {
     if (dom_result == DomResult::EncounteredDeadCode) {
       // Wait for the dead code to be removed.
+      // The dead code will eventually be removed in IGVN,
+      // so we have an unambiguous result whether it's dominated or not.
       igvn->_worklist.push(this);
     }
     return nullptr;
@@ -1860,7 +1867,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (in(MemNode::Control) != nullptr
         && can_remove_control()
         && phase->type(base)->higher_equal(TypePtr::NOTNULL)
-        && all_controls_dominate(base, phase->C->start()) == DomResult::Dominate) {
+        && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, nullptr);
       progress = true;
@@ -4594,7 +4601,7 @@ bool InitializeNode::detect_init_independence(Node* value, PhaseGVN* phase) {
       // must have preceded the init, or else be equal to the init.
       // Even after loop optimizations (which might change control edges)
       // a store is never pinned *before* the availability of its inputs.
-      if (MemNode::all_controls_dominate(n, this) != DomResult::Dominate) {
+      if (!MemNode::all_controls_dominate(n, this)) {
         return false;                  // failed to prove a good control
       }
     }
