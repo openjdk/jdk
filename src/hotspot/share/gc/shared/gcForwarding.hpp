@@ -47,7 +47,7 @@ class GCForwarding : public AllStatic {
   static HeapWord* _heap_base;
   static int _num_low_bits;
 public:
-  static void initialize_flags();
+  static void initialize_flags(size_t max_heap_size);
   static void initialize(MemRegion heap);
   static inline void forward_to(oop from, oop to);
   static inline oop forwardee(oop from);

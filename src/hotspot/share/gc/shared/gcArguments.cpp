@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
-#include "gc/shared/gcForwarding.hpp"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -61,7 +60,6 @@ void GCArguments::initialize_heap_sizes() {
   initialize_alignments();
   initialize_heap_flags_and_sizes();
   initialize_size_info();
-  GCForwarding::initialize_flags();
 }
 
 size_t GCArguments::compute_heap_alignment() {
