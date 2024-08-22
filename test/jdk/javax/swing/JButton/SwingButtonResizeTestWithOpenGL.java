@@ -119,18 +119,16 @@ public class SwingButtonResizeTestWithOpenGL {
 
             // some platforms may not support maximize frame
             if (frame.getToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH)) {
-
                 robot.waitForIdle();
-
-                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);  //maximize
-                // frame from normal size
+                //maximize frame from normal size
+                frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 System.out.println("Frame is maximized");
                 robot.waitForIdle();
 
                 if (frame.getToolkit().isFrameStateSupported(JFrame.NORMAL)) {
                     System.out.println("Frame is back to normal");
-                    frame.setExtendedState(JFrame.NORMAL);  //resize from
-                    // maximum size to normal
+                    //resize from maximum size to normal
+                    frame.setExtendedState(JFrame.NORMAL);
 
                     // capture image of JButton after resize
                     System.out.println("Getting image of JButton after resize..image2");
@@ -255,10 +253,10 @@ public class SwingButtonResizeTestWithOpenGL {
             nDiff = 0;
             for (int x = minx1; x < (minx1 + w1); x++) {
                 for (int y = miny1; y < (miny1 + h1); y++) {
-                    o1 = ras1.getDataElements(x, y, o1);  // Causes rasters to
-                    // allocate data
-                    o2 = ras2.getDataElements(x, y, o2);  // and we reuse the
-                    // data on every loop
+                    // Causes rasters to allocate data
+                    o1 = ras1.getDataElements(x, y, o1);
+                    // and we reuse the data on every loop
+                    o2 = ras2.getDataElements(x, y, o2);
 
                     r1 = cm1.getRed(o1);
                     r2 = cm2.getRed(o2);
