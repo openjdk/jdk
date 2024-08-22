@@ -25,7 +25,6 @@ package org.openjdk.bench.jdk.classfile;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import jdk.internal.classfile.impl.Util;
@@ -49,12 +48,10 @@ import static org.openjdk.bench.jdk.classfile.TestConstants.*;
 @State(Scope.Benchmark)
 public class ConstantPoolBuildingClassEntry {
     // JDK-8338546
-    static final int RUNS = 0xff; // Q: Should we measure consecutive runs at all?
     ConstantPoolBuilder builder;
     List<ClassDesc> classDescs;
     List<ClassDesc> nonIdenticalClassDescs;
     List<String> internalNames;
-    Random random;
     int size;
 
     @Setup(Level.Iteration)
@@ -70,15 +67,17 @@ public class ConstantPoolBuildingClassEntry {
         size = classDescs.size();
         nonIdenticalClassDescs = classDescs.stream().map(cd -> {
             var ret = ClassDesc.ofDescriptor(cd.descriptorString());
-            ret.hashCode(); // pre-compute hash code
+            ret.hashCode(); // pre-compute hash code for cd
             return ret;
         }).toList();
         internalNames = classDescs.stream().map(cd -> {
             // also sets up builder
-            var ce = builder.classEntry(cd); // pre-computes hash code for cd
-            return ce.name().stringValue(); // pre-computes hash code for stringValue
+            cd.hashCode(); // pre-computes hash code for cd
+            var ce = builder.classEntry(cd);
+            var ret = ce.name().stringValue();
+            ret.hashCode(); // pre-computes hash code for stringValue
+            return ret;
         }).toList();
-        random = new Random(-555278801022917158L);
     }
 
     /**
@@ -87,9 +86,8 @@ public class ConstantPoolBuildingClassEntry {
      */
     @Benchmark
     public void identicalLookup(Blackhole bh) {
-        for (int i = 0; i < RUNS; i++) {
-            int n = random.nextInt(size);
-            bh.consume(builder.classEntry(classDescs.get(n)));
+        for (var cd : classDescs) {
+            bh.consume(builder.classEntry(cd));
         }
     }
 
@@ -100,9 +98,8 @@ public class ConstantPoolBuildingClassEntry {
      */
     @Benchmark
     public void nonIdenticalLookup(Blackhole bh) {
-        for (int i = 0; i < RUNS; i++) {
-            int n = random.nextInt(size);
-            bh.consume(builder.classEntry(nonIdenticalClassDescs.get(n)));
+        for (var cd : nonIdenticalClassDescs) {
+            bh.consume(builder.classEntry(cd));
         }
     }
 
@@ -112,9 +109,8 @@ public class ConstantPoolBuildingClassEntry {
      */
     @Benchmark
     public void internalNameLookup(Blackhole bh) {
-        for (int i = 0; i < RUNS; i++) {
-            int n = random.nextInt(size);
-            bh.consume(builder.classEntry(builder.utf8Entry(internalNames.get(n))));
+        for (var name : internalNames) {
+            bh.consume(builder.classEntry(builder.utf8Entry(name)));
         }
     }
 
@@ -124,9 +120,7 @@ public class ConstantPoolBuildingClassEntry {
      */
     @Benchmark
     public void oldStyleLookup(Blackhole bh) {
-        for (int i = 0; i < RUNS; i++) {
-            int n = random.nextInt(size);
-            var cd = classDescs.get(n);
+        for (var cd : classDescs) {
             var s = cd.isClassOrInterface() ? Util.toInternalName(cd) : cd.descriptorString();
             bh.consume(builder.classEntry(builder.utf8Entry(s)));
         }
