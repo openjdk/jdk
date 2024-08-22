@@ -939,6 +939,34 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment fill(byte value);
 
     /**
+     * Fills the contents of this memory segment with the given value.
+     * <p>
+     * More specifically, the given value is written into each address of this
+     * segment. Equivalent to (but likely more efficient than) the following code:
+     *
+     * {@snippet lang=java :
+     * for (long offset = 0; offset < segment.byteSize(); offset++) {
+     *     segment.set(ValueLayout.JAVA_BYTE, offset, value);
+     * }
+     * }
+     *
+     * But without any regard or guarantees on the ordering of particular memory
+     * elements being set.
+     * <p>
+     * This method can be useful to initialize or reset the contents of a memory segment.
+     *
+     * @param value the value to write into this segment
+     * @return this memory segment
+     * @throws IllegalStateException if the {@linkplain #scope() scope} associated with
+     *         this segment is not {@linkplain Scope#isAlive() alive}
+     * @throws WrongThreadException if this method is called from a thread {@code T},
+     *         such that {@code isAccessibleBy(T) == false}
+     * @throws IllegalArgumentException if this segment is
+     *         {@linkplain #isReadOnly() read-only}
+     */
+    MemorySegment fillBase(byte value);
+
+    /**
      * Performs a bulk copy from the given source segment to this segment. More specifically,
      * the bytes at offset {@code 0} through {@code src.byteSize() - 1} in the source
      * segment are copied into this segment at offset {@code 0} through

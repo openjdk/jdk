@@ -26,6 +26,7 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.*;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
@@ -56,7 +57,7 @@ import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
 
-import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.*;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
@@ -189,11 +190,45 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     @Override
-    public final MemorySegment fill(byte value){
+    public final MemorySegment fill(byte value) {
+        checkReadOnly(false);
+        if ((length & ~4095) == 0) { // 0 < length < 4096
+            int i = 0;
+            final int end = (int) (length & ~7);
+            if (end > 0) { // Maybe skip this if statement?
+                long longValue = value | value << 8 | value << 16 | value << 24 |
+                        (long) value << 32 | (long) value << 40 | (long) value << 48 | (long) value << 56;
+                for (; i < end; i += 8) {
+                    set(JAVA_LONG_UNALIGNED, i, longValue);
+                }
+            }
+            // Maybe skip this (makes it slower for certain common values)
+            if ((length & 4) != 0) {
+                int intValue = value | value << 8 | value << 16 | value << 24;
+                set(JAVA_INT_UNALIGNED, i, intValue);
+                i += 4;
+            }
+            if ((length & 2) != 0) {
+                short shortValue = (short) (value | value << 8);
+                set(JAVA_SHORT_UNALIGNED, i, shortValue);
+                i += 2;
+            }
+            if ((length & 1) != 0) {
+                set(JAVA_BYTE, i, value);
+            }
+        } else {
+            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
+        }
+        return this;
+    }
+
+    @Override
+    public final MemorySegment fillBase(byte value){
         checkAccess(0, length, false);
         SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
+
 
     @Override
     public MemorySegment allocate(long byteSize, long byteAlignment) {
