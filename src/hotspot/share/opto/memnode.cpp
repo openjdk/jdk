@@ -1712,9 +1712,8 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
   PhaseIterGVN* igvn = phase->is_IterGVN();
   if (dom_result != DomResult::Dominate) {
     if (dom_result == DomResult::EncounteredDeadCode) {
-      // Wait for the dead code to be removed.
-      // The dead code will eventually be removed in IGVN,
-      // so we have an unambiguous result whether it's dominated or not.
+      // There is some dead code which eventually will be removed in IGVN. Once this is the case, we get an unambiguous 
+      // dominance result. Push the node to the worklist again until the dead code is removed.
       igvn->_worklist.push(this);
     }
     return nullptr;
