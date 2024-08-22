@@ -31,6 +31,7 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Field;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -73,8 +73,8 @@ public class CopyTest {
         dstArray = new byte[ELEM_SIZE];
         heapSrcSegment = MemorySegment.ofArray(srcArray);
         heapDstSegment = MemorySegment.ofArray(dstArray);
-        MemorySegment nativeSrcSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        MemorySegment nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
+        nativeSrcSegment = Arena.ofAuto().allocate(ELEM_SIZE);
+        nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
         srcBuffer = ByteBuffer.wrap(srcArray);
         dstBuffer = ByteBuffer.wrap(dstArray);
     }
