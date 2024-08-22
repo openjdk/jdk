@@ -81,6 +81,10 @@ import static org.testng.Assert.*;
  * @run testng/othervm -Dseed=-3689060484817342283 PacketEncodingTest
  * @run testng/othervm -Dseed=2425718686525936108 PacketEncodingTest
  * @run testng/othervm -Dseed=-2996954753243104355 PacketEncodingTest
+ * @run testng/othervm -Dseed=8750823652999067800 PacketEncodingTest
+ * @run testng/othervm -Dseed=2906555779406889127 PacketEncodingTest
+ * @run testng/othervm -Dseed=902801756808168822 PacketEncodingTest
+ * @run testng/othervm -Dseed=5643545543196691308 PacketEncodingTest
  * @run testng/othervm -Djdk.internal.httpclient.debug=true PacketEncodingTest
  */
 public class PacketEncodingTest {
@@ -331,6 +335,11 @@ public class PacketEncodingTest {
         public QuicTLSEngine getTLSEngine() {
             return TLS_ENGINE;
         }
+
+        @Override
+        public int minShortPacketPayloadSize(int destConnectionIdLength) {
+            return 100 - (destConnectionIdLength - connectionIdLength());
+        }
     }
 
     private void checkLongHeaderPacket(LongHeaderPacket packet,
@@ -388,6 +397,15 @@ public class PacketEncodingTest {
     }
 
     private static List<ByteBuffer> getBuffers(List<QuicFrame> payload) {
+        return payload.stream().map(QuicFrame::payload).toList();
+    }
+    private static List<ByteBuffer> getBuffers(List<QuicFrame> payload, CodingContext context, int peerCidLength) {
+        int minSize = context.minShortPacketPayloadSize(peerCidLength);
+        int payloadSize = payload.stream().mapToInt(QuicFrame::size).sum();
+        if (payloadSize < minSize) {
+            payload = new ArrayList<>(payload);
+            payload.add(0, new PaddingFrame(minSize - payloadSize));
+        }
         return payload.stream().map(QuicFrame::payload).toList();
     }
 
@@ -478,20 +496,22 @@ public class PacketEncodingTest {
                                         PacketNumberSpace packetNumberSpace,
                                         long packetNumber,
                                         QuicConnectionId destConnectionId,
-                                        List<QuicFrame> payload) {
+                                        List<QuicFrame> payload,
+                                        CodingContext context) {
         // Check created packet
         assertEquals(packet.headersType(), HeadersType.SHORT);
         assertEquals(packet.packetType(), packetType);
         assertEquals(packet.hasLength(), false);
         assertEquals(packet.numberSpace(), packetNumberSpace);
-        assertEquals(getBuffers(packet.frames()), getBuffers(payload));
+        assertEquals(getBuffers(packet.frames()), getBuffers(payload, context, destConnectionId.length()));
         assertEquals(packet.packetNumber(), packetNumber);
         assertEquals(packet.destinationId(), destConnectionId);
     }
 
     private void checkShortHeaderPacketAt(ByteBuffer datagram, int offset,
-                                         PacketType packetType,
-                                         QuicConnectionId destConnectionId) {
+                                          PacketType packetType,
+                                          QuicConnectionId destConnectionId,
+                                          CodingContext context) {
         assertEquals(QuicPacket.peekHeaderType(datagram, offset), HeadersType.SHORT);
         assertEquals(QuicPacketDecoder.of(QuicVersion.QUIC_V1).peekPacketType(datagram, offset), packetType);
         assertEquals(QuicPacket.peekVersion(datagram, offset), 0);
@@ -1113,8 +1133,6 @@ public class PacketEncodingTest {
         int payloadSize = Math.max(RANDOM.nextInt(bound - 1) + 1, 4 - packetNumberLength);
         byte[] payload = new byte[payloadSize];
         var frames = frames(payload);
-        System.out.printf("testOneRTTPacket.encode(payload:%d)%n", payloadSize);
-        int expectedSize = 1 + destid.length + payloadSize + packetNumberLength;
 
         CodingContext context = new TestCodingContext() {
             @Override public long largestProcessedPN(PacketNumberSpace packetSpace) {
@@ -1123,10 +1141,17 @@ public class PacketEncodingTest {
             @Override public long largestAckedPN(PacketNumberSpace packetSpace) {
                 return packetSpace == PacketNumberSpace.APPLICATION ? largestAcked : -1;
             }
+            // since we're going to decode the short packet, we need to return
+            // the same length that was used as destination cid in the packet
             @Override public int connectionIdLength() {
                 return destid.length;
             }
         };
+
+        int paddedPayLoadSize = Math.max(payloadSize, context.minShortPacketPayloadSize(destid.length));
+        System.out.printf("testOneRTTPacket.encode(payload:%d, padded:%d, destid.length: %d)%n",
+                payloadSize, paddedPayLoadSize, destid.length);
+        int expectedSize = 1 + destid.length + paddedPayLoadSize + packetNumberLength;
         // Create an initial packet
         var packet = encoder.newOneRttPacket(destConnectionId,
                 packetNumber,
@@ -1139,16 +1164,17 @@ public class PacketEncodingTest {
         var oneRttPacket = (OneRttPacket) packet;
         checkShortHeaderPacket(oneRttPacket, PacketType.ONERTT,
                 PacketNumberSpace.APPLICATION, packetNumber,
-                destConnectionId, frames);
+                destConnectionId, frames, context);
         assertEquals(oneRttPacket.hasLength(), false);
         assertEquals(oneRttPacket.size(), expectedSize);
 
         // Check that peeking at the encoded packet returns correct information
         ByteBuffer encoded = toByteBuffer(encoder, packet, context);
         checkShortHeaderPacketAt(encoded, 0, PacketType.ONERTT,
-                destConnectionId);
+                destConnectionId, context);
 
-        // coalesce two packets in a single datagram and check
+        // write packet at an offset in the datagram to simulate
+        // short packet coalesced after long packet and check
         // the peek methods again
         int offset = RANDOM.nextInt(256);
         int end = offset + encoded.limit();
@@ -1161,16 +1187,13 @@ public class PacketEncodingTest {
         datagram.flip();
         assert datagram.limit() == offset + encoded.remaining();
 
-        // check header, type and version of both packets
-        System.out.printf("datagram(offset:%d, position:%d, limit:%d)%n",
-                offset, datagram.position(), datagram.limit());
         // set position to first packet to check connection ids
         System.out.printf("reading datagram(offset:%d, position:%d, limit:%d)%n",
                 offset, datagram.position(), datagram.limit());
         checkShortHeaderPacketAt(datagram, offset, PacketType.ONERTT,
-                destConnectionId);
+                destConnectionId, context);
 
-        // check that skip packet can skip both packets
+        // check that skip packet can skip packet at offset
         datagram.position(0);
         datagram.limit(end);
         decoder.skipPacket(datagram, offset);
@@ -1179,7 +1202,7 @@ public class PacketEncodingTest {
         assertEquals(datagram.position(), datagram.capacity() - offset);
 
 
-        // Decode the two packets in the datagram
+        // Decode the packet in the datagram
         datagram.position(offset);
         int size = expectedSize;
         for (int i=0; i<1; i++) {
@@ -1189,9 +1212,32 @@ public class PacketEncodingTest {
             assertEquals(datagram.position(), pos + size);
             assertTrue(decodedPacket instanceof OneRttPacket, "decoded: " + decodedPacket);
             OneRttPacket oneRttDecoded = OneRttPacket.class.cast(decodedPacket);
+            List<QuicFrame> expectedFrames = frames;
+            if (frames.size() > 0 && frames.get(0) instanceof PaddingFrame) {
+                // The first frame should be a crypto frame, except if payloadSize
+                // was less than 7.
+                int frameSizes = frames.stream().mapToInt(QuicFrame::size).sum();
+                assert frameSizes == payloadSize;
+                assert frameSizes <= 7;
+                // decoder will coalesce padding frames. So instead of finding
+                // two padding frames in the decoded packet we will find just one.
+                // To make the check pass, we should expect a bigger padding frame.
+                int minPayloadSize = context.minShortPacketPayloadSize(destid.length);
+                if (minPayloadSize > frameSizes) {
+                    // replace the first frame with a bigger padding frame
+                    expectedFrames = new ArrayList<>(frames);
+                    var first = frames.get(0);
+                    // replace the first frame with a bigger padding frame that
+                    // coalesce the first padding payload frame with the padding that
+                    // should have been added by the encoder.
+                    // We will then be able to check that the decoded packet contains
+                    // that single bigger padding frame.
+                    expectedFrames.set(0, new PaddingFrame(minPayloadSize - frameSizes + first.size()));
+                }
+            }
             checkShortHeaderPacket(oneRttDecoded, PacketType.ONERTT,
                     PacketNumberSpace.APPLICATION, packetNumber,
-                    destConnectionId, frames);
+                    destConnectionId, expectedFrames, context);
             assertEquals(decodedPacket.size(), packet.size());
             assertEquals(decodedPacket.size(), size);
         }

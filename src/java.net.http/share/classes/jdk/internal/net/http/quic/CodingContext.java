@@ -144,4 +144,26 @@ public interface CodingContext {
      * @return true if token is valid, false otherwise
      */
     boolean verifyToken(QuicConnectionId destinationID, byte[] token);
+
+    /**
+     * {@return The minimum payload size for short packet payloads}.
+     * Padding will be added to match that size if needed.
+     * @param destConnectionIdLength the length of the destination
+     *                               connectionId included in the packet
+     */
+    default int minShortPacketPayloadSize(int destConnectionIdLength) {
+        // See RFC 9000, Section 10.3
+        // https://www.rfc-editor.org/rfc/rfc9000#section-10.3
+        // [..] the endpoint SHOULD ensure that all packets it sends
+        // are at least 22 bytes longer than the minimum connection
+        // ID length that it requests the peer to include in its
+        // packets [...]
+        //
+        // A 1-RTT packet contains the peer connection id
+        // (whose length is destConnectionIdLength), therefore the
+        // payload should be at least 22 - (destConnectionIdLength
+        // - connectionIdLength()) - where connectionIdLength is the
+        // length of the local connection ID.
+        return 22 - (destConnectionIdLength - connectionIdLength());
+    }
 }

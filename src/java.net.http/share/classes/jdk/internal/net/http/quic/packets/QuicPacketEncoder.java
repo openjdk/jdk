@@ -1252,7 +1252,10 @@ public class QuicPacketEncoder {
         QuicTLSEngine tlsEngine = codingContext.getTLSEngine();
         int tagSize = tlsEngine.getAuthTagSize();
         int protectionSampleSize = tlsEngine.getHeaderProtectionSampleSize(KeySpace.ONE_RTT);
-        int minLength = 4 + protectionSampleSize - encodedPacketNumber.length - tagSize;
+        // packets should be at least 22 bytes longer than the local connection id length.
+        // we ensure that by making sure the frames size (including padding) is at least 22 bytes
+        int minPayloadSize = codingContext.minShortPacketPayloadSize(destination.length());
+        int minLength = Math.max(4 + protectionSampleSize - encodedPacketNumber.length - tagSize, minPayloadSize);
         return new OutgoingOneRttPacket(
                 destination, packetNumber,
                 encodedPacketNumber, padFrames(frames, minLength), tagSize);
@@ -1751,8 +1754,6 @@ public class QuicPacketEncoder {
         result.add(new PaddingFrame(minLength - size));
         result.addAll(frames);
         return result;
-
-
     }
 
     /**
