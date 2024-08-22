@@ -104,10 +104,10 @@ public class ScalarReplacementWithGCBarrierTests {
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.ALLOC, "1" })
     @IR(phase = { CompilePhase.INCREMENTAL_BOXING_INLINE }, counts = { IRNode.ALLOC, "2" })
-    @IR(applyIf = { "UseG1GC", "true" }, phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, counts = { IRNode.ALLOC, "1" })
+    @IR(phase = { CompilePhase.ITER_GVN_AFTER_ELIMINATION }, counts = { IRNode.ALLOC, "1" })
     private int testScalarReplacementWithGCBarrier(List list) {
         Iter iter = list.iter();
-        for (;;) {
+        while (true) {
             while (iter.next()) {}
             if (list.head == null) break;
             list.head = list.head.next;
