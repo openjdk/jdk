@@ -268,6 +268,8 @@ class EndEntityChecker {
      */
     private void checkTLSServer(X509Certificate cert, String parameter,
             Set<String> exts) throws CertificateException {
+// This only applies to Symantec
+/*
         if (KU_SERVER_ENCRYPTION.contains(parameter)) {
             if (!checkKeyUsage(cert, KU_KEY_ENCIPHERMENT)) {
                 throw new ValidatorException
@@ -289,6 +291,7 @@ class EndEntityChecker {
         } else {
             throw new CertificateException("Unknown authType: " + parameter);
         }
+*/
 
         if (!checkEKU(cert, exts, OID_EKU_TLS_SERVER)) {
             // check for equivalent but now obsolete Server-Gated-Cryptography

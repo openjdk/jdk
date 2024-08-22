@@ -48,6 +48,7 @@ enum CADistrustPolicy {
     SYMANTEC_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
                            throws ValidatorException {
+System.out.println("SYMANTEC_TLS");
             if (!variant.equals(Validator.VAR_TLS_SERVER)) {
                 return;
             }
@@ -66,6 +67,7 @@ enum CADistrustPolicy {
     ENTRUST_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
                            throws ValidatorException {
+System.out.println("ENTRUST_TLS");
             if (!variant.equals(Validator.VAR_TLS_SERVER)) {
                 return;
             }

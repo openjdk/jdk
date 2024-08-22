@@ -88,8 +88,9 @@ final class EntrustTLSPolicy {
 
     // Any TLS Server certificate that is anchored by one of the Entrust
     // roots above and is issued after this date will be distrusted.
-    private static final LocalDate OCTOBER_31_2024 =
-        LocalDate.of(2024, Month.OCTOBER, 31);
+    private static final LocalDate OCTOBER_30_2024 =
+        LocalDate.of(2023, Month.OCTOBER, 30);
+        //LocalDate.of(2024, Month.OCTOBER, 31);
 
     /**
      * This method assumes the eeCert is a TLS Server Cert and chains back to
@@ -111,25 +112,8 @@ final class EntrustTLSPolicy {
             Date notBefore = chain[0].getNotBefore();
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);
-/*
-            // check if chain goes through one of the subCAs
-            if (chain.length > 2) {
-                X509Certificate subCA = chain[chain.length-2];
-                fp = fingerprint(subCA);
-                if (fp == null) {
-                    throw new ValidatorException("Cannot generate fingerprint "
-                        + "for intermediate CA of TLS server certificate");
-                }
-                LocalDate distrustDate = EXEMPT_SUBCAS.get(fp);
-                if (distrustDate != null) {
-                    // reject if certificate is issued after specified date
-                    checkNotBefore(ldNotBefore, distrustDate, anchor);
-                    return; // success
-                }
-            }
-*/
             // reject if certificate is issued after October 31, 2024
-            checkNotBefore(ldNotBefore, OCTOBER_31_2024, anchor);
+            checkNotBefore(ldNotBefore, OCTOBER_30_2024, anchor);
         }
     }
 

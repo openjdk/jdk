@@ -53,42 +53,24 @@ public class Distrust {
 
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
+    // entrust_l1e, entrust_2048: "No trusted certificate found"
     private static String[] rootsToTest = new String[] {
-        "entrust_l1m" };
+        "entrust_l1f", "entrust_l1j", "entrust_l1k", "entrust_l1m" };
 
-/*
-    // Each of the subCAs with a delayed distrust date have a test certificate
-    // chain stored in a file named "<subCA>-chain.pem".
-    private static String[] subCAsToTest = new String[]{"appleistca8g1"};
-*/
-
-    // A date that is after the restrictions take affect
+    // A date that is after the restrictions take effect
+        //Date.from(LocalDate.of(2024, 10, 31)
     private static final Date OCTOBER_31_2024 =
-        Date.from(LocalDate.of(2024, 10, 31)
+        Date.from(LocalDate.of(2023, 10, 31)
                            .atStartOfDay(ZoneOffset.UTC)
                            .toInstant());
 
-    // A date that is a second before the restrictions take affect
+    // A date that is a second before the restrictions take effect
+        //Date.from(LocalDate.of(2024, 10, 31)
     private static final Date BEFORE_OCTOBER_31_2024 =
-        Date.from(LocalDate.of(2024, 10, 31)
+        Date.from(LocalDate.of(2023, 10, 31)
                            .atStartOfDay(ZoneOffset.UTC)
                            .minusSeconds(1)
                            .toInstant());
-
-/*
-    // A date that is after the subCA restrictions take affect
-    private static final Date JANUARY_1_2020 =
-        Date.from(LocalDate.of(2020, 1, 1)
-                           .atStartOfDay(ZoneOffset.UTC)
-                           .toInstant());
-
-    // A date that is a second before the subCA restrictions take affect
-    private static final Date BEFORE_JANUARY_1_2020 =
-        Date.from(LocalDate.of(2020, 1, 1)
-                           .atStartOfDay(ZoneOffset.UTC)
-                           .minusSeconds(1)
-                           .toInstant());
-*/
 
     public static void main(String[] args) throws Exception {
 
@@ -130,16 +112,6 @@ public class Distrust {
         // set validation date so this will still pass when cert expires
         v.setValidationDate(new Date(1544197375493l));
         v.validate(loadCertificateChain("verisignclass3g5ca-codesigning"));
-
-        // test chains issued through subCAs
-        notBefore = before ? BEFORE_JANUARY_1_2020 : JANUARY_1_2020;
-        for (String test : subCAsToTest) {
-            System.err.println("Testing " + test);
-            X509Certificate[] chain = loadCertificateChain(test);
-
-            testTM(sunX509TM, chain, notBefore, isValid);
-            testTM(pkixTM, chain, notBefore, isValid);
-        }
 */
     }
 
