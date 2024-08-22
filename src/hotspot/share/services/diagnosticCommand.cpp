@@ -1199,7 +1199,7 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     MemMapPrinter::print_all_mappings(&fs);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
-    const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));
+    const char* absname = os::realpath(name, tmp, sizeof(tmp));
     name = absname != nullptr ? absname : name;
     output()->print_cr("Memory map dumped to \"%s\".", name);
   } else {

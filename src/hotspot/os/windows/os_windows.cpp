@@ -5315,6 +5315,45 @@ void os::funlockfile(FILE* fp) {
   _unlock_file(fp);
 }
 
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+  return os::win32::realpath(filename, outbuf, outbuflen);
+}
+
+char* os::win32::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+
+  if (filename == nullptr || outbuf == nullptr || outbuflen < 1) {
+    assert(false, "os::realpath: invalid arguments.");
+    errno = EINVAL;
+    return nullptr;
+  }
+
+  char* result = nullptr;
+  ALLOW_C_FUNCTION(::_fullpath, char* p = ::_fullpath(nullptr, filename, 0);)
+  if (p != nullptr) {
+    if (strlen(p) < outbuflen) {
+      strcpy(outbuf, p);
+      result = outbuf;
+    } else {
+      errno = ENAMETOOLONG;
+    }
+    ALLOW_C_FUNCTION(::free, ::free(p);) // *not* os::free
+  } else {
+    // there was a error
+    // In this case, use the user provided buffer but at least check whether _fullpath caused
+    // a memory overwrite.
+    if (errno == EINVAL) {
+      outbuf[outbuflen - 1] = '\0';
+      ALLOW_C_FUNCTION(::_fullpath, p = ::_fullpath(outbuf, filename, outbuflen - 1);)
+      if (p != nullptr) {
+        guarantee(outbuf[outbuflen - 1] == '\0', "_fullpath buffer overwrite detected.");
+        result = p;
+      }
+    }
+  }
+  return result;
+
+}
+
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
                         char *addr, size_t bytes, bool read_only,

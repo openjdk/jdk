@@ -891,6 +891,10 @@ void os::funlockfile(FILE* fp) {
   ::funlockfile(fp);
 }
 
+char* os::realpath(const char* filename, char* outbuf, size_t outbuflen) {
+  return os::Posix::realpath(filename, outbuf, outbuflen);
+}
+
 DIR* os::opendir(const char* dirname) {
   assert(dirname != nullptr, "just checking");
   return ::opendir(dirname);

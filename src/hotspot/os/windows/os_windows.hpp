@@ -59,6 +59,8 @@ class os::win32 {
 
   static bool register_code_area(char *low, char *high);
 
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
+
  public:
   // Windows-specific interface:
   static void   initialize_system_info();

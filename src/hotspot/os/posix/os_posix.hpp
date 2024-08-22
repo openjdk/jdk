@@ -61,6 +61,8 @@ protected:
   static void print_load_average(outputStream* st);
   static void print_uptime_info(outputStream* st);
 
+  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
+
 public:
   static void init(void);  // early initialization - no logging available
   static void init_2(void);// later initialization - logging available
@@ -72,13 +74,6 @@ public:
   // Helper function; describes pthread attributes as short string. String is written
   // to buf with len buflen; buf is returned.
   static char* describe_pthread_attr(char* buf, size_t buflen, const pthread_attr_t* attr);
-
-  // A safe implementation of realpath which will not cause a buffer overflow if the resolved path
-  //   is longer than PATH_MAX.
-  // On success, returns 'outbuf', which now contains the path.
-  // On error, it will return null and set errno. The content of 'outbuf' is undefined.
-  // On truncation error ('outbuf' too small), it will return null and set errno to ENAMETOOLONG.
-  static char* realpath(const char* filename, char* outbuf, size_t outbuflen);
 
   // Returns true if given uid is root.
   static bool is_root(uid_t uid);
