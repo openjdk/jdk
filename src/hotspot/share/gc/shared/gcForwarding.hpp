@@ -30,11 +30,19 @@
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 
+/*
+ * Implements forwarding for the full-GCs of Serial, Parallel, G1 and Shenandoan in
+ * a way that preserves upper N bits of object mark-words, which contain crucial
+ * Klass* information when running with compact headers. The encoding is similar to
+ * compressed-oops encoding: it basically subtracts the forwardee address from the
+ * heap-base, shifts that difference into the right place, and sets the lowest two
+ * bits (to indicate 'forwarded' state as usual).
+ */
 class GCForwarding : public AllStatic {
   static const int NumKlassBits        = 32; // Will be 22 with Tiny Class-Pointers
-  static const int NUM_LOW_BITS_NARROW = BitsPerWord - NumKlassBits;
-  static const int NUM_LOW_BITS_WIDE   = BitsPerWord;
-  static const int SHIFT = markWord::lock_bits + markWord::lock_shift;
+  static const int NumLowBitsNarrow = BitsPerWord - NumKlassBits;
+  static const int NumLowBitsWide   = BitsPerWord;
+  static const int Shift = markWord::lock_bits + markWord::lock_shift;
 
   static HeapWord* _heap_base;
   static int _num_low_bits;
