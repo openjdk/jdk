@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -871,8 +871,10 @@ charset ISO-8859-8 ISO_8859_8
     alias   8859_8
     alias   iso-ir-138
     alias   ISO_8859-8
+    alias   ISO-8859-8-I  
     alias   ISO_8859-8:1988
     alias   ISO8859-8
+    alias   ISO8859-8-I
     alias   cp916
     alias   916
     alias   ibm916
