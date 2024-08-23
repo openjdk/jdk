@@ -701,9 +701,9 @@ public class MessageFormat extends Format {
      * converted to a String pattern, the {@code FormatType} and {@code FormatStyle}
      * will be omitted from the {@code FormatElement}.
      * @implNote This implementation does not guarantee the order of
-     * {@code FormatStyle} matching. That is, the {@code FormatStyle} produced
-     * may not be equivalent to the style passed, in the instance that multiple
-     * styles have equivalent patterns.
+     * {@code FormatStyle} matching. That is, a {@code FormatStyle} produced
+     * may not be equivalent to the corresponding style passed, in the instance
+     * that multiple styles have equivalent patterns.
      */
     public String toPattern() {
         // later, make this more extensible
