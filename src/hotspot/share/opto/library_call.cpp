@@ -482,6 +482,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
+  case vmIntrinsics::_Continuation_pin:          return inline_native_Continuation_pinning(false);
+  case vmIntrinsics::_Continuation_unpin:        return inline_native_Continuation_pinning(true);
+
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_start()),
                                                                                          "notifyJvmtiStart", true, false);
@@ -3711,6 +3714,93 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   access_store_at(nullptr, cache_obj_handle, adr_type, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);
+
+  return true;
+}
+
+//------------------------inline_native_Continuation_pin and unpin-----------
+
+// Shared implementation routine for both pin and unpin.
+bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  // Save input memory.
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+
+  // TLS
+  Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
+  Node* last_continuation_offset = basic_plus_adr(top(), tls_ptr, in_bytes(JavaThread::cont_entry_offset()));
+  Node* last_continuation = make_load(control(), last_continuation_offset, last_continuation_offset->get_ptr_type(), T_ADDRESS, MemNode::unordered);
+
+  // Null check the last continuation object.
+  Node* continuation_cmp_null = _gvn.transform(new CmpPNode(last_continuation, null()));
+  Node* test_continuation_not_equal_null = _gvn.transform(new BoolNode(continuation_cmp_null, BoolTest::ne));
+  IfNode* iff_continuation_not_equal_null = create_and_map_if(control(), test_continuation_not_equal_null, PROB_MAX, COUNT_UNKNOWN);
+
+  // False path, last continuation is null.
+  Node* continuation_is_null = _gvn.transform(new IfFalseNode(iff_continuation_not_equal_null));
+
+  // True path, last continuation is not null.
+  Node* continuation_is_not_null = _gvn.transform(new IfTrueNode(iff_continuation_not_equal_null));
+
+  set_control(continuation_is_not_null);
+
+  // Load the pin count from the last continuation.
+  Node* pin_count_offset = basic_plus_adr(top(), last_continuation, in_bytes(ContinuationEntry::pin_count_offset()));
+  Node* pin_count = make_load(control(), pin_count_offset, TypeInt::INT, T_INT, MemNode::unordered);
+
+  // The loaded pin count is compared against a context specific rhs for over/underflow detection.
+  Node* pin_count_rhs;
+  if (unpin) {
+    pin_count_rhs = _gvn.intcon(0);
+  } else {
+    pin_count_rhs = _gvn.intcon(UINT32_MAX);
+  }
+  Node* pin_count_cmp = _gvn.transform(new CmpUNode(_gvn.transform(pin_count), pin_count_rhs));
+  Node* test_pin_count_over_underflow = _gvn.transform(new BoolNode(pin_count_cmp, BoolTest::eq));
+  IfNode* iff_pin_count_over_underflow = create_and_map_if(control(), test_pin_count_over_underflow, PROB_MIN, COUNT_UNKNOWN);
+
+  // False branch, no pin count over/underflow. Increment or decrement pin count and store back.
+  Node* valid_pin_count = _gvn.transform(new IfFalseNode(iff_pin_count_over_underflow));
+  set_control(valid_pin_count);
+
+  Node* next_pin_count;
+  if (unpin) {
+    next_pin_count = _gvn.transform(new SubINode(pin_count, _gvn.intcon(1)));
+  } else {
+    next_pin_count = _gvn.transform(new AddINode(pin_count, _gvn.intcon(1)));
+  }
+
+  Node* updated_pin_count_memory = store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+
+  // True branch, pin count over/underflow.
+  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
+  {
+    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
+    // which will throw IllegalStateException for pin count over/underflow.
+    PreserveJVMState pjvms(this);
+    set_control(pin_count_over_underflow);
+    set_all_memory(input_memory_state);
+    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_none);
+    assert(stopped(), "invariant");
+  }
+
+  // Result of top level CFG and Memory.
+  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(result_rgn);
+  PhiNode* result_mem = new PhiNode(result_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(result_mem);
+
+  result_rgn->init_req(_true_path, _gvn.transform(valid_pin_count));
+  result_rgn->init_req(_false_path, _gvn.transform(continuation_is_null));
+  result_mem->init_req(_true_path, _gvn.transform(updated_pin_count_memory));
+  result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
+
+  // Set output state.
+  set_control(_gvn.transform(result_rgn));
+  set_all_memory(_gvn.transform(result_mem));
 
   return true;
 }
