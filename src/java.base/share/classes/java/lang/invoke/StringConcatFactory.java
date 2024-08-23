@@ -1465,9 +1465,11 @@ public final class StringConcatFactory {
 
                     int coder  = JLA.stringInitCoder(),
                         length = 0;
-                    for (var constant : constants) {
-                        coder  |= JLA.stringCoder(constant);
-                        length += constant.length();
+                    if (staticConcat) {
+                        for (var constant : constants) {
+                            coder |= JLA.stringCoder(constant);
+                            length += constant.length();
+                        }
                     }
 
                     /*
