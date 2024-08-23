@@ -5456,9 +5456,10 @@ class StubGenerator: public StubCodeGenerator {
     Label ProcessData, Exit;
     Label ProcessScalar, ProcessVector;
 
-    // intrinsic only processes data of length in multiple of 4
+    // passed in length (send - soff) is guaranteed to be > 4,
+    // and in this intrinsic we only processe data of length in multiple of 4,
+    // it's not guaranteed to be multiple of 4 by java level, so do it explicitly
     __ sub(length, send, soff);
-    // it's not guaranteed by java level, so do it explicitly
     __ andi(length, length, -4);
     // real src/dst to process data
     __ add(src, src, soff);
