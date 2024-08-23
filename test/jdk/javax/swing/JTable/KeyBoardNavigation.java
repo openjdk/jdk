@@ -39,7 +39,7 @@ import javax.swing.table.TableModel;
 /*
  * @test
  * @key headful
- * @bug 4112270 8264102
+ * @bug 4112270 8264102 8329756
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test Keyboard Navigation in JTable.
@@ -178,7 +178,7 @@ public class KeyBoardNavigation {
                 1. Refer the below keyboard navigation specs
                  (referenced from bug report 4112270).
                 2. Check all combinations of navigational keys mentioned below
-                 and verifying each key combinations against the spec defined.
+                 and verify each key combination against the spec defined.
                  If it does, press "pass", otherwise press "fail".
 
                 """;
@@ -270,24 +270,19 @@ public class KeyBoardNavigation {
                                 up/down
                 Left/Right Arrow - Deselect current selection;
                                    move focus one cell left/right
-                FN+Up Arrow/FN+Down Arrow - Deselect current selection;
+                fn+Up/Down Arrow - Deselect current selection;
                                    scroll up/down one JViewport view;
                                    first visible cell in current column gets focus
-                Control-FN+Up Arrow/FN+Down Arrow - Deselect current selection;
-                                                    move focus and view to
-                                                    first/last cell in current row
-                F2 - Allows editing in a cell containing information without
+                fn - Allows editing in a cell containing information without
                      overwriting the information
                 Esc -  Resets the cell content back to the state it was in
                        before editing started
-                Ctrl+A, Ctrl+/ - Select All
-                Ctrl+\\ - Deselect all
+                Cmd+A - Select All
                 Shift-Up/Down Arrow -  Extend selection up/down one row
                 Shift-Left/Right Arrow - Extend selection left/right one column
-                FN-Shift Up/Down Arrow -  Extend selection to top/bottom of column
-                Shift-PageUp/PageDown - Extend selection up/down one view and scroll
-                                        table
-                                """;
+                Ctrl-Shift Up/Down Arrow -  Extend selection to top/bottom of row
+                Ctrl-Shift Left/Right Arrow -  Extend selection to first/last of column
+                """;
         String osName = System.getProperty("os.name").toLowerCase();
         if (osName.startsWith("mac")) {
             return MAC_SPECIFIC;
