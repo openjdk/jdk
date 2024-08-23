@@ -41,8 +41,7 @@ class ArchiveHeapInfo {
   MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
   CHeapBitMap _oopmap;
   CHeapBitMap _ptrmap;
-  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
-                                        // of the archived heap objects, in bytes.
+  HeapRoots _heap_roots;
 
 public:
   ArchiveHeapInfo() : _buffer_region(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
@@ -57,8 +56,8 @@ public:
   CHeapBitMap* oopmap() { return &_oopmap; }
   CHeapBitMap* ptrmap() { return &_ptrmap; }
 
-  void set_heap_roots_offset(size_t n) { _heap_roots_offset = n; }
-  size_t heap_roots_offset() const { return _heap_roots_offset; }
+  void set_heap_roots(HeapRoots roots) { _heap_roots = roots; };
+  HeapRoots heap_roots() { return _heap_roots; }
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -115,8 +114,7 @@ public:
   // The minimum region size of all collectors that are supported by CDS in
   // ArchiveHeapLoader::can_map() mode. Currently only G1 is supported. G1's region size
   // depends on -Xmx, but can never be smaller than 1 * M.
-  // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
-  static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
+  static constexpr int MIN_GC_REGION_ALIGNMENT = 256 * K; // FIXME: Testing
 
 private:
   class EmbeddedOopRelocator;
@@ -131,8 +129,7 @@ private:
   static size_t _buffer_used;
 
   // The bottom of the copy of Heap::roots() inside this->_buffer.
-  static size_t _heap_roots_offset;
-  static size_t _heap_roots_word_size;
+  static HeapRoots _heap_roots;
 
   // The address range of the requested location of the archived heap objects.
   static address _requested_bottom;
@@ -219,7 +216,6 @@ private:
   template <typename T> static T* requested_addr_to_buffered_addr(T* p);
   template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap);
   template <typename T> static void mark_oop_pointer(T* buffered_addr, CHeapBitMap* oopmap);
-  template <typename T> static void relocate_root_at(oop requested_roots, int index, CHeapBitMap* oopmap);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
 
@@ -234,13 +230,6 @@ public:
   static bool is_string_too_large_to_archive(oop string);
   static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
-  static oop heap_roots_requested_address(); // requested address of HeapShared::roots()
-  static address buffered_heap_roots_addr() {
-    return offset_to_buffered_address<address>(_heap_roots_offset);
-  }
-  static size_t heap_roots_word_size() {
-    return _heap_roots_word_size;
-  }
   static size_t get_filler_size_at(address buffered_addr);
 
   static void mark_native_pointer(oop src_obj, int offset);
