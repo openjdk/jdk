@@ -95,9 +95,6 @@ public abstract class KDFSpi {
      *
      * @return the parameters used with this {@code KDF} object, or
      * {@code null}
-     *
-     * @throws UnsupportedOperationException if the parameters cannot be
-     * retrieved or if the provider does not support parameter retrieval
      */
     protected abstract KDFParameters engineGetParameters();
 

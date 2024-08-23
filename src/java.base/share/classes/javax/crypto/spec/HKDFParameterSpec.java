@@ -137,7 +137,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * @return an {@code ExtractThenExpand}
          *
          * @throws IllegalArgumentException
-         *     if {@code length} is not &gt; 0
+         *     if {@code length} is not greater than 0
          */
         public ExtractThenExpand thenExpand(byte[] info, int length) {
             return new ExtractThenExpand(
@@ -269,17 +269,17 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
     }
 
     /**
-     * Defines the input parameters of an {@code Expand} object
+     * Creates an {@code Expand} object
      *
      * @param prk
      *     the pseudorandom key; must not be {@code null}
      * @param info
      *     the optional context and application specific information (may be
-     *     {@code null}); the byte[] is copied to prevent subsequent
+     *     {@code null}); the byte array is copied to prevent subsequent
      *     modification
      * @param length
-     *     the length of the output key material (must be &gt; 0 and &lt; 255 *
-     *     HMAC length)
+     *     the length of the output key material (must be greater than 0 and
+     *     less than 255 * HMAC length)
      *
      * @return a new {@code Expand} object
      *

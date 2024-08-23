@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8331008
- * @run main TestHKDF
+ * @run main HKDFKnownAnswerTests
  * @summary Tests for HKDF Expand and Extract Key Derivation Functions
  * @enablePreview
  */
@@ -34,17 +34,17 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.HKDFParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-public class TestHKDF {
+public class HKDFKnownAnswerTests {
     public static class TestData {
         public TestData(String name, String algStr, String ikmStr,
                         String saltStr, String infoStr, int oLen,
@@ -52,22 +52,22 @@ public class TestHKDF {
                         String expOkmStr) {
             testName = Objects.requireNonNull(name);
             algName = Objects.requireNonNull(algStr);
-            IKM = hex2bin(Objects.requireNonNull(ikmStr));
+            ikm = HexFormat.of().parseHex(Objects.requireNonNull(ikmStr));
             if ((outLen = oLen) <= 0) {
                 throw new IllegalArgumentException(
                     "Output length must be greater than 0");
             }
-            expectedPRK = hex2bin(Objects.requireNonNull(expPrkStr));
-            expectedOKM = hex2bin(Objects.requireNonNull(expOkmStr));
+            expectedPRK = HexFormat.of().parseHex(Objects.requireNonNull(expPrkStr));
+            expectedOKM = HexFormat.of().parseHex(Objects.requireNonNull(expOkmStr));
 
             // Non-mandatory fields - may be null
-            salt = (saltStr != null) ? hex2bin(saltStr) : null;
-            info = (infoStr != null) ? hex2bin(infoStr) : null;
+            salt = (saltStr != null) ? HexFormat.of().parseHex(saltStr) : null;
+            info = (infoStr != null) ? HexFormat.of().parseHex(infoStr) : null;
         }
 
         public final String testName;
         public final String algName;
-        public final byte[] IKM;
+        public final byte[] ikm;
         public final byte[] salt;
         public final byte[] info;
         public final int outLen;
@@ -161,7 +161,7 @@ public class TestHKDF {
         }
 
         // Set up the input keying material
-        SecretKey ikmKey = new SecretKeySpec(testData.IKM, "HKDF-IKM");
+        SecretKey ikmKey = new SecretKeySpec(testData.ikm, "HKDF-IKM");
 
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
@@ -169,7 +169,7 @@ public class TestHKDF {
             HKDFParameterSpec.ofExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .extractOnly();
-        actualPRK = kdfExtract.deriveKey("RAW", kdfParameterSpecExtract);
+        actualPRK = kdfExtract.deriveKey("Generic", kdfParameterSpecExtract);
 
         // Re-run the KDF to give us raw output data
         deriveData = kdfExtract.deriveData(kdfParameterSpecExtract);
@@ -184,7 +184,7 @@ public class TestHKDF {
         AlgorithmParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expandOnly(
             actualPRK, testData.info,
             testData.outLen);
-        actualOKM = kdfExpand.deriveKey("RAW", kdfParameterSpecExpand);
+        actualOKM = kdfExpand.deriveKey("Generic", kdfParameterSpecExpand);
 
         // Re-run the KDF to give us raw output data
         deriveData = kdfExpand.deriveData(kdfParameterSpecExpand);
@@ -202,7 +202,7 @@ public class TestHKDF {
                              .addSalt(testData.salt)
                              .thenExpand(testData.info,
                                          testData.outLen);
-        actualOKM = kdfHkdf.deriveKey("RAW", kdfParameterSpecExtractExpand);
+        actualOKM = kdfHkdf.deriveKey("Generic", kdfParameterSpecExtractExpand);
 
         // Re-run the KDF to give us raw output data
         deriveData = kdfHkdf.deriveData(kdfParameterSpecExtractExpand);
@@ -238,7 +238,7 @@ public class TestHKDF {
             result = false;
             System.out.println("\t* Key output: FAIL");
             System.out.println("Expected:\n" +
-                               dumpHexBytes(outData, 16, "\n", " "));
+                               dumpHexBytes(expectedOut, 16, "\n", " "));
             System.out.println("Actual:\n" +
                                dumpHexBytes(outKey.getEncoded(), 16, "\n",
                                             " "));
@@ -288,16 +288,5 @@ public class TestHKDF {
         }
 
         return sb.toString();
-    }
-
-    private static byte[] hex2bin(String hex) {
-        int i;
-        int len = hex.length();
-        byte[] data = new byte[len / 2];
-        for (i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(hex.charAt(i), 16) << 4) +
-                                  Character.digit(hex.charAt(i + 1), 16));
-        }
-        return data;
     }
 }

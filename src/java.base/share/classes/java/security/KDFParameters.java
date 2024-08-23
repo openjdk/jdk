@@ -38,8 +38,12 @@ import jdk.internal.javac.PreviewFeature;
  * {@link javax.crypto.KDF#getInstance(String, KDFParameters) KDF.getInstance}
  * methods. The {@code getInstance} method returns a {@code KDF}. The
  * {@code KDF} that is returned is initialized with the specified parameters.
+ * <p>
+ * The {@code KDFParameters} used for initialization can be retrieved via
+ * {@link javax.crypto.KDF#getParameters()}.
  *
  * @see javax.crypto.KDF#getInstance(String, KDFParameters)
+ * @see javax.crypto.KDF#getParameters()
  * @since 24
  */
 @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
