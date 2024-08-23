@@ -229,7 +229,6 @@ void G1ParScanThreadState::do_partial_array(PartialArrayState* state) {
 #ifdef ASSERT
   oop from_obj = state->source();
   assert(_g1h->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->forward_safe_klass()->is_objArray_klass(), "must be obj array");
   assert(from_obj->is_forwarded(), "must be forwarded");
   assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
   assert(to_obj->is_objArray(), "must be obj array");
@@ -262,7 +261,6 @@ MAYBE_INLINE_EVACUATION
 void G1ParScanThreadState::start_partial_objarray(G1HeapRegionAttr dest_attr,
                                                   oop from_obj,
                                                   oop to_obj) {
-  assert(from_obj->forward_safe_klass()->is_objArray_klass(), "precondition");
   assert(from_obj->is_forwarded(), "precondition");
   assert(from_obj->forwardee() == to_obj, "precondition");
   assert(to_obj->is_objArray(), "precondition");
@@ -471,15 +469,17 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   assert(region_attr.is_in_cset(),
          "Unexpected region attr type: %s", region_attr.get_type_str());
 
-  // Get the klass once.  We'll need it again later, and this avoids
-  // re-decoding when it's compressed.
   // NOTE: With compact headers, it is not safe to load the Klass* from o, because
   // that would access the mark-word, and the mark-word might change at any time by
   // concurrent promotion. The promoted mark-word would point to the forwardee, which
   // may not yet have completed copying. Therefore we must load the Klass* from
   // the mark-word that we have already loaded. This is safe, because we have checked
   // that this is not yet forwarded in the caller.
-  Klass* klass = old->forward_safe_klass(old_mark);
+  assert(!old_mark.is_forwarded(), "precondition");
+  Klass* klass = UseCompactObjectHeaders
+      ? old_mark.klass()
+      : old->klass();
+
   const size_t word_sz = old->size_given_klass(klass);
 
   // JNI only allows pinning of typeArrays, so we only need to keep those in place.

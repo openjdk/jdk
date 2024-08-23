@@ -704,7 +704,8 @@ void DefNewGeneration::remove_forwarding_pointers() {
         obj->unset_self_forwarded();
       } else if (obj->is_forwarded()) {
         // To restore the klass-bits in the header.
-        obj->forward_safe_init_mark();
+        // Needed for object iteration to work properly.
+        obj->set_mark(obj->forwardee()->prototype_mark());
       }
     }
   } cl;

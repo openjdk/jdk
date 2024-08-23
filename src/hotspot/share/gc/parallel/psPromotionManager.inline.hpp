@@ -165,13 +165,18 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 
   oop new_obj = nullptr;
   bool new_obj_is_tenured = false;
+
   // NOTE: With compact headers, it is not safe to load the Klass* from o, because
   // that would access the mark-word, and the mark-word might change at any time by
   // concurrent promotion. The promoted mark-word would point to the forwardee, which
   // may not yet have completed copying. Therefore we must load the Klass* from
   // the mark-word that we have already loaded. This is safe, because we have checked
-  // that this is not yet forwarded in the caller.
-  Klass* klass = o->forward_safe_klass(test_mark);
+  // that this is not yet forwarded in the caller.)
+  assert(!test_mark.is_forwarded(), "precondition");
+  Klass* klass = UseCompactObjectHeaders
+      ? test_mark.klass()
+      : o->klass();
+
   size_t new_obj_size = o->size_given_klass(klass);
 
   // Find the objects age, MT safe.
