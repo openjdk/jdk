@@ -199,9 +199,9 @@ void SplitInfo::verify_clear()
 {
   assert(_split_region_idx == 0, "not clear");
   assert(_split_destination == nullptr, "not clear");
-  assert(_split_point == nullptr, "inv");
-  assert(_preceding_live_words == 0, "inv");
-  assert(_split_destination_count == 0, "inv");
+  assert(_split_point == nullptr, "not clear");
+  assert(_preceding_live_words == 0, "not clear");
+  assert(_split_destination_count == 0, "not clear");
 }
 #endif  // #ifdef ASSERT
 
@@ -305,7 +305,7 @@ ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 }
 
 // The total live words on src_region would overflow the target space, so find
-// the overflowing object and recorde the split point. The invariant is that an
+// the overflowing object and record the split point. The invariant is that an
 // obj should not cross space boundary.
 HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
                                                      SplitInfo& split_info,
@@ -361,7 +361,7 @@ HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
     HeapWord* src_region_start = region_to_addr(src_region);
     HeapWord* new_top = destination - pointer_delta(src_region_start, overflowing_obj);
 
-    // If the overflowing obj were to relocated to its original destination,
+    // If the overflowing obj was relocated to its original destination,
     // those destination regions would have their source_region set. Now that
     // this overflowing obj is relocated somewhere else, reset the
     // source_region.
@@ -1556,9 +1556,9 @@ void PSParallelCompact::forward_to_new_addr() {
     static void forward_objs_in_range(ParCompactionManager* cm,
                                       HeapWord* start,
                                       HeapWord* end,
-                                      HeapWord* destination,
-                                      size_t live_words) {
+                                      HeapWord* destination) {
       HeapWord* cur_addr = start;
+      HeapWord* new_addr = destination;
 
       while (cur_addr < end) {
         cur_addr = mark_bitmap()->find_obj_beg(cur_addr, end);
@@ -1566,14 +1566,13 @@ void PSParallelCompact::forward_to_new_addr() {
           return;
         }
         assert(mark_bitmap()->is_marked(cur_addr), "inv");
-        HeapWord* new_addr = destination + live_words;
         oop obj = cast_to_oop(cur_addr);
         if (new_addr != cur_addr) {
           cm->preserved_marks()->push_if_necessary(obj, obj->mark());
           obj->forward_to(cast_to_oop(new_addr));
         }
         size_t obj_size = obj->size();
-        live_words += obj_size;
+        new_addr += obj_size;
         cur_addr += obj_size;
       }
     }
@@ -1588,6 +1587,8 @@ void PSParallelCompact::forward_to_new_addr() {
         if (dense_prefix_addr == top) {
           continue;
         }
+
+        const SplitInfo& split_info = _space_info[SpaceId(id)].split_info();
 
         size_t dense_prefix_region = _summary_data.addr_to_region_idx(dense_prefix_addr);
         size_t top_region = _summary_data.addr_to_region_idx(_summary_data.region_align_up(top));
@@ -1608,19 +1609,19 @@ void PSParallelCompact::forward_to_new_addr() {
           HeapWord* region_start = _summary_data.region_to_addr(cur_region);
           HeapWord* region_end = region_start + ParallelCompactData::RegionSize;
 
-          const SplitInfo& split_info = _space_info[space_id(region_start)].split_info();
+
           if (split_info.is_split(cur_region)) {
             // Part 1: will be relocated to space-1
             HeapWord* split_destination = split_info.split_destination();
             HeapWord* split_point = split_info.split_point();
-            forward_objs_in_range(cm, region_start + live_words, split_point, split_destination, live_words);
+            forward_objs_in_range(cm, region_start + live_words, split_point, split_destination + live_words);
 
             // Part 2: will be relocated to space-2
             HeapWord* destination = region_ptr->destination();
-            forward_objs_in_range(cm, split_point, region_end, destination, 0);
+            forward_objs_in_range(cm, split_point, region_end, destination);
           } else {
             HeapWord* destination = region_ptr->destination();
-            forward_objs_in_range(cm, region_start + live_words, region_end, destination, live_words);
+            forward_objs_in_range(cm, region_start + live_words, region_end, destination + live_words);
           }
         }
       }
@@ -1995,7 +1996,7 @@ HeapWord* PSParallelCompact::skip_live_words(HeapWord* beg, HeapWord* end, size_
 // A dest-region can have one or more source regions, but only the first
 // source-region contains this location. This location is retrieved by calling
 // `first_src_addr` on a dest-region.
-// Conversely, a source-region has a dest-region which holds the destinatino of
+// Conversely, a source-region has a dest-region which holds the destination of
 // the first live word on this source-region, based on which the destination
 // for the rest of live words can be derived.
 //
