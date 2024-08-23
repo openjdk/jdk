@@ -511,15 +511,7 @@ final class Short512Vector extends ShortVector {
     public Short512Vector selectFrom(Vector<Short> v1,
                                    Vector<Short> v2) {
         return (Short512Vector)
-            super.selectFromTemplate((Short512Vector) v1, (Short512Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Short512Vector selectFrom(Vector<Short> v1,
-                                   Vector<Short> v2, boolean wrap) {
-        return (Short512Vector)
-            super.selectFromTemplate((Short512Vector) v1, (Short512Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Short512Vector) v1, (Short512Vector) v2);  // specialize
     }
 
     @ForceInline

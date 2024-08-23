@@ -511,15 +511,7 @@ final class Short128Vector extends ShortVector {
     public Short128Vector selectFrom(Vector<Short> v1,
                                    Vector<Short> v2) {
         return (Short128Vector)
-            super.selectFromTemplate((Short128Vector) v1, (Short128Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Short128Vector selectFrom(Vector<Short> v1,
-                                   Vector<Short> v2, boolean wrap) {
-        return (Short128Vector)
-            super.selectFromTemplate((Short128Vector) v1, (Short128Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Short128Vector) v1, (Short128Vector) v2);  // specialize
     }
 
     @ForceInline

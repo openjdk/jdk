@@ -511,15 +511,7 @@ final class Short256Vector extends ShortVector {
     public Short256Vector selectFrom(Vector<Short> v1,
                                    Vector<Short> v2) {
         return (Short256Vector)
-            super.selectFromTemplate((Short256Vector) v1, (Short256Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Short256Vector selectFrom(Vector<Short> v1,
-                                   Vector<Short> v2, boolean wrap) {
-        return (Short256Vector)
-            super.selectFromTemplate((Short256Vector) v1, (Short256Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Short256Vector) v1, (Short256Vector) v2);  // specialize
     }
 
     @ForceInline

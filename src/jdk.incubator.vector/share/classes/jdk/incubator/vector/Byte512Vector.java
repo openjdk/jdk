@@ -511,15 +511,7 @@ final class Byte512Vector extends ByteVector {
     public Byte512Vector selectFrom(Vector<Byte> v1,
                                    Vector<Byte> v2) {
         return (Byte512Vector)
-            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Byte512Vector selectFrom(Vector<Byte> v1,
-                                   Vector<Byte> v2, boolean wrap) {
-        return (Byte512Vector)
-            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Byte512Vector) v1, (Byte512Vector) v2);  // specialize
     }
 
     @ForceInline

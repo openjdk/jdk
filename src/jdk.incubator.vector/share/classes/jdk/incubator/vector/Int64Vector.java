@@ -511,15 +511,7 @@ final class Int64Vector extends IntVector {
     public Int64Vector selectFrom(Vector<Integer> v1,
                                    Vector<Integer> v2) {
         return (Int64Vector)
-            super.selectFromTemplate((Int64Vector) v1, (Int64Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Int64Vector selectFrom(Vector<Integer> v1,
-                                   Vector<Integer> v2, boolean wrap) {
-        return (Int64Vector)
-            super.selectFromTemplate((Int64Vector) v1, (Int64Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Int64Vector) v1, (Int64Vector) v2);  // specialize
     }
 
     @ForceInline

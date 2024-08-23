@@ -2582,22 +2582,11 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public abstract
     ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2);
 
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    ShortVector selectFrom(Vector<Short> v1, Vector<Short> v2, boolean wrap);
-
     /*package-private*/
     @ForceInline
-    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2, boolean wrap) {
+    final ShortVector selectFromTemplate(ShortVector v1, ShortVector v2) {
         int twovectorlen = length() * 2;
-        ShortVector wrapped_indexes = this;
-        if (!wrap && this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
-            throw checkIndexFailed(this, twovectorlen);
-        }
-        wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
         return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);

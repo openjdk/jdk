@@ -2581,22 +2581,11 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public abstract
     ByteVector selectFrom(Vector<Byte> v1, Vector<Byte> v2);
 
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    ByteVector selectFrom(Vector<Byte> v1, Vector<Byte> v2, boolean wrap);
-
     /*package-private*/
     @ForceInline
-    final ByteVector selectFromTemplate(ByteVector v1, ByteVector v2, boolean wrap) {
+    final ByteVector selectFromTemplate(ByteVector v1, ByteVector v2) {
         int twovectorlen = length() * 2;
-        ByteVector wrapped_indexes = this;
-        if (!wrap && this.compare(VectorOperators.UNSIGNED_GT, twovectorlen - 1).anyTrue()) {
-            throw checkIndexFailed(this, twovectorlen);
-        }
-        wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
+        ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
         return (ByteVector)VectorSupport.selectFromTwoVectorOp(getClass(), byte.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);

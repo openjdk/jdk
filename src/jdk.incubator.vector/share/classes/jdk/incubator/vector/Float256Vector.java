@@ -498,15 +498,7 @@ final class Float256Vector extends FloatVector {
     public Float256Vector selectFrom(Vector<Float> v1,
                                    Vector<Float> v2) {
         return (Float256Vector)
-            super.selectFromTemplate((Float256Vector) v1, (Float256Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Float256Vector selectFrom(Vector<Float> v1,
-                                   Vector<Float> v2, boolean wrap) {
-        return (Float256Vector)
-            super.selectFromTemplate((Float256Vector) v1, (Float256Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Float256Vector) v1, (Float256Vector) v2);  // specialize
     }
 
     @ForceInline

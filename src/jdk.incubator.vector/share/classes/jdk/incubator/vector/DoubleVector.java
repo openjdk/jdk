@@ -2423,29 +2423,15 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public abstract
     DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2);
 
-    /**
-     * {@inheritDoc} <!--workaround-->
-     */
-    @Override
-    public abstract
-    DoubleVector selectFrom(Vector<Double> v1, Vector<Double> v2, boolean wrap);
-
     /*package-private*/
     @ForceInline
-    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2, boolean wrap) {
+    final DoubleVector selectFromTemplate(DoubleVector v1, DoubleVector v2) {
         int twovectorlen = length() * 2;
-        DoubleVector wrapped_indexes = this;
-        if (!wrap &&
-               (!this.test(VectorOperators.IS_FINITE).allTrue() ||
-                 this.compare(VectorOperators.LT, 0)
-                 .or(this.compare(VectorOperators.GE, twovectorlen)).anyTrue())) {
-            throw checkIndexFailed(this, twovectorlen);
-        }
-        wrapped_indexes = wrapped_indexes.convert(VectorOperators.D2I, 0)
-                          .lanewise(VectorOperators.AND, twovectorlen - 1)
-                          .reinterpretAsInts()
-                          .convert(VectorOperators.I2D, 0)
-                          .reinterpretAsDoubles();
+        DoubleVector wrapped_indexes = this.convert(VectorOperators.D2I, 0)
+                                               .lanewise(VectorOperators.AND, twovectorlen - 1)
+                                               .reinterpretAsInts()
+                                               .convert(VectorOperators.I2D, 0)
+                                               .reinterpretAsDoubles();
         return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), wrapped_indexes, v1, v2,
             (vec1, vec2, vec3) -> {
                 return vec2.rearrange(vec1.toShuffle(), vec3);

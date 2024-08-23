@@ -498,15 +498,7 @@ final class Float128Vector extends FloatVector {
     public Float128Vector selectFrom(Vector<Float> v1,
                                    Vector<Float> v2) {
         return (Float128Vector)
-            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2, true);  // specialize
-    }
-
-    @Override
-    @ForceInline
-    public Float128Vector selectFrom(Vector<Float> v1,
-                                   Vector<Float> v2, boolean wrap) {
-        return (Float128Vector)
-            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2, wrap);  // specialize
+            super.selectFromTemplate((Float128Vector) v1, (Float128Vector) v2);  // specialize
     }
 
     @ForceInline
