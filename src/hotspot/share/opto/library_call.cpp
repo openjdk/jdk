@@ -3233,10 +3233,12 @@ bool LibraryCallKit::inline_native_jvm_commit() {
  * oop threadObj = Thread::threadObj();
  * oop vthread = java_lang_Thread::vthread(threadObj);
  * traceid tid;
+ * bool pinVirtualThread;
  * bool excluded;
  * if (vthread != threadObj) {  // i.e. current thread is virtual
  *   tid = java_lang_Thread::tid(vthread);
  *   u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(vthread);
+ *   pinVirtualThread = VMContinuations;
  *   excluded = vthread_epoch_raw & excluded_mask;
  *   if (!excluded) {
  *     traceid current_epoch = JfrTraceIdEpoch::current_generation();
@@ -3248,13 +3250,15 @@ bool LibraryCallKit::inline_native_jvm_commit() {
  * } else {
  *   tid = java_lang_Thread::tid(threadObj);
  *   u2 thread_epoch_raw = java_lang_Thread::jfr_epoch(threadObj);
+ *   pinVirtualThread = false;
  *   excluded = thread_epoch_raw & excluded_mask;
  * }
  * oop event_writer = JNIHandles::resolve_non_null(h_event_writer);
  * traceid tid_in_event_writer = getField(event_writer, "threadID");
  * if (tid_in_event_writer != tid) {
- *   setField(event_writer, "threadID", tid);
+ *   setField(event_writer, "pinVirtualThread", pinVirtualThread);
  *   setField(event_writer, "excluded", excluded);
+ *   setField(event_writer, "threadID", tid);
  * }
  * return event_writer
  */
@@ -3324,6 +3328,10 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 
   // Load the tid field from the vthread object.
   Node* vthread_tid = load_field_from_object(vthread, "tid", "J");
+
+  // Continuation support determines if a virtual thread should be pinned.
+  Node* global_addr = makecon(TypeRawPtr::make((address)&VMContinuations));
+  Node* continuation_support = make_load(control(), global_addr, TypeInt::BOOL, T_BOOLEAN, MemNode::unordered);
 
   // Load the raw epoch value from the vthread.
   Node* vthread_epoch_offset = basic_plus_adr(vthread, java_lang_Thread::jfr_epoch_offset());
@@ -3415,6 +3423,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   record_for_igvn(tid);
   PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
   record_for_igvn(exclusion);
+  PhiNode* pinVirtualThread = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(pinVirtualThread);
 
   // Update control and phi nodes.
   vthread_compare_rgn->init_req(_true_path, _gvn.transform(exclude_compare_rgn));
@@ -3427,6 +3437,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   tid->init_req(_false_path, _gvn.transform(thread_obj_tid));
   exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
   exclusion->init_req(_false_path, _gvn.transform(threadObj_is_excluded));
+  pinVirtualThread->init_req(_true_path, _gvn.transform(continuation_support));
+  pinVirtualThread->init_req(_false_path, _gvn.intcon(0));
 
   // Update branch state.
   set_control(_gvn.transform(vthread_compare_rgn));
@@ -3450,6 +3462,9 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // Get the field offset to, conditionally, store an updated exclusion value later.
   Node* const event_writer_excluded_field = field_address_from_object(event_writer, "excluded", "Z", false);
   const TypePtr* event_writer_excluded_field_type = _gvn.type(event_writer_excluded_field)->isa_ptr();
+  // Get the field offset to, conditionally, store an updated pinVirtualThread value later.
+  Node* const event_writer_pin_field = field_address_from_object(event_writer, "pinVirtualThread", "Z", false);
+  const TypePtr* event_writer_pin_field_type = _gvn.type(event_writer_pin_field)->isa_ptr();
 
   RegionNode* event_writer_tid_compare_rgn = new RegionNode(PATH_LIMIT);
   record_for_igvn(event_writer_tid_compare_rgn);
@@ -3469,6 +3484,9 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // True path, tid is not equal, need to update the tid in the event writer.
   Node* tid_is_not_equal = _gvn.transform(new IfTrueNode(iff_tid_not_equal));
   record_for_igvn(tid_is_not_equal);
+
+  // Store the pin state to the event writer.
+  store_to_memory(tid_is_not_equal, event_writer_pin_field, _gvn.transform(pinVirtualThread), T_BOOLEAN, event_writer_pin_field_type, MemNode::unordered);
 
   // Store the exclusion state to the event writer.
   store_to_memory(tid_is_not_equal, event_writer_excluded_field, _gvn.transform(exclusion), T_BOOLEAN, event_writer_excluded_field_type, MemNode::unordered);
