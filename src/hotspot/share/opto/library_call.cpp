@@ -482,6 +482,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_scopedValueCache:          return inline_native_scopedValueCache();
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
+  case vmIntrinsics::_Continuation_pin:          return inline_native_Continuation_pinning(false);
+  case vmIntrinsics::_Continuation_unpin:        return inline_native_Continuation_pinning(true);
+
 #if INCLUDE_JVMTI
   case vmIntrinsics::_notifyJvmtiVThreadStart:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_start()),
                                                                                          "notifyJvmtiStart", true, false);
@@ -3230,10 +3233,12 @@ bool LibraryCallKit::inline_native_jvm_commit() {
  * oop threadObj = Thread::threadObj();
  * oop vthread = java_lang_Thread::vthread(threadObj);
  * traceid tid;
+ * bool pinVirtualThread;
  * bool excluded;
  * if (vthread != threadObj) {  // i.e. current thread is virtual
  *   tid = java_lang_Thread::tid(vthread);
  *   u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(vthread);
+ *   pinVirtualThread = VMContinuations;
  *   excluded = vthread_epoch_raw & excluded_mask;
  *   if (!excluded) {
  *     traceid current_epoch = JfrTraceIdEpoch::current_generation();
@@ -3245,13 +3250,15 @@ bool LibraryCallKit::inline_native_jvm_commit() {
  * } else {
  *   tid = java_lang_Thread::tid(threadObj);
  *   u2 thread_epoch_raw = java_lang_Thread::jfr_epoch(threadObj);
+ *   pinVirtualThread = false;
  *   excluded = thread_epoch_raw & excluded_mask;
  * }
  * oop event_writer = JNIHandles::resolve_non_null(h_event_writer);
  * traceid tid_in_event_writer = getField(event_writer, "threadID");
  * if (tid_in_event_writer != tid) {
- *   setField(event_writer, "threadID", tid);
+ *   setField(event_writer, "pinVirtualThread", pinVirtualThread);
  *   setField(event_writer, "excluded", excluded);
+ *   setField(event_writer, "threadID", tid);
  * }
  * return event_writer
  */
@@ -3321,6 +3328,10 @@ bool LibraryCallKit::inline_native_getEventWriter() {
 
   // Load the tid field from the vthread object.
   Node* vthread_tid = load_field_from_object(vthread, "tid", "J");
+
+  // Continuation support determines if a virtual thread should be pinned.
+  Node* global_addr = makecon(TypeRawPtr::make((address)&VMContinuations));
+  Node* continuation_support = make_load(control(), global_addr, TypeInt::BOOL, T_BOOLEAN, MemNode::unordered);
 
   // Load the raw epoch value from the vthread.
   Node* vthread_epoch_offset = basic_plus_adr(vthread, java_lang_Thread::jfr_epoch_offset());
@@ -3412,6 +3423,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   record_for_igvn(tid);
   PhiNode* exclusion = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
   record_for_igvn(exclusion);
+  PhiNode* pinVirtualThread = new PhiNode(vthread_compare_rgn, TypeInt::BOOL);
+  record_for_igvn(pinVirtualThread);
 
   // Update control and phi nodes.
   vthread_compare_rgn->init_req(_true_path, _gvn.transform(exclude_compare_rgn));
@@ -3424,6 +3437,8 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   tid->init_req(_false_path, _gvn.transform(thread_obj_tid));
   exclusion->init_req(_true_path, _gvn.transform(vthread_is_excluded));
   exclusion->init_req(_false_path, _gvn.transform(threadObj_is_excluded));
+  pinVirtualThread->init_req(_true_path, _gvn.transform(continuation_support));
+  pinVirtualThread->init_req(_false_path, _gvn.intcon(0));
 
   // Update branch state.
   set_control(_gvn.transform(vthread_compare_rgn));
@@ -3447,6 +3462,9 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // Get the field offset to, conditionally, store an updated exclusion value later.
   Node* const event_writer_excluded_field = field_address_from_object(event_writer, "excluded", "Z", false);
   const TypePtr* event_writer_excluded_field_type = _gvn.type(event_writer_excluded_field)->isa_ptr();
+  // Get the field offset to, conditionally, store an updated pinVirtualThread value later.
+  Node* const event_writer_pin_field = field_address_from_object(event_writer, "pinVirtualThread", "Z", false);
+  const TypePtr* event_writer_pin_field_type = _gvn.type(event_writer_pin_field)->isa_ptr();
 
   RegionNode* event_writer_tid_compare_rgn = new RegionNode(PATH_LIMIT);
   record_for_igvn(event_writer_tid_compare_rgn);
@@ -3466,6 +3484,9 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // True path, tid is not equal, need to update the tid in the event writer.
   Node* tid_is_not_equal = _gvn.transform(new IfTrueNode(iff_tid_not_equal));
   record_for_igvn(tid_is_not_equal);
+
+  // Store the pin state to the event writer.
+  store_to_memory(tid_is_not_equal, event_writer_pin_field, _gvn.transform(pinVirtualThread), T_BOOLEAN, event_writer_pin_field_type, MemNode::unordered);
 
   // Store the exclusion state to the event writer.
   store_to_memory(tid_is_not_equal, event_writer_excluded_field, _gvn.transform(exclusion), T_BOOLEAN, event_writer_excluded_field_type, MemNode::unordered);
@@ -3711,6 +3732,93 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
   access_store_at(nullptr, cache_obj_handle, adr_type, arr, objects_type, T_OBJECT, IN_NATIVE | MO_UNORDERED);
+
+  return true;
+}
+
+//------------------------inline_native_Continuation_pin and unpin-----------
+
+// Shared implementation routine for both pin and unpin.
+bool LibraryCallKit::inline_native_Continuation_pinning(bool unpin) {
+  enum { _true_path = 1, _false_path = 2, PATH_LIMIT };
+
+  // Save input memory.
+  Node* input_memory_state = reset_memory();
+  set_all_memory(input_memory_state);
+
+  // TLS
+  Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
+  Node* last_continuation_offset = basic_plus_adr(top(), tls_ptr, in_bytes(JavaThread::cont_entry_offset()));
+  Node* last_continuation = make_load(control(), last_continuation_offset, last_continuation_offset->get_ptr_type(), T_ADDRESS, MemNode::unordered);
+
+  // Null check the last continuation object.
+  Node* continuation_cmp_null = _gvn.transform(new CmpPNode(last_continuation, null()));
+  Node* test_continuation_not_equal_null = _gvn.transform(new BoolNode(continuation_cmp_null, BoolTest::ne));
+  IfNode* iff_continuation_not_equal_null = create_and_map_if(control(), test_continuation_not_equal_null, PROB_MAX, COUNT_UNKNOWN);
+
+  // False path, last continuation is null.
+  Node* continuation_is_null = _gvn.transform(new IfFalseNode(iff_continuation_not_equal_null));
+
+  // True path, last continuation is not null.
+  Node* continuation_is_not_null = _gvn.transform(new IfTrueNode(iff_continuation_not_equal_null));
+
+  set_control(continuation_is_not_null);
+
+  // Load the pin count from the last continuation.
+  Node* pin_count_offset = basic_plus_adr(top(), last_continuation, in_bytes(ContinuationEntry::pin_count_offset()));
+  Node* pin_count = make_load(control(), pin_count_offset, TypeInt::INT, T_INT, MemNode::unordered);
+
+  // The loaded pin count is compared against a context specific rhs for over/underflow detection.
+  Node* pin_count_rhs;
+  if (unpin) {
+    pin_count_rhs = _gvn.intcon(0);
+  } else {
+    pin_count_rhs = _gvn.intcon(UINT32_MAX);
+  }
+  Node* pin_count_cmp = _gvn.transform(new CmpUNode(_gvn.transform(pin_count), pin_count_rhs));
+  Node* test_pin_count_over_underflow = _gvn.transform(new BoolNode(pin_count_cmp, BoolTest::eq));
+  IfNode* iff_pin_count_over_underflow = create_and_map_if(control(), test_pin_count_over_underflow, PROB_MIN, COUNT_UNKNOWN);
+
+  // False branch, no pin count over/underflow. Increment or decrement pin count and store back.
+  Node* valid_pin_count = _gvn.transform(new IfFalseNode(iff_pin_count_over_underflow));
+  set_control(valid_pin_count);
+
+  Node* next_pin_count;
+  if (unpin) {
+    next_pin_count = _gvn.transform(new SubINode(pin_count, _gvn.intcon(1)));
+  } else {
+    next_pin_count = _gvn.transform(new AddINode(pin_count, _gvn.intcon(1)));
+  }
+
+  Node* updated_pin_count_memory = store_to_memory(control(), pin_count_offset, next_pin_count, T_INT, Compile::AliasIdxRaw, MemNode::unordered);
+
+  // True branch, pin count over/underflow.
+  Node* pin_count_over_underflow = _gvn.transform(new IfTrueNode(iff_pin_count_over_underflow));
+  {
+    // Trap (but not deoptimize (Action_none)) and continue in the interpreter
+    // which will throw IllegalStateException for pin count over/underflow.
+    PreserveJVMState pjvms(this);
+    set_control(pin_count_over_underflow);
+    set_all_memory(input_memory_state);
+    uncommon_trap_exact(Deoptimization::Reason_intrinsic,
+                        Deoptimization::Action_none);
+    assert(stopped(), "invariant");
+  }
+
+  // Result of top level CFG and Memory.
+  RegionNode* result_rgn = new RegionNode(PATH_LIMIT);
+  record_for_igvn(result_rgn);
+  PhiNode* result_mem = new PhiNode(result_rgn, Type::MEMORY, TypePtr::BOTTOM);
+  record_for_igvn(result_mem);
+
+  result_rgn->init_req(_true_path, _gvn.transform(valid_pin_count));
+  result_rgn->init_req(_false_path, _gvn.transform(continuation_is_null));
+  result_mem->init_req(_true_path, _gvn.transform(updated_pin_count_memory));
+  result_mem->init_req(_false_path, _gvn.transform(input_memory_state));
+
+  // Set output state.
+  set_control(_gvn.transform(result_rgn));
+  set_all_memory(_gvn.transform(result_mem));
 
   return true;
 }
