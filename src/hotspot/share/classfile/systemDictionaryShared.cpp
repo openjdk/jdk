@@ -275,8 +275,13 @@ bool SystemDictionaryShared::check_for_exclusion_impl(InstanceKlass* k) {
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
-    // agent during dump time).
-    return warn_excluded(k, "Unsupported location");
+    // agent during dump time). Dynamically generated classes are not archived so they should not
+    // trigger a warning.
+    if (!k->dynamically_generated()) {
+      return warn_excluded(k, "Unsupported location");
+    } else {
+      log_info(cds)("Skipping %s because it was generated dynamically", k->name()->as_C_string());
+    }
   }
   if (k->signers() != nullptr) {
     // We cannot include signed classes in the archive because the certificates

@@ -1056,6 +1056,8 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
     ik->link_class(CHECK_NULL);
   }
 
+  ik->set_dynamically_generated();
+
   return (jclass) JNIHandles::make_local(THREAD, ik->java_mirror());
 }
 

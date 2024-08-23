@@ -297,6 +297,11 @@ class InstanceKlass: public Klass {
   // Controls finalizer registration
   static bool _finalization_enabled;
 
+#if INCLUDE_CDS
+  // Dynamically generated classes cannot be archvied by CDS
+  bool _dynamically_generated;
+#endif
+
  public:
 
   // Queries finalization state
@@ -322,6 +327,8 @@ class InstanceKlass: public Klass {
 #if INCLUDE_CDS
   void set_shared_class_loader_type(s2 loader_type) { _misc_flags.set_shared_class_loader_type(loader_type); }
   void assign_class_loader_type() { _misc_flags.assign_class_loader_type(_class_loader_data); }
+  void set_dynamically_generated() { _dynamically_generated = true; }
+  bool dynamically_generated() { return _dynamically_generated; }
 #endif
 
   bool has_nonstatic_fields() const        { return _misc_flags.has_nonstatic_fields(); }
