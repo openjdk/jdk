@@ -224,7 +224,7 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
