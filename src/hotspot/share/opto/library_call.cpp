@@ -3769,8 +3769,14 @@ Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, 
 Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
   return generate_access_flags_guard(kls, JVM_ACC_INTERFACE, 0, region);
 }
+
 Node* LibraryCallKit::generate_hidden_class_guard(Node* kls, RegionNode* region) {
-  return generate_access_flags_guard(kls, JVM_ACC_IS_HIDDEN_CLASS, 0, region);
+  Node* p = basic_plus_adr(kls, in_bytes(Klass::is_hidden_offset()));
+  Node* hidden = make_load(nullptr, p, TypeInt::BOOL, T_BOOLEAN, MemNode::unordered);
+  Node* bits = intcon(0);
+  Node* cmp  = _gvn.transform(new CmpINode(hidden, bits));
+  Node* bol  = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+  return generate_fair_guard(bol, region);
 }
 
 //-------------------------inline_native_Class_query-------------------

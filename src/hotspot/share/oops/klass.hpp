@@ -194,6 +194,8 @@ private:
   };
 #endif
 
+  bool     _is_hidden_class;
+
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
 protected:
@@ -428,6 +430,8 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
+  static ByteSize is_value_based_class_offset()  { return byte_offset_of(Klass, _is_value_based_class); }
+  static ByteSize is_hidden_offset()             { return byte_offset_of(Klass, _is_hidden_class); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -694,8 +698,8 @@ protected:
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
   bool has_finalizer() const            { return _access_flags.has_finalizer(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  bool is_hidden() const                { return access_flags().is_hidden_class(); }
-  void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
+  bool is_hidden() const                { return _is_hidden_class; }
+  void set_is_hidden()                  { _is_hidden_class = true; }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }
   void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
 

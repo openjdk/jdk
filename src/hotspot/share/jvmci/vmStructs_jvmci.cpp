@@ -481,8 +481,6 @@
   declare_constant(JVM_ACC_WRITTEN_FLAGS)                                 \
   declare_constant(JVM_ACC_HAS_FINALIZER)                                 \
   declare_constant(JVM_ACC_IS_CLONEABLE_FAST)                             \
-  declare_constant(JVM_ACC_IS_HIDDEN_CLASS)                               \
-  declare_constant(JVM_ACC_IS_VALUE_BASED_CLASS)                          \
   declare_constant(FieldInfo::FieldFlags::_ff_injected)                   \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_preprocessor_constant("JVM_ACC_VARARGS", JVM_ACC_VARARGS)       \
