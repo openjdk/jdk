@@ -511,7 +511,7 @@ public abstract class NumberFormat extends Format  {
     public StringBuilder format(double number,
                                 StringBuilder toAppendTo,
                                 FieldPosition pos) {
-        return format(number, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+        throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
     StringBuf format(double number,
@@ -571,7 +571,7 @@ public abstract class NumberFormat extends Format  {
     public StringBuilder format(long number,
                                 StringBuilder toAppendTo,
                                 FieldPosition pos) {
-        return format(number, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+        throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
     StringBuf format(long number,

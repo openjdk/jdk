@@ -460,7 +460,7 @@ public abstract class DateFormat extends Format {
      */
     public StringBuilder format(Date date, StringBuilder toAppendTo,
                                 FieldPosition fieldPosition) {
-        return format(date, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuilder();
+        throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
     StringBuf format(Date date, StringBuf toAppendTo,

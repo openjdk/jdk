@@ -217,7 +217,7 @@ public abstract class Format implements Serializable, Cloneable {
     public StringBuilder format(Object obj,
                                 StringBuilder toAppendTo,
                                 FieldPosition pos) {
-        return format(obj, StringBufFactory.of(toAppendTo), pos).asStringBuilder();
+        throw new UnsupportedOperationException("Subclasses should override this method");
     }
 
     StringBuf format(Object obj,
