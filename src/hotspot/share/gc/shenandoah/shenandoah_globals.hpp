@@ -49,13 +49,6 @@
           "With automatic region sizing, the regions would be at most "     \
           "this large.")                                                    \
                                                                             \
-  product(intx, ShenandoahHumongousThreshold, 100, EXPERIMENTAL,            \
-          "Humongous objects are allocated in separate regions. "           \
-          "This setting defines how large the object should be to be "      \
-          "deemed humongous. Value is in  percents of heap region size. "   \
-          "This also caps the maximum TLAB size.")                          \
-          range(1, 100)                                                     \
-                                                                            \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
           "barriers are in in use. Possible values are:"                    \
@@ -333,9 +326,6 @@
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

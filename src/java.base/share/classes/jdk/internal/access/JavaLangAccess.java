@@ -446,6 +446,8 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
+    Object stringConcat1(String[] constants);
+
     /**
      * Join strings
      */
@@ -457,8 +459,6 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    int stringSize(long i);
 
     int getCharsLatin1(long i, int index, byte[] buf);
 

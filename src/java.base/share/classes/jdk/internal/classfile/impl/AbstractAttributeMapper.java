@@ -657,7 +657,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeInvisibleTypeAnnotationsAttribute attr) {
-            AnnotationReader.writeAnnotations(buf, attr.annotations());
+            AnnotationReader.writeTypeAnnotations(buf, attr.annotations());
         }
     }
 
@@ -714,7 +714,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
         @Override
         protected void writeBody(BufWriter buf, RuntimeVisibleTypeAnnotationsAttribute attr) {
-            AnnotationReader.writeAnnotations(buf, attr.annotations());
+            AnnotationReader.writeTypeAnnotations(buf, attr.annotations());
         }
     }
 

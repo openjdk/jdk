@@ -691,9 +691,7 @@ bool SuperWord::can_pack_into_pair(Node* s1, Node* s2) {
   BasicType bt2 = velt_basic_type(s2);
   if(!is_java_primitive(bt1) || !is_java_primitive(bt2))
     return false;
-  BasicType longer_bt = longer_type_for_conversion(s1);
-  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2 ||
-      (longer_bt != T_ILLEGAL && Matcher::max_vector_size_auto_vectorization(longer_bt) < 2)) {
+  if (Matcher::max_vector_size_auto_vectorization(bt1) < 2) {
     return false; // No vectors for this type
   }
 
@@ -2272,7 +2270,7 @@ Node_List* PackSet::strided_pack_input_at_index_or_null(const Node_List* pack, c
     return nullptr; // size mismatch
   }
 
-  for (uint i = 1; i < pack->size(); i++) {
+  for (uint i = 0; i < pack->size(); i++) {
     if (pack->at(i)->in(index) != pack_in->at(i * stride + offset)) {
       return nullptr; // use-def mismatch
     }
@@ -2440,27 +2438,6 @@ VStatus VLoopBody::construct() {
 
   assert(rpo_idx == -1 && body_count == _body.length(), "all body members found");
   return VStatus::make_success();
-}
-
-BasicType SuperWord::longer_type_for_conversion(Node* n) const {
-  if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
-        VectorNode::is_scalar_op_that_returns_int_but_vector_op_returns_long(n->Opcode())) ||
-      !in_bb(n->in(1))) {
-    return T_ILLEGAL;
-  }
-  assert(in_bb(n), "must be in the bb");
-  BasicType src_t = velt_basic_type(n->in(1));
-  BasicType dst_t = velt_basic_type(n);
-  // Do not use superword for non-primitives.
-  // Superword does not support casting involving unsigned types.
-  if (!is_java_primitive(src_t) || is_unsigned_subword_type(src_t) ||
-      !is_java_primitive(dst_t) || is_unsigned_subword_type(dst_t)) {
-    return T_ILLEGAL;
-  }
-  int src_size = type2aelembytes(src_t);
-  int dst_size = type2aelembytes(dst_t);
-  return src_size == dst_size ? T_ILLEGAL
-                              : (src_size > dst_size ? src_t : dst_t);
 }
 
 void VLoopTypes::compute_vector_element_type() {

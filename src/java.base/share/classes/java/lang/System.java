@@ -2623,8 +2623,8 @@ public final class System {
                 return StringConcatHelper.mix(lengthCoder, value);
             }
 
-            public int stringSize(long i) {
-                return Long.stringSize(i);
+            public Object stringConcat1(String[] constants) {
+                return new StringConcatHelper.Concat1(constants);
             }
 
             public int getCharsLatin1(long i, int index, byte[] buf) {

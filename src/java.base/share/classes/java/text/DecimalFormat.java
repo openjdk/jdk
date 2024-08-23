@@ -430,16 +430,15 @@ public class DecimalFormat extends NumberFormat {
      * for the default {@link java.util.Locale.Category#FORMAT FORMAT} locale.
      * This is a convenient way to obtain a
      * DecimalFormat when internationalization is not the main concern.
-     * <p>
-     * To obtain standard formats for a given locale, use the factory methods
-     * on NumberFormat such as getNumberInstance. These factories will
-     * return the most appropriate sub-class of NumberFormat for a given
-     * locale.
      *
-     * @see java.text.NumberFormat#getInstance
-     * @see java.text.NumberFormat#getNumberInstance
-     * @see java.text.NumberFormat#getCurrencyInstance
-     * @see java.text.NumberFormat#getPercentInstance
+     * @apiNote To obtain standard formats for a given locale, use the
+     * {@code NumberFormat} factory methods such as {@link
+     * NumberFormat#getNumberInstance(Locale)}. These factories will return the most
+     * appropriate subclass of NumberFormat for a given locale.
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      */
     @SuppressWarnings("this-escape")
     public DecimalFormat() {
@@ -464,19 +463,18 @@ public class DecimalFormat extends NumberFormat {
      * DecimalFormat when internationalization is not the main concern.
      * The number of maximum integer digits is usually not derived from the pattern.
      * See the note in the {@link ##patterns Patterns} section for more detail.
-     * <p>
-     * To obtain standard formats for a given locale, use the factory methods
-     * on NumberFormat such as getNumberInstance. These factories will
-     * return the most appropriate sub-class of NumberFormat for a given
-     * locale.
      *
+     * @apiNote To obtain standard formats for a given locale, use the
+     * {@code NumberFormat} factory methods such as {@link
+     * NumberFormat#getNumberInstance(Locale)}. These factories will return the most
+     * appropriate subclass of NumberFormat for a given locale.
      * @param pattern a non-localized pattern string.
      * @throws    NullPointerException if {@code pattern} is null
      * @throws    IllegalArgumentException if the given pattern is invalid.
-     * @see java.text.NumberFormat#getInstance
-     * @see java.text.NumberFormat#getNumberInstance
-     * @see java.text.NumberFormat#getCurrencyInstance
-     * @see java.text.NumberFormat#getPercentInstance
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      */
     @SuppressWarnings("this-escape")
     public DecimalFormat(String pattern) {
@@ -492,21 +490,20 @@ public class DecimalFormat extends NumberFormat {
      * behavior of the format.
      * The number of maximum integer digits is usually not derived from the pattern.
      * See the note in the {@link ##patterns Patterns} section for more detail.
-     * <p>
-     * To obtain standard formats for a given
-     * locale, use the factory methods on NumberFormat such as
-     * getInstance or getCurrencyInstance. If you need only minor adjustments
-     * to a standard format, you can modify the format returned by
-     * a NumberFormat factory method.
      *
+     * @apiNote To obtain standard formats for a given locale, use the
+     * {@code NumberFormat} factory methods such as {@link
+     * NumberFormat#getInstance(Locale)} or {@link NumberFormat#getCurrencyInstance(Locale)}.
+     * If you need only minor adjustments to a standard format, you can modify
+     * the format returned by a NumberFormat factory method.
      * @param pattern a non-localized pattern string
      * @param symbols the set of symbols to be used
      * @throws    NullPointerException if any of the given arguments is null
      * @throws    IllegalArgumentException if the given pattern is invalid
-     * @see java.text.NumberFormat#getInstance
-     * @see java.text.NumberFormat#getNumberInstance
-     * @see java.text.NumberFormat#getCurrencyInstance
-     * @see java.text.NumberFormat#getPercentInstance
+     * @see NumberFormat#getInstance(Locale)
+     * @see NumberFormat#getNumberInstance(Locale)
+     * @see NumberFormat#getCurrencyInstance(Locale)
+     * @see NumberFormat#getPercentInstance(Locale)
      * @see java.text.DecimalFormatSymbols
      */
     @SuppressWarnings("this-escape")
@@ -522,8 +519,8 @@ public class DecimalFormat extends NumberFormat {
      * Formats a number and appends the resulting text to the given string
      * buffer.
      * The number can be of any subclass of {@link java.lang.Number}.
-     * <p>
-     * This implementation uses the maximum precision permitted.
+     *
+     * @implSpec This implementation uses the maximum precision permitted.
      * @param number     the number to format
      * @param toAppendTo the {@code StringBuffer} to which the formatted
      *                   text is to be appended

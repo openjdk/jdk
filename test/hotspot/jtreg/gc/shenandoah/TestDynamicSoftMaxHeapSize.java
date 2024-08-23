@@ -84,28 +84,6 @@
  *     TestDynamicSoftMaxHeapSize
  */
 
-/*
- * @test id=iu-aggressive
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu -XX:ShenandoahGCHeuristics=aggressive
- *      -Dtarget=1000
- *      TestDynamicSoftMaxHeapSize
- */
-
-/*
- * @test id=iu
- * @requires vm.gc.Shenandoah
- * @library /test/lib
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -Dtarget=10000
- *      TestDynamicSoftMaxHeapSize
- */
-
 import java.util.Random;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
