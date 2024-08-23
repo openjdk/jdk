@@ -1708,7 +1708,7 @@ public final class StringConcatFactory {
                      *              buf, arg1, constant[1]), buf, arg0, constant[0]);
                      */
                     cb.iload(lengthSlot);
-                    for (int i = prependArgs.parameterCount() - 1; i >= (staticConcat ? 3 : 4); i--) {
+                    for (int i = prependArgs.parameterCount() - 1, end = staticConcat ? 3 : 4; i >= end; i--) {
                         var cl   = prependArgs.parameterType(i);
                         var kind = TypeKind.from(cl);
 
