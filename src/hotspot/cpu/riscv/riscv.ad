@@ -84,8 +84,8 @@ reg_def R0      ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()         ); // zr
 reg_def R0_H    ( NS,  NS,  Op_RegI, 0,  x0->as_VMReg()->next() );
 reg_def R1      ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()         ); // ra
 reg_def R1_H    ( NS,  SOC, Op_RegI, 1,  x1->as_VMReg()->next() );
-reg_def R2      ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()         ); // sp
-reg_def R2_H    ( NS,  SOE, Op_RegI, 2,  x2->as_VMReg()->next() );
+reg_def R2      ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()         ); // sp
+reg_def R2_H    ( NS,  NS,  Op_RegI, 2,  x2->as_VMReg()->next() );
 reg_def R3      ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()         ); // gp
 reg_def R3_H    ( NS,  NS,  Op_RegI, 3,  x3->as_VMReg()->next() );
 reg_def R4      ( NS,  NS,  Op_RegI, 4,  x4->as_VMReg()         ); // tp
@@ -10553,33 +10553,33 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iR
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastlock $object,$box\t! kills $box,$tmp1,$tmp2 #@cmpFastLockLightweight" %}
+  format %{ "fastlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastLockLightweight" %}
 
   ins_encode %{
-    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
 %}
 
-instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP_R10 box, iRegPNoSp tmp1, iRegPNoSp tmp2)
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   predicate(LockingMode == LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL box);
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
   ins_cost(10 * DEFAULT_COST);
-  format %{ "fastunlock $object,$box\t! kills $box,$tmp1,$tmp2, #@cmpFastUnlockLightweight" %}
+  format %{ "fastunlock $object,$box\t! kills $tmp1,$tmp2,$tmp3 #@cmpFastUnlockLightweight" %}
 
   ins_encode %{
-    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -10613,6 +10613,22 @@ instruct TailjmpInd(iRegPNoSpNoFp jump_target, iRegP_R10 ex_oop)
   format %{ "jalr $jump_target\t# $ex_oop holds exception oop, #@TailjmpInd." %}
 
   ins_encode(riscv_enc_tail_jmp(jump_target));
+
+  ins_pipe(pipe_class_call);
+%}
+
+// Forward exception.
+instruct ForwardExceptionjmp()
+%{
+  match(ForwardException);
+
+  ins_cost(BRANCH_COST);
+
+  format %{ "j forward_exception_stub\t#@ForwardException" %}
+
+  ins_encode %{
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+  %}
 
   ins_pipe(pipe_class_call);
 %}

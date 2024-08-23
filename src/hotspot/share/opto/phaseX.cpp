@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -780,7 +780,7 @@ void PhaseGVN::dead_loop_check( Node *n ) {
         }
       }
     }
-    if (!no_dead_loop) n->dump_bfs(100,0,"#");
+    if (!no_dead_loop) n->dump_bfs(100,nullptr,"#");
     assert(no_dead_loop, "dead loop detected");
   }
 }
@@ -1135,7 +1135,7 @@ bool PhaseIterGVN::verify_node_value(Node* n) {
   }
   tty->cr();
   tty->print_cr("Missed Value optimization:");
-  n->dump_bfs(1, 0, "");
+  n->dump_bfs(1, nullptr, "");
   tty->print_cr("Current type:");
   told->dump_on(tty);
   tty->cr();
@@ -2351,6 +2351,7 @@ void Node::replace_by(Node *new_node) {
 //=============================================================================
 //-----------------------------------------------------------------------------
 void Type_Array::grow( uint i ) {
+  assert(_a == Compile::current()->comp_arena(), "Should be allocated in comp_arena");
   if( !_max ) {
     _max = 1;
     _types = (const Type**)_a->Amalloc( _max * sizeof(Type*) );

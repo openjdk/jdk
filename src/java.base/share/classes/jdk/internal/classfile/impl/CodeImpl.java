@@ -43,7 +43,7 @@ import static java.lang.classfile.ClassFile.*;
 
 public final class CodeImpl
         extends BoundAttribute.BoundCodeAttribute
-        implements CodeModel, LabelContext {
+        implements LabelContext {
 
     static final Instruction[] SINGLETON_INSTRUCTIONS = new Instruction[256];
 
@@ -141,20 +141,15 @@ public final class CodeImpl
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         if (buf.canWriteDirect(classReader)) {
             super.writeTo(buf);
         }
         else {
             DirectCodeBuilder.build((MethodInfo) enclosingMethod,
-                                    new Consumer<CodeBuilder>() {
-                                        @Override
-                                        public void accept(CodeBuilder cb) {
-                                            forEach(cb);
-                                        }
-                                    },
+                                    Util.writingAll(this),
                                     (SplitConstantPool)buf.constantPool(),
-                                    ((BufWriterImpl)buf).context(),
+                                    buf.context(),
                                     null).writeTo(buf);
         }
     }
@@ -210,7 +205,7 @@ public final class CodeImpl
         return exceptionTable;
     }
 
-    public boolean compareCodeBytes(BufWriter buf, int offset, int len) {
+    public boolean compareCodeBytes(BufWriterImpl buf, int offset, int len) {
         return codeLength == len
                && classReader.compare(buf, offset, codeStart, codeLength);
     }

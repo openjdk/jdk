@@ -29,12 +29,13 @@ import javax.lang.model.element.PackageElement;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Generate the file with list of all the packages in this run.
@@ -60,8 +61,8 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
         addPackages(mainContent);
         Content titleContent = contents.allPackagesLabel;
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, titleContent);
-        var headerDiv = HtmlTree.DIV(HtmlStyle.header, pHeading);
+                HtmlStyles.title, titleContent);
+        var headerDiv = HtmlTree.DIV(HtmlStyles.header, pHeading);
         HtmlTree body = getBody(getWindowTitle(label));
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.ALL_PACKAGES))
@@ -77,10 +78,10 @@ public class AllPackagesIndexWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     protected void addPackages(Content target) {
-        var table = new Table<PackageElement>(HtmlStyle.summaryTable)
+        var table = new Table<PackageElement>(HtmlStyles.summaryTable)
                 .setCaption(Text.of(contents.packageSummaryLabel.toString()))
                 .setHeader(new TableHeader(contents.packageLabel, contents.descriptionLabel))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
         for (PackageElement pkg : configuration.packages) {
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
                 Content packageLinkContent = getPackageLink(pkg, getLocalizedPackageName(pkg));
