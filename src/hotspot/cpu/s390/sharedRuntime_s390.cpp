@@ -3010,6 +3010,85 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
 }
 
+// Continuation point for throwing of implicit exceptions that are
+// not handled in the current activation. Fabricates an exception
+// oop and initiates normal exception dispatching in this
+// frame. Only callee-saved registers are preserved (through the
+// normal RegisterMap handling). If the compiler
+// needs all registers to be preserved between the fault point and
+// the exception handler then it must assume responsibility for that
+// in AbstractCompiler::continuation_for_implicit_null_exception or
+// continuation_for_implicit_division_by_zero_exception. All other
+// implicit exceptions (e.g., NullPointerException or
+// AbstractMethodError on entry) are either at call sites or
+// otherwise assume that stack unwinding will be initiated, so
+// caller saved registers were assumed volatile in the compiler.
+
+// Note that we generate only this stub into a RuntimeStub, because
+// it needs to be properly traversed and ignored during GC, so we
+// change the meaning of the "__" macro within this method.
+
+// Note: the routine set_pc_not_at_call_for_caller in
+// SharedRuntime.cpp requires that this code be generated into a
+// RuntimeStub.
+
+RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+
+  int insts_size = 256;
+  int locs_size  = 0;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBuffer      code(name, insts_size, locs_size);
+  MacroAssembler* masm = new MacroAssembler(&code);
+  int framesize_in_bytes;
+  address start = __ pc();
+
+  __ save_return_pc();
+  framesize_in_bytes = __ push_frame_abi160(0);
+
+  address frame_complete_pc = __ pc();
+
+  // Note that we always have a runtime stub frame on the top of stack at this point.
+  __ get_PC(Z_R1);
+  __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1);
+
+  // Do the call.
+  BLOCK_COMMENT("call runtime_entry");
+  __ call_VM_leaf(runtime_entry, Z_thread);
+
+  __ reset_last_Java_frame();
+
+#ifdef ASSERT
+  // Make sure that this code is only executed if there is a pending exception.
+  { Label L;
+    __ z_lg(Z_R0,
+            in_bytes(Thread::pending_exception_offset()),
+            Z_thread);
+    __ z_ltgr(Z_R0, Z_R0);
+    __ z_brne(L);
+    __ stop("SharedRuntime::throw_exception: no pending exception");
+    __ bind(L);
+  }
+#endif
+
+  __ pop_frame();
+  __ restore_return_pc();
+
+  __ load_const_optimized(Z_R1, StubRoutines::forward_exception_entry());
+  __ z_br(Z_R1);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(name, &code,
+                                  frame_complete_pc - start,
+                                  framesize_in_bytes/wordSize,
+                                  nullptr /*oop_maps*/, false);
+
+  return stub;
+}
+
 //------------------------------Montgomery multiplication------------------------
 //
 
@@ -3263,3 +3342,18 @@ extern "C"
 int SpinPause() {
   return 0;
 }
+
+#if INCLUDE_JFR
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return nullptr;
+}
+
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  if (!Continuations::enabled()) return nullptr;
+  Unimplemented();
+  return nullptr;
+}
+
+#endif // INCLUDE_JFR
