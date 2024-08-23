@@ -178,19 +178,19 @@ void SplitInfo::record(size_t split_region_idx, HeapWord* split_point, size_t pr
   }
 
   _split_region_idx = split_region_idx;
-  _split_destination = split_destination;
   _split_point = split_point;
   _preceding_live_words = preceding_live_words;
-  _split_destination_count = split_destination_count;
+  _preceding_destination = split_destination;
+  _preceding_destination_count = split_destination_count;
 }
 
 void SplitInfo::clear()
 {
   _split_region_idx = 0;
-  _split_destination = nullptr;
   _split_point = nullptr;
   _preceding_live_words = 0;
-  _split_destination_count = 0;
+  _preceding_destination = nullptr;
+  _preceding_destination_count = 0;
   assert(!is_valid(), "sanity");
 }
 
@@ -198,10 +198,10 @@ void SplitInfo::clear()
 void SplitInfo::verify_clear()
 {
   assert(_split_region_idx == 0, "not clear");
-  assert(_split_destination == nullptr, "not clear");
   assert(_split_point == nullptr, "not clear");
   assert(_preceding_live_words == 0, "not clear");
-  assert(_split_destination_count == 0, "not clear");
+  assert(_preceding_destination == nullptr, "not clear");
+  assert(_preceding_destination_count == 0, "not clear");
 }
 #endif  // #ifdef ASSERT
 
@@ -484,7 +484,7 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
     }
 
     uint destination_count = split_info.is_split(cur_region)
-                             ? split_info.split_destination_count()
+                             ? split_info.preceding_destination_count()
                              : 0;
 
     HeapWord* const last_addr = dest_addr + words - 1;
@@ -1612,9 +1612,9 @@ void PSParallelCompact::forward_to_new_addr() {
 
           if (split_info.is_split(cur_region)) {
             // Part 1: will be relocated to space-1
-            HeapWord* split_destination = split_info.split_destination();
+            HeapWord* preceding_destination = split_info.preceding_destination();
             HeapWord* split_point = split_info.split_point();
-            forward_objs_in_range(cm, region_start + live_words, split_point, split_destination + live_words);
+            forward_objs_in_range(cm, region_start + live_words, split_point, preceding_destination + live_words);
 
             // Part 2: will be relocated to space-2
             HeapWord* destination = region_ptr->destination();
@@ -2056,7 +2056,7 @@ HeapWord* PSParallelCompact::first_src_addr(HeapWord* const dest_addr,
     if (dest_addr == src_region_destination) {
       return split_info.split_point();
     }
-    region_start_destination = split_info.split_destination();
+    region_start_destination = split_info.preceding_destination();
   } else {
     region_start_destination = src_region_destination;
   }

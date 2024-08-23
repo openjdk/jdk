@@ -121,22 +121,22 @@ public:
   // Return true if this split holds data for the specified source region.
   inline bool is_split(size_t region_idx) const;
 
-  // A split region has two "destinations", living in two spaces. This method
-  // returns the split (first) one -- destination for the first live word on
-  // this split region.
-  HeapWord* split_destination() const {
-    assert(_split_destination != nullptr, "inv");
-    return _split_destination;
-  }
-
   // Obj at the split point doesn't fit the previous space and will be relocated to the next space.
   HeapWord* split_point() const { return _split_point; }
 
   // Number of live words before the split point on this region.
   size_t preceding_live_words() const { return _preceding_live_words; }
 
+  // A split region has two "destinations", living in two spaces. This method
+  // returns the first one -- destination for the first live word on
+  // this split region.
+  HeapWord* preceding_destination() const {
+    assert(_preceding_destination != nullptr, "inv");
+    return _preceding_destination;
+  }
+
   // Number of regions the preceding live words are relocated into.
-  uint split_destination_count() const { return _split_destination_count; }
+  uint preceding_destination_count() const { return _preceding_destination_count; }
 
   void record(size_t split_region_idx, HeapWord* split_point, size_t preceding_live_words);
 
@@ -146,10 +146,10 @@ public:
 
 private:
   size_t       _split_region_idx;
-  HeapWord*    _split_destination;
   HeapWord*    _split_point;
   size_t       _preceding_live_words;
-  uint         _split_destination_count;
+  HeapWord*    _preceding_destination;
+  uint         _preceding_destination_count;
 };
 
 inline bool SplitInfo::is_split(size_t region_idx) const
