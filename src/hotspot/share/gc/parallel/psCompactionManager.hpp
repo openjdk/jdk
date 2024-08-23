@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,9 @@ public:
   static bool steal(int queue_num, oop& t);
   static bool steal_objarray(int queue_num, ObjArrayTask& t);
   static bool steal(int queue_num, size_t& region);
+
+  // Print task queue stats
+  static void print_task_queue_stats();
 
   // Process tasks remaining on any marking stack
   void follow_marking_stacks();

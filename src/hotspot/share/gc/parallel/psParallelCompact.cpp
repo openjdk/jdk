@@ -1294,6 +1294,8 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     MarkFromRootsTask task(active_gc_threads);
     ParallelScavengeHeap::heap()->workers().run_task(&task);
+
+    ParCompactionManager::print_task_queue_stats();
   }
 
   // Process reference objects found during marking

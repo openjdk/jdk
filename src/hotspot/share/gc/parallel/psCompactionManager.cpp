@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -195,6 +196,22 @@ void ParCompactionManager::push_shadow_region(size_t shadow_region) {
 
 void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
+}
+
+void ParCompactionManager::print_task_queue_stats() {
+#if TASKQUEUE_STATS
+  if (!log_is_enabled(Trace, gc, task, stats)) {
+    return;
+  }
+
+  Log(gc, task, stats) log;
+  ResourceMark rm;
+  LogStream ls(log.trace());
+  outputStream* st = &ls;
+
+  _oop_task_queues->print_taskqueue_stats(st, "Oop Queue");
+  _objarray_task_queues->print_taskqueue_stats(st, "ObjArrayOop Queue");
+#endif // TASKQUEUE_STATS
 }
 
 #ifdef ASSERT
