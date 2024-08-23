@@ -162,26 +162,26 @@ void SplitInfo::record(size_t split_region_idx, HeapWord* split_point, size_t pr
   PSParallelCompact::RegionData* split_region_ptr = sd.region(split_region_idx);
   assert(preceding_live_words < split_region_ptr->data_size(), "inv");
 
-  HeapWord* split_destination = split_region_ptr->destination();
-  assert(split_destination != nullptr, "inv");
+  HeapWord* preceding_destination = split_region_ptr->destination();
+  assert(preceding_destination != nullptr, "inv");
 
   // How many regions does the preceding part occupy
-  uint split_destination_count;
+  uint preceding_destination_count;
   if (preceding_live_words == 0) {
-    split_destination_count = 0;
+    preceding_destination_count = 0;
   } else {
-    if (split_destination + preceding_live_words > sd.region_align_up(split_destination)) {
-      split_destination_count = 2;
+    if (preceding_destination + preceding_live_words > sd.region_align_up(preceding_destination)) {
+      preceding_destination_count = 2;
     } else {
-      split_destination_count = 1;
+      preceding_destination_count = 1;
     }
   }
 
   _split_region_idx = split_region_idx;
   _split_point = split_point;
   _preceding_live_words = preceding_live_words;
-  _preceding_destination = split_destination;
-  _preceding_destination_count = split_destination_count;
+  _preceding_destination = preceding_destination;
+  _preceding_destination_count = preceding_destination_count;
 }
 
 void SplitInfo::clear()
