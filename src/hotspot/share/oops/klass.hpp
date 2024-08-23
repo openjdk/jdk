@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "memory/memRegion.hpp"
+#include "oops/klassFlags.hpp"
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/oop.hpp"
@@ -195,6 +196,7 @@ private:
 #endif
 
   bool     _is_hidden_class;
+  KlassFlags  _misc_flags;
 
   CDS_JAVA_HEAP_ONLY(int _archived_mirror_index;)
 
@@ -430,8 +432,8 @@ protected:
   static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
 #endif
   static ByteSize bitmap_offset()                { return byte_offset_of(Klass, _bitmap); }
-  static ByteSize is_value_based_class_offset()  { return byte_offset_of(Klass, _is_value_based_class); }
   static ByteSize is_hidden_offset()             { return byte_offset_of(Klass, _is_hidden_class); }
+  static ByteSize misc_flags_offset()            { return byte_offset_of(Klass, _misc_flags); }
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -700,8 +702,8 @@ protected:
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
   bool is_hidden() const                { return _is_hidden_class; }
   void set_is_hidden()                  { _is_hidden_class = true; }
-  bool is_value_based()                 { return _access_flags.is_value_based_class(); }
-  void set_is_value_based()             { _access_flags.set_is_value_based_class(); }
+  bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
+  void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
 
   inline bool is_non_strong_hidden() const;
 
