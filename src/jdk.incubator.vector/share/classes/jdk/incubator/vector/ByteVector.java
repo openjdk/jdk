@@ -2568,11 +2568,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return v.rearrange(this.toShuffle(), m);
     }
 
-    private static
-    IndexOutOfBoundsException checkIndexFailed(Vector<?> vix, int length) {
-        String msg = String.format("Range check failed: vector %s out of bounds for length %d", vix, length);
-        return new IndexOutOfBoundsException(msg);
-    }
 
     /**
      * {@inheritDoc} <!--workaround-->
