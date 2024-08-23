@@ -335,7 +335,6 @@ void JVMFlag::print_kind(outputStream* st, unsigned int width) const {
     { KIND_C1, "C1" },
     { KIND_C2, "C2" },
     { KIND_ARCH, "ARCH" },
-    { KIND_CDS, "CDS" },
     { KIND_PLATFORM_DEPENDENT, "pd" },
     { KIND_PRODUCT, "product" },
     { KIND_MANAGEABLE, "manageable" },
@@ -457,23 +456,20 @@ void JVMFlag::print_as_flag(outputStream* st) const {
 //                                                  dev     dev-pd  pro     pro-pd  range     constraint
 enum FlagCounter_LP64  { LP64_RUNTIME_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)  num_flags_LP64   };
 enum FlagCounter_ARCH  { ARCH_FLAGS(                ENUM_F,         ENUM_F,         IGNORE_F, IGNORE_F)  num_flags_ARCH   };
-enum FlagCounter_CDS   { CDS_ONLY(CDS_FLAGS(        ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_CDS    };
 enum FlagCounter_JVMCI { JVMCI_ONLY(JVMCI_FLAGS(    ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_JVMCI  };
 enum FlagCounter_C1    { COMPILER1_PRESENT(C1_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C1     };
 enum FlagCounter_C2    { COMPILER2_PRESENT(C2_FLAGS(ENUM_F, ENUM_F, ENUM_F, ENUM_F, IGNORE_F, IGNORE_F)) num_flags_C2     };
 
 const int first_flag_enum_LP64   = 0;
 const int first_flag_enum_ARCH   = first_flag_enum_LP64  + num_flags_LP64;
-const int first_flag_enum_CDS    = first_flag_enum_ARCH  + num_flags_ARCH;
-const int first_flag_enum_JVMCI  = first_flag_enum_CDS   + num_flags_CDS;
+const int first_flag_enum_JVMCI  = first_flag_enum_ARCH  + num_flags_ARCH;
 const int first_flag_enum_C1     = first_flag_enum_JVMCI + num_flags_JVMCI;
 const int first_flag_enum_C2     = first_flag_enum_C1    + num_flags_C1;
 const int first_flag_enum_other  = first_flag_enum_C2    + num_flags_C2;
 
 static constexpr int flag_group(int flag_enum) {
   if (flag_enum < first_flag_enum_ARCH)  return JVMFlag::KIND_LP64_PRODUCT;
-  if (flag_enum < first_flag_enum_CDS)   return JVMFlag::KIND_ARCH;
-  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_CDS;
+  if (flag_enum < first_flag_enum_JVMCI) return JVMFlag::KIND_ARCH;
   if (flag_enum < first_flag_enum_C1)    return JVMFlag::KIND_JVMCI;
   if (flag_enum < first_flag_enum_C2)    return JVMFlag::KIND_C1;
   if (flag_enum < first_flag_enum_other) return JVMFlag::KIND_C2;

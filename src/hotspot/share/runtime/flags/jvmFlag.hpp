@@ -70,7 +70,6 @@ public:
     KIND_ARCH               = 1 << 12,
     KIND_LP64_PRODUCT       = 1 << 13,
     KIND_JVMCI              = 1 << 14,
-    KIND_CDS                = 1 << 15,
 
     // Note the difference:
     // f->get_origin() == COMMAND_LINE
