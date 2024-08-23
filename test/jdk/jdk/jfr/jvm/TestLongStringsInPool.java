@@ -93,7 +93,7 @@ public class TestLongStringsInPool {
 
         // the files aren't exactly the same size, but rec2 should
         // not take up space for all strings if they're pooled correctly
-        long maxAllowedDiff = (numEvents - 1)  * strLen;
+        long maxAllowedDiff = (numEvents - 1) * strLen;
         long diff = Math.abs(Files.size(rec2) - Files.size(rec1));
 
         Asserts.assertTrue(diff <= maxAllowedDiff, "Size difference between recordings is too large: "+ diff +" > " + maxAllowedDiff);
