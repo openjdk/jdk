@@ -43,7 +43,7 @@
 #include "runtime/handles.inline.hpp"
 
 void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, THREAD);
 }
 
 ArrayKlass::ArrayKlass() {

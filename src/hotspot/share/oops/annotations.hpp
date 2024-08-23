@@ -89,7 +89,7 @@ class Annotations: public MetaspaceObj {
   // Turn metadata annotations into a Java heap object (oop)
   static typeArrayOop make_java_array(AnnotationArray* annotations, TRAPS);
 
-  bool is_in_klass_space() const { return false; }
+  bool is_in_class_space() const { return false; }
   void metaspace_pointers_do(MetaspaceClosure* it);
   MetaspaceObj::Type type() const { return AnnotationsType; }
 

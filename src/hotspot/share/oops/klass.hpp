@@ -211,7 +211,7 @@ protected:
 
   virtual bool is_klass() const { return true; }
 
-  bool is_in_klass_space() const { return !is_interface() && !is_abstract(); }
+  bool is_in_class_space() const { return !is_interface() && !is_abstract(); }
 
   // super() cannot be InstanceKlass* -- Java arrays are covariant, and _super is used
   // to implement that. NB: the _super of "[Ljava/lang/Integer;" is "[Ljava/lang/Number;"

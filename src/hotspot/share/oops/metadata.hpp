@@ -49,7 +49,7 @@ class Metadata : public MetaspaceObj {
   virtual MetaspaceObj::Type type()    const = 0;
   virtual const char* internal_name()  const = 0;
   virtual void metaspace_pointers_do(MetaspaceClosure* iter) {}
-  virtual bool is_in_klass_space() const { return false; }
+  virtual bool is_in_class_space() const { return false; }
 
   void print()       const;
   void print_value() const;

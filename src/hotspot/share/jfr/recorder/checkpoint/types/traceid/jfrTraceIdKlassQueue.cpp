@@ -76,7 +76,7 @@ static size_t element_size(bool compressed) {
 }
 
 static bool can_compress_element(const Klass* klass) {
-  return Metaspace::using_class_space() && klass->is_in_klass_space() &&
+  return Metaspace::using_class_space() && klass->is_in_class_space() &&
          JfrTraceId::load_raw(klass) < uncompressed_threshold;
 }
 

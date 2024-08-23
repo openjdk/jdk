@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -106,12 +106,12 @@ public:
   static size_t max_allocation_word_size();
 
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type, TRAPS);
+                            MetaspaceObj::Type type, bool use_class_space, TRAPS);
 
   // Non-TRAPS version of allocate which can be called by a non-Java thread, that returns
   // null on failure.
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
-                            MetaspaceObj::Type type);
+                            MetaspaceObj::Type type, bool use_class_space);
 
   static bool contains(const void* ptr);
   static bool contains_non_shared(const void* ptr);
