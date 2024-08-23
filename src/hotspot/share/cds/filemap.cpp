@@ -770,8 +770,16 @@ bool FileMapInfo::check_paths(int shared_path_start_idx, int num_paths, Growable
   while (i < num_paths) {
     while (shared_path(j)->from_class_path_attr()) {
       // shared_path(j) was expanded from the JAR file attribute "Class-Path:"
-      // during dump time. It's not included in the -classpath VM argument.
+      // during dump time. Check if it is included in the runtime classpath.
+      assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
+      assert(strlen(rp_array->at(i)) > (size_t)runtime_prefix_len, "sanity");
+      if (os::same_files(shared_path(j)->name() + dumptime_prefix_len, rp_array->at(i)  + runtime_prefix_len)) {
+        i++;
+      }
       j++;
+    }
+    if (i == num_paths) {
+      break;
     }
     assert(strlen(shared_path(j)->name()) > (size_t)dumptime_prefix_len, "sanity");
     const char* dumptime_path = shared_path(j)->name() + dumptime_prefix_len;
@@ -853,26 +861,31 @@ bool FileMapInfo::validate_boot_class_paths() {
   return true;
 }
 
-bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
+bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len, int total_shared_app_paths_len) {
   const char *appcp = Arguments::get_appclasspath();
   assert(appcp != nullptr, "null app classpath");
   int rp_len = num_paths(appcp);
   bool mismatch = false;
-  if (rp_len < shared_app_paths_len) {
+  if ((rp_len < shared_app_paths_len)) {
+    log_info(class, path)("App classpath lengths (dumptime: %d expanded(including jars in Class-Path attribute) %d, runtime: %d)",
+        shared_app_paths_len, total_shared_app_paths_len, rp_len);
     return classpath_failure("Run time APP classpath is shorter than the one at dump time: ", appcp);
   }
   if (shared_app_paths_len != 0 && rp_len != 0) {
     // Prefix is OK: E.g., dump with -cp foo.jar, but run with -cp foo.jar:bar.jar.
     ResourceMark rm;
     GrowableArray<const char*>* rp_array = create_path_array(appcp);
-    if (rp_array->length() == 0) {
+    int array_len = rp_array->length();
+    if (array_len == 0) {
       // None of the jar file specified in the runtime -cp exists.
       return classpath_failure("None of the jar file specified in the runtime -cp exists: -Djava.class.path=", appcp);
     }
-    if (rp_array->length() < shared_app_paths_len) {
+    if (array_len < shared_app_paths_len) {
       // create_path_array() ignores non-existing paths. Although the dump time and runtime app classpath lengths
       // are the same initially, after the call to create_path_array(), the runtime app classpath length could become
       // shorter. We consider app classpath mismatch in this case.
+      log_info(class, path)("App classpath lengths (dumptime: %d expanded(including jars in Class-Path attribute) %d, runtime: %d)",
+          shared_app_paths_len, total_shared_app_paths_len, array_len);
       return classpath_failure("[APP classpath mismatch, actual: -Djava.class.path=", appcp);
     }
 
@@ -886,7 +899,8 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
     // run 2: -cp x.jar:NE4:b.jar      -> x.jar:b.jar -> mismatched
 
     int j = header()->app_class_paths_start_index();
-    mismatch = check_paths(j, shared_app_paths_len, rp_array, 0, 0);
+    int num_paths = MIN2(array_len, total_shared_app_paths_len);
+    mismatch = check_paths(j, num_paths, rp_array, 0, 0);
     if (mismatch) {
       // To facilitate app deployment, we allow the JAR files to be moved *together* to
       // a different location, as long as they are still stored under the same directory
@@ -898,7 +912,7 @@ bool FileMapInfo::validate_app_class_paths(int shared_app_paths_len) {
       if (dumptime_prefix_len != 0 || runtime_prefix_len != 0) {
         log_info(class, path)("LCP length for app classpath (dumptime: %u, runtime: %u)",
                               dumptime_prefix_len, runtime_prefix_len);
-        mismatch = check_paths(j, shared_app_paths_len, rp_array,
+        mismatch = check_paths(j, num_paths, rp_array,
                                dumptime_prefix_len, runtime_prefix_len);
       }
       if (mismatch) {
@@ -969,14 +983,18 @@ bool FileMapInfo::validate_shared_path_table() {
 
   int module_paths_start_index = header()->app_module_paths_start_index();
   int shared_app_paths_len = 0;
+  int total_shared_app_paths_len = 0;
 
   // validate the path entries up to the _max_used_path_index
   for (int i=0; i < header()->max_used_path_index() + 1; i++) {
     if (i < module_paths_start_index) {
       if (shared_path(i)->validate()) {
         // Only count the app class paths not from the "Class-path" attribute of a jar manifest.
-        if (!shared_path(i)->from_class_path_attr() && i >= header()->app_class_paths_start_index()) {
-          shared_app_paths_len++;
+        if (i >= header()->app_class_paths_start_index()) {
+          if (!shared_path(i)->from_class_path_attr()) {
+            shared_app_paths_len++;
+          }
+          total_shared_app_paths_len++;
         }
         log_info(class, path)("ok");
       } else {
@@ -1001,7 +1019,7 @@ bool FileMapInfo::validate_shared_path_table() {
     // default archive only contains the module image in the bootclasspath
     assert(shared_path(0)->is_modules_image(), "first shared_path must be the modules image");
   } else {
-    if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len)) {
+    if (!validate_boot_class_paths() || !validate_app_class_paths(shared_app_paths_len, total_shared_app_paths_len)) {
       const char* mismatch_msg = "shared class paths mismatch";
       const char* hint_msg = log_is_enabled(Info, class, path) ?
           "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
