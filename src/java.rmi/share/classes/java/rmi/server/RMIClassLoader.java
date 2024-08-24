@@ -569,20 +569,19 @@ public class RMIClassLoader {
     }
 
     /**
-     * Returns the security context of the given class loader.
+     * Always returns null.
      *
      * @param   loader a class loader from which to get the security context
      *
-     * @return  the security context
+     * @return  null
      *
-     * @deprecated no replacement.  As of the Java 2 platform v1.2, RMI no
-     * longer uses this method to obtain a class loader's security context.
-     * @see java.lang.SecurityManager#getSecurityContext()
+     * @deprecated no replacement. This method has no purpose in the absence
+     * of a Security Manager.
      */
     @Deprecated
     public static Object getSecurityContext(ClassLoader loader)
     {
-        return sun.rmi.server.LoaderHandler.getSecurityContext(loader);
+        return null;
     }
 
     /**
