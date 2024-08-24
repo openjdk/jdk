@@ -1340,7 +1340,7 @@ public final class StringConcatFactory {
                 }
 
                 var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
-                var concat = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
                 CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concat)));
                 var instance = hiddenClass.cast(constructor.invoke(constants));
                 return concat.bindTo(instance);
