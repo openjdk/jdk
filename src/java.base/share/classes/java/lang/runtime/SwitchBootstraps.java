@@ -82,7 +82,7 @@ public class SwitchBootstraps {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final boolean previewEnabled = PreviewFeatures.isEnabled();
 
-    private static final ClassDesc CD_BiPredicate = referenceClassDesc(BiPredicate.class);
+    private static final ClassDesc CD_BiPredicate = ReferenceClassDescImpl.ofValidated("Ljava/util/function/BiPredicate;");
     private static final ClassDesc CD_Objects = ReferenceClassDescImpl.ofValidated("Ljava/util/Objects;");
 
     private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
