@@ -28,11 +28,12 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletManager;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -46,11 +47,11 @@ public class SerialMethodWriter extends MethodWriter {
     }
 
     protected Content getSerializableMethodsHeader() {
-        return HtmlTree.UL(HtmlStyle.blockList);
+        return HtmlTree.UL(HtmlStyles.blockList);
     }
 
     protected Content getMethodsContentHeader() {
-        return new HtmlTree(TagName.LI);
+        return new HtmlTree(HtmlTag.LI);
     }
 
     /**
@@ -64,7 +65,7 @@ public class SerialMethodWriter extends MethodWriter {
     protected Content getSerializableMethods(String heading, Content source) {
         Content headingContent = Text.of(heading);
         var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
-        var section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
+        var section = HtmlTree.SECTION(HtmlStyles.detail, serialHeading);
         section.add(source);
         return HtmlTree.LI(section);
     }
@@ -121,7 +122,7 @@ public class SerialMethodWriter extends MethodWriter {
     protected void addMemberTags(ExecutableElement member, Content methodsContent) {
         TagletManager tagletManager = configuration.tagletManager;
         Content tagContent = writer.getBlockTagOutput(member, tagletManager.getSerializedFormTaglets());
-        var dl = HtmlTree.DL(HtmlStyle.notes);
+        var dl = HtmlTree.DL(HtmlStyles.notes);
         dl.add(tagContent);
         methodsContent.add(dl);
         if (name(member).equals("writeExternal")

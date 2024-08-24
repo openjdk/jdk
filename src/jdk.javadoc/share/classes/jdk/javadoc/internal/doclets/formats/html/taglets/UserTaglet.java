@@ -32,8 +32,8 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.formats.html.Content;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.RawHtml;
 
 /**
  * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}

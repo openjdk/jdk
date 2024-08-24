@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +106,12 @@ public:
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
-  // This one should probably be a phase-specific function:
-  static bool all_controls_dominate(Node* dom, Node* sub);
+  // The following two should probably be phase-specific functions:
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
+  static bool all_controls_dominate(Node* dom, Node* sub) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+    return dom_result == DomResult::Dominate;
+  }
 
   virtual const class TypePtr *adr_type() const;  // returns bottom_type of address
 

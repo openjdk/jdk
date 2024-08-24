@@ -137,11 +137,6 @@ typedef struct {
 
 static DeferredEventModeList deferredEventModes;
 
-#ifdef DEBUG
-static void dumpThreadList(ThreadList *list);
-static void dumpThread(ThreadNode *node);
-#endif
-
 /* Get the state of the thread direct from JVMTI */
 static jvmtiError
 threadState(jthread thread, jint *pstate)
@@ -642,26 +637,31 @@ getLocks(void)
      * thread) needs to be grabbed here. This allows thread control
      * code to safely suspend and resume the application threads
      * while ensuring they don't hold a critical lock.
+     *
+     * stepControl_beginStep() grabs the eventHandler lock and stepControl lock
+     * before eventually ending up here, so we need to maintain that order here.
+     * Similarly, invoker_completeInvokeRequest() grabs the eventHandler lock
+     * and invoker lock.
      */
-
+    callback_lock();
     eventHandler_lock();
+    stepControl_lock();
     invoker_lock();
     eventHelper_lock();
-    stepControl_lock();
-    commonRef_lock();
     debugMonitorEnter(threadLock);
-
+    commonRef_lock();
 }
 
 static void
 releaseLocks(void)
 {
-    debugMonitorExit(threadLock);
     commonRef_unlock();
-    stepControl_unlock();
+    debugMonitorExit(threadLock);
     eventHelper_unlock();
     invoker_unlock();
+    stepControl_unlock();
     eventHandler_unlock();
+    callback_unlock();
 }
 
 void
@@ -2556,13 +2556,15 @@ threadControl_allVThreads(jint *numVThreads)
     return vthreads;
 }
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
+static void dumpThreadList(ThreadList *list);
+static void dumpThread(ThreadNode *node);
 
 void
 threadControl_dumpAllThreads()
 {
+    tty_message("suspendAllCount: %d", suspendAllCount);
     tty_message("Dumping runningThreads:");
     dumpThreadList(&runningThreads);
     tty_message("\nDumping runningVThreads:");
@@ -2647,5 +2649,3 @@ dumpThread(ThreadNode *node) {
     tty_message("\tobjID: %d", commonRef_refToID(getEnv(), node->thread));
 #endif
 }
-
-#endif /* DEBUG */
