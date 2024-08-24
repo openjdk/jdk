@@ -1345,7 +1345,6 @@ jdk.sasl.disabledMechanisms=
 # if this property is not enabled.
 #
 jdk.security.caDistrustPolicies=SYMANTEC_TLS,ENTRUST_TLS
-//jdk.security.caDistrustPolicies=ENTRUST_TLS
 
 #
 # FilePermission path canonicalization

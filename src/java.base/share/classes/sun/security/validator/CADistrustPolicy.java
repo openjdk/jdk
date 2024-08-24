@@ -48,7 +48,6 @@ enum CADistrustPolicy {
     SYMANTEC_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
                            throws ValidatorException {
-System.out.println("SYMANTEC_TLS");
             if (!variant.equals(Validator.VAR_TLS_SERVER)) {
                 return;
             }
@@ -58,16 +57,13 @@ System.out.println("SYMANTEC_TLS");
 
     /**
      * Distrust TLS Server certificates anchored by a Entrust root CA and
-     * issued after October 31, 2024 (with exceptions for a couple of
-     * subordinate CAs, see the jdk.security.caDistrustPolicies definition
-     * in the java.security file for more details). If enabled, this policy is
-     * currently enforced by the PKIX and SunX509 TrustManager implementations
+     * issued after October 31, 2024. If enabled, this policy is currently
+     * enforced by the PKIX and SunX509 TrustManager implementations
      * of the SunJSSE provider implementation.
      */
     ENTRUST_TLS {
         void checkDistrust(String variant, X509Certificate[] chain)
                            throws ValidatorException {
-System.out.println("ENTRUST_TLS");
             if (!variant.equals(Validator.VAR_TLS_SERVER)) {
                 return;
             }
