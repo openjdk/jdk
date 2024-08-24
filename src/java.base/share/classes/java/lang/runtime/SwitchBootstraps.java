@@ -87,10 +87,10 @@ public class SwitchBootstraps {
 
     private static final MethodTypeDesc CHECK_INDEX_DESCRIPTOR =
             MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int, ConstantDescs.CD_int, ConstantDescs.CD_int);
-    private static final MethodTypeDesc MTD_TYPE_SWITCH = MethodTypeDesc.of(ConstantDescs.CD_int,
+    private static final MethodTypeDesc MTD_TYPE_SWITCH = MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
             ConstantDescs.CD_Object,
             ConstantDescs.CD_int);
-    private static final MethodTypeDesc MTD_TYPE_SWITCH_EXTRA = MethodTypeDesc.of(ConstantDescs.CD_int,
+    private static final MethodTypeDesc MTD_TYPE_SWITCH_EXTRA = MethodTypeDescImpl.ofValidated(ConstantDescs.CD_int,
             ConstantDescs.CD_Object,
             ConstantDescs.CD_int,
             CD_BiPredicate,
