@@ -106,11 +106,12 @@ public class CreationTime {
                 supportsCreationTimeWrite = true;
             }
         } else if (Platform.isLinux()) {
-            // Creation time read depends on statx system call support
-            supportsCreationTimeRead = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
-            // Linux system doesn't support birth time on tmpfs filesystem for now
-            if( Files.getFileStore(file).type().contentEquals("tmpfs") ) {
-                supportsCreationTimeRead = false;
+            // Creation time read depends on statx system call support and on the file
+            // system storing the birth time. The tmpfs file system type does not store
+            // the birth time.
+            boolean statxIsPresent = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
+            if (statxIsPresent && !Files.getFileStore(file).type().contentEquals("tmpfs")) {
+                supportsCreationTimeRead = true;
             }
             // Creation time updates are not supported on Linux
             supportsCreationTimeWrite = false;
