@@ -92,7 +92,7 @@ public:
 
   // Prematurely returns a metaspace allocation to the _block_freelists
   // because it is not needed anymore.
-  void deallocate(MetaWord* ptr, size_t word_size, bool is_class);
+  void deallocate(MetaWord* ptr, size_t word_size);
 
   // Update statistics. This walks all in-use chunks.
   void add_to_statistics(metaspace::ClmsStats* out) const;

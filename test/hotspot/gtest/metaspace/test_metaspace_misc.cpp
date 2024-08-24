@@ -67,7 +67,7 @@ TEST_VM(metaspace, misc_max_alloc_size)   {
       ASSERT_NOT_NULL(p);
     }
     // And also, successfully deallocate it.
-    cld->metaspace_non_null()->deallocate(p, sz, in_class_space);
+    cld->metaspace_non_null()->deallocate(p, sz);
   }
 }
 
