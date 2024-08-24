@@ -57,6 +57,7 @@ class outputStream;
   f(conc_mark_roots,                                "Concurrent Mark Roots ")          \
   SHENANDOAH_PAR_PHASE_DO(conc_mark_roots,          "  CMR: ", f)                      \
   f(conc_mark,                                      "Concurrent Marking")              \
+  f(conc_mark_satb_flush,                           "  Flush SATB")                    \
                                                                                        \
   f(final_mark_gross,                               "Pause Final Mark (G)")            \
   f(final_mark,                                     "Pause Final Mark (N)")            \
@@ -216,13 +217,13 @@ private:
   ShenandoahWorkerData* worker_data(Phase phase, ParPhase par_phase);
   Phase worker_par_phase(Phase phase, ParPhase par_phase);
 
-  void set_cycle_data(Phase phase, double time);
+  void set_cycle_data(Phase phase, double time, bool should_aggregate = false);
   static double uninitialized() { return -1; }
 
 public:
   ShenandoahPhaseTimings(uint max_workers);
 
-  void record_phase_time(Phase phase, double time);
+  void record_phase_time(Phase phase, double time, bool should_aggregate = false);
 
   void record_workers_start(Phase phase);
   void record_workers_end(Phase phase);

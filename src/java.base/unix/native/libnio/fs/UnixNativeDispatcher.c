@@ -133,9 +133,10 @@ struct my_statx
 #define STATX_BTIME 0x00000800U
 #endif
 
-#ifndef STATX_ALL
-#define STATX_ALL (STATX_BTIME | STATX_BASIC_STATS)
-#endif
+//
+// STATX_ALL is deprecated; use a different name to avoid confusion.
+//
+#define LOCAL_STATX_ALL (STATX_BASIC_STATS | STATX_BTIME)
 
 #ifndef AT_FDCWD
 #define AT_FDCWD -100
@@ -254,6 +255,23 @@ static int statx_wrapper(int dirfd, const char *restrict pathname, int flags,
 }
 #endif
 
+#if defined(__linux__) && defined(__arm__)
+/**
+ * Lookup functions with time_t parameter. Try to use 64 bit symbol
+ * if sizeof(time_t) exceeds 32 bit.
+ */
+static void* lookup_time_t_function(const char* symbol, const char* symbol64) {
+    void *func_ptr = NULL;
+    if (sizeof(time_t) > 4) {
+        func_ptr = dlsym(RTLD_DEFAULT, symbol64);
+    }
+    if (func_ptr == NULL) {
+        return dlsym(RTLD_DEFAULT, symbol);
+    }
+    return func_ptr;
+}
+#endif
+
 /**
  * Call this to throw an internal UnixException when a system/library
  * call fails
@@ -351,11 +369,20 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
+#if defined(__linux__) && defined(__arm__)
+    my_futimesat_func = (futimesat_func*) lookup_time_t_function("futimesat",
+        "__futimesat64");
+    my_lutimes_func = (lutimes_func*) lookup_time_t_function("lutimes",
+        "__lutimes64");
+    my_futimens_func = (futimens_func*) lookup_time_t_function("futimens",
+        "__futimens64");
+#else
 #ifndef _ALLBSD_SOURCE
     my_futimesat_func = (futimesat_func*) dlsym(RTLD_DEFAULT, "futimesat");
     my_lutimes_func = (lutimes_func*) dlsym(RTLD_DEFAULT, "lutimes");
 #endif
     my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
+#endif
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
@@ -593,8 +620,19 @@ static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject att
     (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->stx_atime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->stx_mtime.tv_sec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->stx_ctime.tv_sec);
-    (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->stx_btime.tv_sec);
-    (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec, (jlong)buf->stx_btime.tv_nsec);
+    if ((buf->stx_mask & STATX_BTIME) != 0) {
+        //  Birth time was filled in so use it
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
+                             (jlong)buf->stx_btime.tv_sec);
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
+                             (jlong)buf->stx_btime.tv_nsec);
+    } else {
+        //  Birth time was not filled in: fall back to last modification time
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec,
+                             (jlong)buf->stx_mtime.tv_sec);
+        (*env)->SetLongField(env, attrs, attrs_st_birthtime_nsec,
+                             (jlong)buf->stx_mtime.tv_nsec);
+    }
     (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->stx_atime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_nsec, (jlong)buf->stx_mtime.tv_nsec);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_nsec, (jlong)buf->stx_ctime.tv_nsec);
@@ -648,7 +686,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
 #if defined(__linux__)
     struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
-    unsigned int mask = STATX_ALL;
+    unsigned int mask = LOCAL_STATX_ALL;
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat on Linux if it's available
@@ -680,7 +718,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
 #if defined(__linux__)
     struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT | AT_SYMLINK_NOFOLLOW;
-    unsigned int mask = STATX_ALL;
+    unsigned int mask = LOCAL_STATX_ALL;
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat on Linux if it's available
@@ -711,7 +749,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
 #if defined(__linux__)
     struct my_statx statx_buf;
     int flags = AT_EMPTY_PATH | AT_STATX_SYNC_AS_STAT;
-    unsigned int mask = STATX_ALL;
+    unsigned int mask = LOCAL_STATX_ALL;
 
     if (my_statx_func != NULL) {
         // statx supports FD use via dirfd iff pathname is an empty string and the
@@ -744,7 +782,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
 #if defined(__linux__)
     struct my_statx statx_buf;
     int flags = AT_STATX_SYNC_AS_STAT;
-    unsigned int mask = STATX_ALL;
+    unsigned int mask = LOCAL_STATX_ALL;
 
     if (my_statx_func != NULL) {
         // Prefer statx over stat on Linux if it's available

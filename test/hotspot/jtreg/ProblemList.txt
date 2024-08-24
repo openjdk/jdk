@@ -119,6 +119,7 @@ runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/Thread/TestAlwaysPreTouchStacks.java 8335167 macosx-aarch64
 runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x64
+runtime/interpreter/LastJsrTest.java 8338924 linux-all
 
 
 applications/jcstress/copy.java 8229852 linux-all

@@ -29,7 +29,6 @@ import javax.lang.model.type.*;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
-import javax.lang.model.type.TypeVisitor;
 
 /**
  * A simple visitor of types with default behavior appropriate for the
