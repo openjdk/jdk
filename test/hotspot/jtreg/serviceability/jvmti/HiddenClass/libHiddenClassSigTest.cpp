@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
 
@@ -35,6 +36,9 @@ static jvmtiEnv *jvmti = nullptr;
 static jint class_load_count = 0;
 static jint class_prep_count = 0;
 static bool failed = false;
+// JVMTI_ERROR_WRONG_PHASE guard
+static jrawMonitorID event_mon = nullptr;
+static bool is_vm_dead = false;
 
 #define LOG0(str)             { printf(str); fflush(stdout); }
 #define LOG1(str, arg)        { printf(str, arg); fflush(stdout); }
@@ -46,6 +50,24 @@ static bool failed = false;
     jni->FatalError(msg); \
     return; \
   }
+
+struct MonitorLock {
+  MonitorLock() {
+    jvmtiError err = jvmti->RawMonitorEnter(event_mon);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG1("RawMonitorEnter returned error: %d\n", err);
+      abort();
+    }
+  }
+
+  ~MonitorLock() {
+    jvmtiError err = jvmti->RawMonitorExit(event_mon);
+    if (err != JVMTI_ERROR_NONE) {
+      LOG1("RawMonitorExit returned error: %d\n", err);
+      abort();
+    }
+  }
+};
 
 /* Return the jmethodID of j.l.Class.isHidden() method. */
 static jmethodID
@@ -247,16 +269,21 @@ check_hidden_class_array(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass_array, const
   LOG0("### Native agent: check_hidden_class_array finished\n");
 }
 
-/* Process a CLASS_LOAD or aClassPrepare event. */
+/* Process a CLASS_LOAD or a ClassPrepare event. */
 static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
                                 jint* event_count_ptr, const char* event_name) {
   char* sig = nullptr;
   char* gsig = nullptr;
   jvmtiError err;
 
+  MonitorLock lock;
+  if (is_vm_dead) {
+    return;
+  }
+
   // get class signature
   err = jvmti->GetClassSignature(klass, &sig, &gsig);
-  CHECK_JVMTI_ERROR(jni, err, "ClassLoad event: Error in JVMTI GetClassSignature");
+  CHECK_JVMTI_ERROR(jni, err, "ClassLoad/ClassPrepare event: Error in JVMTI GetClassSignature");
 
   // check if this is an expected class event for hidden class
   if (strlen(sig) > strlen(SIG_START) &&
@@ -301,6 +328,14 @@ VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
   CHECK_JVMTI_ERROR(jni, err, "VMInit event: Error in enabling ClassPrepare events notification");
 }
 
+static void JNICALL
+VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
+  MonitorLock lock;
+
+  LOG0("VMDeath\n");
+  is_vm_dead = true;
+}
+
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiEventCallbacks callbacks;
@@ -313,11 +348,19 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
+  err = jvmti->CreateRawMonitor("Event Monitor", &event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    LOG1("Agent_OnLoad: CreateRawMonitor failed: %d\n", err);
+    failed = true;
+    return JNI_ERR;
+  }
+
   // set required event callbacks
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.ClassLoad = &ClassLoad;
   callbacks.ClassPrepare = &ClassPrepare;
   callbacks.VMInit = &VMInit;
+  callbacks.VMDeath = &VMDeath;
 
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
   if (err != JVMTI_ERROR_NONE) {

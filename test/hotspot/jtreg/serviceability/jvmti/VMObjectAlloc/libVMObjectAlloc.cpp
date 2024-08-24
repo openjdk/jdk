@@ -21,12 +21,36 @@
  * questions.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
 
 extern "C" {
 
+static jvmtiEnv *jvmti = nullptr;
+// JVMTI_ERROR_WRONG_PHASE guard
+static jrawMonitorID event_mon = nullptr;
+static bool is_vm_dead = false;
+
 static int number_of_allocation = 0;
+
+struct MonitorLock {
+  MonitorLock() {
+    jvmtiError err = jvmti->RawMonitorEnter(event_mon);
+    if (err != JVMTI_ERROR_NONE) {
+      printf("RawMonitorEnter returned error: %d\n", err);
+      abort();
+    }
+  }
+
+  ~MonitorLock() {
+    jvmtiError err = jvmti->RawMonitorExit(event_mon);
+    if (err != JVMTI_ERROR_NONE) {
+      printf("RawMonitorExit returned error: %d\n", err);
+      abort();
+    }
+  }
+};
 
 extern JNIEXPORT void JNICALL
 VMObjectAlloc(jvmtiEnv *jvmti,
@@ -35,6 +59,11 @@ VMObjectAlloc(jvmtiEnv *jvmti,
               jobject object,
               jclass cls,
               jlong size) {
+  MonitorLock lock;
+  if (is_vm_dead) {
+    return;
+  }
+
   char *signature = nullptr;
   jvmtiError err = jvmti->GetClassSignature(cls, &signature, nullptr);
   if (err != JVMTI_ERROR_NONE) {
@@ -48,6 +77,13 @@ VMObjectAlloc(jvmtiEnv *jvmti,
   }
 }
 
+static void JNICALL
+VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
+  MonitorLock lock;
+
+  printf("VMDeath\n");
+  is_vm_dead = true;
+}
 
 JNIEXPORT jint JNICALL
 Java_VMObjectAllocTest_getNumberOfAllocation(JNIEnv *env, jclass cls) {
@@ -56,7 +92,6 @@ Java_VMObjectAllocTest_getNumberOfAllocation(JNIEnv *env, jclass cls) {
 
 extern JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv *jvmti;
   jvmtiEventCallbacks callbacks;
   jvmtiError err;
   jvmtiCapabilities caps;
@@ -65,8 +100,15 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
+  err = jvmti->CreateRawMonitor("Event Monitor", &event_mon);
+  if (err != JVMTI_ERROR_NONE) {
+    printf("Agent_OnLoad: CreateRawMonitor failed: %d\n", err);
+    return JNI_ERR;
+  }
+
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.VMObjectAlloc = &VMObjectAlloc;
+  callbacks.VMDeath = &VMDeath;
   memset(&caps, 0, sizeof(caps));
   caps.can_generate_vm_object_alloc_events = 1;
 
