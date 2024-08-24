@@ -56,7 +56,6 @@ public class ZipEntry implements ZipConstants, Cloneable {
     boolean csizeSet = false; // Only true if csize was explicitly set by
                         // a call to setCompressedSize()
     int method = -1;    // compression method
-    int flag = 0;       // general purpose flag
     byte[] extra;       // optional extra field data for entry
     String comment;     // optional comment string for entry
     int externalFileAttributes = -1; // File type, setuid, setgid, sticky, POSIX permissions
@@ -131,7 +130,6 @@ public class ZipEntry implements ZipConstants, Cloneable {
         csize = e.csize;
         csizeSet = e.csizeSet;
         method = e.method;
-        flag = e.flag;
         extra = e.extra;
         comment = e.comment;
         externalFileAttributes = e.externalFileAttributes;

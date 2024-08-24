@@ -689,7 +689,6 @@ public class ZipFile implements ZipConstants, Closeable {
         } else {
             e = new ZipEntry(name);
         }
-        e.flag = CENFLG(cen, pos);
         e.xdostime = CENTIM(cen, pos);
         e.crc = CENCRC(cen, pos);
         e.size = CENLEN(cen, pos);
