@@ -141,7 +141,7 @@ final class Control {
             @Override
             public String run() {
                 try {
-                    delegate.combine(Collections.unmodifiableSet(values));
+                    return delegate.combine(Collections.unmodifiableSet(values));
                 } catch (Throwable t) {
                     // Prevent malicious user to propagate exception callback in the wrong context
                     Logger.log(LogTag.JFR_SETTING, LogLevel.WARN, "Exception occurred when combining " + values + " for " + getClass());
