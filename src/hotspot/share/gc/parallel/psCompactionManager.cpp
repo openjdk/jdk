@@ -198,8 +198,8 @@ void ParCompactionManager::remove_all_shadow_regions() {
   _shadow_region_array->clear();
 }
 
-void ParCompactionManager::print_task_queue_stats() {
 #if TASKQUEUE_STATS
+void ParCompactionManager::print_task_queue_stats() {
   if (!log_is_enabled(Trace, gc, task, stats)) {
     return;
   }
@@ -211,8 +211,8 @@ void ParCompactionManager::print_task_queue_stats() {
 
   _oop_task_queues->print_taskqueue_stats(st, "Oop Queue");
   _objarray_task_queues->print_taskqueue_stats(st, "ObjArrayOop Queue");
-#endif // TASKQUEUE_STATS
 }
+#endif // TASKQUEUE_STATS
 
 #ifdef ASSERT
 void ParCompactionManager::verify_all_marking_stack_empty() {

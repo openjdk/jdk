@@ -203,7 +203,7 @@ public:
   static bool steal(int queue_num, size_t& region);
 
   // Print task queue stats
-  static void print_task_queue_stats();
+  TASKQUEUE_STATS_ONLY(static void print_task_queue_stats();)
 
   // Process tasks remaining on any marking stack
   void follow_marking_stacks();
