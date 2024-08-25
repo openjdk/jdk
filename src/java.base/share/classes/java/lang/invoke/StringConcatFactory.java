@@ -29,7 +29,6 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
-import jdk.internal.constant.MethodTypeDescImpl;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.ReferenceKey;
@@ -1167,7 +1166,7 @@ public final class StringConcatFactory {
                 }
                 paramTypes[i] = cl;
             }
-            return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
+            return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
         }
 
         /**
@@ -1196,36 +1195,24 @@ public final class StringConcatFactory {
                 var cl = concatArgs.parameterType(i);
                 paramTypes[i + prefixArgs] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
             }
-            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         /**
-         * Construct the MethodType of the coder method, if there are no parameters it may be UTF16, return null.
+         * Construct the MethodType of the coder method,
          * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
          */
-        private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
+        private static MethodTypeDesc coderArgs(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
-
-            int maybeUTF16Count = 0;
+            List<ClassDesc> paramTypes = new ArrayList<>();
+            paramTypes.add(CD_int); // init coder
             for (int i = 0; i < parameterCount; i++) {
-                if (maybeUTF16(concatArgs.parameterType(i))) {
-                    maybeUTF16Count++;
-                }
-            }
-
-            if (maybeUTF16Count == 0) {
-                return null;
-            }
-
-            var paramTypes = new ClassDesc[maybeUTF16Count + 1];
-            paramTypes[0] = CD_int; // init coder
-            for (int i = 0, paramIndex = 1; i < parameterCount; i++) {
                 var cl = concatArgs.parameterType(i);
                 if (maybeUTF16(cl)) {
-                    paramTypes[paramIndex++] = cl == char.class ? CD_char : CD_String;
+                    paramTypes.add(cl == char.class ? CD_char : CD_String);
                 }
             }
-            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         /**
@@ -1240,7 +1227,7 @@ public final class StringConcatFactory {
                 var cl = concatArgs.parameterType(i);
                 paramTypes[i + 1] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
             }
-            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
+            return MethodTypeDesc.of(CD_int, paramTypes);
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
@@ -1273,7 +1260,7 @@ public final class StringConcatFactory {
             }
 
             MethodTypeDesc lengthArgs  = lengthArgs(concatArgs),
-                           coderArgs   = coderArgsIfMaybeUTF16(concatArgs),
+                           coderArgs   = parameterMaybeUTF16(concatArgs) ? coderArgs(concatArgs) : null,
                            prependArgs = prependArgs(concatArgs, staticConcat);
 
             byte[] classBytes = ClassFile.of().build(CD_CONCAT,
@@ -1767,6 +1754,15 @@ public final class StringConcatFactory {
 
         static boolean maybeUTF16(Class<?> cl) {
             return cl == char.class || !cl.isPrimitive();
+        }
+
+        static boolean parameterMaybeUTF16(MethodType args) {
+            for (int i = 0; i < args.parameterCount(); i++) {
+                if (maybeUTF16(args.parameterType(i))) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
