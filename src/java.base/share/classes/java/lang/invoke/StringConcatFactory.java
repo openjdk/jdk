@@ -1196,8 +1196,8 @@ public final class StringConcatFactory {
         }
 
         /**
-         * Construct the MethodType of the coder method, if there are no parameters it may be UTF16, return null.
-         * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
+         * Construct the MethodType of the coder method. The first parameter is the initialized coder.
+         * Only parameter types which can be UTF16 are added. Returns null if no such parameter exists.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
