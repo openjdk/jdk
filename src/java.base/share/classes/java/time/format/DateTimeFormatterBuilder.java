@@ -6521,14 +6521,15 @@ public final class DateTimeFormatterBuilder {
                         nanoSlot       = -1;
 
                     for (var field : fields) {
+                        int slot = cb.allocateLocal(TypeKind.IntType);
                         switch (field) {
-                            case YEAR,YEAR_OF_ERA -> yearSlot       = cb.allocateLocal(TypeKind.IntType);
-                            case MONTH_OF_YEAR    -> monthSlot      = cb.allocateLocal(TypeKind.IntType);
-                            case DAY_OF_MONTH     -> dayOfMonthSlot = cb.allocateLocal(TypeKind.IntType);
-                            case HOUR_OF_DAY      -> hourSlot       = cb.allocateLocal(TypeKind.IntType);
-                            case MINUTE_OF_HOUR   -> minuteSlot     = cb.allocateLocal(TypeKind.IntType);
-                            case SECOND_OF_MINUTE -> secondSlot     = cb.allocateLocal(TypeKind.IntType);
-                            case NANO_OF_SECOND   -> nanoSlot       = cb.allocateLocal(TypeKind.IntType);
+                            case YEAR,YEAR_OF_ERA -> yearSlot       = slot;
+                            case MONTH_OF_YEAR    -> monthSlot      = slot;
+                            case DAY_OF_MONTH     -> dayOfMonthSlot = slot;
+                            case HOUR_OF_DAY      -> hourSlot       = slot;
+                            case MINUTE_OF_HOUR   -> minuteSlot     = slot;
+                            case SECOND_OF_MINUTE -> secondSlot     = slot;
+                            case NANO_OF_SECOND   -> nanoSlot       = slot;
                             default               -> throw new AssertionError();
                         }
                     }
@@ -6615,9 +6616,9 @@ public final class DateTimeFormatterBuilder {
                      */
                     cb.aload(querySlot);
 
-                    boolean containsLocalDate = containsLocalDate(fields);
-                    boolean containsLocalTimeWithoutNano = containsLocalTime(fields, false);
-                    boolean containsLocalTimeWithNano = containsLocalTime(fields, true);
+                    boolean containsLocalDate            = containsLocalDate(fields),
+                            containsLocalTimeWithoutNano = containsLocalTime(fields, false),
+                            containsLocalTimeWithNano    = containsLocalTime(fields, true);
                     if (containsLocalDate && (containsLocalTimeWithNano || containsLocalTimeWithoutNano)) {
                         /*
                          * LocalDateTime.of(year, month, dayOfMonth, hour, minute, second, nano));
