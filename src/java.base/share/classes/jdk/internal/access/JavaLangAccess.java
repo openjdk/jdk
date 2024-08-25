@@ -453,6 +453,11 @@ public interface JavaLangAccess {
      */
     String join(String prefix, String suffix, String delimiter, String[] elements, int size);
 
+    /**
+     * Concatenation of prefix and suffix characters to a String for early bootstrap
+     */
+    String concat(String prefix, String value, String suffix);
+
     /*
      * Get the class data associated with the given class.
      * @param c the class

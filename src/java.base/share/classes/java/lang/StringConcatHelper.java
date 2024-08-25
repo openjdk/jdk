@@ -783,4 +783,16 @@ final class StringConcatHelper {
         }
         throw new OutOfMemoryError("Overflow: String length out of range");
     }
+
+    static String concat(String prefix, String value, String suffix) {
+        if (prefix == null) prefix = "null";
+        if (value  == null) value  = "null";
+        if (suffix == null) suffix = "null";
+
+        byte coder = (byte) (prefix.coder() | value.coder() | suffix.coder());
+        int len = prefix.length() + value.length();
+        byte[] buf = newArrayWithSuffix(suffix, len, coder);
+        prepend(len, coder, buf, value, prefix);
+        return new String(buf, coder);
+    }
 }
