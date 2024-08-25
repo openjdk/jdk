@@ -119,11 +119,15 @@ import static java.lang.invoke.MethodType.methodType;
  */
 public final class StringConcatFactory {
     private static final int HIGH_ARITY_THRESHOLD;
+    private static final int REUSE_THRESHOLD;
     private static final int FORCE_INLINE_THRESHOLD;
 
     static {
         String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
         HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 0;
+
+        String reuseThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.reuseThreshold");
+        REUSE_THRESHOLD = reuseThreshold != null ? Integer.parseInt(reuseThreshold) : 16;
 
         String inlineThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.inlineThreshold");
         FORCE_INLINE_THRESHOLD = inlineThreshold != null ? Integer.parseInt(inlineThreshold) : 16;
@@ -1241,8 +1245,8 @@ public final class StringConcatFactory {
                 return handle.bindTo(concat1);
             }
 
-            final boolean forceInline = concatArgs.parameterCount() < FORCE_INLINE_THRESHOLD;
-            boolean staticConcat = !forceInline;
+            boolean forceInline  = concatArgs.parameterCount() <  FORCE_INLINE_THRESHOLD;
+            boolean staticConcat = concatArgs.parameterCount() >= REUSE_THRESHOLD;
 
             if (!staticConcat) {
                 var weakConstructorHandle = CACHE.get(concatArgs);
