@@ -241,9 +241,9 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
  * This is done by replacing the '+' delimiter with a '/'
  * in a copy of the already mangled hidden class name.
  *
- * "java/lang/invoke/LambdaForm$DMH+0x0000000037144c00"
+ * "java.lang.invoke.LambdaForm$DMH+0x0000000037144c00"
  *  becomes
- * "java/lang/invoke/LambdaForm$DMH/0x0000000037144c00"
+ * "java.lang.invoke.LambdaForm$DMH/0x0000000037144c00"
  *
  * Caller needs ResourceMark.
  */
@@ -256,7 +256,7 @@ static const char* create_hidden_klass_name(const Klass* k, uintptr_t hash) {
   assert(name->identity_hash() == hash, "invariant");
   const size_t len = static_cast<size_t>(name->utf8_length());
   char* hidden_klass_name = NEW_RESOURCE_ARRAY(char, len + 1);
-  strncpy(hidden_klass_name, name->as_C_string(), len + 1);
+  strncpy(hidden_klass_name, name->as_klass_external_name(), len + 1);
   char* const plus_position = strrchr(hidden_klass_name, '+');
   assert(plus_position != nullptr, "invariant");
   *plus_position = '/'; // replace the '+' delimiter with a '/'
