@@ -5394,7 +5394,7 @@ class StubGenerator: public StubCodeGenerator {
    *  c_rarg3   - dst, dest array
    *  c_rarg4   - dp, dst start offset
    *  c_rarg5   - isURL, Base64 or URL character set
-   *  c_rarg6   - isMIME, Decoding MIME block - unused here
+   *  c_rarg6   - isMIME, Decoding MIME block
    */
   address generate_base64_decodeBlock() {
 
@@ -5454,10 +5454,10 @@ class StubGenerator: public StubCodeGenerator {
     Register length    = x28;     // t3, total length of src data in bytes
 
     Label ProcessData, Exit;
-    Label ProcessScalar, ProcessVector;
+    Label ProcessScalar, ScalarLoop;
 
     // passed in length (send - soff) is guaranteed to be > 4,
-    // and in this intrinsic we only processe data of length in multiple of 4,
+    // and in this intrinsic we only process data of length in multiple of 4,
     // it's not guaranteed to be multiple of 4 by java level, so do it explicitly
     __ sub(length, send, soff);
     __ andi(length, length, -4);
@@ -5473,73 +5473,9 @@ class StubGenerator: public StubCodeGenerator {
     __ la(codec, ExternalAddress((address) fromBase64URL));
     __ BIND(ProcessData);
 
-
-    // scalar version
-    {
-      Label ScalarLoop;
-
-      Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
-      Register combined32Bits = x29; // t5
-
-      if (UseRVV) {
-        __ bnez(isMIME, ScalarLoop);
-        __ mv(t0, MaxVectorSize * 4);
-        __ bge(length, t0, ProcessVector);
-        __ BIND(ProcessScalar);
-        __ beqz(length, Exit);
-      }
-
-      __ BIND(ScalarLoop);
-      {
-        // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
-        // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
-
-        // load 4 bytes encoded src data
-        __ lbu(byte0, Address(src, 0));
-        __ lbu(byte1, Address(src, 1));
-        __ lbu(byte2, Address(src, 2));
-        __ lbu(byte3, Address(src, 3));
-        __ addi(src, src, 4);
-
-        // get codec index and decode (ie. load from codec by index)
-        __ add(byte0, codec, byte0);
-        __ add(byte1, codec, byte1);
-        __ lb(byte0, Address(byte0, 0));
-        __ lb(byte1, Address(byte1, 0));
-        __ add(byte2, codec, byte2);
-        __ add(byte3, codec, byte3);
-        __ lb(byte2, Address(byte2, 0));
-        __ lb(byte3, Address(byte3, 0));
-        __ slliw(byte0, byte0, 18);
-        __ slliw(byte1, byte1, 12);
-        __ orr(byte0, byte0, byte1);
-        __ orr(byte0, byte0, byte3);
-        __ slliw(byte2, byte2, 6);
-        __ orr(combined32Bits, byte0, byte2);
-
-        // error check
-        __ bltz(combined32Bits, Exit);
-
-        // store 3 bytes decoded data
-        __ sraiw(byte0, combined32Bits, 16);
-        __ sraiw(byte1, combined32Bits, 8);
-        __ sb(byte0, Address(dst, 0));
-        __ sb(byte1, Address(dst, 1));
-        __ sb(combined32Bits, Address(dst, 2));
-
-        __ sub(length, length, 4);
-        __ addi(dst, dst, 3);
-        // loop back
-        __ bnez(length, ScalarLoop);
-
-        __ j(Exit);
-      }
-    }
-
-
     // vector version
     if (UseRVV) {
-      __ BIND(ProcessVector);
+      __ bnez(isMIME, ScalarLoop);
 
       Label ProcessM1, ProcessM2;
 
@@ -5575,7 +5511,7 @@ class StubGenerator: public StubCodeGenerator {
       __ bge(length, stepSrcM2, ProcessM2);
 
 
-      // Assembler::m2
+      // Assembler::m1
       __ BIND(ProcessM1);
       __ blt(length, stepSrcM1, ProcessScalar);
 
@@ -5590,7 +5526,58 @@ class StubGenerator: public StubCodeGenerator {
       __ sub(length, length, stepSrcM1);
 
       // error check
-      __ beq(failedIdx, minusOne, ProcessScalar);
+      __ bne(failedIdx, minusOne, Exit);
+
+      __ BIND(ProcessScalar);
+      __ beqz(length, Exit);
+    }
+
+    // scalar version
+    {
+      Register byte0 = soff, byte1 = send, byte2 = doff, byte3 = isURL;
+      Register combined32Bits = x29; // t5
+
+      // encoded:   [byte0[5:0] : byte1[5:0] : byte2[5:0]] : byte3[5:0]] =>
+      // plain:     [byte0[5:0]+byte1[5:4] : byte1[3:0]+byte2[5:2] : byte2[1:0]+byte3[5:0]]
+      __ BIND(ScalarLoop);
+
+      // load 4 bytes encoded src data
+      __ lbu(byte0, Address(src, 0));
+      __ lbu(byte1, Address(src, 1));
+      __ lbu(byte2, Address(src, 2));
+      __ lbu(byte3, Address(src, 3));
+      __ addi(src, src, 4);
+
+      // get codec index and decode (ie. load from codec by index)
+      __ add(byte0, codec, byte0);
+      __ add(byte1, codec, byte1);
+      __ lb(byte0, Address(byte0, 0));
+      __ lb(byte1, Address(byte1, 0));
+      __ add(byte2, codec, byte2);
+      __ add(byte3, codec, byte3);
+      __ lb(byte2, Address(byte2, 0));
+      __ lb(byte3, Address(byte3, 0));
+      __ slliw(byte0, byte0, 18);
+      __ slliw(byte1, byte1, 12);
+      __ orr(byte0, byte0, byte1);
+      __ orr(byte0, byte0, byte3);
+      __ slliw(byte2, byte2, 6);
+      __ orr(combined32Bits, byte0, byte2);
+
+      // error check
+      __ bltz(combined32Bits, Exit);
+
+      // store 3 bytes decoded data
+      __ sraiw(byte0, combined32Bits, 16);
+      __ sraiw(byte1, combined32Bits, 8);
+      __ sb(byte0, Address(dst, 0));
+      __ sb(byte1, Address(dst, 1));
+      __ sb(combined32Bits, Address(dst, 2));
+
+      __ sub(length, length, 4);
+      __ addi(dst, dst, 3);
+      // loop back
+      __ bnez(length, ScalarLoop);
     }
 
     __ BIND(Exit);
