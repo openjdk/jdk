@@ -245,7 +245,7 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
 traceid JfrSymbolTable::mark_hidden_klass_name(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
   assert(k->is_hidden(), "invariant");
-  const uintptr_t hash = k->name()->identity_hash();;
+  const uintptr_t hash = k->name()->identity_hash();
   return mark(hash, k->external_name(), leakp);
 }
 
