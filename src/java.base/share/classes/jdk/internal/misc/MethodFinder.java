@@ -98,7 +98,11 @@ public class MethodFinder {
         if (Modifier.isAbstract(mods) ||
                 mainMethod.getReturnType() != void.class ||
                 (isPreview && Modifier.isPrivate(mods)) ||
-                (!isPreview && !Modifier.isStatic(mods))) {
+                (!isPreview &&
+                        (!Modifier.isStatic(mods)
+                                || !Modifier.isPublic(mods)
+                                || mainMethod.getParameterCount() != 1)
+                )) {
             return null;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@
 
 #include <zlib.h>
 #include "manifest_info.h"
-
-static char     *manifest;
 
 static const char       *manifest_name = "META-INF/MANIFEST.MF";
 
@@ -565,73 +563,6 @@ parse_nv_pair(char **lp, char **name, char **value)
 }
 
 /*
- * Read the manifest from the specified jar file and fill in the manifest_info
- * structure with the information found within.
- *
- * Error returns are as follows:
- *    0 Success
- *   -1 Unable to open jarfile
- *   -2 Error accessing the manifest from within the jarfile (most likely
- *      a manifest is not present, or this isn't a valid zip/jar file).
- */
-int
-JLI_ParseManifest(char *jarfile, manifest_info *info)
-{
-    int     fd;
-    zentry  entry;
-    char    *lp;
-    char    *name;
-    char    *value;
-    int     rc;
-
-    if ((fd = JLI_Open(jarfile, O_RDONLY
-#ifdef O_LARGEFILE
-        | O_LARGEFILE /* large file mode */
-#endif
-#ifdef O_BINARY
-        | O_BINARY /* use binary mode on windows */
-#endif
-        )) == -1) {
-        return (-1);
-    }
-    info->manifest_version = NULL;
-    info->main_class = NULL;
-    info->jre_version = NULL;
-    info->jre_restrict_search = 0;
-    info->splashscreen_image_file_name = NULL;
-    if ((rc = find_file(fd, &entry, manifest_name)) != 0) {
-        close(fd);
-        return (-2);
-    }
-    manifest = inflate_file(fd, &entry, NULL);
-    if (manifest == NULL) {
-        close(fd);
-        return (-2);
-    }
-    lp = manifest;
-    while ((rc = parse_nv_pair(&lp, &name, &value)) > 0) {
-        if (JLI_StrCaseCmp(name, "Manifest-Version") == 0) {
-            info->manifest_version = value;
-        } else if (JLI_StrCaseCmp(name, "Main-Class") == 0) {
-            info->main_class = value;
-        } else if (JLI_StrCaseCmp(name, "JRE-Version") == 0) {
-            /*
-             * Manifest specification overridden by command line option
-             * so we will silently override there with no specification.
-             */
-            info->jre_version = 0;
-        } else if (JLI_StrCaseCmp(name, "Splashscreen-Image") == 0) {
-            info->splashscreen_image_file_name = value;
-        }
-    }
-    close(fd);
-    if (rc == 0)
-        return (0);
-    else
-        return (-2);
-}
-
-/*
  * Opens the jar file and unpacks the specified file from its contents.
  * Returns NULL on failure.
  */
@@ -656,16 +587,6 @@ JLI_JarUnpackFile(const char *jarfile, const char *filename, int *size) {
     }
     close(fd);
     return (data);
-}
-
-/*
- * Specialized "free" function.
- */
-void
-JLI_FreeManifest()
-{
-    if (manifest)
-        free(manifest);
 }
 
 /*

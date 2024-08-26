@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,32 +161,13 @@ typedef struct zentry { /* Zip file entry */
 } zentry;
 
 /*
- * Information returned from the Manifest file by the ParseManifest() routine.
- * Certainly (much) more could be returned, but this is the information
- * currently of interest to the C based Java utilities (particularly the
- * Java launcher).
- */
-typedef struct manifest_info {  /* Interesting fields from the Manifest */
-    char        *manifest_version;      /* Manifest-Version string */
-    char        *main_class;            /* Main-Class entry */
-    char        *jre_version;           /* Appropriate J2SE release spec */
-    char        jre_restrict_search;    /* Restricted JRE search */
-    char        *splashscreen_image_file_name; /* splashscreen image file */
-} manifest_info;
-
-/*
  * Attribute closure to provide to manifest_iterate.
  */
 typedef void (*attribute_closure)(const char *name, const char *value,
         void *user_data);
 
-/*
- * Function prototypes.
- */
-int     JLI_ParseManifest(char *jarfile, manifest_info *info);
 void    *JLI_JarUnpackFile(const char *jarfile, const char *filename,
                 int *size);
-void    JLI_FreeManifest(void);
 
 JNIEXPORT int JNICALL
 JLI_ManifestIterate(const char *jarfile, attribute_closure ac,

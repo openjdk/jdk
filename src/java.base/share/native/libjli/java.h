@@ -51,23 +51,20 @@
 #define CURRENT_DATA_MODEL (CHAR_BIT * sizeof(void*))
 
 /*
- * The following environment variable is used to influence the behavior
- * of the jre exec'd through the SelectVersion routine.  The command line
- * options which specify the version are not passed to the exec'd version,
- * because that jre may be an older version which wouldn't recognize them.
- * This environment variable is known to this (and later) version and serves
- * to suppress the version selection code.  This is not only for efficiency,
- * but also for correctness, since any command line options have been
- * removed which would cause any value found in the manifest to be used.
- * This would be incorrect because the command line options are defined
- * to take precedence.
- *
- * The value associated with this environment variable is the MainClass
- * name from within the executable jar file (if any). This is strictly a
- * performance enhancement to avoid re-reading the jar file manifest.
- *
+ * Older versions of java launcher used to support JRE version selection.
+ * Specifically, the java launcher in JDK 1.8 can be used to launch a java
+ * application using a different java runtime (older, newer or same version JRE
+ * installed at a different location) than the one the launcher belongs to. That support
+ * was discontinued starting Java 9.
+ * However, java launcher in JDK 1.8 can still be launched with JRE version selection
+ * options to launch higher versioned java runtimes, including the current
+ * JDK version. When it does that, this environment variable is set by
+ * the Java 1.8 launcher. The value of this environment variable is the Main-Class name from
+ * within the executable jar file (if any).
+ * The java launcher in the current version of the JDK doesn't use this environment variable
+ * in any way other than merely using it for debug logging.
  */
-#define ENV_ENTRY "_JAVA_VERSION_SET"
+#define MAIN_CLASS_ENV_ENTRY "_JAVA_VERSION_SET"
 
 #define SPLASH_FILE_ENV_ENTRY "_JAVA_SPLASH_FILE"
 #define SPLASH_JAR_ENV_ENTRY "_JAVA_SPLASH_JAR"

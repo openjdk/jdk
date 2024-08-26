@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,8 @@
 
 /*
  * A NOTE TO DEVELOPERS: For performance reasons it is important that
- * the program image remain relatively small until after SelectVersion
- * CreateExecutionEnvironment have finished their possibly recursive
+ * the program image remain relatively small until after
+ * CreateExecutionEnvironment has finished its possibly recursive
  * processing. Watch everything, but resist all temptations to use Java
  * interfaces.
  */
@@ -88,8 +88,9 @@ static jboolean _wc_enabled = JNI_FALSE;
 static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
 
 /*
- * Entries for splash screen environment variables.
- * putenv is performed in SelectVersion. We need
+ * Values that will be stored into splash screen environment variables.
+ * putenv is performed to set _JAVA_SPLASH_FILE and _JAVA_SPLASH_JAR
+ * with these values, before PostJVMInit is invoked. We need
  * them in memory until UnsetEnv, so they are made static
  * global instead of auto local.
  */
@@ -110,19 +111,16 @@ static jboolean IsJavaArgs();
 static void SetJavaLauncherProp();
 static void SetClassPath(const char *s);
 static void SetMainModule(const char *s);
-static void SelectVersion(int argc, char **argv, char **main_class);
 static jboolean ParseArguments(int *pargc, char ***pargv,
                                int *pmode, char **pwhat,
-                               int *pret, const char *jrepath);
+                               int *pret);
 static jboolean InitializeJVM(JavaVM **pvm, JNIEnv **penv,
                               InvocationFunctions *ifn);
 static jstring NewPlatformString(JNIEnv *env, char *s);
-static jclass LoadMainClass(JNIEnv *env, int mode, char *name);
-static jclass GetApplicationClass(JNIEnv *env);
-
+static jobject LocateMainEntry(JNIEnv *env, int mode, char *name);
+static void SetupSplashScreenEnvVars(JNIEnv *env, const char *jarName, const char *jarSplashScreenImage);
 static void TranslateApplicationArgs(int jargc, const char **jargv, int *pargc, char ***pargv);
 static jboolean AddApplicationOptions(int cpathc, const char **cpathv);
-static void SetApplicationClassPath(const char**);
 
 static void PrintJavaVersion(JNIEnv *env);
 static void PrintUsage(JNIEnv* env, jboolean doXUsage);
@@ -130,10 +128,6 @@ static void ShowSettings(JNIEnv* env, char *optString);
 static void ShowResolvedModules(JNIEnv* env);
 static void ListModules(JNIEnv* env);
 static void DescribeModule(JNIEnv* env, char* optString);
-static jboolean ValidateModules(JNIEnv* env);
-
-static void SetPaths(int argc, char **argv);
-
 static void DumpState();
 
 enum OptionKind {
@@ -177,6 +171,11 @@ static int  KnownVMIndex(const char* name);
 static void FreeKnownVMs();
 static jboolean IsWildCardEnabled();
 
+typedef struct launcher_splash_info {
+    int headless; // 1 if headless, 0 otherwise
+    char *splash_file_name; // non-null if "-splash:" launcher option is used
+} launcher_splash_info;
+static launcher_splash_info *launcherSplashInfo = NULL;
 
 #define SOURCE_LAUNCHER_MAIN_ENTRY "jdk.compiler/com.sun.tools.javac.launcher.SourceLauncher"
 
@@ -257,6 +256,10 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     InitLauncher(javaw);
     DumpState();
     if (JLI_IsTraceLauncher()) {
+        char *env_in;
+        if ((env_in = getenv(MAIN_CLASS_ENV_ENTRY)) != NULL) {
+            printf("Launched through Multiple JRE (mJRE) support\n");
+        }
         int i;
         printf("Java args:\n");
         for (i = 0; i < jargc ; i++) {
@@ -268,18 +271,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         }
         AddOption("-Dsun.java.launcher.diag=true", NULL);
     }
-
-    /*
-     * SelectVersion() has several responsibilities:
-     *
-     *  1) Disallow specification of another JRE.  With 1.9, another
-     *     version of the JRE cannot be invoked.
-     *  2) Allow for a JRE version to invoke JDK 1.9 or later.  Since
-     *     all mJRE directives have been stripped from the request but
-     *     the pre 1.9 JRE [ 1.6 thru 1.8 ], it is as if 1.9+ has been
-     *     invoked from the command line.
-     */
-    SelectVersion(argc, argv, &main_class);
 
     CreateExecutionEnvironment(&argc, &argv,
                                jrepath, sizeof(jrepath),
@@ -323,7 +314,7 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
     /* Parse command line options; if the return value of
      * ParseArguments is false, the program should exit.
      */
-    if (!ParseArguments(&argc, &argv, &mode, &what, &ret, jrepath)) {
+    if (!ParseArguments(&argc, &argv, &mode, &what, &ret)) {
         return(ret);
     }
 
@@ -387,94 +378,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
         } \
     } while (JNI_FALSE)
 
-/*
- * Invokes static main(String[]) method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeStaticMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                  "([Ljava/lang/String;)V");
-    if (mainID == NULL) {
-        // static main(String[]) not found
-        return 0;
-    }
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes instance main(String[]) method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeInstanceMainWithArgs(JNIEnv *env, jclass mainClass, jobjectArray mainArgs) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    if (constructor == NULL) {
-        // main class' no-arg constructor not found
-        return 0;
-    }
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    if (mainObject == NULL) {
-        // main class instance couldn't be constructed
-        return 0;
-    }
-    jmethodID mainID =
-        (*env)->GetMethodID(env, mainClass, "main", "([Ljava/lang/String;)V");
-    if (mainID == NULL) {
-        // instance method main(String[]) method not found
-        return 0;
-    }
-    (*env)->CallVoidMethod(env, mainObject, mainID, mainArgs);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes no-arg static main() method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeStaticMainWithoutArgs(JNIEnv *env, jclass mainClass) {
-    jmethodID mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
-                                       "()V");
-    if (mainID == NULL) {
-        // static main() method couldn't be located
-        return 0;
-    }
-    (*env)->CallStaticVoidMethod(env, mainClass, mainID);
-    return 1; // method was invoked
-}
-
-/*
- * Invokes no-arg instance main() method if found.
- * Returns 0 with a pending exception if not found. Returns 1 if invoked, maybe
- * a pending exception if the method threw.
- */
-int
-invokeInstanceMainWithoutArgs(JNIEnv *env, jclass mainClass) {
-    jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
-    if (constructor == NULL) {
-        // main class' no-arg constructor not found
-        return 0;
-    }
-    jobject mainObject = (*env)->NewObject(env, mainClass, constructor);
-    if (mainObject == NULL) {
-        // couldn't create instance of main class
-        return 0;
-    }
-    jmethodID mainID = (*env)->GetMethodID(env, mainClass, "main",
-                                 "()V");
-    if (mainID == NULL) {
-        // instance method main() not found
-        return 0;
-    }
-    (*env)->CallVoidMethod(env, mainObject, mainID);
-    return 1; // method was invoked
-}
-
 int
 JavaMain(void* _args)
 {
@@ -487,16 +390,8 @@ JavaMain(void* _args)
 
     JavaVM *vm = 0;
     JNIEnv *env = 0;
-    jclass mainClass = NULL;
-    jclass appClass = NULL; // actual application class being launched
-    jobjectArray mainArgs;
     int ret = 0;
     jlong start = 0, end = 0;
-    jclass helperClass;
-    jfieldID isStaticMainField;
-    jboolean isStaticMain;
-    jfieldID noArgMainField;
-    jboolean noArgMain;
 
     RegisterThread();
 
@@ -600,19 +495,27 @@ JavaMain(void* _args)
      * This method also correctly handles launching existing JavaFX
      * applications that may or may not have a Main-Class manifest entry.
      */
-    mainClass = LoadMainClass(env, mode, what);
+    const jobject mainEntry = LocateMainEntry(env, mode, what);
+    CHECK_EXCEPTION_NULL_LEAVE(mainEntry);
+
+    const jclass mainEntryType = (*env)->GetObjectClass(env, mainEntry); // sun/launcher/LauncherHelper$MainEntry
+    const jfieldID mainClassFieldId = (*env)->GetFieldID(env, mainEntryType, "mainClass", "Ljava/lang/Class;");
+    CHECK_EXCEPTION_NULL_LEAVE(mainClassFieldId);
+    const jclass mainClass = (jclass)(*env)->GetObjectField(env, mainEntry, mainClassFieldId);
     CHECK_EXCEPTION_NULL_LEAVE(mainClass);
     /*
      * In some cases when launching an application that needs a helper, e.g., a
-     * JavaFX application with no main method, the mainClass will not be the
+     * JavaFX application with no main method, the main class will not be the
      * applications own main class but rather a helper class. To keep things
      * consistent in the UI we need to track and report the application main class.
      */
-    appClass = GetApplicationClass(env);
+    const jfieldID appClassFieldId = (*env)->GetFieldID(env, mainEntryType, "appClass", "Ljava/lang/Class;");
+    CHECK_EXCEPTION_NULL_LEAVE(appClassFieldId);
+    const jclass appClass = (jclass)(*env)->GetObjectField(env, mainEntry, appClassFieldId);
     CHECK_EXCEPTION_NULL_LEAVE(appClass);
 
     /* Build platform specific argument array */
-    mainArgs = CreateApplicationArgs(env, argv, argc);
+    const jobjectArray mainArgs = CreateApplicationArgs(env, argv, argc);
     CHECK_EXCEPTION_NULL_LEAVE(mainArgs);
 
     if (dryRun) {
@@ -620,11 +523,34 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    const jfieldID splashScreenImageFieldID = (*env)->GetFieldID(env, mainEntryType, "splashScreenImage",
+                                                                 "Ljava/lang/String;");
+    CHECK_EXCEPTION_NULL_LEAVE(splashScreenImageFieldID);
+    const jstring jarSplashScreenImage = (jstring)(*env)->GetObjectField(env, mainEntry, splashScreenImageFieldID);
+    CHECK_EXCEPTION_LEAVE(1);
+    const char *splash_file_name;
+    if (jarSplashScreenImage) {
+        splash_file_name = (*env)->GetStringUTFChars(env, jarSplashScreenImage, 0);
+        CHECK_EXCEPTION_LEAVE(1);
+    } else {
+        splash_file_name = NULL;
+    }
+
+    SetupSplashScreenEnvVars(env, what, splash_file_name);
+
+    if (jarSplashScreenImage) {
+        (*env)->ReleaseStringUTFChars(env, jarSplashScreenImage, splash_file_name);
+    }
     /*
+     * In some cases when launching an application that needs a helper, e.g., a
+     * JavaFX application with no main method, the main class will not be the
+     * application's own main class but rather a helper class. To keep things
+     * consistent in the UI we need to track and report the application main class.
+     *
      * PostJVMInit uses the class name as the application name for GUI purposes,
      * for example, on OSX this sets the application name in the menu bar for
      * both SWT and JavaFX. So we'll pass the actual application class here
-     * instead of mainClass as that may be a launcher or helper class instead
+     * instead of main class as that may be a launcher or helper class instead
      * of the application class.
      */
     PostJVMInit(env, appClass, vm);
@@ -635,30 +561,39 @@ JavaMain(void* _args)
      * the application stack trace.
      */
 
-    helperClass = GetLauncherHelperClass(env);
-    isStaticMainField = (*env)->GetStaticFieldID(env, helperClass, "isStaticMain", "Z");
-    CHECK_EXCEPTION_NULL_LEAVE(isStaticMainField);
-    isStaticMain = (*env)->GetStaticBooleanField(env, helperClass, isStaticMainField);
+    const jfieldID mainMethodFieldID = (*env)->GetFieldID(env, mainEntryType, "mainMethod",
+                                                          "Ljava/lang/reflect/Method;");
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethodFieldID);
+    const jobject mainMethod = (*env)->GetObjectField(env, mainEntry, mainMethodFieldID);
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethod);
 
-    noArgMainField = (*env)->GetStaticFieldID(env, helperClass, "noArgMain", "Z");
-    CHECK_EXCEPTION_NULL_LEAVE(noArgMainField);
-    noArgMain = (*env)->GetStaticBooleanField(env, helperClass, noArgMainField);
+    const jfieldID flagFieldID = (*env)->GetFieldID(env, mainEntryType, "mainMethodFlag", "I");
+    CHECK_EXCEPTION_NULL_LEAVE(flagFieldID);
+    const jint flag = (*env)->GetIntField(env, mainEntry, flagFieldID);
+    const jboolean isStaticMain = flag & 1; // if set, then implies static method
+    const jboolean isNoArgMain = flag & 2; // if set, then implies no-arg method
 
+    // FromReflectedMethod will internally initialize the class to which the mainMethod belongs
+    const jmethodID mainMethodID = (*env)->FromReflectedMethod(env, mainMethod);
+    CHECK_EXCEPTION_NULL_LEAVE(mainMethodID); // can happen if static initialization of the mainMethod's class failed
+    jboolean mainInvoked = JNI_FALSE;
     if (isStaticMain) {
-        if (noArgMain) {
-            ret = invokeStaticMainWithoutArgs(env, mainClass);
-        } else {
-            ret = invokeStaticMainWithArgs(env, mainClass, mainArgs);
-        }
+        isNoArgMain ? (*env)->CallStaticVoidMethod(env, mainClass, mainMethodID)
+                    : (*env)->CallStaticVoidMethod(env, mainClass, mainMethodID, mainArgs);
+        mainInvoked = JNI_TRUE;
     } else {
-        if (noArgMain) {
-            ret = invokeInstanceMainWithoutArgs(env, mainClass);
-        } else {
-            ret = invokeInstanceMainWithArgs(env, mainClass, mainArgs);
+        const jmethodID constructor = (*env)->GetMethodID(env, mainClass, "<init>", "()V");
+        if (constructor != NULL) {
+            const jobject inst = (*env)->NewObject(env, mainClass, constructor);
+            if (inst != NULL) {
+                isNoArgMain ? (*env)->CallVoidMethod(env, inst, mainMethodID)
+                            : (*env)->CallVoidMethod(env, inst, mainMethodID, mainArgs);
+                mainInvoked = JNI_TRUE;
+            }
         }
     }
-    if (!ret) {
-        // An appropriate main method couldn't be located, check and report
+    if (!mainInvoked) {
+        // An appropriate main method wasn't invoked, check and report
         // any exception and LEAVE()
         CHECK_EXCEPTION_LEAVE(1);
     }
@@ -667,7 +602,7 @@ JavaMain(void* _args)
      * The launcher's exit code (in the absence of calls to
      * System.exit) will be non-zero if main threw an exception.
      */
-    if (ret && (*env)->ExceptionOccurred(env) == NULL) {
+    if (mainInvoked && (*env)->ExceptionOccurred(env) == NULL) {
         // main method was invoked and no exception was thrown from it,
         // return success.
         ret = 0;
@@ -676,7 +611,50 @@ JavaMain(void* _args)
         // in the invoked main method, return failure.
         ret = 1;
     }
-    LEAVE();
+    LEAVE(); // exits with the correct "ret" code
+}
+
+static void
+SetupSplashScreenEnvVars(JNIEnv *env,
+                         const char *jarName, // the jar file being launched
+                         const char *jarSplashScreenImage // SplashScreen-Image value from the jar's manifest
+) {
+    if (launcherSplashInfo == NULL || launcherSplashInfo->headless) {
+        // splash screen not applicable
+        return;
+    }
+    // not in headless mode, either use the "-splash:" file (if any)
+    // specified to the launcher or use the "Splashscreen-Image"
+    // (if any) specified in the manifest of the jar being launched.
+
+    // command line specified "-splash:" takes priority over manifest one.
+    if (launcherSplashInfo->splash_file_name) {
+        // We set up the splash file name as a env variable which then gets
+        // used when showing the splash screen in ShowSplashScreen()
+
+        // create the string of the form _JAVA_SPLASH_FILE=<val>
+        splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")
+                                         + JLI_StrLen(launcherSplashInfo->splash_file_name) + 1);
+        JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
+        JLI_StrCat(splash_file_entry, launcherSplashInfo->splash_file_name);
+        putenv(splash_file_entry);
+    } else if (jarSplashScreenImage) {
+        // The jar's manifest had a "Splashscreen-Image" specified. We set up the jar entry name
+        // and the jar file name as env variables which then get used when showing the splash screen
+        // in ShowSplashScreen()
+
+        // create the string of the form _JAVA_SPLASH_FILE=<val>
+        splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")
+                                         + JLI_StrLen(jarSplashScreenImage) + 1);
+        JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
+        JLI_StrCat(splash_file_entry, jarSplashScreenImage);
+        putenv(splash_file_entry);
+        // create the string of the form _JAVA_SPLASH_JAR=<val>
+        splash_jar_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_JAR_ENV_ENTRY "=") + JLI_StrLen(jarName) + 1);
+        JLI_StrCpy(splash_jar_entry, SPLASH_JAR_ENV_ENTRY "=");
+        JLI_StrCat(splash_jar_entry, jarName);
+        putenv(splash_jar_entry);
+    }
 }
 
 /*
@@ -1079,167 +1057,6 @@ SetMainModule(const char *s)
 }
 
 /*
- * The SelectVersion() routine ensures that an appropriate version of
- * the JRE is running.  The specification for the appropriate version
- * is obtained from either the manifest of a jar file (preferred) or
- * from command line options.
- * The routine also parses splash screen command line options and
- * passes on their values in private environment variables.
- */
-static void
-SelectVersion(int argc, char **argv, char **main_class)
-{
-    char    *arg;
-    char    *operand;
-    int     jarflag = 0;
-    int     headlessflag = 0;
-    manifest_info info;
-    char    *splash_file_name = NULL;
-    char    *splash_jar_name = NULL;
-    char    *env_in;
-    int     res;
-    jboolean has_arg;
-
-    /*
-     * If the version has already been selected, set *main_class
-     * with the value passed through the environment (if any) and
-     * simply return.
-     */
-
-    /*
-     * This environmental variable can be set by mJRE capable JREs
-     * [ 1.5 thru 1.8 ].  All other aspects of mJRE processing have been
-     * stripped by those JREs.  This environmental variable allows 1.9+
-     * JREs to be started by these mJRE capable JREs.
-     * Note that mJRE directives in the jar manifest file would have been
-     * ignored for a JRE started by another JRE...
-     * .. skipped for JRE 1.5 and beyond.
-     * .. not even checked for pre 1.5.
-     */
-    if ((env_in = getenv(ENV_ENTRY)) != NULL) {
-        if (*env_in != '\0')
-            *main_class = JLI_StringDup(env_in);
-        return;
-    }
-
-    /*
-     * Scan through the arguments for options relevant to multiple JRE
-     * support.  Multiple JRE support existed in JRE versions 1.5 thru 1.8.
-     *
-     * This capability is no longer available with JRE versions 1.9 and later.
-     * These command line options are reported as errors.
-     */
-
-    argc--;
-    argv++;
-    while (argc > 0 && *(arg = *argv) == '-') {
-        has_arg = IsOptionWithArgument(argc, argv);
-        if (JLI_StrCCmp(arg, "-version:") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR1);
-        } else if (JLI_StrCmp(arg, "-jre-restrict-search") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR2);
-        } else if (JLI_StrCmp(arg, "-jre-no-restrict-search") == 0) {
-            JLI_ReportErrorMessage(SPC_ERROR2);
-        } else {
-            if (JLI_StrCmp(arg, "-jar") == 0)
-                jarflag = 1;
-            if (IsWhiteSpaceOption(arg)) {
-                if (has_arg) {
-                    argc--;
-                    argv++;
-                    arg = *argv;
-                }
-            }
-
-            /*
-             * Checking for headless toolkit option in the some way as AWT does:
-             * "true" means true and any other value means false
-             */
-            if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
-                headlessflag = 1;
-            } else if (JLI_StrCCmp(arg, "-Djava.awt.headless=") == 0) {
-                headlessflag = 0;
-            } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
-                splash_file_name = arg+8;
-            }
-        }
-        argc--;
-        argv++;
-    }
-    if (argc <= 0) {    /* No operand? Possibly legit with -[full]version */
-        operand = NULL;
-    } else {
-        argc--;
-        operand = *argv++;
-    }
-
-    /*
-     * If there is a jar file, read the manifest. If the jarfile can't be
-     * read, the manifest can't be read from the jar file, or the manifest
-     * is corrupt, issue the appropriate error messages and exit.
-     *
-     * Even if there isn't a jar file, construct a manifest_info structure
-     * containing the command line information.  It's a convenient way to carry
-     * this data around.
-     */
-    if (jarflag && operand) {
-        if ((res = JLI_ParseManifest(operand, &info)) != 0) {
-            if (res == -1)
-                JLI_ReportErrorMessage(JAR_ERROR2, operand);
-            else
-                JLI_ReportErrorMessage(JAR_ERROR3, operand);
-            exit(1);
-        }
-
-        /*
-         * Command line splash screen option should have precedence
-         * over the manifest, so the manifest data is used only if
-         * splash_file_name has not been initialized above during command
-         * line parsing
-         */
-        if (!headlessflag && !splash_file_name && info.splashscreen_image_file_name) {
-            splash_file_name = info.splashscreen_image_file_name;
-            splash_jar_name = operand;
-        }
-    } else {
-        info.manifest_version = NULL;
-        info.main_class = NULL;
-        info.jre_version = NULL;
-        info.jre_restrict_search = 0;
-    }
-
-    /*
-     * Passing on splash screen info in environment variables
-     */
-    if (splash_file_name && !headlessflag) {
-        splash_file_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_FILE_ENV_ENTRY "=")+JLI_StrLen(splash_file_name)+1);
-        JLI_StrCpy(splash_file_entry, SPLASH_FILE_ENV_ENTRY "=");
-        JLI_StrCat(splash_file_entry, splash_file_name);
-        putenv(splash_file_entry);
-    }
-    if (splash_jar_name && !headlessflag) {
-        splash_jar_entry = JLI_MemAlloc(JLI_StrLen(SPLASH_JAR_ENV_ENTRY "=")+JLI_StrLen(splash_jar_name)+1);
-        JLI_StrCpy(splash_jar_entry, SPLASH_JAR_ENV_ENTRY "=");
-        JLI_StrCat(splash_jar_entry, splash_jar_name);
-        putenv(splash_jar_entry);
-    }
-
-
-    /*
-     * "Valid" returns (other than unrecoverable errors) follow.  Set
-     * main_class as a side-effect of this routine.
-     */
-    if (info.main_class != NULL)
-        *main_class = JLI_StringDup(info.main_class);
-
-    if (info.jre_version == NULL) {
-        JLI_FreeManifest();
-        return;
-    }
-
-}
-
-/*
  * Test if the current argv is an option, i.e. with a leading `-`
  * and followed with an argument without a leading `-`.
  */
@@ -1325,12 +1142,14 @@ GetOpt(int *pargc, char ***pargv, char **poption, char **pvalue) {
 static jboolean
 ParseArguments(int *pargc, char ***pargv,
                int *pmode, char **pwhat,
-               int *pret, const char *jrepath)
+               int *pret)
 {
     int argc = *pargc;
     char **argv = *pargv;
     int mode = LM_UNKNOWN;
     char *arg = NULL;
+    int headlessflag = 0;
+    char *splash_file_name = NULL;
 
     *pret = 0;
 
@@ -1389,6 +1208,13 @@ ParseArguments(int *pargc, char ***pargv,
                    JLI_StrCmp(arg, "-d") == 0) {
             REPORT_ERROR (has_arg_any_len, ARG_ERROR12, arg);
             describeModule = value;
+        } else if (JLI_StrCCmp(arg, "-version:") == 0) {
+            REPORT_ERROR(NULL, SPC_ERROR1, arg);
+        } else if (JLI_StrCmp(arg, "-jre-restrict-search") == 0) {
+            REPORT_ERROR(NULL, SPC_ERROR2, arg);
+        } else if (JLI_StrCmp(arg, "-jre-no-restrict-search") == 0) {
+            REPORT_ERROR(NULL, SPC_ERROR2, arg);
+
 /*
  * Parse white-space options
  */
@@ -1499,7 +1325,7 @@ ParseArguments(int *pargc, char ***pargv,
             /* No longer supported */
             JLI_ReportErrorMessage(ARG_WARN, arg);
         } else if (JLI_StrCCmp(arg, "-splash:") == 0) {
-            ; /* Ignore machine independent options already handled */
+            splash_file_name = arg+8;
         } else if (JLI_StrCmp(arg, "--disable-@files") == 0) {
             ; /* Ignore --disable-@files option already handled */
         } else if (ProcessPlatformOption(arg)) {
@@ -1508,6 +1334,14 @@ ParseArguments(int *pargc, char ***pargv,
             /* java.class.path set on the command line */
             if (JLI_StrCCmp(arg, "-Djava.class.path=") == 0) {
                 _have_classpath = JNI_TRUE;
+            } else if (JLI_StrCmp(arg, "-Djava.awt.headless=true") == 0) {
+                /*
+                 * Checking for headless toolkit option in the some way as AWT does:
+                 * "true" means true and any other value means false
+                 */
+                headlessflag = 1;
+            } else if (JLI_StrCCmp(arg, "-Djava.awt.headless=") == 0) {
+                headlessflag = 0;
             }
             AddOption(arg, NULL);
         }
@@ -1519,6 +1353,7 @@ ParseArguments(int *pargc, char ***pargv,
             dumpSharedSpaces = JNI_TRUE;
         }
     }
+
 
     if (*pwhat == NULL && --argc >= 0) {
         *pwhat = *argv++;
@@ -1557,6 +1392,10 @@ ParseArguments(int *pargc, char ***pargv,
     }
 
     *pmode = mode;
+
+    launcherSplashInfo = (struct launcher_splash_info*) JLI_MemAlloc(sizeof(struct launcher_splash_info));
+    launcherSplashInfo->headless = headlessflag;
+    launcherSplashInfo->splash_file_name = splash_file_name;
 
     return JNI_TRUE;
 }
@@ -1663,53 +1502,37 @@ NewPlatformStringArray(JNIEnv *env, char **strv, int strc)
 }
 
 /*
- * Calls LauncherHelper::checkAndLoadMain to verify that the main class
+ * Calls LauncherHelper::locateMainEntry to verify that the main class
  * is present, it is ok to load the main class and then load the main class.
  * For more details refer to the java implementation.
  */
-static jclass
-LoadMainClass(JNIEnv *env, int mode, char *name)
+static jobject
+LocateMainEntry(JNIEnv *env, int mode, char *name)
 {
     jmethodID mid;
     jstring str;
     jobject result;
     jlong start = 0, end = 0;
-    jclass cls = GetLauncherHelperClass(env);
-    NULL_CHECK0(cls);
+    jclass launcherHelperClass = GetLauncherHelperClass(env);
+    NULL_CHECK0(launcherHelperClass);
     if (JLI_IsTraceLauncher()) {
         start = CurrentTimeMicros();
     }
-    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
-                "checkAndLoadMain",
-                "(ZILjava/lang/String;)Ljava/lang/Class;"));
+    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, launcherHelperClass,
+                                                "locateMainEntry",
+                                                "(ZILjava/lang/String;)Lsun/launcher/LauncherHelper$MainEntry;"));
 
     NULL_CHECK0(str = NewPlatformString(env, name));
-    NULL_CHECK0(result = (*env)->CallStaticObjectMethod(env, cls, mid,
+    NULL_CHECK0(result = (*env)->CallStaticObjectMethod(env, launcherHelperClass, mid,
                                                         USE_STDERR, mode, str));
 
     if (JLI_IsTraceLauncher()) {
         end = CurrentTimeMicros();
-        printf("%ld micro seconds to load main class\n", (long)(end-start));
+        printf("%ld micro seconds to locate main method\n", (long)(end-start));
         printf("----%s----\n", JLDEBUG_ENV_ENTRY);
     }
 
-    return (jclass)result;
-}
-
-static jclass
-GetApplicationClass(JNIEnv *env)
-{
-    jmethodID mid;
-    jclass appClass;
-    jclass cls = GetLauncherHelperClass(env);
-    NULL_CHECK0(cls);
-    NULL_CHECK0(mid = (*env)->GetStaticMethodID(env, cls,
-                "getApplicationClass",
-                "()Ljava/lang/Class;"));
-
-    appClass = (*env)->CallStaticObjectMethod(env, cls, mid);
-    CHECK_EXCEPTION_RETURN_VALUE(0);
-    return appClass;
+    return (jobject) result;
 }
 
 static char* expandWildcardOnLongOpt(char* arg) {
@@ -2347,13 +2170,16 @@ ShowSplashScreen()
      * Done with all command line processing and potential re-execs so
      * clean up the environment.
      */
-    (void)UnsetEnv(ENV_ENTRY);
+    (void)UnsetEnv(MAIN_CLASS_ENV_ENTRY);
     (void)UnsetEnv(SPLASH_FILE_ENV_ENTRY);
     (void)UnsetEnv(SPLASH_JAR_ENV_ENTRY);
 
     JLI_MemFree(splash_jar_entry);
     JLI_MemFree(splash_file_entry);
-
+    if (launcherSplashInfo) {
+        JLI_MemFree(launcherSplashInfo);
+        launcherSplashInfo = NULL;
+    }
 }
 
 static const char* GetFullVersion()

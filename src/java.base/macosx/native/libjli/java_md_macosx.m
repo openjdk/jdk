@@ -87,10 +87,6 @@ struct NSAppArgs {
  * The vm selection options are not passed to the running
  * virtual machine; they must be screened out by the launcher.
  *
- * The version specification (if any) is processed first by the
- * platform independent routine SelectVersion.  This may result in
- * the exec of the specified launcher version.
- *
  * Now, in most cases,the launcher will dlopen the target libjvm.so. All
  * required libraries are loaded by the runtime linker, using the known paths
  * baked into the shared libraries at compile time. Therefore,

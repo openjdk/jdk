@@ -60,10 +60,6 @@
  * The vm selection options are not passed to the running
  * virtual machine; they must be screened out by the launcher.
  *
- * The version specification (if any) is processed first by the
- * platform independent routine SelectVersion.  This may result in
- * the exec of the specified launcher version.
- *
  * Previously the launcher modified the LD_LIBRARY_PATH appropriately for the
  * desired data model path, regardless if data models matched or not. The
  * launcher subsequently exec'ed the desired executable, in order to make the
