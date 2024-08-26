@@ -140,6 +140,10 @@ protected:
   // source of feedback to adjust trigger parameters.
   TruncatedSeq _available;
 
+  // A conservative minimum threshold of free space that we'll try to maintain when possible.
+  // For example, we might trigger a concurrent gc if we are likely to drop below
+  // this threshold, or we might consider this when dynamically resizing generations
+  // in the generational case. Controlled by global flag ShenandoahMinFreeThreshold.
   size_t min_free_threshold();
 };
 

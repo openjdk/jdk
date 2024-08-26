@@ -42,27 +42,14 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
 void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                       RegionData* data, size_t size,
                                                                       size_t actual_free) {
-  // The logic for cset selection in adaptive is as follows:
+  // See comments in ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata():
+  // we do the same here, but with the following adjustments for generational mode:
   //
-  //   1. We cannot get cset larger than available free space. Otherwise we guarantee OOME
-  //      during evacuation, and thus guarantee full GC. In practice, we also want to let
-  //      application to allocate something. This is why we limit CSet to some fraction of
-  //      available space. In non-overloaded heap, max_cset would contain all plausible candidates
-  //      over garbage threshold.
-  //
-  //   2. We should not get cset too low so that free threshold would not be met right
-  //      after the cycle. Otherwise we get back-to-back cycles for no reason if heap is
-  //      too fragmented. In non-overloaded non-fragmented heap min_garbage would be around zero.
-  //
-  // Therefore, we start by sorting the regions by garbage. Then we unconditionally add the best candidates
-  // before we meet min_garbage. Then we add all candidates that fit with a garbage threshold before
-  // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
-  // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
-
-  // In generational mode, the sort order within the data array is not strictly descending amounts of garbage.  In
-  // particular, regions that have reached tenure age will be sorted into this array before younger regions that contain
-  // more garbage.  This represents one of the reasons why we keep looking at regions even after we decide, for example,
-  // to exclude one of the regions because it might require evacuation of too much live data.
+  // In generational mode, the sort order within the data array is not strictly descending amounts
+  // of garbage. In particular, regions that have reached tenure age will be sorted into this
+  // array before younger regions that typically contain more garbage. This is one reason why,
+  // for example, we continue examining regions even after rejecting a region that has
+  // more live data than we can evacuate.
 
   // Better select garbage-first regions
   QuickSort::sort<RegionData>(data, (int) size, compare_by_garbage);
