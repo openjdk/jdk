@@ -45,30 +45,35 @@ Java_NoClassDefFoundErrorTest_callFindClass(JNIEnv *env, jclass klass, jstring c
     cls = (*env)->FindClass(env, c_name);
 }
 
-JNIEXPORT jboolean JNICALL
-Java_NoClassDefFoundErrorTest_tryCallDefineClass(JNIEnv *env, jclass klass) {
+
+static char* giant_string() {
     size_t len = ((size_t)INT_MAX) + 3;
     char* c_name = malloc(len * sizeof(char));
     if (c_name != NULL) {
-      memset(c_name, 0x59595959, len-1); // YYYY...
-      c_name[len - 1] = '\0';
-      (*env)->DefineClass(env, c_name, NULL, NULL, 0);
-      free(c_name);
-      return JNI_TRUE;
+        memset(c_name, 0x59595959, len-1); // YYYY...
+        c_name[len - 1] = '\0';
+    }
+    return c_name;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_NoClassDefFoundErrorTest_tryCallDefineClass(JNIEnv *env, jclass klass) {
+    char* c_name =  giant_string();
+    if (c_name != NULL) {
+        (*env)->DefineClass(env, c_name, NULL, NULL, 0);
+        free(c_name);
+        return JNI_TRUE;
     }
     return JNI_FALSE;
 }
 
 JNIEXPORT jboolean JNICALL
 Java_NoClassDefFoundErrorTest_tryCallFindClass(JNIEnv *env, jclass klass) {
-    size_t len = ((size_t)INT_MAX) + 3;
-    char* c_name = malloc(len * sizeof(char));
+    char* c_name =  giant_string();
     if (c_name != NULL) {
-      memset(c_name, 0x59595959, len-1); // YYYY...
-      c_name[len - 1] = '\0';
-      jclass cls = (*env)->FindClass(env, c_name);
-      free(c_name);
-      return JNI_TRUE;
+        jclass cls = (*env)->FindClass(env, c_name);
+        free(c_name);
+        return JNI_TRUE;
     }
     return JNI_FALSE;
 }
