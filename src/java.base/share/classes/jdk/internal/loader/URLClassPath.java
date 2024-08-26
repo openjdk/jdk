@@ -59,7 +59,6 @@ import java.util.Properties;
 import java.util.StringTokenizer;
 import java.util.jar.JarFile;
 import java.util.zip.CRC32;
-import java.util.zip.ZipEntry;
 import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
@@ -453,7 +452,7 @@ public class URLClassPath {
                             " local classpath for " + url + ", cause:" + e);
                 }
                 if (loader != null) {
-                    closeLoaderIgnoreEx(loader);
+                    closeQuietly(loader);
                 }
                 continue;
             } catch (SecurityException se) {
@@ -464,7 +463,7 @@ public class URLClassPath {
                     System.err.println("Failed to access " + url + ", " + se );
                 }
                 if (loader != null) {
-                    closeLoaderIgnoreEx(loader);
+                    closeQuietly(loader);
                 }
                 continue;
             }
@@ -479,7 +478,7 @@ public class URLClassPath {
     }
 
     // closes the given loader and ignores any IOException that may occur during close
-    private static void closeLoaderIgnoreEx(final Loader loader) {
+    private static void closeQuietly(final Loader loader) {
         try {
             loader.close();
         } catch (IOException ioe) {
