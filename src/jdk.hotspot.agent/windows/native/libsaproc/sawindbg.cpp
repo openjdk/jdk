@@ -862,7 +862,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
   // when requested for decorated "class" or "class*" (i.e. "??_7class@@6B@"/"??_7class*@@6B@").
   // As a workaround check if returned symbol contains requested symbol.
   ULONG64 disp = 0L;
-  char buf[512];
+  char buf[SYMBOL_BUFSIZE];
   memset(buf, 0, sizeof(buf));
   if (ptrIDebugSymbols->GetNameByOffset(offset, buf, sizeof(buf), 0, &disp) ==  S_OK) {
     if (strstr(buf, name) == nullptr) {
