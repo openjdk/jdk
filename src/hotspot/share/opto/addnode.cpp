@@ -395,9 +395,70 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
+  // optimize a+a+...+a into a*n
+  Node *base = nullptr;
+  int terms = 0;
+  jlong multiplier = find_base_operand_in_chained_addition(this, &base, &terms);
+
+  // Check if there is a more optimal way to represent the multiplication
+  // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms (if possible)
+  if (base != nullptr && base != this && terms > 2) {
+    // FIXME: find a safe way to do type narrowing
+    Node *node = (bt == T_INT) ? (Node *) phase->intcon(multiplier) : (Node *) phase->longcon(multiplier);
+    base->dump();
+    BasicType bt2 = phase->type(base)->basic_type();
+
+    if (bt2 == T_INT || bt2 == T_LONG) { // to avoid void constant types
+      return MulNode::make(base, node, bt2);
+    }
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
+jlong AddNode::find_base_operand_in_chained_addition(Node *node, Node **base, int* terms) {
+  // ADD: e.g., a + a => a or (a<<2) + a => a
+  // SUB: e.g., a<<3 - a => a
+  if (node->is_Add() || node->is_Sub()) {
+    Node *base_left = nullptr;
+    Node *base_right = nullptr;
+    int  terms_left = 0;
+    int  terms_right = 0;
+
+    jlong multiplier_left = find_base_operand_in_chained_addition(node->in(1), &base_left, &terms_left);
+    jlong multiplier_right = find_base_operand_in_chained_addition(node->in(2), &base_right, &terms_right);
+
+    if (base_left == base_right) {
+      *base = base_left;
+      *terms = terms_left + terms_right;
+      return node->is_Add() ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
+    }
+  }
+
+  // e.g., a<<2 => a
+  if (node->is_LShift() && node->isa_LShift()->in(2)->is_Con()) {
+    BasicType bt = node->in(2)->is_ConI() ? T_INT : T_LONG;
+    jlong exponent = node->in(2)->get_integer_as_long(bt);
+
+    *base = node->in(1);
+    *terms = 1;
+    return 1 << exponent;
+  }
+
+  // e.g., a*2 => a or a*2
+  if (node->is_Mul() && (node->in(1)->is_Con() || node->in(2)->is_Con())) {
+    Node *multiplier_node = node->in(1)->is_Con() ? node->in(1) : node->in(2);
+    jlong multiplier = multiplier_node->get_integer_as_long(multiplier_node->is_ConI() ? T_INT : T_LONG);
+
+    *base = node->in(1)->is_Con() ? node->in(2) : node->in(1);
+    *terms = 1;
+    return multiplier;
+  }
+
+  *base = node;
+  *terms = 1;
+  return 1;
+}
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);

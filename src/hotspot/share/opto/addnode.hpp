@@ -42,6 +42,10 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 // by virtual functions.
 class AddNode : public Node {
   virtual uint hash() const;
+
+private:
+  static jlong find_base_operand_in_chained_addition(Node* node, Node** base, int* terms);
+
 public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
     init_class_id(Class_Add);
