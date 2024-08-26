@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -47,51 +47,44 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 2) // 3
+@Fork(value = 3)
 public class TestFill {
 
-/*    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8",
-            "9", "10", "11", "12", "13", "14", "15", "16",
-            "17", "18", "19", "20", "21", "22", "23", "24",
-            "25", "26", "27", "28", "29", "30", "31", "32",
-            "33", "64", "128", "256", "512", "1023", "2048})*/
-    //@Param({"0", "4", "8", "16", "32", "64", "128"})
-    @Param({"16", "17", "18", "19", "20", "21", "22", "23"})
+    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8", "16", "32", "64", "128"})
     public int ELEM_SIZE;
 
-    byte[] dstArray;
-    MemorySegment heapDstSegment;
-    MemorySegment nativeDstSegment;
-    ByteBuffer dstBuffer;
+    byte[] array;
+    MemorySegment heapSegment;
+    MemorySegment nativeSegment;
+    ByteBuffer buffer;
 
     @Setup
     public void setup() {
-        dstArray = new byte[ELEM_SIZE];
-        heapDstSegment = MemorySegment.ofArray(dstArray);
-        nativeDstSegment = Arena.ofAuto().allocate(ELEM_SIZE);
-        dstBuffer = ByteBuffer.wrap(dstArray);
+        array = new byte[ELEM_SIZE];
+        heapSegment = MemorySegment.ofArray(array);
+        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE);
+        buffer = ByteBuffer.wrap(array);
     }
 
-/*
     @Benchmark
     public void arrays_fill() {
-        Arrays.fill(dstArray, (byte) 0);
+        Arrays.fill(array, (byte) 0);
     }
-*/
 
     @Benchmark
-    public void fill_patch() {
-        heapDstSegment.fill((byte) 0);
+    public void heap_segment_fill() {
+        heapSegment.fill((byte) 0);
     }
 
-/*    @Benchmark
-    public void fill_base() {
-        heapDstSegment.fillBase((byte) 0);
+    @Benchmark
+    public void native_segment_fill() {
+        nativeSegment.fill((byte) 0);
     }
 
     @Benchmark
     public void buffer_fill() {
-        dstBuffer.clear().put(new byte[ELEM_SIZE]);
-    }*/
+        // Hopefully, the creation of the intermediate array will be optimized away.
+        buffer.clear().put(new byte[ELEM_SIZE]);
+    }
 
 }

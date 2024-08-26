@@ -191,41 +191,41 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value) {
-        checkReadOnly(false);
-        if ((length & ~4095) == 0) { // 0 < length < 4096
-            int i = 0;
-            final int end = (int) (length & ~7);
-            if (end > 0) { // Maybe skip this if statement?
-                long longValue = value | value << 8 | value << 16 | value << 24 |
-                        (long) value << 32 | (long) value << 40 | (long) value << 48 | (long) value << 56;
-                for (; i < end; i += 8) {
-                    set(JAVA_LONG_UNALIGNED, i, longValue);
+        if ((length & ~7) == 0) { // 0 <= length < 8
+            // Handle smaller fills directly without having to transition to native code.
+            final int valueUnsigned = Byte.toUnsignedInt(value);
+            final int intValue = valueUnsigned | valueUnsigned << 8 | valueUnsigned << 16 | valueUnsigned << 24;
+            switch ((int) length) {
+                case 0 : checkReadOnly(false); checkValidState(); break; // Implicit test
+                case 1 : set(JAVA_BYTE, 0, value); break;
+                case 2 : set(JAVA_SHORT_UNALIGNED, 0, (short) intValue); break;
+                case 3 : {
+                    set(JAVA_SHORT_UNALIGNED, 0, (short) intValue);
+                    set(JAVA_BYTE, 2, value);
+                    break;
+                }
+                case 4 : set(JAVA_INT_UNALIGNED, 0, intValue); break;
+                case 5 : {
+                    set(JAVA_INT_UNALIGNED, 0, intValue);
+                    set(JAVA_BYTE, 4, value);
+                    break;
+                }
+                case 6 : {
+                    set(JAVA_INT_UNALIGNED, 0, intValue);
+                    set(JAVA_SHORT_UNALIGNED, 4, (short) intValue);
+                    break;
+                }
+                case 7 : {
+                    set(JAVA_INT_UNALIGNED, 0, intValue);
+                    set(JAVA_SHORT_UNALIGNED, 4, (short) intValue);
+                    set(JAVA_BYTE, 6, value);
+                    break;
                 }
             }
-            // Maybe skip this (makes it slower for certain common values)
-            if ((length & 4) != 0) {
-                int intValue = value | value << 8 | value << 16 | value << 24;
-                set(JAVA_INT_UNALIGNED, i, intValue);
-                i += 4;
-            }
-            if ((length & 2) != 0) {
-                short shortValue = (short) (value | value << 8);
-                set(JAVA_SHORT_UNALIGNED, i, shortValue);
-                i += 2;
-            }
-            if ((length & 1) != 0) {
-                set(JAVA_BYTE, i, value);
-            }
         } else {
+            checkReadOnly(false);
             SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         }
-        return this;
-    }
-
-    @Override
-    public final MemorySegment fillBase(byte value){
-        checkAccess(0, length, false);
-        SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
         return this;
     }
 
