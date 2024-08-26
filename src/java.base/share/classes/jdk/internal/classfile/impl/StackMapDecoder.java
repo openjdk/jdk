@@ -161,13 +161,14 @@ public class StackMapDecoder {
 
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
         bw.writeU1(vti.tag());
-        switch (vti) {
-            case SimpleVerificationTypeInfo svti ->
+        switch (vti.tag()) {
+            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL, VT_UNINITIALIZED_THIS ->
                 {}
-            case ObjectVerificationTypeInfo ovti ->
-                bw.writeIndex(ovti.className());
-            case UninitializedVerificationTypeInfo uvti ->
-                bw.writeU2(bw.labelContext().labelToBci(uvti.newTarget()));
+            case VT_OBJECT ->
+                bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
+            case VT_UNINITIALIZED ->
+                bw.writeU2(bw.labelContext().labelToBci(((UninitializedVerificationTypeInfo)vti).newTarget()));
+            default -> throw new IllegalArgumentException("Invalid verification type tag: " + vti.tag());
         }
     }
 
