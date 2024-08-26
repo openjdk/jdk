@@ -44,7 +44,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.nio.file.attribute.*;
 import java.time.Instant;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
@@ -107,10 +109,10 @@ public class CreationTime {
             }
         } else if (Platform.isLinux()) {
             // Creation time read depends on statx system call support and on the file
-            // system storing the birth time. The tmpfs file system type does not store
+            // system storing the birth time. The tmpfs/ext3/nfs etc. file system type does not store
             // the birth time.
             boolean statxIsPresent = Linker.nativeLinker().defaultLookup().find("statx").isPresent();
-            if (statxIsPresent && !Files.getFileStore(file).type().contentEquals("tmpfs")) {
+            if (statxIsPresent && supportBirthTimeOnLinux(file)) {
                 supportsCreationTimeRead = true;
             }
             // Creation time updates are not supported on Linux
@@ -144,6 +146,25 @@ public class CreationTime {
             if (Math.abs(creationTime.toMillis()-current.toMillis()) > 1000L)
                 throw new RuntimeException("Creation time not changed");
         }
+    }
+
+
+    /**
+     * read the output of linux command `stat -c "%w" file`, if the output is "-",
+     * then the file system doesn't support birth time
+     */
+    public static boolean supportBirthTimeOnLinux(Path file) {
+        try {
+            String filePath = file.toAbsolutePath().toString();
+            ProcessBuilder pb = new ProcessBuilder("stat", "-c", "%w", filePath);
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String l = b.readLine();
+            if (l != null && l.equals("-")) { return false; }
+        } catch(Exception e) {
+        }
+        return true;
     }
 
     public static void main(String[] args) throws IOException {
