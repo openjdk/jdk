@@ -42,6 +42,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -959,6 +960,15 @@ public final class ProcessTools {
         @Override
         public boolean waitFor(long timeout, TimeUnit unit) throws InterruptedException {
             boolean rslt = p.waitFor(timeout, unit);
+            if (rslt) {
+                waitForStreams();
+            }
+            return rslt;
+        }
+
+        @Override
+        public boolean waitFor(Duration duration) throws InterruptedException {
+            boolean rslt = p.waitFor(duration);
             if (rslt) {
                 waitForStreams();
             }

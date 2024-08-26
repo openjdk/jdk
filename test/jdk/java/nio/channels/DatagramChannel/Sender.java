@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,9 @@
 /* @test
  * @bug 4669040 8130394
  * @summary Test DatagramChannel subsequent receives with no datagram ready
+ * @library /test/lib
+ * @build jdk.test.lib.Platform Sender
+ * @run main Sender
  * @author Mike McCloskey
  */
 
@@ -36,6 +39,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.DatagramChannel;
 
+import jdk.test.lib.Platform;
+
 public class Sender {
 
     static PrintStream log = System.err;
@@ -46,25 +51,26 @@ public class Sender {
     }
 
     static void test() throws Exception {
-        Server server = new Server();
-        Client client = new Client(server.port());
+        try (Server server = new Server()) {
+            Client client = new Client(server.port());
 
-        Thread serverThread = new Thread(server);
-        serverThread.start();
+            Thread serverThread = new Thread(server);
+            serverThread.start();
 
-        Thread clientThread = new Thread(client);
-        clientThread.start();
+            Thread clientThread = new Thread(client);
+            clientThread.start();
 
-        serverThread.join();
-        clientThread.join();
+            serverThread.join();
+            clientThread.join();
 
-        server.throwException();
-        client.throwException();
+            server.throwException();
+            client.throwException();
+        }
     }
 
     public static class Client implements Runnable {
         final int port;
-        Exception e = null;
+        volatile Exception e = null;
 
         Client(int port) {
             this.port = port;
@@ -76,14 +82,17 @@ public class Sender {
         }
 
         public void run() {
-            try {
-                DatagramChannel dc = DatagramChannel.open();
+            try (DatagramChannel dc = DatagramChannel.open()) {
                 ByteBuffer bb = ByteBuffer.allocateDirect(12);
                 bb.order(ByteOrder.BIG_ENDIAN);
                 bb.putInt(1).putLong(1);
                 bb.flip();
                 InetAddress address = InetAddress.getLocalHost();
                 InetSocketAddress isa = new InetSocketAddress(address, port);
+                if (Platform.isOSX()) {
+                    // avoid binding on wildcard on macOS
+                    dc.bind(new InetSocketAddress(address, 0));
+                }
                 dc.connect(isa);
                 clientISA = dc.getLocalAddress();
                 dc.write(bb);
@@ -93,12 +102,16 @@ public class Sender {
         }
     }
 
-    public static class Server implements Runnable {
+    public static class Server implements Runnable, AutoCloseable {
         final DatagramChannel dc;
-        Exception e = null;
+        volatile Exception e = null;
 
         Server() throws IOException {
-            dc = DatagramChannel.open().bind(new InetSocketAddress(0));
+            // avoid binding to wildcard address on macOS
+            InetSocketAddress lo = Platform.isOSX()
+                    ? new InetSocketAddress(InetAddress.getLocalHost(), 0)
+                    : new InetSocketAddress(0);
+            dc = DatagramChannel.open().bind(lo);
         }
 
         int port() {
@@ -148,6 +161,11 @@ public class Sender {
             } catch (Exception ex) {
                 e = ex;
             }
+        }
+
+        @Override
+        public void close() throws IOException {
+            dc.close();
         }
     }
 

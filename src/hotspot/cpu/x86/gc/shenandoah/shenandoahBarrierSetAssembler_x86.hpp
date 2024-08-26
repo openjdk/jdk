@@ -56,10 +56,7 @@ private:
                                     bool tosca_live,
                                     bool expand_call);
 
-  void iu_barrier_impl(MacroAssembler* masm, Register dst, Register tmp);
-
 public:
-  void iu_barrier(MacroAssembler* masm, Register dst, Register tmp);
 #ifdef COMPILER1
   void gen_pre_barrier_stub(LIR_Assembler* ce, ShenandoahPreBarrierStub* stub);
   void gen_load_reference_barrier_stub(LIR_Assembler* ce, ShenandoahLoadReferenceBarrierStub* stub);

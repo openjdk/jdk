@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ PhaseRegAlloc::PhaseRegAlloc( uint unique, PhaseCFG &cfg,
                               Matcher &matcher,
                               void (*pr_stats)() ):
                Phase(Register_Allocation),
-               _node_regs(0),
+               _node_regs(nullptr),
                _node_regs_max_index(0),
                _cfg(cfg),
                _framesize(0xdeadbeef),

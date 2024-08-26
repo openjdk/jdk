@@ -529,8 +529,8 @@ class methodHandle;
   /* support for sun.security.util.math.intpoly.MontgomeryIntegerPolynomialP256 */                                      \
   do_class(sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, "sun/security/util/math/intpoly/MontgomeryIntegerPolynomialP256")  \
   do_intrinsic(_intpoly_montgomeryMult_P256, sun_security_util_math_intpoly_MontgomeryIntegerPolynomialP256, intPolyMult_name, intPolyMult_signature, F_R) \
-  do_name(intPolyMult_name, "mult")                                                                                     \
-  do_signature(intPolyMult_signature, "([J[J[J)I")                                                                      \
+  do_name(intPolyMult_name, "multImpl")                                                                                     \
+  do_signature(intPolyMult_signature, "([J[J[J)V")                                                                      \
                                                                                                                         \
   do_class(sun_security_util_math_intpoly_IntegerPolynomial, "sun/security/util/math/intpoly/IntegerPolynomial")        \
   do_intrinsic(_intpoly_assign, sun_security_util_math_intpoly_IntegerPolynomial, intPolyAssign_name, intPolyAssign_signature, F_S) \
@@ -600,6 +600,8 @@ class methodHandle;
   do_alias(continuationOnPinned_signature,      int_void_signature)                                                     \
   do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
+  do_intrinsic(_Continuation_pin,          jdk_internal_vm_Continuation, pin_name, void_method_signature, F_SN)         \
+  do_intrinsic(_Continuation_unpin,        jdk_internal_vm_Continuation, unpin_name, void_method_signature, F_SN)       \
                                                                                                                         \
   /* java/lang/VirtualThread */                                                                                         \
   do_intrinsic(_notifyJvmtiVThreadStart, java_lang_VirtualThread, notifyJvmtiStart_name, void_method_signature, F_RN)   \

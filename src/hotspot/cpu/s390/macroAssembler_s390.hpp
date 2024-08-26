@@ -708,6 +708,31 @@ class MacroAssembler: public Assembler {
                                      Label* L_success,
                                      Label* L_failure);
 
+  void repne_scan(Register r_addr, Register r_value, Register r_count, Register r_scratch);
+
+  void lookup_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register r_temp1,
+                                     Register r_temp2,
+                                     Register r_temp3,
+                                     Register r_temp4,
+                                     Register r_result,
+                                     u1 super_klass_slot);
+
+  void lookup_secondary_supers_table_slow_path(Register r_super_klass,
+                                               Register r_array_base,
+                                               Register r_array_index,
+                                               Register r_bitmap,
+                                               Register r_result,
+                                               Register r_temp1);
+
+  void verify_secondary_supers_table(Register r_sub_klass,
+                                     Register r_super_klass,
+                                     Register r_result /* expected */,
+                                     Register r_temp1,
+                                     Register r_temp2,
+                                     Register r_temp3);
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,
@@ -727,8 +752,10 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_lock_object(Register oop, Register box, Register temp1, Register temp2);
   void compiler_fast_unlock_object(Register oop, Register box, Register temp1, Register temp2);
-  void lightweight_lock(Register obj, Register hdr, Register tmp, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow);
+  void lightweight_lock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Label& slow);
+  void compiler_fast_lock_lightweight_object(Register obj, Register tmp1, Register tmp2);
+  void compiler_fast_unlock_lightweight_object(Register obj, Register tmp1, Register tmp2);
 
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
 

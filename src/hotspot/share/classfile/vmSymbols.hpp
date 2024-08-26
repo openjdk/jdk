@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -406,6 +406,8 @@ class SerializeClosure;
   template(onContinue_name,                           "onContinue0")                              \
   template(scope_name,                                "scope")                                    \
   template(yieldInfo_name,                            "yieldInfo")                                \
+  template(pin_name,                                  "pin")                                      \
+  template(unpin_name,                                "unpin")                                    \
   template(tail_name,                                 "tail")                                     \
   template(size_name,                                 "size")                                     \
   template(bottom_name,                               "bottom")                                   \
@@ -557,6 +559,7 @@ class SerializeClosure;
   template(bool_array_signature,                      "[Z")                                       \
   template(byte_array_signature,                      "[B")                                       \
   template(char_array_signature,                      "[C")                                       \
+  template(int_array_signature,                       "[I")                                       \
   template(runnable_signature,                        "Ljava/lang/Runnable;")                     \
   template(continuation_signature,                    "Ljdk/internal/vm/Continuation;")           \
   template(continuationscope_signature,               "Ljdk/internal/vm/ContinuationScope;")      \

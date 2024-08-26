@@ -115,7 +115,7 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
     }
 
     @Override
-    public byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+    public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
         ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARED_POOL
                                                                      ? ConstantPoolBuilder.of(model)
                                                                      : ConstantPoolBuilder.of();
@@ -132,7 +132,11 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
 
     @Override
     public List<VerifyError> verify(ClassModel model) {
-        return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+        try {
+            return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+        } catch (IllegalArgumentException verifierInitializationError) {
+            return List.of(new VerifyError(verifierInitializationError.getMessage()));
+        }
     }
 
     @Override

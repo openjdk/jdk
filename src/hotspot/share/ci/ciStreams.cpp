@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,7 @@ Bytecodes::Code ciBytecodeStream::next_wide_or_table(Bytecodes::Code bc) {
 // ------------------------------------------------------------------
 // ciBytecodeStream::reset_to_bci
 void ciBytecodeStream::reset_to_bci( int bci ) {
-  _bc_start=_was_wide=0;
+  _bc_start = _was_wide = nullptr;
   _pc = _start+bci;
 }
 

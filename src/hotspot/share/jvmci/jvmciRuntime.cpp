@@ -628,7 +628,7 @@ JRT_LEAF(oopDesc*, JVMCIRuntime::load_and_clear_exception(JavaThread* thread))
   oop exception = thread->exception_oop();
   assert(exception != nullptr, "npe");
   thread->set_exception_oop(nullptr);
-  thread->set_exception_pc(0);
+  thread->set_exception_pc(nullptr);
   return exception;
 JRT_END
 
@@ -874,7 +874,7 @@ int JVMCIRuntime::release_and_clear_oop_handles() {
     for (int i = 0; i < _oop_handles.length(); i++) {
       oop* oop_ptr = _oop_handles.at(i);
       guarantee(oop_ptr != nullptr, "release_cleared_oop_handles left null entry in _oop_handles");
-      guarantee(*oop_ptr != nullptr, "unexpected cleared handle");
+      guarantee(NativeAccess<>::oop_load(oop_ptr) != nullptr, "unexpected cleared handle");
       // Satisfy OopHandles::release precondition that all
       // handles being released are null.
       NativeAccess<>::oop_store(oop_ptr, (oop) nullptr);
@@ -889,7 +889,7 @@ int JVMCIRuntime::release_and_clear_oop_handles() {
 }
 
 static bool is_referent_non_null(oop* handle) {
-  return handle != nullptr && *handle != nullptr;
+  return handle != nullptr && NativeAccess<>::oop_load(handle) != nullptr;
 }
 
 // Swaps the elements in `array` at index `a` and index `b`
@@ -2078,6 +2078,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
                                                        int compile_id,
                                                        bool has_monitors,
                                                        bool has_unsafe_access,
+                                                       bool has_scoped_access,
                                                        bool has_wide_vector,
                                                        JVMCIObject compiled_code,
                                                        JVMCIObject nmethod_mirror,
@@ -2183,6 +2184,7 @@ JVMCI::CodeInstallResult JVMCIRuntime::register_method(JVMCIEnv* JVMCIENV,
         nm->set_has_unsafe_access(has_unsafe_access);
         nm->set_has_wide_vectors(has_wide_vector);
         nm->set_has_monitors(has_monitors);
+        nm->set_has_scoped_access(has_scoped_access);
 
         JVMCINMethodData* data = nm->jvmci_nmethod_data();
         assert(data != nullptr, "must be");

@@ -60,4 +60,10 @@ public class FindAny {
         return LongStream.range(0, size).parallel().boxed().findAny().get();
     }
 
+    public static void main(String... args) {
+        FindAny findAny = new FindAny();
+        findAny.size = 100000;
+        findAny.seq_invoke();
+        findAny.par_invoke();
+    }
 }
