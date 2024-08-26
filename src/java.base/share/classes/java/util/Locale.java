@@ -995,7 +995,7 @@ public final class Locale implements Cloneable, Serializable {
         }
     }
 
-    private static class LocaleCache implements Function<Object, Locale> {
+    private static final class LocaleCache implements Function<Object, Locale> {
         private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE
                 = ReferencedKeyMap.create(true, ReferencedKeyMap.concurrentHashMapSupplier());
 
