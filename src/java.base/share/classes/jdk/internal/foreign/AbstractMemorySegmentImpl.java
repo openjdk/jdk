@@ -196,7 +196,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             final int intValue = valueUnsigned | valueUnsigned << 8 | valueUnsigned << 16 | valueUnsigned << 24;
             // Use the old switch statement syntax to improve startup time
             switch ((int) length) {
-                case 0 : checkReadOnly(false); checkValidState(); break; // Implicit test
+                case 0 : checkReadOnly(false); checkValidState(); break; // Explicit tests
                 case 1 : set(JAVA_BYTE, 0, value); break;
                 case 2 : set(JAVA_SHORT_UNALIGNED, 0, (short) intValue); break;
                 case 3 : {
