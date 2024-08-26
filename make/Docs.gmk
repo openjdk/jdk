@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -714,7 +714,7 @@ SPEC_HEADER_BLOCK := \
     <div class="navbar"> \
         <div>$(HEADER_RIGHT_SIDE_INFO)</div> \
         <nav><ul><li><a href="PATH_TO_SPECS/../api/index.html">API</a> \
-        <li><a href="PATH_TO_SPECS/index.html">OTHER SPECIFICATIONS \
+        <li><a href="PATH_TO_SPECS/index.html">OTHER SPECIFICATIONS</a> \
         <li><a href="PATH_TO_SPECS/man/index.html">TOOL GUIDES</a></ul></nav> \
     </div> \
 </header>

@@ -99,8 +99,8 @@ class vframe: public ResourceObj {
 
 #ifndef PRODUCT
   // printing operations
-  virtual void print_value() const;
-  virtual void print();
+  virtual void print_value(outputStream* output = tty) const;
+  virtual void print(outputStream* output = tty);
 #endif
 };
 
@@ -145,9 +145,9 @@ class javaVFrame: public vframe {
 #ifndef PRODUCT
  public:
   // printing operations
-  void print();
-  void print_value() const;
-  void print_activation(int index) const;
+  void print(outputStream* output = tty);
+  void print_value(outputStream* output = tty) const;
+  void print_activation(int index, outputStream* output = tty) const;
 #endif
   friend class vframe;
 };
@@ -195,8 +195,8 @@ class externalVFrame: public vframe {
 #ifndef PRODUCT
  public:
   // printing operations
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };
@@ -211,8 +211,8 @@ class entryVFrame: public externalVFrame {
 #ifndef PRODUCT
  public:
   // printing
-  void print_value() const;
-  void print();
+  void print_value(outputStream* output = tty) const;
+  void print(outputStream* output = tty);
 #endif
   friend class vframe;
 };

@@ -68,10 +68,10 @@ private:
   // The header is considered the oop part of this type plus the length.
   // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
   static int header_size_in_bytes() {
-    size_t hs = length_offset_in_bytes() + sizeof(int);
+    int hs = length_offset_in_bytes() + (int)sizeof(int);
 #ifdef ASSERT
     // make sure it isn't called before UseCompressedOops is initialized.
-    static size_t arrayoopdesc_hs = 0;
+    static int arrayoopdesc_hs = 0;
     if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
     assert(arrayoopdesc_hs == hs, "header size can't change");
 #endif // ASSERT
@@ -83,13 +83,13 @@ private:
   // it occupies the second half of the _klass field in oopDesc.
   static int length_offset_in_bytes() {
     return UseCompressedClassPointers ? klass_gap_offset_in_bytes() :
-                               sizeof(arrayOopDesc);
+                               (int)sizeof(arrayOopDesc);
   }
 
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
-    size_t hs = header_size_in_bytes();
-    return (int)(element_type_should_be_aligned(type) ? align_up(hs, BytesPerLong) : hs);
+    int hs = header_size_in_bytes();
+    return element_type_should_be_aligned(type) ? align_up(hs, BytesPerLong) : hs;
   }
 
   // Returns the address of the first element. The elements in the array will not
@@ -134,14 +134,14 @@ private:
     assert(type < T_CONFLICT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
-    size_t hdr_size_in_bytes = base_offset_in_bytes(type);
+    int hdr_size_in_bytes = base_offset_in_bytes(type);
     // This is rounded-up and may overlap with the first array elements.
-    size_t hdr_size_in_words = align_up(hdr_size_in_bytes, HeapWordSize) / HeapWordSize;
+    int hdr_size_in_words = align_up(hdr_size_in_bytes, HeapWordSize) / HeapWordSize;
 
     const size_t max_element_words_per_size_t =
-      align_down((SIZE_MAX/HeapWordSize - hdr_size_in_words), MinObjAlignment);
+      align_down((SIZE_MAX/HeapWordSize - (size_t)hdr_size_in_words), MinObjAlignment);
     const size_t max_elements_per_size_t =
-      HeapWordSize * max_element_words_per_size_t / type2aelembytes(type);
+      HeapWordSize * max_element_words_per_size_t / (size_t)type2aelembytes(type);
     if ((size_t)max_jint < max_elements_per_size_t) {
       // It should be ok to return max_jint here, but parts of the code
       // (CollectedHeap, Klass::oop_oop_iterate(), and more) uses an int for

@@ -208,6 +208,9 @@ public:
 
   bool starts_bundle(const Node *n) const;
   bool contains_as_owner(GrowableArray<MonitorValue*> *monarray, ObjectValue *ov) const;
+  bool contains_as_scalarized_obj(JVMState* jvms, MachSafePointNode* sfn,
+                                  GrowableArray<ScopeValue*>* objs,
+                                  ObjectValue* ov) const;
 
   // Dump formatted assembly
 #if defined(SUPPORT_OPTO_ASSEMBLY)

@@ -31,16 +31,18 @@ import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlStyle;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -53,7 +55,17 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
      */
     private ExecutableElement currentConstructor;
 
-    private boolean foundNonPubConstructor = false;
+    /**
+     * If any constructors are non-public, then we want the modifiers shown in the summary.
+     * This implies we need a three-column summary.
+     */
+    private boolean showConstructorModifiers = false;
+
+    /**
+     * Whether any constructors have type parameters.
+     * This implies we need a three column summary.
+     */
+    private boolean hasTypeParamsConstructor = false;
 
     /**
      * Construct a new member writer for constructors.
@@ -65,11 +77,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
         // the following must be done before the summary table is generated
         var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
-        for (Element constructor : constructors) {
-            if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
-                setFoundNonPubConstructor(true);
-            }
-        }
+        analyzeConstructors(constructors);
     }
 
     /**
@@ -94,11 +102,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     protected void buildConstructorDoc(Content target) {
         var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
         if (!constructors.isEmpty()) {
-            for (Element constructor : constructors) {
-                if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
-                    setFoundNonPubConstructor(true);
-                }
-            }
+            analyzeConstructors(constructors);
 
             Content constructorDetailsHeader = getConstructorDetailsHeader(target);
             Content memberList = getMemberList();
@@ -108,7 +112,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             for (Element constructor : constructors) {
                 currentConstructor = (ExecutableElement)constructor;
                 Content constructorContent = getConstructorHeaderContent(currentConstructor);
-                Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+                Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
                 buildSignature(div);
                 buildDeprecationInfo(div);
                 buildPreviewInfo(div);
@@ -124,6 +128,24 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             target.add(constructorDetails);
             writer.tableOfContents.popNestedList();
         }
+    }
+
+    // Calculate "showConstructorModifiers" and "hasTypeParamsConstructor"
+    private void analyzeConstructors(List<? extends Element> constructors) {
+        for (Element constructor : constructors) {
+            if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
+                setShowConstructorModifiers(true);
+            }
+            List<? extends TypeParameterElement> list = ((ExecutableElement)constructor).getTypeParameters();
+            if (list != null && !list.isEmpty()) {
+                hasTypeParamsConstructor = true;
+            }
+        }
+    }
+
+    // Does the constructor summary need three columnns or just two?
+    protected boolean threeColumnSummary() {
+        return showConstructorModifiers || hasTypeParamsConstructor;
     }
 
     @Override
@@ -172,7 +194,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     public void buildSummary(Content summariesList, Content content) {
-        writer.addSummary(HtmlStyle.constructorSummary,
+        writer.addSummary(HtmlStyles.constructorSummary,
                 HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
@@ -195,12 +217,13 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             heading.setId(anchors.getLast());
         }
         content.add(heading);
-        return HtmlTree.SECTION(HtmlStyle.detail, content)
+        return HtmlTree.SECTION(HtmlStyles.detail, content)
                 .setId(anchors.getFirst());
     }
 
     protected Content getSignature(ExecutableElement constructor) {
         return new Signatures.MemberSignature(constructor, this)
+                .setTypeParameters(getTypeParameters(constructor))
                 .setParameters(getParameters(constructor, true))
                 .setExceptions(getExceptions(constructor))
                 .setAnnotations(writer.getAnnotationInfo(constructor, true))
@@ -225,14 +248,14 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     protected Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails) {
         return writer.getDetailsListItem(
-                HtmlTree.SECTION(HtmlStyle.constructorDetails)
+                HtmlTree.SECTION(HtmlStyles.constructorDetails)
                         .setId(HtmlIds.CONSTRUCTOR_DETAIL)
                         .add(memberDetailsHeader)
                         .add(memberDetails));
     }
 
-    protected void setFoundNonPubConstructor(boolean foundNonPubConstructor) {
-        this.foundNonPubConstructor = foundNonPubConstructor;
+    protected void setShowConstructorModifiers(boolean showConstructorModifiers) {
+        this.showConstructorModifiers = showConstructorModifiers;
     }
 
     @Override
@@ -244,7 +267,7 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     public TableHeader getSummaryTableHeader(Element member) {
-        if (foundNonPubConstructor) {
+        if (threeColumnSummary()) {
             return new TableHeader(contents.modifierLabel, contents.constructorLabel,
                     contents.descriptionLabel);
         } else {
@@ -256,15 +279,15 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
     protected Table<Element> createSummaryTable() {
         List<HtmlStyle> bodyRowStyles;
 
-        if (foundNonPubConstructor) {
-            bodyRowStyles = Arrays.asList(HtmlStyle.colFirst, HtmlStyle.colConstructorName,
-                    HtmlStyle.colLast);
+        if (threeColumnSummary()) {
+            bodyRowStyles = Arrays.asList(HtmlStyles.colFirst, HtmlStyles.colConstructorName,
+                    HtmlStyles.colLast);
         } else {
-            bodyRowStyles = Arrays.asList(HtmlStyle.colConstructorName, HtmlStyle.colLast);
+            bodyRowStyles = Arrays.asList(HtmlStyles.colConstructorName, HtmlStyles.colLast);
         }
 
         return new Table<Element>(
-                HtmlStyle.summaryTable)
+                HtmlStyles.summaryTable)
                 .setCaption(contents.constructors)
                 .setHeader(getSummaryTableHeader(typeElement))
                 .setColumnStyles(bodyRowStyles);
@@ -276,8 +299,8 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     @Override
     protected void addSummaryType(Element member, Content content) {
-        if (foundNonPubConstructor) {
-            var code = new HtmlTree(TagName.CODE);
+        if (threeColumnSummary()) {
+            var code = new HtmlTree(HtmlTag.CODE);
             if (utils.isProtected(member)) {
                 code.add("protected ");
             } else if (utils.isPrivate(member)) {
@@ -287,6 +310,11 @@ public class ConstructorWriter extends AbstractExecutableMemberWriter {
             } else {
                 code.add(
                         resources.getText("doclet.Package_private"));
+            }
+            ExecutableElement constructor = (ExecutableElement)member;
+            List<? extends TypeParameterElement> list = constructor.getTypeParameters();
+            if (list != null && !list.isEmpty()) {
+                addTypeParameters(constructor, code);
             }
             content.add(code);
         }

@@ -27,10 +27,8 @@ package jdk.internal.classfile.impl;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
 
 import java.lang.classfile.BufWriter;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.constantpool.ConstantPool;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -126,10 +124,8 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(arr, 0, arr.length);
     }
 
-    @Override
-    public void writeBytes(BufWriter other) {
-        BufWriterImpl o = (BufWriterImpl) other;
-        writeBytes(o.elems, 0, o.offset);
+    public void writeBytes(BufWriterImpl other) {
+        writeBytes(other.elems, 0, other.offset);
     }
 
     @Override
@@ -175,7 +171,6 @@ public final class BufWriterImpl implements BufWriter {
         return ByteBuffer.wrap(elems, 0, offset).slice();
     }
 
-    @Override
     public void copyTo(byte[] array, int bufferOffset) {
         System.arraycopy(elems, 0, array, bufferOffset, size());
     }
@@ -197,21 +192,5 @@ public final class BufWriterImpl implements BufWriter {
             writeU2(0);
         else
             writeIndex(entry);
-    }
-
-    @Override
-    public<T extends WritableElement<?>> void writeList(List<T> list) {
-        writeU2(list.size());
-        for (T t : list) {
-            t.writeTo(this);
-        }
-    }
-
-    @Override
-    public void writeListIndices(List<? extends PoolEntry> list) {
-        writeU2(list.size());
-        for (PoolEntry info : list) {
-            writeIndex(info);
-        }
     }
 }
