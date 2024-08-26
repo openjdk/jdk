@@ -2902,7 +2902,11 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check for monitor (0b10).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(t, mark, markWord::monitor_value);
-    bne(CCR0, inflated);
+    if (!UseObjectMonitorTable) {
+      bne(CCR0, inflated);
+    } else {
+      bne(CCR0, push_and_slow);
+    }
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
