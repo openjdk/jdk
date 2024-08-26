@@ -571,11 +571,11 @@ private:
 
   public:
     DefUsePair(Node* def, Node* use) :
-            _def(def), _use(use) {
+      _def(def), _use(use) {
     }
 
     DefUsePair() :
-            _def(nullptr), _use(nullptr) {
+      _def(nullptr), _use(nullptr) {
     }
 
     Node* def() const {
@@ -751,7 +751,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   worklist_def_use_mem_states.push(nullptr, initial_mem);
   while (worklist_def_use_mem_states.is_nonempty()) {
     // Examine a nearby store to see if it might interfere with our load.
-    Node* def_mem_state   = worklist_def_use_mem_states.top_def();
+    Node* def_mem_state = worklist_def_use_mem_states.top_def();
     Node* use_mem_state = worklist_def_use_mem_states.top_use();
     worklist_def_use_mem_states.pop();
 
