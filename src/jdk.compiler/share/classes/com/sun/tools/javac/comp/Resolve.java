@@ -424,7 +424,9 @@ public class Resolve {
             return
                 (env.enclClass.sym == sym.owner // fast special case
                  ||
-                 isCurrentlyResolvingPermitting(env) && ((JCClassDecl) env.tree).sym == sym.owner
+                 isCurrentlyResolvingPermitting(env)
+                 &&
+                 ((JCClassDecl) env.tree).sym.outermostClass() == sym.owner.outermostClass()
                  ||
                  env.enclClass.sym.outermostClass() ==
                  sym.owner.outermostClass())
