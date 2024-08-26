@@ -151,9 +151,6 @@ public interface OperatingSystemMXBean extends
      * @apiNote Callers should be aware of the possibility of other callers
      * affecting the observation period and the result.
      *
-     * @implNote There is only one observation period for the entire JVM
-     * process.
-     *
      * @implSpec This implementation must return the same value
      * as {@link #getCpuLoad()}.
      *
@@ -183,9 +180,6 @@ public interface OperatingSystemMXBean extends
      * @apiNote Callers should be aware of the possibility of other callers
      * affecting the observation period and the result.
      *
-     * @implNote  There is only one observation period for the entire JVM
-     * process.
-     *
      * @return the "recent cpu usage" for the whole operating environment;
      * a negative value if not available.
      * @since 14
@@ -213,9 +207,6 @@ public interface OperatingSystemMXBean extends
      *
      * @apiNote Callers should be aware of the possibility of other callers
      * affecting the observation period and the result.
-     *
-     * @implNote There is only one observation period for the entire JVM
-     * process.
      *
      * @return the "recent cpu usage" for the Java Virtual Machine process;
      * a negative value if not available.
