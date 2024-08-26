@@ -238,38 +238,15 @@ traceid JfrSymbolTable::mark(uintptr_t hash, const char* str, bool leakp) {
  * The hidden class symbol is the external name with the
  * address of its Klass slash appended.
  *
- * This is done by replacing the '+' delimiter with a '/'
- * in a copy of the already mangled hidden class name.
- *
- * "java.lang.invoke.LambdaForm$DMH+0x0000000037144c00"
- *  becomes
  * "java.lang.invoke.LambdaForm$DMH/0x0000000037144c00"
  *
  * Caller needs ResourceMark.
  */
-static const char* create_hidden_klass_name(const Klass* k, uintptr_t hash) {
-  assert(k != nullptr, "invariant");
-  assert(k->is_hidden(), "invariant");
-  assert(hash != 0, "invariant");
-  const Symbol* const name = k->name();
-  assert(name != nullptr, "invariant");
-  assert(name->identity_hash() == hash, "invariant");
-  const size_t len = static_cast<size_t>(name->utf8_length());
-  char* hidden_klass_name = NEW_RESOURCE_ARRAY(char, len + 1);
-  strncpy(hidden_klass_name, name->as_klass_external_name(), len + 1);
-  char* const plus_position = strrchr(hidden_klass_name, '+');
-  assert(plus_position != nullptr, "invariant");
-  *plus_position = '/'; // replace the '+' delimiter with a '/'
-  assert(strlen(hidden_klass_name) == len, "invariant");
-  return hidden_klass_name;
-}
-
 traceid JfrSymbolTable::mark_hidden_klass_name(const Klass* k, bool leakp) {
   assert(k != nullptr, "invariant");
   assert(k->is_hidden(), "invariant");
-  assert(k->name() != nullptr, "invariant");
   const uintptr_t hash = k->name()->identity_hash();;
-  return mark(hash, create_hidden_klass_name(k, hash), leakp);
+  return mark(hash, k->external_name(), leakp);
 }
 
 traceid JfrSymbolTable::mark(const Klass* k, bool leakp) {
