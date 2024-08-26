@@ -82,7 +82,7 @@ public class TestBoolNodeGVN {
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(counts = {IRNode.CMP_U, ">=1"},
+    @IR(counts = {IRNode.CMP_U, "1"},
         phase = CompilePhase.AFTER_PARSING,
         applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase1(int x, int m) {
@@ -91,7 +91,7 @@ public class TestBoolNodeGVN {
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(counts = {IRNode.CMP_U, ">=1"},
+    @IR(counts = {IRNode.CMP_U, "1"},
             phase = CompilePhase.AFTER_PARSING,
             applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase2(int x, int m) {
@@ -100,7 +100,7 @@ public class TestBoolNodeGVN {
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(counts = {IRNode.CMP_U, ">=1"},
+    @IR(counts = {IRNode.CMP_U, "1"},
             phase = CompilePhase.AFTER_PARSING,
             applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase3(int x, int m) {
@@ -109,7 +109,7 @@ public class TestBoolNodeGVN {
 
     @Test
     @Arguments(values = {Argument.DEFAULT, Argument.DEFAULT})
-    @IR(counts = {IRNode.CMP_U, ">=1"},
+    @IR(counts = {IRNode.CMP_U, "1"},
             phase = CompilePhase.AFTER_PARSING,
             applyIfPlatformOr = {"x64", "true", "aarch64", "true", "riscv64", "true"})
     public static boolean testShouldHaveCpmUCase4(int x, int m) {
