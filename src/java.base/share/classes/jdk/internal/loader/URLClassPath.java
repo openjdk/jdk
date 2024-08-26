@@ -442,8 +442,8 @@ public class URLClassPath {
             final URL[] loaderClassPathURLs;
             try {
                 loader = getLoader(url);
-                // If the loader defines a local class path then construct
-                // and add the URLs as the next URLs to be opened.
+                // If the loader defines a local class path then add the
+                // URLs as the next URLs to be opened.
                 loaderClassPathURLs = loader.getClassPath();
             } catch (IOException e) {
                 // log the error and close the unusable loader (if any)
