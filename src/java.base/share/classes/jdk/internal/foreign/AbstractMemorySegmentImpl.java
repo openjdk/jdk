@@ -194,6 +194,7 @@ public abstract sealed class AbstractMemorySegmentImpl
             // Handle smaller fills directly without having to transition to native code.
             final int valueUnsigned = Byte.toUnsignedInt(value);
             final int intValue = valueUnsigned | valueUnsigned << 8 | valueUnsigned << 16 | valueUnsigned << 24;
+            // Use the old switch statement syntax to improve startup time
             switch ((int) length) {
                 case 0 : checkReadOnly(false); checkValidState(); break; // Implicit test
                 case 1 : set(JAVA_BYTE, 0, value); break;
@@ -227,7 +228,6 @@ public abstract sealed class AbstractMemorySegmentImpl
         }
         return this;
     }
-
 
     @Override
     public MemorySegment allocate(long byteSize, long byteAlignment) {
