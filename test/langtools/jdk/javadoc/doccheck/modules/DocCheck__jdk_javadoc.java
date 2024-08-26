@@ -26,5 +26,5 @@
  * @bug 8337109
  * @summary Running Doccheck on generated HTML
  * @library /test/langtools/jdk/javadoc/doccheck/
- * @run junit/othervm  -Ddoccheck.dir=jdk.javadoc DocCheck
+ * @run junit/othervm  -Ddoccheck.dir=api/jdk.javadoc DocCheck
  */
