@@ -2579,8 +2579,8 @@ void TemplateTable::_return(TosState state) {
     Register robj = LP64_ONLY(c_rarg1) NOT_LP64(rax);
     __ movptr(robj, aaddress(0));
     __ load_klass(rdi, robj, rscratch1);
-    __ movl(rdi, Address(rdi, Klass::access_flags_offset()));
-    __ testl(rdi, JVM_ACC_HAS_FINALIZER);
+    __ movb(rdi, Address(rdi, Klass::misc_flags_offset()));
+    __ testl(rdi, KlassFlags::_misc_has_finalizer);
     Label skip_register_finalizer;
     __ jcc(Assembler::zero, skip_register_finalizer);
 

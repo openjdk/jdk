@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -479,8 +479,8 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         // Load the klass and check the has finalizer flag.
         __ load_klass(t, R3_ARG1);
-        __ lwz(t, in_bytes(Klass::access_flags_offset()), t);
-        __ testbitdi(CCR0, R0, t, exact_log2(JVM_ACC_HAS_FINALIZER));
+        __ lbz(t, in_bytes(Klass::misc_flags_offset()), t);
+        __ testbitdi(CCR0, R0, t, exact_log2(KlassFlags::_misc_has_finalizer));
         // Return if has_finalizer bit == 0 (CR0.eq).
         __ bclr(Assembler::bcondCRbiIs1, Assembler::bi0(CCR0, Assembler::equal), Assembler::bhintbhBCLRisReturn);
 

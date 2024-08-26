@@ -696,8 +696,8 @@ protected:
   bool is_super() const                 { return _access_flags.is_super(); }
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
-  bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
+  bool has_finalizer() const            { return _misc_flags.has_finalizer(); }
+  void set_has_finalizer()              { _misc_flags.set_has_finalizer(true); }
   bool is_hidden() const                { return _misc_flags.is_hidden_class(); }
   void set_is_hidden()                  { _misc_flags.set_is_hidden_class(true); }
   bool is_value_based() const           { return _misc_flags.is_value_based_class(); }

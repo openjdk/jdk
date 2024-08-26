@@ -3752,7 +3752,7 @@ Node* LibraryCallKit::load_klass_from_mirror_common(Node* mirror,
 }
 
 //--------------------(inline_native_Class_query helpers)---------------------
-// Use this for JVM_ACC_INTERFACE, JVM_ACC_IS_CLONEABLE_FAST, JVM_ACC_HAS_FINALIZER.
+// Use this for JVM_ACC_INTERFACE.
 // Fall through if (mods & mask) == bits, take the guard otherwise.
 Node* LibraryCallKit::generate_access_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   // Branch around if the given klass has the given modifier bit set.
@@ -3770,11 +3770,12 @@ Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
   return generate_access_flags_guard(kls, JVM_ACC_INTERFACE, 0, region);
 }
 
+// Use this for testing if Klass is_hidden, has_finalizer, and is_cloneable_fast.
 Node* LibraryCallKit::generate_misc_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   Node* p = basic_plus_adr(kls, in_bytes(Klass::misc_flags_offset()));
   Node* mods = make_load(nullptr, p, TypeInt::BYTE, T_BYTE, MemNode::unordered);
-  Node* mask = intcon(KlassFlags::_misc_is_hidden_class);
-  Node* bits = intcon(0);
+  Node* mask = intcon(modifier_mask);
+  Node* bits = intcon(modifier_bits);
   Node* mbit = _gvn.transform(new AndINode(mods, mask));
   Node* cmp  = _gvn.transform(new CmpINode(mbit, bits));
   Node* bol  = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
@@ -5224,12 +5225,12 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // The object must be easily cloneable and must not have a finalizer.
       // Both of these conditions may be checked in a single test.
       // We could optimize the test further, but we don't care.
-      generate_access_flags_guard(obj_klass,
-                                  // Test both conditions:
-                                  JVM_ACC_IS_CLONEABLE_FAST | JVM_ACC_HAS_FINALIZER,
-                                  // Must be cloneable but not finalizer:
-                                  JVM_ACC_IS_CLONEABLE_FAST,
-                                  slow_region);
+      generate_misc_flags_guard(obj_klass,
+                                // Test both conditions:
+                                KlassFlags::_misc_is_cloneable_fast | KlassFlags::_misc_has_finalizer,
+                                // Must be cloneable but not finalizer:
+                                KlassFlags::_misc_is_cloneable_fast,
+                                slow_region);
     }
 
     if (!stopped()) {
