@@ -744,7 +744,9 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
   // The relevant stores "nearby" the load consist of a tree rooted
   // at initial_mem, with internal nodes of type MergeMem.
   // Therefore, the branches visited by the worklist are of this form:
-  //    initial_mem -> (MergeMem ->)* store
+  //    initial_mem -> (MergeMem ->)* Memory state modifying node
+  // Memory state modifying nodes include Store and Phi nodes and any node for which needs_anti_dependence_check()
+  // returns true.
   // The anti-dependence constraints apply only to the fringe of this tree.
 
   Node* initial_mem = load->in(MemNode::Memory);
