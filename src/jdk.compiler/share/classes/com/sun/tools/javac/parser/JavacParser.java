@@ -455,7 +455,7 @@ public class JavacParser implements Parser {
         return syntaxError(pos, List.nil(), errorKey);
     }
 
-    protected JCErroneous syntaxError(int pos, List<JCTree> errs, Error errorKey) {
+    protected JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey) {
         setErrorEndPos(pos);
         JCErroneous err = F.at(pos).Erroneous(errs);
         reportSyntaxError(err, errorKey);
@@ -4733,6 +4733,12 @@ public class JavacParser implements Parser {
                 }
                 ignoreDanglingComments();   // no declaration with which dangling comments can be associated
                 return List.of(block(pos, mods.flags));
+            } else if (isDefiniteStatementStartToken()) {
+                int startPos = token.pos;
+                List<JCStatement> statements = blockStatement();
+                return List.of(syntaxError(startPos,
+                                           statements,
+                                           Errors.StatementNotExpected));
             } else {
                 return constructorOrMethodOrFieldDeclaration(mods, className, isInterface, isRecord, dc);
             }
@@ -4910,7 +4916,19 @@ public class JavacParser implements Parser {
                token.kind == INTERFACE ||
                token.kind == ENUM ||
                isRecordStart() && allowRecords;
-        }
+    }
+
+    /**
+     * {@return true if and only if the current token is definitelly a token that
+     *  starts a statement.}
+     */
+    private boolean isDefiniteStatementStartToken() {
+        return switch (token.kind) {
+            case IF, WHILE, DO, SWITCH, RETURN, TRY, FOR, ASSERT, BREAK,
+                 CONTINUE, THROW -> true;
+            default -> false;
+        };
+    }
 
     protected boolean isRecordStart() {
         if (token.kind == IDENTIFIER && token.name() == names.record && peekToken(TokenKind.IDENTIFIER)) {

@@ -54,7 +54,6 @@ class SharedRuntime: AllStatic {
   static RuntimeStub*        _resolve_opt_virtual_call_blob;
   static RuntimeStub*        _resolve_virtual_call_blob;
   static RuntimeStub*        _resolve_static_call_blob;
-  static address             _resolve_static_call_entry;
 
   static DeoptimizationBlob* _deopt_blob;
 
@@ -63,6 +62,17 @@ class SharedRuntime: AllStatic {
   static SafepointBlob*      _polling_page_return_handler_blob;
 
   static nmethod*            _cont_doYield_stub;
+
+  static RuntimeStub*        _throw_AbstractMethodError_blob;
+  static RuntimeStub*        _throw_IncompatibleClassChangeError_blob;
+  static RuntimeStub*        _throw_NullPointerException_at_call_blob;
+  static RuntimeStub*        _throw_StackOverflowError_blob;
+  static RuntimeStub*        _throw_delayed_StackOverflowError_blob;
+
+#if INCLUDE_JFR
+  static RuntimeStub*        _jfr_write_checkpoint_blob;
+  static RuntimeStub*        _jfr_return_lease_blob;
+#endif
 
 #ifndef PRODUCT
   // Counters
@@ -73,9 +83,19 @@ class SharedRuntime: AllStatic {
   enum { POLL_AT_RETURN,  POLL_AT_LOOP, POLL_AT_VECTOR_LOOP };
   static SafepointBlob* generate_handler_blob(address call_ptr, int poll_type);
   static RuntimeStub*   generate_resolve_blob(address destination, const char* name);
-
+  static RuntimeStub*   generate_throw_exception(const char* name, address runtime_entry);
  public:
+  static void generate_initial_stubs(void);
   static void generate_stubs(void);
+#if INCLUDE_JFR
+  static void generate_jfr_stubs(void);
+  // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+  // It returns a jobject handle to the event writer.
+  // The handle is dereferenced and the return value is the event writer oop.
+  static RuntimeStub* generate_jfr_write_checkpoint();
+  // For c2: call to runtime to return a buffer lease.
+  static RuntimeStub* generate_jfr_return_lease();
+#endif
 
   // max bytes for each dtrace string parameter
   enum { max_dtrace_string_size = 256 };
@@ -240,6 +260,18 @@ class SharedRuntime: AllStatic {
     assert(_cont_doYield_stub != nullptr, "oops");
     return _cont_doYield_stub;
   }
+
+  // Implicit exceptions
+  static address throw_AbstractMethodError_entry()          { return _throw_AbstractMethodError_blob->entry_point(); }
+  static address throw_IncompatibleClassChangeError_entry() { return _throw_IncompatibleClassChangeError_blob->entry_point(); }
+  static address throw_NullPointerException_at_call_entry() { return _throw_NullPointerException_at_call_blob->entry_point(); }
+  static address throw_StackOverflowError_entry()           { return _throw_StackOverflowError_blob->entry_point(); }
+  static address throw_delayed_StackOverflowError_entry()   { return _throw_delayed_StackOverflowError_blob->entry_point(); }
+
+#if INCLUDE_JFR
+  static address jfr_write_checkpoint() { return _jfr_write_checkpoint_blob->entry_point(); }
+  static address jfr_return_lease()     { return _jfr_return_lease_blob->entry_point(); }
+#endif
 
   // Counters
 #ifndef PRODUCT

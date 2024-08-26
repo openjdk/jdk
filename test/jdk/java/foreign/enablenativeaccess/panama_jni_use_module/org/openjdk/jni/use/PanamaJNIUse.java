@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,21 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zUtils.hpp"
-#include "utilities/debug.hpp"
+package org.openjdk.jni.use;
 
-#include <malloc.h>
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 
-uintptr_t ZUtils::alloc_aligned(size_t alignment, size_t size) {
-  void* const res = _aligned_malloc(size, alignment);
+import org.openjdk.jni.def.PanamaJNIDef;
 
-  if (res == nullptr) {
-    fatal("_aligned_malloc failed");
-  }
+public class PanamaJNIUse {
+    public static void run() {
+        testDirectAccessCLinker();
+    }
 
-  memset(res, 0, size);
-
-  return (uintptr_t)res;
+    public static void testDirectAccessCLinker() {
+        System.out.println("Trying to get downcall handle");
+        PanamaJNIDef.nativeLinker0(Linker.nativeLinker(), FunctionDescriptor.ofVoid(), new Linker.Option[0]);
+        System.out.println("Got downcall handle");
+    }
 }
