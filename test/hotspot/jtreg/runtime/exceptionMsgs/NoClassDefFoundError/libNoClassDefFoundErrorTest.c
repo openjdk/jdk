@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,10 @@
  */
 
 #include <jni.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
 
 JNIEXPORT void JNICALL
 Java_NoClassDefFoundErrorTest_callDefineClass(JNIEnv *env, jclass klass, jstring className) {
@@ -41,4 +45,30 @@ Java_NoClassDefFoundErrorTest_callFindClass(JNIEnv *env, jclass klass, jstring c
     cls = (*env)->FindClass(env, c_name);
 }
 
+JNIEXPORT jboolean JNICALL
+Java_NoClassDefFoundErrorTest_tryCallDefineClass(JNIEnv *env, jclass klass) {
+    size_t len = ((size_t)INT_MAX) + 3;
+    char* c_name = malloc(len * sizeof(char));
+    if (c_name != NULL) {
+      memset(c_name, 0x59595959, len-1); // YYYY...
+      c_name[len - 1] = '\0';
+      (*env)->DefineClass(env, c_name, NULL, NULL, 0);
+      free(c_name);
+      return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}
 
+JNIEXPORT jboolean JNICALL
+Java_NoClassDefFoundErrorTest_tryCallFindClass(JNIEnv *env, jclass klass) {
+    size_t len = ((size_t)INT_MAX) + 3;
+    char* c_name = malloc(len * sizeof(char));
+    if (c_name != NULL) {
+      memset(c_name, 0x59595959, len-1); // YYYY...
+      c_name[len - 1] = '\0';
+      jclass cls = (*env)->FindClass(env, c_name);
+      free(c_name);
+      return JNI_TRUE;
+    }
+    return JNI_FALSE;
+}

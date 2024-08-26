@@ -261,12 +261,16 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
   if (name == nullptr) {
     THROW_MSG_NULL(exception, "No class name given");
   }
-  if ((int)strlen(name) > Symbol::max_length()) {
+  if (strlen(name) > static_cast<size_t>(Symbol::max_length())) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
+    // To avoid internal snprintf INT_MAX limit we reduce the maximum length
+    // of name to print, by the length of the rest of the formatted message.
+    int print_limit = INT_MAX - 45;
     Exceptions::fthrow(THREAD_AND_LOCATION, exception,
-                       "Class name exceeds maximum length of %d: %s",
+                       "Class name exceeds maximum length of %d: %.*s",
                        Symbol::max_length(),
+                       print_limit,
                        name);
     return nullptr;
   }
