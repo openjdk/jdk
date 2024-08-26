@@ -39,7 +39,7 @@ class KlassFlags {
 
  public:
 #define KLASS_FLAGS_DO(flag)  \
-    flag(is_hidden                    , 1 << 0) \
+    flag(is_hidden_class              , 1 << 0) \
     flag(is_value_based_class         , 1 << 1) \
     flag(has_finalizer                , 1 << 2) \
     flag(is_cloneable_fast            , 1 << 3) \
