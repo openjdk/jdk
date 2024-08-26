@@ -84,7 +84,7 @@ ifneq ($(call check-jvm-feature, jvmti), true)
       jvmtiImpl.cpp jvmtiManageCapabilities.cpp jvmtiRawMonitor.cpp jvmtiUtil.cpp jvmtiTrace.cpp \
       jvmtiCodeBlobEvents.cpp jvmtiEnv.cpp jvmtiRedefineClasses.cpp jvmtiEnvBase.cpp jvmtiEnvThreadState.cpp \
       jvmtiTagMap.cpp jvmtiEventController.cpp evmCompat.cpp jvmtiEnter.xsl jvmtiExport.cpp \
-      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp
+      jvmtiClassFileReconstituter.cpp jvmtiTagMapTable.cpp jvmtiAgent.cpp jvmtiAgentList.cpp jfrJvmtiAgent.cpp
 endif
 
 ifneq ($(call check-jvm-feature, jvmci), true)

@@ -213,9 +213,9 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
     abs_local_to_UTC = -(abs_local_to_UTC);
   }
   // Convert time zone offset seconds to hours and minutes.
-  const time_t zone_hours = (abs_local_to_UTC / seconds_per_hour);
-  const time_t zone_min =
-    ((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
+  const int zone_hours = static_cast<int>(abs_local_to_UTC / seconds_per_hour);
+  const int zone_min =
+    static_cast<int>((abs_local_to_UTC % seconds_per_hour) / seconds_per_minute);
 
   // Print an ISO 8601 date and time stamp into the buffer
   const int year = 1900 + time_struct.tm_year;
@@ -959,7 +959,7 @@ static void print_ascii_form(stringStream& ascii_form, uint64_t value, int units
     uint8_t c[sizeof(v)];
   } u = { value };
   for (int i = 0; i < unitsize; i++) {
-    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - 1 - i);
+    const int idx = LITTLE_ENDIAN_ONLY(i) BIG_ENDIAN_ONLY(sizeof(u.v) - unitsize + i);
     const uint8_t c = u.c[idx];
     ascii_form.put(isprint(c) && isascii(c) ? c : '.');
   }
@@ -2271,8 +2271,8 @@ bool os::unmap_memory(char *addr, size_t bytes) {
   return result;
 }
 
-void os::free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  pd_free_memory(addr, bytes, alignment_hint);
+void os::disclaim_memory(char *addr, size_t bytes) {
+  pd_disclaim_memory(addr, bytes);
 }
 
 void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {

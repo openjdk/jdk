@@ -159,7 +159,7 @@ static char* reserve_memory(char* requested_address, const size_t size,
   // If the memory was requested at a particular address, use
   // os::attempt_reserve_memory_at() to avoid mapping over something
   // important.  If the reservation fails, return null.
-  if (requested_address != 0) {
+  if (requested_address != nullptr) {
     assert(is_aligned(requested_address, alignment),
            "Requested address " PTR_FORMAT " must be aligned to " SIZE_FORMAT,
            p2i(requested_address), alignment);

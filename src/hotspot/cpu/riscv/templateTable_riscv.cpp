@@ -3592,8 +3592,7 @@ void TemplateTable::_new() {
     __ store_klass_gap(x10, zr);   // zero klass gap for compressed oops
     __ store_klass(x10, x14);      // store klass last
 
-    {
-      SkipIfEqual skip(_masm, &DTraceAllocProbes, false);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos); // save the return value
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, static_cast<int (*)(oopDesc*)>(SharedRuntime::dtrace_object_alloc)), x10);

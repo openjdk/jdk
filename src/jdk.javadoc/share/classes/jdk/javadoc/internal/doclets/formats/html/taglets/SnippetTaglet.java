@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -49,21 +51,23 @@ import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Action;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
+
+import static jdk.javadoc.internal.doclets.formats.html.taglets.SnippetTaglet.Language.*;
 
 /**
  * A taglet that represents the {@code @snippet} tag.
@@ -71,35 +75,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public class SnippetTaglet extends BaseTaglet {
 
     public enum Language {
-
-        JAVA("java"),
-        PROPERTIES("properties");
-
-        private static final Map<String, Language> languages;
-
-        static {
-            Map<String, Language> tmp = new HashMap<>();
-            for (var language : values()) {
-                String id = Objects.requireNonNull(language.identifier);
-                if (tmp.put(id, language) != null)
-                    throw new IllegalStateException(); // 1-1 correspondence
-            }
-            languages = Map.copyOf(tmp);
-        }
-
-        Language(String id) {
-            identifier = id;
-        }
-
-        private final String identifier;
-
-        public static Optional<Language> of(String identifier) {
-            if (identifier == null)
-                return Optional.empty();
-            return Optional.ofNullable(languages.get(identifier));
-        }
-
-        public String getIdentifier() {return identifier;}
+        JAVA,
+        PROPERTIES;
     }
 
     SnippetTaglet(HtmlConfiguration config) {
@@ -145,11 +122,13 @@ public class SnippetTaglet extends BaseTaglet {
     private Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
                                        String id, String lang) {
         var pathToRoot = tagletWriter.htmlWriter.pathToRoot;
-        var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
+        var pre = new HtmlTree(HtmlTag.PRE).setStyle(HtmlStyles.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
+        } else {
+            pre.put(HtmlAttr.ID, config.htmlIds.forSnippet(element, ids).name());
         }
-        var code = new HtmlTree(TagName.CODE)
+        var code = new HtmlTree(HtmlTag.CODE)
                 .addUnchecked(Text.EMPTY); // Make sure the element is always rendered
         if (lang != null && !lang.isBlank()) {
             code.addStyle("language-" + lang);
@@ -217,20 +196,22 @@ public class SnippetTaglet extends BaseTaglet {
         String copyText = resources.getText("doclet.Copy_to_clipboard");
         String copiedText = resources.getText("doclet.Copied_to_clipboard");
         String copySnippetText = resources.getText("doclet.Copy_snippet_to_clipboard");
-        var snippetContainer = HtmlTree.DIV(HtmlStyle.snippetContainer,
-                new HtmlTree(TagName.BUTTON)
+        var snippetContainer = HtmlTree.DIV(HtmlStyles.snippetContainer,
+                new HtmlTree(HtmlTag.BUTTON)
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
-                        .add(new HtmlTree(TagName.IMG)
+                        .add(new HtmlTree(HtmlTag.IMG)
                                 .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.RESOURCE_FILES)
                                                              .resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))
-                        .addStyle(HtmlStyle.copy)
-                        .addStyle(HtmlStyle.snippetCopy)
+                        .addStyle(HtmlStyles.copy)
+                        .addStyle(HtmlStyles.snippetCopy)
                         .put(HtmlAttr.ARIA_LABEL, copySnippetText)
                         .put(HtmlAttr.ONCLICK, "copySnippet(this)"));
         return snippetContainer.add(pre.add(code));
     }
+
+    private final Set<String> ids = new HashSet<>();
 
     private static final class BadSnippetException extends Exception {
 
@@ -357,18 +338,30 @@ public class SnippetTaglet extends BaseTaglet {
             }
         }
 
-        String lang = null;
+        String lang;
         AttributeTree langAttr = attributes.get("lang");
-        if (langAttr != null) {
+
+        if (langAttr != null) { // the lang attribute overrides everything else
             lang = stringValueOf(langAttr);
-        } else if (containsClass) {
+        } else if (inlineContent != null && externalContent == null) { // an inline snippet
             lang = "java";
-        } else if (containsFile) {
-            lang = languageFromFileName(fileObject.getName());
+        } else if (externalContent != null) { // an external or a hybrid snippet
+            if (containsClass) { // the class attribute means Java
+                lang = "java";
+            } else {
+                var uri = fileObject.toUri();
+                var path = uri.getPath() != null ? uri.getPath() : "";
+                var fileName = path.substring(path.lastIndexOf('/') + 1);
+                lang = languageFromFileName(fileName);
+            }
+        } else {
+            throw new AssertionError();
         }
 
-        Optional<Language> language = Language.of(lang);
-
+        var language = switch (lang) {
+            case "properties" -> PROPERTIES;
+            case null, default -> JAVA;
+        };
 
         // TODO cache parsed external snippet (WeakHashMap)
 
@@ -478,7 +471,7 @@ public class SnippetTaglet extends BaseTaglet {
                """.formatted(inline, external);
     }
 
-    private StyledText parse(Resources resources, Diags diags, Optional<Language> language, String content) throws ParseException {
+    private StyledText parse(Resources resources, Diags diags, Language language, String content) throws ParseException {
         Parser.Result result = new Parser(resources).parse(diags, language, content);
         result.actions().forEach(Action::perform);
         return result.text();
@@ -501,13 +494,15 @@ public class SnippetTaglet extends BaseTaglet {
     }
 
     private String languageFromFileName(String fileName) {
-        // TODO: find a way to extend/customize the list of recognized file name extensions
-        if (fileName.endsWith(".java")) {
-            return "java";
-        } else if (fileName.endsWith(".properties")) {
-            return "properties";
+        // The assumption is simple: a file extension is the language
+        // identifier.
+        // Was about to use Path.getExtension introduced in 8057113, but then
+        // learned that it was removed in 8298303.
+        int lastPeriod = fileName.lastIndexOf('.');
+        if (lastPeriod <= 0) {
+            return null;
         }
-        return null;
+        return (lastPeriod == fileName.length() - 1) ? null : fileName.substring(lastPeriod + 1);
     }
 
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {

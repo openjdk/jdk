@@ -24,7 +24,7 @@
 /*
  * @test
  * @key cgroups
- * @requires os.family == "linux"
+ * @requires (os.family == "linux" & !vm.musl)
  * @requires vm.flagless
  * @library /test/lib
  * @build TestSystemSettings

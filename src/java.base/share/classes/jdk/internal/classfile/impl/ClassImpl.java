@@ -101,7 +101,7 @@ public final class ClassImpl
 
     @Override
     public AccessFlags flags() {
-        return AccessFlags.ofClass(reader.flags());
+        return new AccessFlagsImpl(AccessFlag.Location.CLASS, reader.flags());
     }
 
     @Override
@@ -156,7 +156,7 @@ public final class ClassImpl
     // ClassModel
 
     @Override
-    public void forEachElement(Consumer<ClassElement> consumer) {
+    public void forEach(Consumer<? super ClassElement> consumer) {
         consumer.accept(flags());
         consumer.accept(ClassFileVersion.of(majorVersion(), minorVersion()));
         superclass().ifPresent(new Consumer<ClassEntry>() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ public final class SealedGraph implements Taglet {
             throw new RuntimeException(e);
         }
 
-        String simpleTypeName = element.getSimpleName().toString();
+        String simpleTypeName = packagelessCanonicalName(typeElement).replace('.', '/');
         String imageFile = simpleTypeName + "-sealed-graph.svg";
         int thumbnailHeight = 100; // also appears in the stylesheet
         String hoverImage = "<span>"
@@ -315,14 +315,14 @@ public final class SealedGraph implements Taglet {
                 case MEMBER -> packageName((TypeElement) element.getEnclosingElement());
             };
         }
+    }
 
-        private static String packagelessCanonicalName(TypeElement element) {
-            String result = element.getSimpleName().toString();
-            while (element.getNestingKind() == NestingKind.MEMBER) {
-                element = (TypeElement) element.getEnclosingElement();
-                result = element.getSimpleName().toString() + '.' + result;
-            }
-            return result;
+    private static String packagelessCanonicalName(TypeElement element) {
+        String result = element.getSimpleName().toString();
+        while (element.getNestingKind() == NestingKind.MEMBER) {
+            element = (TypeElement) element.getEnclosingElement();
+            result = element.getSimpleName().toString() + '.' + result;
         }
+        return result;
     }
 }
