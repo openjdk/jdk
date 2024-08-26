@@ -38,7 +38,6 @@ import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.StringJoiner;
-import java.util.function.UnaryOperator;
 
 public final class BaseLocale {
 
@@ -88,21 +87,6 @@ public final class BaseLocale {
             baseLocales[CANADA_FRENCH] = createInstance("fr", "CA");
             baseLocales[ROOT] = createInstance("", "");
             constantBaseLocales = baseLocales;
-        }
-    }
-
-    private static class InterningCache {
-        // Interned BaseLocale cache
-        private static final ReferencedKeySet<BaseLocale> CACHE =
-                ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
-
-        public static BaseLocale intern(String language, String script, String region, String variant) {
-            BaseLocale baseLocale = new BaseLocale(
-                    LocaleUtils.toLowerString(language).intern(),
-                    LocaleUtils.toTitleString(script).intern(),
-                    LocaleUtils.toUpperString(region).intern(),
-                    variant.intern());
-            return CACHE.intern(baseLocale);
         }
     }
 
@@ -174,7 +158,15 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return InterningCache.intern(language, script, region, variant);
+        class InterningCache { // TODO: StableValue
+            private static final ReferencedKeySet<BaseLocale> CACHE =
+                    ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+        }
+        return InterningCache.CACHE.intern(new BaseLocale(
+                language.intern(), // guaranteed to be lower-case
+                LocaleUtils.toTitleString(script).intern(),
+                region.intern(), // guaranteed to be upper-case
+                variant.intern()));
     }
 
     public static String convertOldISOCodes(String language) {
