@@ -511,7 +511,7 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1XChgP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
+instruct g1GetAndSetP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetP mem newval));
@@ -538,7 +538,7 @@ instruct g1XChgP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRe
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1XChgPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
+instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
 %{
   predicate(UseG1GC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetP mem newval));
@@ -565,7 +565,7 @@ instruct g1XChgPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, 
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1XChgN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
+instruct g1GetAndSetN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
 %{
   predicate(UseG1GC && !needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetN mem newval));
@@ -593,7 +593,7 @@ instruct g1XChgN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRe
 
 // This pattern is generated automatically from g1_aarch64.m4.
 // DO NOT EDIT ANYTHING IN THIS SECTION OF THE FILE
-instruct g1XChgNAcq(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
+instruct g1GetAndSetNAcq(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
 %{
   predicate(UseG1GC && needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetN mem newval));

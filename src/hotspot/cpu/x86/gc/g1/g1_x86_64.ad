@@ -288,7 +288,7 @@ instruct g1CompareAndSwapN(rRegI res, indirect mem, rRegN newval, rRegP tmp1, rR
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct g1XChgP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1GetAndSetP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set newval (GetAndSetP mem newval));
@@ -312,7 +312,7 @@ instruct g1XChgP(indirect mem, rRegP newval, rRegP tmp1, rRegP tmp2, rRegP tmp3,
   ins_pipe(pipe_cmpxchg);
 %}
 
-instruct g1XChgN(indirect mem, rRegN newval, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
+instruct g1GetAndSetN(indirect mem, rRegN newval, rRegP tmp1, rRegP tmp2, rRegP tmp3, rFlagsReg cr)
 %{
   predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
   match(Set newval (GetAndSetN mem newval));

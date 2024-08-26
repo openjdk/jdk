@@ -608,13 +608,13 @@ public class IRNode {
 
     public static final String G1_GET_AND_SET_N_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_GET_AND_SET_N_WITH_BARRIER_FLAG" + POSTFIX;
     static {
-        String regex = START + "g1XChgN\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex = START + "g1GetAndSetN\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(G1_GET_AND_SET_N_WITH_BARRIER_FLAG, regex);
     }
 
     public static final String G1_GET_AND_SET_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "G1_GET_AND_SET_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
-        String regex = START + "g1XChgP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
+        String regex = START + "g1GetAndSetP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(G1_GET_AND_SET_P_WITH_BARRIER_FLAG, regex);
     }
 
