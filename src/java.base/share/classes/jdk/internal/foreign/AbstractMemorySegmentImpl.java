@@ -26,7 +26,6 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.*;
-import java.lang.invoke.VarHandle;
 import java.lang.reflect.Array;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
