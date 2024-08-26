@@ -30,5 +30,5 @@ void KlassFlags::print_on(outputStream* st) const {
 #define KLASS_FLAGS_PRINT(name, ignore)          \
   if (name()) st->print(#name " ");
   KLASS_FLAGS_DO(KLASS_FLAGS_PRINT)
-#undef IK_FLAGS_PRINT
+#undef KLASS_FLAGS_PRINT
 }
