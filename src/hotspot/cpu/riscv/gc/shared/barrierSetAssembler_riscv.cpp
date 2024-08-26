@@ -276,8 +276,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
 
         __ la(t1, ExternalAddress((address)&_patching_epoch));
         if (!UseZtso) {
-          // Embed an synthetic data dependency to order the guard load
-          // before the epoch load. (xor + add is standard way)
+          // Embed a synthetic data dependency between the load of the guard and
+          // the load of the epoch. This guarantees that these loads occur in
+          // order, while allowing other independent instructions to be reordered.
           // Note: This may be slower than using a membar(load|load) (fence r,r).
           // Because processors will not start the second load until the first comes back.
           // This means you can’t overlap the two loads,
