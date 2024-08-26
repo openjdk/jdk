@@ -91,9 +91,20 @@ public final class BaseLocale {
         }
     }
 
-    // Interned BaseLocale cache
-    private static final ReferencedKeySet<BaseLocale> CACHE =
-            ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+    private static class InterningCache {
+        // Interned BaseLocale cache
+        private static final ReferencedKeySet<BaseLocale> CACHE =
+                ReferencedKeySet.create(true, ReferencedKeySet.concurrentHashMapSupplier());
+
+        public static BaseLocale intern(String language, String script, String region, String variant) {
+            BaseLocale baseLocale = new BaseLocale(
+                    LocaleUtils.toLowerString(language).intern(),
+                    LocaleUtils.toTitleString(script).intern(),
+                    LocaleUtils.toUpperString(region).intern(),
+                    variant.intern());
+            return CACHE.intern(baseLocale);
+        }
+    }
 
     public static final String SEP = "_";
 
@@ -163,21 +174,8 @@ public final class BaseLocale {
         // Obtain the "interned" BaseLocale from the cache. The returned
         // "interned" instance can subsequently be used by the Locale
         // instance which guarantees the locale components are properly cased/interned.
-        return CACHE.intern(new BaseLocale(language, script, region, variant),
-                // Avoid lambdas since this may be on the bootstrap path in many locales
-                INTERNER);
+        return InterningCache.intern(language, script, region, variant);
     }
-
-    public static final UnaryOperator<BaseLocale> INTERNER = new UnaryOperator<>() {
-        @Override
-        public BaseLocale apply(BaseLocale b) {
-            return new BaseLocale(
-                    LocaleUtils.toLowerString(b.language).intern(),
-                    LocaleUtils.toTitleString(b.script).intern(),
-                    LocaleUtils.toUpperString(b.region).intern(),
-                    b.variant.intern());
-        }
-    };
 
     public static String convertOldISOCodes(String language) {
         return switch (language) {
