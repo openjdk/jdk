@@ -197,11 +197,6 @@ bm_word_t* CHeapBitMap::reallocate(bm_word_t* map, size_t old_size_in_words, siz
 }
 
 #ifdef ASSERT
-void BitMap::verify_size(idx_t size_in_bits) {
-  assert(size_in_bits <= max_size_in_bits(),
-         "out of bounds: " SIZE_FORMAT, size_in_bits);
-}
-
 void BitMap::verify_index(idx_t bit) const {
   assert(bit < _size,
          "BitMap index out of bounds: " SIZE_FORMAT " >= " SIZE_FORMAT,

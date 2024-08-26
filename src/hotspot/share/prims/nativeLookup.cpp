@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,7 +414,7 @@ address NativeLookup::lookup_base(const methodHandle& method, TRAPS) {
   ss.print("'");
   method->print_external_name(&ss);
   ss.print("'");
-  THROW_MSG_0(vmSymbols::java_lang_UnsatisfiedLinkError(), ss.as_string());
+  THROW_MSG_NULL(vmSymbols::java_lang_UnsatisfiedLinkError(), ss.as_string());
 }
 
 

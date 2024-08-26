@@ -1796,7 +1796,7 @@ public class LambdaToMethod extends TreeTranslator {
         boolean allowIllegalSignatures;
 
         L2MSignatureGenerator(boolean allowIllegalSignatures) {
-            super(types);
+            types.super();
             this.allowIllegalSignatures = allowIllegalSignatures;
         }
 

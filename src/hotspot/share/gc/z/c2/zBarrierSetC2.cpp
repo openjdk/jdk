@@ -327,7 +327,7 @@ int ZBarrierSetC2::estimate_stub_size() const {
   int size = 0;
 
   for (int i = 0; i < stubs->length(); i++) {
-    CodeBuffer cb(blob->content_begin(), (address)C->output()->scratch_locs_memory() - blob->content_begin());
+    CodeBuffer cb(blob->content_begin(), checked_cast<CodeBuffer::csize_t>((address)C->output()->scratch_locs_memory() - blob->content_begin()));
     MacroAssembler masm(&cb);
     stubs->at(i)->emit_code(masm);
     size += cb.insts_size();

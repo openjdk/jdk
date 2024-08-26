@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -326,7 +326,7 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
   __ load_method_holder_cld(t0, xmethod);
 
   // Is it a strong CLD?
-  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_offset()));
+  __ lwu(t1, Address(t0, ClassLoaderData::keep_alive_ref_count_offset()));
   __ bnez(t1, method_live);
 
   // Is it a weak but alive CLD?

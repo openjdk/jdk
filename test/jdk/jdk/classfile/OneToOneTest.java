@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,18 +27,19 @@
  * @run junit OneToOneTest
  */
 import java.lang.constant.ClassDesc;
+
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
-import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.MethodModel;
-import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -74,7 +75,7 @@ class OneToOneTest {
                                   )
               )
               .withMethod("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                          AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
+                          ACC_PUBLIC | ACC_STATIC,
                           mb -> mb.withCode(c0 -> {
                                                 Label loopTop = c0.newLabel();
                                                 Label loopEnd = c0.newLabel();

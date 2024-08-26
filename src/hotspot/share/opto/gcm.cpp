@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2124,6 +2124,7 @@ float Block::succ_prob(uint i) {
 
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -2177,6 +2178,7 @@ int Block::num_fall_throughs() {
   case Op_NeverBranch:
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:
@@ -2222,6 +2224,7 @@ bool Block::succ_fall_through(uint i) {
   case Op_NeverBranch:
   case Op_TailCall:
   case Op_TailJump:
+  case Op_ForwardException:
   case Op_Return:
   case Op_Halt:
   case Op_Rethrow:

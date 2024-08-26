@@ -44,15 +44,16 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.Entity;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
 
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER;
 import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER_OPTIONAL;
@@ -450,7 +451,7 @@ public abstract class AbstractMemberWriter {
      */
     protected void addModifiersAndType(Element member, TypeMirror type,
             Content target) {
-        var code = new HtmlTree(TagName.CODE);
+        var code = new HtmlTree(HtmlTag.CODE);
         addModifiers(member, code);
         if (type == null) {
             code.add(switch (member.getKind()) {
@@ -466,16 +467,8 @@ public abstract class AbstractMemberWriter {
                     ? ((ExecutableElement)member).getTypeParameters()
                     : null;
             if (list != null && !list.isEmpty()) {
-                Content typeParameters = ((AbstractExecutableMemberWriter) this)
-                        .getTypeParameters((ExecutableElement)member);
-                code.add(typeParameters);
-                // Add explicit line break between method type parameters and
-                // return type in member summary table to avoid random wrapping.
-                if (typeParameters.charCount() > 10) {
-                    code.add(new HtmlTree(TagName.BR));
-                } else {
-                    code.add(Entity.NO_BREAK_SPACE);
-                }
+                ((AbstractExecutableMemberWriter) this)
+                  .addTypeParameters((ExecutableElement)member, code);
             }
             code.add(
                     writer.getLink(new HtmlLinkInfo(configuration,
@@ -526,7 +519,7 @@ public abstract class AbstractMemberWriter {
         var t = configuration.tagletManager.getTaglet(DocTree.Kind.DEPRECATED);
         Content output = t.getAllBlockTagOutput(member, writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
-            target.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
+            target.add(HtmlTree.DIV(HtmlStyles.deprecationBlock, output));
         }
     }
 
@@ -578,9 +571,9 @@ public abstract class AbstractMemberWriter {
             return;
         }
         boolean printedUseTableHeader = false;
-        var useTable = new Table<Void>(HtmlStyle.summaryTable)
+        var useTable = new Table<Void>(HtmlStyles.summaryTable)
                 .setCaption(heading)
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colSecond, HtmlStyles.colLast);
         for (Element element : members) {
             TypeElement te = (typeElement == null)
                     ? utils.getEnclosingTypeElement(element)
@@ -596,7 +589,7 @@ public abstract class AbstractMemberWriter {
                     && !utils.isConstructor(element)
                     && !utils.isTypeElement(element)) {
 
-                var name = HtmlTree.SPAN(HtmlStyle.typeNameLabel);
+                var name = HtmlTree.SPAN(HtmlStyles.typeNameLabel);
                 name.add(name(te) + ".");
                 typeContent.add(name);
             }
@@ -677,7 +670,7 @@ public abstract class AbstractMemberWriter {
      * @return the inherited summary links
      */
     public Content getInheritedSummaryLinks() {
-        return new HtmlTree(TagName.CODE);
+        return new HtmlTree(HtmlTag.CODE);
     }
 
     /**
