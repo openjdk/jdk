@@ -1069,7 +1069,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || get_loop(lca)->_head->as_Loop()->is_in_infinite_subgraph(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
