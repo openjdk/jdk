@@ -388,9 +388,8 @@ HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
   while (true) {
     assert(cur_addr < region_end, "inv");
     cur_addr = PSParallelCompact::mark_bitmap()->find_obj_beg(cur_addr, region_end);
-    if (cur_addr >= region_end) {
-      break;
-    }
+    // There must be an overflowing obj in this region
+    assert(cur_addr < region_end, "inv");
 
     oop obj = cast_to_oop(cur_addr);
     size_t obj_size = obj->size();
@@ -404,9 +403,6 @@ HeapWord* ParallelCompactData::summarize_split_space(size_t src_region,
     live_words += obj_size;
     cur_addr += obj_size;
   }
-
-  // There must be an overflowing obj in this region
-  ShouldNotReachHere();
 }
 
 size_t ParallelCompactData::live_words_in_space(const MutableSpace* space,
