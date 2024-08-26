@@ -757,8 +757,8 @@ JRT_BLOCK_ENTRY(void, Runtime1::monitorenter(JavaThread* current, oopDesc* obj, 
   if (LockingMode == LM_MONITOR) {
     lock->set_obj(obj);
   }
-  assert(LockingMode == LM_LIGHTWEIGHT || obj == lock->obj(), "must match");
-  SharedRuntime::monitor_enter_helper(obj, LockingMode == LM_LIGHTWEIGHT ? nullptr : lock->lock(), current);
+  assert(obj == lock->obj(), "must match");
+  SharedRuntime::monitor_enter_helper(obj, lock->lock(), current);
 JRT_END
 
 
@@ -1059,8 +1059,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, Runtime1::StubID stub_
         break;
       }
       case Bytecodes::_invokedynamic: {
-        int indy_index = pool->decode_invokedynamic_index(index);
-        appendix = Handle(current, pool->cache()->set_dynamic_call(info, indy_index));
+        appendix = Handle(current, pool->cache()->set_dynamic_call(info, index));
         break;
       }
       default: fatal("unexpected bytecode for load_appendix_patching_id");

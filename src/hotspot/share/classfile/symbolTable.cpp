@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ public:
       // Deleting permanent symbol should not occur very often (insert race condition),
       // so log it.
       log_trace_symboltable_helper(&value, "Freeing permanent symbol");
-      size_t alloc_size = _local_table->get_node_size() + value.byte_size() + value.effective_length();
+      size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
       if (!SymbolTable::arena()->Afree(memory, alloc_size)) {
         log_trace_symboltable_helper(&value, "Leaked permanent symbol");
       }
@@ -182,7 +182,7 @@ public:
 
 private:
   static void* allocate_node_impl(size_t size, Value const& value) {
-    size_t alloc_size = size + value.byte_size() + value.effective_length();
+    size_t alloc_size = SymbolTableHash::get_dynamic_node_size(value.byte_size());
 #if INCLUDE_CDS
     if (CDSConfig::is_dumping_static_archive()) {
       MutexLocker ml(DumpRegion_lock, Mutex::_no_safepoint_check_flag);
@@ -193,7 +193,7 @@ private:
       // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
-      DEBUG_ONLY(static void* last = 0);
+      DEBUG_ONLY(static void* last = nullptr);
       void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);
@@ -246,10 +246,15 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
+bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+
 void SymbolTable::trigger_cleanup() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
-  Service_lock->notify_all();
+  // Avoid churn on ServiceThread
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_work = true;
+    Service_lock->notify_all();
+  }
 }
 
 class SymbolsDo : StackObj {
@@ -339,8 +344,23 @@ Symbol* SymbolTable::lookup_common(const char* name,
   return sym;
 }
 
+// Symbols should represent entities from the constant pool that are
+// limited to <64K in length, but usage errors creep in allowing Symbols
+// to be used for arbitrary strings. For debug builds we will assert if
+// a string is too long, whereas product builds will truncate it.
+static int check_length(const char* name, int len) {
+  assert(len <= Symbol::max_length(),
+         "String length %d exceeds the maximum Symbol length of %d", len, Symbol::max_length());
+  if (len > Symbol::max_length()) {
+    warning("A string \"%.80s ... %.80s\" exceeds the maximum Symbol "
+            "length of %d and has been truncated", name, (name + len - 80), Symbol::max_length());
+    len = Symbol::max_length();
+  }
+  return len;
+}
+
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
-  assert(len <= Symbol::max_length(), "sanity");
+  len = check_length(name, len);
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
   if (sym == nullptr) {
@@ -413,6 +433,13 @@ public:
   }
 };
 
+void SymbolTable::update_needs_rehash(bool rehash) {
+  if (rehash) {
+    _needs_rehashing = true;
+    trigger_cleanup();
+  }
+}
+
 Symbol* SymbolTable::do_lookup(const char* name, int len, uintx hash) {
   Thread* thread = Thread::current();
   SymbolTableLookup lookup(name, len, hash);
@@ -473,6 +500,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
   for (int i = 0; i < names_count; i++) {
     const char *name = names[i];
     int len = lengths[i];
+    assert(len <= Symbol::max_length(), "must be - these come from the constant pool");
     unsigned int hash = hashValues[i];
     assert(lookup_shared(name, len, hash) == nullptr, "must have checked already");
     Symbol* sym = do_add_if_needed(name, len, hash, is_permanent);
@@ -482,6 +510,7 @@ void SymbolTable::new_symbols(ClassLoaderData* loader_data, const constantPoolHa
 }
 
 Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, bool is_permanent) {
+  assert(len <= Symbol::max_length(), "caller should have ensured this");
   SymbolTableLookup lookup(name, len, hash);
   SymbolTableGet stg;
   bool clean_hint = false;
@@ -530,7 +559,7 @@ Symbol* SymbolTable::do_add_if_needed(const char* name, int len, uintx hash, boo
 
 Symbol* SymbolTable::new_permanent_symbol(const char* name) {
   unsigned int hash = 0;
-  int len = (int)strlen(name);
+  int len = check_length(name, (int)strlen(name));
   Symbol* sym = SymbolTable::lookup_only(name, len, hash);
   if (sym == nullptr) {
     sym = do_add_if_needed(name, len, hash, /* is_permanent */ true);
@@ -772,7 +801,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void SymbolTable::check_concurrent_work() {
-  if (_has_work) {
+  if (has_work()) {
     return;
   }
   // We should clean/resize if we have
@@ -785,98 +814,70 @@ void SymbolTable::check_concurrent_work() {
   }
 }
 
+bool SymbolTable::should_grow() {
+  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
+}
+
 void SymbolTable::do_concurrent_work(JavaThread* jt) {
-  double load_factor = get_load_factor();
-  log_debug(symboltable, perf)("Concurrent work, live factor: %g", load_factor);
+  // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
+  // work is concurrent.
+  if (needs_rehashing() && maybe_rehash_table()) {
+    Atomic::release_store(&_has_work, false);
+    return; // done, else grow
+  }
+  log_debug(symboltable, perf)("Concurrent work, live factor: %g", get_load_factor());
   // We prefer growing, since that also removes dead items
-  if (load_factor > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached()) {
+  if (should_grow()) {
     grow(jt);
   } else {
     clean_dead_entries(jt);
   }
-  _has_work = false;
+  Atomic::release_store(&_has_work, false);
 }
 
-// Rehash
-bool SymbolTable::do_rehash() {
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
+// Called at VM_Operation safepoint
+void SymbolTable::rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  // The ServiceThread initiates the rehashing so it is not resizing.
+  assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
+
+  _alt_hash_seed = AltHashing::compute_seed();
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
   SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
-  if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
-    _alt_hash = false;
-    delete new_table;
-    return false;
-  }
+  _local_table->rehash_nodes_to(Thread::current(), new_table);
 
   // free old table
   delete _local_table;
   _local_table = new_table;
 
-  return true;
+  _rehashed = true;
+  _needs_rehashing = false;
 }
 
-bool SymbolTable::should_grow() {
-  return get_load_factor() > PREF_AVG_LIST_LEN && !_local_table->is_max_size_reached();
-}
-
-bool SymbolTable::rehash_table_expects_safepoint_rehashing() {
-  // No rehashing required
-  if (!needs_rehashing()) {
-    return false;
-  }
-
-  // Grow instead of rehash
-  if (should_grow()) {
-    return false;
-  }
-
-  // Already rehashed
-  if (_rehashed) {
-    return false;
-  }
-
-  // Resizing in progress
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
-
-  return true;
-}
-
-void SymbolTable::rehash_table() {
+bool SymbolTable::maybe_rehash_table() {
   log_debug(symboltable)("Table imbalanced, rehashing called.");
 
   // Grow instead of rehash.
   if (should_grow()) {
     log_debug(symboltable)("Choosing growing over rehashing.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
   // Already rehashed.
   if (_rehashed) {
     log_warning(symboltable)("Rehashing already done, still long lists.");
-    trigger_cleanup();
     _needs_rehashing = false;
-    return;
+    return false;
   }
 
-  _alt_hash_seed = AltHashing::compute_seed();
-
-  if (do_rehash()) {
-    _rehashed = true;
-  } else {
-    log_info(symboltable)("Resizes in progress rehashing skipped.");
-  }
-
-  _needs_rehashing = false;
+  VM_RehashSymbolTable op;
+  VMThread::execute(&op);
+  return true;
 }
 
 //---------------------------------------------------------------------------

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -30,7 +30,6 @@
                             develop_pd,                                     \
                             product,                                        \
                             product_pd,                                     \
-                            notproduct,                                     \
                             range,                                          \
                             constraint)                                     \
                                                                             \
@@ -49,13 +48,6 @@
   product(size_t, ShenandoahMaxRegionSize, 32 * M, EXPERIMENTAL,            \
           "With automatic region sizing, the regions would be at most "     \
           "this large.")                                                    \
-                                                                            \
-  product(intx, ShenandoahHumongousThreshold, 100, EXPERIMENTAL,            \
-          "Humongous objects are allocated in separate regions. "           \
-          "This setting defines how large the object should be to be "      \
-          "deemed humongous. Value is in  percents of heap region size. "   \
-          "This also caps the maximum TLAB size.")                          \
-          range(1, 100)                                                     \
                                                                             \
   product(ccstr, ShenandoahGCMode, "satb",                                  \
           "GC mode to use.  Among other things, this defines which "        \
@@ -115,7 +107,7 @@
           "to learn application and GC performance.")                       \
           range(0,100)                                                      \
                                                                             \
-  product(uintx, ShenandoahImmediateThreshold, 90, EXPERIMENTAL,            \
+  product(uintx, ShenandoahImmediateThreshold, 70, EXPERIMENTAL,            \
           "The cycle may shortcut when enough garbage can be reclaimed "    \
           "from the immediate garbage (completely garbage regions). "       \
           "In percents of total garbage found. Setting this threshold "     \
@@ -319,9 +311,10 @@
           "checking for cancellation, yielding, etc. Larger values improve "\
           "marking performance at expense of responsiveness.")              \
                                                                             \
-  product(uintx, ShenandoahParallelRegionStride, 1024, EXPERIMENTAL,        \
+  product(uintx, ShenandoahParallelRegionStride, 0, EXPERIMENTAL,           \
           "How many regions to process at once during parallel region "     \
-          "iteration. Affects heaps with lots of regions.")                 \
+          "iteration. Affects heaps with lots of regions. "                 \
+          "Set to 0 to let Shenandoah to decide the best value.")           \
                                                                             \
   product(size_t, ShenandoahSATBBufferSize, 1 * K, EXPERIMENTAL,            \
           "Number of entries in an SATB log buffer.")                       \
@@ -333,9 +326,6 @@
                                                                             \
   product(bool, ShenandoahSATBBarrier, true, DIAGNOSTIC,                    \
           "Turn on/off SATB barriers in Shenandoah")                        \
-                                                                            \
-  product(bool, ShenandoahIUBarrier, false, DIAGNOSTIC,                     \
-          "Turn on/off I-U barriers barriers in Shenandoah")                \
                                                                             \
   product(bool, ShenandoahCASBarrier, true, DIAGNOSTIC,                     \
           "Turn on/off CAS barriers in Shenandoah")                         \

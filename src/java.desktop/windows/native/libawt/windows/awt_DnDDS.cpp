@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,15 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #pragma pop_macro("bad_alloc")
 //"bad_alloc" is undefined from here
 
-#include <awt.h>
 #include <shlobj.h>
 
+// These files must be included before awt.h, since the latter redefines malloc
+// to Do_Not_Use_Malloc, etc, and that will break these files.
+#include "awt_ole.h"
+#include "awt_DCHolder.h"
+
 #include "jlong.h"
+#include "awt.h"
 #include "awt_DataTransferer.h"
 #include "awt_DnDDS.h"
 #include "awt_DnDDT.h"
@@ -53,9 +58,6 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 #include "java_awt_event_InputEvent.h"
 #include "java_awt_dnd_DnDConstants.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
-
-#include "awt_ole.h"
-#include "awt_DCHolder.h"
 
 bool operator < (const FORMATETC &fr, const FORMATETC &fl) {
     return memcmp(&fr, &fl, sizeof(FORMATETC)) < 0;
@@ -154,7 +156,6 @@ public:
     }
     static const FORMATETC *FindFormat(const FORMATETC &format)
     {
-        static FORMATETC fm = {0};
         CDataMap::iterator i = st.find(format);
         if (st.end() != i) {
             return &i->first;
@@ -1265,8 +1266,6 @@ AwtDragSource::call_dSCmouseMoved(JNIEnv* env, jobject self, jint targetActions,
         env->ExceptionClear();
     }
 }
-
-DECLARE_JAVA_CLASS(awtIEClazz, "java/awt/event/InputEvent")
 
 /**
  * Constructor

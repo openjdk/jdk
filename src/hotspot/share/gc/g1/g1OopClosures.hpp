@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "memory/iterator.hpp"
 #include "oops/markWord.hpp"
 
-class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
 class G1ConcurrentMark;
@@ -54,8 +53,6 @@ protected:
   template <class T>
   inline void handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj);
 public:
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-
   inline void trim_queue_partially();
 };
 
@@ -67,6 +64,8 @@ public:
                     G1ParScanThreadState* pss,
                     size_t& heap_roots_found) :
     G1ScanClosureBase(g1h, pss), _heap_roots_found(heap_roots_found) { }
+
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
@@ -104,9 +103,6 @@ public:
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(oop* p)          { do_oop_work(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_work(p); }
-
-  // We need to do reference discovery while processing evacuated objects.
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_DISCOVERED_AND_DISCOVERY; }
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) {
     set_ref_discoverer_internal(rd);

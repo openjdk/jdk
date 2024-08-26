@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,15 +49,16 @@ import com.sun.source.util.TreePath;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.DocletElement;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
+import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toList;
@@ -70,7 +71,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
     /**
      * Cached contents of {@code <title>...</title>} tags of the HTML pages.
      */
-    final Map<Element, String> titles = new WeakHashMap<>();
+    final Map<DocFileElement, String> titles = new WeakHashMap<>();
 
     /**
      * Constructs ExternalSpecsWriter object.
@@ -103,7 +104,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         addExternalSpecs(mainContent);
         body.add(new BodyContents()
                 .setHeader(getHeader(PageMode.EXTERNAL_SPECS))
-                .addMainContent(HtmlTree.DIV(HtmlStyle.header,
+                .addMainContent(HtmlTree.DIV(HtmlStyles.header,
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.External_Specifications"))))
                 .addMainContent(mainContent)
@@ -192,10 +193,10 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         }
         var hostNamesList = new ArrayList<>(hostNamesSet);
 
-        var table = new Table<URI>(HtmlStyle.summaryTable)
+        var table = new Table<URI>(HtmlStyles.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                 .setId(HtmlIds.EXTERNAL_SPECS);
         if ((hostNamesList.size() + (noHost ? 1 : 0)) > 1) {
             for (var host : hostNamesList) {
@@ -211,7 +212,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         for (List<IndexItem> searchIndexItems : searchIndexMap.values()) {
             IndexItem ii = searchIndexItems.get(0);
             Content specName = createSpecLink(ii);
-            Content referencesList = HtmlTree.UL(HtmlStyle.refList, searchIndexItems,
+            Content referencesList = HtmlTree.UL(HtmlStyles.refList, searchIndexItems,
                     item -> HtmlTree.LI(createLink(item)));
             Content references = searchIndexItems.size() < USE_DETAILS_THRESHHOLD
                     ? referencesList
@@ -274,29 +275,27 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
 
     private Content createLink(IndexItem i) {
         assert i.getDocTree().getKind() == DocTree.Kind.SPEC : i;
-        Element element = i.getElement();
+        var element = i.getElement();
         if (element instanceof OverviewElement) {
             return links.createLink(pathToRoot.resolve(i.getUrl()),
                     resources.getText("doclet.Overview"));
-        } else if (element instanceof DocletElement e) {
-            // Implementations of DocletElement do not override equals and
-            // hashCode; putting instances of DocletElement in a map is not
-            // incorrect, but might well be inefficient
-            String t = titles.computeIfAbsent(element, utils::getHTMLTitle);
+        } else if (element instanceof DocFileElement e) {
+            var fo = e.getFileObject();
+            var t = titles.computeIfAbsent(e, this::getFileTitle);
             if (t.isBlank()) {
                 // The user should probably be notified (a warning?) that this
                 // file does not have a title
-                Path p = Path.of(e.getFileObject().toUri());
+                Path p = Path.of(fo.toUri());
                 t = p.getFileName().toString();
             }
-            ContentBuilder b = new ContentBuilder();
-            b.add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")));
-            // non-program elements should be displayed using a normal font
-            b.add(t);
+            var b = new ContentBuilder()
+                    .add(HtmlTree.CODE(Text.of(i.getHolder() + ": ")))
+                    // non-program elements should be displayed using a normal font
+                    .add(t);
             return links.createLink(pathToRoot.resolve(i.getUrl()), b);
         } else {
             // program elements should be displayed using a code font
-            Content link = links.createLink(pathToRoot.resolve(i.getUrl()), i.getHolder());
+            var link = links.createLink(pathToRoot.resolve(i.getUrl()), i.getHolder());
             return HtmlTree.CODE(link);
         }
     }

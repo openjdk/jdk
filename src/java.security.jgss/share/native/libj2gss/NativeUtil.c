@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,7 +106,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   /* Retrieve and store the classes in global ref */
   cls = (*env)->FindClass(env, "java/lang/Object");
   if (cls == NULL) {
-    printf("Couldn't find Object class\n");
+    fprintf(stderr, "Couldn't find Object class\n");
     return JNI_ERR;
   }
   CLS_Object = (*env)->NewGlobalRef(env, cls);
@@ -115,7 +115,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "java/lang/String");
   if (cls == NULL) {
-    printf("Couldn't find String class\n");
+    fprintf(stderr, "Couldn't find String class\n");
     return JNI_ERR;
   }
   CLS_String = (*env)->NewGlobalRef(env, cls);
@@ -124,7 +124,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "org/ietf/jgss/Oid");
   if (cls == NULL) {
-    printf("Couldn't find org.ietf.jgss.Oid class\n");
+    fprintf(stderr, "Couldn't find org.ietf.jgss.Oid class\n");
     return JNI_ERR;
   }
   CLS_Oid = (*env)->NewGlobalRef(env, cls);
@@ -133,7 +133,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "org/ietf/jgss/GSSException");
   if (cls == NULL) {
-    printf("Couldn't find org.ietf.jgss.GSSException class\n");
+    fprintf(stderr, "Couldn't find org.ietf.jgss.GSSException class\n");
     return JNI_ERR;
   }
   CLS_GSSException = (*env)->NewGlobalRef(env, cls);
@@ -142,7 +142,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/GSSNameElement");
   if (cls == NULL) {
-    printf("Couldn't find sun.security.jgss.wrapper.GSSNameElement class\n");
+    fprintf(stderr, "Couldn't find sun.security.jgss.wrapper.GSSNameElement class\n");
     return JNI_ERR;
   }
   CLS_GSSNameElement = (*env)->NewGlobalRef(env, cls);
@@ -151,7 +151,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/GSSCredElement");
   if (cls == NULL) {
-    printf("Couldn't find sun.security.jgss.wrapper.GSSCredElement class\n");
+    fprintf(stderr, "Couldn't find sun.security.jgss.wrapper.GSSCredElement class\n");
     return JNI_ERR;
   }
   CLS_GSSCredElement = (*env)->NewGlobalRef(env, cls);
@@ -160,7 +160,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/NativeGSSContext");
   if (cls == NULL) {
-    printf("Couldn't find sun.security.jgss.wrapper.NativeGSSContext class\n");
+    fprintf(stderr, "Couldn't find sun.security.jgss.wrapper.NativeGSSContext class\n");
     return JNI_ERR;
   }
   CLS_NativeGSSContext = (*env)->NewGlobalRef(env, cls);
@@ -169,7 +169,7 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   }
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/SunNativeProvider");
   if (cls == NULL) {
-    printf("Couldn't find sun.security.jgss.wrapper.SunNativeProvider class\n");
+    fprintf(stderr, "Couldn't find sun.security.jgss.wrapper.SunNativeProvider class\n");
     return JNI_ERR;
   }
   CLS_SunNativeProvider = (*env)->NewGlobalRef(env, cls);
@@ -180,115 +180,115 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   MID_String_ctor = (*env)->GetMethodID(env, CLS_String,
                                         "<init>", "([B)V");
   if (MID_String_ctor == NULL) {
-    printf("Couldn't find String(byte[]) constructor\n");
+    fprintf(stderr, "Couldn't find String(byte[]) constructor\n");
     return JNI_ERR;
   }
   MID_Oid_ctor1 =
     (*env)->GetMethodID(env, CLS_Oid, "<init>", "([B)V");
   if (MID_Oid_ctor1 == NULL) {
-    printf("Couldn't find Oid(byte[]) constructor\n");
+    fprintf(stderr, "Couldn't find Oid(byte[]) constructor\n");
     return JNI_ERR;
   }
   MID_Oid_getDER = (*env)->GetMethodID(env, CLS_Oid, "getDER", "()[B");
   if (MID_Oid_getDER == NULL) {
-    printf("Couldn't find Oid.getDER() method\n");
+    fprintf(stderr, "Couldn't find Oid.getDER() method\n");
     return JNI_ERR;
   }
   cls = (*env)->FindClass(env, "org/ietf/jgss/MessageProp");
   if (cls == NULL) {
-    printf("Couldn't find org.ietf.jgss.MessageProp class\n");
+    fprintf(stderr, "Couldn't find org.ietf.jgss.MessageProp class\n");
     return JNI_ERR;
   }
   MID_MessageProp_getPrivacy =
     (*env)->GetMethodID(env, cls, "getPrivacy", "()Z");
   if (MID_MessageProp_getPrivacy == NULL) {
-    printf("Couldn't find MessageProp.getPrivacy() method\n");
+    fprintf(stderr, "Couldn't find MessageProp.getPrivacy() method\n");
     return JNI_ERR;
   }
   MID_MessageProp_getQOP = (*env)->GetMethodID(env, cls, "getQOP", "()I");
   if (MID_MessageProp_getQOP == NULL) {
-    printf("Couldn't find MessageProp.getQOP() method\n");
+    fprintf(stderr, "Couldn't find MessageProp.getQOP() method\n");
     return JNI_ERR;
   }
   MID_MessageProp_setPrivacy =
     (*env)->GetMethodID(env, cls, "setPrivacy", "(Z)V");
   if (MID_MessageProp_setPrivacy == NULL) {
-    printf("Couldn't find MessageProp.setPrivacy(boolean) method\n");
+    fprintf(stderr, "Couldn't find MessageProp.setPrivacy(boolean) method\n");
     return JNI_ERR;
   }
   MID_MessageProp_setQOP = (*env)->GetMethodID(env, cls, "setQOP", "(I)V");
   if (MID_MessageProp_setQOP == NULL) {
-    printf("Couldn't find MessageProp.setQOP(int) method\n");
+    fprintf(stderr, "Couldn't find MessageProp.setQOP(int) method\n");
     return JNI_ERR;
   }
   MID_MessageProp_setSupplementaryStates =
     (*env)->GetMethodID(env, cls, "setSupplementaryStates",
                         "(ZZZZILjava/lang/String;)V");
   if (MID_MessageProp_setSupplementaryStates == NULL) {
-    printf("Couldn't find MessageProp.setSupplementaryStates(...) method\n");
+    fprintf(stderr, "Couldn't find MessageProp.setSupplementaryStates(...) method\n");
     return JNI_ERR;
   }
   MID_GSSException_ctor3 = (*env)->GetMethodID
     (env, CLS_GSSException, "<init>", "(IILjava/lang/String;)V");
   if (MID_GSSException_ctor3 == NULL) {
-    printf("Couldn't find GSSException(int, int, String) constructor\n");
+    fprintf(stderr, "Couldn't find GSSException(int, int, String) constructor\n");
     return JNI_ERR;
   }
   cls = (*env)->FindClass(env, "org/ietf/jgss/ChannelBinding");
   if (cls == NULL) {
-    printf("Couldn't find org.ietf.jgss.ChannelBinding class\n");
+    fprintf(stderr, "Couldn't find org.ietf.jgss.ChannelBinding class\n");
     return JNI_ERR;
   }
   MID_ChannelBinding_getInitiatorAddr =
     (*env)->GetMethodID(env, cls, "getInitiatorAddress",
                         "()Ljava/net/InetAddress;");
   if (MID_ChannelBinding_getInitiatorAddr == NULL) {
-    printf("Couldn't find ChannelBinding.getInitiatorAddress() method\n");
+    fprintf(stderr, "Couldn't find ChannelBinding.getInitiatorAddress() method\n");
     return JNI_ERR;
   }
   MID_ChannelBinding_getAcceptorAddr =
     (*env)->GetMethodID(env, cls, "getAcceptorAddress",
                         "()Ljava/net/InetAddress;");
   if (MID_ChannelBinding_getAcceptorAddr == NULL) {
-    printf("Couldn't find ChannelBinding.getAcceptorAddress() method\n");
+    fprintf(stderr, "Couldn't find ChannelBinding.getAcceptorAddress() method\n");
     return JNI_ERR;
   }
   MID_ChannelBinding_getAppData =
     (*env)->GetMethodID(env, cls, "getApplicationData", "()[B");
   if (MID_ChannelBinding_getAppData == NULL) {
-    printf("Couldn't find ChannelBinding.getApplicationData() method\n");
+    fprintf(stderr, "Couldn't find ChannelBinding.getApplicationData() method\n");
     return JNI_ERR;
   }
   cls = (*env)->FindClass(env, "java/net/InetAddress");
   if (cls == NULL) {
-    printf("Couldn't find java.net.InetAddress class\n");
+    fprintf(stderr, "Couldn't find java.net.InetAddress class\n");
     return JNI_ERR;
   }
   MID_InetAddress_getAddr = (*env)->GetMethodID(env, cls, "getAddress",
                                                 "()[B");
   if (MID_InetAddress_getAddr == NULL) {
-    printf("Couldn't find InetAddress.getAddress() method\n");
+    fprintf(stderr, "Couldn't find InetAddress.getAddress() method\n");
     return JNI_ERR;
   }
   MID_GSSNameElement_ctor =
     (*env)->GetMethodID(env, CLS_GSSNameElement,
                         "<init>", "(JLsun/security/jgss/wrapper/GSSLibStub;)V");
   if (MID_GSSNameElement_ctor == NULL) {
-    printf("Couldn't find GSSNameElement(long, GSSLibStub) constructor\n");
+    fprintf(stderr, "Couldn't find GSSNameElement(long, GSSLibStub) constructor\n");
     return JNI_ERR;
   }
   MID_GSSCredElement_ctor =
     (*env)->GetMethodID(env, CLS_GSSCredElement, "<init>",
         "(JLsun/security/jgss/wrapper/GSSNameElement;Lorg/ietf/jgss/Oid;)V");
   if (MID_GSSCredElement_ctor == NULL) {
-    printf("Couldn't find GSSCredElement(long, GSSLibStub) constructor\n");
+    fprintf(stderr, "Couldn't find GSSCredElement(long, GSSLibStub) constructor\n");
     return JNI_ERR;
   }
   MID_NativeGSSContext_ctor =
     (*env)->GetMethodID(env, CLS_NativeGSSContext, "<init>",
                         "(JLsun/security/jgss/wrapper/GSSLibStub;)V");
   if (MID_NativeGSSContext_ctor == NULL) {
-    printf("Couldn't find NativeGSSContext(long, GSSLibStub) constructor\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext(long, GSSLibStub) constructor\n");
     return JNI_ERR;
   }
 
@@ -296,78 +296,78 @@ DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
     (*env)->GetMethodID(env, CLS_NativeGSSContext, "setContext",
                         "(J)V");
   if (MID_NativeGSSContext_setContext == NULL) {
-    printf("Couldn't find NativeGSSContext.setContext(long) method\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.setContext(long) method\n");
     return JNI_ERR;
   }
 
   /* Compute and cache the field ID */
   cls = (*env)->FindClass(env, "sun/security/jgss/wrapper/GSSLibStub");
   if (cls == NULL) {
-    printf("Couldn't find sun.security.jgss.wrapper.GSSLibStub class\n");
+    fprintf(stderr, "Couldn't find sun.security.jgss.wrapper.GSSLibStub class\n");
     return JNI_ERR;
   }
   FID_GSSLibStub_pMech =
     (*env)->GetFieldID(env, cls, "pMech", "J");
   if (FID_GSSLibStub_pMech == NULL) {
-    printf("Couldn't find GSSLibStub.pMech field\n");
+    fprintf(stderr, "Couldn't find GSSLibStub.pMech field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_pContext =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "pContext", "J");
   if (FID_NativeGSSContext_pContext == NULL) {
-    printf("Couldn't find NativeGSSContext.pContext field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.pContext field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_srcName =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "srcName",
                        "Lsun/security/jgss/wrapper/GSSNameElement;");
   if (FID_NativeGSSContext_srcName == NULL) {
-    printf("Couldn't find NativeGSSContext.srcName field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.srcName field\n");
    return JNI_ERR;
   }
   FID_NativeGSSContext_targetName =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "targetName",
                        "Lsun/security/jgss/wrapper/GSSNameElement;");
   if (FID_NativeGSSContext_targetName == NULL) {
-    printf("Couldn't find NativeGSSContext.targetName field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.targetName field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_isInitiator =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "isInitiator", "Z");
   if (FID_NativeGSSContext_isInitiator == NULL) {
-    printf("Couldn't find NativeGSSContext.isInitiator field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.isInitiator field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_isEstablished =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "isEstablished", "Z");
   if (FID_NativeGSSContext_isEstablished == NULL) {
-    printf("Couldn't find NativeGSSContext.isEstablished field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.isEstablished field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_delegatedCred =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "delegatedCred",
                        "Lsun/security/jgss/wrapper/GSSCredElement;");
   if (FID_NativeGSSContext_delegatedCred == NULL) {
-    printf("Couldn't find NativeGSSContext.delegatedCred field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.delegatedCred field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_flags =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "flags", "I");
   if (FID_NativeGSSContext_flags == NULL) {
-    printf("Couldn't find NativeGSSContext.flags field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.flags field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_lifetime =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "lifetime", "I");
   if (FID_NativeGSSContext_lifetime == NULL) {
-    printf("Couldn't find NativeGSSContext.lifetime field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.lifetime field\n");
     return JNI_ERR;
   }
   FID_NativeGSSContext_actualMech =
     (*env)->GetFieldID(env, CLS_NativeGSSContext, "actualMech",
                        "Lorg/ietf/jgss/Oid;");
   if (FID_NativeGSSContext_actualMech == NULL) {
-    printf("Couldn't find NativeGSSContext.actualMech field\n");
+    fprintf(stderr, "Couldn't find NativeGSSContext.actualMech field\n");
     return JNI_ERR;
   }
   return JNI_VERSION_1_2;

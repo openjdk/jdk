@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
 
 /*
  * @test
+ * @key randomness
+ *
+ * @library /test/lib
  * @modules jdk.incubator.vector
  * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation Float256VectorTests
  */
@@ -60,8 +63,11 @@ public class Float256VectorTests extends AbstractVectorTest {
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
 
-    // for floating point reduction ops that may introduce rounding errors
-    private static final float RELATIVE_ROUNDING_ERROR = (float)0.000001;
+    // for floating point addition reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_ADD = (float)10.0;
+
+    // for floating point multiplication reduction ops that may introduce rounding errors
+    private static final float RELATIVE_ROUNDING_ERROR_FACTOR_MUL = (float)50.0;
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 256);
 
@@ -126,16 +132,16 @@ public class Float256VectorTests extends AbstractVectorTest {
 
     static void assertReductionArraysEquals(float[] r, float rc, float[] a,
                                             FReductionOp f, FReductionAllOp fa,
-                                            float relativeError) {
+                                            float relativeErrorFactor) {
         int i = 0;
         try {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError));
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor);
             for (; i < a.length; i += SPECIES.length()) {
-                Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError));
+                Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor);
             }
         } catch (AssertionError e) {
-            Assert.assertEquals(rc, fa.apply(a), Math.abs(rc * relativeError), "Final result is incorrect!");
-            Assert.assertEquals(r[i], f.apply(a, i), Math.abs(r[i] * relativeError), "at index #" + i);
+            Assert.assertEquals(rc, fa.apply(a), Math.ulp(rc) * relativeErrorFactor, "Final result is incorrect!");
+            Assert.assertEquals(r[i], f.apply(a, i), Math.ulp(r[i]) * relativeErrorFactor, "at index #" + i);
         }
     }
 
@@ -2202,7 +2208,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float256VectorTests::ADDReduce, Float256VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float256VectorTests::ADDReduce, Float256VectorTests::ADDReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float ADDReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2248,7 +2254,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float256VectorTests::ADDReduceMasked, Float256VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float256VectorTests::ADDReduceMasked, Float256VectorTests::ADDReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_ADD);
     }
 
     static float MULReduce(float[] a, int idx) {
@@ -2291,7 +2297,7 @@ relativeError));
         }
 
         assertReductionArraysEquals(r, ra, a,
-                Float256VectorTests::MULReduce, Float256VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR);
+                Float256VectorTests::MULReduce, Float256VectorTests::MULReduceAll, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MULReduceMasked(float[] a, int idx, boolean[] mask) {
@@ -2337,7 +2343,7 @@ relativeError));
         }
 
         assertReductionArraysEqualsMasked(r, ra, a, mask,
-                Float256VectorTests::MULReduceMasked, Float256VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR);
+                Float256VectorTests::MULReduceMasked, Float256VectorTests::MULReduceAllMasked, RELATIVE_ROUNDING_ERROR_FACTOR_MUL);
     }
 
     static float MINReduce(float[] a, int idx) {
@@ -3558,7 +3564,7 @@ relativeError));
     static void sliceUnaryFloat256VectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3587,7 +3593,7 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float[] b = fb.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3621,7 +3627,7 @@ relativeError));
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
 
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3650,7 +3656,7 @@ relativeError));
     static void unsliceUnaryFloat256VectorTests(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
+        int origin = RAND.nextInt(SPECIES.length());
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3688,8 +3694,8 @@ relativeError));
         float[] a = fa.apply(SPECIES.length());
         float[] b = fb.apply(SPECIES.length());
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
@@ -3745,8 +3751,8 @@ relativeError));
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Float> vmask = VectorMask.fromArray(SPECIES, mask, 0);
         float[] r = new float[a.length];
-        int origin = (new java.util.Random()).nextInt(SPECIES.length());
-        int part = (new java.util.Random()).nextInt(2);
+        int origin = RAND.nextInt(SPECIES.length());
+        int part = RAND.nextInt(2);
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);

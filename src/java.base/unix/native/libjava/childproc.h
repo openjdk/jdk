@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,13 +71,6 @@ extern char **environ;
 #endif
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
-
-/* TODO: Refactor. */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.

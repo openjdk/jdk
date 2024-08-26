@@ -257,6 +257,9 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_copyMemory:
     if (StubRoutines::unsafe_arraycopy() == nullptr) return false;
     break;
+  case vmIntrinsics::_setMemory:
+    if (StubRoutines::unsafe_setmemory() == nullptr) return false;
+    break;
   case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     if (StubRoutines::electronicCodeBook_encryptAESCrypt() == nullptr) return false;
     break;
@@ -728,6 +731,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_setCurrentThread:
   case vmIntrinsics::_scopedValueCache:
   case vmIntrinsics::_setScopedValueCache:
+  case vmIntrinsics::_Continuation_pin:
+  case vmIntrinsics::_Continuation_unpin:
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
@@ -783,6 +788,8 @@ bool C2Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_base64_encodeBlock:
   case vmIntrinsics::_base64_decodeBlock:
   case vmIntrinsics::_poly1305_processBlocks:
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:

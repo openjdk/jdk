@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,14 +98,14 @@ void VMOperationTimeoutTask::disarm() {
 // Implementation of VMThread stuff
 
 static VM_SafepointALot safepointALot_op;
-static VM_Cleanup       cleanup_op;
+static VM_ForceSafepoint no_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
 Monitor*          VMThread::_terminate_lock     = nullptr;
 VMThread*         VMThread::_vm_thread          = nullptr;
 VM_Operation*     VMThread::_cur_vm_operation   = nullptr;
-VM_Operation*     VMThread::_next_vm_operation  = &cleanup_op; // Prevent any thread from setting an operation until VM thread is ready.
+VM_Operation*     VMThread::_next_vm_operation  = &no_op; // Prevent any thread from setting an operation until VM thread is ready.
 PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = nullptr;
 VMOperationTimeoutTask* VMThread::_timeout_task = nullptr;
 
@@ -308,40 +308,24 @@ class HandshakeALotClosure : public HandshakeClosure {
   }
 };
 
-bool VMThread::handshake_alot() {
+bool VMThread::handshake_or_safepoint_alot() {
   assert(_cur_vm_operation == nullptr, "should not have an op yet");
   assert(_next_vm_operation == nullptr, "should not have an op yet");
-  if (!HandshakeALot) {
+  if (!HandshakeALot && !SafepointALot) {
     return false;
   }
-  static jlong last_halot_ms = 0;
+  static jlong last_alot_ms = 0;
   jlong now_ms = nanos_to_millis(os::javaTimeNanos());
-  // If only HandshakeALot is set, but GuaranteedSafepointInterval is 0,
-  // we emit a handshake if it's been more than a second since the last one.
+  // If HandshakeALot or SafepointALot are set, but GuaranteedSafepointInterval is explicitly
+  // set to 0 on the command line, we emit the operation if it's been more than a second
+  // since the last one.
   jlong interval = GuaranteedSafepointInterval != 0 ? GuaranteedSafepointInterval : 1000;
-  jlong deadline_ms = interval + last_halot_ms;
+  jlong deadline_ms = interval + last_alot_ms;
   if (now_ms > deadline_ms) {
-    last_halot_ms = now_ms;
+    last_alot_ms = now_ms;
     return true;
   }
   return false;
-}
-
-void VMThread::setup_periodic_safepoint_if_needed() {
-  assert(_cur_vm_operation  == nullptr, "Already have an op");
-  assert(_next_vm_operation == nullptr, "Already have an op");
-  // Check for a cleanup before SafepointALot to keep stats correct.
-  jlong interval_ms = SafepointTracing::time_since_last_safepoint_ms();
-  bool max_time_exceeded = GuaranteedSafepointInterval != 0 &&
-                           (interval_ms >= GuaranteedSafepointInterval);
-  if (!max_time_exceeded) {
-    return;
-  }
-  if (SafepointSynchronize::is_cleanup_needed()) {
-    _next_vm_operation = &cleanup_op;
-  } else if (SafepointALot) {
-    _next_vm_operation = &safepointALot_op;
-  }
 }
 
 bool VMThread::set_next_operation(VM_Operation *op) {
@@ -467,8 +451,8 @@ void VMThread::wait_for_operation() {
     if (_next_vm_operation != nullptr) {
       return;
     }
-    if (handshake_alot()) {
-      {
+    if (handshake_or_safepoint_alot()) {
+      if (HandshakeALot) {
         MutexUnlocker mul(VMOperation_lock);
         HandshakeALotClosure hal_cl;
         Handshake::execute(&hal_cl);
@@ -477,14 +461,13 @@ void VMThread::wait_for_operation() {
       if (_next_vm_operation != nullptr) {
         return;
       }
+      if (SafepointALot) {
+        _next_vm_operation = &safepointALot_op;
+        return;
+      }
     }
     assert(_next_vm_operation == nullptr, "Must be");
     assert(_cur_vm_operation  == nullptr, "Must be");
-
-    setup_periodic_safepoint_if_needed();
-    if (_next_vm_operation != nullptr) {
-      return;
-    }
 
     // We didn't find anything to execute, notify any waiter so they can install an op.
     ml_op_lock.notify_all();
@@ -499,7 +482,7 @@ void VMThread::loop() {
 
   // Need to set a calling thread for ops not passed
   // via the normal way.
-  cleanup_op.set_calling_thread(_vm_thread);
+  no_op.set_calling_thread(_vm_thread);
   safepointALot_op.set_calling_thread(_vm_thread);
 
   while (true) {

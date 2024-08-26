@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,7 @@
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
  */
 
-import java.lang.foreign.AddressLayout;
-import java.lang.foreign.Arena;
-import java.lang.foreign.MemoryLayout;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -50,19 +46,29 @@ import static org.testng.Assert.*;
 public class TestAccessModes {
 
     @Test(dataProvider = "segmentsAndLayoutsAndModes")
-    public void testAccessModes(MemorySegment segment, ValueLayout layout, AccessMode mode) throws Throwable {
-        VarHandle varHandle = layout.varHandle();
+    public void testAccessModes(MemorySegment segment, MemoryLayout layout, AccessMode mode) throws Throwable {
+        VarHandle varHandle = layout instanceof ValueLayout ?
+                layout.varHandle() :
+                layout.varHandle(MemoryLayout.PathElement.groupElement(0));
         MethodHandle methodHandle = varHandle.toMethodHandle(mode);
-        boolean compatible = AccessModeKind.supportedModes(layout).contains(AccessModeKind.of(mode));
+        boolean compatible = AccessModeKind.supportedModes(accessLayout(layout)).contains(AccessModeKind.of(mode));
         try {
             Object o = methodHandle.invokeWithArguments(makeArgs(segment, varHandle.accessModeType(mode)));
             assertTrue(compatible);
         } catch (UnsupportedOperationException ex) {
             assertFalse(compatible);
         } catch (IllegalArgumentException ex) {
-            // access is unaligned, but access mode is supported
-            assertTrue(compatible);
+            // access is unaligned
+            assertTrue(segment.maxByteAlignment() < layout.byteAlignment());
         }
+    }
+
+    static ValueLayout accessLayout(MemoryLayout layout) {
+        return switch (layout) {
+            case ValueLayout vl -> vl;
+            case GroupLayout gl -> accessLayout(gl.memberLayouts().get(0));
+            default -> throw new IllegalStateException();
+        };
     }
 
     Object[] makeArgs(MemorySegment segment, MethodType type) throws Throwable {
@@ -145,6 +151,7 @@ public class TestAccessModes {
         for (MemoryLayout layout : valueLayouts) {
             for (int align : new int[] { 1, 2, 4, 8 }) {
                 layouts.add(layout.withByteAlignment(align));
+                layouts.add(MemoryLayout.structLayout(layout.withByteAlignment(align)));
             }
         }
         return layouts.toArray(new MemoryLayout[0]);

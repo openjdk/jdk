@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jinfo
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jinfo, \
     MAIN_CLASS := sun.tools.jinfo.JInfo, \
     JAVA_ARGS := \
@@ -32,6 +36,10 @@ $(eval $(call SetupBuildLauncher, jinfo, \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
     MACOSX_PRIVILEGED := true, \
 ))
+
+################################################################################
+## Build jmap
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jmap, \
     MAIN_CLASS := sun.tools.jmap.JMap, \
@@ -41,9 +49,17 @@ $(eval $(call SetupBuildLauncher, jmap, \
     MACOSX_PRIVILEGED := true, \
 ))
 
+################################################################################
+## Build jps
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jps, \
     MAIN_CLASS := sun.tools.jps.Jps, \
 ))
+
+################################################################################
+## Build jstack
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jstack, \
     MAIN_CLASS := sun.tools.jstack.JStack, \
@@ -53,9 +69,17 @@ $(eval $(call SetupBuildLauncher, jstack, \
     MACOSX_PRIVILEGED := true, \
 ))
 
+################################################################################
+## Build jstat
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jstat, \
     MAIN_CLASS := sun.tools.jstat.Jstat, \
 ))
+
+################################################################################
+## Build jcmd
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jcmd, \
     MAIN_CLASS := sun.tools.jcmd.JCmd, \

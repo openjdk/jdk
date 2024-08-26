@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -400,7 +400,7 @@ private:
   void update_heap_region_states(bool concurrent);
   void rebuild_free_set(bool concurrent);
 
-  void rendezvous_threads();
+  void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
   void notify_gc_progress();
@@ -493,6 +493,8 @@ private:
 public:
   bool is_maximal_no_gc() const override shenandoah_not_implemented_return(false);
 
+  // Check the pointer is in active part of Java heap.
+  // Use is_in_reserved to check if object is within heap bounds.
   bool is_in(const void* p) const override;
 
   bool requires_barriers(stackChunkOop obj) const override;
@@ -539,10 +541,11 @@ public:
   void sync_pinned_region_status();
   void assert_pinned_region_status() NOT_DEBUG_RETURN;
 
-// ---------- Concurrent Stack Processing support
-//
-public:
-  bool uses_stack_watermark_barrier() const override { return true; }
+// ---------- CDS archive support
+
+  bool can_load_archived_objects() const override { return UseCompressedOops; }
+  HeapWord* allocate_loaded_archive_space(size_t size) override;
+  void complete_loaded_archive_space(MemRegion archive_space) override;
 
 // ---------- Allocation support
 //
@@ -644,7 +647,7 @@ public:
 
   // Evacuates object src. Returns the evacuated object, either evacuated
   // by this thread, or by some other thread.
-  inline oop evacuate_object(oop src, Thread* thread);
+  oop evacuate_object(oop src, Thread* thread);
 
   // Call before/after evacuation.
   inline void enter_evacuation(Thread* t);

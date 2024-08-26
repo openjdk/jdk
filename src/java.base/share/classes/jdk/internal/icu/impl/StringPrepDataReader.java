@@ -119,7 +119,7 @@ public final class StringPrepDataReader implements ICUBinary.Authenticate {
      * No guarantees are made if a older version is used
      * see store.c of gennorm for more information and values
      */
-    ///* dataFormat="SPRP" 0x53, 0x50, 0x52, 0x50  */
+    // /* dataFormat="SPRP" 0x53, 0x50, 0x52, 0x50  */
     private static final byte DATA_FORMAT_ID[] = {(byte)0x53, (byte)0x50,
                                                     (byte)0x52, (byte)0x50};
     private static final byte DATA_FORMAT_VERSION[] = {(byte)0x3, (byte)0x2,

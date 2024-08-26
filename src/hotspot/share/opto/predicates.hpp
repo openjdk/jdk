@@ -26,6 +26,10 @@
 #define SHARE_OPTO_PREDICATES_HPP
 
 #include "opto/cfgnode.hpp"
+#include "opto/connode.hpp"
+#include "opto/opaquenode.hpp"
+
+class IdealLoopTree;
 
 /*
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
@@ -191,6 +195,15 @@
  * Main Loop Head
  */
 
+#ifndef PRODUCT
+// Assertion Predicates are either emitted to check the initial value of a range check in the first iteration or the last
+// value of a range check in the last iteration of a loop.
+enum class AssertionPredicateType {
+  None, // Not an Assertion Predicate
+  InitValue,
+  LastValue
+};
+#endif // NOT PRODUCT
 
 // Class to represent Assertion Predicates with a HaltNode instead of an UCT (i.e. either an Initialized Assertion
 // Predicate or a Template Assertion Predicate created after the initial one at Loop Predication).
@@ -198,9 +211,6 @@ class AssertionPredicatesWithHalt : public StackObj {
   Node* _entry;
 
   static Node* find_entry(Node* start_proj);
-  static bool has_opaque4(const Node* predicate_proj);
-  static bool has_halt(const Node* success_proj);
-  static bool is_assertion_predicate_success_proj(const Node* predicate_proj);
 
  public:
   AssertionPredicatesWithHalt(Node* assertion_predicate_proj) : _entry(find_entry(assertion_predicate_proj)) {}
@@ -212,13 +222,37 @@ class AssertionPredicatesWithHalt : public StackObj {
   }
 };
 
+// Class to represent a single Assertion Predicate with a HaltNode. This could either be:
+// - A Template Assertion Predicate.
+// - An Initialized Assertion Predicate.
+// Note that all other Regular Predicates have an UCT node.
+class AssertionPredicateWithHalt : public StackObj {
+  static bool has_assertion_predicate_opaque(const Node* predicate_proj);
+  static bool has_halt(const Node* success_proj);
+ public:
+  static bool is_predicate(const Node* maybe_success_proj);
+};
+
+// Class to represent a single Regular Predicate with an UCT. This could either be:
+// - A Runtime Predicate
+// - A Template Assertion Predicate
+// Note that all other Regular Predicates have a Halt node.
+class RegularPredicateWithUCT : public StackObj {
+  static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
+  static bool may_be_predicate_if(Node* node);
+
+ public:
+  static bool is_predicate(Node* maybe_success_proj);
+  static bool is_predicate(Node* node, Deoptimization::DeoptReason deopt_reason);
+};
+
 // Class to represent a Parse Predicate.
 class ParsePredicate : public StackObj {
   ParsePredicateSuccessProj* _success_proj;
   ParsePredicateNode* _parse_predicate_node;
   Node* _entry;
 
-  IfTrueNode* init_success_proj(const Node* parse_predicate_proj) const {
+  static IfTrueNode* init_success_proj(const Node* parse_predicate_proj) {
     assert(parse_predicate_proj != nullptr, "must not be null");
     return parse_predicate_proj->isa_IfTrue();
   }
@@ -252,16 +286,136 @@ class ParsePredicate : public StackObj {
     assert(is_valid(), "must be valid");
     return _success_proj;
   }
+
+  static bool is_predicate(Node* maybe_success_proj);
 };
 
 // Utility class for queries on Runtime Predicates.
 class RuntimePredicate : public StackObj {
-  static Deoptimization::DeoptReason uncommon_trap_reason(IfProjNode* if_proj);
-  static bool may_be_runtime_predicate_if(Node* node);
-
  public:
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
 };
+
+// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Expression.
+class TransformStrategyForOpaqueLoopNodes : public StackObj {
+ public:
+  virtual Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) const = 0;
+  virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) const = 0;
+};
+
+// A Template Assertion Predicate represents the Opaque4Node for the initial value or the last value of a
+// Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
+class TemplateAssertionExpression : public StackObj {
+  Opaque4Node* _opaque4_node;
+
+ public:
+  explicit TemplateAssertionExpression(Opaque4Node* opaque4_node) : _opaque4_node(opaque4_node) {}
+
+ private:
+  Opaque4Node* clone(const TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* new_ctrl, PhaseIdealLoop* phase);
+
+ public:
+  Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl,PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
+};
+
+// Class to represent a node being part of a Template Assertion Expression. Note that this is not an IR node.
+//
+// The expression itself can belong to no, one, or two Template Assertion Predicates:
+// - None: This node is already dead (i.e. we replaced the Bool condition of the Template Assertion Predicate).
+// - Two: A OpaqueLoopInitNode could be part of two Template Assertion Predicates.
+// - One: In all other cases.
+class TemplateAssertionExpressionNode : public StackObj {
+  Node* const _node;
+
+ public:
+  explicit TemplateAssertionExpressionNode(Node* node) : _node(node) {
+    assert(is_in_expression(node), "must be valid");
+  }
+  NONCOPYABLE(TemplateAssertionExpressionNode);
+
+ private:
+  static bool is_template_assertion_predicate(Node* node);
+
+ public:
+  // Check whether the provided node is part of a Template Assertion Expression or not.
+  static bool is_in_expression(Node* node);
+
+  // Check if the opcode of node could be found in a Template Assertion Expression.
+  // This also provides a fast check whether a node is unrelated.
+  static bool is_maybe_in_expression(const Node* node) {
+    const int opcode = node->Opcode();
+    return (node->is_OpaqueLoopInit() ||
+            node->is_OpaqueLoopStride() ||
+            node->is_Bool() ||
+            node->is_Cmp() ||
+            opcode == Op_AndL ||
+            opcode == Op_OrL ||
+            opcode == Op_RShiftL ||
+            opcode == Op_LShiftL ||
+            opcode == Op_LShiftI ||
+            opcode == Op_AddL ||
+            opcode == Op_AddI ||
+            opcode == Op_MulL ||
+            opcode == Op_MulI ||
+            opcode == Op_SubL ||
+            opcode == Op_SubI ||
+            opcode == Op_ConvI2L ||
+            opcode == Op_CastII);
+  }
+
+  // Apply the given function to all Template Assertion Predicates (if any) to which this Template Assertion Predicate
+  // Expression Node belongs to.
+  template <class Callback>
+  void for_each_template_assertion_predicate(Callback callback) {
+    ResourceMark rm;
+    Unique_Node_List list;
+    list.push(_node);
+    DEBUG_ONLY(int template_counter = 0;)
+    for (uint i = 0; i < list.size(); i++) {
+      Node* next = list.at(i);
+      if (is_template_assertion_predicate(next)) {
+        callback(next->as_If());
+        DEBUG_ONLY(template_counter++;)
+      } else {
+        assert(!next->is_CFG(), "no CFG expected in Template Assertion Expression");
+        list.push_outputs_of(next);
+      }
+    }
+
+    // Each node inside a Template Assertion Expression is in between a Template Assertion Predicate and its OpaqueLoop*
+    // nodes (or an OpaqueLoop* node itself). The OpaqueLoop* nodes do not common up. Therefore, each Template Assertion
+    // Expression node belongs to a single expression - except for OpaqueLoopInitNodes. An OpaqueLoopInitNode is shared
+    // between the init and last value Template Assertion Predicate at creation. Later, when cloning the expressions,
+    // they are no longer shared.
+    assert(template_counter <= 2, "a node cannot be part of more than two templates");
+    assert(template_counter <= 1 || _node->is_OpaqueLoopInit(), "only OpaqueLoopInit nodes can be part of two templates");
+  }
+};
+
+// This class creates a new Initialized Assertion Predicate.
+class InitializedAssertionPredicate : public StackObj {
+  IfNode* const _template_assertion_predicate;
+  Node* const _new_init;
+  Node* const _new_stride;
+  PhaseIdealLoop* const _phase;
+
+ public:
+  InitializedAssertionPredicate(IfNode* template_assertion_predicate, Node* new_init, Node* new_stride,
+                                PhaseIdealLoop* phase);
+  NONCOPYABLE(InitializedAssertionPredicate);
+
+  IfTrueNode* create(Node* control);
+
+ private:
+  OpaqueInitializedAssertionPredicateNode* create_assertion_expression(Node* control);
+  IfNode* create_if_node(Node* control, OpaqueInitializedAssertionPredicateNode* assertion_expression, IdealLoopTree* loop);
+  void create_fail_path(IfNode* if_node, IdealLoopTree* loop);
+  void create_halt_node(IfFalseNode* fail_proj, IdealLoopTree* loop);
+  IfTrueNode* create_success_path(IfNode* if_node, IdealLoopTree* loop);
+};
+
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
 // or a Loop Limit Check Predicate Block). It contains zero or more Regular Predicates followed by a Parse Predicate
@@ -373,5 +527,18 @@ class ParsePredicateIterator : public StackObj {
   }
 
   ParsePredicateNode* next();
+};
+
+// Special predicate iterator that can be used to walk through predicate entries, regardless of whether the predicate
+// belongs to the same loop or not (i.e. leftovers from already folded nodes). The iterator returns the next entry
+// to a predicate.
+class PredicateEntryIterator : public StackObj {
+  Node* _current;
+
+ public:
+  explicit PredicateEntryIterator(Node* start) : _current(start) {};
+
+  bool has_next() const;
+  Node* next_entry();
 };
 #endif // SHARE_OPTO_PREDICATES_HPP

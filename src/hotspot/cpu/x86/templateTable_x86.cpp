@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -774,7 +774,7 @@ void TemplateTable::index_check_without_pop(Register array, Register index) {
   __ jccb(Assembler::below, skip);
   // Pass array to create more detailed exceptions.
   __ mov(NOT_LP64(rax) LP64_ONLY(c_rarg1), array);
-  __ jump(ExternalAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ArrayIndexOutOfBoundsException_entry));
   __ bind(skip);
 }
 
@@ -1152,7 +1152,7 @@ void TemplateTable::aastore() {
 
   // Come here on failure
   // object is at TOS
-  __ jump(ExternalAddress(Interpreter::_throw_ArrayStoreException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ArrayStoreException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -1432,7 +1432,7 @@ void TemplateTable::ldiv() {
   // generate explicit div0 check
   __ testq(rcx, rcx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   // Note: could xor rax and rcx and compare with (-1 ^ min_int). If
   //       they are not equal, one could do a normal division (no correction
   //       needed), which may speed up this implementation for the common case.
@@ -1445,7 +1445,7 @@ void TemplateTable::ldiv() {
   // check if y = 0
   __ orl(rax, rdx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::ldiv));
   __ addptr(rsp, 4 * wordSize);  // take off temporaries
 #endif
@@ -1458,7 +1458,7 @@ void TemplateTable::lrem() {
   __ pop_l(rax);
   __ testq(rcx, rcx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   // Note: could xor rax and rcx and compare with (-1 ^ min_int). If
   //       they are not equal, one could do a normal division (no correction
   //       needed), which may speed up this implementation for the common case.
@@ -1472,7 +1472,7 @@ void TemplateTable::lrem() {
   // check if y = 0
   __ orl(rax, rdx);
   __ jump_cc(Assembler::zero,
-             ExternalAddress(Interpreter::_throw_ArithmeticException_entry));
+             RuntimeAddress(Interpreter::_throw_ArithmeticException_entry));
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::lrem));
   __ addptr(rsp, 4 * wordSize);
 #endif
@@ -3495,7 +3495,7 @@ void TemplateTable::fast_storefield(TosState state) {
   __ push(rax);
   __ load_field_entry(rcx, rax);
   load_resolved_field_entry(noreg, cache, rax, rbx, rdx);
-  // RBX: field offset, RCX: RAX: TOS, RDX: flags
+  // RBX: field offset, RAX: TOS, RDX: flags
   __ andl(rdx, (1 << ResolvedFieldEntry::is_volatile_shift));
   __ pop(rax);
 
@@ -4057,10 +4057,9 @@ void TemplateTable::_new() {
   __ jcc(Assembler::notEqual, slow_case);
 #endif
 
-  // make sure klass doesn't have finalizer
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ movl(rdx, Address(rcx, Klass::layout_helper_offset()));
-  // test to see if it has a finalizer or is malformed in some way
+  // test to see if it is malformed in some way
   __ testl(rdx, Klass::_lh_instance_slow_path_bit);
   __ jcc(Assembler::notZero, slow_case);
 
@@ -4124,8 +4123,7 @@ void TemplateTable::_new() {
 #endif
     __ store_klass(rax, rcx, rscratch1);  // klass
 
-    {
-      SkipIfEqual skip_if(_masm, &DTraceAllocProbes, 0, rscratch1);
+    if (DTraceAllocProbes) {
       // Trigger dtrace event for fastpath
       __ push(atos);
       __ call_VM_leaf(
@@ -4224,7 +4222,7 @@ void TemplateTable::checkcast() {
   // Come here on failure
   __ push_ptr(rdx);
   // object is at TOS
-  __ jump(ExternalAddress(Interpreter::_throw_ClassCastException_entry));
+  __ jump(RuntimeAddress(Interpreter::_throw_ClassCastException_entry));
 
   // Come here on success
   __ bind(ok_is_subtype);
@@ -4342,7 +4340,7 @@ void TemplateTable::_breakpoint() {
 void TemplateTable::athrow() {
   transition(atos, vtos);
   __ null_check(rax);
-  __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
+  __ jump(RuntimeAddress(Interpreter::throw_exception_entry()));
 }
 
 //-----------------------------------------------------------------------------

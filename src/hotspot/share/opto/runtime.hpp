@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "opto/machnode.hpp"
 #include "opto/optoreg.hpp"
 #include "opto/type.hpp"
-#include "runtime/rtmLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vframe.hpp"
 
@@ -61,8 +60,7 @@ public:
     enum CounterTag {
     NoTag,
     LockCounter,
-    EliminatedLockCounter,
-    RTMLockingCounter
+    EliminatedLockCounter
   };
 
 private:
@@ -96,17 +94,6 @@ private:
     _next = next;
   }
 
-};
-
-class RTMLockingNamedCounter : public NamedCounter {
- private:
- RTMLockingCounters _counters;
-
- public:
-  RTMLockingNamedCounter(const char *n) :
-    NamedCounter(n, RTMLockingCounter), _counters() {}
-
-  RTMLockingCounters* counters() { return &_counters; }
 };
 
 typedef const TypeFunc*(*TypeFunc_generator)();
@@ -181,7 +168,10 @@ private:
   // CodeBlob support
   // ===================================================================
 
+  static UncommonTrapBlob*   _uncommon_trap_blob;
   static ExceptionBlob*       _exception_blob;
+
+  static void generate_uncommon_trap_blob(void);
   static void generate_exception_blob();
 
   static void register_finalizer(oopDesc* obj, JavaThread* current);
@@ -221,6 +211,7 @@ private:
   static address notify_jvmti_vthread_unmount()          { return _notify_jvmti_vthread_unmount; }
 #endif
 
+  static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
 
   // Implicit exception support
@@ -266,6 +257,8 @@ private:
   static const TypeFunc* generic_arraycopy_Type();
   static const TypeFunc* slow_arraycopy_Type();   // the full routine
 
+  static const TypeFunc* make_setmemory_Type();
+
   static const TypeFunc* array_fill_Type();
 
   static const TypeFunc* array_sort_Type();
@@ -295,7 +288,10 @@ private:
   static const TypeFunc* chacha20Block_Type();
   static const TypeFunc* base64_encodeBlock_Type();
   static const TypeFunc* base64_decodeBlock_Type();
+  static const TypeFunc* string_IndexOf_Type();
   static const TypeFunc* poly1305_processBlocks_Type();
+  static const TypeFunc* intpoly_montgomeryMult_P256_Type();
+  static const TypeFunc* intpoly_assign_Type();
 
   static const TypeFunc* updateBytesCRC32_Type();
   static const TypeFunc* updateBytesCRC32C_Type();

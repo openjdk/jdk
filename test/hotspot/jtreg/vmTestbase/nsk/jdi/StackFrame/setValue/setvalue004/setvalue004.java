@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@
  * @clean nsk.jdi.StackFrame.setValue.setvalue004.setvalue004a
  * @compile -g:lines,source,vars setvalue004a.java
  *
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.StackFrame.setValue.setvalue004.setvalue004
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -163,7 +163,9 @@ public class setvalue004 {
 
     public static void main (String argv[]) {
         int result = run(argv, System.out);
-        System.exit(result + PASS_BASE);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run (String argv[], PrintStream out) {

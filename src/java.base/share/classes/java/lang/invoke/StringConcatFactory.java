@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +28,36 @@ package java.lang.invoke;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.javac.PreviewFeature;
-import jdk.internal.util.FormatConcatItem;
+import jdk.internal.constant.ConstantUtils;
+import jdk.internal.misc.VM;
+import jdk.internal.util.ClassFileDumper;
+import jdk.internal.util.ReferenceKey;
+import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
+import java.lang.classfile.Annotation;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -98,6 +118,16 @@ import static java.lang.invoke.MethodType.methodType;
  * @since 9
  */
 public final class StringConcatFactory {
+    private static final int HIGH_ARITY_THRESHOLD;
+    private static final int FORCE_INLINE_THRESHOLD;
+
+    static {
+        String highArity = VM.getSavedProperty("java.lang.invoke.StringConcat.highArityThreshold");
+        HIGH_ARITY_THRESHOLD = highArity != null ? Integer.parseInt(highArity) : 0;
+
+        String inlineThreshold = VM.getSavedProperty("java.lang.invoke.StringConcat.inlineThreshold");
+        FORCE_INLINE_THRESHOLD = inlineThreshold != null ? Integer.parseInt(inlineThreshold) : 16;
+    }
 
     /**
      * Tag used to demarcate an ordinary argument.
@@ -115,14 +145,8 @@ public final class StringConcatFactory {
      * While the maximum number of argument slots that indy call can handle is 253,
      * we do not use all those slots, to let the strategies with MethodHandle
      * combinators to use some arguments.
-     *
-     * @since 21
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static final int MAX_INDY_CONCAT_ARG_SLOTS;
-    // Use static initialize block to avoid MAX_INDY_CONCAT_ARG_SLOTS being treating
-    // as a constant for constant folding.
-    static { MAX_INDY_CONCAT_ARG_SLOTS = 200; }
+    private static final int MAX_INDY_CONCAT_ARG_SLOTS = 200;
 
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
@@ -361,9 +385,17 @@ public final class StringConcatFactory {
         }
 
         try {
-            return new ConstantCallSite(
-                    generateMHInlineCopy(concatType, constantStrings)
-                            .viewAsType(concatType, true));
+            MethodHandle mh = makeSimpleConcat(concatType, constantStrings);
+            if (mh == null && concatType.parameterCount() <= HIGH_ARITY_THRESHOLD) {
+                mh = generateMHInlineCopy(concatType, constantStrings);
+            }
+
+            if (mh == null) {
+                mh = InlineHiddenClassStrategy.generate(lookup, concatType, constantStrings);
+            }
+            mh = mh.viewAsType(concatType, true);
+
+            return new ConstantCallSite(mh);
         } catch (Error e) {
             // Pass through any error
             throw e;
@@ -412,7 +444,7 @@ public final class StringConcatFactory {
                 }
 
                 // Flush any accumulated characters into a constant
-                consts[oCount++] = acc.length() > 0 ? acc.toString() : null;
+                consts[oCount++] = acc.length() > 0 ? acc.toString() : "";
                 acc.setLength(0);
             } else {
                 // Not a special character, this is a constant embedded into
@@ -428,7 +460,7 @@ public final class StringConcatFactory {
         }
 
         // Flush the remaining characters as constant:
-        consts[oCount] = acc.length() > 0 ? acc.toString() : null;
+        consts[oCount] = acc.length() > 0 ? acc.toString() : "";
         return consts;
     }
 
@@ -451,6 +483,36 @@ public final class StringConcatFactory {
                         " are passed");
     }
 
+    private static MethodHandle makeSimpleConcat(MethodType mt, String[] constants) {
+        int paramCount = mt.parameterCount();
+        String suffix = constants[paramCount];
+
+        // Fast-path trivial concatenations
+        if (paramCount == 0) {
+            return MethodHandles.insertArguments(newStringifier(), 0, suffix == null ? "" : suffix);
+        }
+        if (paramCount == 1) {
+            String prefix = constants[0];
+            // Empty constants will be
+            if (prefix.isEmpty()) {
+                if (suffix.isEmpty()) {
+                    return unaryConcat(mt.parameterType(0));
+                } else if (!mt.hasPrimitives()) {
+                    return MethodHandles.insertArguments(simpleConcat(), 1, suffix);
+                } // else fall-through
+            } else if (suffix.isEmpty() && !mt.hasPrimitives()) {
+                // Non-primitive argument
+                return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
+            } // fall-through if there's both a prefix and suffix
+        } else if (paramCount == 2 && !mt.hasPrimitives() && suffix.isEmpty()
+                && constants[0].isEmpty() && constants[1].isEmpty()) {
+            // Two reference arguments, no surrounding constants
+            return simpleConcat();
+        }
+
+        return null;
+    }
+
     /**
      * <p>This strategy replicates what StringBuilders are doing: it builds the
      * byte[] array on its own and passes that byte[] array to String
@@ -462,29 +524,7 @@ public final class StringConcatFactory {
         int paramCount = mt.parameterCount();
         String suffix = constants[paramCount];
 
-        // Fast-path trivial concatenations
-        if (paramCount == 0) {
-            return MethodHandles.insertArguments(newStringifier(), 0, suffix == null ? "" : suffix);
-        }
-        if (paramCount == 1) {
-            String prefix = constants[0];
-            // Empty constants will be
-            if (prefix == null) {
-                if (suffix == null) {
-                    return unaryConcat(mt.parameterType(0));
-                } else if (!mt.hasPrimitives()) {
-                    return MethodHandles.insertArguments(simpleConcat(), 1, suffix);
-                } // else fall-through
-            } else if (suffix == null && !mt.hasPrimitives()) {
-                // Non-primitive argument
-                return MethodHandles.insertArguments(simpleConcat(), 0, prefix);
-            } // fall-through if there's both a prefix and suffix
-        }
-        if (paramCount == 2 && !mt.hasPrimitives() && suffix == null
-                && constants[0] == null && constants[1] == null) {
-            // Two reference arguments, no surrounding constants
-            return simpleConcat();
-        }
+
         // else... fall-through to slow-path
 
         // Create filters and obtain filtered parameter types. Filters would be used in the beginning
@@ -550,17 +590,17 @@ public final class StringConcatFactory {
 
         // Fold in byte[] instantiation at argument 0
         MethodHandle newArrayCombinator;
-        if (suffix != null) {
-            // newArray variant that deals with prepending any trailing constant
-            //
-            // initialLengthCoder is adjusted to have the correct coder
-            // and length: The newArrayWithSuffix method expects only the coder of the
-            // suffix to be encoded into indexCoder
-            initialLengthCoder -= suffix.length();
-            newArrayCombinator = newArrayWithSuffix(suffix);
-        } else {
-            newArrayCombinator = newArray();
+        if (suffix == null || suffix.isEmpty()) {
+            suffix = "";
         }
+        // newArray variant that deals with prepending any trailing constant
+        //
+        // initialLengthCoder is adjusted to have the correct coder
+        // and length: The newArrayWithSuffix method expects only the coder of the
+        // suffix to be encoded into indexCoder
+        initialLengthCoder -= suffix.length();
+        newArrayCombinator = newArrayWithSuffix(suffix);
+
         mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArrayCombinator,
                 1 // index
         );
@@ -712,9 +752,6 @@ public final class StringConcatFactory {
         int idx = classIndex(cl);
         MethodHandle prepend = PREPENDERS[idx];
         if (prepend == null) {
-            if (idx == STRING_CONCAT_ITEM) {
-                cl = FormatConcatItem.class;
-            }
             PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
                     methodType(long.class, long.class, byte[].class,
                             Wrapper.asPrimitiveType(cl), String.class)).rebind();
@@ -726,12 +763,7 @@ public final class StringConcatFactory {
         int idx = classIndex(cl);
         MethodHandle prepend = NO_PREFIX_PREPENDERS[idx];
         if (prepend == null) {
-            if (idx == STRING_CONCAT_ITEM) {
-                cl = FormatConcatItem.class;
-            }
-            NO_PREFIX_PREPENDERS[idx] = prepend = JLA.stringConcatHelper("prepend",
-                    methodType(long.class, long.class, byte[].class,
-                            Wrapper.asPrimitiveType(cl))).rebind();
+            NO_PREFIX_PREPENDERS[idx] = prepend = MethodHandles.insertArguments(prepender(cl), 3, "");
         }
         return prepend;
     }
@@ -741,15 +773,13 @@ public final class StringConcatFactory {
             LONG_IDX = 2,
             BOOLEAN_IDX = 3,
             STRING_IDX = 4,
-            STRING_CONCAT_ITEM = 5,
-            TYPE_COUNT = 6;
+            TYPE_COUNT = 5;
     private static int classIndex(Class<?> cl) {
         if (cl == String.class)                          return STRING_IDX;
         if (cl == int.class)                             return INT_IDX;
         if (cl == boolean.class)                         return BOOLEAN_IDX;
         if (cl == char.class)                            return CHAR_IDX;
         if (cl == long.class)                            return LONG_IDX;
-        if (FormatConcatItem.class.isAssignableFrom(cl)) return STRING_CONCAT_ITEM;
         throw new IllegalArgumentException("Unexpected class: " + cl);
     }
 
@@ -895,16 +925,6 @@ public final class StringConcatFactory {
         return MethodHandles.insertArguments(mh, 0, suffix);
     }
 
-    private @Stable static MethodHandle NEW_ARRAY;
-    private static MethodHandle newArray() {
-        MethodHandle mh = NEW_ARRAY;
-        if (mh == null) {
-            NEW_ARRAY = mh =
-                    JLA.stringConcatHelper("newArray", methodType(byte[].class, long.class));
-        }
-        return mh;
-    }
-
     /**
      * Public gateways to public "stringify" methods. These methods have the
      * form String apply(T obj), and normally delegate to {@code String.valueOf},
@@ -1048,302 +1068,638 @@ public final class StringConcatFactory {
     }
 
     /**
-     * Simplified concatenation method to facilitate {@link StringTemplate}
-     * concatenation. This method returns a single concatenation method that
-     * interleaves fragments and values. fragment|value|fragment|value|...|value|fragment.
-     * The number of fragments must be one more that the number of ptypes.
-     * The total number of slots used by the ptypes must be less than or equal
-     * to {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
+     * Implement efficient hidden class strategy for String concatenation
      *
-     * @param fragments list of string fragments
-     * @param ptypes    list of expression types
-     *
-     * @return the {@link MethodHandle} for concatenation
-     *
-     * @throws StringConcatException If any of the linkage invariants are violated.
-     * @throws NullPointerException If any of the incoming arguments is null.
-     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
-     *
-     * @since 21
+     * <p>This strategy replicates based on the bytecode what StringBuilders are doing: it builds the
+     * byte[] array on its own and passes that byte[] array to String
+     * constructor. This strategy requires access to some private APIs in JDK,
+     * most notably, the private String constructor that accepts byte[] arrays
+     * without copying.
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static MethodHandle makeConcatWithTemplate(
-            List<String> fragments,
-            List<Class<?>> ptypes)
-            throws StringConcatException
-    {
-        Objects.requireNonNull(fragments, "fragments is null");
-        Objects.requireNonNull(ptypes, "ptypes is null");
-        ptypes = List.copyOf(ptypes);
+    private static final class InlineHiddenClassStrategy {
+        static final String CLASS_NAME   = "java.lang.String$$StringConcat";
+        static final String METHOD_NAME  = "concat";
 
-        if (fragments.size() != ptypes.size() + 1) {
-            throw new IllegalArgumentException("fragments size not equal ptypes size plus one");
+        static final ClassFileDumper DUMPER =
+                ClassFileDumper.getInstance("java.lang.invoke.StringConcatFactory.dump", "stringConcatClasses");
+        static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
+
+        static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
+        static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_StringConcatBase   = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
+        static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
+        static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
+
+        static final MethodTypeDesc MTD_byte_char       = MethodTypeDesc.of(CD_byte, CD_char);
+        static final MethodTypeDesc MTD_byte            = MethodTypeDesc.of(CD_byte);
+        static final MethodTypeDesc MTD_int             = MethodTypeDesc.of(CD_int);
+        static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_boolean);
+        static final MethodTypeDesc MTD_int_int_char    = MethodTypeDesc.of(CD_int, CD_int, CD_char);
+        static final MethodTypeDesc MTD_int_int_int     = MethodTypeDesc.of(CD_int, CD_int, CD_int);
+        static final MethodTypeDesc MTD_int_int_long    = MethodTypeDesc.of(CD_int, CD_int, CD_long);
+        static final MethodTypeDesc MTD_int_int_String  = MethodTypeDesc.of(CD_int, CD_int, CD_String);
+        static final MethodTypeDesc MTD_String_float    = MethodTypeDesc.of(CD_String, CD_float);
+        static final MethodTypeDesc MTD_String_double   = MethodTypeDesc.of(CD_String, CD_double);
+        static final MethodTypeDesc MTD_String_Object   = MethodTypeDesc.of(CD_String, CD_Object);
+
+        static final MethodTypeDesc MTD_INIT             = MethodTypeDesc.of(CD_void, CD_Array_String);
+        static final MethodTypeDesc MTD_NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_int, CD_byte);
+        static final MethodTypeDesc MTD_STRING_INIT      = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_byte);
+
+        static final MethodTypeDesc PREPEND_int     = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String);
+        static final MethodTypeDesc PREPEND_long    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String);
+        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String);
+        static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
+        static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
+
+        static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
+
+        static final MethodType CONSTRUCTOR_METHOD_TYPE        = MethodType.methodType(void.class, String[].class);
+        static final Consumer<CodeBuilder> CONSTRUCTOR_BUILDER = new Consumer<CodeBuilder>() {
+            @Override
+            public void accept(CodeBuilder cb) {
+                /*
+                 * super(constants);
+                 */
+                int thisSlot      = cb.receiverSlot(),
+                    constantsSlot = cb.parameterSlot(0);
+                cb.aload(thisSlot)
+                  .aload(constantsSlot)
+                  .invokespecial(CD_StringConcatBase, INIT_NAME, MTD_INIT, false)
+                  .return_();
+            }
+        };
+
+        static final ReferencedKeyMap<MethodType, SoftReference<MethodHandlePair>> CACHE =
+                ReferencedKeyMap.create(true, true,
+                        new Supplier<>() {
+                            @Override
+                            public Map<ReferenceKey<MethodType>, SoftReference<MethodHandlePair>> get() {
+                                return new ConcurrentHashMap<>(64);
+                            }
+                        });
+
+        private InlineHiddenClassStrategy() {
+            // no instantiation
         }
 
-        if (ptypes.isEmpty()) {
-            return MethodHandles.constant(String.class, fragments.get(0));
+        private record MethodHandlePair(MethodHandle constructor, MethodHandle concatenator) { };
+
+        /**
+         * The parameter types are normalized into 7 types: int,long,boolean,char,float,double,Object
+         */
+        private static MethodType erasedArgs(MethodType args) {
+            int parameterCount = args.parameterCount();
+            var paramTypes = new Class<?>[parameterCount];
+            boolean changed = false;
+            for (int i = 0; i < parameterCount; i++) {
+                Class<?> cl = args.parameterType(i);
+                // Use int as the logical type for subword integral types
+                // (byte and short). char and boolean require special
+                // handling so don't change the logical type of those
+                if (cl == byte.class || cl == short.class) {
+                    cl = int.class;
+                    changed = true;
+                } else if (cl != Object.class && !cl.isPrimitive()) {
+                    cl = Object.class;
+                    changed = true;
+                }
+                paramTypes[i] = cl;
+            }
+            return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
         }
 
-        Class<?>[] ttypes = new Class<?>[ptypes.size()];
-        MethodHandle[] filters = new MethodHandle[ptypes.size()];
-        int slots = 0;
+        /**
+         * Construct the MethodType of the prepend method, The parameters only support 5 types:
+         * int/long/char/boolean/String. Not int/long/char/boolean type, use String type<p>
+         *
+         * The following is an example of the generated target code:
+         * <blockquote><pre>
+         *  int prepend(int length, byte coder, byte[] buff,  String[] constants
+         *      int arg0, long arg1, boolean arg2, char arg3, String arg5)
+         * </pre></blockquote>
+         */
+        private static MethodTypeDesc prependArgs(MethodType concatArgs) {
+            int parameterCount = concatArgs.parameterCount();
+            var paramTypes = new ClassDesc[parameterCount + 4];
+            paramTypes[0] = CD_int;          // length
+            paramTypes[1] = CD_byte;         // coder
+            paramTypes[2] = CD_Array_byte;   // buff
+            paramTypes[3] = CD_Array_String; // constants
 
-        int pos = 0;
-        for (Class<?> ptype : ptypes) {
-            slots += ptype == long.class || ptype == double.class ? 2 : 1;
+            for (int i = 0; i < parameterCount; i++) {
+                var cl = concatArgs.parameterType(i);
+                paramTypes[i + 4] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
+            }
+            return MethodTypeDesc.of(CD_int, paramTypes);
+        }
 
-            if (MAX_INDY_CONCAT_ARG_SLOTS < slots) {
-                throw new StringConcatException("Too many concat argument slots: " +
-                        slots + ", can only accept " + MAX_INDY_CONCAT_ARG_SLOTS);
+        /**
+         * Construct the MethodType of the coder method,
+         * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
+         */
+        private static MethodTypeDesc coderArgs(MethodType concatArgs) {
+            int parameterCount = concatArgs.parameterCount();
+            List<ClassDesc> paramTypes = new ArrayList<>();
+            paramTypes.add(CD_int); // init coder
+            for (int i = 0; i < parameterCount; i++) {
+                var cl = concatArgs.parameterType(i);
+                if (maybeUTF16(cl)) {
+                    paramTypes.add(cl == char.class ? CD_char : CD_String);
+                }
+            }
+            return MethodTypeDesc.of(CD_int, paramTypes);
+        }
+
+        /**
+         * Construct the MethodType of the length method,
+         * The first parameter is the initialized length
+         */
+        private static MethodTypeDesc lengthArgs(MethodType concatArgs) {
+            int parameterCount = concatArgs.parameterCount();
+            var paramTypes = new ClassDesc[parameterCount + 1];
+            paramTypes[0] = CD_int; // init long
+            for (int i = 0; i < parameterCount; i++) {
+                var cl = concatArgs.parameterType(i);
+                paramTypes[i + 1] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
+            }
+            return MethodTypeDesc.of(CD_int, paramTypes);
+        }
+
+        private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
+            lookup = STR_LOOKUP;
+            final MethodType concatArgs = erasedArgs(args);
+
+            // 1 argment use built-in method
+            if (args.parameterCount() == 1) {
+                Object concat1 = JLA.stringConcat1(constants);
+                var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
+                return handle.bindTo(concat1);
             }
 
-            boolean isSpecialized = ptype.isPrimitive();
-            boolean isFormatConcatItem = FormatConcatItem.class.isAssignableFrom(ptype);
-            Class<?> ttype = isSpecialized ? promoteToIntType(ptype) :
-                             isFormatConcatItem ? FormatConcatItem.class : Object.class;
-            MethodHandle filter = isFormatConcatItem ? null : stringifierFor(ttype);
-
-            if (filter != null) {
-                filters[pos] = filter;
-                ttype = String.class;
+            var weakConstructorHandle = CACHE.get(concatArgs);
+            if (weakConstructorHandle != null) {
+                MethodHandlePair handlePair = weakConstructorHandle.get();
+                if (handlePair != null) {
+                    try {
+                        var instance = handlePair.constructor.invoke(constants);
+                        return handlePair.concatenator.bindTo(instance);
+                    } catch (Throwable e) {
+                        throw new StringConcatException("Exception while utilizing the hidden class", e);
+                    }
+                }
             }
+            MethodTypeDesc lengthArgs  = lengthArgs(concatArgs),
+                           coderArgs   = parameterMaybeUTF16(concatArgs) ? coderArgs(concatArgs) : null,
+                           prependArgs = prependArgs(concatArgs);
 
-            ttypes[pos++] = ttype;
-        }
+            byte[] classBytes = ClassFile.of().build(CD_CONCAT,
+                    new Consumer<ClassBuilder>() {
+                        final boolean forceInline = concatArgs.parameterCount() < FORCE_INLINE_THRESHOLD;
 
-        MethodHandle mh = MethodHandles.dropArguments(newString(), 2, ttypes);
+                        @Override
+                        public void accept(ClassBuilder clb) {
+                            clb.withSuperclass(CD_StringConcatBase)
+                                .withFlags(ACC_FINAL | ACC_SUPER | ACC_SYNTHETIC)
+                                .withMethodBody(INIT_NAME, MTD_INIT, 0, CONSTRUCTOR_BUILDER)
+                                .withMethod("length",
+                                        lengthArgs,
+                                        ACC_STATIC | ACC_PRIVATE,
+                                        new Consumer<MethodBuilder>() {
+                                            public void accept(MethodBuilder mb) {
+                                                if (forceInline) {
+                                                    mb.with(FORCE_INLINE);
+                                                }
+                                                mb.withCode(generateLengthMethod(lengthArgs));
+                                            }
+                                        })
+                                .withMethod("prepend",
+                                        prependArgs,
+                                        ACC_STATIC | ACC_PRIVATE,
+                                        new Consumer<MethodBuilder>() {
+                                            public void accept(MethodBuilder mb) {
+                                                if (forceInline) {
+                                                    mb.with(FORCE_INLINE);
+                                                }
+                                                mb.withCode(generatePrependMethod(prependArgs));
+                                            }
+                                        })
+                                .withMethod(METHOD_NAME,
+                                        ConstantUtils.methodTypeDesc(concatArgs),
+                                        ACC_FINAL,
+                                        new Consumer<MethodBuilder>() {
+                                            public void accept(MethodBuilder mb) {
+                                                if (forceInline) {
+                                                    mb.with(FORCE_INLINE);
+                                                }
+                                                mb.withCode(generateConcatMethod(
+                                                        CD_CONCAT,
+                                                        concatArgs,
+                                                        lengthArgs,
+                                                        coderArgs,
+                                                        prependArgs));
+                                            }
+                                        });
 
-        long initialLengthCoder = INITIAL_CODER;
-        pos = 0;
-        for (String fragment : fragments) {
-            initialLengthCoder = JLA.stringConcatMix(initialLengthCoder, fragment);
-
-            if (ttypes.length <= pos) {
-                break;
+                            if (coderArgs != null) {
+                                clb.withMethod("coder",
+                                        coderArgs,
+                                        ACC_STATIC | ACC_PRIVATE,
+                                        new Consumer<MethodBuilder>() {
+                                            public void accept(MethodBuilder mb) {
+                                                if (forceInline) {
+                                                    mb.with(FORCE_INLINE);
+                                                }
+                                                mb.withCode(generateCoderMethod(coderArgs));
+                                            }
+                                        });
+                            }
+                    }});
+            try {
+                var hiddenClass = lookup.makeHiddenClassDefiner(CLASS_NAME, classBytes, Set.of(), DUMPER)
+                                        .defineClass(true, null);
+                var constructor = lookup.findConstructor(hiddenClass, CONSTRUCTOR_METHOD_TYPE);
+                var concat      = lookup.findVirtual(hiddenClass, METHOD_NAME, concatArgs);
+                CACHE.put(concatArgs, new SoftReference<>(new MethodHandlePair(constructor, concat)));
+                var instance = hiddenClass.cast(constructor.invoke(constants));
+                return concat.bindTo(instance);
+            } catch (Throwable e) {
+                throw new StringConcatException("Exception while spinning the class", e);
             }
-
-            Class<?> ttype = ttypes[pos];
-            // (long,byte[],ttype) -> long
-            MethodHandle prepender = prepender(fragment, ttype);
-            // (byte[],long,ttypes...) -> String (unchanged)
-            mh = MethodHandles.filterArgumentsWithCombiner(mh, 1, prepender,1, 0, 2 + pos);
-
-            pos++;
         }
 
-        String lastFragment = fragments.getLast();
-        initialLengthCoder -= lastFragment.length();
-        MethodHandle newArrayCombinator = lastFragment.isEmpty() ? newArray() :
-                newArrayWithSuffix(lastFragment);
-        // (long,ttypes...) -> String
-        mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, newArrayCombinator,
-                1 // index
-        );
+        /**
+         * Generate InlineCopy-based code. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         *  import static java.lang.StringConcatHelper.newArrayWithSuffix;
+         *  import static java.lang.StringConcatHelper.prepend;
+         *  import static java.lang.StringConcatHelper.stringCoder;
+         *  import static java.lang.StringConcatHelper.stringSize;
+         *
+         *  class StringConcat extends java.lang.StringConcatHelper.StringConcatBase {
+         *      // super class defines
+         *      // String[] constants;
+         *      // int length;
+         *      // byte coder;
+         *
+         *      StringConcat(String[] constants) {
+         *          super(constants);
+         *      }
+         *
+         *      String concat(int arg0, long arg1, boolean arg2, char arg3, String arg4,
+         *          float arg5, double arg6, Object arg7
+         *      ) {
+         *          // Types other than byte/short/int/long/boolean/String require a local variable to store
+         *          String str4 = stringOf(arg4);
+         *          String str5 = stringOf(arg5);
+         *          String str6 = stringOf(arg6);
+         *          String str7 = stringOf(arg7);
+         *
+         *          int coder  = coder(this.coder, arg0, arg1, arg2, arg3, str4, str5, str6, str7);
+         *          int length = length(this.length, arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+         *          String[] constants = this.constants;
+         *          byte[] buf = newArrayWithSuffix(constants[paramCount], length. coder);
+         *
+         *          prepend(length, coder, buf, constants, arg0, arg1, arg2, arg3, str4, str5, str6, str7);
+         *
+         *          return new String(buf, coder);
+         *      }
+         *
+         *      static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
+         *                       String arg4, String arg5, String arg6, String arg7) {
+         *          return stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(stringSize(
+         *                      length, arg0), arg1), arg2), arg3), arg4), arg5), arg6), arg7);
+         *      }
+         *
+         *      static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         *          return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
+         *      }
+         *
+         *      static int prepend(int length, int coder, byte[] buf, String[] constants,
+         *                     int arg0, long arg1, boolean arg2, char arg3,
+         *                     String str4, String str5, String str6, String str7) {
+         *          // StringConcatHelper.prepend
+         *          return prepend(prepend(prepend(prepend(
+         *                  prepend(apppend(prepend(prepend(length,
+         *                       buf, str7, constant[7]), buf, str6, constant[6]),
+         *                       buf, str5, constant[5]), buf, str4, constant[4]),
+         *                       buf, arg3, constant[3]), buf, arg2, constant[2]),
+         *                       buf, arg1, constant[1]), buf, arg0, constant[0]);
+         *      }
+         *  }
+         * </pre></blockquote>
+         */
+        private static Consumer<CodeBuilder> generateConcatMethod(
+                ClassDesc      concatClass,
+                MethodType     concatArgs,
+                MethodTypeDesc lengthArgs,
+                MethodTypeDesc coderArgs,
+                MethodTypeDesc prependArgs
+        ) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    // Compute parameter variable slots
+                    int paramCount    = concatArgs.parameterCount(),
+                        thisSlot      = cb.receiverSlot(),
+                        lengthSlot    = cb.allocateLocal(TypeKind.IntType),
+                        coderSlot     = cb.allocateLocal(TypeKind.ByteType),
+                        bufSlot       = cb.allocateLocal(TypeKind.ReferenceType),
+                        constantsSlot = cb.allocateLocal(TypeKind.ReferenceType),
+                        suffixSlot    = cb.allocateLocal(TypeKind.ReferenceType);
 
-        pos = 0;
-        for (Class<?> ttype : ttypes) {
-            // (long,ttype) -> long
-            MethodHandle mix = mixer(ttypes[pos]);
-            boolean lastPType = pos == ttypes.length - 1;
+                    /*
+                     * Types other than int/long/char/boolean require local variables to store the result of stringOf.
+                     *
+                     * stringSlots stores the slots of parameters relative to local variables
+                     *
+                     * str0 = stringOf(arg0);
+                     * str1 = stringOf(arg1);
+                     * ...
+                     * strN = toString(argN);
+                     */
+                    int[] stringSlots = new int[paramCount];
+                    for (int i = 0; i < paramCount; i++) {
+                        var cl = concatArgs.parameterType(i);
+                        if (needStringOf(cl)) {
+                            MethodTypeDesc methodTypeDesc;
+                            if (cl == float.class) {
+                                methodTypeDesc = MTD_String_float;
+                            } else if (cl == double.class) {
+                                methodTypeDesc = MTD_String_double;
+                            } else {
+                                methodTypeDesc = MTD_String_Object;
+                            }
+                            stringSlots[i] = cb.allocateLocal(TypeKind.ReferenceType);
+                            cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
+                              .invokestatic(CD_StringConcatHelper, "stringOf", methodTypeDesc)
+                              .astore(stringSlots[i]);
+                        }
+                    }
 
-            if (lastPType) {
-                // (ttype) -> long
-                mix = MethodHandles.insertArguments(mix, 0, initialLengthCoder);
-                // (ttypes...) -> String
-                mh = MethodHandles.foldArgumentsWithCombiner(mh, 0, mix,
-                        1 + pos // selected argument
-                );
-            } else {
-                // (long,ttypes...) -> String
-                mh = MethodHandles.filterArgumentsWithCombiner(mh, 0, mix,
-                        0, // old-index
-                        1 + pos // selected argument
-                );
+                    /*
+                     * coder = coder(this.coder, arg0, arg1, ... argN);
+                     */
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "coder", CD_byte);
+                    if (coderArgs != null) {
+                        for (int i = 0; i < paramCount; i++) {
+                            var cl = concatArgs.parameterType(i);
+                            if (maybeUTF16(cl)) {
+                                if (cl == char.class) {
+                                    cb.loadLocal(TypeKind.CharType, cb.parameterSlot(i));
+                                } else {
+                                    cb.aload(stringSlots[i]);
+                                }
+                            }
+                        }
+                        cb.invokestatic(concatClass, "coder", coderArgs);
+                    }
+                    cb.istore(coderSlot);
+
+                    /*
+                     * length = length(this.length, arg0, arg1, ..., argN);
+                     */
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "length", CD_int);
+                    for (int i = 0; i < paramCount; i++) {
+                        var cl        = concatArgs.parameterType(i);
+                        int paramSlot = cb.parameterSlot(i);
+                        if (needStringOf(cl)) {
+                            paramSlot = stringSlots[i];
+                            cl = String.class;
+                        }
+                        cb.loadLocal(TypeKind.from(cl), paramSlot);
+                    }
+                    cb.invokestatic(concatClass, "length", lengthArgs);
+
+                    /*
+                     * String[] constants = this.constants;
+                     * suffix  = constants[paranCount];
+                     * length -= suffix.length();
+                     */
+                    cb.aload(thisSlot)
+                      .getfield(concatClass, "constants", CD_Array_String)
+                      .dup()
+                      .astore(constantsSlot)
+                      .ldc(paramCount)
+                      .aaload()
+                      .dup()
+                      .astore(suffixSlot)
+                      .invokevirtual(CD_String, "length", MTD_int)
+                      .isub()
+                      .istore(lengthSlot);
+
+                    /*
+                     * Allocate buffer :
+                     *
+                     *  buf = newArrayWithSuffix(suffix, length, coder)
+                     */
+                    cb.aload(suffixSlot)
+                      .iload(lengthSlot)
+                      .iload(coderSlot)
+                      .invokestatic(CD_StringConcatHelper, "newArrayWithSuffix", MTD_NEW_ARRAY_SUFFIX)
+                      .astore(bufSlot);
+
+                    /*
+                     * prepend(length, coder, buf, constants, ar0, ar1, ..., argN);
+                     */
+                    cb.iload(lengthSlot)
+                      .iload(coderSlot)
+                      .aload(bufSlot)
+                      .aload(constantsSlot);
+                    for (int i = 0; i < paramCount; i++) {
+                        var cl = concatArgs.parameterType(i);
+                        int paramSlot = cb.parameterSlot(i);
+                        var kind = TypeKind.from(cl);
+                        if (needStringOf(cl)) {
+                            paramSlot = stringSlots[i];
+                            kind = TypeKind.ReferenceType;
+                        }
+                        cb.loadLocal(kind, paramSlot);
+                    }
+                    cb.invokestatic(concatClass, "prepend", prependArgs);
+
+                    // return new String(buf, coder);
+                    cb.new_(CD_String)
+                      .dup()
+                      .aload(bufSlot)
+                      .iload(coderSlot)
+                      .invokespecial(CD_String, INIT_NAME, MTD_STRING_INIT)
+                      .areturn();
+                }
+            };
+        }
+
+        /**
+         * Generate length method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.stringSize;
+         *
+         * static int length(int length, int arg0, long arg1, boolean arg2, char arg3,
+         *                  String arg4, String arg5, String arg6, String arg7) {
+         *     return stringSize(stringSize(stringSize(length, arg0), arg1), ..., arg7);
+         * }
+         * </pre></blockquote>
+         */
+        private static Consumer<CodeBuilder> generateLengthMethod(MethodTypeDesc lengthArgs) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    int lengthSlot = cb.parameterSlot(0);
+                    cb.iload(lengthSlot);
+                    for (int i = 1; i < lengthArgs.parameterCount(); i++) {
+                        var cl = lengthArgs.parameterType(i);
+                        MethodTypeDesc methodTypeDesc;
+                        if (cl == CD_char) {
+                            methodTypeDesc = MTD_int_int_char;
+                        } else if (cl == CD_int) {
+                            methodTypeDesc = MTD_int_int_int;
+                        } else if (cl == CD_long) {
+                            methodTypeDesc = MTD_int_int_long;
+                        } else if (cl == CD_boolean) {
+                            methodTypeDesc = MTD_int_int_boolean;
+                        } else {
+                            methodTypeDesc = MTD_int_int_String;
+                        }
+                        cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i))
+                          .invokestatic(CD_StringConcatHelper, "stringSize", methodTypeDesc);
+                    }
+                    cb.ireturn();
+                }
+            };
+        }
+
+        /**
+         * Generate coder method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.stringCoder;
+         *
+         * static int cocder(int coder, char arg3, String str4, String str5, String str6, String str7) {
+         *     return coder | stringCoder(arg3) | str4.coder() | str5.coder() | str6.coder() | str7.coder();
+         * }
+         * </pre></blockquote>
+         */
+        private static Consumer<CodeBuilder> generateCoderMethod(MethodTypeDesc coderArgs) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    /*
+                     * return coder | stringCoder(argN) | ... | arg1.coder() | arg0.coder();
+                     */
+                    int coderSlot = cb.parameterSlot(0);
+                    cb.iload(coderSlot);
+                    for (int i = 1; i < coderArgs.parameterCount(); i++) {
+                        var cl = coderArgs.parameterType(i);
+                        cb.loadLocal(TypeKind.from(cl), cb.parameterSlot(i));
+                        if (cl == CD_char) {
+                            cb.invokestatic(CD_StringConcatHelper, "stringCoder", MTD_byte_char);
+                        } else {
+                            cb.invokevirtual(CD_String, "coder", MTD_byte);
+                        }
+                        cb.ior();
+                    }
+                    cb.ireturn();
+                }
+            };
+        }
+
+        /**
+         * Generate prepend method. <p>
+         *
+         * The following is an example of the generated target code:
+         *
+         * <blockquote><pre>
+         * import static java.lang.StringConcatHelper.prepend;
+         *
+         * static int prepend(int length, int coder, byte[] buf, String[] constants,
+         *                int arg0, long arg1, boolean arg2, char arg3,
+         *                String str4, String str5, String str6, String str7) {
+         *
+         *     return prepend(prepend(prepend(prepend(
+         *             prepend(prepend(prepend(prepend(length,
+         *                  buf, str7, constant[7]), buf, str6, constant[6]),
+         *                  buf, str5, constant[5]), buf, str4, constant[4]),
+         *                  buf, arg3, constant[3]), buf, arg2, constant[2]),
+         *                  buf, arg1, constant[1]), buf, arg0, constant[0]);
+         * }
+         * </pre></blockquote>
+         */
+        private static Consumer<CodeBuilder> generatePrependMethod(MethodTypeDesc prependArgs) {
+            return new Consumer<CodeBuilder>() {
+                @Override
+                public void accept(CodeBuilder cb) {
+                    // Compute parameter variable slots
+                    int lengthSlot    = cb.parameterSlot(0),
+                        coderSlot     = cb.parameterSlot(1),
+                        bufSlot       = cb.parameterSlot(2),
+                        constantsSlot = cb.parameterSlot(3);
+                    /*
+                     * // StringConcatHelper.prepend
+                     * return prepend(prepend(prepend(prepend(
+                     *         prepend(apppend(prepend(prepend(length,
+                     *              buf, str7, constant[7]), buf, str6, constant[6]),
+                     *              buf, str5, constant[5]), buf, arg4, constant[4]),
+                     *              buf, arg3, constant[3]), buf, arg2, constant[2]),
+                     *              buf, arg1, constant[1]), buf, arg0, constant[0]);
+                     */
+                    cb.iload(lengthSlot);
+                    for (int i = prependArgs.parameterCount() - 1; i >= 4; i--) {
+                        var cl   = prependArgs.parameterType(i);
+                        var kind = TypeKind.from(cl);
+
+                        // There are only 5 types of parameters: int, long, boolean, char, String
+                        MethodTypeDesc methodTypeDesc;
+                        if (cl == CD_int) {
+                            methodTypeDesc = PREPEND_int;
+                        } else if (cl == CD_long) {
+                            methodTypeDesc = PREPEND_long;
+                        } else if (cl == CD_boolean) {
+                            methodTypeDesc = PREPEND_boolean;
+                        } else if (cl == CD_char) {
+                            methodTypeDesc = PREPEND_char;
+                        } else {
+                            kind = TypeKind.ReferenceType;
+                            methodTypeDesc = PREPEND_String;
+                        }
+
+                        cb.iload(coderSlot)
+                          .aload(bufSlot)
+                          .loadLocal(kind, cb.parameterSlot(i))
+                          .aload(constantsSlot)
+                          .ldc(i - 4)
+                          .aaload()
+                          .invokestatic(CD_StringConcatHelper, "prepend", methodTypeDesc);
+                    }
+                    cb.ireturn();
+                }
+            };
+        }
+
+        static boolean needStringOf(Class<?> cl) {
+            return cl != int.class && cl != long.class && cl != boolean.class && cl != char.class;
+        }
+
+        static boolean maybeUTF16(Class<?> cl) {
+            return cl == char.class || !cl.isPrimitive();
+        }
+
+        static boolean parameterMaybeUTF16(MethodType args) {
+            for (int i = 0; i < args.parameterCount(); i++) {
+                if (maybeUTF16(args.parameterType(i))) {
+                    return true;
+                }
             }
-
-            pos++;
+            return false;
         }
-
-        mh = MethodHandles.filterArguments(mh, 0, filters);
-        MethodType mt = MethodType.methodType(String.class, ptypes);
-        mh = mh.viewAsType(mt, true);
-
-        return mh;
-    }
-
-    /**
-     * This method breaks up large concatenations into separate
-     * {@link MethodHandle MethodHandles} based on the number of slots required
-     * per {@link MethodHandle}. Each {@link MethodHandle} after the first will
-     * have an extra {@link String} slot for the result from the previous
-     * {@link MethodHandle}.
-     * {@link #makeConcatWithTemplate}
-     * is used to construct the {@link MethodHandle MethodHandles}. The total
-     * number of slots used by the ptypes is open ended. However, care must
-     * be given when combining the {@link MethodHandle MethodHandles} so that
-     * the combine total does not exceed the 255 slot limit.
-     *
-     * @param fragments list of string fragments
-     * @param ptypes    list of expression types
-     * @param maxSlots  maximum number of slots per {@link MethodHandle}.
-     *
-     * @return List of {@link MethodHandle MethodHandles}
-     *
-     * @throws IllegalArgumentException If maxSlots is not between 1 and
-     *                                  MAX_INDY_CONCAT_ARG_SLOTS.
-     * @throws StringConcatException If any of the linkage invariants are violated.
-     * @throws NullPointerException If any of the incoming arguments is null.
-     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
-     *
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static List<MethodHandle> makeConcatWithTemplateCluster(
-            List<String> fragments,
-            List<Class<?>> ptypes,
-            int maxSlots)
-            throws StringConcatException
-    {
-        Objects.requireNonNull(fragments, "fragments is null");
-        Objects.requireNonNull(ptypes, "ptypes is null");
-
-        if (fragments.size() != ptypes.size() + 1) {
-            throw new StringConcatException("fragments size not equal ptypes size plus one");
-        }
-
-        if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new IllegalArgumentException("maxSlots must be between 1 and " +
-                    MAX_INDY_CONCAT_ARG_SLOTS);
-
-        }
-
-        if (ptypes.isEmpty()) {
-            return List.of(MethodHandles.constant(String.class, fragments.get(0)));
-        }
-
-        List<MethodHandle> mhs = new ArrayList<>();
-        List<String> fragmentsSection = new ArrayList<>();
-        List<Class<?>> ptypeSection = new ArrayList<>();
-        int slots = 0;
-
-        int pos = 0;
-        for (Class<?> ptype : ptypes) {
-            boolean lastPType = pos == ptypes.size() - 1;
-            fragmentsSection.add(fragments.get(pos));
-            ptypeSection.add(ptype);
-
-            slots += ptype == long.class || ptype == double.class ? 2 : 1;
-
-            if (maxSlots <= slots || lastPType) {
-                fragmentsSection.add(lastPType ? fragments.get(pos + 1) : "");
-                MethodHandle mh = makeConcatWithTemplate(fragmentsSection,
-                        ptypeSection);
-                mhs.add(mh);
-                fragmentsSection.clear();
-                fragmentsSection.add("");
-                ptypeSection.clear();
-                ptypeSection.add(String.class);
-                slots = 1;
-            }
-
-            pos++;
-        }
-
-        return mhs;
-    }
-
-    /**
-     * This method creates a {@link MethodHandle} expecting one input, the
-     * receiver of the supplied getters. This method uses
-     * {@link #makeConcatWithTemplateCluster}
-     * to create the intermediate {@link MethodHandle MethodHandles}.
-     *
-     * @param fragments list of string fragments
-     * @param getters   list of getter {@link MethodHandle MethodHandles}
-     * @param maxSlots  maximum number of slots per {@link MethodHandle} in
-     *                  cluster.
-     *
-     * @return the {@link MethodHandle} for concatenation
-     *
-     * @throws IllegalArgumentException If maxSlots is not between 1 and
-     *                                  MAX_INDY_CONCAT_ARG_SLOTS or if the
-     *                                  getters don't use the same argument type
-     * @throws StringConcatException If any of the linkage invariants are violated
-     * @throws NullPointerException If any of the incoming arguments is null
-     * @throws IllegalArgumentException If the number of value slots exceed {@link #MAX_INDY_CONCAT_ARG_SLOTS}.
-     *
-     * @since 21
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
-    public static MethodHandle makeConcatWithTemplateGetters(
-            List<String> fragments,
-            List<MethodHandle> getters,
-            int maxSlots)
-            throws StringConcatException
-    {
-        Objects.requireNonNull(fragments, "fragments is null");
-        Objects.requireNonNull(getters, "getters is null");
-
-        if (fragments.size() != getters.size() + 1) {
-            throw new StringConcatException("fragments size not equal getters size plus one");
-        }
-
-        if (maxSlots < 1 || MAX_INDY_CONCAT_ARG_SLOTS < maxSlots) {
-            throw new IllegalArgumentException("maxSlots must be between 1 and " +
-                    MAX_INDY_CONCAT_ARG_SLOTS);
-
-        }
-
-        if (getters.size() == 0) {
-            throw new StringConcatException("no getters supplied");
-        }
-
-        Class<?> receiverType = null;
-        List<Class<?>> ptypes = new ArrayList<>();
-
-        for (MethodHandle getter : getters) {
-            MethodType mt = getter.type();
-            Class<?> returnType = mt.returnType();
-
-            if (returnType == void.class || mt.parameterCount() != 1) {
-                throw new StringConcatException("not a getter " + mt);
-            }
-
-            if (receiverType == null) {
-                receiverType = mt.parameterType(0);
-            } else if (receiverType != mt.parameterType(0)) {
-                throw new StringConcatException("not the same receiever type " +
-                        mt + " needs " + receiverType);
-            }
-
-            ptypes.add(returnType);
-        }
-
-        MethodType resultType = MethodType.methodType(String.class, receiverType);
-        List<MethodHandle> clusters = makeConcatWithTemplateCluster(fragments, ptypes,
-                maxSlots);
-
-        MethodHandle mh = null;
-        Iterator<MethodHandle> getterIterator = getters.iterator();
-
-        for (MethodHandle cluster : clusters) {
-            MethodType mt = cluster.type();
-            MethodHandle[] filters = new MethodHandle[mt.parameterCount()];
-            int pos = 0;
-
-            if (mh != null) {
-                filters[pos++] = mh;
-            }
-
-            while (pos < filters.length) {
-                filters[pos++] = getterIterator.next();
-            }
-
-            cluster = MethodHandles.filterArguments(cluster, 0, filters);
-            mh = MethodHandles.permuteArguments(cluster, resultType,
-                    new int[filters.length]);
-        }
-
-        return mh;
     }
 }

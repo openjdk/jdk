@@ -35,6 +35,8 @@ import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents the AArch64 architecture.
+ *
+ * The value returned by {@code Architecture#getName} for an instance of this class is {@code "aarch64"}.
  */
 public class AArch64 extends Architecture {
 
@@ -190,7 +192,6 @@ public class AArch64 extends Architecture {
      */
     public enum Flag {
         UseCRC32,
-        UseNeon,
         UseSIMDForMemoryOps,
         AvoidUnalignedAccesses,
         UseLSE,

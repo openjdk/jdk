@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
+// Copyright (c) 2020, 2024, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ source %{
                                                              PRegister Pg, const Address &adr);
 
   // Predicated load/store, with optional ptrue to all elements of given predicate register.
-  static void loadStoreA_predicated(C2_MacroAssembler masm, bool is_store, FloatRegister reg,
+  static void loadStoreA_predicated(C2_MacroAssembler* masm, bool is_store, FloatRegister reg,
                                     PRegister pg, BasicType mem_elem_bt, BasicType vector_elem_bt,
                                     int opcode, Register base, int index, int size, int disp) {
     sve_mem_insn_predicate insn;
@@ -109,7 +109,7 @@ source %{
         ShouldNotReachHere();
       }
       int imm4 = disp / mesize / Matcher::scalable_vector_reg_size(vector_elem_bt);
-      (masm.*insn)(reg, Assembler::elemType_to_regVariant(vector_elem_bt), pg, Address(base, imm4));
+      (masm->*insn)(reg, Assembler::elemType_to_regVariant(vector_elem_bt), pg, Address(base, imm4));
     } else {
       assert(false, "unimplemented");
       ShouldNotReachHere();
@@ -125,9 +125,9 @@ source %{
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
-          // The vector implementation of Op_AddReductionVD/F is for the Vector API only.
-          // It is not suitable for auto-vectorization because it does not add the elements
-          // in the same order as sequential code, and FP addition is non-associative.
+          // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
+          // They are not suitable for auto-vectorization because the result would not conform
+          // to the JLS, Section Evaluation Order.
           opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
           opcode == Op_MulReductionVD || opcode == Op_MulReductionVF ||
           opcode == Op_MulVL) {
@@ -159,14 +159,18 @@ source %{
       case Op_VectorMaskGen:
       case Op_LoadVectorMasked:
       case Op_StoreVectorMasked:
-      case Op_LoadVectorGather:
       case Op_StoreVectorScatter:
-      case Op_LoadVectorGatherMasked:
       case Op_StoreVectorScatterMasked:
       case Op_PopulateIndex:
       case Op_CompressM:
       case Op_CompressV:
         if (UseSVE == 0) {
+          return false;
+        }
+        break;
+      case Op_LoadVectorGather:
+      case Op_LoadVectorGatherMasked:
+        if (UseSVE == 0 || is_subword_type(bt)) {
           return false;
         }
         break;
@@ -334,7 +338,7 @@ dnl VECTOR_LOAD_STORE($1,   $2,     $3,       $4,    $5  )
 dnl VECTOR_LOAD_STORE(type, nbytes, arg_name, nbits, size)
 define(`VECTOR_LOAD_STORE', `
 // ifelse(load, $1, Load, Store) Vector ($4 bits)
-instruct $1V$2(vReg $3, vmem$2 mem) %{
+instruct $1V$2(vReg $3, vmem mem) %{
   predicate(`n->as_'ifelse(load, $1, Load, Store)Vector()->memory_size() == $2);
   match(Set ifelse(load, $1, dst (LoadVector mem), mem (StoreVector mem src)));
   format %{ "$1V$2 ifelse(load, $1, `$dst, $mem', `$mem, $src')\t# vector ($4 bits)" %}
@@ -361,7 +365,7 @@ instruct loadV(vReg dst, vmemA mem) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ false,
+    loadStoreA_predicated(masm, /* is_store */ false,
                           $dst$$FloatRegister, ptrue, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -378,7 +382,7 @@ instruct storeV(vReg src, vmemA mem) %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ true,
+    loadStoreA_predicated(masm, /* is_store */ true,
                           $src$$FloatRegister, ptrue, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -393,7 +397,7 @@ instruct loadV_masked(vReg dst, vmemA mem, pRegGov pg) %{
   format %{ "loadV_masked $dst, $pg, $mem" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ false, $dst$$FloatRegister,
+    loadStoreA_predicated(masm, /* is_store */ false, $dst$$FloatRegister,
                           $pg$$PRegister, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -406,7 +410,7 @@ instruct storeV_masked(vReg src, vmemA mem, pRegGov pg) %{
   format %{ "storeV_masked $mem, $pg, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this, $src);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), /* is_store */ true, $src$$FloatRegister,
+    loadStoreA_predicated(masm, /* is_store */ true, $src$$FloatRegister,
                           $pg$$PRegister, bt, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -1748,14 +1752,14 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(I, iRegIorL2I)
 REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
 // reduction addF
-// Floating-point addition is not associative, so the rules for AddReductionVF
-// on NEON can't be used to auto-vectorize floating-point reduce-add.
-// Currently, on NEON, AddReductionVF is only generated by Vector API.
-instruct reduce_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
-  predicate(UseSVE == 0 && Matcher::vector_length(n->in(2)) == 2);
+
+instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
+  // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  predicate(Matcher::vector_length(n->in(2)) == 2 && !n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF fsrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_add2F_neon $dst, $fsrc, $vsrc" %}
+  format %{ "reduce_non_strict_order_add2F_neon $dst, $fsrc, $vsrc" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ S);
     __ fadds($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
@@ -1763,11 +1767,13 @@ instruct reduce_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct reduce_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
-  predicate(UseSVE == 0 && Matcher::vector_length(n->in(2)) == 4);
+instruct reduce_non_strict_order_add4F_neon(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
+  // Non-strictly ordered floating-point add reduction for 128-bits-long vector. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  predicate(Matcher::vector_length(n->in(2)) == 4 && !n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp);
-  format %{ "reduce_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
+  format %{ "reduce_non_strict_order_add4F_neon $dst, $fsrc, $vsrc\t# KILL $tmp" %}
   ins_encode %{
     __ faddp($tmp$$FloatRegister, __ T4S, $vsrc$$FloatRegister, $vsrc$$FloatRegister);
     __ faddp($dst$$FloatRegister, $tmp$$FloatRegister, __ S);
@@ -1779,11 +1785,21 @@ dnl
 dnl REDUCE_ADD_FP_SVE($1,   $2  )
 dnl REDUCE_ADD_FP_SVE(type, size)
 define(`REDUCE_ADD_FP_SVE', `
+// This rule calculates the reduction result in strict order. Two cases will
+// reach here:
+// 1. Non strictly-ordered AddReductionV$1 when vector size > 128-bits. For example -
+//    AddReductionV$1 generated by Vector API. For vector size > 128-bits, it is more
+//    beneficial performance-wise to generate direct SVE instruction even if it is
+//    strictly ordered.
+// 2. Strictly-ordered AddReductionV$1. For example - AddReductionV$1 generated by
+//    auto-vectorization on SVE machine.
 instruct reduce_add$1_sve(vReg$1 dst_src1, vReg src2) %{
-  predicate(UseSVE > 0);
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) ||
+            n->as_Reduction()->requires_strict_order());
   match(Set dst_src1 (AddReductionV$1 dst_src1 src2));
   format %{ "reduce_add$1_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
+    assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src2);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ sve_fadda($dst_src1$$FloatRegister, __ $2, ptrue, $src2$$FloatRegister);
@@ -1794,14 +1810,14 @@ dnl
 REDUCE_ADD_FP_SVE(F, S)
 
 // reduction addD
-// Floating-point addition is not associative, so the rule for AddReductionVD
-// on NEON can't be used to auto-vectorize floating-point reduce-add.
-// Currently, on NEON, AddReductionVD is only generated by Vector API.
-instruct reduce_addD_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
-  predicate(UseSVE == 0);
+
+instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
+  // Non-strictly ordered floating-point add reduction for doubles. This rule is
+  // intended for the VectorAPI (which allows for non-strictly ordered add reduction).
+  predicate(!n->as_Reduction()->requires_strict_order());
   match(Set dst (AddReductionVD dsrc vsrc));
   effect(TEMP_DEF dst);
-  format %{ "reduce_addD_neon $dst, $dsrc, $vsrc\t# 2D" %}
+  format %{ "reduce_non_strict_order_add2D_neon $dst, $dsrc, $vsrc\t# 2D" %}
   ins_encode %{
     __ faddp($dst$$FloatRegister, $vsrc$$FloatRegister, __ D);
     __ faddd($dst$$FloatRegister, $dst$$FloatRegister, $dsrc$$FloatRegister);
@@ -3321,7 +3337,7 @@ instruct vloadmask_loadV(pReg dst, indirect mem, vReg tmp, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3342,7 +3358,7 @@ instruct vloadmask_loadV_masked(pReg dst, indirect mem, pRegGov pg,
     // Load valid mask values which are boolean type, and extend them to the
     // defined vector element type. Convert the vector to predicate.
     BasicType bt = Matcher::vector_element_basic_type(this);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           $pg$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3369,7 +3385,7 @@ instruct vloadmask_loadVMasked(pReg dst, vmemA mem, pRegGov pg, vReg tmp, rFlags
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3397,7 +3413,7 @@ instruct vloadmask_loadVMasked_masked(pReg dst, vmemA mem, pRegGov pg1, pRegGov 
     BasicType bt = Matcher::vector_element_basic_type(this);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     assert(length_in_bytes == MaxVectorSize, "invalid vector length");
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), false, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, false, $tmp$$FloatRegister,
                           $pg2$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
     __ sve_cmp(Assembler::NE, $dst$$PRegister, __ elemType_to_regVariant(bt),
@@ -3422,7 +3438,7 @@ instruct storeV_vstoremask(indirect mem, pReg src, immI_gt_1 esize, vReg tmp) %{
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3444,7 +3460,7 @@ instruct storeV_vstoremask_masked(indirect mem, pReg src, immI_gt_1 esize,
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3470,7 +3486,7 @@ instruct storeVMasked_vstoremask(vmemA mem, pReg src, pRegGov pg, immI_gt_1 esiz
     assert(type2aelembytes(bt) == (int)$esize$$constant, "unsupported type.");
     Assembler::SIMD_RegVariant size = __ elemBytes_to_regVariant($esize$$constant);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           ptrue, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}
@@ -3497,7 +3513,7 @@ instruct storeVMasked_vstoremask_masked(vmemA mem, pReg src, pRegGov pg, immI_gt
     Assembler::SIMD_RegVariant size = __ elemType_to_regVariant(bt);
     __ sve_cpy($tmp$$FloatRegister, size, $src$$PRegister, 1, false);
     __ sve_gen_mask_imm($pgtmp$$PRegister, bt, Matcher::vector_length(this, $src));
-    loadStoreA_predicated(C2_MacroAssembler(&cbuf), true, $tmp$$FloatRegister,
+    loadStoreA_predicated(masm, true, $tmp$$FloatRegister,
                           $pgtmp$$PRegister, T_BOOLEAN, bt, $mem->opcode(),
                           as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp);
   %}

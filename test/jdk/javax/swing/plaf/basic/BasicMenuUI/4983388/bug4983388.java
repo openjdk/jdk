@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.awt.event.KeyEvent;
 
 public class bug4983388 {
     static volatile boolean bMenuSelected = false;
+    static JFrame frame;
 
     private static class TestMenuListener implements MenuListener {
         public void menuCanceled(MenuEvent e) {}
@@ -55,8 +56,9 @@ public class bug4983388 {
         JMenu menu = new JMenu("File");
         menu.setMnemonic('F');
         menuBar.add(menu);
-        JFrame frame = new JFrame();
+        frame = new JFrame();
         frame.setJMenuBar(menuBar);
+        frame.setLocationRelativeTo(null);
         frame.pack();
         frame.setVisible(true);
         MenuListener listener = new TestMenuListener();
@@ -80,9 +82,13 @@ public class bug4983388 {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.waitForIdle();
+        robot.delay(500);
+
         Util.hitMnemonics(robot, KeyEvent.VK_F);
         robot.waitForIdle();
-        robot.delay(200);
+        robot.delay(500);
+
+        SwingUtilities.invokeAndWait(() -> frame.dispose());
 
         if (!bMenuSelected) {
             throw new RuntimeException("shortcuts on menus do not work");

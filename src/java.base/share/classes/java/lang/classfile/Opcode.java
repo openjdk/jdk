@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.lang.constant.ConstantDescs;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Describes the opcodes of the JVM instruction set, as described in {@jvms 6.5}.
+ * Describes the opcodes of the JVM instruction set, as described in JVMS {@jvms 6.5}.
  * As well as a number of pseudo-instructions that may be encountered when
  * traversing the instructions of a method.
  *
@@ -645,7 +645,7 @@ public enum Opcode {
     IFNULL(ClassFile.IFNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch if reference not null */
-    IFNONNULL(ClassFile.IFNONNULL, 3, Kind.BRANCH, TypeKind.IntType),
+    IFNONNULL(ClassFile.IFNONNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch always (wide index) */
     GOTO_W(ClassFile.GOTO_W, 5, Kind.BRANCH, TypeKind.VoidType),

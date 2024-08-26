@@ -2409,9 +2409,9 @@ public class BidiBase {
         return directionFromFlags();
     }
 
-    /*********************************************************************/
+    /* *******************************************************************/
     /* The Properties state machine table                                */
-    /*********************************************************************/
+    /* *******************************************************************/
     /*                                                                   */
     /* All table cells are 8 bits:                                       */
     /*      bits 0..4:  next state                                       */
@@ -2422,9 +2422,9 @@ public class BidiBase {
     /* Cells may also be of format "_(x,y)" where x represents an action */
     /* to perform and y represents the next state.                       */
     /*                                                                   */
-    /*********************************************************************/
+    /* *******************************************************************/
     /* Definitions and type for properties state tables                  */
-    /*********************************************************************/
+    /* *******************************************************************/
     private static final int IMPTABPROPS_COLUMNS = 16;
     private static final int IMPTABPROPS_RES = IMPTABPROPS_COLUMNS - 1;
     private static short GetStateProps(short cell) {
@@ -2447,7 +2447,7 @@ public class BidiBase {
     private static final short _S  = 5;
     private static final short _B  = 6; /* reduced dirProp */
 
-    /*********************************************************************/
+    /* *******************************************************************/
     /*                                                                   */
     /*      PROPERTIES  STATE  TABLE                                     */
     /*                                                                   */
@@ -2510,9 +2510,9 @@ public class BidiBase {
 /*23 ENR+ET      */ {  32+1,  32+2,    21,  32+5,  32+7, 32+15, 32+17,  32+7,    23,  32+7,    23,    23,  32+3,    18,    21,   _AN }
     };
 
-    /*********************************************************************/
+    /* *******************************************************************/
     /* The levels state machine tables                                   */
-    /*********************************************************************/
+    /* *******************************************************************/
     /*                                                                   */
     /* All table cells are 8 bits:                                       */
     /*      bits 0..3:  next state                                       */
@@ -2525,9 +2525,9 @@ public class BidiBase {
     /*                                                                   */
     /* This format limits each table to 16 states each and to 15 actions.*/
     /*                                                                   */
-    /*********************************************************************/
+    /* *******************************************************************/
     /* Definitions and type for levels state tables                      */
-    /*********************************************************************/
+    /* *******************************************************************/
     private static final int IMPTABLEVELS_COLUMNS = _B + 2;
     private static final int IMPTABLEVELS_RES = IMPTABLEVELS_COLUMNS - 1;
     private static short GetState(byte cell) { return (short)(cell & 0x0f); }
@@ -2544,7 +2544,7 @@ public class BidiBase {
         }
     }
 
-    /*********************************************************************/
+    /* *******************************************************************/
     /*                                                                   */
     /*      LEVELS  STATE  TABLES                                        */
     /*                                                                   */

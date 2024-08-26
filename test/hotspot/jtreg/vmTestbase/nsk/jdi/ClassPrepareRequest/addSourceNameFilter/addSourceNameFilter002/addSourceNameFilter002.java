@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
  *          /test/lib
  * @build nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter002.addSourceNameFilter002
  *        nsk.share.jdi.TestClass1
- * @run main/othervm
+ * @run driver
  *      nsk.jdi.ClassPrepareRequest.addSourceNameFilter.addSourceNameFilter002.addSourceNameFilter002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
@@ -83,7 +83,10 @@ public class addSourceNameFilter002 extends SDEDebugger {
     private static final String DEBUGGEE_MAIN_THREAD = "main";
 
     public static void main(String argv[]) {
-        System.exit(run(argv, System.out) + Consts.JCK_STATUS_BASE);
+        int result = run(argv,System.out);
+        if (result != 0) {
+            throw new RuntimeException("TEST FAILED with result " + result);
+        }
     }
 
     public static int run(String argv[], PrintStream out) {

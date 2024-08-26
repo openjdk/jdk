@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ public sealed interface InvokeInstruction extends Instruction
     boolean isInterface();
 
     /**
-     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in {@jvms 6.5}
+     * {@return the {@code count} value of an {@code invokeinterface} instruction, as defined in JVMS {@jvms 6.5}
      * or {@code 0} for {@code invokespecial}, {@code invokestatic} and {@code invokevirtual} instructions}
      */
     int count();
@@ -104,6 +104,8 @@ public sealed interface InvokeInstruction extends Instruction
      * @param op the opcode for the specific type of invocation instruction,
      *           which must be of kind {@link Opcode.Kind#INVOKE}
      * @param method a constant pool entry describing the method
+     * @throws IllegalArgumentException if the opcode kind is not
+     *         {@link Opcode.Kind#INVOKE}.
      */
     static InvokeInstruction of(Opcode op, MemberRefEntry method) {
         Util.checkKind(op, Opcode.Kind.INVOKE);

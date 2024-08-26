@@ -1,4 +1,5 @@
-/* Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+/*
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +111,7 @@ inline bool StackChunkFrameStream<frame_kind>::is_stub() const {
 
 template <ChunkFrames frame_kind>
 inline bool StackChunkFrameStream<frame_kind>::is_compiled() const {
-  return cb() != nullptr && _cb->is_compiled();
+  return cb() != nullptr && _cb->is_nmethod();
 }
 
 template <>
@@ -188,9 +189,9 @@ inline int StackChunkFrameStream<frame_kind>::stack_argsize() const {
     return 0;
   }
   assert(cb() != nullptr, "");
-  assert(cb()->is_compiled(), "");
-  assert(cb()->as_compiled_method()->method() != nullptr, "");
-  return (cb()->as_compiled_method()->method()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
+  assert(cb()->is_nmethod(), "");
+  assert(cb()->as_nmethod()->method() != nullptr, "");
+  return (cb()->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
 }
 
 template <ChunkFrames frame_kind>
@@ -265,7 +266,7 @@ inline void StackChunkFrameStream<frame_kind>::get_oopmap() const {
 template <ChunkFrames frame_kind>
 inline void StackChunkFrameStream<frame_kind>::get_oopmap(address pc, int oopmap_slot) const {
   assert(cb() != nullptr, "");
-  assert(!is_compiled() || !cb()->as_compiled_method()->is_deopt_pc(pc), "");
+  assert(!is_compiled() || !cb()->as_nmethod()->is_deopt_pc(pc), "");
   if (oopmap_slot >= 0) {
     assert(oopmap_slot >= 0, "");
     assert(cb()->oop_map_for_slot(oopmap_slot, pc) != nullptr, "");
@@ -317,13 +318,13 @@ inline address StackChunkFrameStream<frame_kind>::orig_pc() const {
   if (is_interpreted() || is_stub()) {
     return pc1;
   }
-  CompiledMethod* cm = cb()->as_compiled_method();
-  if (cm->is_deopt_pc(pc1)) {
-    pc1 = *(address*)((address)unextended_sp() + cm->orig_pc_offset());
+  nmethod* nm = cb()->as_nmethod();
+  if (nm->is_deopt_pc(pc1)) {
+    pc1 = *(address*)((address)unextended_sp() + nm->orig_pc_offset());
   }
 
   assert(pc1 != nullptr, "");
-  assert(!cm->is_deopt_pc(pc1), "");
+  assert(!nm->is_deopt_pc(pc1), "");
   assert(_cb == CodeCache::find_blob_fast(pc1), "");
 
   return pc1;
@@ -344,7 +345,7 @@ void StackChunkFrameStream<frame_kind>::handle_deopted() const {
   address pc1 = pc();
   int oopmap_slot = CodeCache::find_oopmap_slot_fast(pc1);
   if (oopmap_slot < 0) { // UNLIKELY; we could have marked frames for deoptimization in thaw_chunk
-    if (cb()->as_compiled_method()->is_deopt_pc(pc1)) {
+    if (cb()->as_nmethod()->is_deopt_pc(pc1)) {
       pc1 = orig_pc();
       oopmap_slot = CodeCache::find_oopmap_slot_fast(pc1);
     }

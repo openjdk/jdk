@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
         Map<String, byte[]> m2b = new HashMap<>();
         Map<String, CodeAttribute> m2c = new HashMap<>();
         byte[] resultBytes =
-                cc.transform(cm, (cb, e) -> {
+                cc.transformClass(cm, (cb, e) -> {
                     if (e instanceof MethodModel mm) {
                         Optional<CodeModel> code = mm.code();
                         if (code.isPresent()) {
@@ -120,7 +120,7 @@ class MassAdaptCopyPrimitiveMatchCodeTest {
                         cb.with(e);
                 });
         //TODO: work-around to compiler bug generating multiple constant pool entries within records
-        if (cm.findAttribute(Attributes.RECORD).isPresent()) {
+        if (cm.findAttribute(Attributes.record()).isPresent()) {
             System.err.printf("MassAdaptCopyPrimitiveMatchCodeTest: Ignored because it is a record%n         - %s%n", name);
             return;
         }

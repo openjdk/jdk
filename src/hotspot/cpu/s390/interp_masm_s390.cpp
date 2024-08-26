@@ -324,12 +324,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index, int bcp_o
   } else if (index_size == sizeof(u4)) {
 
     load_sized_value(index, param, 4, false);
-
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    not_(index);  // Convert to plain index.
   } else if (index_size == sizeof(u1)) {
     z_llgc(index, param);
   } else {
@@ -1011,9 +1005,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
   // markWord header = obj->mark().set_unlocked();
 
-  // Load markWord from object into header.
-  z_lg(header, hdr_offset, object);
-
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp, object);
     testbit(Address(tmp, Klass::access_flags_offset()), exact_log2(JVM_ACC_IS_VALUE_BASED_CLASS));
@@ -1021,8 +1012,11 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   }
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_lock(object, /* mark word */ header, tmp, slow_case);
+    lightweight_lock(object, header, tmp, slow_case);
   } else if (LockingMode == LM_LEGACY) {
+
+    // Load markWord from object into header.
+    z_lg(header, hdr_offset, object);
 
     // Set header to be (markWord of object | UNLOCK_VALUE).
     // This will not change anything if it was unlocked before.
@@ -1078,16 +1072,9 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // None of the above fast optimizations worked so we have to get into the
   // slow case of monitor enter.
   bind(slow_case);
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    // for lightweight locking we need to use monitorenter_obj, see interpreterRuntime.cpp
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
-            object);
-  } else {
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor);
-  }
+  call_VM(noreg,
+          CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+          monitor);
   // }
 
   bind(done);
@@ -1159,26 +1146,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // If we still have a lightweight lock, unlock the object and be done.
   if (LockingMode == LM_LIGHTWEIGHT) {
-    // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-    // must handle it.
 
-    Register tmp = current_header;
-
-    // First check for lock-stack underflow.
-    z_lgf(tmp, Address(Z_thread, JavaThread::lock_stack_top_offset()));
-    compareU32_and_branch(tmp, (unsigned)LockStack::start_offset(), Assembler::bcondNotHigh, slow_case);
-
-    // Then check if the top of the lock-stack matches the unlocked object.
-    z_aghi(tmp, -oopSize);
-    z_lg(tmp, Address(Z_thread, tmp));
-    compare64_and_branch(tmp, object, Assembler::bcondNotEqual, slow_case);
-
-    z_lg(header, Address(object, hdr_offset));
-    z_lgr(tmp, header);
-    z_nill(tmp, markWord::monitor_value);
-    z_brne(slow_case);
-
-    lightweight_unlock(object, header, tmp, slow_case);
+    lightweight_unlock(object, header, current_header, slow_case);
 
     z_bru(done);
   } else {

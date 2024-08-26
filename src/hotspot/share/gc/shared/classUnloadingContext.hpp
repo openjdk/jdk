@@ -43,7 +43,7 @@ class ClassUnloadingContext : public CHeapObj<mtGC> {
   NMethodSet** _unlinked_nmethods;
 
   bool _unregister_nmethods_during_purge;
-  bool _lock_codeblob_free_separately;
+  bool _lock_nmethod_free_separately;
 
 public:
   static ClassUnloadingContext* context() { assert(_context != nullptr, "context not set"); return _context; }
@@ -53,12 +53,12 @@ public:
   // unregister_nmethods_during_purge determines whether unloaded nmethods should
   //     be unregistered from the garbage collector during purge. If not, ,the caller
   //     is responsible to do that later.
-  // lock_codeblob_free_separately determines whether freeing the code blobs takes
-  //     the CodeCache_lock during the whole operation (=false) or per code blob
+  // lock_nmethod_free_separately determines whether freeing the nmethods takes
+  //     the CodeCache_lock during the whole operation (=false) or per nmethod
   //     free operation (=true).
   ClassUnloadingContext(uint num_nmethod_unlink_workers,
                         bool unregister_nmethods_during_purge,
-                        bool lock_codeblob_free_separately);
+                        bool lock_nmethod_free_separately);
   ~ClassUnloadingContext();
 
   bool has_unloaded_classes() const;
@@ -71,11 +71,11 @@ public:
   // Register unloading nmethods, potentially in parallel.
   void register_unlinked_nmethod(nmethod* nm);
   void purge_nmethods();
-  void free_code_blobs();
+  void free_nmethods();
 
   void purge_and_free_nmethods() {
     purge_nmethods();
-    free_code_blobs();
+    free_nmethods();
   }
 };
 

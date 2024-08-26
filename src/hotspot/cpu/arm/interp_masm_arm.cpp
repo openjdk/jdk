@@ -211,11 +211,6 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
     ldrb(tmp_reg, Address(Rbcp, bcp_offset));
     orr(index, tmp_reg, AsmOperand(index, lsl, BitsPerByte));
-    // Check if the secondary index definition is still ~x, otherwise
-    // we have to change the following assembler code to calculate the
-    // plain index.
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    mvn_32(index, index);  // convert to plain index
   } else if (index_size == sizeof(u1)) {
     ldrb(index, Address(Rbcp, bcp_offset));
   } else {
@@ -990,15 +985,7 @@ void InterpreterMacroAssembler::lock_object(Register Rlock) {
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      // Pass oop, not lock, in fast lock case. call_VM wants R1 though.
-      push(R1);
-      mov(R1, Robj);
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), R1);
-      pop(R1);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), Rlock);
     bind(done);
   }
 }

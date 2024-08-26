@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.classfile.AccessFlags;
 import java.lang.classfile.Attribute;
-import java.lang.classfile.ClassModel;
-import java.lang.classfile.ClassTransform;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.attribute.ModuleAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -143,10 +139,6 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
-        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
-            // boot/builtin modules are always native
-            implAddEnableNativeAccess();
-        }
     }
 
 
@@ -1592,7 +1584,7 @@ public final class Module implements AnnotatedElement {
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
         var cc = ClassFile.of(ClassFile.ConstantPoolSharingOption.NEW_POOL);
-        byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
+        byte[] bytes = cc.transformClass(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_OPTO_MACHNODE_HPP
 #define SHARE_OPTO_MACHNODE_HPP
 
+#include "opto/c2_MacroAssembler.hpp"
 #include "opto/callnode.hpp"
 #include "opto/constantTable.hpp"
 #include "opto/matcher.hpp"
@@ -34,7 +35,6 @@
 #include "utilities/growableArray.hpp"
 
 class BufferBlob;
-class CodeBuffer;
 class JVMState;
 class MachCallDynamicJavaNode;
 class MachCallJavaNode;
@@ -54,7 +54,6 @@ class MachSpillCopyNode;
 class Matcher;
 class PhaseRegAlloc;
 class RegMask;
-class RTMLockingCounters;
 class State;
 
 //---------------------------MachOper------------------------------------------
@@ -292,8 +291,8 @@ public:
   MachOper **_opnds;
   uint16_t num_opnds() const { return _num_opnds; }
 
-  // Emit bytes into cbuf
-  virtual void  emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  // Emit bytes using C2_MacroAssembler
+  virtual void  emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   // Expand node after register allocation.
   // Node is replaced by several nodes in the postalloc expand phase.
   // Corresponding methods are generated for nodes if they specify
@@ -429,7 +428,7 @@ public:
 class MachBreakpointNode : public MachIdealNode {
 public:
   MachBreakpointNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 #ifndef PRODUCT
@@ -455,7 +454,7 @@ public:
   virtual bool requires_postalloc_expand() const;
   virtual void postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_);
 
-  virtual void emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const;
+  virtual void emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const;
   virtual uint size(PhaseRegAlloc* ra_) const;
 
   static const RegMask& static_out_RegMask() { return _out_RegMask; }
@@ -506,7 +505,7 @@ public:
 class MachUEPNode : public MachIdealNode {
 public:
   MachUEPNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 #ifndef PRODUCT
@@ -520,7 +519,7 @@ public:
 class MachPrologNode : public MachIdealNode {
 public:
   MachPrologNode( ) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
 
@@ -535,7 +534,7 @@ public:
 class MachEpilogNode : public MachIdealNode {
 public:
   MachEpilogNode(bool do_poll = false) : _do_polling(do_poll) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
   virtual int reloc() const;
   virtual const Pipeline *pipeline() const;
@@ -560,7 +559,7 @@ private:
 public:
   MachNopNode( ) : _count(1) {}
   MachNopNode( int count ) : _count(count) {}
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
   virtual const class Type *bottom_type() const { return Type::CONTROL; }
@@ -618,9 +617,9 @@ public:
   virtual const class Type *bottom_type() const { return _type; }
   virtual uint ideal_reg() const { return _type->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
-  uint implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
+  uint implementation( C2_MacroAssembler *masm, PhaseRegAlloc *ra_, bool do_size, outputStream* st ) const;
 
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual uint size(PhaseRegAlloc *ra_) const;
 
 
@@ -683,7 +682,7 @@ public:
   virtual const class Type *bottom_type() const { return in(1)->bottom_type(); }
   virtual uint ideal_reg() const { return bottom_type()->ideal_reg(); }
   virtual uint oper_input_base() const { return 1; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const { }
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const { }
   virtual uint size(PhaseRegAlloc *ra_) const { return 0; }
 #ifndef PRODUCT
   virtual const char *Name() const { return "MachMerge"; }
@@ -723,7 +722,7 @@ public:
   virtual int Opcode() const;
   virtual uint size_of() const { return sizeof(*this); }
 
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const;
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const;
   virtual void label_set(Label* label, uint block_num);
   virtual void save_label(Label** label, uint* block_num);
   virtual void negate() { }
@@ -810,8 +809,6 @@ public:
 class MachFastLockNode : public MachNode {
   virtual uint size_of() const { return sizeof(*this); } // Size is bigger
 public:
-  RTMLockingCounters*       _rtm_counters; // RTM lock counters for inflated locks
-  RTMLockingCounters* _stack_rtm_counters; // RTM lock counters for stack locks
   MachFastLockNode() : MachNode() {}
 };
 
@@ -877,6 +874,10 @@ public:
   Node *monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     return in(_jvmadj + jvms->monitor_box_offset(idx));
+  }
+  Node* scalarized_obj(const JVMState* jvms, uint idx) const {
+    assert(verify_jvms(jvms), "jvms must match");
+    return in(_jvmadj + jvms->scloff() + idx);
   }
   void  set_local(const JVMState* jvms, uint idx, Node *c) {
     assert(verify_jvms(jvms), "jvms must match");
@@ -954,13 +955,13 @@ public:
 
   virtual const RegMask &in_RegMask(uint) const;
 
-  int resolved_method_index(CodeBuffer &cbuf) const {
+  int resolved_method_index(C2_MacroAssembler *masm) const {
     if (_override_symbolic_info) {
       // Attach corresponding Method* to the call site, so VM can use it during resolution
       // instead of querying symbolic info from bytecode.
       assert(_method != nullptr, "method should be set");
       assert(_method->constant_encoding()->is_method(), "should point to a Method");
-      return cbuf.oop_recorder()->find_index(_method->constant_encoding());
+      return masm->code()->oop_recorder()->find_index(_method->constant_encoding());
     }
     return 0; // Use symbolic info from bytecode (resolved_method is null).
   }
@@ -1065,7 +1066,7 @@ private:
 public:
   virtual const RegMask &out_RegMask() const { return *_opnds[0]->in_RegMask(0); }
   virtual uint rule() const { return 9999999; }
-  virtual void emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {}
+  virtual void emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {}
 
   MachTempNode(MachOper* oper) {
     init_class_id(Class_MachTemp);
@@ -1095,7 +1096,7 @@ public:
 
   uint _block_num;
 
-  labelOper() : _label(0), _block_num(0) {}
+  labelOper() : _label(nullptr), _block_num(0) {}
 
   labelOper(Label* label, uint block_num) : _label(label), _block_num(block_num) {}
 

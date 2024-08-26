@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2023 Unicode, Inc.
+<!-- Copyright © 1991-2024 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
-SPDX-License-Identifier: Unicode-DFS-2016
+SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
 -->
 <ldml>
@@ -1033,9 +1033,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">G d'ê' MMM'a' y'an' – d'ê' MMM'a' y'an'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">G d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
-							<greatestDifference id="M">G d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
-							<greatestDifference id="y">G d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="d">G d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="M">G d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="y">G d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">G MMMM – MMMM y</greatestDifference>
@@ -1393,9 +1393,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">d'ê' MMM'a' y'an' – d'ê' MMM'a' y'an'</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMEd">
-							<greatestDifference id="d">d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
-							<greatestDifference id="M">d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
-							<greatestDifference id="y">d'ê' MMM'a' y'an' E  – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="d">d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="M">d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
+							<greatestDifference id="y">d'ê' MMM'a' y'an' E – d'ê' MMM'a' y'an' E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
 							<greatestDifference id="M">MMMM – MMMM y</greatestDifference>
@@ -1991,14 +1991,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Dar_es_Salaam">
 				<exemplarCity>Daruselam</exemplarCity>
 			</zone>
-			<zone type="Europe/Uzhgorod">
-				<exemplarCity>Ujgorod</exemplarCity>
-			</zone>
 			<zone type="Europe/Kiev">
 				<exemplarCity>Kîev</exemplarCity>
-			</zone>
-			<zone type="Europe/Zaporozhye">
-				<exemplarCity>Zaporojye</exemplarCity>
 			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity>Beûlah, Dakotaya Bakur</exemplarCity>
@@ -2577,11 +2571,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Saeta Havînê ya Lord Howeyê</daylight>
 				</long>
 			</metazone>
-			<metazone type="Macquarie">
-				<long>
-					<standard>Saeta Girava Macquarieyê</standard>
-				</long>
-			</metazone>
 			<metazone type="Magadan">
 				<long>
 					<generic>Saeta Magadanê</generic>
@@ -2621,29 +2610,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Mawsonê</standard>
 				</long>
 			</metazone>
-			<metazone type="Mexico_Northwest">
-				<long>
-					<generic>Saeta Meksîkoya Bakurrojava</generic>
-					<standard>Saeta Standard a Meksîkoya Bakurrojava</standard>
-					<daylight>Saeta Havînê ya Meksîkoya Bakurrojava</daylight>
-				</long>
-				<short>
-					<generic draft="contributed">SMBR</generic>
-					<standard draft="contributed">SSMBR</standard>
-					<daylight draft="contributed">SHMBR</daylight>
-				</short>
-			</metazone>
 			<metazone type="Mexico_Pacific">
 				<long>
 					<generic>Saeta Pasîfîka Meksîkayê</generic>
 					<standard>Saeta Standard a Pasîfîka Meksîkayê</standard>
 					<daylight>Saeta Havînê ya Pasîfîka Meksîkayê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SPM</generic>
-					<standard draft="contributed">SSPM</standard>
-					<daylight draft="contributed">SHPM</daylight>
-				</short>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
@@ -2782,11 +2754,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Saint Pierre û Miquelonê</standard>
 					<daylight>Saeta Havînê ya Saint Pierre û Miquelonê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SSPM</generic>
-					<standard draft="contributed">SSSPM</standard>
-					<daylight draft="contributed">SHSPM</daylight>
-				</short>
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>

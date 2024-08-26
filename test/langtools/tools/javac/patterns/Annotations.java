@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,14 +67,14 @@ public class Annotations extends JavacTestingAbstractProcessor {
         ClassModel cf = ClassFile.of().parse(annotationsClass.readAllBytes());
         for (MethodModel m : cf.methods()) {
             if (m.methodName().equalsString("test")) {
-                CodeAttribute codeAttr = m.findAttribute(Attributes.CODE).orElseThrow();
-                RuntimeInvisibleTypeAnnotationsAttribute annotations = codeAttr.findAttribute(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS).orElseThrow();
+                CodeAttribute codeAttr = m.findAttribute(Attributes.code()).orElseThrow();
+                RuntimeInvisibleTypeAnnotationsAttribute annotations = codeAttr.findAttribute(Attributes.runtimeInvisibleTypeAnnotations()).orElseThrow();
                 String expected = "LAnnotations$DTA; pos: [LOCAL_VARIABLE, {start_pc=31, end_pc=38, index=1}], " +
                                   "LAnnotations$TA; pos: [LOCAL_VARIABLE, {start_pc=50, end_pc=57, index=1}], ";
                 StringBuilder actual = new StringBuilder();
                 for (TypeAnnotation ta: annotations.annotations()) {
                     TypeAnnotation.LocalVarTargetInfo info = ((TypeAnnotation.LocalVarTarget) ta.targetInfo()).table().getFirst();
-                    actual.append(ta.className().stringValue() + " pos: [" + ta.targetInfo().targetType());
+                    actual.append(ta.annotation().className().stringValue() + " pos: [" + ta.targetInfo().targetType());
                     actual.append(", {start_pc=" + codeAttr.labelToBci(info.startLabel()) + ", end_pc=" + codeAttr.labelToBci(info.endLabel()));
                     actual.append(", index=" + info.index()+ "}], ");
                 }

@@ -444,8 +444,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
     } else {
       lwa(Rdst, bcp_offset, R14_bcp);
     }
-    assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
-    nand(Rdst, Rdst, Rdst); // convert to plain index
   } else if (index_size == sizeof(u1)) {
     lbz(Rdst, bcp_offset, R14_bcp);
   } else {
@@ -1045,11 +1043,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // None of the above fast optimizations worked so we have to get into the
     // slow case of monitor enter.
     bind(slow_case);
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj), object);
-    } else {
-      call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
-    }
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     b(done);
     // }
     align(32, 12);

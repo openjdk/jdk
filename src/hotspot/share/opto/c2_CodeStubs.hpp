@@ -68,7 +68,7 @@ public:
   C2CodeStubList();
 
   void add_stub(C2CodeStub* stub) { _stubs.append(stub); }
-  void emit(CodeBuffer& cb);
+  void emit(C2_MacroAssembler& masm);
 };
 
 class C2SafepointPollStub : public C2CodeStub {
@@ -103,6 +103,7 @@ private:
   Register _mark;
   Register _t;
   Register _thread;
+  Label _slow_path;
   Label _push_and_slow_path;
   Label _check_successor;
   Label _unlocked_continuation;
@@ -111,6 +112,7 @@ public:
     _obj(obj), _mark(mark), _t(t), _thread(thread) {}
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
+  Label& slow_path() { return _slow_path; }
   Label& push_and_slow_path() { return _push_and_slow_path; }
   Label& check_successor() { return _check_successor; }
   Label& unlocked_continuation() { return _unlocked_continuation; }

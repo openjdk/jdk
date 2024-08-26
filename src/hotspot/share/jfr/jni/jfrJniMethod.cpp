@@ -30,6 +30,7 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -104,7 +105,9 @@ NO_TRANSITION_END
 NO_TRANSITION(void, jfr_set_enabled(JNIEnv* env, jclass jvm, jlong event_type_id, jboolean enabled))
   JfrEventSetting::set_enabled(event_type_id, JNI_TRUE == enabled);
   if (EventOldObjectSample::eventId == event_type_id) {
-    ThreadInVMfromNative transition(JavaThread::thread_from_jni_environment(env));
+    JavaThread* thread = JavaThread::thread_from_jni_environment(env);
+    MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, thread));
+    ThreadInVMfromNative transition(thread);
     if (JNI_TRUE == enabled) {
       LeakProfiler::start(JfrOptionSet::old_object_queue_size());
     } else {
@@ -423,3 +426,7 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_unregister_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
   JfrStackFilterRegistry::remove(id);
 JVM_END
+
+NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
+  return JfrChunk::nanos_now();
+NO_TRANSITION_END

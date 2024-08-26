@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,13 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
+  if (!is_armed(nm)) {
+    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed before lock)", p2i(nm));
+    // Some other thread got here first and healed the oops
+    // and disarmed the nmethod. No need to continue.
+    return true;
+  }
+
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
@@ -44,8 +51,8 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   if (!is_armed(nm)) {
     log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // Some other thread managed to complete while we were
+    // waiting for lock. No need to continue.
     return true;
   }
 
@@ -72,7 +79,7 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   ZNMethod::nmethod_oops_do_inner(nm, &cl);
 
   const uintptr_t prev_color = ZNMethod::color(nm);
-  const uintptr_t new_color = *(int*)ZPointerStoreGoodMaskLowOrderBitsAddr;
+  const uintptr_t new_color = *ZPointerStoreGoodMaskLowOrderBitsAddr;
   log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, new_color);
 
   // CodeCache unloading support

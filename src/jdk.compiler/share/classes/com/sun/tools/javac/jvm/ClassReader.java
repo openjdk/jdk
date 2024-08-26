@@ -36,9 +36,9 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.stream.IntStream;
 
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.NestingKind;
@@ -62,6 +62,7 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.*;
@@ -308,7 +309,7 @@ public class ClassReader {
             c.members_field.enter(sym);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Error Diagnoses
  ***********************************************************************/
 
@@ -338,7 +339,7 @@ public class ClassReader {
             dcfh);
     }
 
-/************************************************************************
+/* **********************************************************************
  * Buffer Access
  ***********************************************************************/
 
@@ -378,7 +379,7 @@ public class ClassReader {
         return res;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Constant Pool Access
  ***********************************************************************/
 
@@ -437,7 +438,7 @@ public class ClassReader {
         return set;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Types
  ***********************************************************************/
 
@@ -590,8 +591,21 @@ public class ClassReader {
                 ClassSymbol t = enterClass(readName(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t) {
+                List<Type> actuals = sigToTypes('>');
+                List<Type> formals = ((ClassType)t.type.tsym.type).typarams_field;
+                if (formals != null) {
+                    if (actuals.isEmpty())
+                        actuals = formals;
+                }
+                /* actualsCp is final as it will be captured by the inner class below. We could avoid defining
+                 * this additional local variable and depend on field ClassType::typarams_field which `actuals` is
+                 * assigned to but then we would have a dependendy on the internal representation of ClassType which
+                 * could change in the future
+                 */
+                final List<Type> actualsCp = actuals;
+                outer = new ClassType(outer, actuals, t) {
                         boolean completed = false;
+                        boolean typeArgsSet = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
                             if (!completed) {
@@ -621,7 +635,27 @@ public class ClassReader {
                         public void setEnclosingType(Type outer) {
                             throw new UnsupportedOperationException();
                         }
-                    };
+
+                        @Override
+                        public List<Type> getTypeArguments() {
+                            if (!typeArgsSet) {
+                                typeArgsSet = true;
+                                List<Type> formalsCp = ((ClassType)t.type.tsym.type).typarams_field;
+                                if (formalsCp != null && !formalsCp.isEmpty()) {
+                                    if (actualsCp.length() == formalsCp.length()) {
+                                        List<Type> a = actualsCp;
+                                        List<Type> f = formalsCp;
+                                        while (a.nonEmpty()) {
+                                            a.head = a.head.withTypeVar(f.head);
+                                            a = a.tail;
+                                            f = f.tail;
+                                        }
+                                    }
+                                }
+                            }
+                            return super.getTypeArguments();
+                        }
+                };
                 switch (signature[sigp++]) {
                 case ';':
                     if (sigp < siglimit && signature[sigp] == '.') {
@@ -791,7 +825,7 @@ public class ClassReader {
         }
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Attributes
  ***********************************************************************/
 
@@ -1462,7 +1496,7 @@ public class ClassReader {
         return null;
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Java-language annotations
  ***********************************************************************/
 
@@ -1511,7 +1545,7 @@ public class ClassReader {
             } else if (proxy.type.tsym.flatName() == syms.valueBasedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == TYP);
                 sym.flags_field |= VALUE_BASED;
-            } else if (proxy.type.tsym.flatName() == syms.restrictedType.tsym.flatName()) {
+            } else if (proxy.type.tsym.flatName() == syms.restrictedInternalType.tsym.flatName()) {
                 Assert.check(sym.kind == MTH);
                 sym.flags_field |= RESTRICTED;
             } else {
@@ -2278,9 +2312,17 @@ public class ClassReader {
      * 4.7.20-A target_type to locate the correct type to rewrite, and then interpreting the JVMS
      * 4.7.20.2 type_path to associate the annotation with the correct contained type.
      */
-    private static void addTypeAnnotationsToSymbol(
-            Symbol s, List<Attribute.TypeCompound> attributes) {
-        new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+    private void addTypeAnnotationsToSymbol(Symbol s, List<Attribute.TypeCompound> attributes) {
+        try {
+            new TypeAnnotationSymbolVisitor(attributes).visit(s, null);
+        } catch (CompletionFailure ex) {
+            JavaFileObject prev = log.useSource(currentClassFile);
+            try {
+                log.error(Errors.CantAttachTypeAnnotations(attributes, s.owner, s.name, ex.getDetailValue()));
+            } finally {
+                log.useSource(prev);
+            }
+        }
     }
 
     private static class TypeAnnotationSymbolVisitor
@@ -2428,13 +2470,8 @@ public class ClassReader {
                         .add(attribute);
             }
 
-            // Search the structure of the type to find the contained types at each type path
-            Map<Type, List<Attribute.TypeCompound>> attributesByType = new HashMap<>();
-            new TypeAnnotationLocator(attributesByPath, attributesByType).visit(type, List.nil());
-
             // Rewrite the type and add the annotations
-            type = new TypeAnnotationTypeMapping(attributesByType).visit(type, null);
-            Assert.check(attributesByType.isEmpty(), "Failed to apply annotations to types");
+            type = new TypeAnnotationStructuralTypeMapping(attributesByPath).visit(type, List.nil());
 
             return type;
         }
@@ -2462,124 +2499,106 @@ public class ClassReader {
     }
 
     /**
-     * Visit all contained types, assembling a type path to represent the current location, and
-     * record the types at each type path that need to be annotated.
+     * A type mapping that rewrites the type to include type annotations.
+     *
+     * <p>This logic is similar to {@link Type.StructuralTypeMapping}, but also tracks the path to
+     * the contained types being rewritten, and so cannot easily share the existing logic.
      */
-    private static class TypeAnnotationLocator
-            extends Types.DefaultTypeVisitor<Void, List<TypeAnnotationPosition.TypePathEntry>> {
-        private final Map<List<TypeAnnotationPosition.TypePathEntry>,
-                          ListBuffer<Attribute.TypeCompound>> attributesByPath;
-        private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
+    private static final class TypeAnnotationStructuralTypeMapping
+            extends Types.TypeMapping<List<TypeAnnotationPosition.TypePathEntry>> {
 
-        private TypeAnnotationLocator(
+        private final Map<List<TypeAnnotationPosition.TypePathEntry>,
+                ListBuffer<Attribute.TypeCompound>> attributesByPath;
+
+        private TypeAnnotationStructuralTypeMapping(
                 Map<List<TypeAnnotationPosition.TypePathEntry>, ListBuffer<Attribute.TypeCompound>>
-                        attributesByPath,
-                Map<Type, List<Attribute.TypeCompound>> attributesByType) {
+                    attributesByPath) {
             this.attributesByPath = attributesByPath;
-            this.attributesByType = attributesByType;
         }
 
+
         @Override
-        public Void visitClassType(ClassType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+        public Type visitClassType(ClassType t, List<TypeAnnotationPosition.TypePathEntry> path) {
             // As described in JVMS 4.7.20.2, type annotations on nested types are located with
             // 'left-to-right' steps starting on 'the outermost part of the type for which a type
             // annotation is admissible'. So the current path represents the outermost containing
             // type of the type being visited, and we add type path steps for every contained nested
             // type.
-            List<ClassType> enclosing = List.nil();
-            for (Type curr = t;
-                    curr != null && curr != Type.noType;
+            Type outer = t.getEnclosingType();
+            Type outer1 = outer != Type.noType ? visit(outer, path) : outer;
+            for (Type curr = t.getEnclosingType();
+                    curr != Type.noType;
                     curr = curr.getEnclosingType()) {
-                enclosing = enclosing.prepend((ClassType) curr);
-            }
-            for (ClassType te : enclosing) {
-                if (te.typarams_field != null) {
-                    int i = 0;
-                    for (Type typaram : te.typarams_field) {
-                        visit(typaram, path.append(new TypeAnnotationPosition.TypePathEntry(
-                                TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i++)));
-                    }
-                }
-                visitType(te, path);
                 path = path.append(TypeAnnotationPosition.TypePathEntry.INNER_TYPE);
             }
-            return null;
-        }
-
-        @Override
-        public Void visitWildcardType(
-                WildcardType t, List<TypeAnnotationPosition.TypePathEntry> path) {
-            visit(t.type, path.append(TypeAnnotationPosition.TypePathEntry.WILDCARD));
-            return super.visitWildcardType(t, path);
-        }
-
-        @Override
-        public Void visitArrayType(ArrayType t, List<TypeAnnotationPosition.TypePathEntry> path) {
-            visit(t.elemtype, path.append(TypeAnnotationPosition.TypePathEntry.ARRAY));
-            return super.visitArrayType(t, path);
-        }
-
-        @Override
-        public Void visitType(Type t, List<TypeAnnotationPosition.TypePathEntry> path) {
-            ListBuffer<Attribute.TypeCompound> attributes = attributesByPath.remove(path);
-            if (attributes != null) {
-                attributesByType.put(t, attributes.toList());
+            List<Type> typarams = t.getTypeArguments();
+            List<Type> typarams1 = rewriteTypeParams(path, typarams);
+            if (outer1 != outer || typarams != typarams1) {
+                t = new ClassType(outer1, typarams1, t.tsym, t.getMetadata());
             }
-            return null;
-        }
-    }
-
-    /** A type mapping that rewrites the type to include type annotations. */
-    private static class TypeAnnotationTypeMapping extends Type.StructuralTypeMapping<Void> {
-
-        private final Map<Type, List<Attribute.TypeCompound>> attributesByType;
-
-        private TypeAnnotationTypeMapping(
-                Map<Type, List<Attribute.TypeCompound>> attributesByType) {
-            this.attributesByType = attributesByType;
+            return reannotate(t, path);
         }
 
-        private <T extends Type> Type reannotate(T t, BiFunction<T, Void, Type> f) {
-            // We're relying on object identify of Type instances to record where the annotations
-            // need to be added, so we have to retrieve the annotations for each type before
-            // rewriting it, and then add them after its contained types have been rewritten.
-            List<Attribute.TypeCompound> attributes = attributesByType.remove(t);
-            Type mapped = f.apply(t, null);
-            if (attributes == null) {
-                return mapped;
+        private List<Type> rewriteTypeParams(
+                List<TypeAnnotationPosition.TypePathEntry> path, List<Type> typarams) {
+            var i = IntStream.iterate(0, x -> x + 1).iterator();
+            return typarams.map(typaram -> visit(typaram,
+                    path.append(new TypeAnnotationPosition.TypePathEntry(
+                            TypeAnnotationPosition.TypePathEntryKind.TYPE_ARGUMENT, i.nextInt()))));
+        }
+
+        @Override
+        public Type visitWildcardType(
+                WildcardType wt, List<TypeAnnotationPosition.TypePathEntry> path) {
+            Type t = wt.type;
+            if (t != null) {
+                t = visit(t, path.append(TypeAnnotationPosition.TypePathEntry.WILDCARD));
+            }
+            if (t != wt.type) {
+                wt = new WildcardType(t, wt.kind, wt.tsym, wt.bound, wt.getMetadata());
+            }
+            return reannotate(wt, path);
+        }
+
+        @Override
+        public Type visitArrayType(ArrayType t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            Type elemtype = t.elemtype;
+            Type elemtype1 =
+                    visit(elemtype, path.append(TypeAnnotationPosition.TypePathEntry.ARRAY));
+            if (elemtype1 != elemtype)  {
+                t = new ArrayType(elemtype1, t.tsym, t.getMetadata());
+            }
+            return reannotate(t, path);
+        }
+
+        @Override
+        public Type visitType(Type t, List<TypeAnnotationPosition.TypePathEntry> path) {
+            return reannotate(t, path);
+        }
+
+        Type reannotate(Type type, List<TypeAnnotationPosition.TypePathEntry> path) {
+            List<Attribute.TypeCompound> attributes = attributesForPath(path);
+            if (attributes.isEmpty()) {
+                return type;
             }
             // Runtime-visible and -invisible annotations are completed separately, so if the same
             // type has annotations from both it will get annotated twice.
-            TypeMetadata.Annotations existing = mapped.getMetadata(TypeMetadata.Annotations.class);
+            TypeMetadata.Annotations existing = type.getMetadata(TypeMetadata.Annotations.class);
             if (existing != null) {
                 existing.annotationBuffer().addAll(attributes);
-                return mapped;
+                return type;
             }
-            return mapped.annotatedType(attributes);
+            return type.annotatedType(attributes);
         }
 
-        @Override
-        public Type visitClassType(ClassType t, Void unused) {
-            return reannotate(t, super::visitClassType);
-        }
-
-        @Override
-        public Type visitWildcardType(WildcardType t, Void unused) {
-            return reannotate(t, super::visitWildcardType);
-        }
-
-        @Override
-        public Type visitArrayType(ArrayType t, Void unused) {
-            return reannotate(t, super::visitArrayType);
-        }
-
-        @Override
-        public Type visitType(Type t, Void unused) {
-            return reannotate(t, (x, u) -> x);
+        List<Attribute.TypeCompound> attributesForPath(
+                List<TypeAnnotationPosition.TypePathEntry> path) {
+            ListBuffer<Attribute.TypeCompound> attributes = attributesByPath.remove(path);
+            return attributes != null ? attributes.toList() : List.nil();
         }
     }
 
-/************************************************************************
+/* **********************************************************************
  * Reading Symbols
  ***********************************************************************/
 
@@ -3122,7 +3141,7 @@ public class ClassReader {
      */
     public boolean filling = false;
 
-/************************************************************************
+/* **********************************************************************
  * Adjusting flags
  ***********************************************************************/
 
