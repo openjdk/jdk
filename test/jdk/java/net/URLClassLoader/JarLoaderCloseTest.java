@@ -62,7 +62,7 @@ public class JarLoaderCloseTest {
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        // create a file which will be added to the jar that gets tested
+        // create a file which will be added to the JAR file that gets tested
         Files.writeString(TEST_SCRATCH_DIR.resolve(RESOURCE_NAME), RESOURCE_CONTENT);
     }
 
@@ -75,9 +75,9 @@ public class JarLoaderCloseTest {
     }
 
     /*
-     * Creates a jar with a manifest which has a Class-Path entry value with malformed URLs.
-     * Then uses a URLClassLoader backed by the jar file in its classpath, loads some resource,
-     * closes the URLClassLoader and then expects that the underlying jar file can be deleted
+     * Creates a JAR file with a manifest which has a Class-Path entry value with malformed URLs.
+     * Then uses a URLClassLoader backed by the JAR file in its classpath, loads some resource,
+     * closes the URLClassLoader and then expects that the underlying JAR file can be deleted
      * from the filesystem.
      */
     @ParameterizedTest
@@ -85,15 +85,15 @@ public class JarLoaderCloseTest {
     public void testMalformedClassPathEntry(final String classPathValue) throws Exception {
         final Manifest manifest = createManifestWithClassPath(classPathValue);
         final Path jar = Files.createTempFile(TEST_SCRATCH_DIR, "8338445", ".jar");
-        // create the jar with the given manifest and an arbitrary file
+        // create the JAR file with the given manifest and an arbitrary file
         JarUtils.createJarFile(jar, manifest, TEST_SCRATCH_DIR, Path.of(RESOURCE_NAME));
         System.out.println("created jar at " + jar + " with manifest:");
         manifest.write(System.out);
         final URL[] urlClassPath = new URL[]{jar.toUri().toURL()};
-        // Create a URLClassLoader backed by the jar file and load a non-existent resource just to
+        // Create a URLClassLoader backed by the JAR file and load a non-existent resource just to
         // exercise the URLClassPath code of loading the jar and parsing the Class-Path entry.
         // Then close the classloader. After the classloader is closed
-        // issue a delete on the underlying jar file on the filesystem. The delete is expected
+        // issue a delete on the underlying JAR file on the filesystem. The delete is expected
         // to succeed.
         try (final URLClassLoader cl = new URLClassLoader(urlClassPath)) {
             try (final InputStream is = cl.getResourceAsStream("non-existent.txt")) {
@@ -101,7 +101,7 @@ public class JarLoaderCloseTest {
                         + Arrays.toString(urlClassPath));
             }
         }
-        // now delete the jar file and verify the delete worked
+        // now delete the JAR file and verify the delete worked
         Files.delete(jar);
         assertFalse(Files.exists(jar), jar + " exists even after being deleted");
     }
@@ -114,10 +114,10 @@ public class JarLoaderCloseTest {
     }
 
     /*
-     * Creates a jar with a manifest which has a Class-Path entry value with URLs that are parsable
-     * but point to files that don't exist on the filesystem.
-     * Then uses a URLClassLoader backed by the jar file in its classpath, loads some resource,
-     * closes the URLClassLoader and then expects that the underlying jar file can be deleted
+     * Creates a JAR file with a manifest which has a Class-Path entry value with URLs
+     * that are parsable but point to files that don't exist on the filesystem.
+     * Then uses a URLClassLoader backed by the JAR file in its classpath, loads some resource,
+     * closes the URLClassLoader and then expects that the underlying JAR file can be deleted
      * from the filesystem.
      */
     @ParameterizedTest
@@ -125,15 +125,15 @@ public class JarLoaderCloseTest {
     public void testParsableClassPathEntry(final String classPathValue) throws Exception {
         final Manifest manifest = createManifestWithClassPath(classPathValue);
         final Path jar = Files.createTempFile(TEST_SCRATCH_DIR, "8338445", ".jar");
-        // create the jar with the given manifest and an arbitrary file
+        // create the JAR file with the given manifest and an arbitrary file
         JarUtils.createJarFile(jar, manifest, TEST_SCRATCH_DIR, Path.of(RESOURCE_NAME));
         System.out.println("created jar at " + jar + " with manifest:");
         manifest.write(System.out);
         final URL[] urlClassPath = new URL[]{jar.toUri().toURL()};
-        // Create a URLClassLoader backed by the jar file and load a resource
+        // Create a URLClassLoader backed by the JAR file and load a resource
         // and verify the resource contents.
         // Then close the classloader. After the classloader is closed
-        // issue a delete on the underlying jar file on the filesystem. The delete is expected
+        // issue a delete on the underlying JAR file on the filesystem. The delete is expected
         // to succeed.
         try (final URLClassLoader cl = new URLClassLoader(urlClassPath)) {
             try (final InputStream is = cl.getResourceAsStream(RESOURCE_NAME)) {
@@ -143,7 +143,7 @@ public class JarLoaderCloseTest {
                 assertEquals(RESOURCE_CONTENT, content, "unexpected content in " + RESOURCE_NAME);
             }
         }
-        // now delete the jar file and verify the delete worked
+        // now delete the JAR file and verify the delete worked
         Files.delete(jar);
         assertFalse(Files.exists(jar), jar + " exists even after being deleted");
     }
