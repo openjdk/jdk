@@ -70,6 +70,9 @@ public class VMDeprecatedOptions {
             })
           );
         }
+        if (Platform.isLinux()) {
+            deprecated.add(new String[] { "UseLinuxPosixThreadCPUClocks", "true" });
+        }
         if (wb.isJFRIncluded()) {
             deprecated.add(new String[] {"FlightRecorder", "false"});
         }
