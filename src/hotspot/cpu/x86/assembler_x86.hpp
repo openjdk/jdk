@@ -792,7 +792,7 @@ private:
                        bool eevex_x, int nds_enc, VexSimdPrefix pre, VexOpcode opc, bool no_flags = false);
 
   void vex_prefix_ndd(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false) {
-    vex_prefix(adr, ndd_enc, xreg_enc, pre, opc, attributes, true /* nds_is_ndd */, no_flags);
+    vex_prefix(adr, ndd_enc, xreg_enc, pre, opc, attributes, /* nds_is_ndd */ true , /* force_evex */ true, no_flags);
   }
 
   void vex_prefix_nf(Address adr, int ndd_enc, int xreg_enc, VexSimdPrefix pre, VexOpcode opc, InstructionAttr *attributes, bool no_flags = false) {
