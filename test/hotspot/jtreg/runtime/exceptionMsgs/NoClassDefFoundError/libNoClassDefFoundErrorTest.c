@@ -50,7 +50,7 @@ static char* giant_string() {
     size_t len = ((size_t)INT_MAX) + 3;
     char* c_name = malloc(len * sizeof(char));
     if (c_name != NULL) {
-        memset(c_name, 0x59595959, len-1); // YYYY...
+        memset(c_name, 0x59595959, len - 1); // YYYY...
         c_name[len - 1] = '\0';
     }
     return c_name;
@@ -58,7 +58,7 @@ static char* giant_string() {
 
 JNIEXPORT jboolean JNICALL
 Java_NoClassDefFoundErrorTest_tryCallDefineClass(JNIEnv *env, jclass klass) {
-    char* c_name =  giant_string();
+    char* c_name = giant_string();
     if (c_name != NULL) {
         (*env)->DefineClass(env, c_name, NULL, NULL, 0);
         free(c_name);
@@ -69,7 +69,7 @@ Java_NoClassDefFoundErrorTest_tryCallDefineClass(JNIEnv *env, jclass klass) {
 
 JNIEXPORT jboolean JNICALL
 Java_NoClassDefFoundErrorTest_tryCallFindClass(JNIEnv *env, jclass klass) {
-    char* c_name =  giant_string();
+    char* c_name = giant_string();
     if (c_name != NULL) {
         jclass cls = (*env)->FindClass(env, c_name);
         free(c_name);
