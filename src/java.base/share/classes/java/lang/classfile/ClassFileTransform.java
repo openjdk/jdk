@@ -24,6 +24,7 @@
  */
 package java.lang.classfile;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
@@ -102,6 +103,7 @@ public sealed interface ClassFileTransform<
      * @implSpec The default implementation does nothing.
      */
     default void atEnd(B builder) {
+        Objects.requireNonNull(builder);
     }
 
     /**
@@ -113,6 +115,7 @@ public sealed interface ClassFileTransform<
      * @implSpec The default implementation does nothing.
      */
     default void atStart(B builder) {
+        Objects.requireNonNull(builder);
     }
 
     /**

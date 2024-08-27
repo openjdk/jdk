@@ -28,6 +28,8 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
@@ -53,6 +55,7 @@ public sealed interface NewObjectInstruction extends Instruction
      * @param className the type of object to create
      */
     static NewObjectInstruction of(ClassEntry className) {
+        Objects.requireNonNull(className);
         return new AbstractInstruction.UnboundNewObjectInstruction(className);
     }
 }

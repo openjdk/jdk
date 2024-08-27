@@ -27,6 +27,8 @@ package java.lang.classfile;
 import java.lang.constant.ClassDesc;
 
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AnnotationImpl;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.javac.PreviewFeature;
@@ -72,6 +74,8 @@ public sealed interface AnnotationElement
      */
     static AnnotationElement of(Utf8Entry name,
                                 AnnotationValue value) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(value);
         return new AnnotationImpl.AnnotationElementImpl(name, value);
     }
 
@@ -217,4 +221,3 @@ public sealed interface AnnotationElement
         return of(name, AnnotationValue.ofArray(values));
     }
 }
-

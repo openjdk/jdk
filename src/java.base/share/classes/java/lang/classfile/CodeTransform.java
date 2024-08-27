@@ -24,6 +24,7 @@
  */
 package java.lang.classfile;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -48,6 +49,8 @@ public non-sealed interface CodeTransform
     CodeTransform ACCEPT_ALL = new CodeTransform() {
         @Override
         public void accept(CodeBuilder builder, CodeElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             builder.with(element);
         }
     };
@@ -75,11 +78,14 @@ public non-sealed interface CodeTransform
         return new CodeTransform() {
             @Override
             public void accept(CodeBuilder builder, CodeElement element) {
+                Objects.requireNonNull(builder);
+                Objects.requireNonNull(element);
                 builder.with(element);
             }
 
             @Override
             public void atEnd(CodeBuilder builder) {
+                Objects.requireNonNull(builder);
                 finisher.accept(builder);
             }
         };
@@ -94,6 +100,7 @@ public non-sealed interface CodeTransform
      */
     @Override
     default CodeTransform andThen(CodeTransform t) {
+        Objects.requireNonNull(t);
         return new TransformImpl.ChainedCodeTransform(this, t);
     }
 }

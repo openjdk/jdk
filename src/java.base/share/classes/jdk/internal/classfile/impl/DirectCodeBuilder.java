@@ -24,12 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -135,6 +130,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
+        Objects.requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

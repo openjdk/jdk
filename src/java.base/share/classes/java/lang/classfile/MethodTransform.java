@@ -24,6 +24,7 @@
  */
 package java.lang.classfile;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -49,6 +50,8 @@ public non-sealed interface MethodTransform
     MethodTransform ACCEPT_ALL = new MethodTransform() {
         @Override
         public void accept(MethodBuilder builder, MethodElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             builder.with(element);
         }
     };
@@ -76,6 +79,8 @@ public non-sealed interface MethodTransform
         return new MethodTransform() {
             @Override
             public void accept(MethodBuilder builder, MethodElement element) {
+                Objects.requireNonNull(builder);
+                Objects.requireNonNull(element);
                 builder.with(element);
             }
 

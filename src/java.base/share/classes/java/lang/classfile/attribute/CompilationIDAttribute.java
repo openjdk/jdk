@@ -28,6 +28,8 @@ package java.lang.classfile.attribute;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -62,6 +64,7 @@ public sealed interface CompilationIDAttribute
      * @param id the compilation ID
      */
     static CompilationIDAttribute of(Utf8Entry id) {
+        Objects.requireNonNull(id);
         return new UnboundAttribute.UnboundCompilationIDAttribute(id);
     }
 

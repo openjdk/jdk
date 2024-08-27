@@ -34,6 +34,7 @@ import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import java.lang.classfile.ClassHierarchyResolver;

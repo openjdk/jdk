@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.lang.classfile.ClassFileBuilder;
 import java.lang.classfile.ClassFileTransform;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -78,16 +79,20 @@ public final class TransformImpl {
     interface UnresolvedClassTransform extends ClassTransform, ResolvableTransform<ClassElement, ClassBuilder> {
         @Override
         default void accept(ClassBuilder builder, ClassElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atEnd(ClassBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atStart(ClassBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
     }
@@ -174,16 +179,20 @@ public final class TransformImpl {
     interface UnresolvedMethodTransform extends MethodTransform, ResolvableTransform<MethodElement, MethodBuilder> {
         @Override
         default void accept(MethodBuilder builder, MethodElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atEnd(MethodBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atStart(MethodBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
     }
@@ -238,16 +247,20 @@ public final class TransformImpl {
     interface UnresolvedFieldTransform extends FieldTransform, ResolvableTransform<FieldElement, FieldBuilder> {
         @Override
         default void accept(FieldBuilder builder, FieldElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atEnd(FieldBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atStart(FieldBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
     }
@@ -278,16 +291,20 @@ public final class TransformImpl {
     interface UnresolvedCodeTransform extends CodeTransform, ResolvableTransform<CodeElement, CodeBuilder> {
         @Override
         default void accept(CodeBuilder builder, CodeElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atEnd(CodeBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
 
         @Override
         default void atStart(CodeBuilder builder) {
+            Objects.requireNonNull(builder);
             throw new UnsupportedOperationException("transforms must be resolved before running");
         }
     }

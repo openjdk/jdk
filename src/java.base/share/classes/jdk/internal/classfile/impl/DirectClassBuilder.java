@@ -30,6 +30,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.ClassBuilder;
@@ -74,6 +75,7 @@ public final class DirectClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
+        Objects.requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

@@ -25,6 +25,8 @@
 package java.lang.classfile.instruction;
 
 import java.lang.classfile.Label;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
 
@@ -55,6 +57,7 @@ public sealed interface SwitchCase
      * @return the {@linkplain SwitchCase}
      */
     static SwitchCase of(int caseValue, Label target) {
+        Objects.requireNonNull(target);
         return new AbstractInstruction.SwitchCaseImpl(caseValue, target);
     }
 }

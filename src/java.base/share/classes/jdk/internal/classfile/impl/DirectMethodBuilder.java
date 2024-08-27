@@ -26,6 +26,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.ClassFile;
@@ -110,6 +111,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodBuilder with(MethodElement element) {
+        Objects.requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

@@ -88,12 +88,15 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) implements ClassRemapper {
 
     @Override
     public void accept(ClassBuilder clb, ClassElement cle) {
+        Objects.requireNonNull(clb);
+        Objects.requireNonNull(cle);
         switch (cle) {
             case FieldModel fm ->
                 clb.withField(fm.fieldName().stringValue(), map(

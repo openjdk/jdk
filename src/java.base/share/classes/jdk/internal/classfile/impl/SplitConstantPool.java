@@ -130,6 +130,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool other) {
+        Objects.requireNonNull(other);
         return this == other || parent == other;
     }
 

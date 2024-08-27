@@ -24,6 +24,7 @@
  */
 package java.lang.classfile;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -50,6 +51,8 @@ public non-sealed interface ClassTransform
     static final ClassTransform ACCEPT_ALL = new ClassTransform() {
         @Override
         public void accept(ClassBuilder builder, ClassElement element) {
+            Objects.requireNonNull(builder);
+            Objects.requireNonNull(element);
             builder.with(element);
         }
     };
@@ -77,11 +80,14 @@ public non-sealed interface ClassTransform
         return new ClassTransform() {
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
+                Objects.requireNonNull(builder);
+                Objects.requireNonNull(element);
                 builder.with(element);
             }
 
             @Override
             public void atEnd(ClassBuilder builder) {
+                Objects.requireNonNull(builder);
                 finisher.accept(builder);
             }
         };

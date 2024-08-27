@@ -25,7 +25,7 @@
 package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
-import java.util.Collection;
+import java.util.*;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -34,9 +34,6 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.lang.reflect.AccessFlag;
 import java.lang.constant.ModuleDesc;
@@ -140,6 +137,13 @@ public sealed interface ModuleAttribute
                               Collection<ModuleOpenInfo> opens,
                               Collection<ClassEntry> uses,
                               Collection<ModuleProvideInfo> provides) {
+        Objects.requireNonNull(moduleName);
+        Objects.requireNonNull(moduleVersion);
+        Objects.requireNonNull(requires);
+        Objects.requireNonNull(exports);
+        Objects.requireNonNull(opens);
+        Objects.requireNonNull(uses);
+        Objects.requireNonNull(provides);
         return new UnboundAttribute.UnboundModuleAttribute(moduleName, moduleFlags, moduleVersion, requires, exports, opens, uses, provides);
     }
 
@@ -164,6 +168,8 @@ public sealed interface ModuleAttribute
      */
     static ModuleAttribute of(ModuleEntry moduleName,
                               Consumer<ModuleAttributeBuilder> attrHandler) {
+        Objects.requireNonNull(moduleName);
+        Objects.requireNonNull(attrHandler);
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
         return mb.build();

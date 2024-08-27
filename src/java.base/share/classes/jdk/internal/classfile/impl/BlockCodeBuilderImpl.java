@@ -80,6 +80,7 @@ public final class BlockCodeBuilderImpl
 
     @Override
     public CodeBuilder with(CodeElement element) {
+        Objects.requireNonNull(element);
         parent.with(element);
 
         hasInstructions |= element instanceof Instruction;

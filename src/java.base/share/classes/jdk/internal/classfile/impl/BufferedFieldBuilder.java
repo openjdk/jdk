@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -61,6 +62,7 @@ public final class BufferedFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
+        Objects.requireNonNull(element);
         elements.add(element);
         if (element instanceof AccessFlags f) this.flags = f;
         return this;

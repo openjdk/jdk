@@ -56,13 +56,7 @@ import java.lang.classfile.instruction.TableSwitchInstruction;
 import java.lang.classfile.instruction.ThrowInstruction;
 import java.lang.classfile.instruction.TypeCheckInstruction;
 
-import java.util.AbstractCollection;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Consumer;
 
 public final class CodeStackTrackerImpl implements CodeStackTracker {
@@ -171,6 +165,8 @@ public final class CodeStackTrackerImpl implements CodeStackTracker {
 
     @Override
     public void accept(CodeBuilder cb, CodeElement el) {
+        Objects.requireNonNull(cb);
+        Objects.requireNonNull(el);
         cb.with(el);
         switch (el) {
             case ArrayLoadInstruction i -> {

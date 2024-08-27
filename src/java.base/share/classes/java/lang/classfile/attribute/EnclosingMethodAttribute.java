@@ -26,6 +26,7 @@ package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.util.Objects;
 import java.util.Optional;
 
 import java.lang.classfile.Attribute;
@@ -103,6 +104,7 @@ public sealed interface EnclosingMethodAttribute
      */
     static EnclosingMethodAttribute of(ClassEntry className,
                                        Optional<NameAndTypeEntry> method) {
+        Objects.requireNonNull(className);
         return new UnboundAttribute.UnboundEnclosingMethodAttribute(className, method.orElse(null));
     }
 

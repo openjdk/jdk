@@ -29,6 +29,8 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
@@ -60,6 +62,7 @@ public sealed interface BranchInstruction extends Instruction
      *         {@link Opcode.Kind#BRANCH}.
      */
     static BranchInstruction of(Opcode op, Label target) {
+        Objects.requireNonNull(target);
         Util.checkKind(op, Opcode.Kind.BRANCH);
         return new AbstractInstruction.UnboundBranchInstruction(op, target);
     }

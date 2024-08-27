@@ -30,6 +30,8 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Label;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.attribute.CharacterRangeTableAttribute;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundCharacterRange;
 import jdk.internal.javac.PreviewFeature;
@@ -102,6 +104,8 @@ public sealed interface CharacterRange extends PseudoInstruction
      * @param flags a flags word, indicating the kind of range
      */
     static CharacterRange of(Label startScope, Label endScope, int characterRangeStart, int characterRangeEnd, int flags) {
+        Objects.requireNonNull(startScope);
+        Objects.requireNonNull(endScope);
         return new AbstractPseudoInstruction.UnboundCharacterRange(startScope, endScope, characterRangeStart, characterRangeEnd, flags);
     }
 }

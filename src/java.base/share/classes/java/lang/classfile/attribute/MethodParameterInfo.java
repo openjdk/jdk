@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.attribute;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -82,6 +83,7 @@ public sealed interface MethodParameterInfo
      * @param flags the method parameter access flags
      */
     static MethodParameterInfo of(Optional<Utf8Entry> name, int flags) {
+        Objects.requireNonNull(name);
         return new UnboundAttribute.UnboundMethodParameterInfo(name, flags);
     }
 
@@ -91,6 +93,11 @@ public sealed interface MethodParameterInfo
      * @param flags the method parameter access flags
      */
     static MethodParameterInfo of(Optional<String> name, AccessFlag... flags) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(flags);
+        for (var f : flags){
+            Objects.requireNonNull(f);
+        }
         return of(name.map(TemporaryConstantPool.INSTANCE::utf8Entry), Util.flagsToBits(AccessFlag.Location.METHOD_PARAMETER, flags));
     }
 

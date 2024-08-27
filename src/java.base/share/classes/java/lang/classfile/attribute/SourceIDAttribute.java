@@ -29,6 +29,8 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -62,6 +64,7 @@ public sealed interface SourceIDAttribute
      * @param sourceId the source id
      */
     static SourceIDAttribute of(Utf8Entry sourceId) {
+        Objects.requireNonNull(sourceId);
         return new UnboundAttribute.UnboundSourceIDAttribute(sourceId);
     }
 

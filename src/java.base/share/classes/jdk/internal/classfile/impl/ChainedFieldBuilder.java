@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.FieldBuilder;
@@ -50,9 +51,9 @@ public final class ChainedFieldBuilder implements FieldBuilder {
 
     @Override
     public FieldBuilder with(FieldElement element) {
+        Objects.requireNonNull(element);
         consumer.accept(element);
         return this;
     }
 
 }
-

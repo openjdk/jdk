@@ -24,6 +24,7 @@
  */
 package java.lang.classfile.instruction;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import java.lang.classfile.CodeElement;
@@ -78,6 +79,9 @@ public sealed interface ExceptionCatch extends PseudoInstruction
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd,
                              Optional<ClassEntry> catchTypeEntry) {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(tryStart);
+        Objects.requireNonNull(tryEnd);
         return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, catchTypeEntry.orElse(null));
     }
 
@@ -88,6 +92,9 @@ public sealed interface ExceptionCatch extends PseudoInstruction
      * @param tryEnd the end of the instruction range for the gaurded instructions
      */
     static ExceptionCatch of(Label handler, Label tryStart, Label tryEnd) {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(tryStart);
+        Objects.requireNonNull(tryEnd);
         return new AbstractPseudoInstruction.ExceptionCatchImpl(handler, tryStart, tryEnd, (ClassEntry) null);
     }
 }

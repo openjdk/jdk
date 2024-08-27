@@ -30,6 +30,8 @@ import java.util.List;
 
 import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.ClassEntry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static java.lang.classfile.ClassFile.*;
@@ -73,7 +75,7 @@ public sealed interface StackMapFrameInfo
     public static StackMapFrameInfo of(Label target,
             List<VerificationTypeInfo> locals,
             List<VerificationTypeInfo> stack) {
-
+        Objects.requireNonNull(target);
         return new StackMapDecoder.StackMapFrameImpl(255, target, locals, stack);
     }
 
@@ -147,6 +149,7 @@ public sealed interface StackMapFrameInfo
          * @param className the class of the object
          */
         public static ObjectVerificationTypeInfo of(ClassEntry className) {
+            Objects.requireNonNull(className);
             return new StackMapDecoder.ObjectVerificationTypeInfoImpl(className);
         }
 
@@ -191,6 +194,7 @@ public sealed interface StackMapFrameInfo
          * @param newTarget the {@code new} instruction position that creates this unitialized object
          */
         public static UninitializedVerificationTypeInfo of(Label newTarget) {
+            Objects.requireNonNull(newTarget);
             return new StackMapDecoder.UninitializedVerificationTypeInfoImpl(newTarget);
         }
     }

@@ -29,6 +29,8 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
@@ -62,6 +64,8 @@ public sealed interface ConvertInstruction extends Instruction
      * @param toType the type to convert to
      */
     static ConvertInstruction of(TypeKind fromType, TypeKind toType) {
+        Objects.requireNonNull(fromType);
+        Objects.requireNonNull(toType);
         return of(BytecodeHelpers.convertOpcode(fromType, toType));
     }
 

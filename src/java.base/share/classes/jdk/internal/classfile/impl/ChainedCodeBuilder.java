@@ -29,6 +29,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.Label;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 public final class ChainedCodeBuilder
@@ -59,6 +60,7 @@ public final class ChainedCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
+        Objects.requireNonNull(element);
         consumer.accept(element);
         return this;
     }

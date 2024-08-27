@@ -36,6 +36,7 @@ import java.lang.classfile.instruction.LocalVariableType;
 import java.lang.classfile.instruction.StoreInstruction;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
 
@@ -48,6 +49,8 @@ public final class CodeLocalsShifterImpl implements CodeLocalsShifter {
 
     @Override
     public void accept(CodeBuilder cob, CodeElement coe) {
+        Objects.requireNonNull(cob);
+        Objects.requireNonNull(coe);
         switch (coe) {
             case LoadInstruction li ->
                 cob.loadLocal(

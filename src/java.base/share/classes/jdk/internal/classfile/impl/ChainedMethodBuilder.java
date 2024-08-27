@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.CodeBuilder;
@@ -48,6 +49,7 @@ public final class ChainedMethodBuilder implements MethodBuilder {
 
     @Override
     public MethodBuilder with(MethodElement element) {
+        Objects.requireNonNull(element);
         consumer.accept(element);
         return this;
     }

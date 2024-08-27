@@ -32,6 +32,8 @@ import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
@@ -167,6 +169,7 @@ public sealed interface ConstantInstruction extends Instruction {
      *                                  {@link Opcode#LDC_W}, or {@link Opcode#LDC2_W}
      */
     static LoadConstantInstruction ofLoad(Opcode op, LoadableConstantEntry constant) {
+        Objects.requireNonNull(constant);
         Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.LDC && op != Opcode.LDC_W && op != Opcode.LDC2_W)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected LDC, LDC_W or LDC2_W", op));

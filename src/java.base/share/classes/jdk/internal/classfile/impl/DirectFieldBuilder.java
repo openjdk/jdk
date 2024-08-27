@@ -25,6 +25,7 @@
 
 package jdk.internal.classfile.impl;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.CustomAttribute;
@@ -54,6 +55,7 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
+        Objects.requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

@@ -38,6 +38,7 @@ import java.lang.classfile.instruction.LookupSwitchInstruction;
 import java.lang.classfile.instruction.SwitchCase;
 import java.lang.classfile.instruction.TableSwitchInstruction;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 
 public record CodeRelabelerImpl(BiFunction<Label, CodeBuilder, Label> mapFunction) implements CodeRelabeler {
@@ -48,6 +49,8 @@ public record CodeRelabelerImpl(BiFunction<Label, CodeBuilder, Label> mapFunctio
 
     @Override
     public void accept(CodeBuilder cob, CodeElement coe) {
+        Objects.requireNonNull(cob);
+        Objects.requireNonNull(coe);
         switch (coe) {
             case BranchInstruction bi ->
                 cob.branch(

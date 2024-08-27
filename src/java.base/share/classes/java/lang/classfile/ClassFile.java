@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -392,6 +393,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
+        Objects.requireNonNull(moduleAttribute);
         return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);

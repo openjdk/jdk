@@ -32,6 +32,7 @@ import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.LocalVariableTypeTableAttribute;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Objects;
 
 import jdk.internal.classfile.impl.AbstractPseudoInstruction;
 import jdk.internal.classfile.impl.BoundLocalVariableType;
@@ -91,6 +92,10 @@ public sealed interface LocalVariableType extends PseudoInstruction
      * @param endScope the end range of the local variable scope
      */
     static LocalVariableType of(int slot, Utf8Entry nameEntry, Utf8Entry signatureEntry, Label startScope, Label endScope) {
+        Objects.requireNonNull(nameEntry);
+        Objects.requireNonNull(signatureEntry);
+        Objects.requireNonNull(startScope);
+        Objects.requireNonNull(endScope);
         return new AbstractPseudoInstruction.UnboundLocalVariableType(slot, nameEntry, signatureEntry,
                                                                       startScope, endScope);
     }

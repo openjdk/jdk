@@ -28,6 +28,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 import java.lang.classfile.CodeElement;
@@ -103,6 +104,7 @@ public sealed interface InvokeDynamicInstruction extends Instruction
      * @param invokedynamic the constant pool entry describing the call site
      */
     static InvokeDynamicInstruction of(InvokeDynamicEntry invokedynamic) {
+        Objects.requireNonNull(invokedynamic);
         return new AbstractInstruction.UnboundInvokeDynamicInstruction(invokedynamic);
     }
 }

@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.*;
@@ -47,6 +48,7 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
+        Objects.requireNonNull(element);
         consumer.accept(element);
         return this;
     }

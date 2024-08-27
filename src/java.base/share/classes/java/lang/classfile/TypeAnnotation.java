@@ -29,6 +29,8 @@ import java.util.List;
 
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -202,6 +204,8 @@ public sealed interface TypeAnnotation
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                              Annotation annotation) {
+        Objects.requireNonNull(targetInfo);
+        Objects.requireNonNull(annotation);
         return new UnboundAttribute.UnboundTypeAnnotation(targetInfo, targetPath, annotation);
     }
 

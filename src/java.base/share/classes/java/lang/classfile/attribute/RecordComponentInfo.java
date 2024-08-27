@@ -30,6 +30,8 @@ import java.util.List;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.BoundRecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -70,6 +72,8 @@ public sealed interface RecordComponentInfo
     static RecordComponentInfo of(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   List<Attribute<?>> attributes) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(descriptor);
         return new UnboundAttribute.UnboundRecordComponentInfo(name, descriptor, attributes);
     }
 

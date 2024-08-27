@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -106,6 +107,7 @@ public interface ClassHierarchyResolver {
      *           other resolver in cases where this resolver returns {@code null}.
      */
     default ClassHierarchyResolver orElse(ClassHierarchyResolver other) {
+        Objects.requireNonNull(other);
         return new ClassHierarchyResolver() {
             @Override
             public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
@@ -170,6 +172,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(Function<ClassDesc, InputStream> classStreamResolver) {
+        Objects.requireNonNull(classStreamResolver);
         return new ClassHierarchyImpl.ResourceParsingClassHierarchyResolver(classStreamResolver);
     }
 
@@ -181,6 +184,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(ClassLoader loader) {
+        Objects.requireNonNull(loader);
         return ofResourceParsing(new Function<>() {
             @Override
             public InputStream apply(ClassDesc classDesc) {
@@ -199,6 +203,11 @@ public interface ClassHierarchyResolver {
      */
     static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
                                             Map<ClassDesc, ClassDesc> classToSuperClass) {
+        Objects.requireNonNull(interfaces);
+        for (var i : interfaces){
+            Objects.requireNonNull(i);
+        }
+        Objects.requireNonNull(classToSuperClass);
         return new StaticClassHierarchyResolver(interfaces, classToSuperClass);
     }
 
@@ -210,6 +219,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(ClassLoader loader) {
+        Objects.requireNonNull(loader);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {
@@ -232,6 +242,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(MethodHandles.Lookup lookup) {
+        Objects.requireNonNull(lookup);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {

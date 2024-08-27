@@ -38,6 +38,8 @@ import java.lang.classfile.ClassModel;
 import jdk.internal.classfile.impl.ClassReaderImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
+import java.util.Objects;
+
 import jdk.internal.classfile.impl.AbstractPoolEntry.ClassEntryImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry.NameAndTypeEntryImpl;
 import jdk.internal.classfile.impl.SplitConstantPool;
@@ -480,6 +482,7 @@ public sealed interface ConstantPoolBuilder
      * @param c the constant
      */
     default ConstantValueEntry constantValueEntry(ConstantDesc c) {
+        Objects.requireNonNull(c);
         if (c instanceof Integer i) return intEntry(i);
         if (c instanceof String s) return stringEntry(s);
         if (c instanceof Long l) return longEntry(l);
@@ -498,6 +501,7 @@ public sealed interface ConstantPoolBuilder
      * @param c the constant
      */
     default LoadableConstantEntry loadableConstantEntry(ConstantDesc c) {
+        Objects.requireNonNull(c);
         if (c instanceof Integer i) return intEntry(i);
         if (c instanceof String s) return stringEntry(s);
         if (c instanceof Long l) return longEntry(l);

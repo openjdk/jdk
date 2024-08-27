@@ -35,6 +35,7 @@ import java.lang.classfile.instruction.ExceptionCatch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -119,6 +120,7 @@ public final class BufferedCodeBuilder
 
     @Override
     public CodeBuilder with(CodeElement element) {
+        Objects.requireNonNull(element);
         if (finished)
             throw new IllegalStateException("Can't add elements after traversal");
         elements.add(element);

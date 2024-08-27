@@ -28,6 +28,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -72,6 +73,7 @@ public final class BufferedMethodBuilder
 
     @Override
     public MethodBuilder with(MethodElement element) {
+        Objects.requireNonNull(element);
         elements.add(element);
         if (element instanceof AccessFlags f) this.flags = checkFlags(f);
         return this;
