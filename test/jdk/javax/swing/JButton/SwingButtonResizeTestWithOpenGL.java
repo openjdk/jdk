@@ -51,15 +51,32 @@ import java.util.concurrent.atomic.AtomicReference;
  * resized back to normal.  The test case simulates this operation using
  * a JButton.  A file image of the component will be saved before and after
  * window resize. The test passes if both button images are the same.
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
- * @run main/othervm -Dsun.java2d.xrender=false SwingButtonResizeTestWithOpenGL
- * @run main/othervm -Dsun.java2d.xrender=true SwingButtonResizeTestWithOpenGL
- * @run main/othervm -Dsun.java2d.d3d=false SwingButtonResizeTestWithOpenGL
- * @run main/othervm -Dsun.java2d.d3d=true SwingButtonResizeTestWithOpenGL
- * @run main/othervm -Dsun.java2d.metal=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=true SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.opengl=false SwingButtonResizeTestWithOpenGL
  * @run main/othervm SwingButtonResizeTestWithOpenGL
  */
-
+/*
+ * @test
+ * @key headful
+ * @requires (os.family == "windows")
+ * @run main/othervm -Dsun.java2d.d3d=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.d3d=true SwingButtonResizeTestWithOpenGL
+ */
+/*
+ * @test
+ * @key headful
+ * @requires (os.family == "linux")
+ * @run main/othervm -Dsun.java2d.xrender=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.xrender=true SwingButtonResizeTestWithOpenGL
+ */
+/*
+ * @test
+ * @key headful
+ * @requires (os.family == "mac")
+ * @run main/othervm -Dsun.java2d.metal=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.metal=true SwingButtonResizeTestWithOpenGL
+ */
 public class SwingButtonResizeTestWithOpenGL {
     private static Robot robot;
     private static CountDownLatch focusGainedLatch;
