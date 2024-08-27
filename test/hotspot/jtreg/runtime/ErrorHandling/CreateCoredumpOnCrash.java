@@ -52,15 +52,17 @@ public class CreateCoredumpOnCrash {
             runTest("-XX:-CreateMinidumpOnCrash").shouldContain("CreateCoredumpOnCrash turned off, no core file dumped")
                                                  .shouldNotHaveExitValue(0);
         } else {
-            runTest("-XX:+CreateCoredumpOnCrash").shouldNotContain("CreateCoredumpOnCrash turned off, no core file dumped")
-                                                 .shouldNotHaveExitValue(0);
+          OutputAnalyzer oa = runTest("-XX:+CreateCoredumpOnCrash");
+          oa.reportDiagnosticSummary();
+          oa.shouldContain("core dump info").shouldNotContain("CreateCoredumpOnCrash turned off, no core file dumped").
+                  shouldNotHaveExitValue(0);
         }
-
     }
+
     public static OutputAnalyzer runTest(String option) throws Exception {
         return new OutputAnalyzer(
             ProcessTools.createLimitedTestJavaProcessBuilder(
-            "-Xmx128m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", option, Crasher.class.getName())
+            "-Xmx128m", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "-Xlog:os=info:stdout", option, Crasher.class.getName())
             .start());
     }
 }

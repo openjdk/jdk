@@ -663,6 +663,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif // INCLUDE_MANAGEMENT
 
   log_info(os)("Initialized VM with process ID %d", os::current_process_id());
+  if (log_is_enabled(Info, os)) {
+    char buffer[2048];
+    os::check_dump_limit(buffer, sizeof(buffer));
+    log_info(os)("core dump info: %s", buffer);
+  }
 
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::initialize_jdk_signal_support(CHECK_JNI_ERR);
