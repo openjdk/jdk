@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl.verifier;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import java.lang.classfile.ClassHierarchyResolver;
@@ -114,9 +115,10 @@ public final class VerifierImpl {
     }
 
     public static List<VerifyError> verify(ClassModel classModel, ClassHierarchyResolver classHierarchyResolver, Consumer<String> logger) {
-        var klass = new VerificationWrapper(classModel);
-        log_info(logger, "Start class verification for: %s", klass.thisClassName());
+        String clsName = classModel.thisClass().asInternalName();
+        log_info(logger, "Start class verification for: %s", clsName);
         try {
+            var klass = new VerificationWrapper(classModel);
             var errors = new ArrayList<VerifyError>();
             errors.addAll(new ParserVerifier(classModel).verify());
             if (is_eligible_for_verification(klass)) {
@@ -132,9 +134,9 @@ public final class VerifierImpl {
                     errors.addAll(inference_verify(klass));
                 }
             }
-            return errors;
+            return Collections.unmodifiableList(errors);
         } finally {
-            log_info(logger, "End class verification for: %s", klass.thisClassName());
+            log_info(logger, "End class verification for: %s", clsName);
         }
     }
 

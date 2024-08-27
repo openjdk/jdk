@@ -76,11 +76,9 @@ jlong threadControl_getFrameGeneration(jthread thread);
 
 jthread *threadControl_allVThreads(jint *numVThreads);
 
-/***** debugging *****/
+/***** APIs for debugging the debug agent *****/
 
-#ifdef DEBUG
 void threadControl_dumpAllThreads();
 void threadControl_dumpThread(jthread thread);
-#endif
 
 #endif

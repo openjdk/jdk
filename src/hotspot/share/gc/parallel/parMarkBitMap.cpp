@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
     return true;
   }
 
-  _heap_start = 0;
+  _heap_start = nullptr;
   _heap_size = 0;
   if (_virtual_space != nullptr) {
     delete _virtual_space;

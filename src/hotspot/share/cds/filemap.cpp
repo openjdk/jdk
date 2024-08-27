@@ -1406,7 +1406,8 @@ void FileMapInfo::open_for_write() {
   if (fd < 0) {
     log_error(cds)("Unable to create shared archive file %s: (%s).", _full_path,
                    os::strerror(errno));
-    MetaspaceShared::unrecoverable_writing_error();
+    MetaspaceShared::writing_error();
+    return;
   }
   _fd = fd;
   _file_open = true;
@@ -1659,7 +1660,7 @@ void FileMapInfo::write_bytes(const void* buffer, size_t nbytes) {
     // If the shared archive is corrupted, close it and remove it.
     close();
     remove(_full_path);
-    MetaspaceShared::unrecoverable_writing_error("Unable to write to shared archive file.");
+    MetaspaceShared::writing_error("Unable to write to shared archive file.");
   }
   _file_offset += nbytes;
 }
@@ -2024,7 +2025,7 @@ void FileMapInfo::map_or_load_heap_region() {
         // TODO - remove implicit knowledge of G1
         log_info(cds)("Cannot use CDS heap data. UseG1GC is required for -XX:-UseCompressedOops");
       } else {
-        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC or UseParallelGC are required.");
+        log_info(cds)("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
       }
     }
   }
@@ -2177,21 +2178,35 @@ bool FileMapInfo::map_heap_region_impl() {
   // Map the archived heap data. No need to call MemTracker::record_virtual_memory_type()
   // for mapped region as it is part of the reserved java heap, which is already recorded.
   char* addr = (char*)_mapped_heap_memregion.start();
-  char* base = map_memory(_fd, _full_path, r->file_offset(),
-                          addr, _mapped_heap_memregion.byte_size(), r->read_only(),
-                          r->allow_exec());
-  if (base == nullptr || base != addr) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
-                  INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
-                  p2i(addr), _mapped_heap_memregion.byte_size());
-    return false;
-  }
+  char* base;
 
-  if (VerifySharedSpaces && !r->check_region_crc(base)) {
-    dealloc_heap_region();
-    log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
-    return false;
+  if (MetaspaceShared::use_windows_memory_mapping()) {
+    if (!read_region(MetaspaceShared::hp, addr,
+                     align_up(_mapped_heap_memregion.byte_size(), os::vm_page_size()),
+                     /* do_commit = */ true)) {
+      dealloc_heap_region();
+      log_error(cds)("Failed to read archived heap region into " INTPTR_FORMAT, p2i(addr));
+      return false;
+    }
+    // Checks for VerifySharedSpaces is already done inside read_region()
+    base = addr;
+  } else {
+    base = map_memory(_fd, _full_path, r->file_offset(),
+                      addr, _mapped_heap_memregion.byte_size(), r->read_only(),
+                      r->allow_exec());
+    if (base == nullptr || base != addr) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: Unable to map at required address in java heap. "
+                    INTPTR_FORMAT ", size = " SIZE_FORMAT " bytes",
+                    p2i(addr), _mapped_heap_memregion.byte_size());
+      return false;
+    }
+
+    if (VerifySharedSpaces && !r->check_region_crc(base)) {
+      dealloc_heap_region();
+      log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
+      return false;
+    }
   }
 
   r->set_mapped_base(base);

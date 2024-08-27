@@ -178,6 +178,8 @@ class MacroAssembler: public Assembler {
   void inline set_cmp3(Register dst);
   // set dst to (treat_unordered_like_less ? -1 : +1)
   void inline set_cmpu3(Register dst, bool treat_unordered_like_less);
+  // Branch-free implementation to convert !=0 to 1.
+  void inline normalize_bool(Register dst, Register temp = R0, bool is_64bit = false);
 
   inline void pd_patch_instruction(address branch, address target, const char* file, int line);
   NOT_PRODUCT(static void pd_print_patched_instruction(address branch);)

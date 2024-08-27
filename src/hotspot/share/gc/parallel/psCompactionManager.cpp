@@ -54,7 +54,9 @@ Monitor*                ParCompactionManager::_shadow_region_monitor = nullptr;
 
 PreservedMarksSet* ParCompactionManager::_preserved_marks_set = nullptr;
 
-ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks) {
+ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks,
+                                           ReferenceProcessor* ref_processor)
+  : _mark_and_push_closure(this, ref_processor) {
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
@@ -66,8 +68,9 @@ ParCompactionManager::ParCompactionManager(PreservedMarks* preserved_marks) {
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
-  assert(ParallelScavengeHeap::heap() != nullptr,
-    "Needed for initialization");
+  assert(ParallelScavengeHeap::heap() != nullptr, "Needed for initialization");
+  assert(PSParallelCompact::ref_processor() != nullptr, "precondition");
+  assert(ParallelScavengeHeap::heap()->workers().max_workers() != 0, "Not initialized?");
 
   _mark_bitmap = mbm;
 
@@ -85,14 +88,12 @@ void ParCompactionManager::initialize(ParMarkBitMap* mbm) {
 
   // Create and register the ParCompactionManager(s) for the worker threads.
   for(uint i=0; i<parallel_gc_threads; i++) {
-    _manager_array[i] = new ParCompactionManager(_preserved_marks_set->get(i));
+    _manager_array[i] = new ParCompactionManager(_preserved_marks_set->get(i),
+                                                 PSParallelCompact::ref_processor());
     oop_task_queues()->register_queue(i, _manager_array[i]->oop_stack());
     _objarray_task_queues->register_queue(i, &_manager_array[i]->_objarray_stack);
     region_task_queues()->register_queue(i, _manager_array[i]->region_stack());
   }
-
-  assert(ParallelScavengeHeap::heap()->workers().max_workers() != 0,
-    "Not initialized?");
 
   _shadow_region_array = new (mtGC) GrowableArray<size_t >(10, mtGC);
 

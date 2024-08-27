@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -981,6 +981,8 @@ JvmtiEventControllerPrivate::change_field_watch(jvmtiEvent event_type, bool adde
             event_type==JVMTI_EVENT_FIELD_MODIFICATION? "modification" : "access",
             added? "add" : "remove",
             *count_addr));
+
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (added) {
     (*count_addr)++;

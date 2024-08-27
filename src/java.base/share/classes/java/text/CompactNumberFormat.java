@@ -539,29 +539,42 @@ public final class CompactNumberFormat extends NumberFormat {
     public final StringBuffer format(Object number,
             StringBuffer toAppendTo,
             FieldPosition fieldPosition) {
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case BigInteger bi -> format(bi, StringBufFactory.of(toAppendTo), fieldPosition).asStringBuffer();
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
+    }
 
-        if (number == null) {
-            throw new IllegalArgumentException("Cannot format null as a number");
-        }
-
-        if (number instanceof Long || number instanceof Integer
-                || number instanceof Short || number instanceof Byte
-                || number instanceof AtomicInteger
-                || number instanceof AtomicLong
-                || (number instanceof BigInteger
-                && ((BigInteger) number).bitLength() < 64)) {
-            return format(((Number) number).longValue(), toAppendTo,
-                    fieldPosition);
-        } else if (number instanceof BigDecimal) {
-            return format((BigDecimal) number, toAppendTo, fieldPosition);
-        } else if (number instanceof BigInteger) {
-            return format((BigInteger) number, toAppendTo, fieldPosition);
-        } else if (number instanceof Number) {
-            return format(((Number) number).doubleValue(), toAppendTo, fieldPosition);
-        } else {
-            throw new IllegalArgumentException("Cannot format "
-                    + number.getClass().getName() + " as a number");
-        }
+    @Override
+    StringBuf format(Object number,
+                     StringBuf toAppendTo,
+                     FieldPosition fieldPosition) {
+        return switch (number) {
+            case Long l -> format(l.longValue(), toAppendTo, fieldPosition);
+            case Integer i -> format(i.longValue(), toAppendTo, fieldPosition);
+            case Short s -> format(s.longValue(), toAppendTo, fieldPosition);
+            case Byte b -> format(b.longValue(), toAppendTo, fieldPosition);
+            case AtomicInteger ai -> format(ai.longValue(), toAppendTo, fieldPosition);
+            case AtomicLong al -> format(al.longValue(), toAppendTo, fieldPosition);
+            case BigInteger bi when bi.bitLength() < 64 -> format(bi.longValue(), toAppendTo, fieldPosition);
+            case BigDecimal bd -> format(bd, toAppendTo, fieldPosition);
+            case BigInteger bi -> format(bi, toAppendTo, fieldPosition);
+            case Number n -> format(n.doubleValue(), toAppendTo, fieldPosition);
+            case null -> throw new IllegalArgumentException("Cannot format null as a number");
+            default -> throw new IllegalArgumentException(
+                    String.format("Cannot format %s as a number", number.getClass().getName()));
+        };
     }
 
     /**
@@ -593,10 +606,19 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(double number, StringBuf result,
+                     FieldPosition fieldPosition) {
+
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(double number, StringBuffer result,
+    private StringBuf format(double number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean nanOrInfinity = decimalFormat.handleNaN(number, result, delegate);
@@ -683,10 +705,19 @@ public final class CompactNumberFormat extends NumberFormat {
 
         fieldPosition.setBeginIndex(0);
         fieldPosition.setEndIndex(0);
+        return format(number, StringBufFactory.of(result), fieldPosition.getFieldDelegate()).asStringBuffer();
+    }
+
+    @Override
+    StringBuf format(long number, StringBuf result,
+                     FieldPosition fieldPosition) {
+
+        fieldPosition.setBeginIndex(0);
+        fieldPosition.setEndIndex(0);
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(long number, StringBuffer result, FieldDelegate delegate) {
+    private StringBuf format(long number, StringBuf result, FieldDelegate delegate) {
         boolean isNegative = (number < 0);
         if (isNegative) {
             number = -number;
@@ -757,15 +788,15 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         of the prefix and the suffix fields can be
      *                         obtained using {@link NumberFormat.Field#PREFIX}
      *                         and {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigDecimal number, StringBuffer result,
-            FieldPosition fieldPosition) {
+    private StringBuf format(BigDecimal number, StringBuf result,
+                             FieldPosition fieldPosition) {
 
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
@@ -773,7 +804,7 @@ public final class CompactNumberFormat extends NumberFormat {
         return format(number, result, fieldPosition.getFieldDelegate());
     }
 
-    private StringBuffer format(BigDecimal number, StringBuffer result,
+    private StringBuf format(BigDecimal number, StringBuf result,
             FieldDelegate delegate) {
 
         boolean isNegative = number.signum() == -1;
@@ -843,15 +874,15 @@ public final class CompactNumberFormat extends NumberFormat {
      *                         prefix and the suffix fields can be obtained
      *                         using {@link NumberFormat.Field#PREFIX} and
      *                         {@link NumberFormat.Field#SUFFIX} respectively.
-     * @return        the {@code StringBuffer} passed in as {@code result}
+     * @return        the {@code StringBuf} passed in as {@code result}
      * @throws        ArithmeticException if rounding is needed with rounding
      *                mode being set to {@code RoundingMode.UNNECESSARY}
      * @throws        NullPointerException if any of the given parameter
      *                is {@code null}
      * @see FieldPosition
      */
-    private StringBuffer format(BigInteger number, StringBuffer result,
-            FieldPosition fieldPosition) {
+    private StringBuf format(BigInteger number, StringBuf result,
+                             FieldPosition fieldPosition) {
 
         Objects.requireNonNull(number);
         fieldPosition.setBeginIndex(0);
@@ -859,7 +890,7 @@ public final class CompactNumberFormat extends NumberFormat {
         return format(number, result, fieldPosition.getFieldDelegate(), false);
     }
 
-    private StringBuffer format(BigInteger number, StringBuffer result,
+    private StringBuf format(BigInteger number, StringBuf result,
             FieldDelegate delegate, boolean formatLong) {
 
         boolean isNegative = number.signum() == -1;
@@ -936,7 +967,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.PREFIX} fields
      */
-    private void appendPrefix(StringBuffer result, String prefix,
+    private void appendPrefix(StringBuf result, String prefix,
             FieldDelegate delegate) {
         append(result, expandAffix(prefix), delegate,
                 getFieldPositions(prefix, NumberFormat.Field.PREFIX));
@@ -952,7 +983,7 @@ public final class CompactNumberFormat extends NumberFormat {
      *                 {@code NumberFormat.Field.SIGN} and
      *                 {@code NumberFormat.Field.SUFFIX} fields
      */
-    private void appendSuffix(StringBuffer result, String suffix,
+    private void appendSuffix(StringBuf result, String suffix,
             FieldDelegate delegate) {
         append(result, expandAffix(suffix), delegate,
                 getFieldPositions(suffix, NumberFormat.Field.SUFFIX));
@@ -968,7 +999,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @param positions a list of {@code FieldPosition} in the given
      *                  string
      */
-    private void append(StringBuffer result, String string,
+    private void append(StringBuf result, String string,
             FieldDelegate delegate, List<FieldPosition> positions) {
         if (!string.isEmpty()) {
             int start = result.length();
@@ -1134,23 +1165,21 @@ public final class CompactNumberFormat extends NumberFormat {
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
         CharacterIteratorFieldDelegate delegate
                 = new CharacterIteratorFieldDelegate();
-        StringBuffer sb = new StringBuffer();
-
-        if (obj instanceof Double || obj instanceof Float) {
-            format(((Number) obj).doubleValue(), sb, delegate);
-        } else if (obj instanceof Long || obj instanceof Integer
-                || obj instanceof Short || obj instanceof Byte
-                || obj instanceof AtomicInteger || obj instanceof AtomicLong) {
-            format(((Number) obj).longValue(), sb, delegate);
-        } else if (obj instanceof BigDecimal) {
-            format((BigDecimal) obj, sb, delegate);
-        } else if (obj instanceof BigInteger) {
-            format((BigInteger) obj, sb, delegate, false);
-        } else if (obj == null) {
-            throw new NullPointerException(
+        StringBuf sb = StringBufFactory.of();
+        switch (obj) {
+            case Double d -> format(d.doubleValue(), sb, delegate);
+            case Float f -> format(f.doubleValue(), sb, delegate);
+            case Long l -> format(l.longValue(), sb, delegate);
+            case Integer i -> format(i.longValue(), sb, delegate);
+            case Short s -> format(s.longValue(), sb, delegate);
+            case Byte b -> format(b.longValue(), sb, delegate);
+            case AtomicInteger ai -> format(ai.longValue(), sb, delegate);
+            case AtomicLong al -> format(al.longValue(), sb, delegate);
+            case BigDecimal bd -> format(bd, sb, delegate);
+            case BigInteger bi -> format(bi, sb, delegate, false);
+            case null -> throw new NullPointerException(
                     "formatToCharacterIterator must be passed non-null object");
-        } else {
-            throw new IllegalArgumentException(
+            default -> throw new IllegalArgumentException(
                     "Cannot format given Object as a Number");
         }
         return delegate.getIterator(sb.toString());
@@ -1724,7 +1753,7 @@ public final class CompactNumberFormat extends NumberFormat {
         // Call DecimalFormat.subparseNumber() method to parse the
         // number part of the input text
         position = decimalFormat.subparseNumber(text, position,
-                digitList, false, false, status);
+                digitList, false, false, status).fullPos();
 
         if (position == -1) {
             // Unable to parse the number successfully
@@ -1732,26 +1761,6 @@ public final class CompactNumberFormat extends NumberFormat {
             pos.errorIndex = oldStart;
             return null;
         }
-
-        // If parse integer only is true and the parsing is broken at
-        // decimal point, then pass/ignore all digits and move pointer
-        // at the start of suffix, to process the suffix part
-        if (isParseIntegerOnly() && position < text.length()
-                && text.charAt(position) == symbols.getDecimalSeparator()) {
-            position++; // Pass decimal character
-            for (; position < text.length(); ++position) {
-                char ch = text.charAt(position);
-                int digit = ch - symbols.getZeroDigit();
-                if (digit < 0 || digit > 9) {
-                    digit = Character.digit(ch, 10);
-                    // Parse all digit characters
-                    if (!(digit >= 0 && digit <= 9)) {
-                        break;
-                    }
-                }
-            }
-        }
-
         // Number parsed successfully; match prefix and
         // suffix to obtain multiplier
         pos.index = position;
@@ -2372,6 +2381,8 @@ public final class CompactNumberFormat extends NumberFormat {
      * parsed as the value {@code 1234000} (1234 (integer part) * 1000
      * (thousand)) and the fractional part would be skipped.
      * The exact format accepted by the parse operation is locale dependent.
+     * @implSpec This implementation does not set the {@code ParsePosition} index
+     * to the position of the decimal symbol, but rather the end of the string.
      *
      * @return {@code true} if compact numbers should be parsed as integers
      *         only; {@code false} otherwise

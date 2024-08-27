@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1029,4 +1029,4 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
 #undef __
 
-const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); return 0; }
+const char *Runtime1::pd_name_for_address(address entry) { Unimplemented(); }

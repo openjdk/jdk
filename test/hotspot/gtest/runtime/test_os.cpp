@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -167,82 +166,95 @@ TEST_VM_ASSERT_MSG(os, page_size_for_region_with_zero_min_pages,
 }
 #endif
 
-static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const char* expected) {
-  char buf[256];
+#ifndef AIX
+// Test relies on the ability to protect memory allocated with os::reserve_memory. AIX may not be able
+// to do that (mprotect won't work on System V shm).
+static void do_test_print_hex_dump(const_address from, const_address to, int unitsize, int bytes_per_line,
+                                   const_address logical_start, const char* expected) {
+  char buf[2048];
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
-  os::print_hex_dump(&ss, addr, addr + len, unitsize);
-  // tty->print_cr("expected: %s", expected);
-  // tty->print_cr("result: %s", buf);
-  EXPECT_THAT(buf, HasSubstr(expected));
+  os::print_hex_dump(&ss, from, to, unitsize, /* print_ascii=*/true, bytes_per_line, logical_start);
+  EXPECT_STREQ(buf, expected);
 }
 
 TEST_VM(os, test_print_hex_dump) {
-  const char* pattern [4] = {
+
+#ifdef _LP64
+#define ADDRESS1 "0x0000aaaaaaaaaa00"
+#define ADDRESS2 "0x0000aaaaaaaaaa20"
+#define ADDRESS3 "0x0000aaaaaaaaaa40"
+#else
+#define ADDRESS1 "0xaaaaaa00"
+#define ADDRESS2 "0xaaaaaa20"
+#define ADDRESS3 "0xaaaaaa40"
+#endif
+
+#define ASCII_1  "....#.jdk/internal/loader/Native"
+#define ASCII_2  "Libraries......."
+
+#define PAT_1 ADDRESS1 ":   ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??\n" \
+              ADDRESS2 ":   ff ff e0 dc 23 00 6a 64 6b 2f 69 6e 74 65 72 6e 61 6c 2f 6c 6f 61 64 65 72 2f 4e 61 74 69 76 65   " ASCII_1 "\n" \
+              ADDRESS3 ":   4c 69 62 72 61 72 69 65 73 00 00 00 00 00 00 00                                                   " ASCII_2 "\n"
+
 #ifdef VM_LITTLE_ENDIAN
-    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
-    "0100 0302 0504 0706 0908 0b0a 0d0c 0f0e",
-    "03020100 07060504 0b0a0908 0f0e0d0c",
-    "0706050403020100 0f0e0d0c0b0a0908"
+#define PAT_2 ADDRESS1 ":   ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ????\n" \
+              ADDRESS2 ":   ffff dce0 0023 646a 2f6b 6e69 6574 6e72 6c61 6c2f 616f 6564 2f72 614e 6974 6576   " ASCII_1 "\n" \
+              ADDRESS3 ":   694c 7262 7261 6569 0073 0000 0000 0000                                           " ASCII_2 "\n"
+
+#define PAT_4 ADDRESS1 ":   ???????? ???????? ???????? ???????? ???????? ???????? ???????? ????????\n" \
+              ADDRESS2 ":   dce0ffff 646a0023 6e692f6b 6e726574 6c2f6c61 6564616f 614e2f72 65766974   " ASCII_1 "\n" \
+              ADDRESS3 ":   7262694c 65697261 00000073 00000000                                       " ASCII_2 "\n"
+
+#define PAT_8 ADDRESS1 ":   ???????????????? ???????????????? ???????????????? ????????????????\n" \
+              ADDRESS2 ":   646a0023dce0ffff 6e7265746e692f6b 6564616f6c2f6c61 65766974614e2f72   " ASCII_1 "\n" \
+              ADDRESS3 ":   656972617262694c 0000000000000073                                     " ASCII_2 "\n"
 #else
-    "00 01 02 03 04 05 06 07 08 09 0a 0b 0c 0d 0e 0f",
-    "0001 0203 0405 0607 0809 0a0b 0c0d 0e0f",
-    "00010203 04050607 08090a0b 0c0d0e0f",
-    "0001020304050607 08090a0b0c0d0e0f"
+#define PAT_2 ADDRESS1 ":   ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ???? ????\n" \
+              ADDRESS2 ":   ffff e0dc 2300 6a64 6b2f 696e 7465 726e 616c 2f6c 6f61 6465 722f 4e61 7469 7665   " ASCII_1 "\n" \
+              ADDRESS3 ":   4c69 6272 6172 6965 7300 0000 0000 0000                                           " ASCII_2 "\n"
+
+#define PAT_4 ADDRESS1 ":   ???????? ???????? ???????? ???????? ???????? ???????? ???????? ????????\n" \
+              ADDRESS2 ":   ffffe0dc 23006a64 6b2f696e 7465726e 616c2f6c 6f616465 722f4e61 74697665   " ASCII_1 "\n" \
+              ADDRESS3 ":   4c696272 61726965 73000000 00000000                                       " ASCII_2 "\n"
+
+#define PAT_8 ADDRESS1 ":   ???????????????? ???????????????? ???????????????? ????????????????\n" \
+              ADDRESS2 ":   ffffe0dc23006a64 6b2f696e7465726e 616c2f6c6f616465 722f4e6174697665   " ASCII_1 "\n" \
+              ADDRESS3 ":   4c69627261726965 7300000000000000                                     " ASCII_2 "\n"
 #endif
+
+  constexpr uint8_t bytes[] = {
+    0xff, 0xff, 0xe0, 0xdc, 0x23, 0x00, 0x6a, 0x64, 0x6b, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e,
+    0x61, 0x6c, 0x2f, 0x6c, 0x6f, 0x61, 0x64, 0x65, 0x72, 0x2f, 0x4e, 0x61, 0x74, 0x69, 0x76, 0x65,
+    0x4c, 0x69, 0x62, 0x72, 0x61, 0x72, 0x69, 0x65, 0x73, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   };
 
-  const char* pattern_not_readable [4] = {
-    "?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ?? ??",
-    "???? ???? ???? ???? ???? ???? ???? ????",
-    "???????? ???????? ???????? ????????",
-    "???????????????? ????????????????"
-  };
+  // two pages, first one protected.
+  const size_t ps = os::vm_page_size();
+  char* two_pages = os::reserve_memory(ps * 2, false, mtTest);
+  os::commit_memory(two_pages, ps * 2, false);
+  os::protect_memory(two_pages, ps, os::MEM_PROT_NONE, true);
 
-  // On AIX, zero page is readable.
-  address unreadable =
-#ifdef AIX
-    (address) 0xFFFFFFFFFFFF0000ULL;
-#else
-    (address) 0
-#endif
-    ;
+  memcpy(two_pages + ps, bytes, sizeof(bytes));
 
-  ResourceMark rm;
-  char buf[64];
-  stringStream ss(buf, sizeof(buf));
-  outputStream* out = &ss;
-//  outputStream* out = tty; // enable for printout
+  // print
+  const const_address from = (const_address) two_pages + ps - 32;
+  const const_address to = (const_address) from + 32 + sizeof(bytes);
+  const const_address logical_start = (const_address) LP64_ONLY(0xAAAAAAAAAA00ULL) NOT_LP64(0xAAAAAA00ULL);
 
-  // Test dumping unreadable memory
-  // Exclude test for Windows for now, since it needs SEH handling to work which cannot be
-  // guaranteed when we call directly into VM code. (see JDK-8220220)
-#ifndef _WIN32
-  do_test_print_hex_dump(unreadable, 100, 1, pattern_not_readable[0]);
-  do_test_print_hex_dump(unreadable, 100, 2, pattern_not_readable[1]);
-  do_test_print_hex_dump(unreadable, 100, 4, pattern_not_readable[2]);
-  do_test_print_hex_dump(unreadable, 100, 8, pattern_not_readable[3]);
-#endif
+  do_test_print_hex_dump(from, to, 1, 32, logical_start, PAT_1);
+  do_test_print_hex_dump(from, to, 2, 32, logical_start, PAT_2);
+  do_test_print_hex_dump(from, to, 4, 32, logical_start, PAT_4);
+  do_test_print_hex_dump(from, to, 8, 32, logical_start, PAT_8);
 
-  // Test dumping readable memory
-  address arr = (address)os::malloc(100, mtInternal);
-  for (u1 c = 0; c < 100; c++) {
-    arr[c] = c;
-  }
+  // unaligned printing, should align to next lower unitsize
+  do_test_print_hex_dump(from + 1, to, 2, 32, logical_start, PAT_2);
+  do_test_print_hex_dump(from + 1, to, 4, 32, logical_start, PAT_4);
+  do_test_print_hex_dump(from + 1, to, 8, 32, logical_start, PAT_8);
 
-  // properly aligned
-  do_test_print_hex_dump(arr, 100, 1, pattern[0]);
-  do_test_print_hex_dump(arr, 100, 2, pattern[1]);
-  do_test_print_hex_dump(arr, 100, 4, pattern[2]);
-  do_test_print_hex_dump(arr, 100, 8, pattern[3]);
-
-  // Not properly aligned. Should automatically down-align by unitsize
-  do_test_print_hex_dump(arr + 1, 100, 2, pattern[1]);
-  do_test_print_hex_dump(arr + 1, 100, 4, pattern[2]);
-  do_test_print_hex_dump(arr + 1, 100, 8, pattern[3]);
-
-  os::free(arr);
+  os::release_memory(two_pages, ps * 2);
 }
+#endif // not AIX
 
 //////////////////////////////////////////////////////////////////////////////
 // Test os::vsnprintf and friends.
@@ -954,18 +966,6 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
   }
 }
 
-#ifdef AIX
-// On Aix, we should fail attach attempts not aligned to segment boundaries (256m)
-TEST_VM(os, aix_reserve_at_non_shmlba_aligned_address) {
-  if (Use64KPages) {
-    char* p = os::attempt_reserve_memory_at((char*)0x1f00000, M);
-    ASSERT_EQ(p, nullptr); // should have failed
-    p = os::attempt_reserve_memory_at((char*)((64 * G) + M), M);
-    ASSERT_EQ(p, nullptr); // should have failed
-  }
-}
-#endif // AIX
-
 TEST_VM(os, vm_min_address) {
   size_t s = os::vm_min_address();
   ASSERT_GE(s, M);
@@ -976,3 +976,27 @@ TEST_VM(os, vm_min_address) {
 #endif
 }
 
+#if !defined(_WINDOWS) && !defined(_AIX)
+TEST_VM(os, free_without_uncommit) {
+  const size_t page_sz = os::vm_page_size();
+  const size_t pages = 64;
+  const size_t size = pages * page_sz;
+
+  char* base = os::reserve_memory(size, false, mtTest);
+  ASSERT_NE(base, (char*) nullptr);
+  ASSERT_TRUE(os::commit_memory(base, size, false));
+
+  for (size_t index = 0; index < pages; index++) {
+    base[index * page_sz] = 'a';
+  }
+
+  os::disclaim_memory(base, size);
+
+  // Ensure we can still use the memory without having to recommit.
+  for (size_t index = 0; index < pages; index++) {
+    base[index * page_sz] = 'a';
+  }
+
+  os::release_memory(base, size);
+}
+#endif

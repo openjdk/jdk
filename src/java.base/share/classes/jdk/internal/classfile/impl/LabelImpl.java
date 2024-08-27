@@ -51,7 +51,7 @@ public final class LabelImpl
     private final LabelContext labelContext;
     private int bci;
 
-        public LabelImpl(LabelContext labelContext, int bci) {
+    public LabelImpl(LabelContext labelContext, int bci) {
         this.labelContext = Objects.requireNonNull(labelContext);
         this.bci = bci;
     }

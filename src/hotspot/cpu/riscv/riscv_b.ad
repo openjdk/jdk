@@ -206,13 +206,13 @@ instruct bytes_reverse_long_b(iRegLNoSp dst, iRegL src) %{
 %}
 
 instruct bytes_reverse_unsigned_short_b(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseZbb);
   match(Set dst (ReverseBytesUS src));
 
   ins_cost(ALU_COST * 2);
   format %{ "revb_h_h_u  $dst, $src\t#@bytes_reverse_unsigned_short_b" %}
 
   ins_encode %{
+    assert(UseZbb, "must be");
     __ revb_h_h_u(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 
@@ -220,13 +220,13 @@ instruct bytes_reverse_unsigned_short_b(iRegINoSp dst, iRegIorL2I src) %{
 %}
 
 instruct bytes_reverse_short_b(iRegINoSp dst, iRegIorL2I src) %{
-  predicate(UseZbb);
   match(Set dst (ReverseBytesS src));
 
   ins_cost(ALU_COST * 2);
   format %{ "revb_h_h  $dst, $src\t#@bytes_reverse_short_b" %}
 
   ins_encode %{
+    assert(UseZbb, "must be");
     __ revb_h_h(as_Register($dst$$reg), as_Register($src$$reg));
   %}
 

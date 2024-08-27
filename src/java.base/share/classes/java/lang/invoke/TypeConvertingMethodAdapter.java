@@ -69,14 +69,14 @@ class TypeConvertingMethodAdapter {
     }
 
     private static TypeKind primitiveTypeKindFromClass(Class<?> type) {
-        if (type == int.class)     return TypeKind.IntType;
-        if (type == long.class)    return TypeKind.LongType;
-        if (type == boolean.class) return TypeKind.BooleanType;
-        if (type == short.class)   return TypeKind.ShortType;
-        if (type == byte.class)    return TypeKind.ByteType;
-        if (type == char.class)    return TypeKind.CharType;
-        if (type == float.class)   return TypeKind.FloatType;
-        if (type == double.class)  return TypeKind.DoubleType;
+        if (type == Integer.class)   return TypeKind.IntType;
+        if (type == Long.class)      return TypeKind.LongType;
+        if (type == Boolean.class)   return TypeKind.BooleanType;
+        if (type == Short.class)     return TypeKind.ShortType;
+        if (type == Byte.class)      return TypeKind.ByteType;
+        if (type == Character.class) return TypeKind.CharType;
+        if (type == Float.class)     return TypeKind.FloatType;
+        if (type == Double.class)    return TypeKind.DoubleType;
         return null;
     }
 

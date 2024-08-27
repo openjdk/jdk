@@ -237,7 +237,6 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
       DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
-      DISABLED_WARNINGS_gcc_gtk2_interface.c := parentheses type-limits, \
       DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits \
           unused-function, \
       DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
@@ -252,7 +251,6 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
       DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
       DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
-      DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
       DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
       DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
@@ -262,8 +260,6 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
-      DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses \
-          logical-op-parentheses, \
       DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses \
           logical-op-parentheses, \
       DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := \

@@ -154,7 +154,12 @@ class ConsoleIOContext extends IOContext {
             setupReader = setupReader.andThen(r -> r.option(Option.DISABLE_HIGHLIGHTER, !enableHighlighter));
             input.setInputStream(cmdin);
         } else {
-            terminal = TerminalBuilder.builder().inputStreamWrapper(in -> {
+            //on platforms which are known to be fully supported by
+            //the FFMTerminalProvider, do not permit the ExecTerminalProvider:
+            boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
+                                        !OSUtils.IS_LINUX &&
+                                        !OSUtils.IS_OSX;
+            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
                 input.setInputStream(in);
                 return nonBlockingInput;
             }).nativeSignals(false).build();

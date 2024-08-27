@@ -86,10 +86,10 @@ static bool is_init_with_ea(ciMethod* callee_method,
   if (!C->do_escape_analysis() || !EliminateAllocations) {
     return false; // EA is off
   }
-  if (callee_method->is_initializer()) {
+  if (callee_method->is_object_initializer()) {
     return true; // constructor
   }
-  if (caller_method->is_initializer() &&
+  if (caller_method->is_object_initializer() &&
       caller_method != C->method() &&
       caller_method->holder()->is_subclass_of(callee_method->holder())) {
     return true; // super constructor is called from inlined constructor

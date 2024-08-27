@@ -298,7 +298,7 @@ public:
 
   void set_requested_base(char* b) {
     _requested_base_address = b;
-    _mapped_base_address = 0;
+    _mapped_base_address = nullptr;
   }
 
   SharedPathTable shared_path_table() const {

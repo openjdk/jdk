@@ -132,6 +132,7 @@ class CompileReplay : public StackObj {
   char* _bufptr;
   char* _buffer;
   int   _buffer_length;
+  ReallocMark _nesting; // Safety checks for arena reallocation
 
   // "compile" data
   ciKlass* _iklass;
@@ -601,6 +602,7 @@ class CompileReplay : public StackObj {
     int buffer_pos = 0;
     while(c != EOF) {
       if (buffer_pos + 1 >= _buffer_length) {
+        _nesting.check(); // Check if a reallocation in the resource arena is safe
         int new_length = _buffer_length * 2;
         // Next call will throw error in case of OOM.
         _buffer = REALLOC_RESOURCE_ARRAY(char, _buffer, _buffer_length, new_length);

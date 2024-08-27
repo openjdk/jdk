@@ -105,6 +105,7 @@
 class CgroupController: public CHeapObj<mtInternal> {
   public:
     virtual char* subsystem_path() = 0;
+    virtual bool is_read_only() = 0;
 
     /* Read a numerical value as unsigned long
      *
@@ -179,19 +180,44 @@ class CachedMetric : public CHeapObj<mtInternal>{
     }
 };
 
+template <class T>
 class CachingCgroupController : public CHeapObj<mtInternal> {
   private:
-    CgroupController* _controller;
+    T* _controller;
     CachedMetric* _metrics_cache;
 
   public:
-    CachingCgroupController(CgroupController* cont) {
+    CachingCgroupController(T* cont) {
       _controller = cont;
       _metrics_cache = new CachedMetric();
     }
 
     CachedMetric* metrics_cache() { return _metrics_cache; }
-    CgroupController* controller() { return _controller; }
+    T* controller() { return _controller; }
+};
+
+// Pure virtual class representing version agnostic CPU controllers
+class CgroupCpuController: public CHeapObj<mtInternal> {
+  public:
+    virtual int cpu_quota() = 0;
+    virtual int cpu_period() = 0;
+    virtual int cpu_shares() = 0;
+    virtual bool is_read_only() = 0;
+};
+
+// Pure virtual class representing version agnostic memory controllers
+class CgroupMemoryController: public CHeapObj<mtInternal> {
+  public:
+    virtual jlong read_memory_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_usage_in_bytes() = 0;
+    virtual jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) = 0;
+    virtual jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swap) = 0;
+    virtual jlong memory_soft_limit_in_bytes(julong upper_bound) = 0;
+    virtual jlong memory_max_usage_in_bytes() = 0;
+    virtual jlong rss_usage_in_bytes() = 0;
+    virtual jlong cache_usage_in_bytes() = 0;
+    virtual void print_version_specific_info(outputStream* st, julong host_mem) = 0;
+    virtual bool is_read_only() = 0;
 };
 
 class CgroupSubsystem: public CHeapObj<mtInternal> {
@@ -199,27 +225,28 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     jlong memory_limit_in_bytes();
     int active_processor_count();
 
-    virtual int cpu_quota() = 0;
-    virtual int cpu_period() = 0;
-    virtual int cpu_shares() = 0;
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;
-    virtual jlong memory_usage_in_bytes() = 0;
-    virtual jlong memory_and_swap_limit_in_bytes() = 0;
-    virtual jlong memory_and_swap_usage_in_bytes() = 0;
-    virtual jlong memory_soft_limit_in_bytes() = 0;
-    virtual jlong memory_max_usage_in_bytes() = 0;
-    virtual jlong rss_usage_in_bytes() = 0;
-    virtual jlong cache_usage_in_bytes() = 0;
+    virtual bool is_containerized() = 0;
 
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
-    virtual jlong read_memory_limit_in_bytes() = 0;
     virtual const char * container_type() = 0;
-    virtual CachingCgroupController* memory_controller() = 0;
-    virtual CachingCgroupController* cpu_controller() = 0;
+    virtual CachingCgroupController<CgroupMemoryController>* memory_controller() = 0;
+    virtual CachingCgroupController<CgroupCpuController>* cpu_controller() = 0;
 
-    virtual void print_version_specific_info(outputStream* st) = 0;
+    int cpu_quota();
+    int cpu_period();
+    int cpu_shares();
+
+    jlong memory_usage_in_bytes();
+    jlong memory_and_swap_limit_in_bytes();
+    jlong memory_and_swap_usage_in_bytes();
+    jlong memory_soft_limit_in_bytes();
+    jlong memory_max_usage_in_bytes();
+    jlong rss_usage_in_bytes();
+    jlong cache_usage_in_bytes();
+    void print_version_specific_info(outputStream* st);
 };
 
 // Utility class for storing info retrieved from /proc/cgroups,
@@ -233,6 +260,7 @@ class CgroupInfo : public StackObj {
     char* _name;
     int _hierarchy_id;
     bool _enabled;
+    bool _read_only;            // whether or not the mount path is mounted read-only
     bool _data_complete;    // indicating cgroup v1 data is complete for this controller
     char* _cgroup_path;     // cgroup controller path from /proc/self/cgroup
     char* _root_mount_path; // root mount path from /proc/self/mountinfo. Unused for cgroup v2
@@ -243,6 +271,7 @@ class CgroupInfo : public StackObj {
       _name = nullptr;
       _hierarchy_id = -1;
       _enabled = false;
+      _read_only = false;
       _data_complete = false;
       _cgroup_path = nullptr;
       _root_mount_path = nullptr;
@@ -274,7 +303,8 @@ class CgroupSubsystemFactory: AllStatic {
                                      int controller,
                                      const char* name,
                                      char* mount_path,
-                                     char* root_path);
+                                     char* root_path,
+                                     bool read_only);
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,

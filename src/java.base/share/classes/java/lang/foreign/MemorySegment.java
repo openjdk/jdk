@@ -517,7 +517,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @apiNote When using this method to pass a segment address to some external
      *          operation (e.g. a JNI function), clients must ensure that the segment is
-     *          kept <a href="../../../java/lang/ref/package.html#reachability">reachable</a>
+     *          kept {@linkplain java.lang.ref##reachability reachable}
      *          for the entire duration of the operation. A failure to do so might result
      *          in the premature deallocation of the region of memory backing the memory
      *          segment, in case the segment has been allocated with an
@@ -618,6 +618,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *     // Take action (e.g. throw an Exception)
      * }
      * }
+     *
+     * @since 23
      */
     long maxByteAlignment();
 
@@ -630,6 +632,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@snippet lang=java :
      * asSlice(offset, newSize, 1);
      * }
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -649,6 +654,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Returns a slice of this memory segment, at the given offset, with the provided
      * alignment constraint. The returned segment's address is the address of this
      * segment plus the given offset; its size is specified by the given argument.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -677,6 +685,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * asSlice(offset, layout.byteSize(), layout.byteAlignment());
      * }
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -703,6 +714,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * asSlice(offset, byteSize() - offset);
      * }
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -718,6 +732,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     /**
      * Returns a new memory segment that has the same address and scope as this segment,
      * but with the provided size.
+     * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
      * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
@@ -757,6 +774,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@link #byteSize()}.
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -765,7 +785,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          backing region of memory is no longer available. Furthermore, if the
      *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
      *          the cleanup action must not prevent the scope from becoming
-     *          <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+     *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
@@ -805,6 +825,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * scope, and is accessible from any thread. The size of the segment accepted by the
      * cleanup action is {@code newSize}.
      * <p>
+     * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
+     * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
+     * <p>
      * The returned memory segment shares a region of backing memory with this segment.
      * Hence, no memory will be allocated or freed by this method.
      *
@@ -813,7 +836,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *          backing region of memory is no longer available. Furthermore, if the
      *          provided scope is the scope of an {@linkplain Arena#ofAuto() automatic arena},
      *          the cleanup action must not prevent the scope from becoming
-     *          <a href="../../../java/lang/ref/package.html#reachability">unreachable</a>.
+     *          {@linkplain java.lang.ref##reachability unreachable}.
      *          A failure to do so will permanently prevent the regions of memory
      *          allocated by the automatic arena from being deallocated.
      *
@@ -2639,7 +2662,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * invalidated, either {@link Arena#close() explicitly}, or automatically, by the
      * garbage collector. A segment scope that is invalidated automatically is an
      * <em>automatic scope</em>. An automatic scope is always {@link #isAlive() alive}
-     * as long as it is <a href="../../../java/lang/ref/package.html#reachability">reachable</a>.
+     * as long as it is {@linkplain java.lang.ref##reachability reachable}.
      * Segments associated with an automatic scope are:
      * <ul>
      *     <li>Segments obtained from an {@linkplain Arena#ofAuto() automatic arena};</li>

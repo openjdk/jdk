@@ -4646,9 +4646,6 @@ public class Attr extends JCTree.Visitor {
                      Type pt,
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
-            if (pt.isErroneous()) {
-                return types.createErrorType(site);
-            }
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
             case TYP:
@@ -4755,6 +4752,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
                 chk.checkPreview(tree.pos(), env.info.scope.owner, sym);
+            }
+
+            if (pt.isErroneous()) {
+                owntype = types.createErrorType(owntype);
             }
 
             // If symbol is a variable, check that its type and
@@ -5240,14 +5241,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitAnnotatedType(JCAnnotatedType tree) {
         attribAnnotationTypes(tree.annotations, env);
-        Type underlyingType =
-                attribTree(tree.underlyingType, env, new ResultInfo(KindSelector.TYP_PCK, Type.noType));
-        if (underlyingType.hasTag(PACKAGE)) {
-            // Type annotations are not admissible on packages, but we handle packages here to
-            // report better diagnostics later in validateAnnotatedType.
-            result = tree.type = underlyingType;
-            return;
-        }
+        Type underlyingType = attribType(tree.underlyingType, env);
         Type annotatedType = underlyingType.preannotatedType();
 
         if (!env.info.isNewClass)
@@ -5257,7 +5251,18 @@ public class Attr extends JCTree.Visitor {
 
     public void visitErroneous(JCErroneous tree) {
         if (tree.errs != null) {
-            Env<AttrContext> errEnv = env.dup(env.tree, env.info.dup());
+            WriteableScope newScope = env.info.scope;
+
+            if (env.tree instanceof JCClassDecl) {
+                Symbol fakeOwner =
+                    new MethodSymbol(BLOCK, names.empty, null,
+                        env.info.scope.owner);
+                newScope = newScope.dupUnshared(fakeOwner);
+            }
+
+            Env<AttrContext> errEnv =
+                    env.dup(env.tree,
+                            env.info.dup(newScope));
             errEnv.info.returnResult = unknownExprInfo;
             for (JCTree err : tree.errs)
                 attribTree(err, errEnv, new ResultInfo(KindSelector.ERR, pt()));

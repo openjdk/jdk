@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.TypeKind;
@@ -30,6 +29,8 @@ import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 import java.io.FileOutputStream;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 import static java.lang.constant.ConstantDescs.*;
 
 import java.nio.file.Files;
@@ -148,7 +149,7 @@ public class Write {
               );
             for (int xi = 0; xi < 40; ++xi) {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
-                              AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
+                              ACC_PUBLIC | ACC_STATIC,
                               mb -> mb.withCode(c0 -> {
                                   java.lang.classfile.Label loopTop = c0.newLabel();
                                   java.lang.classfile.Label loopEnd = c0.newLabel();
@@ -196,7 +197,7 @@ public class Write {
               );
             for (int xi = 0; xi < 40; ++xi) {
                 cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MTD_void_StringArray,
-                              AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
+                              ACC_PUBLIC | ACC_STATIC,
                               mb -> mb.withCode(c0 -> {
                                   java.lang.classfile.Label loopTop = c0.newLabel();
                                   java.lang.classfile.Label loopEnd = c0.newLabel();

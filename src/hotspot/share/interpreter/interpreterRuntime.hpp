@@ -92,9 +92,11 @@ class InterpreterRuntime: AllStatic {
 
   static void resolve_from_cache(JavaThread* current, Bytecodes::Code bytecode);
 
-  // Used by ClassListParser.
+  // Used by ClassPrelinker
   static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
                               methodHandle& m, constantPoolHandle& pool, bool initialize_holder, TRAPS);
+  static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
+                                 constantPoolHandle& pool, TRAPS);
 
 private:
   // Statics & fields
@@ -105,6 +107,9 @@ private:
   static void resolve_invokehandle (JavaThread* current);
   static void resolve_invokedynamic(JavaThread* current);
 
+  static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
+                                           methodHandle& resolved_method,
+                                           constantPoolHandle& pool, int method_index);
  public:
   // Synchronization
   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);

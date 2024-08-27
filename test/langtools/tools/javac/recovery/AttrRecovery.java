@@ -203,4 +203,35 @@ public class AttrRecovery extends TestRunner {
         }
     }
 
+    @Test
+    public void testErroneousTarget() throws Exception {
+        String code = """
+                      public class C {
+                          public Undefined g(Undefined u) {
+                              return switch (0) {
+                                  default -> u;
+                              };
+                          }
+                      }
+                      """;
+        Path curPath = Path.of(".");
+        List<String> actual = new JavacTask(tb)
+                .options("-XDrawDiagnostics")
+                .sources(code)
+                .outdir(curPath)
+                .run(Expect.FAIL, 1)
+                .writeAll()
+                .getOutputLines(OutputKind.DIRECT);
+
+        List<String> expected = List.of(
+                "C.java:2:24: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, C, null)",
+                "C.java:2:12: compiler.err.cant.resolve.location: kindname.class, Undefined, , , (compiler.misc.location: kindname.class, C, null)",
+                "2 errors"
+        );
+
+        if (!Objects.equals(actual, expected)) {
+            error("Expected: " + expected + ", but got: " + actual);
+        }
+    }
+
 }

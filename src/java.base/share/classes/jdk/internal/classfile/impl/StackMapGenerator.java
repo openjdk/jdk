@@ -152,7 +152,7 @@ public final class StackMapGenerator {
                 dcb.methodInfo.methodName().stringValue(),
                 dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
-                ((BufWriterImpl) dcb.bytecodesBufWriter).asByteBuffer(),
+                dcb.bytecodesBufWriter.asByteBuffer(),
                 dcb.constantPool,
                 dcb.context,
                 dcb.handlers);
@@ -383,7 +383,7 @@ public final class StackMapGenerator {
     public Attribute<? extends StackMapTableAttribute> stackMapTableAttribute() {
         return frames.isEmpty() ? null : new UnboundAttribute.AdHocAttribute<>(Attributes.stackMapTable()) {
             @Override
-            public void writeBody(BufWriter b) {
+            public void writeBody(BufWriterImpl b) {
                 b.writeU2(frames.size());
                 Frame prevFrame =  new Frame(classHierarchy);
                 prevFrame.setLocalsFromArg(methodName, methodDesc, isStatic, thisType);
@@ -1046,7 +1046,7 @@ public final class StackMapGenerator {
         void setLocalsFromArg(String name, MethodTypeDesc methodDesc, boolean isStatic, Type thisKlass) {
             int localsSize = 0;
             // Pre-emptively create a locals array that encompass all parameter slots
-            checkLocal(methodDesc.parameterCount() + (isStatic ? 0 : -1));
+            checkLocal(methodDesc.parameterCount() + (isStatic ? -1 : 0));
             if (!isStatic) {
                 localsSize++;
                 if (OBJECT_INITIALIZER_NAME.equals(name) && !CD_Object.equals(thisKlass.sym)) {

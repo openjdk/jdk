@@ -26,6 +26,7 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/memTracker.hpp"
+#include "nmt/nativeCallStackPrinter.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
@@ -679,16 +680,17 @@ class PrintRegionWalker : public VirtualMemoryWalker {
 private:
   const address               _p;
   outputStream*               _st;
+  NativeCallStackPrinter      _stackprinter;
 public:
   PrintRegionWalker(const void* p, outputStream* st) :
-    _p((address)p), _st(st) { }
+    _p((address)p), _st(st), _stackprinter(st) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn) {
     if (rgn->contain_address(_p)) {
       _st->print_cr(PTR_FORMAT " in mmap'd memory region [" PTR_FORMAT " - " PTR_FORMAT "], tag %s",
         p2i(_p), p2i(rgn->base()), p2i(rgn->base() + rgn->size()), NMTUtil::flag_to_enum_name(rgn->flag()));
       if (MemTracker::tracking_level() == NMT_detail) {
-        rgn->call_stack()->print_on(_st);
+        _stackprinter.print_stack(rgn->call_stack());
         _st->cr();
       }
       return false;

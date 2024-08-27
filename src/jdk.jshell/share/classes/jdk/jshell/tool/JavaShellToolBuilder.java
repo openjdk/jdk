@@ -250,6 +250,8 @@ public interface JavaShellToolBuilder {
      * @throws Exception an unexpected fatal exception
      * @return the exit status with which the tool explicitly exited (if any),
      * otherwise 0 for success or 1 for failure
+     *
+     * @since 10
      */
     default int start(String... arguments) throws Exception {
         run(arguments);

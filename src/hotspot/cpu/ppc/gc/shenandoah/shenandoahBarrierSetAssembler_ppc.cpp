@@ -61,20 +61,6 @@ void ShenandoahBarrierSetAssembler::satb_write_barrier(MacroAssembler *masm,
   }
 }
 
-void ShenandoahBarrierSetAssembler::iu_barrier(MacroAssembler *masm,
-                                               Register val,
-                                               Register tmp1, Register tmp2,
-                                               MacroAssembler::PreservationLevel preservation_level,
-                                               DecoratorSet decorators) {
-  // IU barriers are also employed to avoid resurrection of weak references,
-  // even if Shenandoah does not operate in incremental update mode.
-  if (ShenandoahIUBarrier || ShenandoahSATBBarrier) {
-    __ block_comment("iu_barrier (shenandoahgc) {");
-    satb_write_barrier_impl(masm, decorators, noreg, noreg, val, tmp1, tmp2, preservation_level);
-    __ block_comment("} iu_barrier (shenandoahgc)");
-  }
-}
-
 void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler *masm, DecoratorSet decorators,
                                                            Register base, RegisterOrConstant ind_or_offs,
                                                            Register dst,
@@ -110,7 +96,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
 
   // Fast path: No barrier required if for every barrier type, it is either disabled or would not store
   // any useful information.
-  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahIUBarrier && !ShenandoahLoadRefBarrier) {
+  if ((!ShenandoahSATBBarrier || dest_uninitialized) && !ShenandoahLoadRefBarrier) {
     return;
   }
 
@@ -582,7 +568,11 @@ void ShenandoahBarrierSetAssembler::load_at(
 
   /* ==== Apply keep-alive barrier, if required (e.g., to inhibit weak reference resurrection) ==== */
   if (ShenandoahBarrierSet::need_keep_alive_barrier(decorators, type)) {
-    iu_barrier(masm, dst, tmp1, tmp2, preservation_level);
+    if (ShenandoahSATBBarrier) {
+      __ block_comment("keep_alive_barrier (shenandoahgc) {");
+      satb_write_barrier_impl(masm, 0, noreg, noreg, dst, tmp1, tmp2, preservation_level);
+      __ block_comment("} keep_alive_barrier (shenandoahgc)");
+    }
   }
 }
 
@@ -596,10 +586,6 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler *masm, DecoratorSet 
   if (is_reference_type(type)) {
     if (ShenandoahSATBBarrier) {
       satb_write_barrier(masm, base, ind_or_offs, tmp1, tmp2, tmp3, preservation_level);
-    }
-
-    if (ShenandoahIUBarrier && val != noreg) {
-      iu_barrier(masm, val, tmp1, tmp2, preservation_level, decorators);
     }
   }
 

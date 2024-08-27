@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,7 @@ public class JavaBaseTest {
                 modAttr1.provides());
         Path modInfo = base.resolve("test-modules").resolve("module-info.class");
         Files.createDirectories(modInfo.getParent());
-        byte[] newBytes = ClassFile.of().transform(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
+        byte[] newBytes = ClassFile.of().transformClass(cm1, ClassTransform.dropping(ce -> ce instanceof ModuleAttribute).
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modAttr2))));
         try (OutputStream out = Files.newOutputStream(modInfo)) {
             out.write(newBytes);

@@ -322,7 +322,7 @@ void Method::mask_for(const methodHandle& this_mh, int bci, InterpreterOopMap* m
 }
 
 int Method::bci_from(address bcp) const {
-  if (is_native() && bcp == 0) {
+  if (is_native() && bcp == nullptr) {
     return 0;
   }
   // Do not have a ResourceMark here because AsyncGetCallTrace stack walking code
@@ -345,7 +345,7 @@ int Method::validate_bci(int bci) const {
 int Method::validate_bci_from_bcp(address bcp) const {
   // keep bci as -1 if not a valid bci
   int bci = -1;
-  if (bcp == 0 || bcp == code_base()) {
+  if (bcp == nullptr || bcp == code_base()) {
     // code_size() may return 0 and we allow 0 here
     // the method may be native
     bci = 0;
@@ -1733,7 +1733,7 @@ void Method::sort_methods(Array<Method*>* methods, bool set_idnums, method_compa
     }
     {
       NoSafepointVerifier nsv;
-      QuickSort::sort(methods->data(), length, func, /*idempotent=*/false);
+      QuickSort::sort(methods->data(), length, func);
     }
     // Reset method ordering
     if (set_idnums) {
