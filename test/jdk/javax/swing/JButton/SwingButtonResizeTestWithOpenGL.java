@@ -52,6 +52,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * a JButton.  A file image of the component will be saved before and after
  * window resize. The test passes if both button images are the same.
  * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.xrender=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.xrender=true SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.d3d=false SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.d3d=true SwingButtonResizeTestWithOpenGL
+ * @run main/othervm -Dsun.java2d.metal=false SwingButtonResizeTestWithOpenGL
  * @run main/othervm SwingButtonResizeTestWithOpenGL
  */
 
