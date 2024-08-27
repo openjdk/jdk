@@ -29,13 +29,11 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
-import java.util.stream.Stream;
 
 import jdk.test.lib.util.JarUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -66,14 +64,6 @@ public class JarLoaderCloseTest {
         Files.writeString(TEST_SCRATCH_DIR.resolve(RESOURCE_NAME), RESOURCE_CONTENT);
     }
 
-    static Stream<Arguments> malformedClassPaths() {
-        return Stream.of(
-                Arguments.of("C:\\foo\\bar\\hello/world.jar lib2.jar"),
-                Arguments.of("C:/hello/world/foo.jar"),
-                Arguments.of("lib4.jar C:\\bar\\foo\\world/hello.jar")
-        );
-    }
-
     /*
      * Creates a JAR file with a manifest which has a Class-Path entry value with malformed URLs.
      * Then uses a URLClassLoader backed by the JAR file in its classpath, loads some resource,
@@ -81,7 +71,11 @@ public class JarLoaderCloseTest {
      * from the filesystem.
      */
     @ParameterizedTest
-    @MethodSource("malformedClassPaths")
+    @ValueSource(strings = {
+            "C:\\foo\\bar\\hello/world.jar lib2.jar",
+            "C:/hello/world/foo.jar",
+            "lib4.jar C:\\bar\\foo\\world/hello.jar"
+    })
     public void testMalformedClassPathEntry(final String classPathValue) throws Exception {
         final Manifest manifest = createManifestWithClassPath(classPathValue);
         final Path jar = Files.createTempFile(TEST_SCRATCH_DIR, "8338445", ".jar");
@@ -106,13 +100,6 @@ public class JarLoaderCloseTest {
         assertFalse(Files.exists(jar), jar + " exists even after being deleted");
     }
 
-    static Stream<Arguments> missingButParsableClassPaths() {
-        return Stream.of(
-                Arguments.of("/home/me/hello/world.jar lib9.jar"),
-                Arguments.of("lib10.jar")
-        );
-    }
-
     /*
      * Creates a JAR file with a manifest which has a Class-Path entry value with URLs
      * that are parsable but point to files that don't exist on the filesystem.
@@ -121,7 +108,10 @@ public class JarLoaderCloseTest {
      * from the filesystem.
      */
     @ParameterizedTest
-    @MethodSource("missingButParsableClassPaths")
+    @ValueSource(strings = {
+            "/home/me/hello/world.jar lib9.jar",
+            "lib10.jar"
+    })
     public void testParsableClassPathEntry(final String classPathValue) throws Exception {
         final Manifest manifest = createManifestWithClassPath(classPathValue);
         final Path jar = Files.createTempFile(TEST_SCRATCH_DIR, "8338445", ".jar");
