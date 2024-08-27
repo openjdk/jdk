@@ -73,6 +73,12 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   }
 }
 
+/*
+ * The common case, containers, we have _root == _cgroup_path, and thus set the
+ * controller path to the _mount_point. This is where the limits are exposed in
+ * the cgroup pseudo filesystem (at the leaf) and adjustment of the path won't
+ * be needed for that reason.
+ */
 bool CgroupV1Controller::needs_hierarchy_adjustment() {
   assert(_cgroup_path != nullptr, "sanity");
   return strcmp(_root, _cgroup_path) != 0;
