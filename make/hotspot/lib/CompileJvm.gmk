@@ -92,7 +92,8 @@ CFLAGS_VM_VERSION := \
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     empty-body implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers \
-    shift-negative-value unknown-pragmas
+    shift-negative-value unknown-pragmas unused-but-set-variable \
+    unused-const-variable unused-local-typedefs unused-variable
 
 DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
