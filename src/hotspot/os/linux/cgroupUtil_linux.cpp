@@ -58,6 +58,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   char* orig = os::strdup(mem->cgroup_path());
   char* cg_path = os::strdup(orig);
   char* last_slash;
+  assert(cg_path[0] == '/', "cgroup path must start with '/'");
   julong phys_mem = os::Linux::physical_memory();
   jlong limit = mem->read_memory_limit_in_bytes(phys_mem);
   bool path_iterated = false;
@@ -105,6 +106,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   char* orig = os::strdup(cpu->cgroup_path());
   char* cg_path = os::strdup(orig);
   char* last_slash;
+  assert(cg_path[0] == '/', "cgroup path must start with '/'");
   int host_cpus = os::Linux::active_processor_count();
   int cpus = CgroupUtil::processor_count(cpu, host_cpus);
   bool path_iterated = false;
