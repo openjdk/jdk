@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Thread)
-public class MathVectorizedBench {
+public class MathLoopBench {
 
     @Param({"1024", "4096", "8192", "16384"})
     int size;
