@@ -219,18 +219,28 @@ void MethodLiveness::init_basic_blocks() {
       case Bytecodes::_jsr:
         {
           assert(bytes.is_wide()==false, "sanity check");
-        }
-      case Bytecodes::_jsr_w:
-        {
+          dest = _block_map->at(bytes.get_dest());
+          assert(dest != nullptr, "branch destination must start a block.");
+          dest->add_normal_predecessor(current_block);
           // If JSR is the last bytecode in a method it is not folloed by a basic block
           if (bci + Bytecodes::length_for(code) < method_len) {
-            dest = _block_map->at(bytes.get_far_dest());
-            assert(dest != nullptr, "branch destination must start a block.");
-            dest->add_normal_predecessor(current_block);
             BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
             assert(jsrExit != nullptr, "jsr return bci must start a block.");
             jsr_exit_list->append(jsrExit);
           }
+          break;
+        }
+      case Bytecodes::_jsr_w:
+        {
+            dest = _block_map->at(bytes.get_far_dest());
+            assert(dest != nullptr, "branch destination must start a block.");
+            dest->add_normal_predecessor(current_block);
+            // If JSR is the last bytecode in a method it is not folloed by a basic block
+            if (bci + Bytecodes::length_for(code) < method_len) {
+              BasicBlock *jsrExit = _block_map->at(current_block->limit_bci());
+              assert(jsrExit != nullptr, "jsr return bci must start a block.");
+              jsr_exit_list->append(jsrExit);
+            }
           break;
         }
 
