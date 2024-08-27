@@ -383,7 +383,7 @@ public final class ConstantUtils {
                         ConstantUtils.MAX_ARRAY_TYPE_DESC_DIMENSIONS));
     }
 
-    public static String concat(String prefix, String value, String suffix) {
+    public static String concat(String prefix, Object value, String suffix) {
         return JLA.concat(prefix, value, suffix);
     }
 }

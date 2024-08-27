@@ -2639,7 +2639,7 @@ public final class System {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
 
-            public String concat(String prefix, String value, String suffix) {
+            public String concat(String prefix, Object value, String suffix) {
                 return StringConcatHelper.concat(prefix, value, suffix);
             }
 
