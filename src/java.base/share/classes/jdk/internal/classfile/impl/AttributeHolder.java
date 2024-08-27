@@ -54,7 +54,7 @@ public class AttributeHolder {
     }
 
     @SuppressWarnings("unchecked")
-    <A> A get(AttributeMapper<A> am) {
+    <A extends Attribute<A>> A get(AttributeMapper<A> am) {
         for (Attribute<?> a : attributes)
             if (a.attributeMapper() == am)
                 return (A)a;

@@ -35,6 +35,7 @@
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/continuationEntry.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/osThread.hpp"
@@ -244,10 +245,12 @@
   nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
   nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   nonstatic_field(JavaThread,                  _om_cache,                                     OMCache)                               \
+  nonstatic_field(JavaThread,                  _cont_entry,                                   ContinuationEntry*)                    \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
                                                                                                                                      \
+  nonstatic_field(ContinuationEntry,           _pin_count,                                    uint32_t)                              \
   nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
   JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \

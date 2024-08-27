@@ -116,51 +116,45 @@ public:
   // Return true if this split info is valid (i.e., if a split has been
   // recorded).  The very first region cannot have a partial object and thus is
   // never split, so 0 is the 'invalid' value.
-  bool is_valid() const { return _src_region_idx > 0; }
+  bool is_valid() const { return _split_region_idx > 0; }
 
   // Return true if this split holds data for the specified source region.
-  inline bool is_split(size_t source_region) const;
+  inline bool is_split(size_t region_idx) const;
 
-  // The index of the split region, the size of the partial object on that
-  // region and the destination of the partial object.
-  size_t    partial_obj_size() const { return _partial_obj_size; }
-  HeapWord* destination() const      { return _destination; }
+  // Obj at the split point doesn't fit the previous space and will be relocated to the next space.
+  HeapWord* split_point() const { return _split_point; }
 
-  // The destination count of the partial object referenced by this split
-  // (either 1 or 2).  This must be added to the destination count of the
-  // remainder of the source region.
-  unsigned int destination_count() const { return _destination_count; }
+  // Number of live words before the split point on this region.
+  size_t preceding_live_words() const { return _preceding_live_words; }
 
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of the destination region;
-  // otherwise this is null.
-  HeapWord* dest_region_addr() const     { return _dest_region_addr; }
+  // A split region has two "destinations", living in two spaces. This method
+  // returns the first one -- destination for the first live word on
+  // this split region.
+  HeapWord* preceding_destination() const {
+    assert(_preceding_destination != nullptr, "inv");
+    return _preceding_destination;
+  }
 
-  // If a word within the partial object will be written to the first word of a
-  // destination region, this is the address of that word within the partial
-  // object; otherwise this is null.
-  HeapWord* first_src_addr() const       { return _first_src_addr; }
+  // Number of regions the preceding live words are relocated into.
+  uint preceding_destination_count() const { return _preceding_destination_count; }
 
-  // Record the data necessary to split the region src_region_idx.
-  void record(size_t src_region_idx, size_t partial_obj_size,
-              HeapWord* destination);
+  void record(size_t split_region_idx, HeapWord* split_point, size_t preceding_live_words);
 
   void clear();
 
   DEBUG_ONLY(void verify_clear();)
 
 private:
-  size_t       _src_region_idx;
-  size_t       _partial_obj_size;
-  HeapWord*    _destination;
-  unsigned int _destination_count;
-  HeapWord*    _dest_region_addr;
-  HeapWord*    _first_src_addr;
+  size_t       _split_region_idx;
+  HeapWord*    _split_point;
+  size_t       _preceding_live_words;
+  HeapWord*    _preceding_destination;
+  uint         _preceding_destination_count;
 };
 
 inline bool SplitInfo::is_split(size_t region_idx) const
 {
-  return _src_region_idx == region_idx && is_valid();
+  return _split_region_idx == region_idx && is_valid();
 }
 
 class SpaceInfo
@@ -215,10 +209,18 @@ public:
   class RegionData
   {
   public:
-    // Destination address of the region.
+    // Destination for the first live word in this region.
+    // Therefore, the new addr for every live obj on this region can be calculated as:
+    //
+    // new_addr := _destination + live_words_offset(old_addr);
+    //
+    // where, live_words_offset is the number of live words accumulated from
+    // region-start to old_addr.
     HeapWord* destination() const { return _destination; }
 
-    // The first region containing data destined for this region.
+    // A destination region can have multiple source regions; only the first
+    // one is recorded. Since all live objs are slided down, subsequent source
+    // regions can be found via plain heap-region iteration.
     size_t source_region() const { return _source_region; }
 
     // Reuse _source_region to store the corresponding shadow region index
@@ -313,8 +315,11 @@ public:
     // Return to the normal path here
     inline void shadow_to_normal();
 
-
     int shadow_state() { return _shadow_state; }
+
+    bool is_clear();
+
+    void verify_clear() NOT_DEBUG_RETURN;
 
   private:
     // The type used to represent object sizes within a region.
@@ -873,7 +878,10 @@ public:
   size_t    words_remaining()    const { return _words_remaining; }
   bool      is_full()            const { return _words_remaining == 0; }
   HeapWord* source()             const { return _source; }
-  void      set_source(HeapWord* addr) { _source = addr; }
+  void      set_source(HeapWord* addr) {
+    assert(addr != nullptr, "precondition");
+    _source = addr;
+  }
 
   // If the object will fit (size <= words_remaining()), copy it to the current
   // destination, update the interior oops and the start array.
@@ -902,9 +910,8 @@ inline size_t MoveAndUpdateClosure::calculate_words_remaining(size_t region) {
   HeapWord* dest_addr = PSParallelCompact::summary_data().region_to_addr(region);
   PSParallelCompact::SpaceId dest_space_id = PSParallelCompact::space_id(dest_addr);
   HeapWord* new_top = PSParallelCompact::new_top(dest_space_id);
-  assert(dest_addr < new_top, "sanity");
-
-  return MIN2(pointer_delta(new_top, dest_addr), ParallelCompactData::RegionSize);
+  return MIN2(pointer_delta(new_top, dest_addr),
+              ParallelCompactData::RegionSize);
 }
 
 inline

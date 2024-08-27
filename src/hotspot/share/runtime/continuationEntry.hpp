@@ -39,6 +39,7 @@ class RegisterMap;
 
 // Metadata stored in the continuation entry frame
 class ContinuationEntry {
+  friend class JVMCIVMStructs;
   ContinuationEntryPD _pd;
 #ifdef ASSERT
 private:
@@ -78,7 +79,7 @@ private:
 #else
   int32_t   _parent_held_monitor_count;
 #endif
-  uint _pin_count;
+  uint32_t _pin_count;
 
 public:
   static ByteSize parent_offset()   { return byte_offset_of(ContinuationEntry, _parent); }
@@ -108,7 +109,7 @@ public:
 
   bool is_pinned() { return _pin_count > 0; }
   bool pin() {
-    if (_pin_count == UINT_MAX) return false;
+    if (_pin_count == UINT32_MAX) return false;
     _pin_count++;
     return true;
   }
