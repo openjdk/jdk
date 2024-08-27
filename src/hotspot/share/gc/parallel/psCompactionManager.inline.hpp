@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,13 +117,17 @@ inline void follow_array_specialized(objArrayOop obj, int index, ParCompactionMa
   assert(beg_index < len || len == 0, "index too large");
 
   const size_t stride = MIN2(len - beg_index, (size_t)ObjArrayMarkingStride);
-  const size_t end_index = beg_index + stride;
+  size_t end_index = beg_index + stride;
   T* const base = (T*)obj->base();
   T* const beg = base + beg_index;
   T* const end = base + end_index;
 
-  if (end_index < len) {
-    cm->push_objarray(obj, end_index); // Push the continuation.
+  if (index == 0) {
+    // Breakup remaining and push to the task queue
+    while (end_index < len) {
+      cm->push_objarray(obj, end_index);
+      end_index += (size_t)ObjArrayMarkingStride;
+    }
   }
 
   // Push the non-null elements of the next stride on the marking stack.
