@@ -1202,6 +1202,10 @@ public final class StringConcatFactory {
          * Returns null if no such parameter exists or CompactStrings is off.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
+            if (JLA.stringInitCoder() != 0) {
+                return null;
+            }
+
             int parameterCount = concatArgs.parameterCount();
 
             int maybeUTF16Count = 0;
