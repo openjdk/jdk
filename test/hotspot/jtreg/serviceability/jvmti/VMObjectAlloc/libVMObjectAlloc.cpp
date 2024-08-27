@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -34,24 +35,6 @@ static bool is_vm_dead = false;
 
 static int number_of_allocation = 0;
 
-struct MonitorLock {
-  MonitorLock() {
-    jvmtiError err = jvmti->RawMonitorEnter(event_mon);
-    if (err != JVMTI_ERROR_NONE) {
-      printf("RawMonitorEnter returned error: %d\n", err);
-      abort();
-    }
-  }
-
-  ~MonitorLock() {
-    jvmtiError err = jvmti->RawMonitorExit(event_mon);
-    if (err != JVMTI_ERROR_NONE) {
-      printf("RawMonitorExit returned error: %d\n", err);
-      abort();
-    }
-  }
-};
-
 extern JNIEXPORT void JNICALL
 VMObjectAlloc(jvmtiEnv *jvmti,
               JNIEnv* jni,
@@ -59,7 +42,7 @@ VMObjectAlloc(jvmtiEnv *jvmti,
               jobject object,
               jclass cls,
               jlong size) {
-  MonitorLock lock;
+  RawMonitorLocker locker(jvmti, jni, event_mon);
   if (is_vm_dead) {
     return;
   }
@@ -79,7 +62,7 @@ VMObjectAlloc(jvmtiEnv *jvmti,
 
 static void JNICALL
 VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
-  MonitorLock lock;
+  RawMonitorLocker locker(jvmti, jni, event_mon);
 
   printf("VMDeath\n");
   is_vm_dead = true;

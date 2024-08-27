@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
@@ -50,24 +51,6 @@ static bool is_vm_dead = false;
     jni->FatalError(msg); \
     return; \
   }
-
-struct MonitorLock {
-  MonitorLock() {
-    jvmtiError err = jvmti->RawMonitorEnter(event_mon);
-    if (err != JVMTI_ERROR_NONE) {
-      LOG1("RawMonitorEnter returned error: %d\n", err);
-      abort();
-    }
-  }
-
-  ~MonitorLock() {
-    jvmtiError err = jvmti->RawMonitorExit(event_mon);
-    if (err != JVMTI_ERROR_NONE) {
-      LOG1("RawMonitorExit returned error: %d\n", err);
-      abort();
-    }
-  }
-};
 
 /* Return the jmethodID of j.l.Class.isHidden() method. */
 static jmethodID
@@ -276,7 +259,7 @@ static void process_class_event(jvmtiEnv* jvmti, JNIEnv* jni, jclass klass,
   char* gsig = nullptr;
   jvmtiError err;
 
-  MonitorLock lock;
+  RawMonitorLocker locker(jvmti, jni, event_mon);
   if (is_vm_dead) {
     return;
   }
@@ -330,7 +313,7 @@ VMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 
 static void JNICALL
 VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
-  MonitorLock lock;
+  RawMonitorLocker locker(jvmti, jni, event_mon);
 
   LOG0("VMDeath\n");
   is_vm_dead = true;
