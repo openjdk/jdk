@@ -46,6 +46,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import jdk.internal.access.JavaLangReflectAccess;
+import jdk.internal.access.JavaObjectStreamDefaultSupportAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.vm.annotation.Stable;
@@ -73,8 +74,10 @@ public class ReflectionFactory {
     private static volatile Method hasStaticInitializerMethod;
 
     private final JavaLangReflectAccess langReflectAccess;
+    private final JavaObjectStreamDefaultSupportAccess javaObjectStreamDefaultSupportAccess;
     private ReflectionFactory() {
         this.langReflectAccess = SharedSecrets.getJavaLangReflectAccess();
+        this.javaObjectStreamDefaultSupportAccess = SharedSecrets.getJavaObjectStreamDefaultSupportAccess();
     }
 
     /**
@@ -439,7 +442,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return SerializationBytecodeGenerator.defaultReadObjectForSerialization(cl);
+        return javaObjectStreamDefaultSupportAccess.defaultReadObject(cl);
     }
 
     public final MethodHandle defaultWriteObjectForSerialization(Class<?> cl) {
@@ -447,7 +450,7 @@ public class ReflectionFactory {
             return null;
         }
 
-        return SerializationBytecodeGenerator.defaultWriteObjectForSerialization(cl);
+        return javaObjectStreamDefaultSupportAccess.defaultWriteObject(cl);
     }
 
     public final ObjectStreamField[] serialPersistentFields(Class<?> cl) {

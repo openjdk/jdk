@@ -73,6 +73,7 @@ public class SharedSecrets {
     private static JavaObjectInputStreamReadString javaObjectInputStreamReadString;
     private static JavaObjectInputStreamAccess javaObjectInputStreamAccess;
     private static JavaObjectInputFilterAccess javaObjectInputFilterAccess;
+    private static JavaObjectStreamDefaultSupportAccess javaObjectStreamDefaultSupportAccess;
     private static JavaNetInetAddressAccess javaNetInetAddressAccess;
     private static JavaNetHttpCookieAccess javaNetHttpCookieAccess;
     private static JavaNetUriAccess javaNetUriAccess;
@@ -451,6 +452,21 @@ public class SharedSecrets {
 
     public static void setJavaObjectInputFilterAccess(JavaObjectInputFilterAccess access) {
         javaObjectInputFilterAccess = access;
+    }
+
+    public static JavaObjectStreamDefaultSupportAccess getJavaObjectStreamDefaultSupportAccess() {
+        var access = javaObjectStreamDefaultSupportAccess;
+        if (access == null) {
+            try {
+                Class.forName("java.io.ObjectStreamDefaultSupport$Access", true, null);
+                access = javaObjectStreamDefaultSupportAccess;
+            } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJavaObjectStreamDefaultSupportAccess(JavaObjectStreamDefaultSupportAccess access) {
+        javaObjectStreamDefaultSupportAccess = access;
     }
 
     public static void setJavaIORandomAccessFileAccess(JavaIORandomAccessFileAccess jirafa) {
