@@ -118,7 +118,7 @@ public:
                             MetaspaceObj::Type type);
 
   // Returns true if the pointer points into class space, non-class metaspace, or the
-  // Klass portion of the CDS archive.
+  // metadata portion of the CDS archive.
   static bool contains(const void* ptr) {
     return is_in_shared_metaspace(ptr) || // in cds
            is_in_class_space(ptr) ||      // in class space
