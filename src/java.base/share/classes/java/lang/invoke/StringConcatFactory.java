@@ -1215,7 +1215,7 @@ public final class StringConcatFactory {
                 }
             }
 
-            if (maybeUTF16Count == 0 || JLA.stringInitCoder() != 0) {
+            if (maybeUTF16Count == 0) {
                 return null;
             }
 
