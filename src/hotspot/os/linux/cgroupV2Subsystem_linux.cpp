@@ -275,7 +275,7 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
-void CgroupV2Controller::set_subsystem_path(char* cgroup_path) {
+void CgroupV2Controller::set_subsystem_path(const char* cgroup_path) {
   if (_path != nullptr) {
     os::free(_path);
   }
@@ -295,7 +295,7 @@ void CgroupV2MemoryController::print_version_specific_info(outputStream* st, jul
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
 }
 
-char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
+char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_path) {
   stringStream ss;
   ss.print_raw(mount_path);
   if (strcmp(cgroup_path, "/") != 0) {

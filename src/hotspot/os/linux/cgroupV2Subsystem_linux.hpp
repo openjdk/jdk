@@ -34,7 +34,7 @@ class CgroupV2Controller: public CgroupController {
 
     /* Constructed full path to the subsystem directory */
     char *_path;
-    static char* construct_path(char* mount_path, char *cgroup_path);
+    static char* construct_path(char* mount_path, const char *cgroup_path);
 
   public:
     CgroupV2Controller(char* mount_path,
@@ -58,7 +58,7 @@ class CgroupV2Controller: public CgroupController {
     char* subsystem_path() override { return _path; }
     bool needs_hierarchy_adjustment() override;
     // Allow for optional updates of the subsystem path
-    void set_subsystem_path(char* cgroup_path);
+    void set_subsystem_path(const char* cgroup_path);
     bool is_read_only() override { return _read_only; }
 };
 
@@ -81,7 +81,7 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
     char* mount_point() { return reader()->mount_point(); }
@@ -114,7 +114,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
     char* mount_point() { return reader()->mount_point(); }

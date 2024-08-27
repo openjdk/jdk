@@ -38,7 +38,7 @@
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
  */
-void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
+void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
     os::free(_cgroup_path);
   }
@@ -59,7 +59,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         ss.print_raw(_mount_point);
         _path = os::strdup(ss.base());
       } else {
-        char *p = strstr(cgroup_path, _root);
+        char *p = strstr((char*)cgroup_path, _root);
         if (p != nullptr && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
             ss.print_raw(_mount_point);

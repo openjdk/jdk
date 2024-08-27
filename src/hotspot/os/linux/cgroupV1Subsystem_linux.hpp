@@ -62,7 +62,7 @@ class CgroupV1Controller: public CgroupController {
       // names
     }
 
-    void set_subsystem_path(char *cgroup_path);
+    void set_subsystem_path(const char *cgroup_path);
     char* subsystem_path() override { return _path; }
     bool is_read_only() override { return _read_only; }
     bool needs_hierarchy_adjustment() override;
@@ -74,7 +74,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
   public:
-    void set_subsystem_path(char *cgroup_path) override {
+    void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
@@ -118,7 +118,7 @@ class CgroupV1CpuController final : public CgroupCpuController {
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
-    void set_subsystem_path(char *cgroup_path) override {
+    void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     bool is_read_only() override {

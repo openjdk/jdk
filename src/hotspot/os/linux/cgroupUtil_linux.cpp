@@ -77,7 +77,7 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   // no lower limit found or limit at leaf
   os::free(cg_path);
   if (path_iterated) {
-    mem->set_subsystem_path((char*)"/");
+    mem->set_subsystem_path("/");
     limit = mem->read_memory_limit_in_bytes(phys_mem);
     if (limit > 0) {
       // handle limit set at mount point
@@ -111,7 +111,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   while (cpus == host_cpus && (last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
-    cpu->set_subsystem_path((char*)cg_path);
+    cpu->set_subsystem_path(cg_path);
     cpus = CgroupUtil::processor_count(cpu, host_cpus);
     path_iterated = true;
     if (cpus != host_cpus) {
@@ -124,7 +124,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   // no lower limit found or limit at leaf
   os::free(cg_path);
   if (path_iterated) {
-    cpu->set_subsystem_path((char*)"/");
+    cpu->set_subsystem_path("/");
     cpus = CgroupUtil::processor_count(cpu, host_cpus);
     if (cpus != host_cpus) {
       // handle limit set at mount point

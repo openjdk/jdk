@@ -211,7 +211,7 @@ class CgroupCpuController: public CHeapObj<mtInternal> {
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
     virtual char* subsystem_path() = 0;
-    virtual void set_subsystem_path(char* cgroup_path) = 0;
+    virtual void set_subsystem_path(const char* cgroup_path) = 0;
     virtual char* mount_point() = 0;
     virtual char* cgroup_path() = 0;
 };
@@ -231,7 +231,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
     virtual bool needs_hierarchy_adjustment() = 0;
     virtual bool is_read_only() = 0;
     virtual char* subsystem_path() = 0;
-    virtual void set_subsystem_path(char* cgroup_path) = 0;
+    virtual void set_subsystem_path(const char* cgroup_path) = 0;
     virtual char* mount_point() = 0;
     virtual char* cgroup_path() = 0;
 };
