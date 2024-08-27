@@ -295,12 +295,12 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   }
 
   Node* divisor = n->in(2);
-  return is_divisor_counted_loop_phi(divisor, region) &&
+  return is_divisor_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
 }
 
-bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
-  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+bool PhaseIdealLoop::is_divisor_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_Loop() && divisor->is_Phi() && divisor->in(0) == loop;
 }
 
 bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {

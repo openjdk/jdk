@@ -3167,7 +3167,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   // Make a runtime call, which can safepoint, to return the leased buffer. This updates both the JfrThreadLocal and the Java event writer oop.
   Node* call_return_lease = make_runtime_call(RC_NO_LEAF,
                                               OptoRuntime::void_void_Type(),
-                                              StubRoutines::jfr_return_lease(),
+                                              SharedRuntime::jfr_return_lease(),
                                               "return_lease", TypePtr::BOTTOM);
   Node* call_return_lease_control = _gvn.transform(new ProjNode(call_return_lease, TypeFunc::Control));
 
@@ -3366,7 +3366,7 @@ bool LibraryCallKit::inline_native_getEventWriter() {
   // The call also updates the native thread local thread id and the vthread with the current epoch.
   Node* call_write_checkpoint = make_runtime_call(RC_NO_LEAF,
                                                   OptoRuntime::jfr_write_checkpoint_Type(),
-                                                  StubRoutines::jfr_write_checkpoint(),
+                                                  SharedRuntime::jfr_write_checkpoint(),
                                                   "write_checkpoint", TypePtr::BOTTOM);
   Node* call_write_checkpoint_control = _gvn.transform(new ProjNode(call_write_checkpoint, TypeFunc::Control));
 
@@ -4604,21 +4604,23 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  // Test the header to see if it is safe to read w.r.t. locking.
-  Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
-  Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
-    Node *chk_monitor   = _gvn.transform(new CmpXNode(lmasked_header, monitor_val));
-    Node *test_monitor  = _gvn.transform(new BoolNode(chk_monitor, BoolTest::eq));
+  if (!UseObjectMonitorTable) {
+    // Test the header to see if it is safe to read w.r.t. locking.
+    Node *lock_mask      = _gvn.MakeConX(markWord::lock_mask_in_place);
+    Node *lmasked_header = _gvn.transform(new AndXNode(header, lock_mask));
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      Node *monitor_val   = _gvn.MakeConX(markWord::monitor_value);
+      Node *chk_monitor   = _gvn.transform(new CmpXNode(lmasked_header, monitor_val));
+      Node *test_monitor  = _gvn.transform(new BoolNode(chk_monitor, BoolTest::eq));
 
-    generate_slow_guard(test_monitor, slow_region);
-  } else {
-    Node *unlocked_val      = _gvn.MakeConX(markWord::unlocked_value);
-    Node *chk_unlocked      = _gvn.transform(new CmpXNode(lmasked_header, unlocked_val));
-    Node *test_not_unlocked = _gvn.transform(new BoolNode(chk_unlocked, BoolTest::ne));
+      generate_slow_guard(test_monitor, slow_region);
+    } else {
+      Node *unlocked_val      = _gvn.MakeConX(markWord::unlocked_value);
+      Node *chk_unlocked      = _gvn.transform(new CmpXNode(lmasked_header, unlocked_val));
+      Node *test_not_unlocked = _gvn.transform(new BoolNode(chk_unlocked, BoolTest::ne));
 
-    generate_slow_guard(test_not_unlocked, slow_region);
+      generate_slow_guard(test_not_unlocked, slow_region);
+    }
   }
 
   // Get the hash value and check to see that it has been properly assigned.

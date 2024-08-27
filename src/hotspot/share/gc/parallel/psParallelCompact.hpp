@@ -374,9 +374,6 @@ public:
                  HeapWord** target_next);
 
   void clear_range(size_t beg_region, size_t end_region);
-  void clear_range(HeapWord* beg, HeapWord* end) {
-    clear_range(addr_to_region_idx(beg), addr_to_region_idx(end));
-  }
 
   // Return the number of words between addr and the start of the region
   // containing addr.
