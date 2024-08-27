@@ -538,6 +538,8 @@ void MetaspaceGC::compute_new_size() {
 //////  Metaspace methods /////
 
 const MetaspaceTracer* Metaspace::_tracer = nullptr;
+const void* Metaspace::_class_space_start = nullptr;
+const void* Metaspace::_class_space_end = nullptr;
 
 bool Metaspace::initialized() {
   return metaspace::MetaspaceContext::context_nonclass() != nullptr
@@ -570,6 +572,8 @@ void Metaspace::initialize_class_space(ReservedSpace rs) {
          "wrong alignment");
 
   MetaspaceContext::initialize_class_space_context(rs);
+  _class_space_start = rs.base();
+  _class_space_end = rs.end();
 }
 
 // Returns true if class space has been setup (initialize_class_space).
@@ -893,20 +897,22 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
   // If result is still null, we are out of memory.
-  Log(gc, metaspace, freelist, oom) log;
-  if (log.is_info()) {
-    log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
-             is_class_space_allocation(mdtype) ? "class" : "data", word_size);
-    ResourceMark rm;
-    if (log.is_debug()) {
-      if (loader_data->metaspace_or_null() != nullptr) {
-        LogStream ls(log.debug());
-        loader_data->print_value_on(&ls);
+  {
+    LogMessage(gc, metaspace, freelist, oom) log;
+    if (log.is_info()) {
+      log.info("Metaspace (%s) allocation failed for size " SIZE_FORMAT,
+               is_class_space_allocation(mdtype) ? "class" : "data", word_size);
+      ResourceMark rm;
+      if (log.is_debug()) {
+        if (loader_data->metaspace_or_null() != nullptr) {
+          NonInterleavingLogStream ls(LogLevelType::Debug, log);
+          loader_data->print_value_on(&ls);
+        }
       }
+      NonInterleavingLogStream ls(LogLevelType::Info, log);
+      // In case of an OOM, log out a short but still useful report.
+      MetaspaceUtils::print_basic_report(&ls, 0);
     }
-    LogStream ls(log.info());
-    // In case of an OOM, log out a short but still useful report.
-    MetaspaceUtils::print_basic_report(&ls, 0);
   }
 
   bool out_of_compressed_class_space = false;
@@ -977,17 +983,15 @@ void Metaspace::purge(bool classes_unloaded) {
   MetaspaceCriticalAllocation::process();
 }
 
-bool Metaspace::contains(const void* ptr) {
-  if (MetaspaceShared::is_in_shared_metaspace(ptr)) {
-    return true;
-  }
-  return contains_non_shared(ptr);
+
+// Returns true if pointer points into one of the metaspace regions, or
+// into the class space.
+bool Metaspace::is_in_shared_metaspace(const void* ptr) {
+  return MetaspaceShared::is_in_shared_metaspace(ptr);
 }
 
-bool Metaspace::contains_non_shared(const void* ptr) {
-  if (using_class_space() && VirtualSpaceList::vslist_class()->contains((MetaWord*)ptr)) {
-     return true;
-  }
-
+// Returns true if pointer points into one of the non-class-space metaspace regions.
+bool Metaspace::is_in_nonclass_metaspace(const void* ptr) {
   return VirtualSpaceList::vslist_nonclass()->contains((MetaWord*)ptr);
 }
+

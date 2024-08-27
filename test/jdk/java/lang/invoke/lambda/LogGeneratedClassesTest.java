@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.function.Predicate;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.FileStore;
 import java.nio.file.attribute.PosixFileAttributeView;
 
 import jdk.test.lib.compiler.CompilerUtils;
@@ -47,6 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import static java.nio.file.attribute.PosixFilePermissions.*;
 import static jdk.test.lib.process.ProcessTools.*;
@@ -207,15 +209,15 @@ public class LogGeneratedClassesTest {
 
     @Test
     public void testDumpDirNotWritable() throws Exception {
-        if (!Files.getFileStore(Paths.get("."))
-                  .supportsFileAttributeView(PosixFileAttributeView.class)) {
+        FileStore fs;
+        try {
+            fs = Files.getFileStore(Paths.get("."));
+        } catch (IOException e) {
+            throw new SkipException("WARNING: IOException occurred: " + e + ", Skipping testDumpDirNotWritable test.");
+        }
+        if (!fs.supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
-            // We would like to skip the test with a cause with
-            //     throw new SkipException("Posix not supported");
-            // but jtreg will report failure so we just pass the test
-            // which we can look at if jtreg changed its behavior
-            System.out.println("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
-            return;
+            throw new SkipException("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
         }
 
         Path testDir = Path.of("readOnly");
@@ -227,8 +229,7 @@ public class LogGeneratedClassesTest {
             if (isWriteableDirectory(dumpDir)) {
                 // Skipping the test: it's allowed to write into read-only directory
                 // (e.g. current user is super user).
-                System.out.println("WARNING: The dump directory is writeable. Skipping testDumpDirNotWritable test.");
-                return;
+                throw new SkipException("WARNING: The dump directory is writeable. Skipping testDumpDirNotWritable test.");
             }
 
             ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
