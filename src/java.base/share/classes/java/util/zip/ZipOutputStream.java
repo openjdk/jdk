@@ -62,11 +62,11 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
     private static class XEntry {
         final ZipEntry entry;
         final long offset;
-        final int flags;
-        public XEntry(ZipEntry entry, long offset, int flags) {
+        final int flag;
+        public XEntry(ZipEntry entry, long offset, int flag) {
             this.entry = entry;
             this.offset = offset;
-            this.flags = flags;
+            this.flag = flag;
         }
     }
 
@@ -286,7 +286,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
                         while (!def.finished()) {
                             deflate();
                         }
-                        if ((current.flags & 8) == 0) {
+                        if ((current.flag & 8) == 0) {
                             // verify size, compressed size, and crc-32 settings
                             if (e.size != def.getBytesRead()) {
                                 throw new ZipException(
@@ -416,7 +416,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      */
     private void writeLOC(XEntry xentry) throws IOException {
         ZipEntry e = xentry.entry;
-        int flag = xentry.flags;
+        int flag = xentry.flag;
         boolean hasZip64 = false;
         int elen = getExtraLen(e.extra);
 
@@ -553,7 +553,7 @@ public class ZipOutputStream extends DeflaterOutputStream implements ZipConstant
      */
     private void writeCEN(XEntry xentry) throws IOException {
         ZipEntry e  = xentry.entry;
-        int flag = xentry.flags;
+        int flag = xentry.flag;
         int version = version(e);
         long csize = e.csize;
         long size = e.size;
