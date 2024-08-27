@@ -192,6 +192,21 @@ jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   }
 }
 
+// Constructor
+CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
+                      CgroupV1CpuController* cpu,
+                      CgroupV1Controller* cpuacct,
+                      CgroupV1Controller* pids,
+                      CgroupV1MemoryController* memory) :
+    _cpuset(cpuset),
+    _cpuacct(cpuacct),
+    _pids(pids) {
+  CgroupUtil::adjust_controller(memory);
+  CgroupUtil::adjust_controller(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+}
+
 bool CgroupV1Subsystem::is_containerized() {
   // containerized iff all required controllers are mounted
   // read-only. See OSContainer::is_containerized() for

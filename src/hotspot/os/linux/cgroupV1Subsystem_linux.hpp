@@ -143,6 +143,12 @@ class CgroupV1CpuController final : public CgroupCpuController {
 class CgroupV1Subsystem: public CgroupSubsystem {
 
   public:
+    CgroupV1Subsystem(CgroupV1Controller* cpuset,
+                      CgroupV1CpuController* cpu,
+                      CgroupV1Controller* cpuacct,
+                      CgroupV1Controller* pids,
+                      CgroupV1MemoryController* memory);
+
     jlong kernel_memory_usage_in_bytes();
     jlong kernel_memory_limit_in_bytes();
     jlong kernel_memory_max_usage_in_bytes();
@@ -168,20 +174,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CgroupV1Controller* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 
-  public:
-    CgroupV1Subsystem(CgroupV1Controller* cpuset,
-                      CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
-                      CgroupV1Controller* pids,
-                      CgroupV1MemoryController* memory) :
-      _cpuset(cpuset),
-      _cpuacct(cpuacct),
-      _pids(pids) {
-      CgroupUtil::adjust_controller(memory);
-      CgroupUtil::adjust_controller(cpu);
-      _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-      _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
-    }
 };
 
 #endif // CGROUP_V1_SUBSYSTEM_LINUX_HPP

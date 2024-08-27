@@ -95,6 +95,17 @@ int CgroupV2CpuController::cpu_quota() {
   return limit;
 }
 
+// Constructor
+CgroupV2Subsystem::CgroupV2Subsystem(CgroupV2MemoryController * memory,
+                                     CgroupV2CpuController* cpu,
+                                     CgroupV2Controller unified) :
+                                     _unified(unified) {
+  CgroupUtil::adjust_controller(memory);
+  CgroupUtil::adjust_controller(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
+}
+
 bool CgroupV2Subsystem::is_containerized() {
   return _unified.is_read_only() &&
          _memory->controller()->is_read_only() &&

@@ -134,13 +134,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
   public:
     CgroupV2Subsystem(CgroupV2MemoryController * memory,
                       CgroupV2CpuController* cpu,
-                      CgroupV2Controller unified) :
-                         _unified(unified) {
-      CgroupUtil::adjust_controller(memory);
-      CgroupUtil::adjust_controller(cpu);
-      _memory = new CachingCgroupController<CgroupMemoryController>(memory);
-      _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
-    }
+                      CgroupV2Controller unified);
 
     char * cpu_cpuset_cpus() override;
     char * cpu_cpuset_memory_nodes() override;
