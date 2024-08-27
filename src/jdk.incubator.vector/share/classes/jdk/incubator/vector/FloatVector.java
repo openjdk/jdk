@@ -525,6 +525,19 @@ public abstract class FloatVector extends AbstractVector<Float> {
         return r;
     }
 
+    static FloatVector selectFromHelper(Vector<Float> v1, Vector<Float> v2, Vector<Float> v3) {
+        int vlen = v1.length();
+        float[] res = new float[vlen];
+        float[] vpayload1 = ((FloatVector)v1).vec();
+        float[] vpayload2 = ((FloatVector)v2).vec();
+        float[] vpayload3 = ((FloatVector)v3).vec();
+        for (int i = 0; i < vlen; i++) {
+            int index = ((int)vpayload1[i]);
+            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+        }
+        return ((FloatVector)v1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2440,9 +2453,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                                .convert(VectorOperators.I2F, 0)
                                                .reinterpretAsFloats();
         return (FloatVector)VectorSupport.selectFromTwoVectorOp(getClass(), float.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> {
-                return vec2.rearrange(vec1.toShuffle(), vec3);
-            }
+            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
         );
     }
 

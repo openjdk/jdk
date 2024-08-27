@@ -525,6 +525,19 @@ public abstract class DoubleVector extends AbstractVector<Double> {
         return r;
     }
 
+    static DoubleVector selectFromHelper(Vector<Double> v1, Vector<Double> v2, Vector<Double> v3) {
+        int vlen = v1.length();
+        double[] res = new double[vlen];
+        double[] vpayload1 = ((DoubleVector)v1).vec();
+        double[] vpayload2 = ((DoubleVector)v2).vec();
+        double[] vpayload3 = ((DoubleVector)v3).vec();
+        for (int i = 0; i < vlen; i++) {
+            int index = ((int)vpayload1[i]);
+            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+        }
+        return ((DoubleVector)v1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2428,9 +2441,7 @@ public abstract class DoubleVector extends AbstractVector<Double> {
                                                .convert(VectorOperators.I2D, 0)
                                                .reinterpretAsDoubles();
         return (DoubleVector)VectorSupport.selectFromTwoVectorOp(getClass(), double.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> {
-                return vec2.rearrange(vec1.toShuffle(), vec3);
-            }
+            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
         );
     }
 

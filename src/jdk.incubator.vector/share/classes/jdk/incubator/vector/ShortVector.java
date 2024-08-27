@@ -536,6 +536,19 @@ public abstract class ShortVector extends AbstractVector<Short> {
         return r;
     }
 
+    static ShortVector selectFromHelper(Vector<Short> v1, Vector<Short> v2, Vector<Short> v3) {
+        int vlen = v1.length();
+        short[] res = new short[vlen];
+        short[] vpayload1 = ((ShortVector)v1).vec();
+        short[] vpayload2 = ((ShortVector)v2).vec();
+        short[] vpayload3 = ((ShortVector)v3).vec();
+        for (int i = 0; i < vlen; i++) {
+            int index = ((int)vpayload1[i]);
+            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+        }
+        return ((ShortVector)v1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2583,9 +2596,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
         int twovectorlen = length() * 2;
         ShortVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
         return (ShortVector)VectorSupport.selectFromTwoVectorOp(getClass(), short.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> {
-                return vec2.rearrange(vec1.toShuffle(), vec3);
-            }
+            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
         );
     }
 

@@ -550,6 +550,19 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         return r;
     }
 
+    static $abstractvectortype$ selectFromHelper(Vector<$Boxtype$> v1, Vector<$Boxtype$> v2, Vector<$Boxtype$> v3) {
+        int vlen = v1.length();
+        $type$[] res = new $type$[vlen];
+        $type$[] vpayload1 = (($abstractvectortype$)v1).vec();
+        $type$[] vpayload2 = (($abstractvectortype$)v2).vec();
+        $type$[] vpayload3 = (($abstractvectortype$)v3).vec();
+        for (int i = 0; i < vlen; i++) {
+            int index = ((int)vpayload1[i]);
+            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+        }
+        return (($abstractvectortype$)v1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2975,9 +2988,7 @@ public abstract class $abstractvectortype$ extends AbstractVector<$Boxtype$> {
         $abstractvectortype$ wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
 #end[FP]
         return ($Type$Vector)VectorSupport.selectFromTwoVectorOp(getClass(), $type$.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> {
-                return vec2.rearrange(vec1.toShuffle(), vec3);
-            }
+            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
         );
     }
 

@@ -536,6 +536,19 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         return r;
     }
 
+    static ByteVector selectFromHelper(Vector<Byte> v1, Vector<Byte> v2, Vector<Byte> v3) {
+        int vlen = v1.length();
+        byte[] res = new byte[vlen];
+        byte[] vpayload1 = ((ByteVector)v1).vec();
+        byte[] vpayload2 = ((ByteVector)v2).vec();
+        byte[] vpayload3 = ((ByteVector)v3).vec();
+        for (int i = 0; i < vlen; i++) {
+            int index = ((int)vpayload1[i]);
+            res[i] = index >= vlen ? vpayload3[index & (vlen - 1)] : vpayload2[index];
+        }
+        return ((ByteVector)v1).vectorFactory(res);
+    }
+
     // Static factories (other than memory operations)
 
     // Note: A surprising behavior in javadoc
@@ -2582,9 +2595,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         int twovectorlen = length() * 2;
         ByteVector wrapped_indexes = this.lanewise(VectorOperators.AND, twovectorlen - 1);
         return (ByteVector)VectorSupport.selectFromTwoVectorOp(getClass(), byte.class, length(), wrapped_indexes, v1, v2,
-            (vec1, vec2, vec3) -> {
-                return vec2.rearrange(vec1.toShuffle(), vec3);
-            }
+            (vec1, vec2, vec3) -> selectFromHelper(vec1, vec2, vec3)
         );
     }
 
