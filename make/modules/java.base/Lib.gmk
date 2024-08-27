@@ -170,6 +170,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       NAME := fallbackLinker, \
       EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBFFI_CFLAGS), \
+      DISABLED_WARNINGS_gcc := implicit-function-declaration unused-variable, \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := ws2_32.lib, \
   ))
