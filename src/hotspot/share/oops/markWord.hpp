@@ -53,7 +53,8 @@
 //    [ptr             | 00]  locked             ptr points to real header on stack (stack-locking in use)
 //    [header          | 00]  locked             locked regular object header (fast-locking in use)
 //    [header          | 01]  unlocked           regular object header
-//    [ptr             | 10]  monitor            inflated lock (header is swapped out)
+//    [ptr             | 10]  monitor            inflated lock (header is swapped out, UseObjectMonitorTable == false)
+//    [header          | 10]  monitor            inflated lock (UseObjectMonitorTable == true)
 //    [ptr             | 11]  marked             used to mark an object
 //    [0 ............ 0| 00]  inflating          inflation in progress (stack-locking in use)
 //

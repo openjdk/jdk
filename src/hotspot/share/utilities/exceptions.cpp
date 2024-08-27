@@ -183,7 +183,7 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
   thread->set_pending_exception(h_exception(), file, line);
 
   // vm log
-  Events::log_exception(thread, h_exception, message, file, line);
+  Events::log_exception(thread, h_exception, message, file, line, MAX_LEN);
 }
 
 
