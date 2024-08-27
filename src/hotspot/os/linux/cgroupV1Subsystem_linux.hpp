@@ -174,13 +174,13 @@ class CgroupV1Subsystem: public CgroupSubsystem {
                       CgroupV1Controller* cpuacct,
                       CgroupV1Controller* pids,
                       CgroupV1MemoryController* memory) :
-      _memory(new CachingCgroupController<CgroupMemoryController>(
-                                         CgroupUtil::adjust_controller(memory))),
       _cpuset(cpuset),
-      _cpu(new CachingCgroupController<CgroupCpuController>(
-                                         CgroupUtil::adjust_controller(cpu))),
       _cpuacct(cpuacct),
       _pids(pids) {
+      CgroupUtil::adjust_controller(memory);
+      CgroupUtil::adjust_controller(cpu);
+      _memory = new CachingCgroupController<CgroupMemoryController>(memory);
+      _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
     }
 };
 

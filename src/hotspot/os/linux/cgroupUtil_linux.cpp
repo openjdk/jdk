@@ -48,10 +48,10 @@ int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
   return result;
 }
 
-CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
+void CgroupUtil::adjust_controller(CgroupMemoryController* mem) {
   if (!mem->needs_hierarchy_adjustment()) {
     // nothing to do
-    return mem;
+    return;
   }
   log_trace(os, container)("Adjusting controller path for memory: %s", mem->subsystem_path());
   assert(mem->cgroup_path() != nullptr, "invariant");
@@ -71,7 +71,7 @@ CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* me
       log_trace(os, container)("Adjusted controller path for memory to: %s", mem->subsystem_path());
       os::free(cg_path);
       os::free(orig);
-      return mem;
+      return;
     }
   }
   // no lower limit found or limit at leaf
@@ -83,7 +83,7 @@ CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* me
       // handle limit set at mount point
       log_trace(os, container)("Adjusted controller path for memory to: %s", mem->subsystem_path());
       os::free(orig);
-      return mem;
+      return;
     }
     log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
                               mem->mount_point(), orig);
@@ -93,13 +93,12 @@ CgroupMemoryController* CgroupUtil::adjust_controller(CgroupMemoryController* me
                               mem->subsystem_path());
   }
   os::free(orig);
-  return mem;
 }
 
-CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
+void CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
   if (!cpu->needs_hierarchy_adjustment()) {
     // nothing to do
-    return cpu;
+    return;
   }
   log_trace(os, container)("Adjusting controller path for cpu: %s", cpu->subsystem_path());
   assert(cpu->cgroup_path() != nullptr, "invariant");
@@ -119,7 +118,7 @@ CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
       log_trace(os, container)("Adjusted controller path for cpu to: %s", cpu->subsystem_path());
       os::free(cg_path);
       os::free(orig);
-      return cpu;
+      return;
     }
   }
   // no lower limit found or limit at leaf
@@ -131,7 +130,7 @@ CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
       // handle limit set at mount point
       log_trace(os, container)("Adjusted controller path for cpu to: %s", cpu->subsystem_path());
       os::free(orig);
-      return cpu;
+      return;
     }
     log_trace(os, container)("No lower limit found in hierarchy %s, adjusting to original path %s",
                               cpu->mount_point(), orig);
@@ -141,5 +140,5 @@ CgroupCpuController* CgroupUtil::adjust_controller(CgroupCpuController* cpu) {
                               cpu->subsystem_path());
   }
   os::free(orig);
-  return cpu;
+  return;
 }

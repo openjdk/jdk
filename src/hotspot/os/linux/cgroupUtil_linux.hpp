@@ -34,10 +34,10 @@ class CgroupUtil: AllStatic {
     static int processor_count(CgroupCpuController* cpu, int host_cpus);
     // Iterate over the memory controller hierarchy adjusting the path to the
     // smallest observable limit (if any)
-    static CgroupMemoryController* adjust_controller(CgroupMemoryController* m);
+    static void adjust_controller(CgroupMemoryController* m);
     // Iterate over the cpu controller hierarchy adjusting the path to the
     // smallest observable limit (if any)
-    static CgroupCpuController* adjust_controller(CgroupCpuController* c);
+    static void adjust_controller(CgroupCpuController* c);
 };
 
 #endif // CGROUP_UTIL_LINUX_HPP
