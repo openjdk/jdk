@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models a classfile attribute {@jvms 4.7}.  Many, though not all, subtypes of
+ * Models a classfile attribute (JVMS {@jvms 4.7}).  Many, though not all, subtypes of
  * {@linkplain Attribute} will implement {@link ClassElement}, {@link
  * MethodElement}, {@link FieldElement}, or {@link CodeElement}; attributes that
  * are also elements will be delivered when traversing the elements of the
@@ -78,7 +78,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * @since 24
  */
 public sealed interface Attribute<A extends Attribute<A>>
-        extends WritableElement<A>
+        extends ClassFileElement
         permits AnnotationDefaultAttribute, BootstrapMethodsAttribute,
                 CharacterRangeTableAttribute, CodeAttribute, CompilationIDAttribute,
                 ConstantValueAttribute, DeprecatedAttribute, EnclosingMethodAttribute,

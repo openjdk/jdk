@@ -261,7 +261,7 @@ void JvmtiTrace::shutdown() {
 
 
 const char* JvmtiTrace::enum_name(const char** names, const jint* values, jint value) {
-  for (int index = 0; names[index] != 0; ++index) {
+  for (int index = 0; names[index] != nullptr; ++index) {
     if (values[index] == value) {
       return names[index];
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,10 +125,10 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // Remembered sets support for the oops in the class loader data.
   bool _modified_oops;     // Card Table Equivalent
 
-  int _keep_alive;         // if this CLD is kept alive.
-                           // Used for non-strong hidden classes and the
-                           // boot class loader. _keep_alive does not need to be volatile or
-                           // atomic since there is one unique CLD per non-strong hidden class.
+  int _keep_alive_ref_count; // if this CLD should not be considered eligible for unloading.
+                             // Used for non-strong hidden classes and the
+                             // boot class loader. _keep_alive_ref_count does not need to be volatile or
+                             // atomic since there is one unique CLD per non-strong hidden class.
 
   volatile int _claim; // non-zero if claimed, for example during GC traces.
                        // To avoid applying oop closure more than once.
@@ -205,12 +205,14 @@ private:
   bool has_modified_oops()               { return _modified_oops; }
 
   oop holder_no_keepalive() const;
+  // Resolving the holder keeps this CLD alive for the current GC cycle.
   oop holder() const;
+  void keep_alive() const { (void)holder(); }
 
   void classes_do(void f(Klass* const));
 
  private:
-  bool keep_alive() const       { return _keep_alive > 0; }
+  int keep_alive_ref_count() const { return _keep_alive_ref_count; }
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -302,9 +304,10 @@ private:
     return _unloading;
   }
 
-  // Used to refcount a non-strong hidden class's s CLD in order to indicate their aliveness.
-  void inc_keep_alive();
-  void dec_keep_alive();
+  // Used to refcount a non-strong hidden class's CLD in order to force its aliveness during
+  // loading, when gc tracing may not find this CLD alive through the holder.
+  void inc_keep_alive_ref_count();
+  void dec_keep_alive_ref_count();
 
   void initialize_holder(Handle holder);
 
@@ -335,8 +338,8 @@ private:
   bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
-  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
+  static ByteSize holder_offset() { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize keep_alive_ref_count_offset() { return byte_offset_of(ClassLoaderData, _keep_alive_ref_count); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }

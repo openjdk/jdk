@@ -42,7 +42,6 @@ import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
@@ -282,10 +281,14 @@ public interface JavaLangAccess {
     void addEnableNativeAccessToAllUnnamed();
 
     /**
-     * Ensure that the given module has native access. If not, warn or
-     * throw exception depending on the configuration.
+     * Ensure that the given module has native access. If not, warn or throw exception depending on the configuration.
+     * @param m the module in which native access occurred
+     * @param owner the owner of the restricted method being called (or the JNI method being bound)
+     * @param methodName the name of the restricted method being called (or the JNI method being bound)
+     * @param currentClass the class calling the restricted method (for JNI, this is the same as {@code owner})
+     * @param jni {@code true}, if this event is related to a JNI method being bound
      */
-    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass);
+    void ensureNativeAccess(Module m, Class<?> owner, String methodName, Class<?> currentClass, boolean jni);
 
     /**
      * Returns the ServicesCatalog for the given Layer.
@@ -433,12 +436,6 @@ public interface JavaLangAccess {
     MethodHandle stringConcatHelper(String name, MethodType methodType);
 
     /**
-     * Prepends constant and the stringly representation of value into buffer,
-     * given the coder and final index. Index is measured in chars, not in bytes!
-     */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
-
-    /**
      * Get the string concat initial coder
      */
     long stringConcatInitialCoder();
@@ -453,6 +450,8 @@ public interface JavaLangAccess {
      */
     long stringConcatMix(long lengthCoder, char value);
 
+    Object stringConcat1(String[] constants);
+
     /**
      * Join strings
      */
@@ -464,8 +463,6 @@ public interface JavaLangAccess {
      * @see java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      */
     Object classData(Class<?> c);
-
-    int stringSize(long i);
 
     int getCharsLatin1(long i, int index, byte[] buf);
 
@@ -509,11 +506,6 @@ public interface JavaLangAccess {
      * current thread is a virtual thread then this method returns the carrier.
      */
     Thread currentCarrierThread();
-
-    /**
-     * Executes the given value returning task on the current carrier thread.
-     */
-    <V> V executeOnCarrierThread(Callable<V> task) throws Exception;
 
     /**
      * Returns the value of the current carrier thread's copy of a thread-local.

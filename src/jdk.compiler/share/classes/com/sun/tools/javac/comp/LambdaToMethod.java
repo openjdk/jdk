@@ -1291,12 +1291,13 @@ public class LambdaToMethod extends TreeTranslator {
          * in nested scopes (which do not need to undergo capture).
          */
         private JCTree capturedDecl(int depth, Symbol sym) {
+            Assert.check(sym.kind != TYP);
             int currentDepth = frameStack.size() - 1;
             for (Frame block : frameStack) {
                 switch (block.tree.getTag()) {
                     case CLASSDEF:
                         ClassSymbol clazz = ((JCClassDecl)block.tree).sym;
-                        if (clazz.isSubClass(sym, types) || sym.isMemberOf(clazz, types)) {
+                        if (clazz.isSubClass(sym.enclClass(), types)) {
                             return currentDepth > depth ? null : block.tree;
                         }
                         break;
@@ -1795,7 +1796,7 @@ public class LambdaToMethod extends TreeTranslator {
         boolean allowIllegalSignatures;
 
         L2MSignatureGenerator(boolean allowIllegalSignatures) {
-            super(types);
+            types.super();
             this.allowIllegalSignatures = allowIllegalSignatures;
         }
 

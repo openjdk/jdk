@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,10 +347,8 @@ class ClassFileParser {
                                                    TRAPS);
 
   // Annotations handling
-  AnnotationArray* assemble_annotations(const u1* const runtime_visible_annotations,
-                                        int runtime_visible_annotations_length,
-                                        const u1* const runtime_invisible_annotations,
-                                        int runtime_invisible_annotations_length,
+  AnnotationArray* allocate_annotations(const u1* const anno,
+                                        int anno_length,
                                         TRAPS);
 
   void set_precomputed_flags(InstanceKlass* k);
@@ -514,16 +512,10 @@ class ClassFileParser {
   void copy_method_annotations(ConstMethod* cm,
                                const u1* runtime_visible_annotations,
                                int runtime_visible_annotations_length,
-                               const u1* runtime_invisible_annotations,
-                               int runtime_invisible_annotations_length,
                                const u1* runtime_visible_parameter_annotations,
                                int runtime_visible_parameter_annotations_length,
-                               const u1* runtime_invisible_parameter_annotations,
-                               int runtime_invisible_parameter_annotations_length,
                                const u1* runtime_visible_type_annotations,
                                int runtime_visible_type_annotations_length,
-                               const u1* runtime_invisible_type_annotations,
-                               int runtime_invisible_type_annotations_length,
                                const u1* annotation_default,
                                int annotation_default_length,
                                TRAPS);

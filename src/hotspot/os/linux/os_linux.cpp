@@ -864,7 +864,7 @@ static void *thread_native_entry(Thread *thread) {
   log_info(os, thread)("Thread finished (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT ").",
     os::current_thread_id(), (uintx) pthread_self());
 
-  return 0;
+  return nullptr;
 }
 
 // On Linux, glibc places static TLS blocks (for __thread variables) on
@@ -3035,15 +3035,10 @@ void os::pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
   }
 }
 
-void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
-  // This method works by doing an mmap over an existing mmaping and effectively discarding
-  // the existing pages. However it won't work for SHM-based large pages that cannot be
-  // uncommitted at all. We don't do anything in this case to avoid creating a segment with
-  // small pages on top of the SHM segment. This method always works for small pages, so we
-  // allow that in any case.
-  if (alignment_hint <= os::vm_page_size() || can_commit_large_page_memory()) {
-    commit_memory(addr, bytes, alignment_hint, !ExecMem);
-  }
+// Hints to the OS that the memory is no longer needed and may be reclaimed by the OS when convenient.
+// The memory will be re-acquired on touch without needing explicit recommitting.
+void os::pd_disclaim_memory(char *addr, size_t bytes) {
+   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
 size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
@@ -4454,7 +4449,7 @@ void os::init(void) {
   check_pax();
 
   // Check the availability of MADV_POPULATE_WRITE.
-  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
+  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(nullptr, 0, MADV_POPULATE_WRITE) == 0));
 
   os::Posix::init();
 }

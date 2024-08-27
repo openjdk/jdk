@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,10 @@
 
 package java.lang.classfile;
 
-import java.lang.constant.ClassDesc;
 import java.util.List;
 
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -56,22 +54,31 @@ import static java.lang.classfile.ClassFile.TAT_METHOD_TYPE_PARAMETER_BOUND;
 import static java.lang.classfile.ClassFile.TAT_NEW;
 import static java.lang.classfile.ClassFile.TAT_RESOURCE_VARIABLE;
 import static java.lang.classfile.ClassFile.TAT_THROWS;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
- * Models an annotation on a type use, as defined in {@jvms 4.7.19} and {@jvms 4.7.20}.
+ * Models a {@code type_annotation} structure (JVMS {@jvms 4.7.20}). This model
+ * indicates the annotated type within a declaration or expression and the part
+ * of the indicated type that is annotated, in addition to what is {@linkplain
+ * #annotation() available} in an {@code Annotation}.
+ * <p>
+ * This model can reconstruct an annotation on a type or a part of a type, given
+ * the location of the {@code type_annotation} structure in the class file and
+ * the definition of the annotation interface.
+ * <p>
+ * Two {@code TypeAnnotation} objects should be compared using the {@link
+ * Object#equals(Object) equals} method.
  *
+ * @see Annotation
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute
  *
  * @since 24
  */
 public sealed interface TypeAnnotation
-        extends Annotation
         permits UnboundAttribute.UnboundTypeAnnotation {
 
     /**
-     * The kind of target on which the annotation appears, as defined in {@jvms 4.7.20.1}.
+     * The kind of target on which the annotation appears, as defined in JVMS {@jvms 4.7.20.1}.
      *
      * @since 24
      */
@@ -167,7 +174,7 @@ public sealed interface TypeAnnotation
 
     /**
      * {@return information describing precisely which type in a declaration or expression
-     * is annotated}
+     * is annotated} This models the {@code target_type} and {@code target_info} items.
      */
     TargetInfo targetInfo();
 
@@ -177,57 +184,22 @@ public sealed interface TypeAnnotation
     List<TypePathComponent> targetPath();
 
     /**
-     * {@return a type annotation}
-     * @param targetInfo which type in a declaration or expression is annotated
-     * @param targetPath which part of the type is annotated
-     * @param annotationClassUtf8Entry the annotation class
-     * @param annotationElements the annotation elements
+     * {@return the annotation applied to the part indicated by {@link #targetPath()}}
+     * This models the interface of the annotation and the set of element-value pairs,
+     * the subset of the {@code type_annotation} structure that is identical to the
+     * {@code annotation} structure.
      */
-    static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                             Utf8Entry annotationClassUtf8Entry,
-                             List<AnnotationElement> annotationElements) {
-        return new UnboundAttribute.UnboundTypeAnnotation(targetInfo, targetPath,
-                annotationClassUtf8Entry, annotationElements);
-    }
+    Annotation annotation();
 
     /**
-     * {@return a type annotation}
+     * {@return a {@code type_annotation} structure}
      * @param targetInfo which type in a declaration or expression is annotated
      * @param targetPath which part of the type is annotated
-     * @param annotationClass the annotation class
-     * @param annotationElements the annotation elements
+     * @param annotation the annotation
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                             ClassDesc annotationClass,
-                             AnnotationElement... annotationElements) {
-        return of(targetInfo, targetPath, annotationClass, List.of(annotationElements));
-    }
-
-    /**
-     * {@return a type annotation}
-     * @param targetInfo which type in a declaration or expression is annotated
-     * @param targetPath which part of the type is annotated
-     * @param annotationClass the annotation class
-     * @param annotationElements the annotation elements
-     */
-    static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                             ClassDesc annotationClass,
-                             List<AnnotationElement> annotationElements) {
-        return of(targetInfo, targetPath,
-                TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), annotationElements);
-    }
-
-    /**
-     * {@return a type annotation}
-     * @param targetInfo which type in a declaration or expression is annotated
-     * @param targetPath which part of the type is annotated
-     * @param annotationClassUtf8Entry the annotation class
-     * @param annotationElements the annotation elements
-     */
-    static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
-                             Utf8Entry annotationClassUtf8Entry,
-                             AnnotationElement... annotationElements) {
-        return of(targetInfo, targetPath, annotationClassUtf8Entry, List.of(annotationElements));
+                             Annotation annotation) {
+        return new UnboundAttribute.UnboundTypeAnnotation(targetInfo, targetPath, annotation);
     }
 
     /**
@@ -758,7 +730,7 @@ public sealed interface TypeAnnotation
 
     /**
      * JVMS: Type_path structure identifies which part of the type is annotated,
-     * as defined in {@jvms 4.7.20.2}
+     * as defined in JVMS {@jvms 4.7.20.2}
      *
      * @since 24
      */
@@ -766,7 +738,7 @@ public sealed interface TypeAnnotation
             permits UnboundAttribute.TypePathComponentImpl {
 
         /**
-         * Type path kind, as defined in {@jvms 4.7.20.2}
+         * Type path kind, as defined in JVMS {@jvms 4.7.20.2}
          *
          * @since 24
          */

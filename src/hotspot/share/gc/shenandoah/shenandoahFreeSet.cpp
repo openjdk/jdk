@@ -48,19 +48,19 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 
 #ifndef PRODUCT
 void ShenandoahRegionPartitions::dump_bitmap() const {
-  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
-  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
-               "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
-               _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
-               _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts[int(ShenandoahFreeSetPartitionId::Collector)]);
+  log_debug(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Mutator)],
+                _leftmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)],
+                _rightmosts_empty[int(ShenandoahFreeSetPartitionId::Collector)]);
 
-  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_debug(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
   dump_bitmap_range(0, _max-1);
 }
 
@@ -83,8 +83,8 @@ void ShenandoahRegionPartitions::dump_bitmap_row(idx_t region_idx) const {
   uintx collector_bits = _membership[int(ShenandoahFreeSetPartitionId::Collector)].bits_at(aligned_idx);
   uintx free_bits = mutator_bits | collector_bits;
   uintx notfree_bits =  ~free_bits;
-  log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
-               aligned_idx, mutator_bits, collector_bits, notfree_bits);
+  log_debug(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
+                aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
 #endif
 
@@ -1060,8 +1060,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   }
 
   size_t collector_xfer = collector_empty_xfer + collector_not_empty_xfer;
-  log_info(gc)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
-               byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
+  log_info(gc, ergo)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
+                     byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
 }
 
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
@@ -1308,7 +1308,7 @@ void ShenandoahFreeSet::log_status() {
 
 HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   shenandoah_assert_heaplocked();
-  if (req.size() > ShenandoahHeapRegion::humongous_threshold_words()) {
+  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:
       case ShenandoahAllocRequest::_alloc_shared_gc:
@@ -1317,8 +1317,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:
         in_new_region = false;
-        assert(false, "Trying to allocate TLAB larger than the humongous threshold: " SIZE_FORMAT " > " SIZE_FORMAT,
-               req.size(), ShenandoahHeapRegion::humongous_threshold_words());
+        assert(false, "Trying to allocate TLAB in humongous region: " SIZE_FORMAT, req.size());
         return nullptr;
       default:
         ShouldNotReachHere();
@@ -1351,7 +1350,6 @@ void ShenandoahFreeSet::print_on(outputStream* out) const {
 double ShenandoahFreeSet::internal_fragmentation() {
   double squared = 0;
   double linear = 0;
-  int count = 0;
 
   idx_t rightmost = _partitions.rightmost(ShenandoahFreeSetPartitionId::Mutator);
   for (idx_t index = _partitions.leftmost(ShenandoahFreeSetPartitionId::Mutator); index <= rightmost; ) {
@@ -1361,11 +1359,10 @@ double ShenandoahFreeSet::internal_fragmentation() {
     size_t used = r->used();
     squared += used * used;
     linear += used;
-    count++;
     index = _partitions.find_index_of_next_available_region(ShenandoahFreeSetPartitionId::Mutator, index + 1);
   }
 
-  if (count > 0) {
+  if (linear > 0) {
     double s = squared / (ShenandoahHeapRegion::region_size_bytes() * linear);
     return 1 - s;
   } else {

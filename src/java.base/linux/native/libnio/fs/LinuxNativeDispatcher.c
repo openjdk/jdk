@@ -211,7 +211,7 @@ Java_sun_nio_fs_LinuxNativeDispatcher_directCopy0
     }
 
     do {
-        RESTARTABLE(sendfile64(dst, src, NULL, count), bytes_sent);
+        RESTARTABLE(sendfile(dst, src, NULL, count), bytes_sent);
         if (bytes_sent < 0) {
             if (errno == EAGAIN)
                 return IOS_UNAVAILABLE;

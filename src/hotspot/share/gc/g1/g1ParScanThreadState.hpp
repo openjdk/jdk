@@ -32,6 +32,7 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/copyFailedInfo.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
 #include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
@@ -87,7 +88,8 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // available for allocation.
   bool _old_gen_is_full;
   // Size (in elements) of a partial objArray task chunk.
-  int _partial_objarray_chunk_size;
+  size_t _partial_objarray_chunk_size;
+  PartialArrayStateAllocator* _partial_array_state_allocator;
   PartialArrayTaskStepper _partial_array_stepper;
   StringDedup::Requests _string_dedup_requests;
 
@@ -129,7 +131,8 @@ public:
                        uint worker_id,
                        uint num_workers,
                        G1CollectionSet* collection_set,
-                       G1EvacFailureRegions* evac_failure_regions);
+                       G1EvacFailureRegions* evac_failure_regions,
+                       PartialArrayStateAllocator* partial_array_state_allocator);
   virtual ~G1ParScanThreadState();
 
   void set_ref_discoverer(ReferenceDiscoverer* rd) { _scanner.set_ref_discoverer(rd); }
@@ -140,7 +143,7 @@ public:
 
   void verify_task(narrowOop* task) const NOT_DEBUG_RETURN;
   void verify_task(oop* task) const NOT_DEBUG_RETURN;
-  void verify_task(PartialArrayScanTask task) const NOT_DEBUG_RETURN;
+  void verify_task(PartialArrayState* task) const NOT_DEBUG_RETURN;
   void verify_task(ScannerTask task) const NOT_DEBUG_RETURN;
 
   void push_on_queue(ScannerTask task);
@@ -169,7 +172,7 @@ public:
   size_t flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* buffer_log);
 
 private:
-  void do_partial_array(PartialArrayScanTask task);
+  void do_partial_array(PartialArrayState* state);
   void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
@@ -252,6 +255,7 @@ class G1ParScanThreadStateSet : public StackObj {
   uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
+  PartialArrayStateAllocator _partial_array_state_allocator;
 
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,

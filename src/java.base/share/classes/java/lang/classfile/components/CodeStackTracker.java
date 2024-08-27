@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.CodeStackTrackerImpl;
  * and calculating max stack size.
  * <p>
  * Sample use:
- * <p>
+ *
  * {@snippet lang=java :
  *     var stackTracker = CodeStackTracker.of();
  *     codeBuilder.transforming(stackTracker, trackedBuilder -> {

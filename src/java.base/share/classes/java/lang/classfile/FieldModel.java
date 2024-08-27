@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.FieldImpl;
  * @since 24
  */
 public sealed interface FieldModel
-        extends WritableElement<FieldModel>, CompoundElement<FieldElement>, AttributedElement, ClassElement
+        extends CompoundElement<FieldElement>, AttributedElement, ClassElement
         permits BufferedFieldBuilder.Model, FieldImpl {
 
     /** {@return the access flags} */

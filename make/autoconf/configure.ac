@@ -313,9 +313,11 @@ AC_OUTPUT
 
 # After AC_OUTPUT, we need to do final work
 CUSTOM_CONFIG_OUTPUT_GENERATED_HOOK
-BASIC_POST_CONFIG_OUTPUT
 
 # Finally output some useful information to the user
 HELP_PRINT_SUMMARY_AND_WARNINGS
 CUSTOM_SUMMARY_AND_WARNINGS_HOOK
 HELP_REPEAT_WARNINGS
+
+# All output is done. Do the post-config output management.
+BASIC_POST_CONFIG_OUTPUT

@@ -31,7 +31,7 @@ import java.lang.classfile.Label;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
- * Models the {@code Code} attribute {@jvms 4.7.3}, appears on non-native,
+ * Models the {@code Code} attribute (JVMS {@jvms 4.7.3}), appears on non-native,
  * non-abstract methods and contains the bytecode of the method body.  Delivered
  * as a {@link java.lang.classfile.MethodElement} when traversing the elements of a
  * {@link java.lang.classfile.MethodModel}.
@@ -44,6 +44,16 @@ import jdk.internal.classfile.impl.BoundAttribute;
  */
 public sealed interface CodeAttribute extends Attribute<CodeAttribute>, CodeModel
         permits BoundAttribute.BoundCodeAttribute {
+
+    /**
+     * {@return the maximum size of the local variable table}
+     */
+    int maxLocals();
+
+    /**
+     * {@return the maximum size of the operand stack}
+     */
+    int maxStack();
 
     /**
      * {@return The length of the code array in bytes}

@@ -40,7 +40,7 @@ import jdk.internal.classfile.impl.MethodImpl;
  * @since 24
  */
 public sealed interface MethodModel
-        extends WritableElement<MethodModel>, CompoundElement<MethodElement>, AttributedElement, ClassElement
+        extends CompoundElement<MethodElement>, AttributedElement, ClassElement
         permits BufferedMethodBuilder.Model, MethodImpl {
 
     /** {@return the access flags} */
