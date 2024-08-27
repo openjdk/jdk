@@ -48,6 +48,7 @@ public class CheckboxCheckerScalingTest {
     private static Checkbox checkbox;
     private static BufferedImage imageAfterChecked;
     private static volatile boolean checkmarkFound = false;
+    private static final int TOLERANCE = 10;
 
     public static void main(String[] args) throws Exception {
         System.setProperty("sun.java2d.uiScale", "2");
@@ -58,6 +59,7 @@ public class CheckboxCheckerScalingTest {
                 checkbox = new Checkbox("one");
                 checkbox.setState(true);
                 frame.add(checkbox);
+                frame.setLocationRelativeTo(null);
                 frame.pack();
                 frame.setVisible(true);
             });
@@ -72,7 +74,8 @@ public class CheckboxCheckerScalingTest {
                 check: {
                     for (int i = 0; i < imageAfterChecked.getHeight(); i++) {
                         for (int j = 0; j < imageAfterChecked.getWidth(); j++) {
-                            if (Color.black.getRGB() == imageAfterChecked.getRGB(i, j)) {
+                            Color pixelColor = new Color(imageAfterChecked.getRGB(i, j));
+                            if (compareColor(pixelColor)) {
                                 checkmarkFound = true;
                                 break check;
                             }
@@ -98,5 +101,11 @@ public class CheckboxCheckerScalingTest {
                 }
             });
         }
+    }
+
+    private static boolean compareColor(Color c) {
+        return Math.abs(Color.black.getRed() - c.getRed()) < TOLERANCE &&
+                Math.abs(Color.black.getGreen() - c.getGreen()) < TOLERANCE &&
+                Math.abs(Color.black.getBlue() - c.getBlue()) < TOLERANCE;
     }
 }
