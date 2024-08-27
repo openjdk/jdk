@@ -58,6 +58,8 @@ class KlassFlags {
  public:
   KlassFlags() : _flags(0) {}
 
+  u1 value() const { return _flags; }
+
   // Create getters and setters for the flag values.
 #define KLASS_FLAGS_GET_SET(name, ignore)          \
   bool name() const { return (_flags & _misc_##name) != 0; } \

@@ -703,6 +703,8 @@ protected:
   bool is_value_based() const           { return _misc_flags.is_value_based_class(); }
   void set_is_value_based()             { _misc_flags.set_is_value_based_class(true); }
 
+  u1 misc_flags() const                 { return _misc_flags.value(); }
+
   inline bool is_non_strong_hidden() const;
 
   bool is_cloneable() const;
