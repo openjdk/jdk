@@ -88,9 +88,8 @@ final class EntrustTLSPolicy {
 
     // Any TLS Server certificate that is anchored by one of the Entrust
     // roots above and is issued after this date will be distrusted.
-    private static final LocalDate OCTOBER_30_2024 =
-        LocalDate.of(2023, Month.OCTOBER, 30);
-        //LocalDate.of(2024, Month.OCTOBER, 31);
+    private static final LocalDate OCTOBER_31_2024 =
+        LocalDate.of(2024, Month.OCTOBER, 31);
 
     /**
      * This method assumes the eeCert is a TLS Server Cert and chains back to
@@ -113,7 +112,7 @@ final class EntrustTLSPolicy {
             LocalDate ldNotBefore = LocalDate.ofInstant(notBefore.toInstant(),
                                                         ZoneOffset.UTC);
             // reject if certificate is issued after October 31, 2024
-            checkNotBefore(ldNotBefore, OCTOBER_30_2024, anchor);
+            checkNotBefore(ldNotBefore, OCTOBER_31_2024, anchor);
         }
     }
 

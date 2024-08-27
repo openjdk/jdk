@@ -53,21 +53,20 @@ public class Distrust {
 
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
-    // entrust_l1e, entrust_2048: "No trusted certificate found"
     private static String[] rootsToTest = new String[] {
-        "entrust_l1f", "entrust_l1j", "entrust_l1k", "entrust_l1m" };
+        "entrustevca", "entrustcaec1", "entrustcag2", "entrustcag4",
+        "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
+        "affirmtrustpremiumca", "affirmtrustpremiumeccca" };
 
     // A date that is after the restrictions take effect
-        //Date.from(LocalDate.of(2024, 10, 31)
-    private static final Date OCTOBER_31_2024 =
-        Date.from(LocalDate.of(2023, 10, 31)
+    private static final Date NOVEMBER_1_2024 =
+        Date.from(LocalDate.of(2024, 11, 1)
                            .atStartOfDay(ZoneOffset.UTC)
                            .toInstant());
 
     // A date that is a second before the restrictions take effect
-        //Date.from(LocalDate.of(2024, 10, 31)
-    private static final Date BEFORE_OCTOBER_31_2024 =
-        Date.from(LocalDate.of(2023, 10, 31)
+    private static final Date BEFORE_NOVEMBER_1_2024 =
+        Date.from(LocalDate.of(2024, 11, 1)
                            .atStartOfDay(ZoneOffset.UTC)
                            .minusSeconds(1)
                            .toInstant());
@@ -85,7 +84,7 @@ public class Distrust {
             Security.setProperty("jdk.security.caDistrustPolicies", "");
         }
 
-        Date notBefore = before ? BEFORE_OCTOBER_31_2024 : OCTOBER_31_2024;
+        Date notBefore = before ? BEFORE_NOVEMBER_1_2024 : NOVEMBER_1_2024;
 
         X509TrustManager pkixTM = getTMF("PKIX", null);
         X509TrustManager sunX509TM = getTMF("SunX509", null);
@@ -96,23 +95,6 @@ public class Distrust {
             testTM(sunX509TM, chain, notBefore, isValid);
             testTM(pkixTM, chain, notBefore, isValid);
         }
-
-/*
-        // test chain if params are passed to TrustManager
-        System.err.println("Testing verisignuniversalrootca with params");
-        testTM(getTMF("PKIX", getParams()),
-               loadCertificateChain("verisignuniversalrootca"),
-               notBefore, isValid);
-
-        // test code-signing chain (should be valid as restrictions don't apply)
-        System.err.println("Testing verisignclass3g5ca code-signing chain");
-        Validator v = Validator.getInstance(Validator.TYPE_PKIX,
-                                            Validator.VAR_CODE_SIGNING,
-                                            getParams());
-        // set validation date so this will still pass when cert expires
-        v.setValidationDate(new Date(1544197375493l));
-        v.validate(loadCertificateChain("verisignclass3g5ca-codesigning"));
-*/
     }
 
     private static X509TrustManager getTMF(String type,
