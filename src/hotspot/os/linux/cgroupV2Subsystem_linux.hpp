@@ -37,20 +37,9 @@ class CgroupV2Controller: public CgroupController {
     static char* construct_path(char* mount_path, const char *cgroup_path);
 
   public:
-    CgroupV2Controller(char* mount_path,
-                       char *cgroup_path,
-                       bool ro) :  _read_only(ro),
-                                   _path(construct_path(mount_path, cgroup_path)) {
-      _cgroup_path = os::strdup(cgroup_path);
-      _mount_point = os::strdup(mount_path);
-    }
+    CgroupV2Controller(char* mount_path, char *cgroup_path, bool ro);
     // Shallow copy constructor
-    CgroupV2Controller(const CgroupV2Controller& o) :
-                                            _read_only(o._read_only),
-                                            _path(o._path) {
-      _cgroup_path = o._cgroup_path;
-      _mount_point = o._mount_point;
-    }
+    CgroupV2Controller(const CgroupV2Controller& o);
     ~CgroupV2Controller() {
       // At least one controller exists with references to the paths
     }

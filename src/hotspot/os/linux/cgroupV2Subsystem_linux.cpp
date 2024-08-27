@@ -25,6 +25,22 @@
 #include "cgroupV2Subsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
 
+// Constructor
+CgroupV2Controller::CgroupV2Controller(char* mount_path,
+                                       char *cgroup_path,
+                                       bool ro) :  _read_only(ro),
+                                                   _path(construct_path(mount_path, cgroup_path)) {
+  _cgroup_path = os::strdup(cgroup_path);
+  _mount_point = os::strdup(mount_path);
+}
+// Shallow copy constructor
+CgroupV2Controller::CgroupV2Controller(const CgroupV2Controller& o) :
+                                            _read_only(o._read_only),
+                                            _path(o._path) {
+  _cgroup_path = o._cgroup_path;
+  _mount_point = o._mount_point;
+}
+
 /* cpu_shares
  *
  * Return the amount of cpu shares available to the process
