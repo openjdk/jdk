@@ -127,7 +127,7 @@ public class MathLoopBench {
     public long reductionMultiLongMin() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
+            final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
             result = Math.min(result, v);
         }
         return result;
@@ -147,7 +147,7 @@ public class MathLoopBench {
     public long reductionMultiLongMax() {
         long result = 0;
         for (int i = 0; i < size; i++) {
-            final int v = (aInt[i] * bInt[i]) + (aInt[i] * cInt[i]) + (bInt[i] * cInt[i]);
+            final long v = (aLong[i] * bLong[i]) + (aLong[i] * cLong[i]) + (bLong[i] * cLong[i]);
             result = Math.max(result, v);
         }
         return result;
