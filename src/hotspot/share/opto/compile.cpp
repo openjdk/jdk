@@ -3175,7 +3175,7 @@ void Compile::handle_div_mod_op(Node* n, int div_op, int div_mod_op, bool is_uns
 
   // Replace them with a fused divmod if supported
   if (Matcher::has_match_rule(div_mod_op)) {
-    DivModNode* divmod = DivModNode::make(n, T_INT, is_unsigned);
+    DivModNode* divmod = DivModNode::make(n, bt, is_unsigned);
     d->subsume_by(divmod->div_proj(), this);
     n->subsume_by(divmod->mod_proj(), this);
   } else {
