@@ -1198,7 +1198,8 @@ public final class StringConcatFactory {
 
         /**
          * Construct the MethodType of the coder method. The first parameter is the initialized coder.
-         * Only parameter types which can be UTF16 are added. Returns null if no such parameter exists.
+         * Only parameter types which can be UTF16 are added.
+         * Returns null if no such parameter exists or CompactStrings is off.
          */
         private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
@@ -1210,7 +1211,7 @@ public final class StringConcatFactory {
                 }
             }
 
-            if (maybeUTF16Count == 0) {
+            if (maybeUTF16Count == 0 || JLA.stringInitCoder() != 0) {
                 return null;
             }
 
