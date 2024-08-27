@@ -143,6 +143,7 @@ public:
     WinOsInfo::printOsInfo(st);
     st->print_cr("current process reserved memory: " PROPERFMT, PROPERFMTARGS(_total_region_size));
     st->print_cr("current process committed memory: " PROPERFMT, PROPERFMTARGS(_total_committed));
+    st->print_cr("current process region count: " PROPERFMT, PROPERFMTARGS(_num_mappings));
   }
 };
 
