@@ -148,7 +148,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 mapper = customAttributes.apply(name);
             }
             if (mapper != null) {
-                filled.add((Attribute<?>) Objects.requireNonNull(mapper.readAttribute(enclosing, reader, p)));
+                filled.add(Objects.requireNonNull(mapper.readAttribute(enclosing, reader, p)));
             } else {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override

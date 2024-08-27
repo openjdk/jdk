@@ -104,12 +104,7 @@ public final class BufferedFieldBuilder
 
         @Override
         public void writeTo(DirectClassBuilder builder) {
-            builder.withField(name, desc, new Consumer<>() {
-                @Override
-                public void accept(FieldBuilder fieldBuilder) {
-                    elements.forEach(fieldBuilder);
-                }
-            });
+            builder.withField(name, desc, Util.writingAll(this));
         }
 
         @Override
