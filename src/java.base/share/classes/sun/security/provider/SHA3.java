@@ -438,25 +438,25 @@ public abstract class SHA3 extends DigestBase {
         }
     }
 
-    public static abstract class SHA3XOF extends SHA3 {
+    public abstract static class SHA3XOF extends SHA3 {
         public SHA3XOF(String name, int digestLength, byte offset, int c) {
             super(name, digestLength, offset, c);
         }
         public void update(byte in) {
-            if (squeezeOffset  != -1) {
+            if (squeezeOffset != -1) {
                 throw new ProviderException("update() after squeeze() is not allowed.");
             }
             engineUpdate(in);
         }
         public void update(byte[] in, int off, int len) {
-            if (squeezeOffset  != -1) {
+            if (squeezeOffset != -1) {
                 throw new ProviderException("update() after squeeze() is not allowed.");
             }
             engineUpdate(in, off, len);
         }
 
         public void update(byte[] in) {
-            if (squeezeOffset  != -1) {
+            if (squeezeOffset != -1) {
                 throw new ProviderException("update() after squeeze() is not allowed.");
             }
             engineUpdate(in, 0, in.length);
