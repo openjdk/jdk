@@ -132,7 +132,11 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
 
     @Override
     public List<VerifyError> verify(ClassModel model) {
-        return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+        try {
+            return VerifierImpl.verify(model, classHierarchyResolverOption().classHierarchyResolver(), null);
+        } catch (IllegalArgumentException verifierInitializationError) {
+            return List.of(new VerifyError(verifierInitializationError.getMessage()));
+        }
     }
 
     @Override

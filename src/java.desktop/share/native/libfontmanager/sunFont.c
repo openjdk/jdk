@@ -300,41 +300,9 @@ JNIEXPORT void JNICALL Java_sun_font_StrikeCache_freeLongMemory
     }
 }
 
-JNIEXPORT void JNICALL
-Java_sun_font_StrikeCache_getGlyphCacheDescription
-  (JNIEnv *env, jclass cls, jlongArray results) {
+JNIEXPORT jlong JNICALL
+Java_sun_font_StrikeCache_getInvisibleGlyphPtr(JNIEnv *env, jclass cls) {
 
-    jlong* nresults;
-    GlyphInfo *info;
-    size_t baseAddr;
-
-    if ((*env)->GetArrayLength(env, results) < 13) {
-        return;
-    }
-
-    nresults = (jlong*)(*env)->GetPrimitiveArrayCritical(env, results, NULL);
-    if (nresults == NULL) {
-        return;
-    }
-    info = (GlyphInfo*) calloc(1, sizeof(GlyphInfo));
-    if (info == NULL) {
-        (*env)->ReleasePrimitiveArrayCritical(env, results, nresults, 0);
-        return;
-    }
-    baseAddr = (size_t)info;
-    nresults[0] = sizeof(void*);
-    nresults[1] = sizeof(GlyphInfo);
-    nresults[2] = 0;
-    nresults[3] = (size_t)&(info->advanceY)-baseAddr;
-    nresults[4] = (size_t)&(info->width)-baseAddr;
-    nresults[5] = (size_t)&(info->height)-baseAddr;
-    nresults[6] = (size_t)&(info->rowBytes)-baseAddr;
-    nresults[7] = (size_t)&(info->topLeftX)-baseAddr;
-    nresults[8] = (size_t)&(info->topLeftY)-baseAddr;
-    nresults[9] = (size_t)&(info->image)-baseAddr;
-    nresults[10] = (jlong)(uintptr_t)info; /* invisible glyph */
-    nresults[11] = (size_t)&(info->cellInfo)-baseAddr;
-    nresults[12] = (size_t)&(info->managed)-baseAddr;
-
-    (*env)->ReleasePrimitiveArrayCritical(env, results, nresults, 0);
+    GlyphInfo *info = (GlyphInfo*) calloc(1, sizeof(GlyphInfo));
+    return (jlong)(uintptr_t)info; /* invisible glyph */
 }

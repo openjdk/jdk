@@ -20,7 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
@@ -977,3 +976,27 @@ TEST_VM(os, vm_min_address) {
 #endif
 }
 
+#if !defined(_WINDOWS) && !defined(_AIX)
+TEST_VM(os, free_without_uncommit) {
+  const size_t page_sz = os::vm_page_size();
+  const size_t pages = 64;
+  const size_t size = pages * page_sz;
+
+  char* base = os::reserve_memory(size, false, mtTest);
+  ASSERT_NE(base, (char*) nullptr);
+  ASSERT_TRUE(os::commit_memory(base, size, false));
+
+  for (size_t index = 0; index < pages; index++) {
+    base[index * page_sz] = 'a';
+  }
+
+  os::disclaim_memory(base, size);
+
+  // Ensure we can still use the memory without having to recommit.
+  for (size_t index = 0; index < pages; index++) {
+    base[index * page_sz] = 'a';
+  }
+
+  os::release_memory(base, size);
+}
+#endif

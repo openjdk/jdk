@@ -227,7 +227,6 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   la(owner_addr, Address(tmp, ObjectMonitor::owner_offset()));
 
   // Set owner to null.
-  // Release to satisfy the JMM
   membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
   sd(zr, Address(owner_addr));
   membar(StoreLoad);
@@ -340,25 +339,30 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Regis
   { // Handle inflated monitor.
     bind(inflated);
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register tmp1_tagged_monitor = tmp1_mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
-    const Register tmp2_owner_addr = tmp2;
-    const Register tmp3_owner = tmp3;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register tmp1_tagged_monitor = tmp1_mark;
+      const uintptr_t monitor_tag = markWord::monitor_value;
+      const Register tmp2_owner_addr = tmp2;
+      const Register tmp3_owner = tmp3;
 
-    // Compute owner address.
-    la(tmp2_owner_addr, Address(tmp1_tagged_monitor, (in_bytes(ObjectMonitor::owner_offset()) - monitor_tag)));
+      // Compute owner address.
+      la(tmp2_owner_addr, Address(tmp1_tagged_monitor, (in_bytes(ObjectMonitor::owner_offset()) - monitor_tag)));
 
-    // CAS owner (null => current thread).
-    cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
-            /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
-    beqz(tmp3_owner, locked);
+      // CAS owner (null => current thread).
+      cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+      beqz(tmp3_owner, locked);
 
-    // Check if recursive.
-    bne(tmp3_owner, xthread, slow_path);
+      // Check if recursive.
+      bne(tmp3_owner, xthread, slow_path);
 
-    // Recursive.
-    increment(Address(tmp1_tagged_monitor, in_bytes(ObjectMonitor::recursions_offset()) - monitor_tag), 1, tmp2, tmp3);
+      // Recursive.
+      increment(Address(tmp1_tagged_monitor, in_bytes(ObjectMonitor::recursions_offset()) - monitor_tag), 1, tmp2, tmp3);
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      j(slow_path);
+    }
   }
 
   bind(locked);
@@ -470,55 +474,59 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
     bind(check_done);
 #endif
 
-    // mark contains the tagged ObjectMonitor*.
-    const Register tmp1_monitor = tmp1_mark;
-    const uintptr_t monitor_tag = markWord::monitor_value;
+    if (!UseObjectMonitorTable) {
+      // mark contains the tagged ObjectMonitor*.
+      const Register tmp1_monitor = tmp1_mark;
+      const uintptr_t monitor_tag = markWord::monitor_value;
 
-    // Untag the monitor.
-    sub(tmp1_monitor, tmp1_mark, monitor_tag);
+      // Untag the monitor.
+      sub(tmp1_monitor, tmp1_mark, monitor_tag);
 
-    const Register tmp2_recursions = tmp2;
-    Label not_recursive;
+      const Register tmp2_recursions = tmp2;
+      Label not_recursive;
 
-    // Check if recursive.
-    ld(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
-    beqz(tmp2_recursions, not_recursive);
+      // Check if recursive.
+      ld(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
+      beqz(tmp2_recursions, not_recursive);
 
-    // Recursive unlock.
-    addi(tmp2_recursions, tmp2_recursions, -1);
-    sd(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
-    j(unlocked);
+      // Recursive unlock.
+      addi(tmp2_recursions, tmp2_recursions, -1);
+      sd(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
+      j(unlocked);
 
-    bind(not_recursive);
+      bind(not_recursive);
 
-    Label release;
-    const Register tmp2_owner_addr = tmp2;
+      Label release;
+      const Register tmp2_owner_addr = tmp2;
 
-    // Compute owner address.
-    la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
+      // Compute owner address.
+      la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
 
-    // Set owner to null.
-    // Release to satisfy the JMM
-    membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp2_owner_addr));
-    membar(StoreLoad);
+      // Set owner to null.
+      membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+      sd(zr, Address(tmp2_owner_addr));
+      membar(StoreLoad);
 
-    // Check if the entry lists are empty.
-    ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
-    ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
-    orr(t0, t0, tmp3_t);
-    beqz(t0, unlocked);     // If so we are done.
+      // Check if the entry lists are empty.
+      ld(t0, Address(tmp1_monitor, ObjectMonitor::EntryList_offset()));
+      ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::cxq_offset()));
+      orr(t0, t0, tmp3_t);
+      beqz(t0, unlocked); // If so we are done.
 
-    // Check if there is a successor.
-    ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::succ_offset()));
-    bnez(tmp3_t, unlocked); // If so we are done.
+      // Check if there is a successor.
+      ld(tmp3_t, Address(tmp1_monitor, ObjectMonitor::succ_offset()));
+      bnez(tmp3_t, unlocked); // If so we are done.
 
-    // Save the monitor pointer in the current thread, so we can try
-    // to reacquire the lock in SharedRuntime::monitor_exit_helper().
-    sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
+      // Save the monitor pointer in the current thread, so we can try
+      // to reacquire the lock in SharedRuntime::monitor_exit_helper().
+      sd(tmp1_monitor, Address(xthread, JavaThread::unlocked_inflated_monitor_offset()));
 
-    mv(flag, 1);
-    j(slow_path);
+      mv(flag, 1);
+      j(slow_path);
+    } else {
+      // OMCache lookup not supported yet. Take the slowpath.
+      j(slow_path);
+    }
   }
 
   bind(unlocked);

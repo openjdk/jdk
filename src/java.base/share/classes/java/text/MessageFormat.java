@@ -367,12 +367,11 @@ import java.util.Objects;
  *
  * <h2>Usage Information</h2>
  *
- * <p>
+ *
  * The following example demonstrates a general usage of {@code MessageFormat}.
  * In internationalized programs, the message format pattern and other
  * static strings will likely be obtained from resource bundles.
  *
- * <p>
  * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";
@@ -1027,12 +1026,13 @@ public class MessageFormat extends Format {
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
     {
-        return subformat(arguments, result, pos, null);
+        return subformat(arguments, StringBufFactory.of(result), pos, null).asStringBuffer();
     }
 
     /**
      * Creates a MessageFormat with the given pattern and uses it
-     * to format the given arguments. This is equivalent to
+     * to format the given arguments.
+     * This method returns a string that would be equal to the string returned by
      * <blockquote>
      *     <code>(new {@link #MessageFormat(String) MessageFormat}(pattern)).{@link #format(java.lang.Object[], java.lang.StringBuffer, java.text.FieldPosition) format}(arguments, new StringBuffer(), null).toString()</code>
      * </blockquote>
@@ -1076,6 +1076,12 @@ public class MessageFormat extends Format {
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
     {
+        return subformat((Object[]) arguments, StringBufFactory.of(result), pos, null).asStringBuffer();
+    }
+
+    @Override
+    final StringBuf format(Object arguments, StringBuf result,
+                           FieldPosition pos) {
         return subformat((Object[]) arguments, result, pos, null);
     }
 
@@ -1116,7 +1122,7 @@ public class MessageFormat extends Format {
      */
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
         Objects.requireNonNull(arguments, "arguments must not be null");
-        StringBuffer result = new StringBuffer();
+        StringBuf result = StringBufFactory.of();
         ArrayList<AttributedCharacterIterator> iterators = new ArrayList<>();
 
         subformat((Object[]) arguments, result, null, iterators);
@@ -1472,7 +1478,7 @@ public class MessageFormat extends Format {
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
      */
-    private StringBuffer subformat(Object[] arguments, StringBuffer result,
+    private StringBuf subformat(Object[] arguments, StringBuf result,
                                    FieldPosition fp, List<AttributedCharacterIterator> characterIterators) {
         // note: this implementation assumes a fast substring & index.
         // if this is not true, would be better to append chars one by one.
@@ -1582,9 +1588,9 @@ public class MessageFormat extends Format {
 
     /**
      * Convenience method to append all the characters in
-     * {@code iterator} to the StringBuffer {@code result}.
+     * {@code iterator} to the StringBuf {@code result}.
      */
-    private void append(StringBuffer result, CharacterIterator iterator) {
+    private void append(StringBuf result, CharacterIterator iterator) {
         if (iterator.first() != CharacterIterator.DONE) {
             char aChar;
 

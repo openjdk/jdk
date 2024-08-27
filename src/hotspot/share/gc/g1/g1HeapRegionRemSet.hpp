@@ -47,7 +47,8 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   G1CardSetMemoryManager _card_set_mm;
 
   // The set of cards in the Java heap
-  G1CardSet _card_set;
+  G1CardSet* _card_set;
+  G1CardSet* _saved_card_set;
 
   G1HeapRegion* _hr;
 
@@ -58,9 +59,24 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
 
 public:
   G1HeapRegionRemSet(G1HeapRegion* hr, G1CardSetConfiguration* config);
+  ~G1HeapRegionRemSet() { delete _card_set; }
 
   bool cardset_is_empty() const {
-    return _card_set.is_empty();
+    return _card_set->is_empty();
+  }
+
+  void install_group_cardset(G1CardSet* group_cardset) {
+    assert(group_cardset != nullptr, "pre-condition");
+    assert(_saved_card_set == nullptr, "pre-condition");
+
+    _saved_card_set = _card_set;
+    _card_set = group_cardset;
+  }
+
+  void uninstall_group_cardset();
+
+  bool has_group_cardset() {
+    return _saved_card_set != nullptr;
   }
 
   bool is_empty() const {
@@ -68,7 +84,7 @@ public:
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
-    return (code_roots_list_length() == 0) && _card_set.occupancy_less_or_equal_to(occ);
+    return (code_roots_list_length() == 0) && _card_set->occupancy_less_or_equal_to(occ);
   }
 
   // Iterate the card based remembered set for merging them into the card table.
@@ -77,9 +93,14 @@ public:
   template <class CardOrRangeVisitor>
   inline void iterate_for_merge(CardOrRangeVisitor& cl);
 
+  template <class CardOrRangeVisitor>
+  inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
+
   size_t occupied() {
-    return _card_set.occupied();
+    return _card_set->occupied();
   }
+
+  G1CardSet* card_set() { return _card_set; }
 
   static void initialize(MemRegion reserved);
 
@@ -125,13 +146,13 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return _card_set.mem_size()
+    return _card_set->mem_size()
            + (sizeof(G1HeapRegionRemSet) - sizeof(G1CardSet)) // Avoid double-counting G1CardSet.
            + code_roots_mem_size();
   }
 
   size_t unused_mem_size() {
-    return _card_set.unused_mem_size();
+    return _card_set->unused_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,17 +27,15 @@ package jdk.internal.classfile.impl;
 
 import java.util.function.Consumer;
 
-import java.lang.classfile.BufWriter;
 import java.lang.classfile.CustomAttribute;
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
-import java.lang.classfile.WritableElement;
 import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
-        implements TerminalFieldBuilder, WritableElement<FieldModel> {
+        implements TerminalFieldBuilder, Util.Writable {
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private int flags;
@@ -59,7 +57,7 @@ public final class DirectFieldBuilder
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
-            writeAttribute((CustomAttribute)element);
+            writeAttribute((CustomAttribute<?>) element);
         }
         return this;
     }
@@ -74,7 +72,7 @@ public final class DirectFieldBuilder
     }
 
     @Override
-    public void writeTo(BufWriter buf) {
+    public void writeTo(BufWriterImpl buf) {
         buf.writeU2(flags);
         buf.writeIndex(name);
         buf.writeIndex(desc);

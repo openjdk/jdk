@@ -109,6 +109,11 @@ define CreateStaticLibrary
 	      $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
 	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
 	          -o $$($1_TARGET_RELOCATABLE) $$($1_LD_OBJ_ARG))
+          # 'ld -r' might invalidate the .llvm_addrsig section, and this will cause subsequent
+          # calls to lld (with '-Wl,--icf=safe') to fail when linking with this library, so
+          # remove that section.
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_objcopy_remove_llvm_addrsig_section, \
+	      $$($1_OBJCOPY) --remove-section=.llvm_addrsig $$($1_TARGET_RELOCATABLE))
         endif
 	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_run_ar, \
 	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \

@@ -33,25 +33,26 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 /**
  * Class to generate file for each package contents in the right-hand
@@ -71,7 +72,7 @@ public class PackageWriter extends HtmlDocletWriter {
     /**
      * The HTML element for the section tag being written.
      */
-    private final HtmlTree section = HtmlTree.SECTION(HtmlStyle.packageDescription, new ContentBuilder());
+    private final HtmlTree section = HtmlTree.SECTION(HtmlStyles.packageDescription, new ContentBuilder());
 
     private final BodyContents bodyContents = new BodyContents();
 
@@ -127,8 +128,8 @@ public class PackageWriter extends HtmlDocletWriter {
      */
     protected void buildContent() {
         Content packageContent = getContentHeader();
-        packageContent.add(new HtmlTree(TagName.HR));
-        Content div = HtmlTree.DIV(HtmlStyle.horizontalScroll);
+        packageContent.add(new HtmlTree(HtmlTag.HR));
+        Content div = HtmlTree.DIV(HtmlStyles.horizontalScroll);
         addPackageSignature(div);
         buildPackageDescription(div);
         buildPackageTags(div);
@@ -202,14 +203,14 @@ public class PackageWriter extends HtmlDocletWriter {
     protected Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
         HtmlTree body = getBody(getWindowTitle(packageName));
-        var div = HtmlTree.DIV(HtmlStyle.header);
+        var div = HtmlTree.DIV(HtmlStyles.header);
         Content packageHead = new ContentBuilder();
         if (!packageElement.isUnnamed()) {
             packageHead.add(contents.packageLabel).add(" ");
         }
         packageHead.add(packageName);
         var tHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
-                HtmlStyle.title, packageHead);
+                HtmlStyles.title, packageHead);
         div.add(tHeading);
         bodyContents.setHeader(getHeader(PageMode.PACKAGE, packageElement))
                 .addMainContent(div);
@@ -277,8 +278,8 @@ public class PackageWriter extends HtmlDocletWriter {
         List<? extends DeprecatedTree> deprs = utils.getDeprecatedTrees(packageElement);
         if (utils.isDeprecated(packageElement)) {
             CommentHelper ch = utils.getCommentHelper(packageElement);
-            var deprDiv = HtmlTree.DIV(HtmlStyle.deprecationBlock);
-            var deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, getDeprecatedPhrase(packageElement));
+            var deprDiv = HtmlTree.DIV(HtmlStyles.deprecationBlock);
+            var deprPhrase = HtmlTree.SPAN(HtmlStyles.deprecatedLabel, getDeprecatedPhrase(packageElement));
             deprDiv.add(deprPhrase);
             if (!deprs.isEmpty()) {
                 List<? extends DocTree> commentTags = ch.getDescription(deprs.get(0));
@@ -291,7 +292,7 @@ public class PackageWriter extends HtmlDocletWriter {
     }
 
     protected Content getSummariesList() {
-        return HtmlTree.UL(HtmlStyle.summaryList);
+        return HtmlTree.UL(HtmlStyles.summaryList);
     }
 
     protected void addRelatedPackagesSummary(Content summaryContent) {
@@ -308,9 +309,9 @@ public class PackageWriter extends HtmlDocletWriter {
      * @param target the content to which the links will be added
      */
     public void addAllClassesAndInterfacesSummary(Content target) {
-        var table = new Table<TypeElement>(HtmlStyle.summaryTable)
+        var table = new Table<TypeElement>(HtmlStyles.summaryTable)
                 .setHeader(new TableHeader(contents.classLabel, contents.descriptionLabel))
-                .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast)
+                .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
@@ -347,14 +348,14 @@ public class PackageWriter extends HtmlDocletWriter {
                                      boolean showModules) {
         if (!relatedPackages.isEmpty()) {
             tableOfContents.addLink(HtmlIds.RELATED_PACKAGE_SUMMARY, contents.relatedPackages);
-            var table = new Table<Void>(HtmlStyle.summaryTable)
+            var table = new Table<Void>(HtmlStyles.summaryTable)
                     .setId(HtmlIds.RELATED_PACKAGE_SUMMARY)
                     .setCaption(contents.relatedPackages)
                     .setHeader(tableHeader);
             if (showModules) {
-                table.setColumnStyles(HtmlStyle.colPlain, HtmlStyle.colFirst, HtmlStyle.colLast);
+                table.setColumnStyles(HtmlStyles.colPlain, HtmlStyles.colFirst, HtmlStyles.colLast);
             } else {
-                table.setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colLast);
+                table.setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast);
             }
 
             for (PackageElement pkg : relatedPackages) {
@@ -423,7 +424,7 @@ public class PackageWriter extends HtmlDocletWriter {
     }
 
     protected Content getPackageSummary(Content summaryContent) {
-        return HtmlTree.SECTION(HtmlStyle.summary, summaryContent);
+        return HtmlTree.SECTION(HtmlStyles.summary, summaryContent);
     }
 
     private boolean hasRelatedPackagesInOtherModules(List<PackageElement> relatedPackages) {

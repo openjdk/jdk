@@ -787,7 +787,7 @@ public class Flow {
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
-            Set<Object> booleanLiterals = new HashSet<>();
+            Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
             for (JCCase c : cases) {
                 if (!TreeInfo.unguardedCase(c))
                     continue;
@@ -800,7 +800,7 @@ public class Flow {
                     } else if (l instanceof JCConstantCaseLabel constantLabel) {
                         if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
                             Object value = ((JCLiteral) constantLabel.expr).value;
-                            booleanLiterals.add(value);
+                            booleanLiterals.remove(value);
                         } else {
                             Symbol s = TreeInfo.symbol(constantLabel.expr);
                             if (s != null && s.isEnum()) {
@@ -817,7 +817,7 @@ public class Flow {
                 }
             }
 
-            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.size() == 2) {
+            if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
                 return true;
             }
 

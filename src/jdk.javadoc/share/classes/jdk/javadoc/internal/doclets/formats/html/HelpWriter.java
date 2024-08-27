@@ -27,17 +27,18 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.List;
 
-import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.html.Content;
+import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Text;
 
 
 /**
@@ -103,13 +104,13 @@ public class HelpWriter extends HtmlDocletWriter {
         var mainHeading = getContent("doclet.help.main_heading");
         tableOfContents.addLink(HtmlIds.TOP_OF_PAGE, mainHeading);
         tableOfContents.pushNestedList();
-        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyle.title, mainHeading))
-                .add(new HtmlTree(TagName.HR))
+        content.add(HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING, HtmlStyles.title, mainHeading))
+                .add(new HtmlTree(HtmlTag.HR))
                 .add(getNavigationSection())
-                .add(new HtmlTree(TagName.HR))
+                .add(new HtmlTree(HtmlTag.HR))
                 .add(getPageKindSection())
-                .add(new HtmlTree(TagName.HR))
-                .add(HtmlTree.SPAN(HtmlStyle.helpFootnote,
+                .add(new HtmlTree(HtmlTag.HR))
+                .add(HtmlTree.SPAN(HtmlStyles.helpFootnote,
                         getContent("doclet.help.footnote")));
         tableOfContents.popNestedList();
     }
@@ -129,7 +130,7 @@ public class HelpWriter extends HtmlDocletWriter {
         Content content = new ContentBuilder();
 
         Content navHeading = contents.getContent("doclet.help.navigation.head");
-        var navSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var navSection = HtmlTree.DIV(HtmlStyles.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, navHeading).setId(HtmlIds.HELP_NAVIGATION))
                 .add(contents.getContent("doclet.help.navigation.intro", overviewLink));
         if (options.createIndex()) {
@@ -153,7 +154,7 @@ public class HelpWriter extends HtmlDocletWriter {
         if (options.createIndex()) {
             section = newHelpSection(getContent("doclet.help.search.head"), PageMode.SEARCH);
             var searchIntro = HtmlTree.P(getContent("doclet.help.search.intro"));
-            var searchExamples = HtmlTree.OL(HtmlStyle.tocList);
+            var searchExamples = HtmlTree.OL(HtmlStyles.tocList);
             for (String[] example : SEARCH_EXAMPLES) {
                 searchExamples.add(HtmlTree.LI(
                         getContent("doclet.help.search.example",
@@ -190,7 +191,7 @@ public class HelpWriter extends HtmlDocletWriter {
      */
     private Content getPageKindSection() {
         Content pageKindsHeading = contents.getContent("doclet.help.page_kinds.head");
-        var pageKindsSection = HtmlTree.DIV(HtmlStyle.subTitle)
+        var pageKindsSection = HtmlTree.DIV(HtmlStyles.subTitle)
                 .add(HtmlTree.HEADING(Headings.CONTENT_HEADING, pageKindsHeading).setId(HtmlIds.HELP_PAGES))
                 .add(contents.getContent("doclet.help.page_kinds.intro"));
 
@@ -235,7 +236,7 @@ public class HelpWriter extends HtmlDocletWriter {
 
         // Class/interface
         Content notes = new ContentBuilder(
-                HtmlTree.SPAN(HtmlStyle.helpNote, getContent("doclet.help.class_interface.note")),
+                HtmlTree.SPAN(HtmlStyles.helpNote, getContent("doclet.help.class_interface.note")),
                 Text.of(" "),
                 getContent("doclet.help.class_interface.anno"),
                 Text.of(" "),
@@ -254,7 +255,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         getContent("doclet.help.class_interface.implementations"),
                         getContent("doclet.help.class_interface.declaration"),
                         getContent("doclet.help.class_interface.description")))
-                .add(new HtmlTree(TagName.BR))
+                .add(new HtmlTree(HtmlTag.BR))
                 .add(newHelpSectionList(
                         contents.nestedClassSummary,
                         contents.enumConstantSummary,
@@ -264,7 +265,7 @@ public class HelpWriter extends HtmlDocletWriter {
                         contents.methodSummary,
                         contents.annotateTypeRequiredMemberSummaryLabel,
                         contents.annotateTypeOptionalMemberSummaryLabel))
-                .add(new HtmlTree(TagName.BR))
+                .add(new HtmlTree(HtmlTag.BR))
                 .add(newHelpSectionList(
                         contents.enumConstantDetailLabel,
                         contents.fieldDetailsLabel,
@@ -412,7 +413,7 @@ public class HelpWriter extends HtmlDocletWriter {
     private HtmlTree newHelpSection(Content headingContent, HtmlId id) {
         tableOfContents.addLink(id, headingContent);
 
-        return HtmlTree.SECTION(HtmlStyle.helpSection,
+        return HtmlTree.SECTION(HtmlStyles.helpSection,
                 HtmlTree.HEADING(Headings.SUB_HEADING, headingContent))
                 .setId(id);
     }
@@ -422,7 +423,7 @@ public class HelpWriter extends HtmlDocletWriter {
     }
 
     private HtmlTree newHelpSectionList(Content first, Content... rest) {
-        var list = HtmlTree.UL(HtmlStyle.helpSectionList, HtmlTree.LI(first));
+        var list = HtmlTree.UL(HtmlStyles.helpSectionList, HtmlTree.LI(first));
         List.of(rest).forEach(i -> list.add(HtmlTree.LI(i)));
         return list;
     }

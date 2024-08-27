@@ -4670,6 +4670,9 @@ void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
   _phase->igvn().register_new_node_with_optimizer(clone);
   _orig_to_new.put(node, clone);
   _phase->set_ctrl(clone, new_ctrl);
+  if (node->is_CastII()) {
+    clone->set_req(0, new_ctrl);
+  }
 }
 
 // Rewire the data inputs of all (unprocessed) cloned nodes, whose inputs are still pointing to the same inputs as their

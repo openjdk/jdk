@@ -42,7 +42,7 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public sealed interface FieldModel
-        extends WritableElement<FieldModel>, CompoundElement<FieldElement>, AttributedElement, ClassElement
+        extends CompoundElement<FieldElement>, AttributedElement, ClassElement
         permits BufferedFieldBuilder.Model, FieldImpl {
 
     /** {@return the access flags} */

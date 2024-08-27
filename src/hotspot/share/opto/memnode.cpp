@@ -2723,13 +2723,13 @@ uint StoreNode::hash() const {
 //
 class ArrayPointer {
 private:
-  const bool _is_valid;          // The parsing succeeded
   const Node* _pointer;          // The final pointer to the position in the array
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
   const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
-  const jint  _int_offset_shift; // (optional) Shift value for int_offset
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
+  const jint _int_offset_shift; // (optional) Shift value for int_offset
+  const bool _is_valid;          // The parsing succeeded
 
   ArrayPointer(const bool is_valid,
                const Node* pointer,
@@ -2738,13 +2738,13 @@ private:
                const Node* int_offset,
                const jint int_offset_shift,
                const GrowableArray<Node*>* other_offsets) :
-      _is_valid(is_valid),
       _pointer(pointer),
       _base(base),
       _constant_offset(constant_offset),
       _int_offset(int_offset),
+      _other_offsets(other_offsets),
       _int_offset_shift(int_offset_shift),
-      _other_offsets(other_offsets)
+      _is_valid(is_valid)
   {
     assert(_pointer != nullptr, "must always have pointer");
     assert(is_valid == (_base != nullptr), "have base exactly if valid");
