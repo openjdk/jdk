@@ -25,6 +25,8 @@
 #ifndef SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 #define SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP
 
+#include "c1/c1_Compiler.hpp"
+#include "opto/c2compiler.hpp"
 #include "compiler/compilerDefinitions.hpp"
 
 #include "compiler/compiler_globals.hpp"
@@ -130,6 +132,15 @@ inline bool CompilerConfig::is_c1_profiling() {
 
 inline bool CompilerConfig::is_c2_or_jvmci_compiler_enabled() {
   return is_c2_enabled() || is_jvmci_compiler_enabled();
+}
+
+inline size_t CompilerConfig::min_code_cache_size() {
+  size_t min_code_cache_size = CodeCacheMinimumUseSpace;
+  COMPILER1_PRESENT(min_code_cache_size += Compiler::code_buffer_size());
+  COMPILER2_PRESENT(min_code_cache_size += C2Compiler::initial_code_buffer_size());
+  // Template Interpreter code is approximately 3X larger in debug builds.
+  DEBUG_ONLY(min_code_cache_size *= 3);
+  return min_code_cache_size;
 }
 
 #endif // SHARE_COMPILER_COMPILERDEFINITIONS_INLINE_HPP

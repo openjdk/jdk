@@ -187,8 +187,17 @@ public class CheckSegmentedCodeCache {
 
         // Fails if not enough space for VM internal code
         long minUseSpace = WHITE_BOX.getUintxVMFlag("CodeCacheMinimumUseSpace");
-        // minimum size: CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)
-        long minSize = (Platform.isDebugBuild() ? 3 : 1) * minUseSpace;
+        long nMethodSizeLimit = WHITE_BOX.getIntxVMFlag("NMethodSizeLimit");
+        long codeEntryAlignment = WHITE_BOX.getIntxVMFlag("CodeEntryAlignment");
+        long c1MinCodeCacheSize = 11 * nMethodSizeLimit / 10;
+        long c2MinCodeCacheSize = 2048 /* PhaseOutput::MAX_inst_size */ +
+                                  128 /* PhaseOutput::MAX_stubs_size */ +
+                                  4 * 1024 /* initial_const_capacity */ +
+                                  2 * Math.max(64, codeEntryAlignment) /* 2 * CodeSection::end_slop() */ +
+                                  2 * 128 /* sizeof(relocInfo) * PhaseOutput::MAX_locs_size */;
+        // minimum size: CompilerConfig::min_code_cache_size =
+        // (CodeCacheMinimumUseSpace + Compiler::code_buffer_size() + C2Compiler::initial_code_buffer_size())) DEBUG_ONLY(* 3)
+        long minSize = (minUseSpace + c1MinCodeCacheSize + c2MinCodeCacheSize) * (Platform.isDebugBuild() ? 3 : 1);
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                               "-XX:NonNMethodCodeHeapSize=" + minSize,
                                                               "-XX:ReservedCodeCacheSize=" + minSize,
