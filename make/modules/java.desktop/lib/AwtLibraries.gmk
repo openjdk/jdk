@@ -179,10 +179,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       CFLAGS := -DHEADLESS=true $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) \
           $(X_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
-      DISABLED_WARNINGS_gcc_AccelGlyphCache.c := unused-variable, \
-      DISABLED_WARNINGS_gcc_CUPSfuncs.c := unused-variable, \
-      DISABLED_WARNINGS_gcc_fontpath.c := unused-variable, \
-      DISABLED_WARNINGS_gcc_X11FontScaler_md.c := unused-variable, \
+      DISABLED_WARNINGS_gcc := unused-variable, \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
       JDK_LIBS := libawt java.base:libjava, \
