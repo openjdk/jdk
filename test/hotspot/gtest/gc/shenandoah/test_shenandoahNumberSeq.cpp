@@ -55,9 +55,9 @@ class ShenandoahNumberSeqTest: public ::testing::Test {
   void print(HdrSeq& seq, const char* msg) {
     std::cout << "[";
     for (int i = 0; i <= 100; i += 10) {
-      std::cout << "\t" << seq.percentile(i);
+      std::cout << "\t p" << i << ":" << seq.percentile(i);
     }
-    std::cout << " ] : " << msg << "\n";
+    std::cout << "\t] : " << msg << "\n";
   }
 };
 
