@@ -37,30 +37,17 @@ import jdk.internal.util.ByteArray;
  *
  */
 final class ObjectStreamDefaultSupport {
+
+    // todo: these could be constants
     private static final MethodHandle DRO_HANDLE;
     private static final MethodHandle DWO_HANDLE;
 
-    private static final ClassValue<ObjectStreamDefaultSupport> cache = new ClassValue<ObjectStreamDefaultSupport>() {
-        protected ObjectStreamDefaultSupport computeValue(final Class<?> type) {
-            ObjectStreamClass objectStreamClass = ObjectStreamClass.lookup(type);
-            if (objectStreamClass == null) {
-                return null;
-            }
-            try {
-                objectStreamClass.checkDefaultSerialize();
-            } catch (InvalidClassException e) {
-                return null;
-            }
-            return new ObjectStreamDefaultSupport(objectStreamClass);
-        }
-    };
-
     static {
         try {
-            MethodType droType = MethodType.methodType(void.class, Object.class, ObjectInputStream.class);
-            DRO_HANDLE = MethodHandles.lookup().findVirtual(ObjectStreamDefaultSupport.class, "defaultReadObject", droType);
-            MethodType dwoType = MethodType.methodType(void.class, Object.class, ObjectOutputStream.class);
-            DWO_HANDLE = MethodHandles.lookup().findVirtual(ObjectStreamDefaultSupport.class, "defaultWriteObject", dwoType);
+            MethodType droType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectInputStream.class);
+            DRO_HANDLE = MethodHandles.lookup().findStatic(ObjectStreamDefaultSupport.class, "defaultReadObject", droType);
+            MethodType dwoType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectOutputStream.class);
+            DWO_HANDLE = MethodHandles.lookup().findStatic(ObjectStreamDefaultSupport.class, "defaultWriteObject", dwoType);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
@@ -68,25 +55,7 @@ final class ObjectStreamDefaultSupport {
         }
     }
 
-    private final ObjectStreamClass streamClass;
-    private final MethodHandle boundDefaultReadObject;
-    private final MethodHandle boundDefaultWriteObject;
-
-    ObjectStreamDefaultSupport(ObjectStreamClass streamClass) {
-        this.streamClass = streamClass;
-        boundDefaultReadObject = DRO_HANDLE.bindTo(this).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectInputStream.class));
-        boundDefaultWriteObject = DWO_HANDLE.bindTo(this).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectOutputStream.class));
-    }
-
-    MethodHandle boundDefaultReadObject() {
-        return boundDefaultReadObject;
-    }
-
-    MethodHandle boundDefaultWriteObject() {
-        return boundDefaultWriteObject;
-    }
-
-    private void defaultReadObject(Object obj, ObjectInputStream ois) throws IOException, ClassNotFoundException {
+    private static void defaultReadObject(ObjectStreamClass streamClass, Object obj, ObjectInputStream ois) throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField getField = ois.readFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];
         Object[] objs = new Object[streamClass.getNumObjFields()];
@@ -110,7 +79,7 @@ final class ObjectStreamDefaultSupport {
         streamClass.setObjFieldValues(obj, objs);
     }
 
-    private void defaultWriteObject(Object obj, ObjectOutputStream oos) throws IOException {
+    private static void defaultWriteObject(ObjectStreamClass streamClass, Object obj, ObjectOutputStream oos) throws IOException {
         ObjectOutputStream.PutField putField = oos.putFields();
         byte[] bytes = new byte[streamClass.getPrimDataSize()];
         Object[] objs = new Object[streamClass.getNumObjFields()];
@@ -141,13 +110,26 @@ final class ObjectStreamDefaultSupport {
         }
 
         public MethodHandle defaultReadObject(Class<?> clazz) {
-            ObjectStreamDefaultSupport osds = cache.get(clazz);
-            return osds == null ? null : osds.boundDefaultReadObject();
+            ObjectStreamClass streamClass = getStreamClass(clazz);
+            return streamClass == null ? null : DRO_HANDLE.bindTo(streamClass).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectInputStream.class));
         }
 
         public MethodHandle defaultWriteObject(Class<?> clazz) {
-            ObjectStreamDefaultSupport osds = cache.get(clazz);
-            return osds == null ? null : osds.boundDefaultWriteObject();
+            ObjectStreamClass streamClass = getStreamClass(clazz);
+            return streamClass == null ? null : DWO_HANDLE.bindTo(streamClass).asType(MethodType.methodType(void.class, streamClass.forClass(), ObjectOutputStream.class));
+        }
+
+        private static ObjectStreamClass getStreamClass(final Class<?> clazz) {
+            ObjectStreamClass streamClass = ObjectStreamClass.lookup(clazz);
+            if (streamClass == null) {
+                return null;
+            }
+            try {
+                streamClass.checkDefaultSerialize();
+            } catch (InvalidClassException e) {
+                return null;
+            }
+            return streamClass;
         }
     }
 }
