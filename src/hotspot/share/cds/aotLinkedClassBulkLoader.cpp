@@ -88,6 +88,12 @@ void AOTLinkedClassBulkLoader::load_impl(JavaThread* current, LoaderKind loader_
   load_table(AOTLinkedClassTable::for_dynamic_archive(), loader_kind, h_loader, current);
   assert(!current->has_pending_exception(), "VM should have exited due to ExceptionMark");
 
+  if (loader_kind == LoaderKind::BOOT) {
+    // Delayed until init_javabase_preloaded_classes
+  } else {
+    HeapShared::initialize_default_subgraph_classes(h_loader, current);
+  }
+
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
     // Make sure we're still in a clean slate.
     VM_Verify verify_op;
@@ -172,6 +178,13 @@ void AOTLinkedClassBulkLoader::load_classes(LoaderKind loader_kind, Array<Instan
       }
     }
   }
+
+
+  if (loader_kind == LoaderKind::BOOT) {
+    // Delayed until init_javabase_preloaded_classes
+  } else {
+    maybe_init(classes, CHECK);
+  }
 }
 
 // Initiate loading of the <classes> in the <loader>. The <classes> should have already been loaded
@@ -248,4 +261,22 @@ void AOTLinkedClassBulkLoader::jvmti_agent_error(InstanceKlass* expected, Instan
   log_error(cds)("Expected: " INTPTR_FORMAT ", actual: " INTPTR_FORMAT, p2i(expected), p2i(actual));
   log_error(cds)("JVMTI class retransformation is not supported when archive was generated with -XX:+AOTClassLinking.");
   MetaspaceShared::unrecoverable_loading_error();
+}
+
+void AOTLinkedClassBulkLoader::init_javabase_preloaded_classes(TRAPS) {
+  maybe_init(AOTLinkedClassTable::for_static_archive()->boot(),  CHECK);
+
+  // Initialize java.base classes in the default subgraph.
+  HeapShared::initialize_default_subgraph_classes(Handle(), CHECK);
+}
+
+void AOTLinkedClassBulkLoader::maybe_init(Array<InstanceKlass*>* classes, TRAPS) {
+  if (classes != nullptr) {
+    for (int i = 0; i < classes->length(); i++) {
+      InstanceKlass* ik = classes->at(i);
+      if (ik->has_preinitialized_mirror()) {
+        ik->initialize_from_cds(CHECK);
+      }
+    }
+  }
 }

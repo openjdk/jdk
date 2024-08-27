@@ -181,11 +181,14 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
+  static void debug_trace();
 public:
   static unsigned oop_hash(oop const& p);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
   }
+
+  class CopyKlassSubGraphInfoToArchive;
 
   class CachedOopInfo {
     // Used by CDSHeapVerifier.
@@ -249,6 +252,7 @@ private:
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
   static CachedOopInfo make_cached_oop_info(oop obj);
+  static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
 
@@ -290,6 +294,7 @@ private:
   //    - Klass::java_mirror()
   //    - ConstantPool::resolved_references()
   static KlassSubGraphInfo* _default_subgraph_info;
+  static ArchivedKlassSubGraphInfoRecord* _runtime_default_subgraph_info;
 
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
@@ -326,7 +331,7 @@ private:
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
   static bool archive_object(oop obj);
-
+  static void copy_preinitialized_mirror(Klass* orig_k, oop orig_mirror, oop m);
   static void copy_interned_strings();
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
@@ -431,6 +436,9 @@ private:
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
+  static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+
+  static void initialize_default_subgraph_classes(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
 };
 
 #if INCLUDE_CDS_JAVA_HEAP

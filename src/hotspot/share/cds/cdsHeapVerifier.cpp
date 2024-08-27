@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsHeapVerifier.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -179,6 +180,16 @@ public:
         // See HeapShared::initialize_enum_klass().
         return;
       }
+      if (klass->is_instance_klass()) {
+        if (InstanceKlass::cast(klass)->is_initialized() &&
+            AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass::cast(klass))) {
+          return;
+        }
+      }
+
+      if (AOTClassInitializer::can_archive_preinitialized_mirror(_ik)) {
+        return;
+      }
 
       // This field *may* be initialized to a different value at runtime. Remember it
       // and check later if it appears in the archived object graph.
@@ -280,6 +291,9 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
   st->print("[%2d] ", level);
   orig_obj->print_address_on(st);
   st->print(" %s", k->internal_name());
+  if (java_lang_Class::is_instance(orig_obj)) {
+    st->print(" (%s)", java_lang_Class::as_Klass(orig_obj)->external_name());
+  }
   if (orig_field != nullptr) {
     if (k->is_instance_klass()) {
       TraceFields clo(orig_obj, orig_field, st);
