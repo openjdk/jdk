@@ -1,93 +1,68 @@
-import java.lang.ref.Cleaner;
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 import java.lang.ref.Reference;
-import java.lang.reflect.*;
-
-import jdk.internal.misc.Unsafe;
-
-// Run with
-// java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -XX:CompileCommand=compileonly,TestReachabilityFenceWithBuffer::test -Xbatch TestReachabilityFenceWithBuffer.java
+import java.lang.ref.Cleaner;
 
 public class ReachabilityFence {
+    static MyClass obj = new MyClass();
 
-    static class MyBuffer {
-        private static Unsafe UNSAFE;
-        static {
-            try {
-                Field field = Unsafe.class.getDeclaredField("theUnsafe");
-                field.setAccessible(true);
-                UNSAFE = (Unsafe)field.get(null);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        private static int current = 0;
-        private static long payload[] = new long[10];
-
-        private final int id;
-
-        public MyBuffer(long size) {
-            // Get a unique id, allocate memory and safe the address in the payload array
-            id = current++;
-            payload[id] = UNSAFE.allocateMemory(size);
-
-            // Register a cleaner to free the memory when the buffer is garbage collected
-            int lid = id; // Capture current value
-            Cleaner.create().register(this, () -> { free(lid); });
-
-            System.out.println("Created new buffer of size = " + size + " with id = " + id);
-        }
-
-        private static void free(int id) {
-            System.out.println("Freeing buffer with id = " + id);
-            UNSAFE.freeMemory(payload[id]);
-            payload[id] = 0;
-        }
-
-        public void put(int offset, byte b) {
-            UNSAFE.putByte(payload[id] + offset, b);
-        }
-
-        public byte get(int offset) {
-            return UNSAFE.getByte(payload[id] + offset);
-        }
-    }
-
-    static MyBuffer buffer = new MyBuffer(1000);
-    static {
-        // Initialize buffer
-        for (int i = 0; i < 1000; ++i) {
-            buffer.put(i, (byte)42);
-        }
+    static class MyClass {
+        static boolean[] collected = new boolean[100];
     }
 
     static void test(int limit) {
         for (long j = 0; j < limit; j++) {
             for (int i = 0; i < 100; i++) {
-                MyBuffer myBuffer = buffer;
-                if (myBuffer == null) return;
-                byte b = myBuffer.get(i);
-                if (b != 42) {
-                    throw new RuntimeException("Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!");
+                MyClass myObject = obj;
+                if (myObject == null) return;
+                {
+                  // This would be some code that requires that myObject stays live
+                  if (MyClass.collected[i]) throw new RuntimeException("myObject collected before reachabilityFence was reached!");
                 }
-                // Keep the buffer live while we read from it
-                Reference.reachabilityFence(buffer);
+                Reference.reachabilityFence(myObject);
             }
         }
     }
 
     public static void main(String[] args) throws Exception {
+        // Set 'MyClass.collected[0]' to true if 'obj' is garbage collected
+        Cleaner.create().register(obj, () -> {
+            System.out.println("obj was garbage collected");
+            MyClass.collected[0] = true;
+        });
+
         // Warmup to trigger compilation
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 20000; i++) {
             test(100);
         }
 
-        // Clear reference to 'buffer' and make sure it's garbage collected
+        // Clear reference to 'obj' and make sure it's garbage collected
         Thread gcThread = new Thread() {
             public void run() {
                 try {
-                    buffer = null;
-                    System.out.println("Buffer set to null. Waiting for garbage collection.");
+                    obj = null;
+                    System.out.println("obj set to null");
                     while (true) {
                         Thread.sleep(50);
                         System.gc();
@@ -102,7 +77,7 @@ public class ReachabilityFence {
 
         test(10_000_000);
 
-        // Wait for garbage collection
-        while (MyBuffer.payload[0] != 0) { }
+        // Wait
+        while (!MyClass.collected[0]) { }
     }
 }
