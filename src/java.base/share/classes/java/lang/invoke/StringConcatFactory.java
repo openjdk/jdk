@@ -29,6 +29,8 @@ package java.lang.invoke;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.constant.ConstantUtils;
+import jdk.internal.constant.MethodTypeDescImpl;
+import jdk.internal.constant.ReferenceClassDescImpl;
 import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.ReferenceKey;
@@ -1085,32 +1087,32 @@ public final class StringConcatFactory {
         static final MethodHandles.Lookup STR_LOOKUP = new MethodHandles.Lookup(String.class);
 
         static final ClassDesc CD_CONCAT             = ConstantUtils.binaryNameToDesc(CLASS_NAME);
-        static final ClassDesc CD_StringConcatHelper = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper;");
-        static final ClassDesc CD_StringConcatBase   = ClassDesc.ofDescriptor("Ljava/lang/StringConcatHelper$StringConcatBase;");
-        static final ClassDesc CD_Array_byte         = ClassDesc.ofDescriptor("[B");
-        static final ClassDesc CD_Array_String       = ClassDesc.ofDescriptor("[Ljava/lang/String;");
+        static final ClassDesc CD_StringConcatHelper = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper;");
+        static final ClassDesc CD_StringConcatBase   = ReferenceClassDescImpl.ofValidated("Ljava/lang/StringConcatHelper$StringConcatBase;");
+        static final ClassDesc CD_Array_byte         = ReferenceClassDescImpl.ofValidated("[B");
+        static final ClassDesc CD_Array_String       = ReferenceClassDescImpl.ofValidated("[Ljava/lang/String;");
 
-        static final MethodTypeDesc MTD_byte_char       = MethodTypeDesc.of(CD_byte, CD_char);
-        static final MethodTypeDesc MTD_byte            = MethodTypeDesc.of(CD_byte);
-        static final MethodTypeDesc MTD_int             = MethodTypeDesc.of(CD_int);
-        static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_boolean);
-        static final MethodTypeDesc MTD_int_int_char    = MethodTypeDesc.of(CD_int, CD_int, CD_char);
-        static final MethodTypeDesc MTD_int_int_int     = MethodTypeDesc.of(CD_int, CD_int, CD_int);
-        static final MethodTypeDesc MTD_int_int_long    = MethodTypeDesc.of(CD_int, CD_int, CD_long);
-        static final MethodTypeDesc MTD_int_int_String  = MethodTypeDesc.of(CD_int, CD_int, CD_String);
-        static final MethodTypeDesc MTD_String_float    = MethodTypeDesc.of(CD_String, CD_float);
-        static final MethodTypeDesc MTD_String_double   = MethodTypeDesc.of(CD_String, CD_double);
-        static final MethodTypeDesc MTD_String_Object   = MethodTypeDesc.of(CD_String, CD_Object);
+        static final MethodTypeDesc MTD_byte_char       = MethodTypeDescImpl.ofValidated(CD_byte, CD_char);
+        static final MethodTypeDesc MTD_byte            = MethodTypeDescImpl.ofValidated(CD_byte);
+        static final MethodTypeDesc MTD_int             = MethodTypeDescImpl.ofValidated(CD_int);
+        static final MethodTypeDesc MTD_int_int_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_boolean);
+        static final MethodTypeDesc MTD_int_int_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_char);
+        static final MethodTypeDesc MTD_int_int_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_int);
+        static final MethodTypeDesc MTD_int_int_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_long);
+        static final MethodTypeDesc MTD_int_int_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_String);
+        static final MethodTypeDesc MTD_String_float    = MethodTypeDescImpl.ofValidated(CD_String, CD_float);
+        static final MethodTypeDesc MTD_String_double   = MethodTypeDescImpl.ofValidated(CD_String, CD_double);
+        static final MethodTypeDesc MTD_String_Object   = MethodTypeDescImpl.ofValidated(CD_String, CD_Object);
 
-        static final MethodTypeDesc MTD_INIT             = MethodTypeDesc.of(CD_void, CD_Array_String);
-        static final MethodTypeDesc MTD_NEW_ARRAY_SUFFIX = MethodTypeDesc.of(CD_Array_byte, CD_String, CD_int, CD_byte);
-        static final MethodTypeDesc MTD_STRING_INIT      = MethodTypeDesc.of(CD_void, CD_Array_byte, CD_byte);
+        static final MethodTypeDesc MTD_INIT             = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_String);
+        static final MethodTypeDesc MTD_NEW_ARRAY_SUFFIX = MethodTypeDescImpl.ofValidated(CD_Array_byte, CD_String, CD_int, CD_byte);
+        static final MethodTypeDesc MTD_STRING_INIT      = MethodTypeDescImpl.ofValidated(CD_void, CD_Array_byte, CD_byte);
 
-        static final MethodTypeDesc PREPEND_int     = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String);
-        static final MethodTypeDesc PREPEND_long    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String);
-        static final MethodTypeDesc PREPEND_boolean = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String);
-        static final MethodTypeDesc PREPEND_char    = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
-        static final MethodTypeDesc PREPEND_String  = MethodTypeDesc.of(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
+        static final MethodTypeDesc PREPEND_int     = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_int, CD_String);
+        static final MethodTypeDesc PREPEND_long    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_long, CD_String);
+        static final MethodTypeDesc PREPEND_boolean = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_boolean, CD_String);
+        static final MethodTypeDesc PREPEND_char    = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_char, CD_String);
+        static final MethodTypeDesc PREPEND_String  = MethodTypeDescImpl.ofValidated(CD_int, CD_int, CD_byte, CD_Array_byte, CD_String, CD_String);
 
         static final RuntimeVisibleAnnotationsAttribute FORCE_INLINE = RuntimeVisibleAnnotationsAttribute.of(Annotation.of(ClassDesc.ofDescriptor("Ljdk/internal/vm/annotation/ForceInline;")));
 
@@ -1166,7 +1168,7 @@ public final class StringConcatFactory {
                 }
                 paramTypes[i] = cl;
             }
-            return changed ? MethodType.methodType(args.returnType(), paramTypes) : args;
+            return changed ? MethodType.methodType(args.returnType(), paramTypes, true) : args;
         }
 
         /**
@@ -1191,24 +1193,36 @@ public final class StringConcatFactory {
                 var cl = concatArgs.parameterType(i);
                 paramTypes[i + 4] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
             }
-            return MethodTypeDesc.of(CD_int, paramTypes);
+            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
         }
 
         /**
-         * Construct the MethodType of the coder method,
-         * The first parameter is the initialized coder, Only parameter types that can be UTF16 are added.
+         * Construct the MethodType of the coder method. The first parameter is the initialized coder.
+         * Only parameter types which can be UTF16 are added. Returns null if no such parameter exists.
          */
-        private static MethodTypeDesc coderArgs(MethodType concatArgs) {
+        private static MethodTypeDesc coderArgsIfMaybeUTF16(MethodType concatArgs) {
             int parameterCount = concatArgs.parameterCount();
-            List<ClassDesc> paramTypes = new ArrayList<>();
-            paramTypes.add(CD_int); // init coder
+
+            int maybeUTF16Count = 0;
             for (int i = 0; i < parameterCount; i++) {
-                var cl = concatArgs.parameterType(i);
-                if (maybeUTF16(cl)) {
-                    paramTypes.add(cl == char.class ? CD_char : CD_String);
+                if (maybeUTF16(concatArgs.parameterType(i))) {
+                    maybeUTF16Count++;
                 }
             }
-            return MethodTypeDesc.of(CD_int, paramTypes);
+
+            if (maybeUTF16Count == 0) {
+                return null;
+            }
+
+            var paramTypes = new ClassDesc[maybeUTF16Count + 1];
+            paramTypes[0] = CD_int; // init coder
+            for (int i = 0, paramIndex = 1; i < parameterCount; i++) {
+                var cl = concatArgs.parameterType(i);
+                if (maybeUTF16(cl)) {
+                    paramTypes[paramIndex++] = cl == char.class ? CD_char : CD_String;
+                }
+            }
+            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
         }
 
         /**
@@ -1223,7 +1237,7 @@ public final class StringConcatFactory {
                 var cl = concatArgs.parameterType(i);
                 paramTypes[i + 1] = needStringOf(cl) ? CD_String : ConstantUtils.classDesc(cl);
             }
-            return MethodTypeDesc.of(CD_int, paramTypes);
+            return MethodTypeDescImpl.ofValidated(CD_int, paramTypes);
         }
 
         private static MethodHandle generate(Lookup lookup, MethodType args, String[] constants) throws Exception {
@@ -1250,7 +1264,7 @@ public final class StringConcatFactory {
                 }
             }
             MethodTypeDesc lengthArgs  = lengthArgs(concatArgs),
-                           coderArgs   = parameterMaybeUTF16(concatArgs) ? coderArgs(concatArgs) : null,
+                           coderArgs   = coderArgsIfMaybeUTF16(concatArgs),
                            prependArgs = prependArgs(concatArgs);
 
             byte[] classBytes = ClassFile.of().build(CD_CONCAT,
@@ -1478,7 +1492,7 @@ public final class StringConcatFactory {
 
                     /*
                      * String[] constants = this.constants;
-                     * suffix  = constants[paranCount];
+                     * suffix  = constants[paramCount];
                      * length -= suffix.length();
                      */
                     cb.aload(thisSlot)
@@ -1691,15 +1705,6 @@ public final class StringConcatFactory {
 
         static boolean maybeUTF16(Class<?> cl) {
             return cl == char.class || !cl.isPrimitive();
-        }
-
-        static boolean parameterMaybeUTF16(MethodType args) {
-            for (int i = 0; i < args.parameterCount(); i++) {
-                if (maybeUTF16(args.parameterType(i))) {
-                    return true;
-                }
-            }
-            return false;
         }
     }
 }
