@@ -121,6 +121,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.access.JavaTimeAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.DecimalDigits;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
@@ -161,6 +163,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    private static final JavaTimeAccess JTA = SharedSecrets.getJavaTimeAccess();
 
     /**
      * Query for a time-zone that is region-only.
@@ -3850,7 +3853,7 @@ public final class DateTimeFormatterBuilder {
             if (hi > 0) {
                 buf.append('+').append(hi);
             }
-            buf.append(ldt);
+            JTA.formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }
@@ -3862,7 +3865,7 @@ public final class DateTimeFormatterBuilder {
             long lo = zeroSecs % SECONDS_PER_10000_YEARS;
             LocalDateTime ldt = LocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, inNano, ZoneOffset.UTC);
             int pos = buf.length();
-            buf.append(ldt);
+            JTA.formatTo(buf, ldt);
             if (ldt.getSecond() == 0 && inNano == 0) {
                 buf.append(":00");
             }
