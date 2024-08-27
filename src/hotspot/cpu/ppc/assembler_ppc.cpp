@@ -292,31 +292,54 @@ void Assembler::stb(Register d, RegisterOrConstant roc, Register s1, Register tm
   }
 }
 
-void Assembler::add(Register d, RegisterOrConstant roc, Register s1) {
+void Assembler::add(Register d, Register s, RegisterOrConstant roc) {
   if (roc.is_constant()) {
     intptr_t c = roc.as_constant();
     assert(is_simm(c, 16), "too big");
-    addi(d, s1, (int)c);
+    addi(d, s, (int)c);
+  } else {
+    add(d, s, roc.as_register());
   }
-  else add(d, roc.as_register(), s1);
 }
 
-void Assembler::subf(Register d, RegisterOrConstant roc, Register s1) {
+void Assembler::sub(Register d, Register s, RegisterOrConstant roc) {
   if (roc.is_constant()) {
     intptr_t c = roc.as_constant();
     assert(is_simm(-c, 16), "too big");
-    addi(d, s1, (int)-c);
+    addi(d, s, (int)-c);
+  } else {
+    sub(d, s, roc.as_register());
   }
-  else subf(d, roc.as_register(), s1);
 }
 
-void Assembler::cmpd(ConditionRegister d, RegisterOrConstant roc, Register s1) {
+void Assembler::xorr(Register d, Register s, RegisterOrConstant roc) {
+  if (roc.is_constant()) {
+    intptr_t c = roc.as_constant();
+    assert(is_uimm(c, 16), "too big");
+    xori(d, s, (int)c);
+  } else {
+    xorr(d, s, roc.as_register());
+  }
+}
+
+void Assembler::cmpw(ConditionRegister d, Register s, RegisterOrConstant roc) {
   if (roc.is_constant()) {
     intptr_t c = roc.as_constant();
     assert(is_simm(c, 16), "too big");
-    cmpdi(d, s1, (int)c);
+    cmpwi(d, s, (int)c);
+  } else {
+    cmpw(d, s, roc.as_register());
   }
-  else cmpd(d, roc.as_register(), s1);
+}
+
+void Assembler::cmpd(ConditionRegister d, Register s, RegisterOrConstant roc) {
+  if (roc.is_constant()) {
+    intptr_t c = roc.as_constant();
+    assert(is_simm(c, 16), "too big");
+    cmpdi(d, s, (int)c);
+  } else {
+    cmpd(d, s, roc.as_register());
+  }
 }
 
 // Load a 64 bit constant. Patchable.
