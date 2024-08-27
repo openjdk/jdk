@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,41 +179,6 @@ public class ReflectionFactory {
     //
     //
 
-    /** Creates a new java.lang.reflect.Constructor. Access checks as
-        per java.lang.reflect.AccessibleObject are not overridden. */
-    public Constructor<?> newConstructor(Class<?> declaringClass,
-                                         Class<?>[] parameterTypes,
-                                         Class<?>[] checkedExceptions,
-                                         int modifiers,
-                                         int slot,
-                                         String signature,
-                                         byte[] annotations,
-                                         byte[] parameterAnnotations)
-    {
-        return langReflectAccess.newConstructor(declaringClass,
-                                                parameterTypes,
-                                                checkedExceptions,
-                                                modifiers,
-                                                slot,
-                                                signature,
-                                                annotations,
-                                                parameterAnnotations);
-    }
-
-    /** Gets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public ConstructorAccessor getConstructorAccessor(Constructor<?> c) {
-        return langReflectAccess.getConstructorAccessor(c);
-    }
-
-    /** Sets the ConstructorAccessor object for a
-        java.lang.reflect.Constructor */
-    public void setConstructorAccessor(Constructor<?> c,
-                                       ConstructorAccessor accessor)
-    {
-        langReflectAccess.setConstructorAccessor(c, accessor);
-    }
-
     /** Makes a copy of the passed method. The returned method is a
         "child" of the passed one; see the comments in Method.java for
         details. */
@@ -225,9 +190,9 @@ public class ReflectionFactory {
      * a "child" but a "sibling" of the Method in arg. Should only be
      * used on non-root methods. */
     public Method leafCopyMethod(Method arg) {
-        return langReflectAccess.leafCopyMethod(arg);
+        Method root = langReflectAccess.getRoot(arg);
+        return langReflectAccess.copyMethod(root);
     }
-
 
     /** Makes a copy of the passed field. The returned field is a
         "child" of the passed one; see the comments in Field.java for
@@ -369,15 +334,6 @@ public class ReflectionFactory {
 
     private final Constructor<?> generateConstructor(Class<?> cl,
                                                      Constructor<?> constructorToCall) {
-
-        Constructor<?> ctor = newConstructor(constructorToCall.getDeclaringClass(),
-                                             constructorToCall.getParameterTypes(),
-                                             constructorToCall.getExceptionTypes(),
-                                             constructorToCall.getModifiers(),
-                                             langReflectAccess.getConstructorSlot(constructorToCall),
-                                             langReflectAccess.getConstructorSignature(constructorToCall),
-                                             langReflectAccess.getConstructorAnnotations(constructorToCall),
-                                             langReflectAccess.getConstructorParameterAnnotations(constructorToCall));
         ConstructorAccessor acc;
         if (useOldSerializableConstructor()) {
             acc = new SerializationConstructorAccessorGenerator().
@@ -386,9 +342,12 @@ public class ReflectionFactory {
                                                                  constructorToCall.getModifiers(),
                                                                  constructorToCall.getDeclaringClass());
         } else {
-            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, ctor);
+            acc = MethodHandleAccessorFactory.newSerializableConstructorAccessor(cl, constructorToCall);
         }
-        setConstructorAccessor(ctor, acc);
+        // Unlike other root constructors, this constructor is not copied for mutation
+        // but directly mutated, as it is not cached. To cache this constructor,
+        // setAccessible call must be done on a copy and return that copy instead.
+        Constructor<?> ctor = langReflectAccess.newConstructorWithAccessor(constructorToCall, acc);
         ctor.setAccessible(true);
         return ctor;
     }

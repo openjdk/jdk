@@ -534,15 +534,6 @@ public abstract sealed class AbstractPoolEntry {
         public String asInternalName() {
             return ref1.stringValue();
         }
-
-        @Override
-        public boolean equals(Object o) {
-            if (o == this) { return true; }
-            if (o instanceof AbstractNamedEntry ne) {
-                return tag == ne.tag() && name().equals(ref1());
-            }
-            return false;
-        }
     }
 
     public static final class ClassEntryImpl extends AbstractNamedEntry implements ClassEntry {

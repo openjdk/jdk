@@ -370,7 +370,7 @@ bool LogConfiguration::parse_command_line_arguments(const char* opts) {
 
   // Split the option string to its colon separated components.
   char* str = copy;
-  char* substrings[4] = {0};
+  char* substrings[4] = {};
   for (int i = 0 ; i < 4; i++) {
     substrings[i] = str;
 

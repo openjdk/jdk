@@ -1776,14 +1776,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load %s-bit .dll on a %s-bit platform",
-                lib_arch_str, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load %s-bit .dll on a %s-bit platform",
+                 lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    ::_snprintf(ebuf, ebuflen - 1,
-                "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                lib_arch, running_arch_str);
+    os::snprintf(ebuf, ebuflen - 1,
+                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                 lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -3462,7 +3462,8 @@ static char* map_or_reserve_memory_aligned(size_t size, size_t alignment, int fi
                                      os::attempt_reserve_memory_at(aligned_base, size, false, flag);
   }
 
-  assert(aligned_base != nullptr, "Did not manage to re-map after %d attempts?", max_attempts);
+  assert(aligned_base != nullptr,
+      "Did not manage to re-map after %d attempts (size %zu, alignment %zu, file descriptor %d)", max_attempts, size, alignment, file_desc);
 
   return aligned_base;
 }

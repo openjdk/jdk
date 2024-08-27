@@ -256,11 +256,6 @@ public:
 
   G1HeapRegion* next_region_in_heap(const G1HeapRegion* r) const;
 
-  // Find the highest free or uncommitted region in the reserved heap,
-  // and if uncommitted, commit it. If none are available, return G1_NO_HRM_INDEX.
-  // Set the 'expanded' boolean true if a new region was committed.
-  uint find_highest_free(bool* expanded);
-
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
   // and not free, and return the number of regions newly committed in commit_count.

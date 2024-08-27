@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 #include "utilities/exceptions.hpp"
