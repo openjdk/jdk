@@ -246,7 +246,7 @@ protected:
 
 public:
 
-  virtual bool generate_c1_runtime_stubs(BufferBlob* buffer_blob);
+  virtual void generate_c1_runtime_stubs(BufferBlob* buffer_blob);
 };
 
 #endif // SHARE_GC_SHENANDOAH_C1_SHENANDOAHBARRIERSETC1_HPP
