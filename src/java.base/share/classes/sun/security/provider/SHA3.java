@@ -76,7 +76,8 @@ public abstract class SHA3 extends DigestBase {
 
     // The byte offset in the state where the next sqeeze() will start.
     // -1 indicates that either we are in the absorbing phase (only
-    // update() calls were made so far)
+    // update() calls were made so far) in an XOF or the class was initialized
+    // as a hash.
     // The first squeeze() call (after a possibly empty sequence of update()
     // calls) will set it to 0 at its start.
     // When a squeeze() call uses up all available bytes from this state
