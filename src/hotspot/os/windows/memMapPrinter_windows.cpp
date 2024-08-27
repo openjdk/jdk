@@ -106,6 +106,8 @@ public:
       out.print("map");
     } else if (mem_info.Type == MEM_PRIVATE) {
       out.print("pvt");
+    } else if (mem_info.Type == 0 && mem_info.State == MEM_FREE) {
+      out.print("---");
     } else {
       fatal("Unknown Windows memory type 0x%x", mem_info.Type);
     }
