@@ -95,7 +95,7 @@ public:
     } else if (mem_info.State == MEM_RESERVE) {
       out.put('r');
     } else {
-      out.print("0x%x", mem_info.State);
+         fatal("Unknown Windows memory state value: 0x%x", mem_info.State);
     }
   }
 
@@ -107,7 +107,7 @@ public:
     } else if (mem_info.Type == MEM_PRIVATE) {
       out.print("pvt");
     } else {
-      out.print("0x%x", mem_info.Type);
+      fatal("Unknown Windows memory type 0x%x", mem_info.Type);
     }
   }
 };
