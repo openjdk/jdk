@@ -456,7 +456,7 @@ jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node
 
     if (bt == T_INT || bt == T_LONG) {
       *base = node->in(1)->is_Con() ? node->in(2) : node->in(1);
-      *terms = 1;
+      *terms = 2; // discouranges multiplication nodes
       multiplier = multiplier_node->get_integer_as_long(bt);
     }
   }
