@@ -5475,6 +5475,9 @@ class StubGenerator: public StubCodeGenerator {
 
     // vector version
     if (UseRVV) {
+      // for MIME case, it has a default length limit of 76 which could be
+      // different(smaller) from (send - soff), so in MIME case, we go through
+      // the scalar code path directly.
       __ bnez(isMIME, ScalarLoop);
 
       Label ProcessM1, ProcessM2;
@@ -5562,6 +5565,9 @@ class StubGenerator: public StubCodeGenerator {
       __ orr(byte0, byte0, byte1);
       __ orr(byte0, byte0, byte3);
       __ slliw(byte2, byte2, 6);
+      // For performance consideration, `combined32Bits` is constructed for 2 purposes at the same time,
+      //  1. error check below
+      //  2. decode below
       __ orr(combined32Bits, byte0, byte2);
 
       // error check
