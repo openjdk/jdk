@@ -52,7 +52,7 @@ VMObjectAlloc(jvmtiEnv *jvmti,
     jni->FatalError("Failed during the GetClassSignature call");
   }
 
-  printf("VMObjectAlloc called for %s\n", signature);
+  LOG("VMObjectAlloc called for %s\n", signature);
 
   if (!strcmp(signature, "LVMObjectAllocTest;")) {
     number_of_allocation++;
@@ -63,7 +63,7 @@ static void JNICALL
 VMDeath(jvmtiEnv *jvmti, JNIEnv* jni) {
   RawMonitorLocker locker(jvmti, jni, event_mon);
 
-  printf("VMDeath\n");
+  LOG("VMDeath\n");
   is_vm_dead = true;
 }
 
@@ -84,7 +84,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   err = jvmti->CreateRawMonitor("Event Monitor", &event_mon);
   if (err != JVMTI_ERROR_NONE) {
-    printf("Agent_OnLoad: CreateRawMonitor failed: %d\n", err);
+    LOG("Agent_OnLoad: CreateRawMonitor failed: %d\n", err);
     return JNI_ERR;
   }
 
