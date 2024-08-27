@@ -96,10 +96,6 @@ class Generation: public CHeapObj<mtGC> {
   // for the allocation of objects.
   virtual size_t max_capacity() const;
 
-  // The largest number of contiguous free bytes in the generation,
-  // including expansion  (Assumes called at a safepoint.)
-  virtual size_t contiguous_available() const = 0;
-
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
@@ -113,9 +109,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Like "allocate", but performs any necessary locking internally.
   virtual HeapWord* par_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Thread-local allocation buffers
-  virtual bool supports_tlab_allocation() const { return false; }
 
   // Perform a heap collection, attempting to create (at least) enough
   // space to support an allocation of the given "word_size".  If

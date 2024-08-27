@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
@@ -137,12 +138,12 @@ class LambdaForm {
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
     enum BasicType {
-        L_TYPE('L', Object.class, Wrapper.OBJECT),  // all reference types
-        I_TYPE('I', int.class,    Wrapper.INT),
-        J_TYPE('J', long.class,   Wrapper.LONG),
-        F_TYPE('F', float.class,  Wrapper.FLOAT),
-        D_TYPE('D', double.class, Wrapper.DOUBLE),  // all primitive types
-        V_TYPE('V', void.class,   Wrapper.VOID);    // not valid in all contexts
+        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.ReferenceType), // all reference types
+        I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.IntType),
+        J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LongType),
+        F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FloatType),
+        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DoubleType),  // all primitive types
+        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VoidType);    // not valid in all contexts
 
         static final @Stable BasicType[] ALL_TYPES = BasicType.values();
         static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
@@ -153,11 +154,13 @@ class LambdaForm {
         final char btChar;
         final Class<?> btClass;
         final Wrapper btWrapper;
+        final TypeKind btKind;
 
-        private BasicType(char btChar, Class<?> btClass, Wrapper wrapper) {
+        private BasicType(char btChar, Class<?> btClass, Wrapper wrapper, TypeKind typeKind) {
             this.btChar = btChar;
             this.btClass = btClass;
             this.btWrapper = wrapper;
+            this.btKind = typeKind;
         }
 
         char basicTypeChar() {
@@ -168,6 +171,9 @@ class LambdaForm {
         }
         Wrapper basicTypeWrapper() {
             return btWrapper;
+        }
+        TypeKind basicTypeKind() {
+            return btKind;
         }
         int basicTypeSlots() {
             return btWrapper.stackSlots();

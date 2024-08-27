@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,7 @@ public:
     tiny_size  =  256  - slack, // Size of first chunk (tiny)
     init_size  =  1*K  - slack, // Size of first chunk (normal aka small)
     medium_size= 10*K  - slack, // Size of medium-sized chunk
-    size       = 32*K  - slack, // Default size of an Arena chunk (following the first)
-    non_pool_size = init_size + 32 // An initial size which is not one of above
+    size       = 32*K  - slack  // Default size of an Arena chunk (following the first)
   };
 
   static void chop(Chunk* chunk);                  // Chop this chunk
@@ -88,27 +87,30 @@ public:
 class Arena : public CHeapObjBase {
 public:
 
-  enum class Tag {
+  enum class Tag : uint8_t {
     tag_other = 0,
     tag_ra,   // resource area
     tag_ha,   // handle area
     tag_node  // C2 Node arena
   };
 
+private:
+  const MEMFLAGS _flags;        // Memory tracking flags
+  const Tag _tag;
+  size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
+
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
 
-  MEMFLAGS    _flags;           // Memory tracking flags
-  const Tag _tag;
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
   char* _hwm;                   // High water mark
   char* _max;                   // and max in current chunk
+
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
-  size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
 
   void* internal_amalloc(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM)  {
     assert(is_aligned(x, BytesPerWord), "misaligned size");
@@ -124,8 +126,7 @@ protected:
  public:
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
-  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other);
-  Arena(MEMFLAGS memflag, Tag tag, size_t init_size);
+  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other, size_t init_size = Chunk::init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }

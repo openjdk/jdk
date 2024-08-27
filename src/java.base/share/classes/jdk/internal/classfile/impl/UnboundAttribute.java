@@ -149,7 +149,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final ConstantValueEntry entry;
 
         public UnboundConstantValueAttribute(ConstantValueEntry entry) {
-            super(Attributes.CONSTANT_VALUE);
+            super(Attributes.constantValue());
             this.entry = entry;
         }
 
@@ -164,7 +164,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<DeprecatedAttribute>
             implements DeprecatedAttribute {
         public UnboundDeprecatedAttribute() {
-            super(Attributes.DEPRECATED);
+            super(Attributes.deprecated());
         }
     }
 
@@ -172,7 +172,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<SyntheticAttribute>
             implements SyntheticAttribute {
         public UnboundSyntheticAttribute() {
-            super(Attributes.SYNTHETIC);
+            super(Attributes.synthetic());
         }
     }
 
@@ -182,7 +182,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry signature;
 
         public UnboundSignatureAttribute(Utf8Entry signature) {
-            super(Attributes.SIGNATURE);
+            super(Attributes.signature());
             this.signature = signature;
         }
 
@@ -198,7 +198,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> exceptions;
 
         public UnboundExceptionsAttribute(List<ClassEntry> exceptions) {
-            super(Attributes.EXCEPTIONS);
+            super(Attributes.exceptions());
             this.exceptions = List.copyOf(exceptions);
         }
 
@@ -214,7 +214,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final AnnotationValue annotationDefault;
 
         public UnboundAnnotationDefaultAttribute(AnnotationValue annotationDefault) {
-            super(Attributes.ANNOTATION_DEFAULT);
+            super(Attributes.annotationDefault());
             this.annotationDefault = annotationDefault;
         }
 
@@ -229,7 +229,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry sourceFile;
 
         public UnboundSourceFileAttribute(Utf8Entry sourceFile) {
-            super(Attributes.SOURCE_FILE);
+            super(Attributes.sourceFile());
             this.sourceFile = sourceFile;
         }
 
@@ -245,7 +245,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<StackMapFrameInfo> entries;
 
         public UnboundStackMapTableAttribute(List<StackMapFrameInfo> entries) {
-            super(Attributes.STACK_MAP_TABLE);
+            super(Attributes.stackMapTable());
             this.entries = List.copyOf(entries);
         }
 
@@ -261,7 +261,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<InnerClassInfo> innerClasses;
 
         public UnboundInnerClassesAttribute(List<InnerClassInfo> innerClasses) {
-            super(Attributes.INNER_CLASSES);
+            super(Attributes.innerClasses());
             this.innerClasses = List.copyOf(innerClasses);
         }
 
@@ -277,7 +277,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<RecordComponentInfo> components;
 
         public UnboundRecordAttribute(List<RecordComponentInfo> components) {
-            super(Attributes.RECORD);
+            super(Attributes.record());
             this.components = List.copyOf(components);
         }
 
@@ -294,7 +294,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final NameAndTypeEntry method;
 
         public UnboundEnclosingMethodAttribute(ClassEntry classEntry, NameAndTypeEntry method) {
-            super(Attributes.ENCLOSING_METHOD);
+            super(Attributes.enclosingMethod());
             this.classEntry = classEntry;
             this.method = method;
         }
@@ -316,7 +316,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<MethodParameterInfo> parameters;
 
         public UnboundMethodParametersAttribute(List<MethodParameterInfo> parameters) {
-            super(Attributes.METHOD_PARAMETERS);
+            super(Attributes.methodParameters());
             this.parameters = List.copyOf(parameters);
         }
 
@@ -332,7 +332,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         final Utf8Entry moduleTarget;
 
         public UnboundModuleTargetAttribute(Utf8Entry moduleTarget) {
-            super(Attributes.MODULE_TARGET);
+            super(Attributes.moduleTarget());
             this.moduleTarget = moduleTarget;
         }
 
@@ -348,7 +348,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         final ClassEntry mainClass;
 
         public UnboundModuleMainClassAttribute(ClassEntry mainClass) {
-            super(Attributes.MODULE_MAIN_CLASS);
+            super(Attributes.moduleMainClass());
             this.mainClass = mainClass;
         }
 
@@ -365,7 +365,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ModuleHashInfo> hashes;
 
         public UnboundModuleHashesAttribute(Utf8Entry algorithm, List<ModuleHashInfo> hashes) {
-            super(Attributes.MODULE_HASHES);
+            super(Attributes.moduleHashes());
             this.algorithm = algorithm;
             this.hashes = List.copyOf(hashes);
         }
@@ -387,7 +387,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Collection<PackageEntry> packages;
 
         public UnboundModulePackagesAttribute(Collection<PackageEntry> packages) {
-            super(Attributes.MODULE_PACKAGES);
+            super(Attributes.modulePackages());
             this.packages = List.copyOf(packages);
         }
 
@@ -403,7 +403,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final int resolutionFlags;
 
         public UnboundModuleResolutionAttribute(int flags) {
-            super(Attributes.MODULE_RESOLUTION);
+            super(Attributes.moduleResolution());
             resolutionFlags = flags;
         }
 
@@ -419,7 +419,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> permittedSubclasses;
 
         public UnboundPermittedSubclassesAttribute(List<ClassEntry> permittedSubclasses) {
-            super(Attributes.PERMITTED_SUBCLASSES);
+            super(Attributes.permittedSubclasses());
             this.permittedSubclasses = List.copyOf(permittedSubclasses);
         }
 
@@ -435,7 +435,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<ClassEntry> memberEntries;
 
         public UnboundNestMembersAttribute(List<ClassEntry> memberEntries) {
-            super(Attributes.NEST_MEMBERS);
+            super(Attributes.nestMembers());
             this.memberEntries = List.copyOf(memberEntries);
         }
 
@@ -451,7 +451,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final ClassEntry hostEntry;
 
         public UnboundNestHostAttribute(ClassEntry hostEntry) {
-            super(Attributes.NEST_HOST);
+            super(Attributes.nestHost());
             this.hostEntry = hostEntry;
         }
 
@@ -467,7 +467,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry idEntry;
 
         public UnboundCompilationIDAttribute(Utf8Entry idEntry) {
-            super(Attributes.COMPILATION_ID);
+            super(Attributes.compilationId());
             this.idEntry = idEntry;
         }
 
@@ -483,7 +483,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final Utf8Entry idEntry;
 
         public UnboundSourceIDAttribute(Utf8Entry idEntry) {
-            super(Attributes.SOURCE_ID);
+            super(Attributes.sourceId());
             this.idEntry = idEntry;
         }
 
@@ -499,7 +499,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final byte[] contents;
 
         public UnboundSourceDebugExtensionAttribute(byte[] contents) {
-            super(Attributes.SOURCE_DEBUG_EXTENSION);
+            super(Attributes.sourceDebugExtension());
             this.contents = contents;
         }
 
@@ -515,7 +515,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<CharacterRangeInfo> ranges;
 
         public UnboundCharacterRangeTableAttribute(List<CharacterRangeInfo> ranges) {
-            super(Attributes.CHARACTER_RANGE_TABLE);
+            super(Attributes.characterRangeTable());
             this.ranges = List.copyOf(ranges);
         }
 
@@ -531,7 +531,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LineNumberInfo> lines;
 
         public UnboundLineNumberTableAttribute(List<LineNumberInfo> lines) {
-            super(Attributes.LINE_NUMBER_TABLE);
+            super(Attributes.lineNumberTable());
             this.lines = List.copyOf(lines);
         }
 
@@ -547,7 +547,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LocalVariableInfo> locals;
 
         public UnboundLocalVariableTableAttribute(List<LocalVariableInfo> locals) {
-            super(Attributes.LOCAL_VARIABLE_TABLE);
+            super(Attributes.localVariableTable());
             this.locals = List.copyOf(locals);
         }
 
@@ -563,7 +563,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<LocalVariableTypeInfo> locals;
 
         public UnboundLocalVariableTypeTableAttribute(List<LocalVariableTypeInfo> locals) {
-            super(Attributes.LOCAL_VARIABLE_TYPE_TABLE);
+            super(Attributes.localVariableTypeTable());
             this.locals = List.copyOf(locals);
         }
 
@@ -579,7 +579,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<Annotation> elements;
 
         public UnboundRuntimeVisibleAnnotationsAttribute(List<Annotation> elements) {
-            super(Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
+            super(Attributes.runtimeVisibleAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -595,7 +595,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<Annotation> elements;
 
         public UnboundRuntimeInvisibleAnnotationsAttribute(List<Annotation> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
+            super(Attributes.runtimeInvisibleAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -611,7 +611,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<List<Annotation>> elements;
 
         public UnboundRuntimeVisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
-            super(Attributes.RUNTIME_VISIBLE_PARAMETER_ANNOTATIONS);
+            super(Attributes.runtimeVisibleParameterAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -627,7 +627,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<List<Annotation>> elements;
 
         public UnboundRuntimeInvisibleParameterAnnotationsAttribute(List<List<Annotation>> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_PARAMETER_ANNOTATIONS);
+            super(Attributes.runtimeInvisibleParameterAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -643,7 +643,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<TypeAnnotation> elements;
 
         public UnboundRuntimeVisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
-            super(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS);
+            super(Attributes.runtimeVisibleTypeAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -659,7 +659,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         private final List<TypeAnnotation> elements;
 
         public UnboundRuntimeInvisibleTypeAnnotationsAttribute(List<TypeAnnotation> elements) {
-            super(Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS);
+            super(Attributes.runtimeInvisibleTypeAnnotations());
             this.elements = List.copyOf(elements);
         }
 
@@ -845,7 +845,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                                       Collection<ClassEntry> uses,
                                       Collection<ModuleProvideInfo> provides)
         {
-            super(Attributes.MODULE);
+            super(Attributes.module());
             this.moduleName = moduleName;
             this.moduleFlags = moduleFlags;
             this.moduleVersion = moduleVersion;
@@ -921,7 +921,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             extends UnboundAttribute<BootstrapMethodsAttribute>
             implements BootstrapMethodsAttribute {
         public EmptyBootstrapAttribute() {
-            super(Attributes.BOOTSTRAP_METHODS);
+            super(Attributes.bootstrapMethods());
         }
 
         @Override

@@ -524,6 +524,10 @@ static bool rule_major_allocation_rate(const ZDirectorStats& stats) {
 }
 
 static double calculate_young_to_old_worker_ratio(const ZDirectorStats& stats) {
+  if (!stats._old_stats._cycle._is_time_trustable) {
+    return 1.0;
+  }
+
   const double young_gc_time = gc_time(stats._young_stats);
   const double old_gc_time = gc_time(stats._old_stats);
   const size_t reclaimed_per_young_gc = stats._young_stats._stat_heap._reclaimed_avg;

@@ -420,7 +420,12 @@ static OopMap* generate_oop_map(StubAssembler* sasm, int num_rt_args,
 void C1_MacroAssembler::save_live_registers_no_oop_map(bool save_fpu_registers) {
   __ block_comment("save_live_registers");
 
-  __ pusha();         // integer registers
+  // Push CPU state in multiple of 16 bytes
+#ifdef _LP64
+  __ save_legacy_gprs();
+#else
+  __ pusha();
+#endif
 
   // assert(float_regs_as_doubles_off % 2 == 0, "misaligned offset");
   // assert(xmm_regs_as_doubles_off % 2 == 0, "misaligned offset");
@@ -560,7 +565,12 @@ void C1_MacroAssembler::restore_live_registers(bool restore_fpu_registers) {
   __ block_comment("restore_live_registers");
 
   restore_fpu(this, restore_fpu_registers);
+#ifdef _LP64
+  __ restore_legacy_gprs();
+#else
   __ popa();
+#endif
+
 }
 
 

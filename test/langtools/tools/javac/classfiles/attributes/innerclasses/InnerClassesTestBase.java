@@ -195,7 +195,7 @@ public abstract class InnerClassesTestBase extends TestResult {
             Map<String, Set<String>> class2Flags = test.getFlags();
             ClassModel cm = readClassFile(compile(getCompileOptions(), test.getSource())
                     .getClasses().get(classToTest));
-            InnerClassesAttribute innerClasses = cm.findAttribute(Attributes.INNER_CLASSES).orElse(null);
+            InnerClassesAttribute innerClasses = cm.findAttribute(Attributes.innerClasses()).orElse(null);
             int count = 0;
             for (Attribute<?> a : cm.attributes()) {
                 if (a instanceof InnerClassesAttribute) {

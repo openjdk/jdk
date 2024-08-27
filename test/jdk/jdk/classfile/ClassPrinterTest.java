@@ -730,13 +730,13 @@ class ClassPrinterTest {
                     <nest_host>Phee</nest_host>
                     <nest_members><member>Phoo</member><member>Boo</member><member>Bee</member></nest_members>
                     <record_components>
-                        <record>
+                        <component>
                             <name>fee</name>
                             <type>LPhoo;</type>
                             <attributes><attribute>Signature</attribute><attribute>RuntimeInvisibleTypeAnnotations</attribute></attributes>
                             <signature>LPhoo;</signature>
                             <invisible_type_annotations>
-                                <anno><annotation_class>LBoo;</annotation_class><target_info>FIELD</target_info><values></values></anno></invisible_type_annotations></record></record_components>
+                                <anno><annotation_class>LBoo;</annotation_class><target_info>FIELD</target_info><values></values></anno></invisible_type_annotations></component></record_components>
                     <invisible_annotations>
                         <anno><annotation_class>LPhoo;</annotation_class><values><pair><name>flfl</name><value><float>2.0</float></value></pair><pair><name>frfl</name><value><float>3.0</float></value></pair></values></anno></invisible_annotations>
                     <permitted_subclasses><subclass>Boo</subclass><subclass>Phoo</subclass></permitted_subclasses>

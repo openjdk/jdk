@@ -60,7 +60,7 @@ private:
   // old objects.
   OldGCAllocRegion _old_gc_alloc_region;
 
-  HeapRegion* _retained_old_gc_alloc_region;
+  G1HeapRegion* _retained_old_gc_alloc_region;
 
   bool survivor_is_full() const;
   bool old_is_full() const;
@@ -70,7 +70,7 @@ private:
 
   void reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                  OldGCAllocRegion* old,
-                                 HeapRegion** retained);
+                                 G1HeapRegion** retained);
 
   // Accessors to the allocation regions.
   inline MutatorAllocRegion* mutator_alloc_region(uint node_index);
@@ -108,7 +108,7 @@ public:
   void init_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void release_gc_alloc_regions(G1EvacInfo* evacuation_info);
   void abandon_gc_alloc_regions();
-  bool is_retained_old_region(HeapRegion* hr);
+  bool is_retained_old_region(G1HeapRegion* hr);
 
   // Allocate blocks of memory during mutator time.
 

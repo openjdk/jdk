@@ -153,6 +153,7 @@ tier1_common = \
   gtest/MetaspaceGtests.java \
   gtest/LargePageGtests.java \
   gtest/NMTGtests.java \
+  gtest/WindowsProcessorGroups.java
 
 tier1_compiler = \
   :tier1_compiler_1 \
@@ -253,7 +254,6 @@ tier2_compiler = \
   compiler/parsing/ \
   compiler/rangechecks/ \
   compiler/reflection/ \
-  compiler/rtm/ \
   compiler/runtime/Test6826736.java \
   compiler/stable/ \
   compiler/stringopts/ \
@@ -448,6 +448,7 @@ hotspot_appcds_dynamic = \
  -runtime/cds/appcds/lambdaForm/DefaultClassListLFInvokers.java \
  -runtime/cds/appcds/methodHandles \
  -runtime/cds/appcds/sharedStrings \
+ -runtime/cds/appcds/resolvedConstants \
  -runtime/cds/appcds/ArchiveRelocationTest.java \
  -runtime/cds/appcds/BadBSM.java \
  -runtime/cds/appcds/DumpClassList.java \

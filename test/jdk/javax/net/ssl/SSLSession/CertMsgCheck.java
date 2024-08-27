@@ -40,20 +40,25 @@ public class CertMsgCheck {
 
         // Initial client session
         TLSBase.Client client1 = new TLSBase.Client(true, false);
-        if (server.getSession(client1).getSessionContext() == null) {
-            for (Exception e : server.getExceptionList()) {
-                System.out.println("Looking at " + e.getClass() + " " +
-                    e.getMessage());
-                if (e.getMessage().contains(args[0])) {
-                    System.out.println("Found correct exception: " + args[0] +
-                    " in " + e.getMessage());
-                    return;
-                } else {
-                    System.out.println("No \"" + args[0] + "\" found.");
-                }
-            }
 
-            throw new Exception("Failed to find expected alert: " + args[0]);
+        server.getSession(client1).getSessionContext();
+        server.done();
+
+        var eList = server.getExceptionList();
+        System.out.println("Exception list size is " + eList.size());
+
+        for (Exception e : eList) {
+            System.out.println("Looking at " + e.getClass() + " " +
+                e.getMessage());
+            if (e.getMessage().contains(args[0])) {
+                System.out.println("Found correct exception: " + args[0] +
+                    " in " + e.getMessage());
+                return;
+            } else {
+                System.out.println("No \"" + args[0] + "\" found.");
+            }
         }
+
+        throw new Exception("Failed to find expected alert: " + args[0]);
     }
 }

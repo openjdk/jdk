@@ -58,9 +58,8 @@ public class TestAccessModes {
         } catch (UnsupportedOperationException ex) {
             assertFalse(compatible);
         } catch (IllegalArgumentException ex) {
-            // access is unaligned, but access mode is supported
-            assertTrue(compatible ||
-                    (layout instanceof GroupLayout && segment.maxByteAlignment() < layout.byteAlignment()));
+            // access is unaligned
+            assertTrue(segment.maxByteAlignment() < layout.byteAlignment());
         }
     }
 

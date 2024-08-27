@@ -757,6 +757,35 @@ C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_
       return JVMCIENV->get_jobject(result);
     }
   }
+#ifdef ASSERT
+  // Support for testing an OOME raised in a context where the current thread cannot call Java
+  // 1. Put -Dtest.jvmci.oome_in_lookupConstantInPool=<trace> on the command line to
+  //    discover possible values for step 2.
+  //    Example output:
+  //
+  //      CompilerToVM.lookupConstantInPool: "Overflow: String length out of range"{0x00000007ffeb2960}
+  //      CompilerToVM.lookupConstantInPool: "null"{0x00000007ffebdfe8}
+  //      CompilerToVM.lookupConstantInPool: "Maximum lock count exceeded"{0x00000007ffec4f90}
+  //      CompilerToVM.lookupConstantInPool: "Negative length"{0x00000007ffec4468}
+  //
+  // 2. Choose a value shown in step 1.
+  //    Example: -Dtest.jvmci.oome_in_lookupConstantInPool=Negative
+  const char* val = Arguments::PropertyList_get_value(Arguments::system_properties(), "test.jvmci.oome_in_lookupConstantInPool");
+  if (val != nullptr) {
+    const char* str = obj->print_value_string();
+    if (strstr(val, "<trace>") != nullptr) {
+      tty->print_cr("CompilerToVM.lookupConstantInPool: %s", str);
+    } else if (strstr(str, val) != nullptr) {
+      Handle garbage;
+      while (true) {
+        // Trigger an OutOfMemoryError
+        objArrayOop next = oopFactory::new_objectArray(0x7FFFFFFF, CHECK_NULL);
+        next->obj_at_put(0, garbage());
+        garbage = Handle(THREAD, next);
+      }
+    }
+  }
+#endif
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
@@ -897,7 +926,9 @@ C2V_VMENTRY_NULL(jobject, lookupKlassInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
     } else if (tag.is_symbol()) {
       symbol = cp->symbol_at(index);
     } else {
-      assert(cp->tag_at(index).is_unresolved_klass(), "wrong tag");
+      if (!tag.is_unresolved_klass()) {
+        JVMCI_THROW_MSG_NULL(InternalError, err_msg("Expected %d at index %d, got %d", JVM_CONSTANT_UnresolvedClassInError, index, tag.value()));
+      }
       symbol = cp->klass_name_at(index);
     }
   }
@@ -1208,12 +1239,19 @@ C2V_VMENTRY_NULL(jobject, executeHotSpotNmethod, (JNIEnv* env, jobject, jobject 
   HandleMark hm(THREAD);
 
   JVMCIObject nmethod_mirror = JVMCIENV->wrap(hs_nmethod);
-  JVMCINMethodHandle nmethod_handle(THREAD);
-  nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
-  if (nm == nullptr || !nm->is_in_use()) {
-    JVMCI_THROW_NULL(InvalidInstalledCodeException);
+  methodHandle mh;
+  {
+    // Reduce the scope of JVMCINMethodHandle so that it isn't alive across the Java call.  Once the
+    // nmethod has been validated and the method is fetched from the nmethod it's fine for the
+    // nmethod to be reclaimed if necessary.
+    JVMCINMethodHandle nmethod_handle(THREAD);
+    nmethod* nm = JVMCIENV->get_nmethod(nmethod_mirror, nmethod_handle);
+    if (nm == nullptr || !nm->is_in_use()) {
+      JVMCI_THROW_NULL(InvalidInstalledCodeException);
+    }
+    methodHandle nmh(THREAD, nm->method());
+    mh = nmh;
   }
-  methodHandle mh(THREAD, nm->method());
   Symbol* signature = mh->signature();
   JavaCallArguments jca(mh->size_of_parameters());
 

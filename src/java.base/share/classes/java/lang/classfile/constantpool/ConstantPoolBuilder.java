@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,14 +91,6 @@ public sealed interface ConstantPoolBuilder
      * @param constantPool the other constant pool
      */
     boolean canWriteDirect(ConstantPool constantPool);
-
-    /**
-     * Writes associated bootstrap method entries to the specified writer
-     *
-     * @param buf the writer
-     * @return false when no bootstrap method entry has been written
-     */
-    boolean writeBootstrapMethods(BufWriter buf);
 
     /**
      * {@return A {@link Utf8Entry} describing the provided {@linkplain String}}

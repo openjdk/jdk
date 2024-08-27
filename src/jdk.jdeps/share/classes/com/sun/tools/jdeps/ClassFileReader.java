@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,7 @@
 
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.AccessFlags;
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPoolException;
-import com.sun.tools.classfile.Dependencies.ClassFileError;
+import com.sun.tools.jdeps.Dependencies.ClassFileError;
 
 import java.io.Closeable;
 import java.io.File;
@@ -36,13 +33,14 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -54,7 +52,7 @@ import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 /**
- * ClassFileReader reads ClassFile(s) of a given path that can be
+ * ClassFileReader reads ClassModel(s) of a given path that can be
  * a .class file, a directory, or a JAR file.
  */
 public class ClassFileReader implements Closeable {
@@ -117,10 +115,10 @@ public class ClassFileReader implements Closeable {
     }
 
     /**
-     * Returns the ClassFile matching the given binary name
+     * Returns the ClassModel matching the given binary name
      * or a fully-qualified class name.
      */
-    public ClassFile getClassFile(String name) throws IOException {
+    public ClassModel getClassFile(String name) throws IOException {
         if (name.indexOf('.') > 0) {
             int i = name.lastIndexOf('.');
             String pathname = name.replace('.', File.separatorChar) + ".class";
@@ -137,31 +135,25 @@ public class ClassFileReader implements Closeable {
         return null;
     }
 
-    public Iterable<ClassFile> getClassFiles() throws IOException {
+    public Iterable<ClassModel> getClassFiles() throws IOException {
         return FileIterator::new;
     }
 
-    protected ClassFile readClassFile(Path p) throws IOException {
-        InputStream is = null;
+    protected ClassModel readClassFile(Path p) throws IOException {
         try {
-            is = Files.newInputStream(p);
-            return ClassFile.read(is);
-        } catch (ConstantPoolException e) {
+            return ClassFile.of().parse(p);
+        } catch (IllegalArgumentException e) {
             throw new ClassFileError(e);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
         }
     }
 
     protected Set<String> scan() {
         try {
-            ClassFile cf = ClassFile.read(path);
-            String name = cf.access_flags.is(AccessFlags.ACC_MODULE)
-                ? "module-info" : cf.getName();
+            ClassModel cf = ClassFile.of().parse(path);
+            String name = cf.isModuleInfo()
+                ? "module-info" : cf.thisClass().asInternalName();
             return Collections.singleton(name);
-        } catch (ConstantPoolException|IOException e) {
+        } catch (IllegalArgumentException|IOException e) {
             throw new ClassFileError(e);
         }
     }
@@ -175,7 +167,7 @@ public class ClassFileReader implements Closeable {
     public void close() throws IOException {
     }
 
-    class FileIterator implements Iterator<ClassFile> {
+    class FileIterator implements Iterator<ClassModel> {
         int count;
         FileIterator() {
             this.count = 0;
@@ -184,12 +176,12 @@ public class ClassFileReader implements Closeable {
             return count == 0 && baseFileName.endsWith(".class");
         }
 
-        public ClassFile next() {
+        public ClassModel next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
             try {
-                ClassFile cf = readClassFile(path);
+                ClassModel cf = readClassFile(path);
                 count++;
                 return cf;
             } catch (IOException e) {
@@ -228,7 +220,7 @@ public class ClassFileReader implements Closeable {
             }
         }
 
-        public ClassFile getClassFile(String name) throws IOException {
+        public ClassModel getClassFile(String name) throws IOException {
             if (name.indexOf('.') > 0) {
                 int i = name.lastIndexOf('.');
                 String pathname = name.replace(".", fsSep) + ".class";
@@ -249,12 +241,12 @@ public class ClassFileReader implements Closeable {
             return null;
         }
 
-        public Iterable<ClassFile> getClassFiles() throws IOException {
-            final Iterator<ClassFile> iter = new DirectoryIterator();
+        public Iterable<ClassModel> getClassFiles() throws IOException {
+            final Iterator<ClassModel> iter = new DirectoryIterator();
             return () -> iter;
         }
 
-        class DirectoryIterator implements Iterator<ClassFile> {
+        class DirectoryIterator implements Iterator<ClassModel> {
             private final List<Path> entries;
             private int index = 0;
             DirectoryIterator() throws IOException {
@@ -271,7 +263,7 @@ public class ClassFileReader implements Closeable {
                 return index != entries.size();
             }
 
-            public ClassFile next() {
+            public ClassModel next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
@@ -332,7 +324,7 @@ public class ClassFileReader implements Closeable {
             }
         }
 
-        public ClassFile getClassFile(String name) throws IOException {
+        public ClassModel getClassFile(String name) throws IOException {
             if (name.indexOf('.') > 0) {
                 int i = name.lastIndexOf('.');
                 String entryName = name.replace('.', '/') + ".class";
@@ -353,31 +345,31 @@ public class ClassFileReader implements Closeable {
             return null;
         }
 
-        protected ClassFile readClassFile(JarFile jarfile, JarEntry e) throws IOException {
+        protected ClassModel readClassFile(JarFile jarfile, JarEntry e) throws IOException {
             try (InputStream is = jarfile.getInputStream(e)) {
-                ClassFile cf = ClassFile.read(is);
+                ClassModel cf = ClassFile.of().parse(is.readAllBytes());
                 // exclude module-info.class since this jarFile is on classpath
-                if (jarfile.isMultiRelease() && !cf.getName().equals("module-info")) {
+                if (jarfile.isMultiRelease() && !cf.isModuleInfo()) {
                     VersionHelper.add(jarfile, e, cf);
                 }
                 return cf;
-            } catch (ConstantPoolException ex) {
+            } catch (IllegalArgumentException ex) {
                 throw new ClassFileError(ex);
             }
         }
 
-        public Iterable<ClassFile> getClassFiles() throws IOException {
-            final Iterator<ClassFile> iter = new JarFileIterator(this, jarfile);
+        public Iterable<ClassModel> getClassFiles() throws IOException {
+            final Iterator<ClassModel> iter = new JarFileIterator(this, jarfile);
             return () -> iter;
         }
     }
 
-    class JarFileIterator implements Iterator<ClassFile> {
+    class JarFileIterator implements Iterator<ClassModel> {
         protected final JarFileReader reader;
         protected Iterator<JarEntry> entries;
         protected JarFile jf;
         protected JarEntry nextEntry;
-        protected ClassFile cf;
+        protected ClassModel cf;
         JarFileIterator(JarFileReader reader) {
             this(reader, null);
         }
@@ -413,11 +405,11 @@ public class ClassFileReader implements Closeable {
             return false;
         }
 
-        public ClassFile next() {
+        public ClassModel next() {
             if (!hasNext()) {
                 throw new NoSuchElementException();
             }
-            ClassFile classFile = cf;
+            ClassModel classFile = cf;
             cf = null;
             nextEntry = nextEntry();
             return classFile;

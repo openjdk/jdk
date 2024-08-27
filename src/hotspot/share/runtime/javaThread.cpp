@@ -409,9 +409,9 @@ void JavaThread::check_for_valid_safepoint_state() {
 
 // A JavaThread is a normal Java thread
 
-JavaThread::JavaThread() :
+JavaThread::JavaThread(MEMFLAGS flags) :
+  Thread(flags),
   // Initialize fields
-
   _on_thread_list(false),
   DEBUG_ONLY(_java_call_counter(0) COMMA)
   _entry_point(nullptr),
@@ -525,12 +525,11 @@ JavaThread::JavaThread() :
   assert(deferred_card_mark().is_empty(), "Default MemRegion ctor");
 }
 
-JavaThread::JavaThread(bool is_attaching_via_jni) : JavaThread() {
-  if (is_attaching_via_jni) {
-    _jni_attach_state = _attaching_via_jni;
-  }
+JavaThread* JavaThread::create_attaching_thread() {
+  JavaThread* jt = new JavaThread();
+  jt->_jni_attach_state = _attaching_via_jni;
+  return jt;
 }
-
 
 // interrupt support
 
@@ -634,8 +633,7 @@ void JavaThread::block_if_vm_exited() {
   }
 }
 
-JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) : JavaThread() {
-  _jni_attach_state = _not_attaching_via_jni;
+JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz, MEMFLAGS flags) : JavaThread(flags) {
   set_entry_point(entry_point);
   // Create the native thread itself.
   // %note runtime_23
@@ -1860,6 +1858,9 @@ JvmtiThreadState* JavaThread::rebind_to_jvmti_thread_state_of(oop thread_oop) {
   // bind new JvmtiThreadState to JavaThread
   JvmtiThreadState::bind_to(java_lang_Thread::jvmti_thread_state(thread_oop), this);
 
+  // enable interp_only_mode for virtual or carrier thread if it has pending bit
+  JvmtiThreadState::process_pending_interp_only(this);
+
   return jvmti_thread_state();
 }
 #endif
@@ -2230,8 +2231,8 @@ void JavaThread::pretouch_stack() {
     if (is_in_full_stack(here) && here > end) {
       size_t to_alloc = here - end;
       char* p2 = (char*) alloca(to_alloc);
-      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
-                            p2i(p2), p2i(end));
+      log_trace(os, thread)("Pretouching thread stack for " UINTX_FORMAT ": " RANGEFMT ".",
+                            (uintx) osthread()->thread_id(), RANGEFMTARGS(p2, to_alloc));
       os::pretouch_memory(p2, p2 + to_alloc,
                           NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
     }

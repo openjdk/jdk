@@ -501,8 +501,6 @@ class Parse : public GraphKit {
 
   void clinit_deopt();
 
-  void rtm_deopt();
-
   // Pass current map to exits
   void return_current(Node* value);
 

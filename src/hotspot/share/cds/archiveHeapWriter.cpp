@@ -89,7 +89,7 @@ void ArchiveHeapWriter::init() {
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
 
     guarantee(UseG1GC, "implementation limitation");
-    guarantee(MIN_GC_REGION_ALIGNMENT <= /*G1*/HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
+    guarantee(MIN_GC_REGION_ALIGNMENT <= G1HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
   }
 }
 
@@ -439,7 +439,7 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
 
 
   if (UseCompressedOops) {
-    _requested_bottom = align_down(heap_end - heap_region_byte_size, HeapRegion::GrainBytes);
+    _requested_bottom = align_down(heap_end - heap_region_byte_size, G1HeapRegion::GrainBytes);
   } else {
     // We always write the objects as if the heap started at this address. This
     // makes the contents of the archive heap deterministic.
@@ -449,7 +449,7 @@ void ArchiveHeapWriter::set_requested_address(ArchiveHeapInfo* info) {
     _requested_bottom = (address)NOCOOPS_REQUESTED_BASE;
   }
 
-  assert(is_aligned(_requested_bottom, HeapRegion::GrainBytes), "sanity");
+  assert(is_aligned(_requested_bottom, G1HeapRegion::GrainBytes), "sanity");
 
   _requested_top = _requested_bottom + _buffer_used;
 

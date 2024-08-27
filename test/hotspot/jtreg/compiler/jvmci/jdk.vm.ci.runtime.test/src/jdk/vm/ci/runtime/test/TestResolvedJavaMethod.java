@@ -678,7 +678,7 @@ public class TestResolvedJavaMethod extends MethodUniverse {
             Map<String, ResolvedJavaMethod> methodMap = buildMethodMap(type);
             ClassModel cf = readClassfile(c);
             for (MethodModel cm : cf.methods()) {
-                cm.findAttribute(Attributes.CODE).ifPresent(codeAttr -> {
+                cm.findAttribute(Attributes.code()).ifPresent(codeAttr -> {
                     String key = cm.methodName().stringValue() + ":" + cm.methodType().stringValue();
                     HotSpotResolvedJavaMethod m = (HotSpotResolvedJavaMethod) Objects.requireNonNull(methodMap.get(key));
                     boolean isMethodWithManyArgs = c == getClass() && m.getName().equals("methodWithManyArgs");

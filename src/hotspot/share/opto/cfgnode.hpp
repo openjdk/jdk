@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ class     JProjNode;
 class       JumpProjNode;
 class     SCMemProjNode;
 class PhaseIdealLoop;
+enum class AssertionPredicateType;
 
 // The success projection of a Parse Predicate is always an IfTrueNode and the uncommon projection an IfFalseNode
 typedef IfTrueNode ParsePredicateSuccessProj;
@@ -237,7 +238,7 @@ public:
   int is_diamond_phi() const;
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
-  virtual bool pinned() const { return in(0) != 0; }
+  virtual bool pinned() const { return in(0) != nullptr; }
   virtual const TypePtr *adr_type() const { verify_adr_type(true); return _adr_type; }
 
   void  set_inst_mem_id(int inst_mem_id) { _inst_mem_id = inst_mem_id; }
@@ -318,11 +319,23 @@ public:
 //------------------------------IfNode-----------------------------------------
 // Output selected Control, based on a boolean test
 class IfNode : public MultiBranchNode {
+ public:
+  float _prob;                           // Probability of true path being taken.
+  float _fcnt;                           // Frequency counter
+
+ private:
+  NOT_PRODUCT(AssertionPredicateType _assertion_predicate_type;)
+
+  void init_node(Node* control, Node* bol) {
+    init_class_id(Class_If);
+    init_req(0, control);
+    init_req(1, bol);
+  }
+
   // Size is bigger to hold the probability field.  However, _prob does not
   // change the semantics so it does not appear in the hash & cmp functions.
   virtual uint size_of() const { return sizeof(*this); }
 
-private:
   // Helper methods for fold_compares
   bool cmpi_folds(PhaseIterGVN* igvn, bool fold_ne = false);
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
@@ -413,14 +426,8 @@ public:
   // Magic manifest probabilities such as 0.83, 0.7, ... can be found in
   // gen_subtype_check() and catch_inline_exceptions().
 
-  float _prob;                  // Probability of true path being taken.
-  float _fcnt;                  // Frequency counter
-  IfNode( Node *control, Node *b, float p, float fcnt )
-    : MultiBranchNode(2), _prob(p), _fcnt(fcnt) {
-    init_class_id(Class_If);
-    init_req(0,control);
-    init_req(1,b);
-  }
+  IfNode(Node* control, Node* bol, float p, float fcnt);
+  NOT_PRODUCT(IfNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type);)
 
   static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
 
@@ -450,13 +457,19 @@ public:
 
 class RangeCheckNode : public IfNode {
 private:
-  int is_range_check(Node* &range, Node* &index, jint &offset);
+  int is_range_check(Node*& range, Node*& index, jint& offset);
 
 public:
-  RangeCheckNode(Node* control, Node *b, float p, float fcnt)
-    : IfNode(control, b, p, fcnt) {
+  RangeCheckNode(Node* control, Node* bol, float p, float fcnt) : IfNode(control, bol, p, fcnt) {
     init_class_id(Class_RangeCheck);
   }
+
+#ifndef PRODUCT
+  RangeCheckNode(Node* control, Node* bol, float p, float fcnt, AssertionPredicateType assertion_predicate_type)
+      : IfNode(control, bol, p, fcnt, assertion_predicate_type) {
+    init_class_id(Class_RangeCheck);
+  }
+#endif // NOT PRODUCT
 
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);

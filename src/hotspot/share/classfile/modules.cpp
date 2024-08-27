@@ -560,9 +560,7 @@ void Modules::verify_archived_modules() {
   ModuleEntry::verify_archived_module_entries();
 }
 
-#if INCLUDE_CDS_JAVA_HEAP
 char* Modules::_archived_main_module_name = nullptr;
-#endif
 
 void Modules::dump_main_module_name() {
   const char* module_name = Arguments::get_property("jdk.module.main");

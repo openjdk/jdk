@@ -1681,7 +1681,7 @@ public:
 // Allocation prefetch which may fault, TLAB size have to be adjusted.
 class PrefetchAllocationNode : public Node {
 public:
-  PrefetchAllocationNode(Node *mem, Node *adr) : Node(0,mem,adr) {}
+  PrefetchAllocationNode(Node *mem, Node *adr) : Node(nullptr,mem,adr) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual uint match_edge(uint idx) const { return idx==2; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,27 @@ public class ActiveAWTWindowTest {
     private Frame frame, frame2;
     private Button button, button2;
     private TextField textField, textField2;
-    private int eventType, eventType1;
-    private ExtendedRobot robot;
-    private Object lock1 = new Object();
-    private Object lock2 = new Object();
-    private Object lock3 = new Object();
+    private volatile int eventType;
+    private final Object lock1 = new Object();
+    private final Object lock2 = new Object();
+    private final Object lock3 = new Object();
     private boolean passed = true;
-    private int delay = 150;
+    private final int delay = 150;
 
     public static void main(String[] args) {
         ActiveAWTWindowTest test = new ActiveAWTWindowTest();
-        test.doTest();
+        try {
+            test.doTest();
+        } finally {
+            EventQueue.invokeLater(() -> {
+                if (test.frame != null) {
+                    test.frame.dispose();
+                }
+                if (test.frame2 != null) {
+                    test.frame2.dispose();
+                }
+            });
+        }
     }
 
     public ActiveAWTWindowTest() {
@@ -105,7 +115,7 @@ public class ActiveAWTWindowTest {
                 System.out.println("Undecorated Frame got Deactivated\n");
                 synchronized (lock2) {
                     try {
-                            lock2.notifyAll();
+                        lock2.notifyAll();
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -146,6 +156,7 @@ public class ActiveAWTWindowTest {
     }
 
     public void doTest() {
+        ExtendedRobot robot;
         try {
             robot = new ExtendedRobot();
         } catch (Exception e) {
@@ -153,13 +164,14 @@ public class ActiveAWTWindowTest {
             throw new RuntimeException("Cannot create robot");
         }
 
+        robot.setAutoDelay(delay);
+        robot.setAutoWaitForIdle(true);
+
         robot.waitForIdle(5*delay);
         robot.mouseMove(button.getLocationOnScreen().x + button.getSize().width / 2,
                         button.getLocationOnScreen().y + button.getSize().height / 2);
-        robot.waitForIdle(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_ACTIVATED) {
             synchronized (lock1) {
@@ -176,15 +188,12 @@ public class ActiveAWTWindowTest {
                     "undecorated frame is activated!");
         }
 
-        eventType1 = -1;
         eventType = -1;
 
         robot.mouseMove(button2.getLocationOnScreen().x + button2.getSize().width / 2,
                         button2.getLocationOnScreen().y + button2.getSize().height / 2);
-        robot.waitForIdle(delay);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle(delay);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
 
         if (eventType != WindowEvent.WINDOW_DEACTIVATED) {
             synchronized (lock2) {

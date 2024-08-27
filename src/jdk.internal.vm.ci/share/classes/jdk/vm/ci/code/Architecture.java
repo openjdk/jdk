@@ -26,6 +26,7 @@ import java.nio.ByteOrder;
 import java.util.Set;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.PlatformKind;
 
@@ -81,6 +82,13 @@ public abstract class Architecture {
     protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, RegisterArray registers, int implicitMemoryBarriers,
                     int nativeCallDisplacementOffset,
                     int returnAddressSize) {
+        // registers is expected to mention all registers in order of their encoding.
+        for (int i = 0; i < registers.size(); ++i) {
+            if (registers.get(i).number != i) {
+                Register reg = registers.get(i);
+                throw new JVMCIError("%s: %d != %d", reg, reg.number, i);
+            }
+        }
         this.name = name;
         this.registers = registers;
         this.wordKind = wordKind;

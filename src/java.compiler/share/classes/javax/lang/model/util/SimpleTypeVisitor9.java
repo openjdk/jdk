@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ import static javax.lang.model.SourceVersion.*;
  *            methods.  Use {@code Void} for visitors that do not need an
  *            additional parameter.
  *
- * @see <a href="SimpleTypeVisitor6.html#note_for_subclasses">
- * <strong>Compatibility note for subclasses</strong></a>
+ * @see SimpleTypeVisitor6##note_for_subclasses
+ * <strong>Compatibility note for subclasses</strong>
  * @see SimpleTypeVisitor6
  * @see SimpleTypeVisitor7
  * @see SimpleTypeVisitor8

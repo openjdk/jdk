@@ -468,12 +468,11 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Returns true if this format will parse numbers as integers only.
+     * Returns {@code true} if this format will parse numbers as integers only.
+     * The {@code ParsePosition} index will be set to the position of the decimal
+     * symbol. The exact format accepted by the parse operation is locale dependent.
      * For example in the English locale, with ParseIntegerOnly true, the
-     * string "1234." would be parsed as the integer value 1234 and parsing
-     * would stop at the "." character.  Of course, the exact format accepted
-     * by the parse operation is locale dependent and determined by sub-classes
-     * of NumberFormat.
+     * string "123.45" would be parsed as the integer value 123.
      *
      * @return {@code true} if numbers should be parsed as integers only;
      *         {@code false} otherwise

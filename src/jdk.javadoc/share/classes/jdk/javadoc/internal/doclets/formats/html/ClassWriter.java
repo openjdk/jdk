@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -447,17 +446,6 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected Content getClassContentHeader() {
         return getContentHeader();
-    }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        List<Content> subnavLinks = new ArrayList<>();
-        if (configuration.showModules) {
-            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
-        }
-        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), false));
-        subnavLinks.add(getBreadcrumbLink(typeElement, true));
-        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     protected void addFooter() {

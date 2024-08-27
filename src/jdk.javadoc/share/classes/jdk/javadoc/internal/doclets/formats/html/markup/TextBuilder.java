@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,14 @@ public class TextBuilder extends Content {
     private final StringBuilder stringBuilder;
 
     /**
-     * Constructor to construct StringContent object.
+     * Constructor to construct an empty TextBuilder object.
      */
     public TextBuilder() {
         stringBuilder = new StringBuilder();
     }
 
     /**
-     * Constructor to construct StringContent object with some initial content.
+     * Constructor to construct a TextBuilder object with some initial content.
      *
      * @param initialContent initial content for the object
      */
@@ -58,7 +58,7 @@ public class TextBuilder extends Content {
     }
 
     /**
-     * Adds content for the StringContent object.
+     * Adds content for the TextBuilder object.
      *
      * @param strContent string content to be added
      */
@@ -72,6 +72,11 @@ public class TextBuilder extends Content {
     @Override
     public boolean isEmpty() {
         return (stringBuilder.length() == 0);
+    }
+
+    @Override
+    public boolean isPhrasingContent() {
+        return true;
     }
 
     @Override

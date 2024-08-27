@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "compiler/compilerDefinitions.hpp"
 #include "jvm_io.h"
 #include "runtime/arguments.hpp"
@@ -136,9 +137,9 @@ const char* Abstract_VM_Version::vm_vendor() {
 const char* Abstract_VM_Version::vm_info_string() {
   switch (Arguments::mode()) {
     case Arguments::_int:
-      return UseSharedSpaces ? "interpreted mode, sharing" : "interpreted mode";
+      return CDSConfig::is_using_archive() ? "interpreted mode, sharing" : "interpreted mode";
     case Arguments::_mixed:
-      if (UseSharedSpaces) {
+      if (CDSConfig::is_using_archive()) {
         if (CompilationModeFlag::quick_only()) {
           return "mixed mode, emulated-client, sharing";
         } else {
@@ -153,9 +154,9 @@ const char* Abstract_VM_Version::vm_info_string() {
       }
     case Arguments::_comp:
       if (CompilationModeFlag::quick_only()) {
-         return UseSharedSpaces ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
+         return CDSConfig::is_using_archive() ? "compiled mode, emulated-client, sharing" : "compiled mode, emulated-client";
       }
-      return UseSharedSpaces ? "compiled mode, sharing" : "compiled mode";
+      return CDSConfig::is_using_archive() ? "compiled mode, sharing" : "compiled mode";
   }
   ShouldNotReachHere();
   return "";

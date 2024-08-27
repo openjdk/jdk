@@ -37,6 +37,13 @@
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
+  if (!is_armed(nm)) {
+    log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed before lock)", p2i(nm));
+    // Some other thread got here first and healed the oops
+    // and disarmed the nmethod. No need to continue.
+    return true;
+  }
+
   ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
   log_trace(nmethod, barrier)("Entered critical zone for %p", nm);
 
@@ -44,8 +51,8 @@ bool ZBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   if (!is_armed(nm)) {
     log_develop_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by entry (disarmed)", p2i(nm));
-    // Some other thread got here first and healed the oops
-    // and disarmed the nmethod.
+    // Some other thread managed to complete while we were
+    // waiting for lock. No need to continue.
     return true;
   }
 

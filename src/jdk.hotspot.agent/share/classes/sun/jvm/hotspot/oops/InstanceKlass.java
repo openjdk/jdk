@@ -57,7 +57,6 @@ public class InstanceKlass extends Klass {
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
   private static int CLASS_STATE_LOADED;
-  private static int CLASS_STATE_BEING_LINKED;
   private static int CLASS_STATE_LINKED;
   private static int CLASS_STATE_BEING_INITIALIZED;
   private static int CLASS_STATE_FULLY_INITIALIZED;
@@ -101,7 +100,6 @@ public class InstanceKlass extends Klass {
     // read ClassState constants
     CLASS_STATE_ALLOCATED = db.lookupIntConstant("InstanceKlass::allocated").intValue();
     CLASS_STATE_LOADED = db.lookupIntConstant("InstanceKlass::loaded").intValue();
-    CLASS_STATE_BEING_LINKED = db.lookupIntConstant("InstanceKlass::being_linked").intValue();
     CLASS_STATE_LINKED = db.lookupIntConstant("InstanceKlass::linked").intValue();
     CLASS_STATE_BEING_INITIALIZED = db.lookupIntConstant("InstanceKlass::being_initialized").intValue();
     CLASS_STATE_FULLY_INITIALIZED = db.lookupIntConstant("InstanceKlass::fully_initialized").intValue();
@@ -158,7 +156,6 @@ public class InstanceKlass extends Klass {
   public static class ClassState {
      public static final ClassState ALLOCATED    = new ClassState("allocated");
      public static final ClassState LOADED       = new ClassState("loaded");
-     public static final ClassState BEING_LINKED = new ClassState("beingLinked");
      public static final ClassState LINKED       = new ClassState("linked");
      public static final ClassState BEING_INITIALIZED      = new ClassState("beingInitialized");
      public static final ClassState FULLY_INITIALIZED    = new ClassState("fullyInitialized");
@@ -182,8 +179,6 @@ public class InstanceKlass extends Klass {
         return ClassState.ALLOCATED;
      } else if (state == CLASS_STATE_LOADED) {
         return ClassState.LOADED;
-     } else if (state == CLASS_STATE_BEING_LINKED) {
-        return ClassState.BEING_LINKED;
      } else if (state == CLASS_STATE_LINKED) {
         return ClassState.LINKED;
      } else if (state == CLASS_STATE_BEING_INITIALIZED) {

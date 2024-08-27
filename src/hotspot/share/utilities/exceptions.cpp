@@ -44,6 +44,9 @@
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
+// Limit exception message components to 64K (the same max as Symbols)
+#define MAX_LEN 65535
+
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
   const ByteSize offset1 = byte_offset_of(ThreadShadow, _pending_exception);
@@ -111,15 +114,14 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
   }
 #endif // ASSERT
 
-  if (!thread->can_call_java()) {
+  if (h_exception.is_null() && !thread->can_call_java()) {
     ResourceMark rm(thread);
-    const char* exc_value = h_exception.not_null() ? h_exception->print_value_string() :
-                      h_name != nullptr ? h_name->as_C_string() :
-                      "null";
-    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%s%s%s> (" PTR_FORMAT ") \n"
+    const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
+    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                         "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
                         "throwing pre-allocated exception: %s",
-                        exc_value, message ? ": " : "", message ? message : "",
+                        MAX_LEN, exc_value, message ? ": " : "",
+                        MAX_LEN, message ? message : "",
                         p2i(h_exception()), file, line, p2i(thread),
                         Universe::vm_exception()->print_value_string());
     // We do not care what kind of exception we get for a thread which
@@ -145,10 +147,11 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
 
   // tracing (do this up front - so it works during boot strapping)
   // Note, the print_value_string() argument is not called unless logging is enabled!
-  log_info(exceptions)("Exception <%s%s%s> (" PTR_FORMAT ") \n"
+  log_info(exceptions)("Exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
                        "thrown [%s, line %d]\nfor thread " PTR_FORMAT,
-                       h_exception->print_value_string(),
-                       message ? ": " : "", message ? message : "",
+                       MAX_LEN, h_exception->print_value_string(),
+                       message ? ": " : "",
+                       MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
 
   // for AbortVMOnException flag
@@ -205,7 +208,7 @@ void Exceptions::_throw_msg_cause(JavaThread* thread, const char* file, int line
 void Exceptions::_throw_cause(JavaThread* thread, const char* file, int line, Symbol* name, Handle h_cause,
                               Handle h_loader, Handle h_protection_domain) {
   // Check for special boot-strapping/compiler-thread handling
-  if (special_exception(thread, file, line, h_cause)) return;
+  if (special_exception(thread, file, line, Handle(), name)) return;
   // Create and throw exception
   Handle h_exception = new_exception(thread, name, h_cause, h_loader, h_protection_domain);
   _throw(thread, file, line, h_exception, nullptr);
@@ -568,13 +571,13 @@ void Exceptions::log_exception(Handle exception, const char* message) {
   ResourceMark rm;
   const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
   if (detail_message != nullptr) {
-    log_info(exceptions)("Exception <%s: %s>\n thrown in %s",
-                         exception->print_value_string(),
-                         detail_message,
-                         message);
+    log_info(exceptions)("Exception <%.*s: %.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, detail_message,
+                         MAX_LEN, message);
   } else {
-    log_info(exceptions)("Exception <%s>\n thrown in %s",
-                         exception->print_value_string(),
-                         message);
+    log_info(exceptions)("Exception <%.*s>\n thrown in %.*s",
+                         MAX_LEN, exception->print_value_string(),
+                         MAX_LEN, message);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,5 +43,16 @@ public interface JVMCICompiler {
      */
     default boolean isGCSupported(int gcIdentifier) {
         return true;
+    }
+
+    /**
+     * Determines if this compiler supports the {@code intrinsicIdentifier} intrinsic. The default
+     * implementation of this method returns false as that is the effective answer given by a
+     * {@link JVMCICompiler} before this method was added.
+     *
+     * @param intrinsicIdentifier intrinsic identifier defined in vmIntrinsics.hpp.
+     */
+    default boolean isIntrinsicSupported(int intrinsicIdentifier) {
+        return false;
     }
 }

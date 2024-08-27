@@ -30,6 +30,7 @@
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceId.inline.hpp"
+#include "jfr/recorder/repository/jfrChunk.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
@@ -425,3 +426,7 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_unregister_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
   JfrStackFilterRegistry::remove(id);
 JVM_END
+
+NO_TRANSITION(jlong, jfr_nanos_now(JNIEnv* env, jclass jvm))
+  return JfrChunk::nanos_now();
+NO_TRANSITION_END

@@ -733,7 +733,13 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   assert(x->number_of_arguments() == 5, "wrong type");
 
   // Make all state_for calls early since they can emit code
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem src(x->argument_at(0), this);
   LIRItem src_pos(x->argument_at(1), this);
@@ -766,13 +772,88 @@ void LIRGenerator::do_ArrayCopy(Intrinsic* x) {
   int flags;
   ciArrayKlass* expected_type = nullptr;
   arraycopy_helper(x, &flags, &expected_type);
+  if (x->check_flag(Instruction::OmitChecksFlag)) {
+    flags = 0;
+  }
 
   __ arraycopy(src.result(), src_pos.result(), dst.result(), dst_pos.result(), length.result(), tmp,
                expected_type, flags, info); // does add_safepoint
 }
 
 void LIRGenerator::do_update_CRC32(Intrinsic* x) {
-  ShouldNotReachHere();
+  assert(UseCRC32Intrinsics, "why are we here?");
+  // Make all state_for calls early since they can emit code
+  LIR_Opr result = rlock_result(x);
+  switch (x->id()) {
+    case vmIntrinsics::_updateCRC32: {
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem val(x->argument_at(1), this);
+      // val is destroyed by update_crc32
+      val.set_destroys_register();
+      crc.load_item();
+      val.load_item();
+      __ update_crc32(crc.result(), val.result(), result);
+      break;
+    }
+    case vmIntrinsics::_updateBytesCRC32:
+    case vmIntrinsics::_updateByteBufferCRC32: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32);
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem len(x->argument_at(3), this);
+      buf.load_item();
+      off.load_nonconstant();
+
+      LIR_Opr index = off.result();
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+      }
+
+      if (offset) {
+        LIR_Opr tmp = new_pointer_register();
+        __ add(base_op, LIR_OprFact::intConst(offset), tmp);
+        base_op = tmp;
+        offset = 0;
+      }
+
+      LIR_Address* a = new LIR_Address(base_op,
+                                       index,
+                                       offset,
+                                       T_BYTE);
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr addr = new_pointer_register();
+      __ leal(LIR_OprFact::address(a), addr);
+
+      crc.load_item_force(cc->at(0));
+      __ move(addr, cc->at(1));
+      len.load_item_force(cc->at(2));
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32(), getThreadTemp(), result_reg, cc->args());
+      __ move(result_reg, result);
+
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
@@ -844,7 +925,13 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
 }
 
 void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = nullptr;
+  if (x->state_before() != nullptr && x->state_before()->force_reexecute()) {
+    info = state_for(x, x->state_before());
+    info->set_force_reexecute();
+  } else {
+    info = state_for(x, x->state());
+  }
 
   LIRItem length(x->length(), this);
   length.load_item_force(FrameMap::r9_opr);
@@ -861,7 +948,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   __ metadata2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path, x->zero_array());
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);

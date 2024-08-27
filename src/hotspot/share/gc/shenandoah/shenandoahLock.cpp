@@ -32,40 +32,49 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 
-// These are inline variants of Thread::SpinAcquire with optional blocking in VM.
-
-class ShenandoahNoBlockOp : public StackObj {
-public:
-  ShenandoahNoBlockOp(JavaThread* java_thread) {
-    assert(java_thread == nullptr, "Should not pass anything");
-  }
-};
-
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (allow_block_for_safepoint && thread->is_Java_thread()) {
-    contended_lock_internal<ThreadBlockInVM>(JavaThread::cast(thread));
+    contended_lock_internal<true>(JavaThread::cast(thread));
   } else {
-    contended_lock_internal<ShenandoahNoBlockOp>(nullptr);
+    contended_lock_internal<false>(nullptr);
   }
 }
 
-template<typename BlockOp>
+template<bool ALLOW_BLOCK>
 void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
-  int ctr = 0;
-  int yields = 0;
+  assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
+  // Spin this much, but only on multi-processor systems.
+  int ctr = os::is_MP() ? 0xFF : 0;
+  // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
   while (Atomic::load(&_state) == locked ||
          Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
-    if ((++ctr & 0xFFF) == 0) {
-      BlockOp block(java_thread);
-      if (yields > 5) {
-        os::naked_short_sleep(1);
+    if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
+      // Lightly contended, spin a little if no safepoint is pending.
+      SpinPause();
+      ctr--;
+    } else if (ALLOW_BLOCK) {
+      ThreadBlockInVM block(java_thread);
+      if (SafepointSynchronize::is_synchronizing()) {
+        // If safepoint is pending, we want to block and allow safepoint to proceed.
+        // Normally, TBIVM above would block us in its destructor.
+        //
+        // But that blocking only happens when TBIVM knows the thread poll is armed.
+        // There is a window between announcing a safepoint and arming the thread poll
+        // during which trying to continuously enter TBIVM is counter-productive.
+        // Under high contention, we may end up going in circles thousands of times.
+        // To avoid it, we wait here until local poll is armed and then proceed
+        // to TBVIM exit for blocking. We do not SpinPause, but yield to let
+        // VM thread to arm the poll sooner.
+        while (SafepointSynchronize::is_synchronizing() &&
+               !SafepointMechanism::local_poll_armed(java_thread)) {
+          os::naked_yield();
+        }
       } else {
         os::naked_yield();
-        yields++;
       }
     } else {
-      SpinPause();
+      os::naked_yield();
     }
   }
 }

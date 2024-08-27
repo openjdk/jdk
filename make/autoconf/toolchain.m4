@@ -178,23 +178,14 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     EXECUTABLE_SUFFIX='.exe'
   else
     LIBRARY_PREFIX=lib
-    SHARED_LIBRARY_SUFFIX='.so'
+    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      SHARED_LIBRARY_SUFFIX='.dylib'
+    else
+      SHARED_LIBRARY_SUFFIX='.so'
+    fi
     STATIC_LIBRARY_SUFFIX='.a'
     OBJ_SUFFIX='.o'
     EXECUTABLE_SUFFIX=''
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # For full static builds, we're overloading the shared library suffix
-      # in order to limit the amount of changes required.
-      # It would be better to remove SHARED and just use LIBRARY and
-      # LIBRARY_SUFFIX for libraries that can be built either
-      # shared or static and use STATIC_* for libraries that are
-      # always built statically.
-      if test "x$STATIC_BUILD" = xtrue; then
-        SHARED_LIBRARY_SUFFIX='.a'
-      else
-        SHARED_LIBRARY_SUFFIX='.dylib'
-      fi
-    fi
   fi
 
   AC_SUBST(LIBRARY_PREFIX)

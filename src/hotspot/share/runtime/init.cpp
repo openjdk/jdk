@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ void mutex_init();
 void universe_oopstorage_init();
 void perfMemory_init();
 void SuspendibleThreadSet_init();
+void ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 
 // Initialization done by Java thread in init_globals()
 void management_init();
@@ -107,6 +108,7 @@ void vm_init_globals() {
   universe_oopstorage_init();
   perfMemory_init();
   SuspendibleThreadSet_init();
+  ExternalsRecorder_init(); // After mutex_init() and before CodeCache_init
 }
 
 

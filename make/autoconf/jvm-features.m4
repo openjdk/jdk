@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ m4_define(jvm_features_valid, m4_normalize( \
     \
     cds compiler1 compiler2 dtrace epsilongc g1gc jfr jni-check \
     jvmci jvmti link-time-opt management minimal opt-size parallelgc \
-    serialgc services shenandoahgc static-build vm-structs zero zgc \
+    serialgc services shenandoahgc vm-structs zero zgc \
 ))
 
 # Deprecated JVM features (these are ignored, but with a warning)
@@ -310,22 +310,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
 ])
 
 ###############################################################################
-# Check if the feature 'static-build' is available on this platform.
-#
-AC_DEFUN_ONCE([JVM_FEATURES_CHECK_STATIC_BUILD],
-[
-  JVM_FEATURES_CHECK_AVAILABILITY(static-build, [
-    AC_MSG_CHECKING([if static-build is enabled in configure])
-    if test "x$STATIC_BUILD" = "xtrue"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, use --enable-static-build to enable static build.])
-      AVAILABLE=false
-    fi
-  ])
-])
-
-###############################################################################
 # Check if the feature 'zgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
@@ -395,7 +379,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_PREPARE_PLATFORM],
   JVM_FEATURES_CHECK_DTRACE
   JVM_FEATURES_CHECK_JVMCI
   JVM_FEATURES_CHECK_SHENANDOAHGC
-  JVM_FEATURES_CHECK_STATIC_BUILD
   JVM_FEATURES_CHECK_ZGC
 
 ])

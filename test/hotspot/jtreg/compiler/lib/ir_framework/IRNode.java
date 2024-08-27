@@ -378,6 +378,26 @@ public class IRNode {
         beforeMatchingNameRegex(CAST_LL, "CastLL");
     }
 
+    public static final String CBNZW_HI = PREFIX + "CBNZW_HI" + POSTFIX;
+    static {
+        optoOnly(CBNZW_HI, "cbwhi");
+    }
+
+    public static final String CBZW_LS = PREFIX + "CBZW_LS" + POSTFIX;
+    static {
+        optoOnly(CBZW_LS, "cbwls");
+    }
+
+    public static final String CBZ_LS = PREFIX + "CBZ_LS" + POSTFIX;
+    static {
+        optoOnly(CBZ_LS, "cbls");
+    }
+
+    public static final String CBZ_HI = PREFIX + "CBZ_HI" + POSTFIX;
+    static {
+        optoOnly(CBZ_HI, "cbhi");
+    }
+
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
         String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
@@ -753,6 +773,11 @@ public class IRNode {
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
+    }
+
+    public static final String LOAD_VECTOR_MASKED = PREFIX + "LOAD_VECTOR_MASKED" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOAD_VECTOR_MASKED, "LoadVectorMasked");
     }
 
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
@@ -1477,6 +1502,11 @@ public class IRNode {
     public static final String STORE_VECTOR_SCATTER = PREFIX + "STORE_VECTOR_SCATTER" + POSTFIX;
     static {
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER, "StoreVectorScatter");
+    }
+
+    public static final String STORE_VECTOR_MASKED = PREFIX + "STORE_VECTOR_MASKED" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(STORE_VECTOR_MASKED, "StoreVectorMasked");
     }
 
     public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;

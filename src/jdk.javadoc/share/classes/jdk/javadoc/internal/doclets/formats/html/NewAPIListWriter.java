@@ -29,7 +29,7 @@ import java.util.List;
 
 import javax.lang.model.element.Element;
 
-import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.SinceTree;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
@@ -107,7 +107,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
                                 ? getTableCaption(headingKey)
                                 : Text.of(release),
                         element -> {
-                            List<? extends DocTree> since = getSinceTree(element);
+                            List<? extends SinceTree> since = utils.getBlockTags(element, SINCE, SinceTree.class);
                             if (since.isEmpty()) {
                                 return false;
                             }
@@ -130,10 +130,10 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected Content getExtraContent(Element element) {
-        List<? extends DocTree> sinceTree = getSinceTree(element);
-        if (!sinceTree.isEmpty()) {
-            CommentHelper ch = utils.getCommentHelper(element);
-            return Text.of(ch.getBody(sinceTree.get(0)).toString());
+        var sinceTrees = utils.getBlockTags(element, SINCE, SinceTree.class);
+        if (!sinceTrees.isEmpty()) {
+            // assumes a simple string value with no formatting
+            return Text.of(sinceTrees.getFirst().getBody().getFirst().toString());
         }
         return Text.EMPTY;
     }
@@ -150,10 +150,6 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
     @Override
     protected HtmlStyle[] getColumnStyles() {
         return new HtmlStyle[]{ HtmlStyle.colSummaryItemName, HtmlStyle.colSecond, HtmlStyle.colLast };
-    }
-
-    private List<? extends DocTree> getSinceTree(Element element) {
-        return utils.hasDocCommentTree(element) ? utils.getBlockTags(element, SINCE) : List.of();
     }
 
     private static String getHeading(HtmlConfiguration configuration) {

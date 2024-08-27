@@ -457,9 +457,6 @@
   develop(bool, PrintLockStatistics, false,                                 \
           "Print precise statistics on the dynamic lock usage")             \
                                                                             \
-  product(bool, PrintPreciseRTMLockingStatistics, false, DIAGNOSTIC,        \
-          "Print per-lock-site statistics of rtm locking in JVM")           \
-                                                                            \
   develop(bool, PrintEliminateLocks, false,                                 \
           "Print out when locks are eliminated")                            \
                                                                             \
@@ -766,9 +763,6 @@
                                                                             \
   product(bool, UseProfiledLoopPredicate, true,                             \
           "Move predicates out of loops based on profiling data")           \
-                                                                            \
-  product(bool, ExpandSubTypeCheckAtParseTime, false, DIAGNOSTIC,           \
-          "Do not use subtype check macro node")                            \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \

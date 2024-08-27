@@ -33,6 +33,7 @@
  * @requires vm.gc != null | !vm.opt.final.ClassUnloadingWithConcurrentMark
  * @requires vm.gc != "G1" | !vm.opt.final.ClassUnloadingWithConcurrentMark
  * @requires vm.gc != "Z"
+ * @requires vm.compMode != "Xcomp"
  * @library /vmTestbase /test/lib
  * @run main/othervm
  *      -Xmx1g

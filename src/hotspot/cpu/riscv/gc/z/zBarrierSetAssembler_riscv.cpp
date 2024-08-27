@@ -629,7 +629,7 @@ void ZBarrierSetAssembler::patch_barrier_relocation(address addr, int format) {
     case ZBarrierRelocationFormatMarkBadMask:
     case ZBarrierRelocationFormatStoreGoodBits:
     case ZBarrierRelocationFormatStoreBadMask:
-      assert(NativeInstruction::is_li16u_at(addr), "invalide zgc barrier");
+      assert(MacroAssembler::is_li16u_at(addr), "invalide zgc barrier");
       bytes = MacroAssembler::pd_patch_instruction_size(addr, (address)(uintptr_t)value);
       break;
     default:

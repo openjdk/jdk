@@ -44,7 +44,7 @@
 // generate a call to a similar but slower 64-bit version when calling with
 // a 32-bit integer type.
 template <typename T>
-inline unsigned population_count(T x) {
+constexpr unsigned population_count(T x) {
   STATIC_ASSERT(BitsPerWord <= 128);
   STATIC_ASSERT(BitsPerByte == 8);
   STATIC_ASSERT(std::is_integral<T>::value);

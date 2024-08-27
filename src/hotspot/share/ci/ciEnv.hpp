@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -383,8 +383,7 @@ public:
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        bool                      has_monitors,
-                       int                       immediate_oops_patched,
-                       RTMState                  rtm_state = NoRTM);
+                       int                       immediate_oops_patched);
 
   // Access to certain well known ciObjects.
 #define VM_CLASS_FUNC(name, ignore_s) \

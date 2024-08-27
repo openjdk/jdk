@@ -352,36 +352,6 @@ void BarrierSetAssembler::tlab_allocate(MacroAssembler* masm,
   __ verify_tlab();
 }
 
-void BarrierSetAssembler::incr_allocated_bytes(MacroAssembler* masm, Register thread,
-                                               Register var_size_in_bytes,
-                                               int con_size_in_bytes,
-                                               Register t1) {
-  if (!thread->is_valid()) {
-#ifdef _LP64
-    thread = r15_thread;
-#else
-    assert(t1->is_valid(), "need temp reg");
-    thread = t1;
-    __ get_thread(thread);
-#endif
-  }
-
-#ifdef _LP64
-  if (var_size_in_bytes->is_valid()) {
-    __ addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    __ addq(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-#else
-  if (var_size_in_bytes->is_valid()) {
-    __ addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), var_size_in_bytes);
-  } else {
-    __ addl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())), con_size_in_bytes);
-  }
-  __ adcl(Address(thread, in_bytes(JavaThread::allocated_bytes_offset())+4), 0);
-#endif
-}
-
 #ifdef _LP64
 void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slow_path, Label* continuation) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -612,6 +582,25 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
   caller_saved.Insert(OptoReg::as_OptoReg(r9->as_VMReg()));
   caller_saved.Insert(OptoReg::as_OptoReg(r10->as_VMReg()));
   caller_saved.Insert(OptoReg::as_OptoReg(r11->as_VMReg()));
+
+  if (UseAPX) {
+    caller_saved.Insert(OptoReg::as_OptoReg(r16->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r17->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r18->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r19->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r20->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r21->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r22->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r23->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r24->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r25->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r26->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r27->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r28->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r30->as_VMReg()));
+    caller_saved.Insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+  }
 
   int gp_spill_size = 0;
   int opmask_spill_size = 0;

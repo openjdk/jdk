@@ -90,13 +90,13 @@ public:
 class ZCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     lock->unlock();
   }
 
@@ -105,7 +105,7 @@ public:
       return true;
     }
 
-    ZReentrantLock* const lock = ZNMethod::lock_for_nmethod(nm);
+    ZReentrantLock* const lock = ZNMethod::ic_lock_for_nmethod(nm);
     return lock->is_owned();
   }
 };

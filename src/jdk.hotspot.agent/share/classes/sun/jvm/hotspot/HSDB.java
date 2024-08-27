@@ -1088,7 +1088,7 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
                           }
                         } else if (collHeap instanceof G1CollectedHeap) {
                           G1CollectedHeap heap = (G1CollectedHeap)collHeap;
-                          HeapRegion region = heap.hrm().getByAddress(handle);
+                          G1HeapRegion region = heap.hrm().getByAddress(handle);
 
                           if (region == null) {
                             // intentionally skip

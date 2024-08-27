@@ -2350,14 +2350,36 @@ void MacroAssembler::membar(Membar_mask_bits order_constraint) {
   address last = code()->last_insn();
   if (last != nullptr && nativeInstruction_at(last)->is_Membar() && prev == last) {
     NativeMembar *bar = NativeMembar_at(prev);
-    // We are merging two memory barrier instructions.  On AArch64 we
-    // can do this simply by ORing them together.
-    bar->set_kind(bar->get_kind() | order_constraint);
-    BLOCK_COMMENT("merged membar");
-  } else {
-    code()->set_last_insn(pc());
-    dmb(Assembler::barrier(order_constraint));
+    if (AlwaysMergeDMB) {
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar(always)");
+      return;
+    }
+    // Don't promote DMB ST|DMB LD to DMB (a full barrier) because
+    // doing so would introduce a StoreLoad which the caller did not
+    // intend
+    if (bar->get_kind() == order_constraint
+        || bar->get_kind() == AnyAny
+        || order_constraint == AnyAny) {
+      // We are merging two memory barrier instructions.  On AArch64 we
+      // can do this simply by ORing them together.
+      bar->set_kind(bar->get_kind() | order_constraint);
+      BLOCK_COMMENT("merged membar");
+      return;
+    } else {
+      // A special case like "DMB ST;DMB LD;DMB ST", the last DMB can be skipped
+      // We need check the last 2 instructions
+      address prev2 = prev - NativeMembar::instruction_size;
+      if (last != code()->last_label() && nativeInstruction_at(prev2)->is_Membar()) {
+        NativeMembar *bar2 = NativeMembar_at(prev2);
+        assert(bar2->get_kind() == order_constraint, "it should be merged before");
+        BLOCK_COMMENT("merged membar(elided)");
+        return;
+      }
+    }
   }
+  code()->set_last_insn(pc());
+  dmb(Assembler::barrier(order_constraint));
 }
 
 bool MacroAssembler::try_merge_ldst(Register rt, const Address &adr, size_t size_in_bytes, bool is_store) {
@@ -3879,7 +3901,7 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  * r2: y
  * r3: ylen
  * r4:  z
- * r5: zlen
+ * r5: tmp0
  * r10: tmp1
  * r11: tmp2
  * r12: tmp3
@@ -3890,11 +3912,11 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
  *
  */
 void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen,
-                                     Register z, Register zlen,
+                                     Register z, Register tmp0,
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6, Register product_hi) {
 
-  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  assert_different_registers(x, xlen, y, ylen, z, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
@@ -3903,7 +3925,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   const Register y_idx = tmp4;
   const Register carry = tmp5;
   const Register product  = xlen;
-  const Register x_xstart = zlen;  // reuse register
+  const Register x_xstart = tmp0;
 
   // First Loop.
   //
@@ -3919,9 +3941,9 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   //  z[xstart] = (int)carry;
   //
 
-  movw(idx, ylen);      // idx = ylen;
-  movw(kdx, zlen);      // kdx = xlen+ylen;
-  mov(carry, zr);       // carry = 0;
+  movw(idx, ylen);       // idx = ylen;
+  addw(kdx, xlen, ylen); // kdx = xlen+ylen;
+  mov(carry, zr);        // carry = 0;
 
   Label L_done;
 

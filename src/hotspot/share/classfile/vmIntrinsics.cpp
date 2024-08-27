@@ -492,6 +492,10 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_poly1305_processBlocks:
     if (!UsePoly1305Intrinsics) return true;
     break;
+  case vmIntrinsics::_intpoly_montgomeryMult_P256:
+  case vmIntrinsics::_intpoly_assign:
+    if (!UseIntPolyIntrinsics) return true;
+    break;
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;

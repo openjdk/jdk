@@ -194,9 +194,6 @@ define AddJdkLibrary
   endif
 
   # Determine if the library in question is static.
-  ifeq ($(STATIC_BUILD), true)
-     $1_$2_STATIC_LIBRARY := true
-  endif
   # Ideally, we should not hardcode these
   ifeq ($(call isTargetOs, aix)+$$($1_$2_MODULE):$$($1_$2_NAME), true+java.base:jli)
      $1_$2_STATIC_LIBRARY := true

@@ -52,8 +52,8 @@
   template(GC_HeapInspection)                     \
   template(SerialCollectForAllocation)            \
   template(SerialGCCollect)                       \
-  template(ParallelGCFailedAllocation)            \
-  template(ParallelGCSystemGC)                    \
+  template(ParallelCollectForAllocation)          \
+  template(ParallelGCCollect)                     \
   template(G1CollectForAllocation)                \
   template(G1CollectFull)                         \
   template(G1PauseRemark)                         \

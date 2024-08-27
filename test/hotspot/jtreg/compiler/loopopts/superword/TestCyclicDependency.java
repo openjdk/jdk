@@ -27,7 +27,6 @@
  * @bug 8298935
  * @summary Writing forward on array creates cyclic dependency
  *          which leads to wrong result, when ignored.
- * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run driver TestCyclicDependency
  */

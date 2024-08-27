@@ -109,7 +109,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   ciEnv *env = CURRENT_ENV;
   if (env->jvmti_can_hotswap_or_post_breakpoint()) {
     // 6328518 check hotswap conditions under the right lock.
-    MutexLocker locker(Compile_lock);
+    bool should_take_Compile_lock = !Compile_lock->owned_by_self();
+    ConditionalMutexLocker locker(Compile_lock, should_take_Compile_lock, Mutex::_safepoint_check_flag);
     if (Dependencies::check_evol_method(h_m()) != nullptr) {
       _is_c1_compilable = false;
       _is_c2_compilable = false;
@@ -718,17 +719,10 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   {
     MutexLocker locker(Compile_lock);
     InstanceKlass* context = actual_recv->get_instanceKlass();
-    if (UseVtableBasedCHA) {
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
-                                                                              root_m->get_Method(),
-                                                                              callee_holder->get_Klass(),
-                                                                              this->get_Method()));
-    } else {
-      if (root_m->is_abstract()) {
-        return nullptr; // not supported
-      }
-      target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context, root_m->get_Method()));
-    }
+    target = methodHandle(THREAD, Dependencies::find_unique_concrete_method(context,
+                                                                            root_m->get_Method(),
+                                                                            callee_holder->get_Klass(),
+                                                                            this->get_Method()));
     assert(target() == nullptr || !target()->is_abstract(), "not allowed");
     // %%% Should upgrade this ciMethod API to look for 1 or 2 concrete methods.
   }
@@ -1126,14 +1120,13 @@ int ciMethod::code_size_for_inlining() {
 // not highly relevant to an inlined method.  So we use the more
 // specific accessor nmethod::insts_size.
 // Also some instructions inside the code are excluded from inline
-// heuristic (e.g. post call nop instructions and GC barriers;
-// see InlineSkippedInstructionsCounter).
+// heuristic (e.g. post call nop instructions; see InlineSkippedInstructionsCounter)
 int ciMethod::inline_instructions_size() {
   if (_inline_instructions_size == -1) {
     GUARDED_VM_ENTRY(
       nmethod* code = get_Method()->code();
       if (code != nullptr && (code->comp_level() == CompLevel_full_optimization)) {
-        int isize = code->inline_insts_size();
+        int isize = code->insts_end() - code->verified_entry_point() - code->skipped_instructions_size();
         _inline_instructions_size = isize > 0 ? isize : 0;
       } else {
         _inline_instructions_size = 0;

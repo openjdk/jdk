@@ -1005,7 +1005,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     // Make sure the call is patchable
     __ align(NativeInstruction::instruction_size);
 
-    const address tr_call = __ trampoline_call(resolve);
+    const address tr_call = __ reloc_call(resolve);
     if (tr_call == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1037,7 +1037,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
   // Make sure the call is patchable
   __ align(NativeInstruction::instruction_size);
 
-  const address tr_call = __ trampoline_call(resolve);
+  const address tr_call = __ reloc_call(resolve);
   if (tr_call == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1638,14 +1638,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ set_last_Java_frame(sp, noreg, native_return, t0);
 
   Label dtrace_method_entry, dtrace_method_entry_done;
-  {
-    ExternalAddress target((address)&DTraceMethodProbes);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lbu(t0, Address(t0, offset));
-    });
-    __ bnez(t0, dtrace_method_entry);
+  if (DTraceMethodProbes) {
+    __ j(dtrace_method_entry);
     __ bind(dtrace_method_entry_done);
   }
 
@@ -1861,14 +1855,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   Label dtrace_method_exit, dtrace_method_exit_done;
-  {
-    ExternalAddress target((address)&DTraceMethodProbes);
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la(t0, target.target(), offset);
-      __ lbu(t0, Address(t0, offset));
-    });
-    __ bnez(t0, dtrace_method_exit);
+  if (DTraceMethodProbes) {
+    __ j(dtrace_method_exit);
     __ bind(dtrace_method_exit_done);
   }
 
@@ -2009,34 +1997,36 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   }
 
   // SLOW PATH dtrace support
-  {
-    __ block_comment("dtrace entry {");
-    __ bind(dtrace_method_entry);
+  if (DTraceMethodProbes) {
+    {
+      __ block_comment("dtrace entry {");
+      __ bind(dtrace_method_entry);
 
-    // We have all of the arguments setup at this point. We must not touch any register
-    // argument registers at this point (what if we save/restore them there are no oop?
+      // We have all of the arguments setup at this point. We must not touch any register
+      // argument registers at this point (what if we save/restore them there are no oop?
 
-    save_args(masm, total_c_args, c_arg, out_regs);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-      CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
-      xthread, c_rarg1);
-    restore_args(masm, total_c_args, c_arg, out_regs);
-    __ j(dtrace_method_entry_done);
-    __ block_comment("} dtrace entry");
-  }
+      save_args(masm, total_c_args, c_arg, out_regs);
+      __ mov_metadata(c_rarg1, method());
+      __ call_VM_leaf(
+        CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+        xthread, c_rarg1);
+      restore_args(masm, total_c_args, c_arg, out_regs);
+      __ j(dtrace_method_entry_done);
+      __ block_comment("} dtrace entry");
+    }
 
-  {
-    __ block_comment("dtrace exit {");
-    __ bind(dtrace_method_exit);
-    save_native_result(masm, ret_type, stack_slots);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-         CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-         xthread, c_rarg1);
-    restore_native_result(masm, ret_type, stack_slots);
-    __ j(dtrace_method_exit_done);
-    __ block_comment("} dtrace exit");
+    {
+      __ block_comment("dtrace exit {");
+      __ bind(dtrace_method_exit);
+      save_native_result(masm, ret_type, stack_slots);
+      __ mov_metadata(c_rarg1, method());
+      __ call_VM_leaf(
+           CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
+           xthread, c_rarg1);
+      restore_native_result(masm, ret_type, stack_slots);
+      __ j(dtrace_method_exit_done);
+      __ block_comment("} dtrace exit");
+    }
   }
 
   __ flush();

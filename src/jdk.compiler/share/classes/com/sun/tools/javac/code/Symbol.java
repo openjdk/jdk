@@ -358,7 +358,7 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
     public Type externalType(Types types) {
         Type t = erasure(types);
         if (name == name.table.names.init && owner.hasOuterInstance()) {
-            Type outerThisType = types.erasure(owner.type.getEnclosingType());
+            Type outerThisType = owner.innermostAccessibleEnclosingClass().erasure(types);
             return new MethodType(t.getParameterTypes().prepend(outerThisType),
                                   t.getReturnType(),
                                   t.getThrownTypes(),
@@ -506,7 +506,23 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
      */
     public boolean hasOuterInstance() {
         return
-            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | ENUM | RECORD | NOOUTERTHIS)) == 0;
+            type.getEnclosingType().hasTag(CLASS) && (flags() & (INTERFACE | ENUM | RECORD)) == 0 &&
+                    ((flags() & NOOUTERTHIS) == 0 || type.getEnclosingType().tsym.hasOuterInstance());
+    }
+
+    /** If the class containing this symbol is a local or an anonymous class, then it might be
+     *  defined inside one or more pre-construction contexts, for which the corresponding enclosing
+     *  instance is considered inaccessible. This method return the class symbol corresponding to the
+     *  innermost enclosing type that is accessible from this symbol's class. Note: this method should
+     *  only be called after checking that {@link #hasOuterInstance()} returns {@code true}.
+     */
+    public ClassSymbol innermostAccessibleEnclosingClass() {
+        Assert.check(enclClass().hasOuterInstance());
+        Type current = enclClass().type;
+        while ((current.tsym.flags() & NOOUTERTHIS) != 0) {
+            current = current.getEnclosingType();
+        }
+        return (ClassSymbol) current.getEnclosingType().tsym;
     }
 
     /** The closest enclosing class of this symbol's declaration.
@@ -1552,9 +1568,11 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             RecordComponent toRemove = null;
             for (RecordComponent rc : recordComponents) {
                 /* it could be that a record erroneously declares two record components with the same name, in that
-                 * case we need to use the position to disambiguate
+                 * case we need to use the position to disambiguate, but if we loaded the record from a class file
+                 * all positions will be -1, in that case we have to ignore the position and match only based on the
+                 * name
                  */
-                if (rc.name == var.name && var.pos == rc.pos) {
+                if (rc.name == var.name && (var.pos == rc.pos || rc.pos == -1)) {
                     toRemove = rc;
                 }
             }

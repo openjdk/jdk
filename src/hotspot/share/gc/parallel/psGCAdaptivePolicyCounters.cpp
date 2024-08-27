@@ -128,14 +128,6 @@ PSGCAdaptivePolicyCounters::PSGCAdaptivePolicyCounters(const char* name_arg,
     _major_pause_young_slope = PerfDataManager::create_variable(SUN_GC, cname,
       PerfData::U_None, (jlong) 0, CHECK);
 
-    cname = PerfDataManager::counter_name(name_space(), "scavengeSkipped");
-    _scavenge_skipped = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Bytes, (jlong) 0, CHECK);
-
-    cname = PerfDataManager::counter_name(name_space(), "fullFollowsScavenge");
-    _full_follows_scavenge = PerfDataManager::create_variable(SUN_GC, cname,
-      PerfData::U_Bytes, (jlong) 0, CHECK);
-
     _counter_time_stamp.update();
   }
 

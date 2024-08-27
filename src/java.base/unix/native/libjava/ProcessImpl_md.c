@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -559,8 +559,17 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     }
     offset = copystrings(buf, 0, &c->argv[0]);
     offset = copystrings(buf, offset, &c->envv[0]);
-    memcpy(buf+offset, c->pdir, sp.dirlen);
-    offset += sp.dirlen;
+    if (c->pdir != NULL) {
+        if (sp.dirlen > 0) {
+            memcpy(buf+offset, c->pdir, sp.dirlen);
+            offset += sp.dirlen;
+        }
+    } else {
+        if (sp.dirlen > 0) {
+            free(buf);
+            return -1;
+        }
+    }
     offset = copystrings(buf, offset, parentPathv);
     assert(offset == bufsize);
 

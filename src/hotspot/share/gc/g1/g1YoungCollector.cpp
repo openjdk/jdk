@@ -259,9 +259,9 @@ void G1YoungCollector::wait_for_root_region_scanning() {
   phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
 }
 
-class G1PrintCollectionSetClosure : public HeapRegionClosure {
+class G1PrintCollectionSetClosure : public G1HeapRegionClosure {
 public:
-  virtual bool do_heap_region(HeapRegion* r) {
+  virtual bool do_heap_region(G1HeapRegion* r) {
     G1HeapRegionPrinter::cset(r);
     return false;
   }
@@ -286,7 +286,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
 }
 
 class G1PrepareEvacuationTask : public WorkerTask {
-  class G1PrepareRegionsClosure : public HeapRegionClosure {
+  class G1PrepareRegionsClosure : public G1HeapRegionClosure {
     G1CollectedHeap* _g1h;
     G1PrepareEvacuationTask* _parent_task;
     uint _worker_humongous_total;
@@ -294,7 +294,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
 
     G1MonotonicArenaMemoryStats _card_set_stats;
 
-    void sample_card_set_size(HeapRegion* hr) {
+    void sample_card_set_size(G1HeapRegion* hr) {
       // Sample card set sizes for young gen and humongous before GC: this makes
       // the policy to give back memory to the OS keep the most recent amount of
       // memory for these regions.
@@ -303,7 +303,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       }
     }
 
-    bool humongous_region_is_candidate(HeapRegion* region) const {
+    bool humongous_region_is_candidate(G1HeapRegion* region) const {
       assert(region->is_starts_humongous(), "Must start a humongous object");
 
       oop obj = cast_to_oop(region->bottom());
@@ -375,7 +375,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       _parent_task->add_humongous_total(_worker_humongous_total);
     }
 
-    virtual bool do_heap_region(HeapRegion* hr) {
+    virtual bool do_heap_region(G1HeapRegion* hr) {
       // First prepare the region for scanning
       _g1h->rem_set()->prepare_region_for_scan(hr);
 
@@ -418,7 +418,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
   };
 
   G1CollectedHeap* _g1h;
-  HeapRegionClaimer _claimer;
+  G1HeapRegionClaimer _claimer;
   volatile uint _humongous_total;
   volatile uint _humongous_candidates;
 
@@ -968,7 +968,7 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
   assert(collector_state()->in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
-  for (HeapRegion* r : *candidates) {
+  for (G1HeapRegion* r : *candidates) {
     _g1h->concurrent_mark()->add_root_region(r);
   }
 }

@@ -259,14 +259,6 @@ define SetupBasicVariables
     $1_TYPE := LIBRARY
   endif
 
-  # If we're doing a static build and producing a library
-  # force it to be a static library and remove the -l libraries
-  ifeq ($(STATIC_BUILD), true)
-    ifeq ($$($1_TYPE), LIBRARY)
-      $1_TYPE := STATIC_LIBRARY
-    endif
-  endif
-
   # STATIC_LIBS is set from Main.gmk when building static versions of certain
   # native libraries.
   ifeq ($(STATIC_LIBS), true)

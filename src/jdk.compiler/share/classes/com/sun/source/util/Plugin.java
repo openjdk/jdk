@@ -74,6 +74,8 @@ public interface Plugin {
      * command-line option.
      *
      * @return whether or not this plugin should be automatically started
+     *
+     * @since 14
      */
     default boolean autoStart() {
         return false;

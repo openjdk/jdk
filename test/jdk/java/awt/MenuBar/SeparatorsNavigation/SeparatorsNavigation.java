@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.awt.Robot;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @test
@@ -51,6 +53,7 @@ public class SeparatorsNavigation {
     static class Listener implements ActionListener {
         public void actionPerformed(ActionEvent e) {
             SeparatorsNavigation.pressed = true;
+            latch.countDown();
         }
     }
 
@@ -61,7 +64,8 @@ public class SeparatorsNavigation {
     static Menu m3;
     static MenuItem i31;
     static Listener l = new Listener();
-    static boolean pressed = false;
+    static volatile boolean pressed = false;
+    static final CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(String args[]) {
         f = new Frame();
@@ -83,27 +87,23 @@ public class SeparatorsNavigation {
         f.setVisible(true);
         try {
             Robot r = new Robot();
+            r.setAutoDelay(20);
             r.delay(1000);
             r.keyPress(KeyEvent.VK_F10);
-            r.delay(10);
             r.keyRelease(KeyEvent.VK_F10);
             r.delay(1000);
             r.keyPress(KeyEvent.VK_DOWN);
-            r.delay(10);
             r.keyRelease(KeyEvent.VK_DOWN);
             r.delay(1000);
             r.keyPress(KeyEvent.VK_RIGHT);
-            r.delay(10);
             r.keyRelease(KeyEvent.VK_RIGHT);
             r.delay(1000);
             r.keyPress(KeyEvent.VK_RIGHT);
-            r.delay(10);
             r.keyRelease(KeyEvent.VK_RIGHT);
             r.delay(1000);
             r.keyPress(KeyEvent.VK_ENTER);
-            r.delay(10);
             r.keyRelease(KeyEvent.VK_ENTER);
-            r.delay(10000);
+            latch.await(5, TimeUnit.SECONDS);
         } catch (Exception ex) {
             throw new RuntimeException("Execution interrupted by an " +
                     "exception " + ex.getLocalizedMessage());

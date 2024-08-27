@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
@@ -157,7 +159,10 @@ public class JSpec implements Taglet  {
                     continue;
             }
 
-            String tagText = contents.toString().trim();
+            String tagText = contents.stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining())
+                    .trim();
             Matcher m = TAG_PATTERN.matcher(tagText);
             if (m.find()) {
                 String chapter = m.group("chapter");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
 
 package com.sun.tools.jdeprscan.scan;
 
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.constantpool.*;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.List;
 import java.util.Locale;
-
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool;
-
-import static com.sun.tools.classfile.ConstantPool.CPInfo;
 
 /**
  * A container for selected constant pool entries. There are currently
@@ -45,15 +42,21 @@ import static com.sun.tools.classfile.ConstantPool.CPInfo;
  *  - CONSTANT_InterfaceMethodref_info
  */
 class CPEntries {
-    final List<ConstantPool.CONSTANT_Class_info> classes = new ArrayList<>();
-    final List<ConstantPool.CONSTANT_Fieldref_info> fieldRefs = new ArrayList<>();
-    final List<ConstantPool.CONSTANT_Methodref_info> methodRefs = new ArrayList<>();
-    final List<ConstantPool.CONSTANT_InterfaceMethodref_info> intfMethodRefs = new ArrayList<>();
+    final List<ClassEntry> classes = new ArrayList<>();
+    final List<FieldRefEntry> fieldRefs = new ArrayList<>();
+    final List<MethodRefEntry> methodRefs = new ArrayList<>();
+    final List<InterfaceMethodRefEntry> intfMethodRefs = new ArrayList<>();
 
-    public static CPEntries loadFrom(ClassFile cf) {
+    public static CPEntries loadFrom(ClassModel cf) {
         CPEntries entries = new CPEntries();
-        for (CPInfo cpi : cf.constant_pool.entries()) {
-            cpi.accept(new CPSelector(), entries);
+        for (PoolEntry cpi : cf.constantPool()) {
+            switch (cpi) {
+                case ClassEntry ce -> entries.classes.add(ce);
+                case MethodRefEntry mref -> entries.methodRefs.add(mref);
+                case InterfaceMethodRefEntry imref -> entries.intfMethodRefs.add(imref);
+                case FieldRefEntry fref -> entries.fieldRefs.add(fref);
+                default -> {}
+            }
         }
         return entries;
     }

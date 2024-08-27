@@ -483,6 +483,9 @@ class StubGenerator: public StubCodeGenerator {
                                const XMMRegister P2L, const XMMRegister P2H,
                                const XMMRegister YTMP1, const Register rscratch);
 
+  address generate_intpoly_montgomeryMult_P256();
+  address generate_intpoly_assign();
+
   // BASE64 stubs
 
   address base64_shuffle_addr();
@@ -572,6 +575,9 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
+#ifdef COMPILER2
+  void generate_string_indexof(address *fnptrs);
+#endif
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();

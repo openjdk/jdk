@@ -58,6 +58,7 @@ public:
   static void nmethods_do(NMethodClosure* cl);
 
   static XReentrantLock* lock_for_nmethod(nmethod* nm);
+  static XReentrantLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void unlink(XWorkers* workers, bool unloading_occurred);
   static void purge();

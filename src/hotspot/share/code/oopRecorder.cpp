@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/copy.hpp"
 
 #ifdef ASSERT
@@ -211,3 +212,46 @@ OopRecorder::OopRecorder(Arena* arena, bool deduplicate): _oops(arena), _metadat
     _object_lookup = nullptr;
   }
 }
+
+// Explicitly instantiate
+template class ValueRecorder<address>;
+
+ExternalsRecorder* ExternalsRecorder::_recorder = nullptr;
+
+ExternalsRecorder::ExternalsRecorder(): _arena(mtCode), _externals(&_arena) {}
+
+void ExternalsRecorder_init() {
+  ExternalsRecorder::initialize();
+}
+
+void ExternalsRecorder::initialize() {
+  // After Mutex and before CodeCache are initialized
+  assert(_recorder == nullptr, "should initialize only once");
+  _recorder = new ExternalsRecorder();
+}
+
+int ExternalsRecorder::find_index(address adr) {
+  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
+  assert(_recorder != nullptr, "sanity");
+  return _recorder->_externals.find_index(adr);
+}
+
+address ExternalsRecorder::at(int index) {
+  // find_index() may resize array by reallocating it and freeing old,
+  // we need loock here to make sure we not accessing to old freed array.
+  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
+  assert(_recorder != nullptr, "sanity");
+  return _recorder->_externals.at(index);
+}
+
+int ExternalsRecorder::count() {
+  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
+  assert(_recorder != nullptr, "sanity");
+  return _recorder->_externals.count();
+}
+
+#ifndef PRODUCT
+void ExternalsRecorder::print_statistics() {
+  tty->print_cr("External addresses table: %d entries", count());
+}
+#endif

@@ -150,8 +150,6 @@ public class UnloadingTest extends GCTestBase {
     }
 
     private static void checkGCCounters() {
-//        System.out.println("WhiteBox.getWhiteBox().g1GetTotalCollections() = \t" + WhiteBox.getWhiteBox().g1GetTotalCollections());
-//        System.out.println("WhiteBox.getWhiteBox().g1GetTotalFullCollections() = \t" + WhiteBox.getWhiteBox().g1GetTotalFullCollections());
         GarbageCollectorMXBean oldGenBean = null;
         for (GarbageCollectorMXBean bean : ManagementFactory.getGarbageCollectorMXBeans()) {
             System.out.println("bean.getName() = \t\"" + bean.getName() + "\", bean.getCollectionCount() = \t" + bean.getCollectionCount());
@@ -159,9 +157,9 @@ public class UnloadingTest extends GCTestBase {
                 oldGenBean = bean;
             }
         }
-//        if (WhiteBox.getWhiteBox().g1GetTotalFullCollections() != 0 || (oldGenBean != null && oldGenBean.getCollectionCount() != 0)) {
+
         if (oldGenBean != null && oldGenBean.getCollectionCount() != 0) {
-            throw new RuntimeException("Full gc happened. Test was useless.");
+            throw new SkippedException("Full gc happened, skip the test.");
         }
     }
 

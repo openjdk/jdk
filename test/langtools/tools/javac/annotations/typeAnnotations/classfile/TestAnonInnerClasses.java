@@ -63,10 +63,10 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
     File testSrc = new File(System.getProperty("test.src"));
 
     AttributeMapper<?> [] AnnoAttributes = new AttributeMapper<?>[]{
-            Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS,
-            Attributes.RUNTIME_INVISIBLE_TYPE_ANNOTATIONS,
-            Attributes.RUNTIME_VISIBLE_ANNOTATIONS,
-            Attributes.RUNTIME_INVISIBLE_ANNOTATIONS
+            Attributes.runtimeVisibleTypeAnnotations(),
+            Attributes.runtimeInvisibleTypeAnnotations(),
+            Attributes.runtimeVisibleAnnotations(),
+            Attributes.runtimeInvisibleAnnotations()
     };
 
     // template for source files
@@ -175,7 +175,7 @@ public class TestAnonInnerClasses extends ClassfileTestHelper {
                         ((MethodModel) m).methodName().stringValue() : ((FieldModel) m).fieldName().stringValue();
                 attr = m.findAttribute(AnnoType).orElse(null);
                 //fetch index annotations from code attribute.
-                CAttr = m.findAttribute(Attributes.CODE).orElse(null);
+                CAttr = m.findAttribute(Attributes.code()).orElse(null);
                 if (CAttr != null) {
                     cattr = CAttr.findAttribute(AnnoType).orElse(null);
                 }

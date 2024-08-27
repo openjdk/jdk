@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,6 @@ import jdk.jfr.events.ActiveSettingEvent;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.consumer.EventLog;
-import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.periodic.PeriodicEvents;
 import jdk.jfr.internal.util.Utils;
 
@@ -83,7 +82,6 @@ public final class PlatformRecorder {
         Logger.log(JFR_SYSTEM, INFO, "Created native");
         JDKEvents.initialize();
         Logger.log(JFR_SYSTEM, INFO, "Registered JDK events");
-        JDKEvents.addInstrumentation();
         startDiskMonitor();
         shutdownHook = SecuritySupport.createThreadWitNoPermissions("JFR Shutdown Hook", new ShutdownHook(this));
         SecuritySupport.setUncaughtExceptionHandler(shutdownHook, new ShutdownHook.ExceptionHandler());

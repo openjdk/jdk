@@ -81,8 +81,8 @@
  * <blockquote>{@code import java.util.random.*;}</blockquote>
  *
  * Then one can choose a specific implementation by giving the name of a generator
- * algorithm to the static method {@link RandomGenerator#of}, in which case the
- * no-arguments constructor for that implementation is used:
+ * algorithm to the static method {@link RandomGenerator#of}, in which case
+ * a {@link RandomGenerator} is constructed without any seed value:
  *
  * <blockquote>{@code RandomGenerator g = RandomGenerator.of("L64X128MixRandom");}</blockquote>
  *
@@ -125,8 +125,8 @@
  *
  * <h2>Choosing a Random Number Generator Algorithm</h2>
  *
- * <p> There are three groups of random number generator algorithm provided
- * in Java: the Legacy group, the LXM group, and the Xoroshiro/Xoshiro group.
+ * <p> Random number generator algorithms are organized in groups,
+ * as described {@linkplain java.util.random##algorithms below}.
  *
  * <p> The legacy group includes random number generators that existed
  * before JDK 17: Random, ThreadLocalRandom, SplittableRandom, and
@@ -302,6 +302,13 @@
  *      <td style="text-align:left">BigInteger.ONE.shiftLeft(64)</td>
  *      <td style="text-align:right">64</td>
  *      <td style="text-align:right">1</td>
+ *  </tr>
+ *  <tr>
+ *      <th scope="row" style="text-align:left">SecureRandom</th>
+ *      <td style="text-align:left">Legacy</td>
+ *      <td style="text-align:left">BigInteger.ZERO</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
+ *      <td style="text-align:right">Integer.MAX_VALUE</td>
  *  </tr>
  *  <tr>
  *      <th scope="row" style="text-align:left">ThreadLocalRandom <sup>*</sup></th>

@@ -108,19 +108,6 @@ define SetupBuildLauncherBody
     ))
 
     $1_LDFLAGS += -sectcreate __TEXT __info_plist $$($1_PLIST_FILE)
-
-    ifeq ($(STATIC_BUILD), true)
-      $1_LDFLAGS += -exported_symbols_list \
-              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
-      $1_LIBS += \
-          $$(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
-          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
-          -framework CoreFoundation \
-          -framework Foundation \
-          -framework SystemConfiguration \
-          -lstdc++ -liconv
-    endif
   endif
 
   $1_EXTRA_FILES := $(LAUNCHER_SRC)/main.c

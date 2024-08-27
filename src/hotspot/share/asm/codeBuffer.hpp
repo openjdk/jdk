@@ -427,15 +427,13 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address      _total_start;    // first address of combined memory buffer
   csize_t      _total_size;     // size in bytes of combined memory buffer
 
-  // Size of code without stubs generated at the end of instructions section
-  csize_t      _main_code_size;
-
   OopRecorder* _oop_recorder;
 
   OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
   address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
+  address      _last_label;     // record last bind label address, it's also the start of current bb.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
@@ -460,7 +458,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
     _last_insn       = nullptr;
-    _main_code_size  = 0;
+    _last_label      = nullptr;
     _finalize_stubs  = false;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
@@ -513,6 +511,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   // moves code sections to new buffer (assumes relocs are already in there)
   void relocate_code_to(CodeBuffer* cb) const;
+
+  // adjust some internal address during expand
+  void adjust_internal_address(address from, address to);
 
   // set up a model of the final layout of my contents
   void compute_final_layout(CodeBuffer* dest) const;
@@ -634,9 +635,6 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   // number of bytes remaining in the insts section
   csize_t insts_remaining() const        { return _insts.remaining(); }
 
-  // size of code without stubs in instruction section
-  csize_t main_code_size() const         { return _main_code_size; }
-
   // is a given address in the insts section?  (2nd version is end-inclusive)
   bool insts_contains(address pc) const  { return _insts.contains(pc); }
   bool insts_contains2(address pc) const { return _insts.contains2(pc); }
@@ -685,6 +683,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
   address last_insn() const { return _last_insn; }
   void set_last_insn(address a) { _last_insn = a; }
   void clear_last_insn() { set_last_insn(nullptr); }
+
+  address last_label() const { return _last_label; }
+  void set_last_label(address a) { _last_label = a; }
 
 #ifndef PRODUCT
   AsmRemarks &asm_remarks() { return _asm_remarks; }

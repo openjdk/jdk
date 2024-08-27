@@ -98,7 +98,11 @@ address Relocation::pd_call_destination(address orig_addr) {
   if (ni->is_call()) {
     return nativeCall_at(addr())->destination() + adj;
   } else if (ni->is_jump()) {
-    return nativeJump_at(addr())->jump_destination() + adj;
+    address dest = nativeJump_at(addr())->jump_destination();
+    if (dest == (address) -1) {
+      return addr(); // jump to self
+    }
+    return dest + adj;
   } else if (ni->is_cond_jump()) {
     return nativeGeneralJump_at(addr())->jump_destination() + adj;
   } else if (ni->is_mov_literal64()) {

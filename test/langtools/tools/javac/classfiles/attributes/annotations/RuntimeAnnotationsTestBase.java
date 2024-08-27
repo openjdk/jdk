@@ -96,11 +96,11 @@ public abstract class RuntimeAnnotationsTestBase extends AnnotationsTestBase {
         Map<String, Annotation> actualInvisible = collectAnnotations(
                 member,
                 attributedElement,
-                Attributes.RUNTIME_INVISIBLE_ANNOTATIONS);
+                Attributes.runtimeInvisibleAnnotations());
         Map<String, Annotation> actualVisible = collectAnnotations(
                 member,
                 attributedElement,
-                Attributes.RUNTIME_VISIBLE_ANNOTATIONS);
+                Attributes.runtimeVisibleAnnotations());
 
         checkEquals(actualInvisible.keySet(),
                 member.getRuntimeInvisibleAnnotations(), "RuntimeInvisibleAnnotations");

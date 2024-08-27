@@ -115,7 +115,7 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
     }
 
     @Override
-    public byte[] transform(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
+    public byte[] transformClass(ClassModel model, ClassEntry newClassName, ClassTransform transform) {
         ConstantPoolBuilder constantPool = constantPoolSharingOption() == ConstantPoolSharingOption.SHARED_POOL
                                                                      ? ConstantPoolBuilder.of(model)
                                                                      : ConstantPoolBuilder.of();

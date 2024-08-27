@@ -212,9 +212,6 @@ public:
   };
 
 private:
-  static void check_enum_obj(int level, KlassSubGraphInfo* subgraph_info,
-                             oop orig_obj);
-
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
   typedef ResizeableResourceHashtable<oop, CachedOopInfo,
@@ -428,7 +425,6 @@ private:
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void init_roots(oop roots_oop) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
 };

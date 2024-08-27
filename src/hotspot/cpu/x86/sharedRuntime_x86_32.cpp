@@ -1476,13 +1476,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Frame is now completed as far as size and linkage.
   int frame_complete = ((intptr_t)__ pc()) - start;
 
-  if (UseRTMLocking) {
-    // Abort RTM transaction before calling JNI
-    // because critical section will be large and will be
-    // aborted anyway. Also nmethod could be deoptimized.
-    __ xabort(0);
-  }
-
   // Calculate the difference between rsp and rbp,. We need to know it
   // after the native call because on windows Java Natives will pop
   // the arguments and it is painful to do rsp relative addressing
@@ -1619,8 +1612,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // We have all of the arguments setup at this point. We must not touch any register
   // argument registers at this point (what if we save/restore them there are no oop?
 
-  {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
+  if (DTraceMethodProbes) {
     __ mov_metadata(rax, method());
     __ call_VM_leaf(
          CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
@@ -1864,8 +1856,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bind(fast_done);
   }
 
-  {
-    SkipIfEqual skip_if(masm, &DTraceMethodProbes, 0, noreg);
+  if (DTraceMethodProbes) {
     // Tell dtrace about this method exit
     save_native_result(masm, ret_type, stack_slots);
     __ mov_metadata(rax, method());
@@ -2422,11 +2413,6 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   address start = __ pc();
 
-  if (UseRTMLocking) {
-    // Abort RTM transaction before possible nmethod deoptimization.
-    __ xabort(0);
-  }
-
   // Push self-frame.
   __ subptr(rsp, return_off*wordSize);     // Epilog!
 
@@ -2608,13 +2594,6 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   address call_pc = nullptr;
   bool cause_return = (poll_type == POLL_AT_RETURN);
   bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
-
-  if (UseRTMLocking) {
-    // Abort RTM transaction before calling runtime
-    // because critical section will be large and will be
-    // aborted anyway. Also nmethod could be deoptimized.
-    __ xabort(0);
-  }
 
   // If cause_return is true we are at a poll_return and there is
   // the return address on the stack to the caller on the nmethod

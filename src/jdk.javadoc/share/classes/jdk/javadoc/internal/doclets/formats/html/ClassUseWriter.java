@@ -430,21 +430,5 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         bodyContents.setHeader(getHeader(PageMode.USE, typeElement)).addMainContent(div);
         return body;
     }
-
-    @Override
-    protected Navigation getNavBar(PageMode pageMode, Element element) {
-        List<Content> subnavLinks = new ArrayList<>();
-        if (configuration.showModules) {
-            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
-        }
-        // We may generate a class-use page for an otherwise undocumented page in the condition below.
-        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
-        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
-        if (!isUndocumented) {
-            subnavLinks.add(getBreadcrumbLink(typeElement, true));
-        }
-
-        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
-    }
 }
 

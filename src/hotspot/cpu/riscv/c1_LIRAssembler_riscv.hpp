@@ -69,15 +69,15 @@ private:
   enum {
     // See emit_static_call_stub for detail
     // CompiledDirectCall::to_interp_stub_size() (14) + CompiledDirectCall::to_trampoline_stub_size() (1 + 3 + address)
-    _call_stub_size = 14 * NativeInstruction::instruction_size +
-                      (NativeInstruction::instruction_size + NativeCallTrampolineStub::instruction_size),
+    _call_stub_size = 14 * MacroAssembler::instruction_size +
+                      (MacroAssembler::instruction_size + MacroAssembler::NativeShortCall::trampoline_size),
     // See emit_exception_handler for detail
     // verify_not_null_oop + far_call + should_not_reach_here + invalidate_registers(DEBUG_ONLY)
     _exception_handler_size = DEBUG_ONLY(584) NOT_DEBUG(548), // or smaller
     // See emit_deopt_handler for detail
     // auipc (1) + far_jump (6 or 2)
-    _deopt_handler_size = 1 * NativeInstruction::instruction_size +
-                          6 * NativeInstruction::instruction_size // or smaller
+    _deopt_handler_size = 1 * MacroAssembler::instruction_size +
+                          6 * MacroAssembler::instruction_size // or smaller
   };
 
   void check_conflict(ciKlass* exact_klass, intptr_t current_klass, Register tmp,

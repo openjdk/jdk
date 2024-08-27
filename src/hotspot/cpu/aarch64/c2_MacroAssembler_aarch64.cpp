@@ -1154,7 +1154,7 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
 
   BLOCK_COMMENT("string_compare {");
 
-  // Bizzarely, the counts are passed in bytes, regardless of whether they
+  // Bizarrely, the counts are passed in bytes, regardless of whether they
   // are L or U strings, however the result is always in characters.
   if (!str1_isL) asrw(cnt1, cnt1, 1);
   if (!str2_isL) asrw(cnt2, cnt2, 1);

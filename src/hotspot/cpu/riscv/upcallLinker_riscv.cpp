@@ -223,7 +223,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
 
   __ block_comment("{ on_entry");
   __ la(c_rarg0, Address(sp, frame_data_offset));
-  __ movptr(c_rarg1, (intptr_t) receiver);
+  __ movptr(c_rarg1, (address) receiver);
   __ rt_call(CAST_FROM_FN_PTR(address, UpcallLinker::on_entry));
   __ mv(xthread, x10);
   __ reinit_heapbase();

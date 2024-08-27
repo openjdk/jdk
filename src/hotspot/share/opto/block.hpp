@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,7 +281,7 @@ public:
       _succs(a),
       _num_succs(0),
       _pre_order(0),
-      _idom(0),
+      _idom(nullptr),
       _loop(nullptr),
       _reg_pressure(0),
       _ihrp_index(1),

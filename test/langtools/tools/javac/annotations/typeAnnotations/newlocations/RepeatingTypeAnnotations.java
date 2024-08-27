@@ -2,10 +2,9 @@ import java.lang.annotation.*;
 
 /*
  * @test /nodynamiccopyright/
- * @bug 8006775
+ * @bug 8006775 8043226
  * @summary repeating type annotations are possible
  * @author Werner Dietl
- * @ignore 8057683 improve ordering of errors with type annotations
  * @compile/fail/ref=RepeatingTypeAnnotations.out -XDrawDiagnostics RepeatingTypeAnnotations.java
  */
 

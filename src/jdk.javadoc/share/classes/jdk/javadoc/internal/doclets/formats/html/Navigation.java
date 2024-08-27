@@ -27,8 +27,10 @@ package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -68,7 +70,6 @@ public class Navigation {
     private final PageMode documentedPage;
     private Content userHeader;
     private final String rowListTitle;
-    private List<Content> subNavLinks = List.of();
 
     public enum PageMode {
         ALL_CLASSES,
@@ -117,11 +118,6 @@ public class Navigation {
 
     public Navigation setUserHeader(Content userHeader) {
         this.userHeader = userHeader;
-        return this;
-    }
-
-    public Navigation setSubNavLinks(List<Content> subNavLinks) {
-        this.subNavLinks = subNavLinks;
         return this;
     }
 
@@ -320,26 +316,6 @@ public class Navigation {
         }
     }
 
-    /**
-     * Adds the navigation Type detail link.
-     *
-     * @param kind the kind of member being documented
-     * @param link true if the members are listed and need to be linked
-     * @param listContents the list of contents to which the detail will be added.
-     */
-    protected void addTypeDetailLink(VisibleMemberTable.Kind kind, boolean link, List<Content> listContents) {
-        addContentToList(listContents, switch (kind) {
-            case CONSTRUCTORS -> links.createLinkOrLabel(HtmlIds.CONSTRUCTOR_DETAIL, contents.navConstructor, link);
-            case ENUM_CONSTANTS -> links.createLinkOrLabel(HtmlIds.ENUM_CONSTANT_DETAIL, contents.navEnum, link);
-            case FIELDS -> links.createLinkOrLabel(HtmlIds.FIELD_DETAIL, contents.navField, link);
-            case METHODS -> links.createLinkOrLabel(HtmlIds.METHOD_DETAIL, contents.navMethod, link);
-            case PROPERTIES -> links.createLinkOrLabel(HtmlIds.PROPERTY_DETAIL, contents.navProperty, link);
-            case ANNOTATION_TYPE_MEMBER -> links.createLinkOrLabel(HtmlIds.ANNOTATION_TYPE_ELEMENT_DETAIL,
-                    contents.navAnnotationTypeMember, link);
-            default -> Text.EMPTY;
-        });
-    }
-
     private void addContentToList(List<Content> listContents, Content source) {
         listContents.add(HtmlTree.LI(source));
     }
@@ -397,6 +373,46 @@ public class Navigation {
         }
     }
 
+    /**
+     * Adds breadcrumb navigation links for {@code element} and its containing elements
+     * to {@code contents}. Only module, package and type elements are supported in
+     * breadcrumb navigation.
+     *
+     * @param elem a module, package or type element
+     * @param contents the list to which links are added
+     * @param selected {@code true} if elem is the current page element
+     */
+    protected void addBreadcrumbLinks(Element elem, List<Content> contents, boolean selected) {
+        if (elem == null) {
+            return;
+        } else if (elem.getKind() != ElementKind.MODULE) {
+            addBreadcrumbLinks(elem.getEnclosingElement(), contents, false);
+        } else if (!configuration.showModules) {
+            return;
+        }
+        var docPaths = configuration.docPaths;
+        HtmlTree link = switch (elem) {
+            case ModuleElement mdle -> links.createLink(pathToRoot.resolve(
+                    docPaths.moduleSummary(mdle)),
+                    Text.of(mdle.getQualifiedName()));
+            case PackageElement pkg -> links.createLink(pathToRoot.resolve(
+                    docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_SUMMARY)),
+                    pkg.isUnnamed()
+                            ? configuration.contents.defaultPackageLabel
+                            : Text.of(pkg.getQualifiedName()));
+            // Breadcrumb navigation displays nested classes as separate links.
+            // Enclosing classes may be undocumented, in which case we just display the class name.
+            case TypeElement type -> (configuration.isGeneratedDoc(type) && !configuration.utils.hasHiddenTag(type))
+                    ? links.createLink(pathToRoot.resolve(
+                            docPaths.forClass(type)), type.getSimpleName().toString())
+                    : HtmlTree.SPAN(Text.of(type.getSimpleName().toString()));
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
+        if (selected) {
+            link.setStyle(HtmlStyle.currentSelection);
+        }
+        contents.add(link);
+    }
 
     private void addPageElementLink(Content list) {
         Content link = switch (element) {
@@ -530,7 +546,12 @@ public class Navigation {
         navigationBar.add(HtmlTree.DIV(HtmlStyle.topNav, navContent).setId(HtmlIds.NAVBAR_TOP));
 
         var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
-
+        List<Content> subNavLinks = new ArrayList<>();
+        switch (documentedPage) {
+            case MODULE, PACKAGE, CLASS, USE, DOC_FILE, TREE -> {
+                addBreadcrumbLinks(element, subNavLinks, true);
+            }
+        }
         // Add the breadcrumb navigation links if present.
         var breadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
         breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);

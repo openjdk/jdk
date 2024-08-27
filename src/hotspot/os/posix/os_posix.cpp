@@ -93,6 +93,9 @@
   #define MAP_ANONYMOUS MAP_ANON
 #endif
 
+/* Input/Output types for mincore(2) */
+typedef LINUX_ONLY(unsigned) char mincore_vec_t;
+
 static jlong initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
@@ -144,6 +147,94 @@ void os::check_dump_limit(char* buffer, size_t bufferSize) {
   }
 
   VMError::record_coredump_status(buffer, success);
+}
+
+bool os::committed_in_range(address start, size_t size, address& committed_start, size_t& committed_size) {
+
+#ifdef _AIX
+  committed_start = start;
+  committed_size = size;
+  return true;
+#else
+
+  int mincore_return_value;
+  constexpr size_t stripe = 1024;  // query this many pages each time
+  mincore_vec_t vec [stripe + 1];
+
+  // set a guard
+  DEBUG_ONLY(vec[stripe] = 'X');
+
+  size_t page_sz = os::vm_page_size();
+  uintx pages = size / page_sz;
+
+  assert(is_aligned(start, page_sz), "Start address must be page aligned");
+  assert(is_aligned(size, page_sz), "Size must be page aligned");
+
+  committed_start = nullptr;
+
+  int loops = checked_cast<int>((pages + stripe - 1) / stripe);
+  int committed_pages = 0;
+  address loop_base = start;
+  bool found_range = false;
+
+  for (int index = 0; index < loops && !found_range; index ++) {
+    assert(pages > 0, "Nothing to do");
+    uintx pages_to_query = (pages >= stripe) ? stripe : pages;
+    pages -= pages_to_query;
+
+    // Get stable read
+    int fail_count = 0;
+    while ((mincore_return_value = mincore(loop_base, pages_to_query * page_sz, vec)) == -1 && errno == EAGAIN){
+      if (++fail_count == 1000){
+        return false;
+      }
+    }
+
+    // During shutdown, some memory goes away without properly notifying NMT,
+    // E.g. ConcurrentGCThread/WatcherThread can exit without deleting thread object.
+    // Bailout and return as not committed for now.
+    if (mincore_return_value == -1 && errno == ENOMEM) {
+      return false;
+    }
+
+    // If mincore is not supported.
+    if (mincore_return_value == -1 && errno == ENOSYS) {
+      return false;
+    }
+
+    assert(vec[stripe] == 'X', "overflow guard");
+    assert(mincore_return_value == 0, "Range must be valid");
+    // Process this stripe
+    for (uintx vecIdx = 0; vecIdx < pages_to_query; vecIdx ++) {
+      if ((vec[vecIdx] & 0x01) == 0) { // not committed
+        // End of current contiguous region
+        if (committed_start != nullptr) {
+          found_range = true;
+          break;
+        }
+      } else { // committed
+        // Start of region
+        if (committed_start == nullptr) {
+          committed_start = loop_base + page_sz * vecIdx;
+        }
+        committed_pages ++;
+      }
+    }
+
+    loop_base += pages_to_query * page_sz;
+  }
+
+  if (committed_start != nullptr) {
+    assert(committed_pages > 0, "Must have committed region");
+    assert(committed_pages <= int(size / page_sz), "Can not commit more than it has");
+    assert(committed_start >= start && committed_start < start + size, "Out of range");
+    committed_size = page_sz * committed_pages;
+    return true;
+  } else {
+    assert(committed_pages == 0, "Should not have committed region");
+    return false;
+  }
+#endif
 }
 
 int os::get_native_stack(address* stack, int frames, int toSkip) {
@@ -423,17 +514,6 @@ char* os::map_memory_to_file_aligned(size_t size, size_t alignment, int file_des
   }
   MemTracker::record_virtual_memory_commit((address)aligned_base, size, CALLER_PC);
   return aligned_base;
-}
-
-int os::vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
-  // All supported POSIX platforms provide C99 semantics.
-  ALLOW_C_FUNCTION(::vsnprintf, int result = ::vsnprintf(buf, len, fmt, args);)
-  // If an encoding error occurred (result < 0) then it's not clear
-  // whether the buffer is NUL terminated, so ensure it is.
-  if ((result < 0) && (len > 0)) {
-    buf[len - 1] = '\0';
-  }
-  return result;
 }
 
 int os::get_fileno(FILE* fp) {

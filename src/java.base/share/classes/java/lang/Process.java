@@ -64,7 +64,7 @@ import java.util.stream.Stream;
  * {@link #getInputStream()}, and
  * {@link #getErrorStream()}.
  * The I/O streams of characters and lines can be written and read using the methods
- * {@link #outputWriter()}, {@link #outputWriter(Charset)}},
+ * {@link #outputWriter()}, {@link #outputWriter(Charset)},
  * {@link #inputReader()}, {@link #inputReader(Charset)},
  * {@link #errorReader()}, and {@link #errorReader(Charset)}.
  * The parent process uses these streams to feed input to and get output

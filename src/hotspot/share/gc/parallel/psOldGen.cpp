@@ -31,7 +31,6 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
-#include "gc/shared/spaceDecorator.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -121,6 +120,18 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
                                       _object_space, _gen_counters);
 }
 
+HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+  assert(Thread::current()->is_VM_thread(), "precondition");
+  if (object_space()->needs_expand(word_size)) {
+    expand(word_size*HeapWordSize);
+  }
+
+  // Reuse the CAS API even though this is VM thread in safepoint. This method
+  // is not invoked repeatedly, so the CAS overhead should be negligible.
+  return cas_allocate_noexpand(word_size);
+}
+
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
@@ -171,9 +182,13 @@ bool PSOldGen::expand_for_allocate(size_t word_size) {
 }
 
 bool PSOldGen::expand(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
+#ifdef ASSERT
+  if (!Thread::current()->is_VM_thread()) {
+    assert_lock_strong(PSOldGenExpand_lock);
+  }
   assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
+#endif
   const size_t alignment = virtual_space()->alignment();
   size_t aligned_bytes  = align_up(bytes, alignment);
   size_t aligned_expand_bytes = align_up(MinHeapDeltaBytes, alignment);
@@ -209,8 +224,6 @@ bool PSOldGen::expand(size_t bytes) {
 }
 
 bool PSOldGen::expand_by(size_t bytes) {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
   assert(bytes > 0, "precondition");
   bool result = virtual_space()->expand_by(bytes);
   if (result) {
@@ -245,9 +258,6 @@ bool PSOldGen::expand_by(size_t bytes) {
 }
 
 bool PSOldGen::expand_to_reserved() {
-  assert_lock_strong(PSOldGenExpand_lock);
-  assert_locked_or_safepoint(Heap_lock);
-
   bool result = false;
   const size_t remaining_bytes = virtual_space()->uncommitted_size();
   if (remaining_bytes > 0) {
@@ -376,10 +386,3 @@ void PSOldGen::update_counters() {
 void PSOldGen::verify() {
   object_space()->verify();
 }
-
-#ifndef PRODUCT
-void PSOldGen::record_spaces_top() {
-  assert(ZapUnusedHeapArea, "Not mangling unused space");
-  object_space()->set_top_for_allocations();
-}
-#endif

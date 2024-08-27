@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -665,13 +665,31 @@ public final class OutputAnalyzer {
 
     /**
      * Verify that the stderr contents of output buffer matches the pattern,
-     * after filtering out the Hotespot warning messages
+     * after filtering out the Hotspot warning messages
      *
      * @param pattern
      * @throws RuntimeException If the pattern was not found
      */
     public OutputAnalyzer stderrShouldMatchIgnoreVMWarnings(String pattern) {
         String stderr = getStderr().replaceAll(jvmwarningmsg + "\\R", "");
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+        if (!matcher.find()) {
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern
+                  + "' missing from stderr");
+        }
+        return this;
+    }
+
+    /**
+     * Verify that the stderr contents of output buffer matches the pattern,
+     * after filtering out the Hotspot deprecation warning messages
+     *
+     * @param pattern
+     * @throws RuntimeException If the pattern was not found
+     */
+    public OutputAnalyzer stderrShouldMatchIgnoreDeprecatedWarnings(String pattern) {
+        String stderr = getStderr().replaceAll(deprecatedmsg + "\\R", "");
         Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (!matcher.find()) {
             reportDiagnosticSummary();

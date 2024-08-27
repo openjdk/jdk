@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,17 +253,16 @@ uint64_t G1ConcurrentRefine::adjust_threads_wait_ms() const {
   }
 }
 
-class G1ConcurrentRefine::RemSetSamplingClosure : public HeapRegionClosure {
-  G1CollectionSet* _cset;
+class G1ConcurrentRefine::RemSetSamplingClosure : public G1HeapRegionClosure {
   size_t _sampled_card_rs_length;
   size_t _sampled_code_root_rs_length;
 
 public:
-  explicit RemSetSamplingClosure(G1CollectionSet* cset) :
-    _cset(cset), _sampled_card_rs_length(0), _sampled_code_root_rs_length(0) {}
+  RemSetSamplingClosure() :
+    _sampled_card_rs_length(0), _sampled_code_root_rs_length(0) {}
 
-  bool do_heap_region(HeapRegion* r) override {
-    HeapRegionRemSet* rem_set = r->rem_set();
+  bool do_heap_region(G1HeapRegion* r) override {
+    G1HeapRegionRemSet* rem_set = r->rem_set();
     _sampled_card_rs_length += rem_set->occupied();
     _sampled_code_root_rs_length += rem_set->code_roots_list_length();
     return false;
@@ -287,8 +286,8 @@ public:
 // gen size to keep pause time length goal.
 void G1ConcurrentRefine::adjust_young_list_target_length() {
   if (_policy->use_adaptive_young_list_length()) {
+    RemSetSamplingClosure cl;
     G1CollectionSet* cset = G1CollectedHeap::heap()->collection_set();
-    RemSetSamplingClosure cl{cset};
     cset->iterate(&cl);
     _policy->revise_young_list_target_length(cl.sampled_card_rs_length(), cl.sampled_code_root_rs_length());
   }
@@ -317,7 +316,7 @@ bool G1ConcurrentRefine::adjust_threads_periodically() {
       size_t used_bytes = _policy->estimate_used_young_bytes_locked();
       Heap_lock->unlock();
       adjust_young_list_target_length();
-      size_t young_bytes = _policy->young_list_target_length() * HeapRegion::GrainBytes;
+      size_t young_bytes = _policy->young_list_target_length() * G1HeapRegion::GrainBytes;
       size_t available_bytes = young_bytes - MIN2(young_bytes, used_bytes);
       adjust_threads_wanted(available_bytes);
       _needs_adjust = false;

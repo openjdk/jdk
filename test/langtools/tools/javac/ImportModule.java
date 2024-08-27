@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8328481 8332236
+ * @bug 8328481 8332236 8332890
  * @summary Check behavior of module imports.
  * @library /tools/lib
  * @modules java.logging
@@ -741,4 +741,60 @@ public class ImportModule extends TestRunner {
             .writeAll();
     }
 
+    @Test //JDK-8332890
+    public void testModuleInfoSelfImport(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          import module M;
+                          module M {
+                             exports p1 to M1;
+                             exports p2;
+                             exports p3 to M;
+                             uses A;
+                             uses B;
+                             uses C;
+                          }
+                          """,
+                          """
+                          package p1;
+                          public class A {}
+                          """,
+                          """
+                          package p2;
+                          public class B {}
+                          """,
+                          """
+                          package p3;
+                          public class C {}
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                        "--enable-preview", "--release", SOURCE_VERSION)
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        List<String> expectedErrors = List.of(
+                "module-info.java:3:18: compiler.warn.module.not.found: M1",
+                "module-info.java:6:9: compiler.err.cant.resolve: kindname.class, A, , ",
+                "- compiler.note.preview.filename: module-info.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "1 error",
+                "1 warning"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+    }
 }

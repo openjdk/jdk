@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,52 +103,21 @@ public class Launcher extends DebugeeBinder {
 
         String[] jdbCmdArgs = makeJdbCmdLine(classToExecute);
 
-        if (argumentHandler.isLaunchedLocally()) {
-
-            if (argumentHandler.isDefaultConnector()) {
-
-                localDefaultLaunch(jdbCmdArgs, classToExecute);
-
-            } else if (argumentHandler.isRawLaunchingConnector()) {
-
-                localRawLaunch(jdbCmdArgs, classToExecute);
-
-            } else if (argumentHandler.isLaunchingConnector()) {
-
-                localLaunch(jdbCmdArgs, classToExecute);
-
-            } else if (argumentHandler.isAttachingConnector()) {
-
-                localLaunchAndAttach(jdbCmdArgs, classToExecute);
-
-            } else if (argumentHandler.isListeningConnector()) {
-
-                localLaunchAndListen(jdbCmdArgs, classToExecute);
-
-            } else {
-                throw new TestBug("Unexpected connector type for local launch mode"
-                                  + argumentHandler.getConnectorType());
-            }
-
-        } else if (argumentHandler.isLaunchedRemotely()) {
-
-            connectToBindServer(classToExecute);
-
-            if (argumentHandler.isAttachingConnector()) {
-
-                remoteLaunchAndAttach(jdbCmdArgs, classToExecute);
-
-            } else if (argumentHandler.isListeningConnector()) {
-
-                remoteLaunchAndListen(jdbCmdArgs, classToExecute);
-
-            } else {
-                throw new TestBug("Unexpected connector type for remote launch mode"
-                                  + argumentHandler.getConnectorType());
-            }
+        if (argumentHandler.isDefaultConnector()) {
+            localDefaultLaunch(jdbCmdArgs, classToExecute);
+        } else if (argumentHandler.isRawLaunchingConnector()) {
+            localRawLaunch(jdbCmdArgs, classToExecute);
+        } else if (argumentHandler.isLaunchingConnector()) {
+            localLaunch(jdbCmdArgs, classToExecute);
+        } else if (argumentHandler.isAttachingConnector()) {
+            localLaunchAndAttach(jdbCmdArgs, classToExecute);
+        } else if (argumentHandler.isListeningConnector()) {
+            localLaunchAndListen(jdbCmdArgs, classToExecute);
         } else {
-            throw new Failure("Unexpected launching mode: " + argumentHandler.getLaunchMode());
+            throw new TestBug("Unexpected connector type for local launch mode"
+                              + argumentHandler.getConnectorType());
         }
+
     }
 
     /**
@@ -198,11 +167,7 @@ public class Launcher extends DebugeeBinder {
             if (argumentHandler.isRawLaunchingConnector()) {
 
                 if (argumentHandler.isSocketTransport()) {
-                    if (argumentHandler.isLaunchedLocally()) {
-                        connectorAddress = argumentHandler.getTransportPort();
-                    } else {
-                        connectorAddress = argumentHandler.getDebugeeHost() + ":" + argumentHandler.getTransportPort();
-                    }
+                    connectorAddress = argumentHandler.getTransportPort();
                 } else if (argumentHandler.isShmemTransport() ) {
                     connectorAddress = argumentHandler.getTransportSharedName();
                 } else {
@@ -247,8 +212,6 @@ public class Launcher extends DebugeeBinder {
 
                 if (argumentHandler.isSocketTransport()) {
                     connect.append("port=" + argumentHandler.getTransportPort().trim());
-                    if (argumentHandler.isLaunchedRemotely())
-                        connect.append(",hostname=" + argumentHandler.getDebugeeHost().trim());
                 } else if (argumentHandler.isShmemTransport()) {
                     connect.append("name=" + argumentHandler.getTransportSharedName().trim());
                 } else {
@@ -324,7 +287,7 @@ public class Launcher extends DebugeeBinder {
     private void localLaunchAndAttach
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
 
-        debuggee = new LocalLaunchedDebuggee(this);
+        debuggee = new Debuggee(this);
         String address = makeTransportAddress();
         String[] javaCmdArgs = makeCommandLineArgs(classToExecute, address);
         debuggee.launch(javaCmdArgs);
@@ -346,57 +309,12 @@ public class Launcher extends DebugeeBinder {
         String address = jdb.waitForListeningJdb();
         display("Listening address found: " + address);
 
-        debuggee = new LocalLaunchedDebuggee(this);
+        debuggee = new Debuggee(this);
         String[] javaCmdArgs = makeCommandLineArgs(classToExecute, address);
         debuggee.launch(javaCmdArgs);
 
 //        jdb.waitForPrompt(0, false);
     }
 
-    /**
-     * Run test in remote mode using attaching connector.
-     */
-    private void remoteLaunchAndAttach
-       (String[] jdbCmdArgs, String classToExecute) throws IOException {
-
-        debuggee = new RemoteLaunchedDebuggee(this);
-        String address = makeTransportAddress();
-        String[] javaCmdArgs = makeCommandLineArgs(classToExecute, address);
-        try {
-            debuggee.launch(javaCmdArgs);
-        } catch (IOException e) {
-            throw new Failure("Caught exception while launching debuggee VM process:\n\t"
-                            + e);
-        };
-
-        display("Start jdb attaching to remote debuggee");
-        jdb = Jdb.startAttachingJdb (this, jdbCmdArgs, JDB_STARTED);
-//        jdb.waitForPrompt(0, false);
-    }
-
-    /**
-     * Run test in remote mode using listening connector.
-     */
-    private void remoteLaunchAndListen
-       (String[] jdbCmdArgs, String classToExecute) throws IOException {
-
-        jdb = new Jdb(this);
-        display("Starting jdb listening to remote debuggee");
-        jdb.launch(jdbCmdArgs);
-        String address = jdb.waitForListeningJdb();
-        display("Listening address found: " + address);
-
-        debuggee = new RemoteLaunchedDebuggee(this);
-        String[] javaCmdArgs = makeCommandLineArgs(classToExecute);
-        try {
-            debuggee.launch(javaCmdArgs);
-        } catch (IOException e) {
-            throw new Failure("Caught exception while launching debuggee VM process:\n\t"
-                            + e);
-        };
-
-        jdb.waitForMessage(0, JDB_STARTED);
-//        jdb.waitForPrompt(0, false);
-    }
 
 } // End of Launcher

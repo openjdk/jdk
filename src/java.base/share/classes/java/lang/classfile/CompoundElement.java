@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import jdk.internal.javac.PreviewFeature;
  * class.  When encountering a {@linkplain CompoundElement}, clients have the
  * option to treat the element as a single entity (e.g., an entire method)
  * or to traverse the contents of that element with the methods in this class
- * (e.g., {@link #elements()}, {@link #forEachElement(Consumer)}, etc.)
+ * (e.g., {@link #forEach(Consumer)}, etc.)
  * @param <E> the element type
  *
  * @sealedGraph
@@ -55,15 +55,8 @@ public sealed interface CompoundElement<E extends ClassFileElement>
      * compound element
      * @param consumer the handler
      */
-    void forEachElement(Consumer<E> consumer);
-
-    /**
-     * {@return an {@link Iterable} describing all the elements contained in this
-     * compound element}
-     */
-    default Iterable<E> elements() {
-        return elementList();
-    }
+    @Override
+    void forEach(Consumer<? super E> consumer);
 
     /**
      * {@return an {@link Iterator} describing all the elements contained in this
@@ -71,7 +64,7 @@ public sealed interface CompoundElement<E extends ClassFileElement>
      */
     @Override
     default Iterator<E> iterator() {
-        return elements().iterator();
+        return elementList().iterator();
     }
 
     /**
@@ -91,7 +84,7 @@ public sealed interface CompoundElement<E extends ClassFileElement>
      */
     default List<E> elementList() {
         List<E> list = new ArrayList<>();
-        forEachElement(new Consumer<>() {
+        forEach(new Consumer<>() {
             @Override
             public void accept(E e) {
                 list.add(e);

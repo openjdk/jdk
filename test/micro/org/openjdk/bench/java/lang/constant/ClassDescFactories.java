@@ -35,6 +35,7 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -59,5 +60,20 @@ public class ClassDescFactories {
     @Benchmark
     public ClassDesc ofDescriptor() {
         return ClassDesc.ofDescriptor(descString);
+    }
+
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @Warmup(iterations = 3, time = 2)
+    @Measurement(iterations = 6, time = 1)
+    @Fork(1)
+    @State(Scope.Thread)
+    public static class ReferenceOnly {
+        public ClassDesc desc = ConstantDescs.CD_Object;
+        @Benchmark
+        public ClassDesc ofNested() {
+            return desc.nested("Foo");
+        }
+
     }
 }

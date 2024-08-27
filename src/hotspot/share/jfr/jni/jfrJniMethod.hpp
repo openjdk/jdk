@@ -165,6 +165,8 @@ jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray cl
 
 jlong JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
 
+jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
+
 #ifdef __cplusplus
 }
 #endif

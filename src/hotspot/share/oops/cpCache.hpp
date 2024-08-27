@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,14 +193,12 @@ class ConstantPoolCache: public MetaspaceObj {
 
 #if INCLUDE_CDS
   void remove_unshareable_info();
-  void save_for_archive(TRAPS);
 #endif
 
  public:
   static int size() { return align_metadata_size(sizeof(ConstantPoolCache) / wordSize); }
 
  private:
-
   // Helpers
   ConstantPool**        constant_pool_addr()     { return &_constant_pool; }
 
@@ -223,6 +221,12 @@ class ConstantPoolCache: public MetaspaceObj {
   bool check_no_old_or_obsolete_entries();
   void dump_cache();
 #endif // INCLUDE_JVMTI
+
+#if INCLUDE_CDS
+  void remove_resolved_field_entries_if_non_deterministic();
+  void remove_resolved_method_entries_if_non_deterministic();
+  bool can_archive_resolved_method(ResolvedMethodEntry* method_entry);
+#endif
 
   // RedefineClasses support
   DEBUG_ONLY(bool on_stack() { return false; })

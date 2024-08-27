@@ -39,7 +39,7 @@ import java.util.List;
  *
  * @jls 15.29 Switch Expressions
  *
- * @since 12
+ * @since 14
  */
 public interface SwitchExpressionTree extends ExpressionTree {
     /**
