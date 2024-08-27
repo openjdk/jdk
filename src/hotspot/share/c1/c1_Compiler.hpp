@@ -33,7 +33,7 @@ class DirectiveSet;
 
 class Compiler: public AbstractCompiler {
  private:
-  static bool init_c1_runtime();
+  static void init_c1_runtime();
   BufferBlob* init_buffer_blob();
 
  public:
