@@ -362,7 +362,7 @@ public sealed interface ClassDesc
             ClassDesc c = this;
             for (int i=0; i<depth; i++)
                 c = c.componentType();
-            return c.displayName() + "[]".repeat(depth);
+            return c.displayName().concat("[]".repeat(depth));
         }
         else
             throw new IllegalStateException(descriptorString());
