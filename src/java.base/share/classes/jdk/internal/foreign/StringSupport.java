@@ -53,6 +53,14 @@ public final class StringSupport {
         };
     }
 
+    public static String read(MemorySegment segment, long offset, int len, Charset charset) {
+        return switch (CharsetKind.of(charset)) {
+            case SINGLE_BYTE -> readByte(segment, offset, len, charset);
+            case DOUBLE_BYTE -> readShort(segment, offset, len, charset);
+            case QUAD_BYTE -> readInt(segment, offset, len, charset);
+        };
+    }
+
     public static void write(MemorySegment segment, long offset, Charset charset, String string) {
         switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> writeByte(segment, offset, charset, string);
@@ -62,9 +70,13 @@ public final class StringSupport {
     }
 
     private static String readByte(MemorySegment segment, long offset, Charset charset) {
-        long len = chunkedStrlenByte(segment, offset);
-        byte[] bytes = new byte[(int)len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
+        int len = chunkedStrlenByte(segment, offset);
+        return readByte(segment, offset, len, charset);
+    }
+
+    private static String readByte(MemorySegment segment, long offset, int len, Charset charset) {
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
@@ -74,9 +86,13 @@ public final class StringSupport {
     }
 
     private static String readShort(MemorySegment segment, long offset, Charset charset) {
-        long len = chunkedStrlenShort(segment, offset);
-        byte[] bytes = new byte[(int)len];
-        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
+        int len = chunkedStrlenShort(segment, offset);
+        return readShort(segment, offset, len, charset);
+    }
+
+    private static String readShort(MemorySegment segment, long offset, int len, Charset charset) {
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
@@ -89,6 +105,12 @@ public final class StringSupport {
         long len = strlenInt(segment, offset);
         byte[] bytes = new byte[(int)len];
         MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
+        return new String(bytes, charset);
+    }
+
+    private static String readInt(MemorySegment segment, long offset, int len, Charset charset) {
+        byte[] bytes = new byte[len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, len);
         return new String(bytes, charset);
     }
 
