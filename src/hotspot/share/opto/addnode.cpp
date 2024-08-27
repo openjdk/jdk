@@ -450,7 +450,8 @@ jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node
   }
 
   // e.g., a*2 => 2*a
-  if (node->is_Mul() && (node->in(1)->is_Con() || node->in(2)->is_Con())) {
+  if (node->is_Mul() && node->Opcode() != Op_AndI && node->Opcode() != Op_AndL // AndNode extends MulNode for some reason
+      && (node->in(1)->is_Con() || node->in(2)->is_Con())) { // node->is_Mul()
     Node *multiplier_node = node->in(1)->is_Con() ? node->in(1) : node->in(2);
     BasicType bt = phase->type(multiplier_node)->basic_type();
 
