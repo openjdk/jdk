@@ -81,10 +81,4 @@ public class TestFill {
         nativeSegment.fill((byte) 0);
     }
 
-    @Benchmark
-    public void buffer_fill() {
-        // Hopefully, the creation of the intermediate array will be optimized away.
-        buffer.clear().put(new byte[ELEM_SIZE]);
-    }
-
 }

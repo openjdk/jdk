@@ -56,7 +56,9 @@ import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.nio.ch.DirectBuffer;
 
-import static java.lang.foreign.ValueLayout.*;
+import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT_UNALIGNED;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT_UNALIGNED;
 
 /**
  * This abstract class provides an immutable implementation for the {@code MemorySegment} interface. This class contains information
