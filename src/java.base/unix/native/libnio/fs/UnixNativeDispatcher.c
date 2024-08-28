@@ -400,14 +400,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #if defined(__linux__)
     my_statx_func = (statx_func*) dlsym(RTLD_DEFAULT, "statx");
     if (my_statx_func != NULL) {
-        /* Verify if statx call is permitted */
-        struct my_statx statx_buf;
-        int err = statx_wrapper(-1, "", AT_EMPTY_PATH, 0, &statx_buf);
-        if (err == -1 && errno == EPERM) {
-            my_statx_func = NULL;
-        } else {
-            capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
-        }
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
     }
 #endif
 
@@ -663,7 +656,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
             return 0;
-        } else {
+        } else if (errno != ENOSYS && errno != EPERM) {
             return errno;
         }
     }
@@ -694,11 +687,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
         RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-        } else {
+            return;
+        } else if (errno != ENOSYS && errno != EPERM) {
             throwUnixException(env, errno);
+            return;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
     RESTARTABLE(lstat(path, &buf), err);
@@ -726,11 +719,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
         RESTARTABLE(statx_wrapper((int)fd, "", flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-        } else {
+            return;
+        } else if (errno != ENOSYS && errno != EPERM) {
             throwUnixException(env, errno);
+            return;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
     RESTARTABLE(fstat((int)fd, &buf), err);
@@ -761,11 +754,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
-        } else {
+            return;
+        } else if (errno != ENOSYS && errno != EPERM) {
             throwUnixException(env, errno);
+            return;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
 

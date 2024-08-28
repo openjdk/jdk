@@ -71,6 +71,8 @@ Java_sun_nio_ch_FileDispatcherImpl_transferFrom0(JNIEnv *env, jobject this,
         if (errno == EINTR) {
             return IOS_INTERRUPTED;
         }
+        if (errno == EPERM)
+            return IOS_UNSUPPORTED;
         JNU_ThrowIOExceptionWithLastError(env, "Transfer failed");
         return IOS_THROWN;
     }
@@ -103,6 +105,7 @@ Java_sun_nio_ch_FileDispatcherImpl_transferTo0(JNIEnv *env, jobject this,
                 case EINVAL:
                 case ENOSYS:
                 case EXDEV:
+                case EPERM:
                     // ignore and try sendfile()
                     break;
                 default:
