@@ -190,7 +190,6 @@ public class SwingButtonResizeTestWithOpenGL {
 
     // Capture button rendering as a BufferedImage
     private BufferedImage getButtonImage() {
-        BufferedImage bimage;
         try {
             robot.waitForIdle();
             robot.delay(500);
@@ -200,14 +199,13 @@ public class SwingButtonResizeTestWithOpenGL {
                     () -> buttonLocRef.set(button.getLocationOnScreen()));
             Point buttonLoc = buttonLocRef.get();
             System.out.println("Button loc: " + buttonLoc);
-            bimage = robot.createScreenCapture(
+            return robot.createScreenCapture(
                     new Rectangle(buttonLoc.x, buttonLoc.y, button.getWidth(),
                                   button.getHeight()));
         } catch (Exception e) {
             throw new RuntimeException(
                     "Problems capturing button image from Robot", e);
         }
-        return bimage;
     }
 
     private void disposeFrame() {
