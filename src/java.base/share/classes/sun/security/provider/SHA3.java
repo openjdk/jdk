@@ -71,7 +71,7 @@ public abstract class SHA3 extends DigestBase {
     // (11111... for the SHAKE functions and 011... for the SHA3-nnn ones)
     private final byte suffix;
 
-    // the stae matrix flattened into an array
+    // the state matrix flattened into an array
     private long[] state = new long[DM*DM];
 
     // The byte offset in the state where the next sqeeze() will start.
@@ -133,7 +133,7 @@ public abstract class SHA3 extends DigestBase {
      * DigestBase calls implReset() when necessary.
      */
     void implDigest(byte[] out, int ofs) {
-        // Moving this allocation to the block where t is used causes a little
+        // Moving this allocation to the block where it is used causes a little
         // performance drop, that is why it is here.
         byte[] byteState = new byte[8];
         if (engineGetDigestLength() == 0) {
@@ -167,7 +167,7 @@ public abstract class SHA3 extends DigestBase {
     }
 
     void implSqueeze(byte[]output, int offset, int numBytes) {
-        // Moving this allocation to the block where t is used causes a little
+        // Moving this allocation to the block where it is used causes a little
         // performance drop, that is why it is here.
         byte[] byteState = new byte[8];
         if (engineGetDigestLength() != 0) {
@@ -219,12 +219,9 @@ public abstract class SHA3 extends DigestBase {
             if (numBytes == 0) return;
         }
 
-        int longsToConvert =
-                ((squeezeOffset + numBytes - longOffset * 8) + 7) / 8;
+        int numLongs = numBytes / 8;
 
-        int limit = longOffset + longsToConvert - (numBytes % 8 == 0 ? 0 : 1);
-
-        for (int i = longOffset; i < limit; i++) {
+        for (int i = longOffset; i < longOffset + numLongs; i++) {
             asLittleEndian.set(output, offset, state[i]);
             offset += 8;
             numBytes -= 8;
