@@ -32,19 +32,9 @@ import java.util.List;
 import static java.lang.classfile.ClassFile.*;
 
 public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
-        implements Annotation, Util.Writable {
+        implements Annotation {
     public AnnotationImpl {
         elements = List.copyOf(elements);
-    }
-
-    @Override
-    public void writeTo(BufWriterImpl buf) {
-        buf.writeIndex(className());
-        buf.writeU2(elements().size());
-        for (var e : elements) {
-            buf.writeIndex(e.name());
-            AnnotationReader.writeAnnotationValue(buf, e.value());
-        }
     }
 
     @Override
@@ -52,17 +42,8 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         StringBuilder sb = new StringBuilder("Annotation[");
         sb.append(className().stringValue());
         List<AnnotationElement> evps = elements();
-        if (!evps.isEmpty())
-            sb.append(" [");
-        for (AnnotationElement evp : evps) {
-            sb.append(evp.name().stringValue())
-                    .append("=")
-                    .append(evp.value().toString())
-                    .append(", ");
-        }
         if (!evps.isEmpty()) {
-            sb.delete(sb.length()-1, sb.length());
-            sb.append("]");
+            sb.append(' ').append(evps);
         }
         sb.append("]");
         return sb.toString();
@@ -70,28 +51,15 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
 
     public record AnnotationElementImpl(Utf8Entry name,
                                         AnnotationValue value)
-            implements AnnotationElement, Util.Writable {
-
+            implements AnnotationElement {
         @Override
-        public void writeTo(BufWriterImpl buf) {
-            buf.writeIndex(name());
-            AnnotationReader.writeAnnotationValue(buf, value());
+        public String toString() {
+            return name + "=" + value;
         }
-    }
-
-    public sealed interface OfConstantImpl extends AnnotationValue.OfConstant, Util.Writable {
-
-        @Override
-        default void writeTo(BufWriterImpl buf) {
-            buf.writeU1(tag());
-            buf.writeIndex(constant());
-        }
-
     }
 
     public record OfStringImpl(Utf8Entry constant)
-            implements OfConstantImpl, AnnotationValue.OfString {
-
+            implements AnnotationValue.OfString {
         @Override
         public char tag() {
             return AEV_STRING;
@@ -104,8 +72,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfDoubleImpl(DoubleEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfDouble {
-
+            implements AnnotationValue.OfDouble {
         @Override
         public char tag() {
             return AEV_DOUBLE;
@@ -118,8 +85,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfFloatImpl(FloatEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfFloat {
-
+            implements AnnotationValue.OfFloat {
         @Override
         public char tag() {
             return AEV_FLOAT;
@@ -132,8 +98,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfLongImpl(LongEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfLong {
-
+            implements AnnotationValue.OfLong {
         @Override
         public char tag() {
             return AEV_LONG;
@@ -146,8 +111,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfIntImpl(IntegerEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfInt {
-
+            implements AnnotationValue.OfInt {
         @Override
         public char tag() {
             return AEV_INT;
@@ -160,8 +124,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfShortImpl(IntegerEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfShort {
-
+            implements AnnotationValue.OfShort {
         @Override
         public char tag() {
             return AEV_SHORT;
@@ -174,8 +137,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfCharImpl(IntegerEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfChar {
-
+            implements AnnotationValue.OfChar {
         @Override
         public char tag() {
             return AEV_CHAR;
@@ -188,8 +150,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfByteImpl(IntegerEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfByte {
-
+            implements AnnotationValue.OfByte {
         @Override
         public char tag() {
             return AEV_BYTE;
@@ -202,8 +163,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfBooleanImpl(IntegerEntry constant)
-            implements OfConstantImpl, AnnotationValue.OfBoolean {
-
+            implements AnnotationValue.OfBoolean {
         @Override
         public char tag() {
             return AEV_BOOLEAN;
@@ -216,8 +176,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     }
 
     public record OfArrayImpl(List<AnnotationValue> values)
-            implements AnnotationValue.OfArray, Util.Writable {
-
+            implements AnnotationValue.OfArray {
         public OfArrayImpl {
             values = List.copyOf(values);
         }
@@ -226,61 +185,29 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         public char tag() {
             return AEV_ARRAY;
         }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            buf.writeU1(tag());
-            buf.writeU2(values.size());
-            for (var e : values) {
-                AnnotationReader.writeAnnotationValue(buf, e);
-            }
-        }
-
     }
 
     public record OfEnumImpl(Utf8Entry className, Utf8Entry constantName)
-            implements AnnotationValue.OfEnum, Util.Writable {
+            implements AnnotationValue.OfEnum {
         @Override
         public char tag() {
             return AEV_ENUM;
         }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            buf.writeU1(tag());
-            buf.writeIndex(className);
-            buf.writeIndex(constantName);
-        }
-
     }
 
     public record OfAnnotationImpl(Annotation annotation)
-            implements AnnotationValue.OfAnnotation, Util.Writable {
+            implements AnnotationValue.OfAnnotation {
         @Override
         public char tag() {
             return AEV_ANNOTATION;
         }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            buf.writeU1(tag());
-            AnnotationReader.writeAnnotation(buf, annotation);
-        }
-
     }
 
     public record OfClassImpl(Utf8Entry className)
-            implements AnnotationValue.OfClass, Util.Writable {
+            implements AnnotationValue.OfClass {
         @Override
         public char tag() {
             return AEV_CLASS;
         }
-
-        @Override
-        public void writeTo(BufWriterImpl buf) {
-            buf.writeU1(tag());
-            buf.writeIndex(className);
-        }
-
     }
 }

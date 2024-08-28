@@ -34,23 +34,12 @@ class CgroupV2Controller: public CgroupController {
 
     /* Constructed full path to the subsystem directory */
     char *_path;
-    static char* construct_path(char* mount_path, char *cgroup_path);
+    static char* construct_path(char* mount_path, const char *cgroup_path);
 
   public:
-    CgroupV2Controller(char* mount_path,
-                       char *cgroup_path,
-                       bool ro) :  _read_only(ro),
-                                   _path(construct_path(mount_path, cgroup_path)) {
-      _cgroup_path = os::strdup(cgroup_path);
-      _mount_point = os::strdup(mount_path);
-    }
+    CgroupV2Controller(char* mount_path, char *cgroup_path, bool ro);
     // Shallow copy constructor
-    CgroupV2Controller(const CgroupV2Controller& o) :
-                                            _read_only(o._read_only),
-                                            _path(o._path) {
-      _cgroup_path = o._cgroup_path;
-      _mount_point = o._mount_point;
-    }
+    CgroupV2Controller(const CgroupV2Controller& o);
     ~CgroupV2Controller() {
       // At least one controller exists with references to the paths
     }
@@ -58,7 +47,7 @@ class CgroupV2Controller: public CgroupController {
     char* subsystem_path() override { return _path; }
     bool needs_hierarchy_adjustment() override;
     // Allow for optional updates of the subsystem path
-    void set_subsystem_path(char* cgroup_path);
+    void set_subsystem_path(const char* cgroup_path);
     bool is_read_only() override { return _read_only; }
 };
 
@@ -81,7 +70,7 @@ class CgroupV2CpuController: public CgroupCpuController {
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
     char* mount_point() { return reader()->mount_point(); }
@@ -114,7 +103,7 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    void set_subsystem_path(char* cgroup_path) {
+    void set_subsystem_path(const char* cgroup_path) {
       reader()->set_subsystem_path(cgroup_path);
     }
     char* mount_point() { return reader()->mount_point(); }
@@ -134,13 +123,7 @@ class CgroupV2Subsystem: public CgroupSubsystem {
   public:
     CgroupV2Subsystem(CgroupV2MemoryController * memory,
                       CgroupV2CpuController* cpu,
-                      CgroupV2Controller unified) :
-                         _unified(unified),
-                         _memory(new CachingCgroupController<CgroupMemoryController>(
-                                         CgroupUtil::adjust_controller(memory))),
-                         _cpu(new CachingCgroupController<CgroupCpuController>(
-                                         CgroupUtil::adjust_controller(cpu))) {
-    }
+                      CgroupV2Controller unified);
 
     char * cpu_cpuset_cpus() override;
     char * cpu_cpuset_memory_nodes() override;

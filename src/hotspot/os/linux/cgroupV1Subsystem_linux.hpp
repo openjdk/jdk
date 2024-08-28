@@ -62,7 +62,7 @@ class CgroupV1Controller: public CgroupController {
       // names
     }
 
-    void set_subsystem_path(char *cgroup_path);
+    void set_subsystem_path(const char *cgroup_path);
     char* subsystem_path() override { return _path; }
     bool is_read_only() override { return _read_only; }
     bool needs_hierarchy_adjustment() override;
@@ -74,7 +74,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     CgroupV1Controller _reader;
     CgroupV1Controller* reader() { return &_reader; }
   public:
-    void set_subsystem_path(char *cgroup_path) override {
+    void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
@@ -118,7 +118,7 @@ class CgroupV1CpuController final : public CgroupCpuController {
     int cpu_quota() override;
     int cpu_period() override;
     int cpu_shares() override;
-    void set_subsystem_path(char *cgroup_path) override {
+    void set_subsystem_path(const char *cgroup_path) override {
       reader()->set_subsystem_path(cgroup_path);
     }
     bool is_read_only() override {
@@ -143,6 +143,12 @@ class CgroupV1CpuController final : public CgroupCpuController {
 class CgroupV1Subsystem: public CgroupSubsystem {
 
   public:
+    CgroupV1Subsystem(CgroupV1Controller* cpuset,
+                      CgroupV1CpuController* cpu,
+                      CgroupV1Controller* cpuacct,
+                      CgroupV1Controller* pids,
+                      CgroupV1MemoryController* memory);
+
     jlong kernel_memory_usage_in_bytes();
     jlong kernel_memory_limit_in_bytes();
     jlong kernel_memory_max_usage_in_bytes();
@@ -168,20 +174,6 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     CgroupV1Controller* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 
-  public:
-    CgroupV1Subsystem(CgroupV1Controller* cpuset,
-                      CgroupV1CpuController* cpu,
-                      CgroupV1Controller* cpuacct,
-                      CgroupV1Controller* pids,
-                      CgroupV1MemoryController* memory) :
-      _memory(new CachingCgroupController<CgroupMemoryController>(
-                                         CgroupUtil::adjust_controller(memory))),
-      _cpuset(cpuset),
-      _cpu(new CachingCgroupController<CgroupCpuController>(
-                                         CgroupUtil::adjust_controller(cpu))),
-      _cpuacct(cpuacct),
-      _pids(pids) {
-    }
 };
 
 #endif // CGROUP_V1_SUBSYSTEM_LINUX_HPP

@@ -38,12 +38,13 @@
  * Set directory to subsystem specific files based
  * on the contents of the mountinfo and cgroup files.
  */
-void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
+void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   if (_cgroup_path != nullptr) {
     os::free(_cgroup_path);
   }
   if (_path != nullptr) {
     os::free(_path);
+    _path = nullptr;
   }
   _cgroup_path = os::strdup(cgroup_path);
   stringStream ss;
@@ -59,7 +60,7 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
         ss.print_raw(_mount_point);
         _path = os::strdup(ss.base());
       } else {
-        char *p = strstr(cgroup_path, _root);
+        char *p = strstr((char*)cgroup_path, _root);
         if (p != nullptr && p == _root) {
           if (strlen(cgroup_path) > strlen(_root)) {
             ss.print_raw(_mount_point);
@@ -73,6 +74,12 @@ void CgroupV1Controller::set_subsystem_path(char *cgroup_path) {
   }
 }
 
+/*
+ * The common case, containers, we have _root == _cgroup_path, and thus set the
+ * controller path to the _mount_point. This is where the limits are exposed in
+ * the cgroup pseudo filesystem (at the leaf) and adjustment of the path won't
+ * be needed for that reason.
+ */
 bool CgroupV1Controller::needs_hierarchy_adjustment() {
   assert(_cgroup_path != nullptr, "sanity");
   return strcmp(_root, _cgroup_path) != 0;
@@ -190,6 +197,21 @@ jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
   } else {
     return (jlong)memsoftlimit;
   }
+}
+
+// Constructor
+CgroupV1Subsystem::CgroupV1Subsystem(CgroupV1Controller* cpuset,
+                      CgroupV1CpuController* cpu,
+                      CgroupV1Controller* cpuacct,
+                      CgroupV1Controller* pids,
+                      CgroupV1MemoryController* memory) :
+    _cpuset(cpuset),
+    _cpuacct(cpuacct),
+    _pids(pids) {
+  CgroupUtil::adjust_controller(memory);
+  CgroupUtil::adjust_controller(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
 }
 
 bool CgroupV1Subsystem::is_containerized() {

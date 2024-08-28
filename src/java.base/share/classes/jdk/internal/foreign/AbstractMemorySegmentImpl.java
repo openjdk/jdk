@@ -152,7 +152,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     }
 
     public MemorySegment reinterpretInternal(Class<?> callerClass, long newSize, Scope scope, Consumer<MemorySegment> cleanup) {
-        Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret");
+        Reflection.ensureNativeAccess(callerClass, MemorySegment.class, "reinterpret", false);
         Utils.checkNonNegativeArgument(newSize, "newSize");
         if (!isNative()) throw new UnsupportedOperationException("Not a native segment");
         Runnable action = cleanup != null ?
@@ -371,6 +371,16 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     public void checkValidState() {
         sessionImpl().checkValidState();
+    }
+
+    @ForceInline
+    public final void checkEnclosingLayout(long offset, MemoryLayout enclosing, boolean readOnly) {
+        checkAccess(offset, enclosing.byteSize(), readOnly);
+        if (!isAlignedForElement(offset, enclosing)) {
+            throw new IllegalArgumentException(String.format(
+                    "Target offset %d is incompatible with alignment constraint %d (of %s) for segment %s"
+                    , offset, enclosing.byteAlignment(), enclosing, this));
+        }
     }
 
     public abstract long unsafeGetOffset();

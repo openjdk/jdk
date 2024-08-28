@@ -25,6 +25,22 @@
 #include "cgroupV2Subsystem_linux.hpp"
 #include "cgroupUtil_linux.hpp"
 
+// Constructor
+CgroupV2Controller::CgroupV2Controller(char* mount_path,
+                                       char *cgroup_path,
+                                       bool ro) :  _read_only(ro),
+                                                   _path(construct_path(mount_path, cgroup_path)) {
+  _cgroup_path = os::strdup(cgroup_path);
+  _mount_point = os::strdup(mount_path);
+}
+// Shallow copy constructor
+CgroupV2Controller::CgroupV2Controller(const CgroupV2Controller& o) :
+                                            _read_only(o._read_only),
+                                            _path(o._path) {
+  _cgroup_path = o._cgroup_path;
+  _mount_point = o._mount_point;
+}
+
 /* cpu_shares
  *
  * Return the amount of cpu shares available to the process
@@ -93,6 +109,17 @@ int CgroupV2CpuController::cpu_quota() {
   int limit = (int)quota_val;
   log_trace(os, container)("CPU Quota is: %d", limit);
   return limit;
+}
+
+// Constructor
+CgroupV2Subsystem::CgroupV2Subsystem(CgroupV2MemoryController * memory,
+                                     CgroupV2CpuController* cpu,
+                                     CgroupV2Controller unified) :
+                                     _unified(unified) {
+  CgroupUtil::adjust_controller(memory);
+  CgroupUtil::adjust_controller(cpu);
+  _memory = new CachingCgroupController<CgroupMemoryController>(memory);
+  _cpu = new CachingCgroupController<CgroupCpuController>(cpu);
 }
 
 bool CgroupV2Subsystem::is_containerized() {
@@ -264,7 +291,7 @@ jlong memory_swap_limit_value(CgroupV2Controller* ctrl) {
   return swap_limit;
 }
 
-void CgroupV2Controller::set_subsystem_path(char* cgroup_path) {
+void CgroupV2Controller::set_subsystem_path(const char* cgroup_path) {
   if (_path != nullptr) {
     os::free(_path);
   }
@@ -284,7 +311,7 @@ void CgroupV2MemoryController::print_version_specific_info(outputStream* st, jul
   OSContainer::print_container_helper(st, swap_limit, "memory_swap_max_limit_in_bytes");
 }
 
-char* CgroupV2Controller::construct_path(char* mount_path, char *cgroup_path) {
+char* CgroupV2Controller::construct_path(char* mount_path, const char* cgroup_path) {
   stringStream ss;
   ss.print_raw(mount_path);
   if (strcmp(cgroup_path, "/") != 0) {
