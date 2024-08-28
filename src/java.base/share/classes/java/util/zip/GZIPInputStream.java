@@ -39,12 +39,9 @@ import java.util.Objects;
  * <p>
  * The GZIP compressed data format is self-delimiting, i.e., it includes an explicit GZIP trailer
  * frame that marks the end of the compressed data. Therefore it's possible for the underlying
- * input to contain additional data beyond the end of the compressed GZIP data. In particular,
- * some GZIP compression tools function by partitioning the input, compressing each parttion
- * separately, and then concatenating the resulting compressed data streams. To support this kind
- * of input, after reading a GZIP trailer frame this class will attempt to read and decode a new
- * GZIP header frame. If succesful, it will proceed to decompress the new GZIP stream, otherwise,
- * it will return EOF. In the latter case, the number of additional bytes that were read is unspecified.
+ * input to contain additional data beyond the end of the compressed GZIP data. After reading a
+ * GZIP trailer frame, this class attempts to read and decode a new GZIP header frame. If succesful,
+ * it proceeds to decompress the new GZIP stream; otherwise, it returns EOF.
  *
  * @see         InflaterInputStream
  * @author      David Connelly
