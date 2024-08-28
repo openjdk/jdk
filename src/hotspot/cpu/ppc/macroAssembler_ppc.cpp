@@ -1035,7 +1035,7 @@ address MacroAssembler::call_c_and_return_to_caller(Register r_function_entry) {
   return branch_to(r_function_entry, /*and_link=*/false);
 }
 
-address MacroAssembler::call_c(address function_entry, relocInfo::relocType rt) {
+address MacroAssembler::call_c(address function_entry,relocInfo::relocType) {
   load_const(R12, function_entry, R0);
   return branch_to(R12,  /*and_link=*/true);
 }
@@ -1293,11 +1293,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
   // ARG1 must hold thread address.
   mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
   address return_pc = call_c(entry_point, relocInfo::none);
-#else
-  address return_pc = call_c((FunctionDescriptor*)entry_point, relocInfo::none);
-#endif
 
   reset_last_Java_frame();
 
@@ -1318,11 +1314,7 @@ void MacroAssembler::call_VM_base(Register oop_result,
 
 void MacroAssembler::call_VM_leaf_base(address entry_point) {
   BLOCK_COMMENT("call_VM_leaf {");
-#if defined(ABI_ELFv2)
-  call_c(entry_point, relocInfo::none);
-#else
-  call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, entry_point), relocInfo::none);
-#endif
+  call_c(entry_point);
   BLOCK_COMMENT("} call_VM_leaf");
 }
 

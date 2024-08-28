@@ -359,11 +359,14 @@ class MacroAssembler: public Assembler {
   address call_c(Register function_entry);
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_entry);
-  address call_c(address function_entry, relocInfo::relocType rt);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::none);
 #else
   // Call a C function via a function descriptor and use full C
   // calling conventions. Updates and returns _last_calls_return_pc.
   address call_c(Register function_descriptor);
+  address call_c(address function_entry, relocInfo::relocType rt = relocInfo::relocType::none) {
+    return call_c((FunctionDescriptor*)function_entry, rt);
+  }
   // For tail calls: only branch, don't link, so callee returns to caller of this function.
   address call_c_and_return_to_caller(Register function_descriptor);
   address call_c(const FunctionDescriptor* function_descriptor, relocInfo::relocType rt);
@@ -416,7 +419,6 @@ class MacroAssembler: public Assembler {
   void call_VM_leaf(address entry_point, Register arg_1);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
-
   // Call a stub function via a function descriptor, but don't save
   // TOC before call, don't setup TOC and ENV for call, and don't
   // restore TOC after call. Updates and returns _last_calls_return_pc.

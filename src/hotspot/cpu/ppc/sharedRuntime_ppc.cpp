@@ -2444,12 +2444,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // The JNI call
   // --------------------------------------------------------------------------
-#if defined(ABI_ELFv2)
   __ call_c(native_func, relocInfo::runtime_call_type);
-#else
-  FunctionDescriptor* fd_native_method = (FunctionDescriptor*) native_func;
-  __ call_c(fd_native_method, relocInfo::runtime_call_type);
-#endif
 
 
   // Now, we are back from the native code.
