@@ -33,17 +33,22 @@
  */
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.containers.systemd.SystemdRunOptions;
 import jdk.test.lib.containers.systemd.SystemdTestUtils;
 import jdk.test.lib.containers.systemd.SystemdTestUtils.ResultFiles;
 
+import jtreg.SkippedException;
 
 public class SystemdMemoryAwarenessTest {
 
     private static final WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
+       if (!Platform.isRoot()) {
+           throw new SkippedException("Test requires to be run as root");
+       }
        testHelloSystemd();
     }
 
