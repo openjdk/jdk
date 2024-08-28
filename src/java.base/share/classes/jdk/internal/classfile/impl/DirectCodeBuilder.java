@@ -537,7 +537,7 @@ public final class DirectCodeBuilder
 
     public void writeLookupSwitch(Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(Opcode.LOOKUPSWITCH);
+        writeBytecode(LOOKUPSWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.writeIntBytes(pad, 0);
@@ -558,7 +558,7 @@ public final class DirectCodeBuilder
 
     public void writeTableSwitch(int low, int high, Label defaultTarget, List<SwitchCase> cases) {
         int instructionPc = curPc();
-        writeBytecode(Opcode.TABLESWITCH);
+        writeBytecode(TABLESWITCH);
         int pad = 4 - (curPc() % 4);
         if (pad != 4)
             bytecodesBufWriter.writeIntBytes(pad, 0);
@@ -594,28 +594,28 @@ public final class DirectCodeBuilder
     }
 
     public void writeInvokeDynamic(InvokeDynamicEntry ref) {
-        writeBytecode(Opcode.INVOKEDYNAMIC);
+        writeBytecode(INVOKEDYNAMIC);
         bytecodesBufWriter.writeIndex(ref);
         bytecodesBufWriter.writeU2(0);
     }
 
     public void writeNewObject(ClassEntry type) {
-        writeBytecode(Opcode.NEW);
+        writeBytecode(NEW);
         bytecodesBufWriter.writeIndex(type);
     }
 
     public void writeNewPrimitiveArray(int newArrayCode) {
-        writeBytecode(Opcode.NEWARRAY);
+        writeBytecode(NEWARRAY);
         bytecodesBufWriter.writeU1(newArrayCode);
     }
 
     public void writeNewReferenceArray(ClassEntry type) {
-        writeBytecode(Opcode.ANEWARRAY);
+        writeBytecode(ANEWARRAY);
         bytecodesBufWriter.writeIndex(type);
     }
 
     public void writeNewMultidimensionalArray(int dimensions, ClassEntry type) {
-        writeBytecode(Opcode.MULTIANEWARRAY);
+        writeBytecode(MULTIANEWARRAY);
         bytecodesBufWriter.writeIndex(type);
         bytecodesBufWriter.writeU1(dimensions);
     }
@@ -795,7 +795,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
-        if (opcode == Opcode.INVOKEINTERFACE) {
+        if (opcode == INVOKEINTERFACE) {
             int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.nameAndType())) + 1;
             writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
         } else {
@@ -851,7 +851,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder aconst_null() {
-        writeBytecode(Opcode.ACONST_NULL);
+        writeBytecode(ACONST_NULL);
         return this;
     }
 
@@ -875,7 +875,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder bipush(int b) {
-        BytecodeHelpers.validateBIPUSH(b);
+        BytecodeHelpers.validateBipush(b);
         writeArgumentConstant(BIPUSH, b);
         return this;
     }
@@ -1455,7 +1455,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder sipush(int s) {
-        BytecodeHelpers.validateSIPUSH(s);
+        BytecodeHelpers.validateSipush(s);
         writeArgumentConstant(SIPUSH, s);
         return this;
     }
