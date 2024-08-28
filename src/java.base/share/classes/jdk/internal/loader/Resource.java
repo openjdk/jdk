@@ -86,8 +86,8 @@ public abstract class Resource {
         // Get stream before content length so that a FileNotFoundException
         // can propagate upwards without being caught too early
         InputStream in = cachedInputStream();
-        int len = getContentLength();
         try {
+            int len = getContentLength();
             b = new byte[0];
             if (len == -1) len = Integer.MAX_VALUE;
             int pos = 0;
