@@ -36,29 +36,30 @@ import jdk.internal.javac.PreviewFeature;
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public enum TypeKind {
     /** the primitive type byte */
-    ByteType("byte", "B", 8),
+    ByteType("byte", "B", 8, 1),
     /** the primitive type short */
-    ShortType("short", "S", 9),
+    ShortType("short", "S", 9, 1),
     /** the primitive type int */
-    IntType("int", "I", 10),
+    IntType("int", "I", 10, 1),
     /** the primitive type float */
-    FloatType("float", "F", 6),
+    FloatType("float", "F", 6, 1),
     /** the primitive type long */
-    LongType("long", "J", 11),
+    LongType("long", "J", 11, 2),
     /** the primitive type double */
-    DoubleType("double", "D", 7),
+    DoubleType("double", "D", 7, 2),
     /** a reference type */
-    ReferenceType("reference type", "L", -1),
+    ReferenceType("reference type", "L", -1, 1),
     /** the primitive type char */
-    CharType("char", "C", 5),
+    CharType("char", "C", 5, 1),
     /** the primitive type boolean */
-    BooleanType("boolean", "Z", 4),
+    BooleanType("boolean", "Z", 4, 1),
     /** void */
-    VoidType("void", "V", -1);
+    VoidType("void", "V", -1, 0);
 
     private final String name;
     private final String descriptor;
     private final int newarrayCode;
+    private final int slotSize;
 
     /** {@return the human-readable name corresponding to this type} */
     public String typeName() { return name; }
@@ -78,11 +79,7 @@ public enum TypeKind {
      * {@return the number of local variable slots consumed by this type}
      */
     public int slotSize() {
-        return switch (this) {
-            case VoidType -> 0;
-            case LongType, DoubleType -> 2;
-            default -> 1;
-        };
+        return slotSize;
     }
 
     /**
@@ -97,10 +94,11 @@ public enum TypeKind {
         };
     }
 
-    TypeKind(String name, String descriptor, int newarrayCode) {
+    TypeKind(String name, String descriptor, int newarrayCode, int slotSize) {
         this.name = name;
         this.descriptor = descriptor;
         this.newarrayCode = newarrayCode;
+        this.slotSize = slotSize;
     }
 
     /**
