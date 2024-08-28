@@ -295,12 +295,12 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
   }
 
   Node* divisor = n->in(2);
-  return is_divisor_counted_loop_phi(divisor, region) &&
+  return is_divisor_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
 }
 
-bool PhaseIdealLoop::is_divisor_counted_loop_phi(const Node* divisor, const Node* loop) {
-  return loop->is_BaseCountedLoop() && divisor->is_Phi() && divisor->in(0) == loop;
+bool PhaseIdealLoop::is_divisor_loop_phi(const Node* divisor, const Node* loop) {
+  return loop->is_Loop() && divisor->is_Phi() && divisor->in(0) == loop;
 }
 
 bool PhaseIdealLoop::loop_phi_backedge_type_contains_zero(const Node* phi_divisor, const Type* zero) const {
@@ -1069,7 +1069,7 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 #endif
             lca = place_outside_loop(lca, n_loop);
             assert(!n_loop->is_member(get_loop(lca)), "control must not be back in the loop");
-            assert(get_loop(lca)->_nest < n_loop->_nest || lca->in(0)->is_NeverBranch(), "must not be moved into inner loop");
+            assert(get_loop(lca)->_nest < n_loop->_nest || get_loop(lca)->_head->as_Loop()->is_in_infinite_subgraph(), "must not be moved into inner loop");
 
             // Move store out of the loop
             _igvn.replace_node(hook, n->in(MemNode::Memory));
@@ -1272,9 +1272,7 @@ Node* PhaseIdealLoop::place_outside_loop(Node* useblock, IdealLoopTree* loop) co
   // Pick control right outside the loop
   for (;;) {
     Node* dom = idom(useblock);
-    if (loop->is_member(get_loop(dom)) ||
-        // NeverBranch nodes are not assigned to the loop when constructed
-        (dom->is_NeverBranch() && loop->is_member(get_loop(dom->in(0))))) {
+    if (loop->is_member(get_loop(dom))) {
       break;
     }
     useblock = dom;
