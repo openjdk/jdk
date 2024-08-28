@@ -21,29 +21,28 @@
  * questions.
  */
 
-
-import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
-
+import java.lang.ref.Reference;
 
 /*
 $ ~/dev/jdk/open/ /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
 !!! CLEAN !!!
 !!! GONE !!!
 Exception in thread "main" java.lang.AssertionError: 42 != 1
-	at ReachabilityFenceC1.test1(ReachabilityFenceC1.java:66)
-	at ReachabilityFenceC1.test(ReachabilityFenceC1.java:55)
-	at ReachabilityFenceC1.main(ReachabilityFenceC1.java:111)
 */
 public class ReachabilityFenceC1 {
+
     static class A {
+
         public B obj;
+
         public A(B obj) {
             this.obj = obj;
         }
     }
 
     static class B {
+
         public final int id;
 
         public static int[] arr = new int[1024];
@@ -53,11 +52,9 @@ public class ReachabilityFenceC1 {
         }
     }
 
-
     static void test(A foo, int[] arr, int limit) {
         test1(foo, arr, arr, limit);
     }
-
 
     static void test1(A foo, int[] arr, int[] arr1, int limit) {
         int val = B.arr[0];
@@ -66,7 +63,9 @@ public class ReachabilityFenceC1 {
             for (int i = 1; i < arr.length; i++) {
                 B bar = foo.obj;
                 arr[i] = bar.id * arr[i];
-                if (B.arr[0] != val) throw new AssertionError(arr[0] + " != " + val);
+                if (B.arr[0] != val) throw new AssertionError(
+                    arr[0] + " != " + val
+                );
                 Reference.reachabilityFence(bar);
             }
         }
@@ -74,10 +73,11 @@ public class ReachabilityFenceC1 {
 
     public static void main(String[] args) {
         final A foo = new A(new B(1));
-        Cleaner.create().register(foo.obj, () -> {
-            B.arr[0] = 42;
-            System.out.println("!!! GONE !!!");
-        });
+        Cleaner.create()
+            .register(foo.obj, () -> {
+                B.arr[0] = 42;
+                System.out.println("!!! GONE !!!");
+            });
 
         for (int j = 0; j < foo.obj.arr.length; j += 1) {
             foo.obj.arr[j] = 1;
