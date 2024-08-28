@@ -3773,7 +3773,7 @@ Node* LibraryCallKit::generate_interface_guard(Node* kls, RegionNode* region) {
 // Use this for testing if Klass is_hidden, has_finalizer, and is_cloneable_fast.
 Node* LibraryCallKit::generate_misc_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region) {
   Node* p = basic_plus_adr(kls, in_bytes(Klass::misc_flags_offset()));
-  Node* mods = make_load(nullptr, p, TypeInt::BYTE, T_BYTE, MemNode::unordered);
+  Node* mods = make_load(nullptr, p, TypeInt::UBYTE, T_BOOLEAN, MemNode::unordered);
   Node* mask = intcon(modifier_mask);
   Node* bits = intcon(modifier_bits);
   Node* mbit = _gvn.transform(new AndINode(mods, mask));
