@@ -654,8 +654,8 @@ public sealed interface CodeBuilder
                             : ldc(constantPool().intEntry(iVal));
                 };
             if (value instanceof Long lVal)
-                return lVal == 0l ? lconst_0()
-                        : lVal == 1l ? lconst_1()
+                return lVal == 0L ? lconst_0()
+                        : lVal == 1L ? lconst_1()
                         : ldc(constantPool().longEntry(lVal));
             if (value instanceof Float fVal)
                 return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
@@ -663,7 +663,7 @@ public sealed interface CodeBuilder
                         : fVal == 2.0f ? fconst_2()
                         : ldc(constantPool().floatEntry(fVal));
             if (value instanceof Double dVal)
-                return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
+                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
                         : dVal == 1.0d ? dconst_1()
                         : ldc(constantPool().doubleEntry(dVal));
         }
