@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8325495
- * @summary C2 should optimize for series of Add of unique value. e.g., a + a + ... + a => a * n
+ * @summary C2 should optimize for series of Add of unique value. e.g., a + a + ... + a => a*n
  * @library /test/lib /
  * @run driver compiler.c2.arithmeticCanonicalization.SerialAdditionCanonicalization
  */
@@ -38,19 +38,16 @@ public class SerialAdditionCanonicalization {
     }
 
     @DontInline
-    private static void verifyResult(int base, long multiplier, int observed) {
-        int expected = base * (int) multiplier; // compute expected result here while making sure not inlined in callers
+    private static void verifyResult(int base, long factor, int observed) {
+        int expected = base * (int) factor; // compute expected result here while making sure not inlined in callers
         if (expected != observed) {
             throw new AssertionError("Expected " + expected + " but got " + observed);
-        } else {
-            // TODO: remove before commit
-            System.err.printf("%d * %d = %d\n", base, multiplier, observed);
         }
     }
 
     @DontInline
-    private static void verifyResult(long base, long multiplier, long observed) {
-        long expected = base * multiplier;
+    private static void verifyResult(long base, long factor, long observed) {
+        long expected = base * factor;
         if (expected != observed) {
             throw new AssertionError("Expected " + expected + " but got " + observed);
         }

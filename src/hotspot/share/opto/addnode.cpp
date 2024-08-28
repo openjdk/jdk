@@ -396,28 +396,28 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   }
 
   // Convert a + a+ ... + a into a*n
-  Node* base = nullptr;
+  Node* repeated_operand = nullptr;
   int terms = 0;
-  jlong multiplier = find_base_operand_in_chained_addition(phase, this, &base, &terms);
+  jlong factor = find_repeated_operand_in_chained_addition(phase, this, &repeated_operand, &terms);
 
   // Check if there is a more optimal way to represent the multiplication
   // MulINode::Ideal() optimizes a multiplication to an addition of at most two terms (if possible)
-  if (base != nullptr && base != this && terms > 2) {
-    Node* node = (bt == T_INT) ? (Node*) phase->intcon((jint) multiplier) : (Node*) phase->longcon(multiplier);
-    BasicType bt2 = phase->type(base)->basic_type();
+  if (repeated_operand != nullptr && repeated_operand != this && terms > 2) {
+    Node* node = (bt == T_INT) ? (Node*) phase->intcon((jint) factor) : (Node*) phase->longcon(factor);
+    BasicType bt2 = phase->type(repeated_operand)->basic_type();
 
     if (bt2 == T_INT || bt2 == T_LONG) { // to avoid void constant types
-      return MulNode::make(base, node, bt2);
+      return MulNode::make(repeated_operand, node, bt2);
     }
   }
 
   return AddNode::Ideal(phase, can_reshape);
 }
 
-jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node, Node** base, int* terms) {
-  *base = node;
+jlong AddNode::find_repeated_operand_in_chained_addition(PhaseGVN* phase, Node* node, Node** operand, int* terms) {
+  *operand = node;
   *terms = 1;
-  jlong multiplier = 1;
+  jlong factor = 1;
 
   // ADD: e.g., a + a => a*2 or (a<<2) + a => a*5
   // SUB: e.g., a<<3 - a => a*7
@@ -427,13 +427,13 @@ jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node
     int terms_left = 0;
     int terms_right = 0;
 
-    jlong multiplier_left = find_base_operand_in_chained_addition(phase, node->in(1), &base_left, &terms_left);
-    jlong multiplier_right = find_base_operand_in_chained_addition(phase, node->in(2), &base_right, &terms_right);
+    jlong multiplier_left = find_repeated_operand_in_chained_addition(phase, node->in(1), &base_left, &terms_left);
+    jlong multiplier_right = find_repeated_operand_in_chained_addition(phase, node->in(2), &base_right, &terms_right);
 
     if (base_left == base_right) {
-      *base = base_left;
+      *operand = base_left;
       *terms = terms_left + terms_right;
-      multiplier = node->is_Add() ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
+      factor = node->is_Add() ? multiplier_left + multiplier_right : multiplier_left - multiplier_right;
     }
   }
 
@@ -442,9 +442,9 @@ jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node
     BasicType bt = phase->type(node->in(2))->basic_type();
 
     if (bt == T_INT || bt == T_LONG) {
-      *base = node->in(1);
+      *operand = node->in(1);
       *terms = 1;
-      multiplier = jlong(1) << node->in(2)->get_integer_as_long(bt);
+      factor = jlong(1) << node->in(2)->get_integer_as_long(bt);
     }
   }
 
@@ -455,13 +455,13 @@ jlong AddNode::find_base_operand_in_chained_addition(PhaseGVN* phase, Node* node
     BasicType bt = phase->type(multiplier_node)->basic_type();
 
     if (bt == T_INT || bt == T_LONG) {
-      *base = node->in(1)->is_Con() ? node->in(2) : node->in(1);
+      *operand = node->in(1)->is_Con() ? node->in(2) : node->in(1);
       *terms = 2; // discourages multiplication nodes
-      multiplier = multiplier_node->get_integer_as_long(bt);
+      factor = multiplier_node->get_integer_as_long(bt);
     }
   }
 
-  return multiplier;
+  return factor;
 }
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
