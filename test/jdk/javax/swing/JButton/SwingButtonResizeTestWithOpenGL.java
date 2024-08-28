@@ -50,7 +50,8 @@ import javax.swing.SwingUtilities;
  * with swing components after window is zoomed to maximum size and then
  * resized back to normal. The test case simulates this operation using
  * a JButton. A file image of the component will be saved before and after
- * window resize. The test passes if both button images are the same.
+ * the window resize if the test fails. The test passes if both the button
+ * images are the same.
  * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
  * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=true SwingButtonResizeTestWithOpenGL
  * @run main/othervm -Dsun.java2d.opengl=false SwingButtonResizeTestWithOpenGL
@@ -277,12 +278,9 @@ public class SwingButtonResizeTestWithOpenGL {
             ColorModel cm1 = img1.getColorModel();
             ColorModel cm2 = img2.getColorModel();
 
-            int r1;  // red
-            int r2;
-            int g1;  // green
-            int g2;
-            int b1;  // blue
-            int b2;
+            int r1, r2;  // red
+            int g1, g2;  // green
+            int b1, b2;  // blue
 
             Object o1 = null;
             Object o2 = null;
@@ -301,12 +299,14 @@ public class SwingButtonResizeTestWithOpenGL {
                     b1 = cm1.getBlue(o1);
                     b2 = cm2.getBlue(o2);
 
-                    if ((Math.abs(r1 - r2) > threshold)
-                        || (Math.abs(g1 - g2) > threshold)
-                        || (Math.abs(b1 - b2) > threshold)) {
+                    int redAbs = Math.abs(r1 - r2);
+                    int greenAbs = Math.abs(g1 - g2);
+                    int blueAbs = Math.abs(b1 - b2);
+                    if ((redAbs > threshold)
+                        || (greenAbs > threshold)
+                        || (blueAbs > threshold)) {
                         // pixel is different
-                        setDiffPixel(x, y, Math.abs(r1 - r2), Math.abs(g1 - g2),
-                                     Math.abs(b1 - b2));
+                        setDiffPixel(x, y, redAbs, greenAbs, blueAbs);
                         nDiff++;
                     } else {
                         setSamePixel(x, y);
