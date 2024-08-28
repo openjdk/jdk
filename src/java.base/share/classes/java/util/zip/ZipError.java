@@ -27,10 +27,9 @@ package java.util.zip;
 
 /**
  * Signals that an unrecoverable error has occurred.
- * @deprecated This error became obsolete in JDK 9. Use
- * {@link ZipException} instead. Code needing to catch this
- * error when running on JDK 8 or earlier releases may catch
- * the parent {@link InternalError} instead.
+ *
+ * @deprecated ZipError is no longer used and is obsolete.
+ * {@link ZipException} should be used instead.
  * @author  Dave Bristor
  * @since   1.6
  */
