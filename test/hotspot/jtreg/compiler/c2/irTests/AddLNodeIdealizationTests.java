@@ -92,8 +92,8 @@ public class AddLNodeIdealizationTests {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD, "0"}) // optimized into x << 2 by JDK-8325495
-    // Checks (x + x) + (x + x) => a=(x + x); r=a+a
+    @IR(failOn = {IRNode.ADD})
+    // Optimized into x << 2 by JDK-8325495
     public long additions(long x) {
         return (x + x) + (x + x);
     }
