@@ -21,10 +21,6 @@
  * questions.
  */
 
-import javax.imageio.ImageIO;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -41,6 +37,10 @@ import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -48,8 +48,8 @@ import java.util.concurrent.atomic.AtomicReference;
  * @key headful
  * @summary Verifies that the OpenGL pipeline does not create artifacts
  * with swing components after window is zoomed to maximum size and then
- * resized back to normal.  The test case simulates this operation using
- * a JButton.  A file image of the component will be saved before and after
+ * resized back to normal. The test case simulates this operation using
+ * a JButton. A file image of the component will be saved before and after
  * window resize. The test passes if both button images are the same.
  * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=false SwingButtonResizeTestWithOpenGL
  * @run main/othervm -Dsun.java2d.opengl=true -Dsun.java2d.opengl.fbobject=true SwingButtonResizeTestWithOpenGL
@@ -95,7 +95,6 @@ public class SwingButtonResizeTestWithOpenGL {
     private void createGUI() {
         frame = new JFrame("SwingButtonResizeTestWithOpenGL");
         button = new JButton("Button A");
-        frame.setLocationRelativeTo(null);
         frame.setLocation(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         button.setPreferredSize(new Dimension(300, 300));
@@ -136,36 +135,28 @@ public class SwingButtonResizeTestWithOpenGL {
             System.out.println("Getting initial button image..image1");
             bimage1 = getButtonImage();
 
-            File file1 = new File("image1.png");
-            saveButtonImage(bimage1, file1);
-
             // some platforms may not support maximize frame
             if (frame.getToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH)) {
                 robot.waitForIdle();
-                //maximize frame from normal size
+                // maximize frame from normal size
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
                 System.out.println("Frame is maximized");
                 robot.waitForIdle();
 
                 if (frame.getToolkit().isFrameStateSupported(JFrame.NORMAL)) {
                     System.out.println("Frame is back to normal");
-                    //resize from maximum size to normal
+                    // resize from maximum size to normal
                     frame.setExtendedState(JFrame.NORMAL);
 
                     // capture image of JButton after resize
                     System.out.println("Getting image of JButton after resize..image2");
                     bimage2 = getButtonImage();
-                    File file2 = new File("image2.png");
-                    saveButtonImage(bimage2, file2);
 
                     // compare button images from before and after frame resize
                     DiffImage di = new DiffImage(bimage1.getWidth(), bimage1.getHeight());
-                    di.compare(bimage1, bimage2);
                     System.out.println("Taking the diff of two images, image1 and image2");
-                    // results of image comparison
-                    int numDiffPixels = di.getNumDiffPixels();
-                    if (numDiffPixels != 0) {
-                        throw new RuntimeException("Button renderings are different after window resize, num of Diff Pixels=" + numDiffPixels);
+                    if (!di.compare(bimage1, bimage2)) {
+                        throw new RuntimeException("Button renderings are different after window resize, num of Diff Pixels=" + di.getNumDiffPixels());
                     } else {
                         System.out.println("Test passed...");
                     }
@@ -178,11 +169,11 @@ public class SwingButtonResizeTestWithOpenGL {
                 System.out.println("Test skipped: JFrame.MAXIMIZED_BOTH resize is not supported");
             }
         } finally {
-            disposeFrame();
+            SwingUtilities.invokeAndWait(() -> disposeFrame());
         }
     }
 
-    //Capture button rendering as a BufferedImage
+    // Capture button rendering as a BufferedImage
     private BufferedImage getButtonImage() {
         BufferedImage bimage;
         try {
@@ -200,7 +191,14 @@ public class SwingButtonResizeTestWithOpenGL {
         return bimage;
     }
 
-    //Save BufferedImage to PNG file
+    private void disposeFrame() {
+        if (frame != null) {
+            frame.dispose();
+            frame = null;
+        }
+    }
+
+    // Save BufferedImage to PNG file
     private void saveButtonImage(BufferedImage image, File file) {
         if (image != null) {
             try {
@@ -211,13 +209,6 @@ public class SwingButtonResizeTestWithOpenGL {
             }
         } else {
             throw new RuntimeException("BufferedImage was set to null");
-        }
-    }
-
-    private void disposeFrame() {
-        if (frame != null) {
-            frame.dispose();
-            frame = null;
         }
     }
 
@@ -239,7 +230,7 @@ public class SwingButtonResizeTestWithOpenGL {
             return nDiff;
         }
 
-        public void compare(BufferedImage img1, BufferedImage img2) throws IOException {
+        public boolean compare(BufferedImage img1, BufferedImage img2) throws IOException {
 
             int minx1 = img1.getMinX();
             int minx2 = img2.getMinX();
@@ -255,7 +246,6 @@ public class SwingButtonResizeTestWithOpenGL {
                 // image sizes are different
                 throw new RuntimeException("img1: <" + minx1 + "," + miny1 + "," + w1 + "x" + h1 + ">" + " img2: " + minx2 + "," + miny2 + "," + w2 + "x" + h2 + ">" + " are different sizes");
             }
-            System.out.println("Going to compare the images with a threshold of " + threshold + " pixels");
             // Get the actual data behind the images
             Raster ras1 = img1.getData();
             Raster ras2 = img2.getData();
@@ -299,7 +289,10 @@ public class SwingButtonResizeTestWithOpenGL {
             }
             if (nDiff != 0) {
                 ImageIO.write(this, "png", new File("diffImage.png"));
+                saveButtonImage(img1, new File("image1.png"));
+                saveButtonImage(img2, new File("image2.png"));
             }
+            return nDiff == 0;
         }
 
         void setDiffPixel(int x, int y, int r, int g, int b) {
