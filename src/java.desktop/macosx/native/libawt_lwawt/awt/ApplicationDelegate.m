@@ -122,7 +122,10 @@ AWT_ASSERT_APPKIT_THREAD;
         if ([NSApp isKindOfClass:[NSApplicationAWT class]]) shouldInstall = YES;
     }
     checked = YES;
-    if (!shouldInstall) return nil;
+    if (!shouldInstall) {
+        [ThreadUtilities setApplicationOwner:NO];
+        return nil;
+    }
 
     sApplicationDelegate = [[ApplicationDelegate alloc] init];
     return sApplicationDelegate;

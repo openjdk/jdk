@@ -36,8 +36,6 @@
 #import "ThreadUtilities.h"
 #import "JNIUtilities.h"
 
-extern JavaVM *jvm;
-
 #define MASK(KEY) \
     (sun_lwawt_macosx_CPlatformWindow_ ## KEY)
 
@@ -633,11 +631,6 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void) _deliverMoveResizeEvent {
 AWT_ASSERT_APPKIT_THREAD;
 
-    JNIEnv *pEnv = nil;
-    jint ret = (*jvm)->GetEnv(jvm, &pEnv, JNI_VERSION_1_4);
-    if (ret == JNI_EDETACHED) {
-        return;
-    }
     // deliver the event if this is a user-initiated live resize or as a side-effect
     // of a Java initiated resize, because AppKit can override the bounds and force
     // the bounds of the window to avoid the Dock or remain on screen.
