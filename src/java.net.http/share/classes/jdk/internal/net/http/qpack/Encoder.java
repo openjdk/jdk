@@ -70,7 +70,7 @@ public class Encoder {
     // "Implementations can also choose to protect sensitive fields by not
     // compressing them and instead encoding their value as literals"
     private static final Set<String> SENSITIVE_HEADER_NAMES =
-            Set.of("Cookie", "Authorization", "Proxy-Authorization");
+            Set.of("cookie", "authorization", "proxy-authorization");
 
     private final Logger logger;
     private final InsertionPolicy policy;
