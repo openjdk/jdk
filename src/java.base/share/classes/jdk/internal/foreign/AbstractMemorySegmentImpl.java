@@ -191,36 +191,27 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public final MemorySegment fill(byte value) {
         if ((length & ~7) == 0) { // 0 <= length < 8
+            if (length == 0) {
+                // Make explicit tests as there are no set operations
+                checkReadOnly(false);
+                checkValidState();
+                return this;
+            }
             // Handle smaller fills directly without having to transition to native code.
             final int valueUnsigned = Byte.toUnsignedInt(value);
             final int intValue = valueUnsigned | valueUnsigned << 8 | valueUnsigned << 16 | valueUnsigned << 24;
-            // Use the old switch statement syntax to improve startup time
-            switch ((int) length) {
-                case 0 : checkReadOnly(false); checkValidState(); break; // Explicit tests
-                case 1 : set(JAVA_BYTE, 0, value); break;
-                case 2 : set(JAVA_SHORT_UNALIGNED, 0, (short) intValue); break;
-                case 3 : {
-                    set(JAVA_SHORT_UNALIGNED, 0, (short) intValue);
-                    set(JAVA_BYTE, 2, value);
-                    break;
-                }
-                case 4 : set(JAVA_INT_UNALIGNED, 0, intValue); break;
-                case 5 : {
-                    set(JAVA_INT_UNALIGNED, 0, intValue);
-                    set(JAVA_BYTE, 4, value);
-                    break;
-                }
-                case 6 : {
-                    set(JAVA_INT_UNALIGNED, 0, intValue);
-                    set(JAVA_SHORT_UNALIGNED, 4, (short) intValue);
-                    break;
-                }
-                case 7 : {
-                    set(JAVA_INT_UNALIGNED, 0, intValue);
-                    set(JAVA_SHORT_UNALIGNED, 4, (short) intValue);
-                    set(JAVA_BYTE, 6, value);
-                    break;
-                }
+
+            int offset = 0;
+            if ((length & 4) != 0) {
+                set(JAVA_INT_UNALIGNED, 0, intValue);
+                offset += 4;
+            }
+            if ((length & 2) != 0) {
+                set(JAVA_SHORT_UNALIGNED, offset, (short) intValue);
+                offset += 2;
+            }
+            if ((length & 1) != 0) {
+                set(JAVA_BYTE, offset, value);
             }
         } else {
             checkReadOnly(false);
