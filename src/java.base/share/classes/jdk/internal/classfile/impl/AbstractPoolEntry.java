@@ -1041,7 +1041,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         void writeTo(BufWriterImpl pool) {
-            pool.writeU1(ClassFile.TAG_INTEGER);
+            pool.writeU1(tag);
             pool.writeInt(val);
         }
 
