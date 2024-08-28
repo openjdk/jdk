@@ -101,7 +101,7 @@ public enum TypeKind {
      */
     FLOAT(1, 6),
     /**
-     *  The primitive type {@code long}. It is of {@linkplain #slotSize() category} 2.
+     * The primitive type {@code long}. It is of {@linkplain #slotSize() category} 2.
      */
     LONG(2, 11),
     /**
