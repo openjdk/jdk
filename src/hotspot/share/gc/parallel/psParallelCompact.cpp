@@ -171,10 +171,12 @@ void SplitInfo::record(size_t split_region_idx, HeapWord* split_point, size_t pr
   if (preceding_live_words == 0) {
     preceding_destination_count = 0;
   } else {
-    if (preceding_destination + preceding_live_words > sd.region_align_up(preceding_destination)) {
-      preceding_destination_count = 2;
-    } else {
+    // -1 so that the ending address doesn't fall on the region-boundary
+    if (sd.region_align_down(preceding_destination) ==
+        sd.region_align_down(preceding_destination + preceding_live_words - 1)) {
       preceding_destination_count = 1;
+    } else {
+      preceding_destination_count = 2;
     }
   }
 
