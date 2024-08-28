@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.util.zip.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Available {
 
@@ -90,8 +91,8 @@ public class Available {
      */
     @Test
     public void testZipInputStream() throws IOException {
-        try (InputStream in = Files.newInputStream(zip);
-             ZipInputStream z = new ZipInputStream(in)) {
+        try (InputStream in = Files.newInputStream(zip)) {
+            ZipInputStream z = new ZipInputStream(in);
             z.getNextEntry();
             assertEquals(1, z.available());
             z.read();
@@ -99,14 +100,15 @@ public class Available {
             z.transferTo(OutputStream.nullOutputStream());
             assertEquals(0, z.available(),
                     "ZipInputStream.available() should return 0 after EOF");
+
+            z.close();
+            assertThrows(IOException.class, () -> z.available(),
+                    "Expected an IOException when calling available on a closed stream");
         }
 
         try (InputStream in = Files.newInputStream(zip);
              ZipInputStream z = new ZipInputStream(in)) {
             z.getNextEntry();
-            assertEquals(1, z.available());
-            z.read();
-            assertEquals(1, z.available());
             z.closeEntry();
             assertEquals(0, z.available(),
                     "ZipInputStream.available() should return 0 after closeEntry");
