@@ -181,9 +181,6 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     public static final boolean USE_DIRECT_BUFFER_POOL = Utils.getBooleanProperty(
             "jdk.internal.httpclient.quic.poolDirectByteBuffers", !QuicEndpoint.DGRAM_SEND_ASYNC);
 
-    public static final boolean FILTER_SENDER_ADDRESS = Utils.getBooleanProperty(
-            "jdk.httpclient.quic.filterSenderAddress", true);
-
     public static final int RESET_TOKEN_LENGTH = 16; // RFC states 16 bytes for stateless token
     public static final long MAX_STREAMS_VALUE_LIMIT = 1L << 60; // cannot exceed 2^60 as per RFC
 
@@ -582,6 +579,13 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
                 ByteBuffer buffer = datagram.buffer;
                 int remaining = buffer.remaining();
                 try {
+                    if (incomingLoopScheduler.isStopped()) {
+                        // we still need to unbuffer, continue here will
+                        // ensure we skip directly to the finally-block
+                        // below.
+                        continue;
+                    }
+
                     internalProcessIncoming(datagram.source(),
                             datagram.destConnId,
                             datagram.headersType,
@@ -648,7 +652,11 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     public void closeIncoming() {
         incomingLoopScheduler.stop();
-        incoming.clear();
+        IncomingDatagram icd;
+        // we still need to unbuffer all datagrams in the queue
+        while ((icd = incoming.poll()) != null ) {
+            endpoint.unbuffer(icd.buffer().remaining());
+        }
     }
 
     /**
@@ -1662,6 +1670,23 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     private record IncomingDatagram(SocketAddress source, ByteBuffer destConnId,
                                     QuicPacket.HeadersType headersType, ByteBuffer buffer) {}
+
+    @Override
+    public boolean accepts(SocketAddress source) {
+        // The client ever accepts packets from two sources:
+        //   => the original peer address
+        //   => the preferred peer address (not implemented)
+        if (!source.equals(peerAddress)) {
+            // We only accept packets from the endpoint to
+            // which we send them.
+            if (debug.on()) {
+                debug.log("unexpected sender %s, skipping packet", source);
+            }
+            return false;
+        }
+        return true;
+    }
+
     public void processIncoming(SocketAddress source, ByteBuffer destConnId,
                                 QuicPacket.HeadersType headersType, ByteBuffer buffer) {
         // Processes an incoming datagram that has just been
@@ -1676,14 +1701,9 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
             }
             return;
         }
-        if (FILTER_SENDER_ADDRESS && !source.equals(peerAddress)) {
-            // We do not support path migration yet, so we only accept
-            // packets from the endpoint to which we send them.
-            if (debug.on()) {
-                debug.log("connection closed, skipping packet");
-            }
-            return;
-        }
+
+        assert accepts(source);
+
         scheduleForDecryption(new IncomingDatagram(source, destConnId, headersType, buffer));
     }
 

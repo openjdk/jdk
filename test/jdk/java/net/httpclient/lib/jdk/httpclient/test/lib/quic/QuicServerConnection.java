@@ -91,6 +91,9 @@ public final class QuicServerConnection extends QuicConnectionImpl {
     private final QuicServer.RetryData retryData;
     private final AtomicBoolean firstHandshakePktProcessed = new AtomicBoolean();
 
+    public static final boolean FILTER_SENDER_ADDRESS = Utils.getBooleanProperty(
+            "test.quic.server.filterSenderAddress", true);
+
     QuicServerConnection(QuicServer server,
                          QuicVersion quicVersion,
                          QuicVersion preferredQuicVersion,
@@ -187,6 +190,19 @@ public final class QuicServerConnection extends QuicConnectionImpl {
             endpoint.removeConnectionId(clientSentDestConnId, this);
         }
         super.processIncoming(source, destConnId, headersType, buffer);
+    }
+
+    @Override
+    public boolean accepts(SocketAddress source) {
+        if (FILTER_SENDER_ADDRESS && !source.equals(peerAddress())) {
+            // We do not support path migration yet, so we only accept
+            // packets from the endpoint to which we send them.
+            if (debug.on()) {
+                debug.log("unexpected sender %s, skipping packet", source);
+            }
+            return false;
+        }
+        return true;
     }
 
     @Override

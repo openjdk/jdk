@@ -894,9 +894,13 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             // client can drop all unmatched long quic packets here
             if (isClient()) return null;
         }
-        return connection != null
-                ? new QuicDatagram(connection, source, copyOnHeap(buffer))
-                : new UnmatchedDatagram(source, copyOnHeap(buffer));
+
+        if (connection != null) {
+            if (!connection.accepts(source)) return null;
+            return new QuicDatagram(connection, source, copyOnHeap(buffer));
+        } else {
+            return new UnmatchedDatagram(source, copyOnHeap(buffer));
+        }
     }
 
 
@@ -1191,7 +1195,9 @@ public abstract sealed class QuicEndpoint implements AutoCloseable
             if (connection != null) {
                 // a matching connection was found, this packet is no longer
                 // unmatched
-                connection.processIncoming(address, idbytes, headersType, buffer);
+                if (connection.accepts(address)) {
+                    connection.processIncoming(address, idbytes, headersType, buffer);
+                }
                 return;
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,4 +151,12 @@ public interface QuicPacketReceiver {
      * @param datagram the datagram that was dropped
      */
     default void datagramDropped(QuicDatagram datagram) { }
+
+    /**
+     * {@return whether this receiver accepts packets from the given source}
+     * @param source the sender address
+     */
+    default boolean accepts(SocketAddress source) {
+        return true;
+    }
 }
