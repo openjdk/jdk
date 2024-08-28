@@ -2122,10 +2122,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
-        return with(ConstantInstruction.ofLoad(
-                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
-                : entry.index() > 0xff ? Opcode.LDC_W
-                : Opcode.LDC, entry));
+        return with(ConstantInstruction.ofLoad(BytecodeHelpers.ldcOpcode(entry), entry));
     }
 
     /**

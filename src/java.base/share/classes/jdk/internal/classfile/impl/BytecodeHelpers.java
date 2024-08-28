@@ -308,6 +308,12 @@ public class BytecodeHelpers {
         }
     }
 
+    public static Opcode ldcOpcode(LoadableConstantEntry entry) {
+        return entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
+                : entry.index() > 0xff ? Opcode.LDC_W
+                : Opcode.LDC;
+    }
+
     public static LoadableConstantEntry constantEntry(ConstantPoolBuilder constantPool,
                                                       ConstantDesc constantValue) {
         // this method is invoked during JVM bootstrap - cannot use pattern switch
