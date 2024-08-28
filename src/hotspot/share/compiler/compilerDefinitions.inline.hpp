@@ -136,10 +136,10 @@ inline bool CompilerConfig::is_c2_or_jvmci_compiler_enabled() {
 
 inline size_t CompilerConfig::min_code_cache_size() {
   size_t min_code_cache_size = CodeCacheMinimumUseSpace;
-  COMPILER1_PRESENT(min_code_cache_size += Compiler::code_buffer_size());
-  COMPILER2_PRESENT(min_code_cache_size += C2Compiler::initial_code_buffer_size());
   // Template Interpreter code is approximately 3X larger in debug builds.
   DEBUG_ONLY(min_code_cache_size *= 3);
+  COMPILER1_PRESENT(min_code_cache_size += Compiler::code_buffer_size());
+  COMPILER2_PRESENT(min_code_cache_size += C2Compiler::initial_code_buffer_size());
   return min_code_cache_size;
 }
 

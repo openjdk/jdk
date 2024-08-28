@@ -196,8 +196,8 @@ public class CheckSegmentedCodeCache {
                                   2 * Math.max(64, codeEntryAlignment) /* 2 * CodeSection::end_slop() */ +
                                   2 * 128 /* sizeof(relocInfo) * PhaseOutput::MAX_locs_size */;
         // minimum size: CompilerConfig::min_code_cache_size =
-        // (CodeCacheMinimumUseSpace + Compiler::code_buffer_size() + C2Compiler::initial_code_buffer_size())) DEBUG_ONLY(* 3)
-        long minSize = (minUseSpace + c1MinCodeCacheSize + c2MinCodeCacheSize) * (Platform.isDebugBuild() ? 3 : 1);
+        // CodeCacheMinimumUseSpace DEBUG_ONLY(* 3) + Compiler::code_buffer_size() + C2Compiler::initial_code_buffer_size())
+        long minSize = minUseSpace * (Platform.isDebugBuild() ? 3 : 1) + c1MinCodeCacheSize + c2MinCodeCacheSize;
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                               "-XX:NonNMethodCodeHeapSize=" + minSize,
                                                               "-XX:ReservedCodeCacheSize=" + minSize,
