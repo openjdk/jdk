@@ -53,7 +53,7 @@ public class ReachabilityFence {
         });
 
         // Warmup to trigger compilation
-        for (int i = 0; i < 20000; i++) {
+        for (int i = 0; i < 20_000; i++) {
             test(100);
         }
 
