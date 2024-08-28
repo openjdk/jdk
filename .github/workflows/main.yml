@@ -36,7 +36,7 @@ on:
       platforms:
         description: 'Platform(s) to execute on (comma separated, e.g. "linux-x64, macos, aarch64")'
         required: true
-        default: 'linux-x64, linux-x86-hs, linux-x64-variants, linux-cross-compile, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
+        default: 'linux-x64, linux-x86-hs, linux-x64-variants, linux-cross-compile, alpine-linux-x64, macos-x64, macos-aarch64, windows-x64, windows-aarch64, docs'
       configure-arguments:
         description: 'Additional configure arguments'
         required: false
@@ -57,11 +57,15 @@ jobs:
   select:
     name: 'Select platforms'
     runs-on: ubuntu-22.04
+    env:
+      # List of platforms to exclude by default
+      EXCLUDED_PLATFORMS: 'alpine-linux-x64'
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x86-hs: ${{ steps.include.outputs.linux-x86-hs }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
       linux-cross-compile: ${{ steps.include.outputs.linux-cross-compile }}
+      alpine-linux-x64: ${{ steps.include.outputs.alpine-linux-x64 }}
       macos-x64: ${{ steps.include.outputs.macos-x64 }}
       macos-aarch64: ${{ steps.include.outputs.macos-aarch64 }}
       windows-x64: ${{ steps.include.outputs.windows-x64 }}
@@ -78,6 +82,10 @@ jobs:
           # Returns 'true' if the input platform list matches any of the platform monikers given as argument,
           # 'false' otherwise.
           # arg $1: platform name or names to look for
+
+          # Convert EXCLUDED_PLATFORMS from a comma-separated string to an array
+          IFS=',' read -r -a excluded_array <<< "$EXCLUDED_PLATFORMS"
+
           function check_platform() {
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
@@ -94,7 +102,13 @@ jobs:
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
             if [[ "$normalized_input" == ",," ]]; then
-              # For an empty input, assume all platforms should run
+              # For an empty input, assume all platforms should run, except those in the EXCLUDED_PLATFORMS list
+              for excluded in "${excluded_array[@]}"; do
+                if [[ "$1" == "$excluded" ]]; then
+                  echo 'false'
+                  return
+                fi
+              done
               echo 'true'
               return
             else
@@ -102,6 +116,14 @@ jobs:
               for part in $* ; do
                 if echo "$normalized_input" | grep -q -e ",$part," ; then
                   echo 'true'
+                  return
+                fi
+              done
+
+              # If not explicitly included, check against the EXCLUDED_PLATFORMS list
+              for excluded in "${excluded_array[@]}"; do
+                if [[ "$1" == "$excluded" ]]; then
+                  echo 'false'
                   return
                 fi
               done
@@ -114,6 +136,7 @@ jobs:
           echo "linux-x86-hs=$(check_platform linux-x86-hs linux x86)" >> $GITHUB_OUTPUT
           echo "linux-x64-variants=$(check_platform linux-x64-variants variants)" >> $GITHUB_OUTPUT
           echo "linux-cross-compile=$(check_platform linux-cross-compile cross-compile)" >> $GITHUB_OUTPUT
+          echo "alpine-linux-x64=$(check_platform alpine-linux-x64 alpine-linux x64)" >> $GITHUB_OUTPUT
           echo "macos-x64=$(check_platform macos-x64 macos x64)" >> $GITHUB_OUTPUT
           echo "macos-aarch64=$(check_platform macos-aarch64 macos aarch64)" >> $GITHUB_OUTPUT
           echo "windows-x64=$(check_platform windows-x64 windows x64)" >> $GITHUB_OUTPUT
@@ -220,6 +243,16 @@ jobs:
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.linux-cross-compile == 'true'
+
+  build-alpine-linux-x64:
+    name: alpine-linux-x64
+    needs: select
+    uses: ./.github/workflows/build-alpine-linux.yml
+    with:
+      platform: alpine-linux-x64
+      configure-arguments: ${{ github.event.inputs.configure-arguments }}
+      make-arguments: ${{ github.event.inputs.make-arguments }}
+    if: needs.select.outputs.alpine-linux-x64 == 'true'
 
   build-macos-x64:
     name: macos-x64
@@ -344,6 +377,7 @@ jobs:
       - build-linux-x64-hs-minimal
       - build-linux-x64-hs-optimized
       - build-linux-cross-compile
+      - build-alpine-linux-x64
       - build-macos-x64
       - build-macos-aarch64
       - build-windows-x64
