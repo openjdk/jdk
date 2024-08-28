@@ -132,7 +132,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte array is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output key material
+         *     the length of the output keying material (must be greater than 0)
+         *
+         * @implNote HKDF implementations will enforce that the length is less
+         * than 255 * HMAC length.
          *
          * @return an {@code ExtractThenExpand}
          *
@@ -146,21 +149,21 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Adds input key material to the builder.
+         * Adds input keying material to the builder.
          * <p>
-         * {@code addIKM} may be called when the input key material value is to
+         * {@code addIKM} may be called when the input keying material value is to
          * be assembled piece-meal or if part of the IKM is to be supplied by a
          * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
-         * <p>
-         * An implementation should concatenate the input key materials into a
-         * single value once all components are available.
+         *
+         * @implNote An implementation should concatenate the input keying
+         * materials into a single value once all components are available.
          *
          * @param ikm
-         *     the input key material value
+         *     the input keying material value
          *
          * @return this builder
          *
@@ -174,21 +177,21 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Adds input key material to the builder.
+         * Adds input keying material to the builder.
          * <p>
-         * {@code addIKM} may be called when the input key material value is to
+         * {@code addIKM} may be called when the input keying material value is to
          * be assembled piece-meal or if part of the IKM is to be supplied by a
          * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
          * <p>
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
-         * <p>
-         * An implementation should concatenate the input key materials into a
-         * single value once all components are available.
+         *
+         * @implNote An implementation should concatenate the input keying
+         * materials into a single value once all components are available.
          *
          * @param ikm
-         *     the input key material value
+         *     the input keying material value
          *
          * @return this builder
          *
@@ -211,9 +214,9 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * piece-meal or if part of the salt is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
-         * <p>
-         * An implementation should concatenate the salt into a single value
-         * once all components are available.
+         *
+         * @implNote An HKDF implementation should concatenate the salt into a
+         * single value once all components are available.
          *
          * @param salt
          *     the salt value
@@ -236,9 +239,9 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * piece-meal or if part of the salt is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
-         * <p>
-         * An implementation should concatenate the salt into a single value
-         * once all components are available.
+         *
+         * @implNote An HKDF implementation should concatenate the salt into a
+         * single value once all components are available.
          *
          * @param salt
          *     the salt value
@@ -262,14 +265,14 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Returns a builder for building {@code Extract} and
      * {@code ExtractThenExpand} objects.
      *
-     * @return a {@code Builder} to mutate
+     * @return a new {@code Builder}
      */
     static Builder ofExtract() {
         return new Builder().createBuilder();
     }
 
     /**
-     * Creates an {@code Expand} object
+     * Creates an {@code Expand} object.
      *
      * @param prk
      *     the pseudorandom key; must not be {@code null}
@@ -278,8 +281,10 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      *     {@code null}); the byte array is copied to prevent subsequent
      *     modification
      * @param length
-     *     the length of the output key material (must be greater than 0 and
-     *     less than 255 * HMAC length)
+     *     the length of the output keying material (must be greater than 0)
+     *
+     * @implNote HKDF implementations will enforce that the length is less than
+     * 255 * HMAC length.
      *
      * @return a new {@code Expand} object
      *
@@ -312,11 +317,11 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of input key material values in
-         * the order they were added. Returns an empty list if there are no
-         * input key material values.
+         * Returns an unmodifiable {@code List} of input keying material values
+         * in the order they were added. Returns an empty list if there are no
+         * input keying material values.
          *
-         * @return the unmodifiable {@code List} of input key material values
+         * @return the unmodifiable {@code List} of input keying material values
          */
         public List<SecretKey> ikms() {
             return ikms;
@@ -357,7 +362,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output key material (must be > 0 and < 255 *
+         *     the length of the output keying material (must be > 0 and < 255 *
          *     HMAC length)
          *
          * @throws IllegalArgumentException
@@ -393,9 +398,9 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Returns the length of the output key material.
+         * Returns the length of the output keying material.
          *
-         * @return the length of the output key material
+         * @return the length of the output keying material
          */
         public int length() {
             return length;
@@ -423,7 +428,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output key material (must be > 0 and < 255 *
+         *     the length of the output keying material (must be > 0 and < 255 *
          *     HMAC length)
          *
          * @throws IllegalArgumentException
@@ -439,11 +444,11 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Returns an unmodifiable {@code List} of input key material values in
-         * the order they were added. Returns an empty list if there are no
-         * input key material values.
+         * Returns an unmodifiable {@code List} of input keying material values
+         * in the order they were added. Returns an empty list if there are no
+         * input keying material values.
          *
-         * @return the unmodifiable {@code List} of input key material values
+         * @return the unmodifiable {@code List} of input keying material values
          */
         public List<SecretKey> ikms() {
             return ext.ikms();
@@ -470,9 +475,9 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         }
 
         /**
-         * Returns the length of the output key material.
+         * Returns the length of the output keying material.
          *
-         * @return the length of the output key material
+         * @return the length of the output keying material
          */
         public int length() {
             return exp.length();

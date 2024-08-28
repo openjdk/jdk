@@ -25,7 +25,7 @@
  * @test
  * @bug 8331008
  * @library /test/lib
- * @run testng Threading
+ * @run testng KDFDelayedProviderSyncTest
  * @summary multi-threading test for KDF
  * @enablePreview
  */
@@ -42,7 +42,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.HexFormat;
 
-public class Threading {
+public class KDFDelayedProviderSyncTest {
     KDF kdfUnderTest;
     byte[] ikm = new BigInteger("0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                                 16).toByteArray();
@@ -61,9 +61,13 @@ public class Threading {
     }
 
     @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 30)
-    public void testDeriveKey() throws InvalidAlgorithmParameterException {
+    public void testDerive()
+        throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         SecretKey result = kdfUnderTest.deriveKey("AES", kdfParameterSpec);
         assert (HexFormat.of().formatHex(result.getEncoded()).equals(
             expectedResult));
+
+        byte[] resultData = kdfUnderTest.deriveData(kdfParameterSpec);
+        assert (HexFormat.of().formatHex(resultData).equals(expectedResult));
     }
 }

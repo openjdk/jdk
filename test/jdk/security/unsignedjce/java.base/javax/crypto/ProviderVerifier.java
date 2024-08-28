@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,19 @@
 
 package javax.crypto;
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.jar.*;
+import java.io.IOException;
+import java.net.URL;
+import java.security.Provider;
 
 /**
- * This class verifies Provider/Policy resources found at a URL
- * (currently only JAR files and any supporting JAR files), and
- * determines whether they may be used in this implementation.
+ * This class is included here to enable testing of Delayed Provider Selection
+ * by certain KDF tests. It only stubs out the necessary methods.
  *
- * The JCE in OpenJDK has an open cryptographic interface, meaning it
- * does not restrict which providers can be used.  Compliance with
- * United States export controls and with local law governing the
- * import/export of products incorporating the JCE in the OpenJDK is
- * the responsibility of the licensee.
- *
- * @since 1.7
+ * @since 24
  */
 final class ProviderVerifier {
 
-    // The URL for the JAR file we want to verify.
-    private final URL jarURL;
-    private final boolean savePerms;
-    private CryptoPermissions appPerms = null;
+    private final CryptoPermissions appPerms = null;
 
     /**
      * Creates a {@code ProviderVerifier} object to verify the given URL.
@@ -70,77 +59,13 @@ final class ProviderVerifier {
      *          exemption mechanism
      */
     ProviderVerifier(URL jarURL, Provider provider, boolean savePerms) {
-        this.jarURL = jarURL;
-        this.savePerms = savePerms;
+        // The URL for the JAR file we want to verify.
     }
 
     /**
-     * Verify the JAR file is signed by an entity which has a certificate
-     * issued by a trusted CA.
-     *
-     * In OpenJDK, we just need to examine the "cryptoperms" file to see
-     * if any permissions were bundled together with this jar file.
+     * Only a stub is needed for the Delayed Provider Selection test.
      */
-    void verify() throws IOException {
-
-        // Short-circuit.  If we weren't asked to save any, we're done.
-        if (!savePerms) {
-            return;
-        }
-
-        // If the protocol of jarURL isn't "jar", we should
-        // construct a JAR URL so we can open a JarURLConnection
-        // for verifying this provider.
-        @SuppressWarnings("deprecation")
-        final URL url = jarURL.getProtocol().equalsIgnoreCase("jar")?
-                        jarURL : new URL("jar:" + jarURL + "!/");
-
-        JarFile jf = null;
-        try {
-
-            // Get a link to the Jarfile to search.
-            try {
-                @SuppressWarnings("removal")
-                var tmp = AccessController.doPrivileged(
-                        (PrivilegedExceptionAction<JarFile>) () -> {
-                            JarURLConnection conn =
-                                (JarURLConnection) url.openConnection();
-                            // You could do some caching here as
-                            // an optimization.
-                            conn.setUseCaches(false);
-                            return conn.getJarFile();
-                        });
-                jf = tmp;
-            } catch (java.security.PrivilegedActionException pae) {
-                throw new SecurityException("Cannot load " + url,
-                    pae.getCause());
-            }
-
-            if (jf != null) {
-                JarEntry je = jf.getJarEntry("cryptoPerms");
-                if (je == null) {
-                    throw new JarException(
-                        "Can not find cryptoPerms");
-                }
-                try {
-                    appPerms = new CryptoPermissions();
-                    appPerms.load(jf.getInputStream(je));
-                } catch (Exception ex) {
-                    JarException jex =
-                        new JarException("Cannot load/parse" + jarURL);
-                    jex.initCause(ex);
-                    throw jex;
-                }
-            }
-        } finally {
-            // Only call close() when caching is not enabled.
-            // Otherwise, exceptions will be thrown for all
-            // subsequent accesses of this cached jar.
-            if (jf != null) {
-                jf.close();
-            }
-        }
-    }
+    void verify() throws IOException { return; }
 
     /**
      * Verify that the provided certs include the
@@ -165,7 +90,7 @@ final class ProviderVerifier {
     /**
      * Returns the permissions which are bundled with the JAR file,
      * aka the "cryptoperms" file.
-     *
+     * <p>
      * NOTE: if this {@code ProviderVerifier} instance is constructed
      * with "savePerms" equal to {@code false}, then this method would always
      * return {@code null}.

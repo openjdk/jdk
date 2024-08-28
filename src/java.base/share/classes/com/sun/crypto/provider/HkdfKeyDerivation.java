@@ -100,11 +100,11 @@ abstract class HkdfKeyDerivation extends KDFSpi {
 
         if (alg == null) {
             throw new NullPointerException(
-                "the algorithm for the SecretKey return value should not be null");
+                "the algorithm for the SecretKey return value must not be null");
         }
         if (alg.isEmpty()) {
             throw new NoSuchAlgorithmException(
-                "the algorithm for the SecretKey return value should not be "
+                "the algorithm for the SecretKey return value must not be "
                 + "empty");
         }
 
@@ -121,7 +121,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the information contained within the {@code KDFParameterSpec} is
      *     invalid or incorrect for the type of key to be derived
      * @throws UnsupportedOperationException
-     *     if the derived key material is not extractable
+     *     if the derived keying material is not extractable
      */
     @Override
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationParameterSpec)
@@ -158,9 +158,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return hkdfExtract(inputKeyMaterial,
                                    (salt == null) ? null : salt.getEncoded());
             } catch (InvalidKeyException ike) {
-                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
+                throw new InvalidAlgorithmParameterException(
                     "an HKDF Extract could not be initialized with the given "
-                    + "key or salt material").initCause(ike);
+                    + "key or salt material", ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it is unlikely.
@@ -191,9 +191,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
+                throw new InvalidAlgorithmParameterException(
                     "an HKDF Expand could not be initialized with the given "
-                    + "key material").initCause(ike);
+                    + "keying material", ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it is unlikely.
@@ -235,9 +235,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
                                      length);
             } catch (InvalidKeyException ike) {
-                throw (InvalidAlgorithmParameterException) new InvalidAlgorithmParameterException(
+                throw new InvalidAlgorithmParameterException(
                     "an HKDF ExtractThenExpand could not be initialized with "
-                    + "the given key or salt material").initCause(ike);
+                    + "the given key or salt material", ike);
             } catch (NoSuchAlgorithmException nsae) {
                 // This is bubbling up from the getInstance of the Mac/Hmac.
                 // Since we're defining these values internally, it is unlikely.
@@ -280,8 +280,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      * @param inputKeyMaterial
      *     the input keying material used for the HKDF-Extract operation.
      * @param salt
-     *     the salt value used for HKDF-Extract; {@code null} if no salt is
-     *     to be used.
+     *     the salt value used for HKDF-Extract; {@code null} if no salt value
+     *     is provided.
      *
      * @return a byte array containing the pseudorandom key (PRK)
      *

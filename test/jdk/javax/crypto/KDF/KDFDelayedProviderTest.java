@@ -26,7 +26,7 @@
  * @bug 8331008
  * @library /test/lib /test/jdk/security/unsignedjce
  * @build java.base/javax.crypto.ProviderVerifier
- * @run main Delayed
+ * @run main KDFDelayedProviderTest
  * @summary delayed provider selection
  * @enablePreview
  */
@@ -43,7 +43,7 @@ import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Objects;
 
-public class Delayed {
+public class KDFDelayedProviderTest {
     public static void main(String[] args) throws Exception {
         Security.addProvider(new Provider1());
         Security.addProvider(new Provider2());

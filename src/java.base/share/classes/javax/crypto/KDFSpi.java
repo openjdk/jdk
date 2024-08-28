@@ -49,11 +49,12 @@ import java.security.spec.AlgorithmParameterSpec;
  * Implementations which do not support {@code KDFParameters} may require
  * {@code null} to be passed, otherwise an {@code InvalidAlgorithmParameterException}
  * may be thrown. On the other hand, implementations which require
- * {@code KDFParameters} may throw an {@code InvalidAlgorithmParameterException}
+ * {@code KDFParameters} should throw an {@code InvalidAlgorithmParameterException}
  * upon receiving a {@code null} value. Furthermore, implementations
  * may supply default values for {@code KDFParameters}, mutating the
- * object. In that case, {@link KDFSpi#engineGetParameters()} would supply
- * callers with the actual {@code KDFParameters} object used.
+ * object or returning a new object. In that case,
+ * {@link KDFSpi#engineGetParameters()} should supply callers with the actual
+ * {@code KDFParameters} object used.
  *
  * @see KDF
  * @see KDFParameters
@@ -102,7 +103,7 @@ public abstract class KDFSpi {
      * Derives a key, returned as a {@code SecretKey}.
      * <p>
      * The {@code engineDeriveKey} method may be called multiple times on a particular
-     * {@code KDFSpi} instance.
+     * {@code KDFSpi} instance, but it is not considered thread-safe.
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
@@ -130,7 +131,7 @@ public abstract class KDFSpi {
      * Obtains raw data from a key derivation function.
      * <p>
      * The {@code engineDeriveData} method may be called multiple times on a
-     * particular {@code KDFSpi} instance.
+     * particular {@code KDFSpi} instance, but it is not considered thread-safe.
      *
      * @param derivationParameterSpec
      *     derivation parameters
@@ -142,7 +143,7 @@ public abstract class KDFSpi {
      *     if the information contained within the {@code derivationParameterSpec} is
      *     invalid
      * @throws UnsupportedOperationException
-     *     if the derived key material is not extractable
+     *     if the derived keying material is not extractable
      * @throws NullPointerException
      *     if {@code derivationParameterSpec} is null
      */
