@@ -30,7 +30,7 @@
 #include "nmt/memflags.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 class outputStream;
 class CachedNMTInformation;

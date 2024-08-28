@@ -981,7 +981,7 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#ifdef LINUX
+#if defined(LINUX) || defined(_WIN64)
 
 class SystemMapDCmd : public DCmd {
 public:
@@ -1017,6 +1017,6 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
-#endif // LINUX
+#endif // LINUX or WINDOWS
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP
