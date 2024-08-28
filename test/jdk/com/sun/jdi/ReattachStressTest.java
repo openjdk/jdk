@@ -109,12 +109,12 @@ public class ReattachStressTest {
             while (is.available() > 0) {
                 is.read();
             }
-            
+
             // We've attached. Do some things that will send JDWP commands.
             System.out.println("Attached!");
             System.out.println("JVM name: " + vm.name());
             System.out.println("Num threads: " + vm.allThreads().size());
-            
+
             // We're all done with this debugger connection.
             vm.dispose();
 
