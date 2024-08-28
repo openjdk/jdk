@@ -796,7 +796,7 @@ public final class DirectCodeBuilder
     @Override
     public CodeBuilder invoke(Opcode opcode, MemberRefEntry ref) {
         if (opcode == Opcode.INVOKEINTERFACE) {
-            int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.nameAndType()));
+            int slots = Util.parameterSlots(Util.methodTypeSymbol(ref.nameAndType())) + 1;
             writeInvokeInterface(opcode, (InterfaceMethodRefEntry) ref, slots);
         } else {
             writeInvokeNormal(opcode, ref);
@@ -1212,7 +1212,7 @@ public final class DirectCodeBuilder
 
     @Override
     public CodeBuilder invokeinterface(InterfaceMethodRefEntry ref) {
-        writeInvokeInterface(INVOKEINTERFACE, ref, Util.parameterSlots(ref.typeSymbol()));
+        writeInvokeInterface(INVOKEINTERFACE, ref, Util.parameterSlots(ref.typeSymbol()) + 1);
         return this;
     }
 
