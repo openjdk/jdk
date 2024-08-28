@@ -1906,7 +1906,7 @@ void JavaThread::trace_frames() {
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
     tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty, this);
+    fst.current()->print_value_on(tty);
     tty->cr();
   }
 }
