@@ -195,7 +195,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label ok;
-    __ cmpd(CCR0, R19_method, 0);
+    __ cmpdi(CCR0, R19_method, 0);
     __ bne(CCR0, ok);
     __ stop("method is null");
     __ bind(ok);

@@ -74,7 +74,7 @@ final class Platform {
     /**
      * Load the native library or libraries.
      */
-    @SuppressWarnings("removal")
+    @SuppressWarnings({"removal", "restricted"})
     private static void loadLibraries() {
         // load the native library
         isNativeLibLoaded = true;
