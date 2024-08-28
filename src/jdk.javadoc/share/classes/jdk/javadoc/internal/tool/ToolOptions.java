@@ -678,7 +678,7 @@ public class ToolOptions {
 
         /**
          * Show command-line help for the extended options, as requested by
-         * the {@code --help-extended} option and its aliases.
+         * the {@code --help-extra} option and its aliases.
          */
         void Xusage();
 
