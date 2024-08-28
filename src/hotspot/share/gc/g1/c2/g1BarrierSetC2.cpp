@@ -447,10 +447,11 @@ G1PostBarrierStubC2* G1PostBarrierStubC2::create(const MachNode* node) {
   return stub;
 }
 
-void G1PostBarrierStubC2::initialize_registers(Register thread, Register tmp1, Register tmp2) {
+void G1PostBarrierStubC2::initialize_registers(Register thread, Register tmp1, Register tmp2, Register tmp3) {
   _thread = thread;
   _tmp1 = tmp1;
   _tmp2 = tmp2;
+  _tmp3 = tmp3;
 }
 
 Register G1PostBarrierStubC2::thread() const {
@@ -463,6 +464,10 @@ Register G1PostBarrierStubC2::tmp1() const {
 
 Register G1PostBarrierStubC2::tmp2() const {
   return _tmp2;
+}
+
+Register G1PostBarrierStubC2::tmp3() const {
+  return _tmp3;
 }
 
 void G1PostBarrierStubC2::emit_code(MacroAssembler& masm) {

@@ -214,6 +214,12 @@ OptoReg::Name BarrierSetAssembler::refine_register(const Node* node, OptoReg::Na
     return OptoReg::Bad;
   }
 
+  const VMReg vm_reg = OptoReg::as_VMReg(opto_reg);
+  if (!vm_reg->is_valid()){
+    // skip APSR and FPSCR
+    return OptoReg::Bad;
+  }
+
   return opto_reg;
 }
 
@@ -233,7 +239,6 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
       }
     }
   }
-
   // Remove C-ABI SOE registers that will be updated
   gp_regs -= RegSet::range(R4, R11) + RegSet::of(R13, R15);
 

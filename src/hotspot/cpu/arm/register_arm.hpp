@@ -307,6 +307,13 @@ typedef AbstractRegSet<Register> RegSet;
 typedef AbstractRegSet<FloatRegister> FloatRegSet;
 
 template <>
+inline Register AbstractRegSet<Register>::first() {
+  if (_bitset == 0) { return noreg; }
+  return as_Register(count_trailing_zeros(_bitset));
+}
+
+
+template <>
 inline FloatRegister AbstractRegSet<FloatRegister>::first() {
   uint32_t first = _bitset & -_bitset;
   return first ? as_FloatRegister(exact_log2(first)) : fnoreg;

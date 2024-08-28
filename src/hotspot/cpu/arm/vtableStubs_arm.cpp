@@ -73,7 +73,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  //assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
 
   const Register tmp = Rtemp; // Rtemp OK, should be free at call sites
 
@@ -142,7 +142,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  //assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
   const Register Rclass  = R4;

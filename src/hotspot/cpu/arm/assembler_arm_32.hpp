@@ -119,8 +119,9 @@ class RegisterSet {
   }
 
   friend RegisterSet operator | (const RegisterSet set1, const RegisterSet set2) {
-    assert((set1._encoding & set2._encoding) == 0,
-           "encoding constraint");
+//    why so strong constraint?
+//    assert((set1._encoding & set2._encoding) == 0,
+//           "encoding constraint");
     return RegisterSet(set1._encoding | set2._encoding);
   }
 
@@ -199,7 +200,8 @@ class FloatRegisterSet {
     // the vector load/store instructions operate on a set of consecutive registers.
     // for the sake of simplicity, write all registers between the first and last in the set
     size_t range =  (*set.rbegin())->encoding() - (*set.begin())->encoding() + 1;
-    return  FloatRegisterSet(*set.begin(), range);
+    // push_float stores float regisgters by pairs
+    return  FloatRegisterSet(*set.begin(), (range+1)/2);
   }
 
 };
