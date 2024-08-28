@@ -2321,7 +2321,7 @@ void TemplateTable::_return(TosState state) {
     assert(state == vtos, "only valid state");
     __ z_lg(Rthis, aaddress(0));
     __ load_klass(Rklass, Rthis);
-    __ z_lb(Rklass, Address(Rklass, Klass::misc_flags_offset());
+    __ z_lb(Rklass, Address(Rklass, Klass::misc_flags_offset()));
     __ testbit(Rklass, exact_log2(KlassFlags::_misc_has_finalizer));
     __ z_bfalse(skip_register_finalizer);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::register_finalizer), Rthis);
