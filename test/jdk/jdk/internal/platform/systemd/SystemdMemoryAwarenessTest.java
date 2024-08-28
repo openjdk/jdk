@@ -34,10 +34,13 @@
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.containers.systemd.SystemdRunOptions;
 import jdk.test.lib.containers.systemd.SystemdTestUtils;
 import jdk.test.lib.containers.systemd.SystemdTestUtils.ResultFiles;
 import jdk.test.whitebox.WhiteBox;
+
+import jtreg.SkippedException;
 
 
 public class SystemdMemoryAwarenessTest {
@@ -47,6 +50,9 @@ public class SystemdMemoryAwarenessTest {
     private static final int GB = 1024 * 1024 * 1024;
 
     public static void main(String[] args) throws Exception {
+        if (!Platform.isRoot()) {
+            throw new SkippedException("Test requires to be run as root");
+        }
         testSystemSettings();
     }
 
