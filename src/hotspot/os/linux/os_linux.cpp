@@ -4829,7 +4829,9 @@ static int get_active_processor_count() {
   return cpu_count;
 }
 
-int os::Linux::active_processor_count() {
+// Return the active CPUs irrespective of the system being containerized
+// or not. Thus, this returns the host active cpus in a container.
+int os::pd_physical_active_processor_count() {
   return get_active_processor_count();
 }
 
@@ -4861,7 +4863,7 @@ int os::active_processor_count() {
     log_trace(os)("active_processor_count: determined by OSContainer: %d",
                    active_cpus);
   } else {
-    active_cpus = os::Linux::active_processor_count();
+    active_cpus = os::pd_physical_active_processor_count();
   }
 
   return active_cpus;

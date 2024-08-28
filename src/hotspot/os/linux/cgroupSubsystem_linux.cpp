@@ -575,7 +575,7 @@ int CgroupSubsystem::active_processor_count() {
     return val;
   }
 
-  cpu_count = os::Linux::active_processor_count();
+  cpu_count = os::physical_active_processor_count();
   result = CgroupUtil::processor_count(contrl->controller(), cpu_count);
   // Update cached metric to avoid re-reading container settings too often
   cpu_limit->set_value(result, OSCONTAINER_CACHE_TIMEOUT);

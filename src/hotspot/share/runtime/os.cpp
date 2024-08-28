@@ -80,6 +80,7 @@
 
 #ifdef LINUX
 #include "osContainer_linux.hpp"
+#include "os_linux.hpp"
 #endif
 
 #ifndef _WINDOWS
@@ -1858,6 +1859,14 @@ void os::initialize_initial_active_processor_count() {
   assert(_initial_active_processor_count == 0, "Initial active processor count already set.");
   _initial_active_processor_count = active_processor_count();
   log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
+}
+
+int os::physical_active_processor_count() {
+#ifdef LINUX
+  return os::pd_physical_active_processor_count();
+#else
+  return os::active_processor_count();
+#endif
 }
 
 bool os::create_stack_guard_pages(char* addr, size_t bytes) {

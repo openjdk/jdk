@@ -84,7 +84,7 @@ void OSContainer::init() {
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
     any_mem_cpu_limit_present = cgroup_subsystem->memory_limit_in_bytes() > 0 ||
-                                     os::Linux::active_processor_count() != cgroup_subsystem->active_processor_count();
+                                     os::physical_active_processor_count() != cgroup_subsystem->active_processor_count();
     if (any_mem_cpu_limit_present) {
       reason = " because either a cpu or a memory limit is present";
     } else {
