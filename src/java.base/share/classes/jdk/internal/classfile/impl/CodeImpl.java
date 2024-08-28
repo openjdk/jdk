@@ -147,12 +147,7 @@ public final class CodeImpl
         }
         else {
             DirectCodeBuilder.build((MethodInfo) enclosingMethod,
-                                    new Consumer<CodeBuilder>() {
-                                        @Override
-                                        public void accept(CodeBuilder cb) {
-                                            forEach(cb);
-                                        }
-                                    },
+                                    Util.writingAll(this),
                                     (SplitConstantPool)buf.constantPool(),
                                     buf.context(),
                                     null).writeTo(buf);

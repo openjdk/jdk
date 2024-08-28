@@ -165,7 +165,7 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(Utf8Entry name,
                                    Utf8Entry descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, Util.buildingFlags(flags));
     }
 
     /**
@@ -194,7 +194,7 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    int flags) {
-        return withField(name, descriptor, fb -> fb.withFlags(flags));
+        return withField(name, descriptor, Util.buildingFlags(flags));
     }
 
     /**
@@ -241,7 +241,7 @@ public sealed interface ClassBuilder
                                         Utf8Entry descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethod(name, descriptor, methodFlags, mb -> mb.withCode(handler));
+        return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 
     /**
@@ -276,7 +276,7 @@ public sealed interface ClassBuilder
                                         MethodTypeDesc descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
-        return withMethod(name, descriptor, methodFlags, mb -> mb.withCode(handler));
+        return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 
     /**
