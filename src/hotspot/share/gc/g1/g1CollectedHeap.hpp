@@ -559,7 +559,7 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void resize_heap_if_necessary();
+  void resize_heap_if_necessary(bool record_expand_time);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
@@ -724,6 +724,11 @@ private:
   // (Rounds down to a G1HeapRegion boundary.)
   void shrink(size_t shrink_bytes);
   void shrink_helper(size_t expand_bytes);
+
+  // Helper functions for `resize_heap_if_necessary()`, depending on whether
+  // Adaptable Heap Sizing is active or not.
+  void resize_heap_if_necessary_non_ahs();
+  void resize_heap_if_necessary_ahs(bool record_expand_time);
 
   // Schedule the VM operation that will do an evacuation pause to
   // satisfy an allocation request of word_size. *succeeded will

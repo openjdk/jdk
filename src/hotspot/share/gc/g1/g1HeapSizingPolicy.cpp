@@ -51,6 +51,23 @@ void G1HeapSizingPolicy::clear_ratio_check_data() {
   _pauses_since_start = 0;
 }
 
+// Computes the appropriate amount to expand or shrink by given the
+// SoftMaxHeapSize value passed from the AHS thread. Does not try to limit the
+// size of expansions or shrinks - this is handled internally from
+// the expand() and shrink() functions, respectively (in g1CollectedHeap).
+// expand() will prevent expansions that will exceed the container limit, and
+// shrink() will make a best attempt to shrink as much as possible. In the case
+// that a shrink() does not succeed for the full amount, there are plans to
+// experiment with issuing a full GC to achieve the shrink target (b/210396819).
+int64_t G1HeapSizingPolicy::resize_amount_ahs() {
+  assert(
+      SoftMaxHeapSize > 0,
+      "Unexpected call to resize_amount_ahs() when SoftMaxHeapSize not set!");
+
+  const int64_t bytes_to_change = SoftMaxHeapSize - _g1h->capacity();
+  return bytes_to_change;
+}
+
 double G1HeapSizingPolicy::scale_with_heap(double pause_time_threshold) {
   double threshold = pause_time_threshold;
   // If the heap is at less than half its maximum size, scale the threshold down,

@@ -36,6 +36,7 @@ class outputStream;
 #define LOG_TAG_LIST \
   LOG_TAG(add) \
   LOG_TAG(age) \
+  LOG_TAG(ahs) /* Logging for debugging Adaptable Heap Sizing */ \
   LOG_TAG(alloc) \
   LOG_TAG(annotation) \
   LOG_TAG(arguments) \
