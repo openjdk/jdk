@@ -50,6 +50,10 @@ public class BytecodeHelpers {
     private BytecodeHelpers() {
     }
 
+    public static IllegalArgumentException cannotConvertException(TypeKind from, TypeKind to) {
+        return new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+    }
+
     public static Opcode loadOpcode(TypeKind tk, int slot) {
         return switch (tk) {
             case INT, SHORT, BYTE, CHAR, BOOLEAN -> switch (slot) {
@@ -203,30 +207,30 @@ public class BytecodeHelpers {
                         case BYTE -> Opcode.I2B;
                         case CHAR -> Opcode.I2C;
                         case SHORT -> Opcode.I2S;
-                        default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+                        default -> throw cannotConvertException(from, to);
                     };
             case LONG ->
                     switch (to) {
                         case FLOAT -> Opcode.L2F;
                         case DOUBLE -> Opcode.L2D;
                         case INT -> Opcode.L2I;
-                        default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+                        default -> throw cannotConvertException(from, to);
                     };
             case DOUBLE ->
                     switch (to) {
                         case FLOAT -> Opcode.D2F;
                         case LONG -> Opcode.D2L;
                         case INT -> Opcode.D2I;
-                        default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+                        default -> throw cannotConvertException(from, to);
                     };
             case FLOAT ->
                     switch (to) {
                         case LONG -> Opcode.F2L;
                         case DOUBLE -> Opcode.F2D;
                         case INT -> Opcode.F2I;
-                        default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+                        default -> throw cannotConvertException(from, to);
                     };
-            default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+            default -> throw cannotConvertException(from, to);
         };
     }
 

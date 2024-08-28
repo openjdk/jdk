@@ -550,66 +550,58 @@ public sealed interface CodeBuilder
      * @param fromType the source type
      * @param toType the target type
      * @return this builder
-     * @throws IllegalArgumentException for conversions of {@code VoidType} or {@code ReferenceType}
+     * @throws IllegalArgumentException for conversions of {@link TypeKind#VOID void} or
+     *         {@link TypeKind#REFERENCE reference}
      * @since 23
      */
     default CodeBuilder conversion(TypeKind fromType, TypeKind toType) {
-        return switch (fromType) {
-            case INT, BYTE, CHAR, SHORT, BOOLEAN ->
-                    switch (toType) {
-                        case INT -> this;
-                        case LONG -> i2l();
-                        case DOUBLE -> i2d();
-                        case FLOAT -> i2f();
-                        case BYTE -> i2b();
-                        case CHAR -> i2c();
-                        case SHORT -> i2s();
-                        case BOOLEAN -> iconst_1().iand();
-                        case VOID, REFERENCE ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case LONG ->
-                    switch (toType) {
-                        case INT -> l2i();
-                        case LONG -> this;
-                        case DOUBLE -> l2d();
-                        case FLOAT -> l2f();
-                        case BYTE -> l2i().i2b();
-                        case CHAR -> l2i().i2c();
-                        case SHORT -> l2i().i2s();
-                        case BOOLEAN -> l2i().iconst_1().iand();
-                        case VOID, REFERENCE ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case DOUBLE ->
-                    switch (toType) {
-                        case INT -> d2i();
-                        case LONG -> d2l();
-                        case DOUBLE -> this;
-                        case FLOAT -> d2f();
-                        case BYTE -> d2i().i2b();
-                        case CHAR -> d2i().i2c();
-                        case SHORT -> d2i().i2s();
-                        case BOOLEAN -> d2i().iconst_1().iand();
-                        case VOID, REFERENCE ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case FLOAT ->
-                    switch (toType) {
-                        case INT -> f2i();
-                        case LONG -> f2l();
-                        case DOUBLE -> f2d();
-                        case FLOAT -> this;
-                        case BYTE -> f2i().i2b();
-                        case CHAR -> f2i().i2c();
-                        case SHORT -> f2i().i2s();
-                        case BOOLEAN -> f2i().iconst_1().iand();
-                        case VOID, REFERENCE ->
-                            throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-                    };
-            case VOID, REFERENCE ->
-                throw new IllegalArgumentException(String.format("convert %s -> %s", fromType, toType));
-        };
+        var computationalFrom = fromType.asLoadable();
+        var computationalTo = toType.asLoadable();
+        if (computationalFrom != computationalTo) {
+            switch (computationalTo) {
+                case INT -> {
+                    switch (computationalFrom) {
+                        case FLOAT -> f2i();
+                        case LONG -> l2i();
+                        case DOUBLE -> d2i();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case FLOAT -> {
+                    switch (computationalFrom) {
+                        case INT -> i2f();
+                        case LONG -> l2f();
+                        case DOUBLE -> d2f();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case LONG -> {
+                    switch (computationalFrom) {
+                        case INT -> i2l();
+                        case FLOAT -> f2l();
+                        case DOUBLE -> d2l();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+                case DOUBLE -> {
+                    switch (computationalFrom) {
+                        case INT -> i2d();
+                        case FLOAT -> f2d();
+                        case LONG -> l2d();
+                        default -> throw BytecodeHelpers.cannotConvertException(fromType, toType);
+                    }
+                }
+            }
+        }
+        if (computationalTo == TypeKind.INT && toType != TypeKind.INT) {
+            switch (toType) {
+                case BOOLEAN -> iconst_1().iand();
+                case BYTE -> i2b();
+                case CHAR -> i2c();
+                case SHORT -> i2s();
+            }
+        }
+        return this;
     }
 
     /**

@@ -194,7 +194,7 @@ public enum Opcode {
     /** Load reference from array */
     AALOAD(ClassFile.AALOAD, 1, Kind.ARRAY_LOAD, TypeKind.REFERENCE),
 
-    /** Load byte from array */
+    /** Load byte or boolean from array */
     BALOAD(ClassFile.BALOAD, 1, Kind.ARRAY_LOAD, TypeKind.BYTE),
 
     /** Load char from array */
@@ -293,7 +293,7 @@ public enum Opcode {
     /** Store into reference array */
     AASTORE(ClassFile.AASTORE, 1, Kind.ARRAY_STORE, TypeKind.REFERENCE),
 
-    /** Store into byte array */
+    /** Store into byte or boolean array */
     BASTORE(ClassFile.BASTORE, 1, Kind.ARRAY_STORE, TypeKind.BYTE),
 
     /** Store into char array */

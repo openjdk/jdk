@@ -26,8 +26,11 @@
 package java.lang.classfile;
 
 import java.lang.classfile.instruction.DiscontinuedInstruction;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
 import java.lang.invoke.TypeDescriptor;
 import jdk.internal.javac.PreviewFeature;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Describes the data types Java Virtual Machine operates on.
@@ -54,40 +57,9 @@ import jdk.internal.javac.PreviewFeature;
  */
 @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
 public enum TypeKind {
-    /**
-     * The primitive type {@code byte}. Its {@linkplain ##computational-type
-     * computational type} is {@link #INT int}. It is sign-extended to an
-     * {@code int} when loaded onto the operand stack and truncated when
-     * stored.
-     */
-    BYTE("byte", "B", 8),
-    /**
-     * The primitive type {@code short}. Its {@linkplain ##computational-type
-     * computational type} is {@link #INT int}. It is sign-extended to an
-     * {@code int} when loaded onto the operand stack and truncated when
-     * stored.
-     */
-    SHORT("short", "S", 9),
-    /** The primitive type {@code int}. */
-    INT("int", "I", 10),
-    /** The primitive type {@code float}. */
-    FLOAT("float", "F", 6),
-    /** The primitive type {@code long}. It is of {@linkplain #slotSize() category} 2. */
-    LONG("long", "J", 11),
-    /** The primitive type {@code double}. It is of {@linkplain #slotSize() category} 2. */
-    DOUBLE("double", "D", 7),
-    /**
-     * A reference type.
-     * @jvms 2.4 Reference Types and Values
-     */
-    REFERENCE("reference type", "L", -1),
-    /**
-     * The primitive type {@code char}. Its {@linkplain ##computational-type
-     * computational type} is {@link #INT int}. It is zero-extended to an
-     * {@code int} when loaded onto the operand stack and truncated when
-     * stored.
-     */
-    CHAR("char", "C", 5),
+    // Elements are grouped so frequently used switch ranges such as
+    // primitives (boolean - double) and computational (int - void) are together.
+    // Begin primitive types
     /**
      * The primitive type {@code boolean}. Its {@linkplain ##computational-type
      * computational type} is {@link #INT int}. {@code 0} represents {@code false},
@@ -97,7 +69,51 @@ public enum TypeKind {
      *
      * @jvms 2.3.4 The {@code boolean} Type
      */
-    BOOLEAN("boolean", "Z", 4),
+    BOOLEAN(1, 4),
+    /**
+     * The primitive type {@code byte}. Its {@linkplain ##computational-type
+     * computational type} is {@link #INT int}. It is sign-extended to an
+     * {@code int} when loaded onto the operand stack and truncated when
+     * stored.
+     */
+    BYTE(1, 8),
+    /**
+     * The primitive type {@code char}. Its {@linkplain ##computational-type
+     * computational type} is {@link #INT int}. It is zero-extended to an
+     * {@code int} when loaded onto the operand stack and truncated when
+     * stored.
+     */
+    CHAR(1, 5),
+    /**
+     * The primitive type {@code short}. Its {@linkplain ##computational-type
+     * computational type} is {@link #INT int}. It is sign-extended to an
+     * {@code int} when loaded onto the operand stack and truncated when
+     * stored.
+     */
+    SHORT(1, 9),
+    // Begin computational types
+    /**
+     * The primitive type {@code int}.
+     */
+    INT(1, 10),
+    /**
+     * The primitive type {@code float}.
+     */
+    FLOAT(1, 6),
+    /**
+     *  The primitive type {@code long}. It is of {@linkplain #slotSize() category} 2.
+     */
+    LONG(2, 11),
+    /**
+     * The primitive type {@code double}. It is of {@linkplain #slotSize() category} 2.
+     */
+    DOUBLE(2, 7),
+    // End primitive types
+    /**
+     * A reference type.
+     * @jvms 2.4 Reference Types and Values
+     */
+    REFERENCE(1, -1),
     /**
      * The {@code void} type, for absence of a value. While this is not a data type,
      * this can be a method return type indicating no change in {@linkplain #slotSize()
@@ -105,29 +121,48 @@ public enum TypeKind {
      *
      * @jvms 4.3.3 Method Descriptors
      */
-    VOID("void", "V", -1);
+    VOID(0, -1);
+    // End computational types
 
-    private final String name;
-    private final String descriptor;
+    private @Stable ClassDesc upperBound;
+    private final int slots;
     private final int newarrayCode;
 
-    TypeKind(String name, String descriptor, int newarrayCode) {
-        this.name = name;
-        this.descriptor = descriptor;
+    TypeKind(int slots, int newarrayCode) {
+        this.slots = slots;
         this.newarrayCode = newarrayCode;
     }
 
-    /** {@return the human-readable name corresponding to this type} */
-    public String typeName() { return name; }
-
     /**
-     * {@return the field descriptor character corresponding to this type, or {@code L} for
-     * {@link #REFERENCE reference}}
+     * {@return the most specific upper bound field descriptor that can store any value
+     * of this type} This is the primitive class descriptor for primitive types and
+     * {@link #VOID void} and {@link ConstantDescs#CD_Object Object} descriptor for
+     * {@link #REFERENCE reference}.
      */
-    public String descriptor() { return descriptor; }
+    public ClassDesc upperBound() {
+        var upper = this.upperBound;
+        if (upper == null)
+            return this.upperBound = fetchUpperBound();
+        return upper;
+    }
+
+    private ClassDesc fetchUpperBound() {
+        return switch (this) {
+            case BOOLEAN -> ConstantDescs.CD_boolean;
+            case BYTE -> ConstantDescs.CD_byte;
+            case CHAR -> ConstantDescs.CD_char;
+            case SHORT -> ConstantDescs.CD_short;
+            case INT -> ConstantDescs.CD_int;
+            case FLOAT -> ConstantDescs.CD_float;
+            case LONG -> ConstantDescs.CD_long;
+            case DOUBLE -> ConstantDescs.CD_double;
+            case REFERENCE -> ConstantDescs.CD_Object;
+            case VOID -> ConstantDescs.CD_void;
+        };
+    }
 
     /**
-     * {@return the code used by the {@code newarray} instruction to create an array
+     * {@return the code used by the {@link Opcode#NEWARRAY newarray} instruction to create an array
      * of this component type, or {@code -1} if this type is not supported by {@code newarray}}
      * @since 23
      * @jvms 6.5.newarray <i>newarray</i>
@@ -139,16 +174,13 @@ public enum TypeKind {
     /**
      * {@return the number of local variable index or operand stack depth consumed by this type}
      * This is also the category of this type for instructions operating on the operand stack without
-     * regard to type (JVMS {@jvms 2.11.1}), such as {@code pop} versus {@code pop2}.
+     * regard to type (JVMS {@jvms 2.11.1}), such as {@link Opcode#POP pop} versus {@link Opcode#POP2
+     * pop2}.
      * @jvms 2.6.1 Local Variables
      * @jvms 2.6.2 Operand Stacks
      */
     public int slotSize() {
-        return switch (this) {
-            case VOID -> 0;
-            case LONG, DOUBLE -> 2;
-            default -> 1;
-        };
+        return this.slots;
     }
 
     /**
@@ -156,14 +188,12 @@ public enum TypeKind {
      * for {@code void}}
      */
     public TypeKind asLoadable() {
-        return switch (this) {
-            case BOOLEAN, BYTE, CHAR, SHORT -> TypeKind.INT;
-            default -> this;
-        };
+        return ordinal() < 4 ? INT : this;
     }
 
     /**
-     * {@return the component type described by the array code used as an operand to {@code newarray}}
+     * {@return the component type described by the array code used as an operand to {@link Opcode#NEWARRAY
+     * newarray}}
      * @param newarrayCode the operand of the {@code newarray} instruction
      * @throws IllegalArgumentException if the code is invalid
      * @since 23
