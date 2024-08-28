@@ -470,7 +470,6 @@ public:
 
   // Deallocation for RedefineClasses
   void deallocate_contents(ClassLoaderData* loader_data);
-  bool is_in_class_space() const { return false; }
   DEBUG_ONLY(bool on_stack() { return false; })
 
   void metaspace_pointers_do(MetaspaceClosure* it);
