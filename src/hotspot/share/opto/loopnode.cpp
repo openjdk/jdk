@@ -4580,19 +4580,39 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Build a loop tree on the fly.  Build a mapping from CFG nodes to
   // IdealLoopTree entries.  Data nodes are NOT walked.
-  build_loop_tree();
+  DEBUG_ONLY(_new_never_branch = false;)
+  build_loop_tree(false);
   // Check for bailout, and return
   if (C->failing()) {
     return;
   }
+#ifdef ASSERT
+  if (_new_never_branch) {
+    ResourceMark rm;
+    Node_List loop_tree;
+    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+      IdealLoopTree* lpt = iter.current();
+      loop_tree.push(lpt->_head);
+    }
+    _ltree_root->_child = nullptr;
+    _loop_or_ctrl.clear();
+    reallocate_preorders();
+    build_loop_tree(true);
+    Node_List loop_tree2;
+    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
+      IdealLoopTree* lpt = iter.current();
+      loop_tree2.push(lpt->_head);
+    }
+    assert(loop_tree.size() == loop_tree2.size(), "");
+    for (uint i = 0; i < loop_tree.size(); ++i) {
+      assert(loop_tree.at(i) == loop_tree2.at(i), "");
+    }
+  }
+#endif
 
-  // Verify that the has_loops() flag set at parse time is consistent
-  // with the just built loop tree. With infinite loops, it could be
-  // that one pass of loop opts only finds infinite loops, clears the
-  // has_loops() flag but adds NeverBranch nodes so the next loop opts
-  // verification pass finds a non empty loop tree. When the back edge
+  // Verify that the has_loops() flag set at parse time is consistent with the just built loop tree. When the back edge
   // is an exception edge, parsing doesn't set has_loops().
-  assert(_ltree_root->_child == nullptr || C->has_loops() || only_has_infinite_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
+  assert(_ltree_root->_child == nullptr || C->has_loops() || C->has_exception_backedge(), "parsing found no loops but there are some");
   // No loops after all
   if( !_ltree_root->_child && !_verify_only ) C->set_has_loops(false);
 
@@ -4629,7 +4649,7 @@ void PhaseIdealLoop::build_and_optimize() {
       _ltree_root->_child = nullptr;
       _loop_or_ctrl.clear();
       reallocate_preorders();
-      build_loop_tree();
+      build_loop_tree(false);
       // Check for bailout, and return
       if (C->failing()) {
         return;
@@ -5372,7 +5392,7 @@ IdealLoopTree *PhaseIdealLoop::sort( IdealLoopTree *loop, IdealLoopTree *innermo
 // loops.  This means I need to sort my childrens' loops by pre-order.
 // The sort is of size number-of-control-children, which generally limits
 // it to size 2 (i.e., I just choose between my 2 target loops).
-void PhaseIdealLoop::build_loop_tree() {
+void PhaseIdealLoop::build_loop_tree(bool verify) {
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   GrowableArray <Node *> bltstack(C->live_nodes() >> 1);
   Node *n = C->root();
@@ -5425,7 +5445,7 @@ void PhaseIdealLoop::build_loop_tree() {
       if ( bltstack.length() == stack_size ) {
         // There were no additional children, post visit node now
         (void)bltstack.pop(); // Remove node from stack
-        pre_order = build_loop_tree_impl( n, pre_order );
+        pre_order = build_loop_tree_impl(n, pre_order, verify);
         // Check for bailout
         if (C->failing()) {
           return;
@@ -5443,7 +5463,7 @@ void PhaseIdealLoop::build_loop_tree() {
 }
 
 //------------------------------build_loop_tree_impl---------------------------
-int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
+int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order, bool verify) {
   // ---- Post-pass Work ----
   // Pre-walked but not post-walked nodes need a pre_order number.
 
@@ -5454,24 +5474,24 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
   // for it.  Then find the tightest enclosing loop for the self Node.
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* m = n->fast_out(i);   // Child
-    if( n == m ) continue;      // Ignore control self-cycles
-    if( !m->is_CFG() ) continue;// Ignore non-CFG edges
+    if (n == m) continue;      // Ignore control self-cycles
+    if (!m->is_CFG()) continue;// Ignore non-CFG edges
 
     IdealLoopTree *l;           // Child's loop
-    if( !is_postvisited(m) ) {  // Child visited but not post-visited?
+    if (!is_postvisited(m)) {  // Child visited but not post-visited?
       // Found a backedge
-      assert( get_preorder(m) < pre_order, "should be backedge" );
+      assert(get_preorder(m) < pre_order, "should be backedge");
       // Check for the RootNode, which is already a LoopNode and is allowed
       // to have multiple "backedges".
-      if( m == C->root()) {     // Found the root?
+      if (m == C->root()) {     // Found the root?
         l = _ltree_root;        // Root is the outermost LoopNode
       } else {                  // Else found a nested loop
         // Insert a LoopNode to mark this loop.
         l = new IdealLoopTree(this, m, n);
       } // End of Else found a nested loop
-      if( !has_loop(m) )        // If 'm' does not already have a loop set
+      if (!has_loop(m)) {        // If 'm' does not already have a loop set
         set_loop(m, l);         // Set loop header to loop now
-
+      }
     } else {                    // Else not a nested loop
       if (!_loop_or_ctrl[m->_idx]) continue; // Dead code has no loop
       IdealLoopTree* m_loop = get_loop(m);
@@ -5480,22 +5500,17 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
       // is a member of some outer enclosing loop.  Since there are no
       // shared headers (I've split them already) I only need to go up
       // at most 1 level.
-      while( l && l->_head == m ) // Successor heads loop?
+      while (l && l->_head == m) { // Successor heads loop?
         l = l->_parent;         // Move up 1 for me
+      }
       // If this loop is not properly parented, then this loop
       // has no exit path out, i.e. its an infinite loop.
-      if( !l ) {
+      if (!l) {
+        assert(!verify, "");
         // Make loop "reachable" from root so the CFG is reachable.  Basically
         // insert a bogus loop exit that is never taken.  'm', the loop head,
         // points to 'n', one (of possibly many) fall-in paths.  There may be
         // many backedges as well.
-
-        // Here I set the loop to be the root loop.  I could have, after
-        // inserting a bogus loop exit, restarted the recursion and found my
-        // new loop exit.  This would make the infinite loop a first-class
-        // loop and it would then get properly optimized.  What's the use of
-        // optimizing an infinite loop?
-        l = _ltree_root;        // Oops, found infinite loop
 
         if (!_verify_only) {
           // Insert the NeverBranch between 'm' and it's control user.
@@ -5520,7 +5535,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           // Now create the never-taken loop exit
           Node *if_f = new CProjNode( iff, 1 );
           _igvn.register_new_node_with_optimizer(if_f);
-          set_loop(if_f, l);
+          set_loop(if_f, _ltree_root);
           // Find frame ptr for Halt.  Relies on the optimizer
           // V-N'ing.  Easier and quicker than searching through
           // the program structure.
@@ -5529,10 +5544,23 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
           // Halt & Catch Fire
           Node* halt = new HaltNode(if_f, frame, "never-taken loop exit reached");
           _igvn.register_new_node_with_optimizer(halt);
-          set_loop(halt, l);
+          set_loop(halt, _ltree_root);
           _igvn.add_input_to(C->root(), halt);
         }
         set_loop(C->root(), _ltree_root);
+        l = m_loop;
+        for (;;) {
+          IdealLoopTree* next = l->_parent;
+          if (next == nullptr || next->_head != m) {
+            break;
+          }
+          l = next;
+        }
+        sort(_ltree_root, l);
+        IdealLoopTree *p = l->_parent;
+        l->_next = p->_child;
+        p->_child = l;
+        l = l->_parent;
       }
     }
     if (is_postvisited(l->_head)) {
@@ -5586,7 +5614,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
     assert( get_loop(n) == innermost, "" );
     IdealLoopTree *p = innermost->_parent;
     IdealLoopTree *l = innermost;
-    while( p && l->_head == n ) {
+    while (p && l->_head == n) {
       l->_next = p->_child;     // Put self on parents 'next child'
       p->_child = l;            // Make self as first child of parent
       l = p;                    // Now walk up the parent chain
@@ -5600,7 +5628,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
     // Record tightest enclosing loop for self.  Mark as post-visited.
     set_loop(n, innermost);
     // Also record has_call flag early on
-    if( innermost ) {
+    if (innermost) {
       if( n->is_Call() && !n->is_CallLeaf() && !n->is_macro() ) {
         // Do not count uncommon calls
         if( !n->is_CallStaticJava() || !n->as_CallStaticJava()->_name ) {
@@ -5610,6 +5638,7 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
               !iff->is_If() ||
               (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
               iff->as_If()->_prob >= 0.01) {
+            assert(!verify || innermost->_has_call, "");
             innermost->_has_call = 1;
           }
         }
@@ -5617,12 +5646,22 @@ int PhaseIdealLoop::build_loop_tree_impl( Node *n, int pre_order ) {
         // Disable loop optimizations if the loop has a scalar replaceable
         // allocation. This disabling may cause a potential performance lost
         // if the allocation is not eliminated for some reason.
+        assert(!verify || innermost->_allow_optimizations, "");
+        assert(!verify || innermost->_has_call, "");
         innermost->_allow_optimizations = false;
         innermost->_has_call = 1; // = true
       } else if (n->Opcode() == Op_SafePoint) {
         // Record all safepoints in this loop.
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
-        innermost->_safepts->push(n);
+#ifdef ASSERT
+        if (verify) {
+          assert(innermost->_safepts->contains(n), "");
+        } else {
+#endif
+          innermost->_safepts->push(n);
+#ifdef ASSERT
+        }
+#endif
       }
     }
   }
