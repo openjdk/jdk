@@ -98,19 +98,23 @@ public final class BufWriterImpl implements BufWriter {
     @Override
     public void writeU2(int x) {
         reserveSpace(2);
+        byte[] elems = this.elems;
+        int offset = this.offset;
         elems[offset    ] = (byte) (x >> 8);
         elems[offset + 1] = (byte) x;
-        offset += 2;
+        this.offset = offset + 2;
     }
 
     @Override
     public void writeInt(int x) {
         reserveSpace(4);
+        byte[] elems = this.elems;
+        int offset = this.offset;
         elems[offset    ] = (byte) (x >> 24);
         elems[offset + 1] = (byte) (x >> 16);
         elems[offset + 2] = (byte) (x >> 8);
         elems[offset + 3] = (byte)  x;
-        offset += 4;
+        this.offset = offset + 4;
     }
 
     @Override
@@ -121,6 +125,8 @@ public final class BufWriterImpl implements BufWriter {
     @Override
     public void writeLong(long x) {
         reserveSpace(8);
+        byte[] elems = this.elems;
+        int offset = this.offset;
         elems[offset    ] = (byte) (x >> 56);
         elems[offset + 1] = (byte) (x >> 48);
         elems[offset + 2] = (byte) (x >> 40);
@@ -129,7 +135,7 @@ public final class BufWriterImpl implements BufWriter {
         elems[offset + 5] = (byte) (x >> 16);
         elems[offset + 6] = (byte) (x >> 8);
         elems[offset + 7] = (byte)  x;
-        offset += 8;
+        this.offset = offset + 8;
     }
 
     @Override
