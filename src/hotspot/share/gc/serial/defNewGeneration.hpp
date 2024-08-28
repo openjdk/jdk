@@ -234,8 +234,7 @@ class DefNewGeneration: public Generation {
   void update_counters();
 
   // Printing
-  virtual const char* name() const;
-  virtual const char* short_name() const { return "DefNew"; }
+  const char* name() const { return "DefNew"; }
 
   void print_on(outputStream* st) const;
 

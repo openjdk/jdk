@@ -97,10 +97,7 @@ public sealed interface AnnotationValue {
      * @since 22
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
-    sealed interface OfConstant
-            extends AnnotationValue
-            permits OfString, OfDouble, OfFloat, OfLong, OfInt, OfShort, OfChar, OfByte,
-                    OfBoolean, AnnotationImpl.OfConstantImpl {
+    sealed interface OfConstant extends AnnotationValue {
         /**
          * {@return the constant pool entry backing this constant element}
          *
