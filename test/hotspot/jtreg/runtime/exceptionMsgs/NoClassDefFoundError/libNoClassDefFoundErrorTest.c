@@ -50,7 +50,7 @@ static char* giant_string() {
     size_t len = ((size_t)INT_MAX) + 3;
     char* c_name = malloc(len * sizeof(char));
     if (c_name != NULL) {
-        memset(c_name, 0x59595959, len - 1); // YYYY...
+        memset(c_name, 'Y', len - 1);
         c_name[len - 1] = '\0';
     }
     return c_name;
