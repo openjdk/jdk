@@ -68,7 +68,7 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
         int start = buf.size();
         writeBody(buf, attr);
         int written = buf.size() - start;
-        buf.patchInt(start - 4, 4, written);
+        buf.patchInt(start - 4, written);
     }
 
     @Override

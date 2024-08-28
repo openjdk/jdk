@@ -853,7 +853,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
             int start = b.size();
             writeBody(b);
             int written = b.size() - start;
-            b.patchInt(start - 4, 4, written);
+            b.patchInt(start - 4, written);
         }
     }
 
