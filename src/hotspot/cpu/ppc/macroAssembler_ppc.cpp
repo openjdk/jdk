@@ -1035,7 +1035,7 @@ address MacroAssembler::call_c_and_return_to_caller(Register r_function_entry) {
   return branch_to(r_function_entry, /*and_link=*/false);
 }
 
-address MacroAssembler::call_c(address function_entry,relocInfo::relocType) {
+address MacroAssembler::call_c(address function_entry, relocInfo::relocType rt) {
   load_const(R12, function_entry, R0);
   return branch_to(R12,  /*and_link=*/true);
 }

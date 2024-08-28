@@ -135,7 +135,7 @@ void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) 
     // Call the Interpreter::remove_activation_preserving_args_entry()
     // func to get the address of the same-named entrypoint in the
     // generated interpreter code.
-    call_c(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_preserving_args_entry), relocInfo::none);
+    call_c(CAST_FROM_FN_PTR(address, Interpreter::remove_activation_preserving_args_entry));
 
     // Jump to Interpreter::_remove_activation_preserving_args_entry.
     mtctr(R3_RET);
