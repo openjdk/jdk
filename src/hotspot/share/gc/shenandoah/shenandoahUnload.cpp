@@ -51,8 +51,7 @@ private:
 
 public:
   ShenandoahIsUnloadingOopClosure() :
-    // TODO: In non-generational mode, this should still be complete_marking_context()
-    _marking_context(ShenandoahHeap::heap()->marking_context()),
+    _marking_context(ShenandoahHeap::heap()->complete_marking_context()),
     _is_unloading(false) {
   }
 
