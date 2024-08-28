@@ -551,7 +551,6 @@ final class ConnectionPool {
                         " a connection not found in the pool: closing %s", c.dbgString());
             }
             Throwable cause = new IOException("Unexpected cleanup triggered for non pooled connection", error);
-            cause.printStackTrace();
             c.close(cause);
         } else {
             c.close();
