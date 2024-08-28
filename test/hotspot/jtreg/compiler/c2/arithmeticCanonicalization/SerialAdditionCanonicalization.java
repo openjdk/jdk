@@ -38,8 +38,8 @@ public class SerialAdditionCanonicalization {
     }
 
     @DontInline
-    private static void verifyResult(int base, long factor, int observed) {
-        int expected = base * (int) factor; // compute expected result here while making sure not inlined in callers
+    private static void verifyResult(int base, int factor, int observed) {
+        int expected = base * factor; // compute expected result here while making sure not inlined in callers
         if (expected != observed) {
             throw new AssertionError("Expected " + expected + " but got " + observed);
         }
@@ -56,74 +56,74 @@ public class SerialAdditionCanonicalization {
     // ----- integer tests -----
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(counts = { IRNode.ADD_L, "1" })
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void addTo3L(long a) {
-        long sum = a + a + a; // a*3 => (a<<1) + a
+    @IR(counts = { IRNode.ADD_I, "1" })
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void addTo3(int a) {
+        int sum = a + a + a; // a*3 => (a<<1) + a
         verifyResult(a, 3, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.ADD_L)
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void addTo4L(long a) {
-        long sum = a + a + a + a; // a*4 => a<<2
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void addTo4(int a) {
+        int sum = a + a + a + a; // a*4 => a<<2
         verifyResult(a, 4, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.ADD_L)
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void shiftAndAddTo4L(long a) {
-        long sum = (a << 1) + a + a; // a*2 + a + a => a*3 + a => a*4 => a<<2
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void shiftAndAddTo4(int a) {
+        int sum = (a << 1) + a + a; // a*2 + a + a => a*3 + a => a*4 => a<<2
         verifyResult(a, 4, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.ADD_L)
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void mulAndAddTo4L(long a) {
-        long sum = a * 3 + a; // a*4 => a<<2
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void mulAndAddTo4(int a) {
+        int sum = a * 3 + a; // a*4 => a<<2
         verifyResult(a, 4, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(counts = { IRNode.ADD_L, "1" })
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void addTo5L(long a) {
-        long sum = a + a + a + a + a; // a*5 => (a<<2) + a
+    @IR(counts = { IRNode.ADD_I, "1" })
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void addTo5L(int a) {
+        int sum = a + a + a + a + a; // a*5 => (a<<2) + a
         verifyResult(a, 5, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(counts = { IRNode.ADD_L, "1" })
-    @IR(counts = {IRNode.LSHIFT_L, "2"})
-    private static void addTo6L(long a) {
-        long sum = a + a + a + a + a + a; // a*6 => (a<<1) + (a<<2)
+    @IR(counts = { IRNode.ADD_I, "1" })
+    @IR(counts = {IRNode.LSHIFT_I, "2"})
+    private static void addTo6L(int a) {
+        int sum = a + a + a + a + a + a; // a*6 => (a<<1) + (a<<2)
         verifyResult(a, 6, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.ADD_L)
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    @IR(counts = {IRNode.SUB_L, "1"})
-    private static void addTo7L(long a) {
-        long sum = a + a + a + a + a + a + a; // a*7 => (a<<3) - a
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    @IR(counts = {IRNode.SUB_I, "1"})
+    private static void addTo7(int a) {
+        int sum = a + a + a + a + a + a + a; // a*7 => (a<<3) - a
         verifyResult(a, 7, sum);
     }
 
     @Test
     @Arguments(values = {Argument.RANDOM_EACH})
-    @IR(failOn = IRNode.ADD_L)
-    @IR(counts = {IRNode.LSHIFT_L, "1"})
-    private static void addTo8(long a) {
-        long sum = a + a + a + a + a + a + a + a; // a*8 => a<<3
+    @IR(failOn = IRNode.ADD_I)
+    @IR(counts = {IRNode.LSHIFT_I, "1"})
+    private static void addTo8(int a) {
+        int sum = a + a + a + a + a + a + a + a; // a*8 => a<<3
         verifyResult(a, 8, sum);
     }
 
@@ -209,6 +209,17 @@ public class SerialAdditionCanonicalization {
     }
 
     // --- long tests ---
+    private static final long INT_MAX_PLUS_ONE = (long) Integer.MAX_VALUE + 1;
+
+    @Test
+    @Arguments(values = {Argument.RANDOM_EACH})
+    @IR(failOn = IRNode.ADD_L)
+    @IR(counts = { IRNode.LSHIFT_L, "1" })
+    private static void mulAndAddToIntOverflowL(long a) {
+        long sum = a * Integer.MAX_VALUE + a; // a*(INT_MAX+1)
+        verifyResult(a, INT_MAX_PLUS_ONE, sum);
+    }
+
     private static final long LONG_MAX_MINUS_ONE = Long.MAX_VALUE - 1;
 
     @Test
