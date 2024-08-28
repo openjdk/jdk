@@ -112,7 +112,8 @@ public class SwingButtonResizeTestWithOpenGL {
 
     public static void main(String[] args) throws Exception {
         focusGainedLatch = new CountDownLatch(1);
-        SwingButtonResizeTestWithOpenGL test = new SwingButtonResizeTestWithOpenGL();
+        SwingButtonResizeTestWithOpenGL test =
+                new SwingButtonResizeTestWithOpenGL();
         test.runTest();
     }
 
@@ -129,14 +130,17 @@ public class SwingButtonResizeTestWithOpenGL {
                 System.out.println("Button focus gained...");
             } else {
                 System.out.println("Button focus not gained...");
-                throw new RuntimeException("Can't gain focus on button even after waiting too long..");
+                throw new RuntimeException(
+                        "Can't gain focus on button even after waiting " +
+                        "too long..");
             }
 
             System.out.println("Getting initial button image..image1");
             bimage1 = getButtonImage();
 
             // some platforms may not support maximize frame
-            if (frame.getToolkit().isFrameStateSupported(JFrame.MAXIMIZED_BOTH)) {
+            if (frame.getToolkit().isFrameStateSupported(
+                    JFrame.MAXIMIZED_BOTH)) {
                 robot.waitForIdle();
                 // maximize frame from normal size
                 frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -149,24 +153,34 @@ public class SwingButtonResizeTestWithOpenGL {
                     frame.setExtendedState(JFrame.NORMAL);
 
                     // capture image of JButton after resize
-                    System.out.println("Getting image of JButton after resize..image2");
+                    System.out.println(
+                            "Getting image of JButton after resize..image2");
                     bimage2 = getButtonImage();
 
                     // compare button images from before and after frame resize
-                    DiffImage di = new DiffImage(bimage1.getWidth(), bimage1.getHeight());
-                    System.out.println("Taking the diff of two images, image1 and image2");
+                    DiffImage di = new DiffImage(bimage1.getWidth(),
+                                                 bimage1.getHeight());
+                    System.out.println(
+                            "Taking the diff of two images, image1 and image2");
                     if (!di.compare(bimage1, bimage2)) {
-                        throw new RuntimeException("Button renderings are different after window resize, num of Diff Pixels=" + di.getNumDiffPixels());
+                        throw new RuntimeException(
+                                "Button renderings are different after window "
+                                + "resize, num of Diff Pixels="
+                                + di.getNumDiffPixels());
                     } else {
                         System.out.println("Test passed...");
                     }
 
                 } else {
-                    System.out.println("Test skipped: JFrame.NORMAL resize is not supported");
+                    System.out.println(
+                            "Test skipped: JFrame.NORMAL resize is " +
+                            "not supported");
                 }
 
             } else {
-                System.out.println("Test skipped: JFrame.MAXIMIZED_BOTH resize is not supported");
+                System.out.println(
+                        "Test skipped: JFrame.MAXIMIZED_BOTH resize is " +
+                        "not supported");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> disposeFrame());
@@ -181,12 +195,16 @@ public class SwingButtonResizeTestWithOpenGL {
             robot.delay(500);
 
             AtomicReference<Point> buttonLocRef = new AtomicReference<>();
-            SwingUtilities.invokeAndWait(() -> buttonLocRef.set(button.getLocationOnScreen()));
+            SwingUtilities.invokeAndWait(
+                    () -> buttonLocRef.set(button.getLocationOnScreen()));
             Point buttonLoc = buttonLocRef.get();
             System.out.println("Button loc: " + buttonLoc);
-            bimage = robot.createScreenCapture(new Rectangle(buttonLoc.x, buttonLoc.y, button.getWidth(), button.getHeight()));
+            bimage = robot.createScreenCapture(
+                    new Rectangle(buttonLoc.x, buttonLoc.y, button.getWidth(),
+                                  button.getHeight()));
         } catch (Exception e) {
-            throw new RuntimeException("Problems capturing button image from Robot", e);
+            throw new RuntimeException(
+                    "Problems capturing button image from Robot", e);
         }
         return bimage;
     }
@@ -202,7 +220,8 @@ public class SwingButtonResizeTestWithOpenGL {
     private void saveButtonImage(BufferedImage image, File file) {
         if (image != null) {
             try {
-                System.out.println("Saving button image to " + file.getAbsolutePath());
+                System.out.println(
+                        "Saving button image to " + file.getAbsolutePath());
                 ImageIO.write(image, "PNG", file);
             } catch (Exception e) {
                 throw new RuntimeException("Could not write image file");
@@ -230,7 +249,8 @@ public class SwingButtonResizeTestWithOpenGL {
             return nDiff;
         }
 
-        public boolean compare(BufferedImage img1, BufferedImage img2) throws IOException {
+        public boolean compare(BufferedImage img1, BufferedImage img2)
+                throws IOException {
 
             int minx1 = img1.getMinX();
             int minx2 = img2.getMinX();
@@ -242,9 +262,13 @@ public class SwingButtonResizeTestWithOpenGL {
             int h1 = img1.getHeight();
             int h2 = img2.getHeight();
 
-            if ((minx1 != minx2) || (miny1 != miny2) || (w1 != w2) || (h1 != h2)) {
+            if ((minx1 != minx2) || (miny1 != miny2) || (w1 != w2)
+                || (h1 != h2)) {
                 // image sizes are different
-                throw new RuntimeException("img1: <" + minx1 + "," + miny1 + "," + w1 + "x" + h1 + ">" + " img2: " + minx2 + "," + miny2 + "," + w2 + "x" + h2 + ">" + " are different sizes");
+                throw new RuntimeException(
+                        "img1: <" + minx1 + "," + miny1 + "," + w1 + "x" + h1
+                        + ">" + " img2: " + minx2 + "," + miny2 + "," + w2 + "x"
+                        + h2 + ">" + " are different sizes");
             }
             // Get the actual data behind the images
             Raster ras1 = img1.getData();
@@ -277,9 +301,12 @@ public class SwingButtonResizeTestWithOpenGL {
                     b1 = cm1.getBlue(o1);
                     b2 = cm2.getBlue(o2);
 
-                    if ((Math.abs(r1 - r2) > threshold) || (Math.abs(g1 - g2) > threshold) || (Math.abs(b1 - b2) > threshold)) {
+                    if ((Math.abs(r1 - r2) > threshold)
+                        || (Math.abs(g1 - g2) > threshold)
+                        || (Math.abs(b1 - b2) > threshold)) {
                         // pixel is different
-                        setDiffPixel(x, y, Math.abs(r1 - r2), Math.abs(g1 - g2), Math.abs(b1 - b2));
+                        setDiffPixel(x, y, Math.abs(r1 - r2), Math.abs(g1 - g2),
+                                     Math.abs(b1 - b2));
                         nDiff++;
                     } else {
                         setSamePixel(x, y);
@@ -288,7 +315,8 @@ public class SwingButtonResizeTestWithOpenGL {
                 }
             }
             if (nDiff != 0) {
-                ImageIO.write(this, "png", new File("diffImage.png"));
+                ImageIO.write(this, "png",
+                              new File("diffImage.png"));
                 saveButtonImage(img1, new File("image1.png"));
                 saveButtonImage(img2, new File("image2.png"));
             }
@@ -302,15 +330,20 @@ public class SwingButtonResizeTestWithOpenGL {
 
         void setSamePixel(int x, int y) {
             if (bgColor != null) {
-                setPixelValue(x, y, 255, bgColor.getRed(), bgColor.getGreen(), bgColor.getBlue());
+                setPixelValue(x, y, 255, bgColor.getRed(),
+                              bgColor.getGreen(),
+                              bgColor.getBlue());
             } else {
-                setPixelValue(x, y, 255, Color.black.getRed(), Color.black.getGreen(), Color.black.getBlue());
+                setPixelValue(x, y, 255, Color.black.getRed(),
+                              Color.black.getGreen(), Color.black.getBlue());
             }
         }
 
         void setPixelValue(int x, int y, int a, int r, int g, int b) {
             // setRGB uses BufferedImage.TYPE_INT_ARGB format
-            int pixel = ((a & 0xff) << 24) + ((r & 0xff) << 16) + ((g & 0xff) << 8) + ((b & 0xff));
+            int pixel =
+                    ((a & 0xff) << 24) + ((r & 0xff) << 16) + ((g & 0xff) << 8)
+                    + ((b & 0xff));
             setRGB(x, y, pixel);
         }
 
