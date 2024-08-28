@@ -934,12 +934,14 @@ class os: AllStatic {
   static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, JavaThread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
-  // it will check if dump file can be created. Check or prepare a core dump to be
-  // taken at a later point in the same thread in os::abort(). Use the caller
+  // it will check for a client versions of Windows. Use the caller
   // provided buffer as a scratch buffer. The status message which will be written
   // into the error log either is file location or a short error message, depending
   // on the checking result.
-  static void check_dump_limit(char* buffer, size_t bufferSize);
+  static bool check_core_dump_enabled(char* buffer, size_t bufferSize);
+  // On Windows it will check if dump file can be created and it will prepare
+  // a core dump to be taken at a later point in the same thread in os::abort()
+  static void prepare_core_dump(char* buffer, size_t bufferSize);
 
   // Get the default path to the core file
   // Returns the length of the string

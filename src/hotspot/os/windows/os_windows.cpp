@@ -1286,38 +1286,42 @@ void os::shutdown() {
 
 static HANDLE dumpFile = nullptr;
 
-// Check if dump file can be created.
-void os::check_dump_limit(char* buffer, size_t buffsz) {
-  bool status = true;
+// Check if core dump is enabled.
+bool os::check_core_dump_enabled(char* buffer, size_t buffsz) {
   if (!FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !CreateCoredumpOnCrash) {
     jio_snprintf(buffer, buffsz, "CreateCoredumpOnCrash is disabled from command line");
-    status = false;
+    VMError::record_coredump_status(buffer, false);
+    return false;
   }
 
 #ifndef ASSERT
-  if (!os::win32::is_windows_server() && FLAG_IS_DEFAULT(CreateCoredumpOnCrash)) {
+  if (FLAG_IS_DEFAULT(CreateCoredumpOnCrash) && !os::win32::is_windows_server()) {
     jio_snprintf(buffer, buffsz, "Minidumps are not enabled by default on client versions of Windows");
-    status = false;
+    VMError::record_coredump_status(buffer, false);
+    return false;
   }
 #endif
 
-  if (status) {
-    const char* cwd = get_current_directory(nullptr, 0);
-    int pid = current_process_id();
-    if (cwd != nullptr) {
-      jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
-    } else {
-      jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
-    }
-
-    if (dumpFile == nullptr &&
-       (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
-                 == INVALID_HANDLE_VALUE) {
-      jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
-      status = false;
-    }
+  const char* cwd = get_current_directory(nullptr, 0);
+  int pid = current_process_id();
+  if (cwd != nullptr) {
+    jio_snprintf(buffer, buffsz, "%s\\hs_err_pid%u.mdmp", cwd, pid);
+  } else {
+    jio_snprintf(buffer, buffsz, ".\\hs_err_pid%u.mdmp", pid);
   }
-  VMError::record_coredump_status(buffer, status);
+
+  VMError::record_coredump_status(buffer, success);
+  return true;
+}
+
+// Prepare core dump file, if it can not be created then make a note.
+void os::prepare_core_dump(char* buffer, size_t buffsz) {
+  if (dumpFile == nullptr &&
+     (dumpFile = CreateFile(buffer, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr))
+               == INVALID_HANDLE_VALUE) {
+    jio_snprintf(buffer, buffsz, "Failed to create minidump file (0x%x).", GetLastError());
+    VMError::record_coredump_status(buffer, false);
+  }
 }
 
 void os::abort(bool dump_core, void* siginfo, const void* context) {
