@@ -159,7 +159,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
          *
-         * @implNote An implementation should concatenate the input keying
+         * @implNote An HKDF implementation should concatenate the input keying
          * materials into a single value once all components are available.
          *
          * @param ikm
@@ -187,7 +187,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * This supports the use-case where a label can be applied to the IKM
          * but the actual value of the IKM is not yet available.
          *
-         * @implNote An implementation should concatenate the input keying
+         * @implNote An HKDF implementation should concatenate the input keying
          * materials into a single value once all components are available.
          *
          * @param ikm
