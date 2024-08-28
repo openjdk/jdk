@@ -1076,7 +1076,7 @@ public abstract sealed class AbstractPoolEntry {
         private final float val;
 
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, ClassFile.TAG_FLOAT, index, Float.hashCode(f));
+            super(cpm, ClassFile.TAG_FLOAT, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
             val = f;
         }
 
