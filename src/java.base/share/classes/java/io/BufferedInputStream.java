@@ -51,7 +51,7 @@ import jdk.internal.util.ArraysSupport;
  * the contained input stream.
  *
  * <p> More than one instance of {@code BufferedInputStream} should not be
- * used with the same underlying {@code InputStream} instance.  Doing
+ * used with the same underlying {@code InputStream} instance. Doing
  * so can cause the {@code BufferedInputStream} instances to return an
  * incorrect result since each instance of {@code BufferedInputStream}
  * maintains its own state.

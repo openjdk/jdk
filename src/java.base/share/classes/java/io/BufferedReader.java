@@ -43,8 +43,9 @@ import jdk.internal.misc.InternalLock;
  *
  * <p> In general, each read request made of a Reader causes a corresponding
  * read request to be made of the underlying character or byte stream.  It is
- * therefore advisable to wrap a BufferedReader around any Reader whose read()
- * operations may be costly, such as FileReaders and InputStreamReaders.  For
+ * therefore advisable to wrap a {@code BufferedReader} around any
+ * {@code Reader} whose {@code read()} operations may be costly, such as
+ * {@code FileReader}s and {@code InputStreamReader}s.  For
  * example,
  *
  * {@snippet lang=java :
@@ -52,17 +53,18 @@ import jdk.internal.misc.InternalLock;
  * }
  *
  * will buffer the input from the specified file.  Without buffering, each
- * invocation of read() or readLine() could cause bytes to be read from the
- * file, converted into characters, and then returned, which can be very
- * inefficient.
+ * invocation of {@code read()} or {@code readLine()} could cause bytes to be
+ * read from the file, converted into characters, and then returned, which can
+ * be very inefficient.
  *
- * <p> Programs that use DataInputStreams for textual input can be localized by
- * replacing each DataInputStream with an appropriate BufferedReader.
+ * <p> Programs that use {@code DataInputStream}s for textual input can be
+ * localized by replacing each {@code DataInputStream} with an appropriate
+ * {@code BufferedReader}.
  *
- * <p> More than one instance of BufferedReader should not be used with the
- * same underlying Reader instance.  Doing so can cause the BufferedReader
- * instances to return an incorrect result since each instance of
- * BufferedReader maintains its own state.
+ * <p> More than one instance of {@code BufferedReader} should not be used
+ * with the same underlying Reader instance. Doing so can cause the
+ * {@code BufferedReader} instances to return an incorrect result since each
+ * instance of {@code BufferedReader} maintains its own state.
  *
  * @see FileReader
  * @see InputStreamReader

@@ -36,7 +36,7 @@ import jdk.internal.misc.VM;
  * system for each byte written.
  *
  * <p> More than one instance of {@code BufferedOutputStream} should not be
- * used with the same underlying {@code OutputStream} instance.  Doing so can
+ * used with the same underlying {@code OutputStream} instance. Doing so can
  * cause unpredictable results as each {@code BufferedOutputStream} maintains
  * its own state and flushes its internal buffer according to that state.
  *
