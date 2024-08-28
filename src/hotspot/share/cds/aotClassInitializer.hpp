@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,19 @@
  *
  */
 
-#ifndef SHARE_CDS_CDSENUMKLASS_HPP
-#define SHARE_CDS_CDSENUMKLASS_HPP
+#ifndef SHARE_CDS_AOTCLASSINITIALIZER_HPP
+#define SHARE_CDS_AOTCLASSINITIALIZER_HPP
 
 #include "memory/allStatic.hpp"
-#include "oops/oop.hpp"
 #include "utilities/exceptions.hpp"
-#include "utilities/macros.hpp"
 
 class InstanceKlass;
-class JavaFieldStream;
-class KlassSubGraphInfo;
 
-class CDSEnumKlass: AllStatic {
+class AOTClassInitializer : AllStatic {
 public:
-  static bool is_enum_obj(oop orig_obj);
-  static void handle_enum_obj(int level,
-                              KlassSubGraphInfo* subgraph_info,
-                              oop orig_obj);
-  static bool initialize_enum_klass(InstanceKlass* k, TRAPS) NOT_CDS_JAVA_HEAP_RETURN_(false);
-
-private:
-  static void archive_static_field(int level, KlassSubGraphInfo* subgraph_info,
-                                   InstanceKlass* ik, oop mirror, JavaFieldStream& fs);
+  // Called by heapShared.cpp to see if src_ik->java_mirror() can be archived in
+  // the initialized state.
+  static bool can_archive_preinitialized_mirror(InstanceKlass* src_ik);
 };
 
-#endif // SHARE_CDS_CDSENUMKLASS_HPP
+#endif // SHARE_CDS_AOTCLASSINITIALIZER_HPP

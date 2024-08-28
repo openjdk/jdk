@@ -779,6 +779,74 @@ void InstanceKlass::initialize(TRAPS) {
   }
 }
 
+static bool are_super_types_initialized(InstanceKlass* ik) {
+  InstanceKlass* s = ik->java_super();
+  if (s != nullptr && !s->is_initialized()) {
+    if (log_is_enabled(Info, cds, init)) {
+      ResourceMark rm;
+      log_info(cds, init)("%s takes slow path because super class %s is not initialized",
+                          ik->external_name(), s->external_name());
+    }
+    return false;
+  }
+
+  if (ik->has_nonstatic_concrete_methods()) {
+    // Only need to recurse if has_nonstatic_concrete_methods which includes declaring and
+    // having a superinterface that declares, non-static, concrete methods
+    Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+    int len = interfaces->length();
+    for (int i = 0; i < len; i++) {
+      InstanceKlass* intf = interfaces->at(i);
+      if (!intf->is_initialized()) {
+        if (log_is_enabled(Info, cds, init)) {
+          ResourceMark rm;
+          log_info(cds, init)("%s takes slow path because interface %s is not initialized",
+                              ik->external_name(), intf->external_name());
+        }
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+void InstanceKlass::initialize_from_cds(TRAPS) {
+  if (is_initialized()) {
+    return;
+  }
+
+  if (has_preinitialized_mirror() && CDSConfig::is_loading_heap() &&
+      are_super_types_initialized(this)) {
+    // TODO: also check for events listeners such as JVMTI, JFR, etc
+    if (log_is_enabled(Info, cds, init)) {
+      ResourceMark rm;
+      log_info(cds, init)("%s (quickest)", external_name());
+    }
+
+    link_class(CHECK);
+
+#ifdef AZZERT
+    {
+      MonitorLocker ml(THREAD, _init_monitor);
+      assert(!initialized(), "sanity");
+      assert(!is_being_initialized(), "sanity");
+      assert(!is_in_error_state(), "sanity");
+    }
+#endif
+
+    set_init_thread(THREAD);
+    set_initialization_state_and_notify(fully_initialized, CHECK);
+    return;
+  }
+
+  if (log_is_enabled(Info, cds, init)) {
+    ResourceMark rm;
+    log_info(cds, init)("%s%s", external_name(),
+                        (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) ? " (quicker)" : "");
+  }
+  initialize(THREAD);
+}
 
 bool InstanceKlass::verify_code(TRAPS) {
   // 1) Verify the bytecodes
@@ -1581,6 +1649,8 @@ void InstanceKlass::call_class_initializer(TRAPS) {
     if (initialized) {
       return;
     }
+  } else if (has_preinitialized_mirror() && CDSConfig::is_loading_heap()) {
+    return;
   }
 #endif
 

@@ -332,6 +332,10 @@ static void call_initPhase2(TRAPS) {
     AOTLinkedClassBulkLoader::load_platform_classes(THREAD);
     AOTLinkedClassBulkLoader::load_app_classes(THREAD);
   }
+
+#ifndef PRODUCT
+  HeapShared::initialize_test_class_from_archive(THREAD);
+#endif
 }
 
 // Phase 3. final setup - set security manager, system class loader and TCCL
@@ -733,6 +737,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CompileBroker::compilation_init(CHECK_JNI_ERR);
   }
 #endif
+
+  AOTLinkedClassBulkLoader::init_javabase_preloaded_classes(CHECK_JNI_ERR);
 
   // Start string deduplication thread if requested.
   if (StringDedup::is_enabled()) {

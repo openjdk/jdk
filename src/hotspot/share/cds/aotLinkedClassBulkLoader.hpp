@@ -56,6 +56,7 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void initiate_loading(JavaThread* current, const char* category, Handle loader, Array<InstanceKlass*>* classes);
   static void load_classes(LoaderKind loader_kind, Array<InstanceKlass*>* classes, const char* category, Handle loader, TRAPS);
   static void load_class_quick(InstanceKlass* ik, ClassLoaderData* loader_data, Handle domain, TRAPS);
+  static void maybe_init(Array<InstanceKlass*>* classes, TRAPS);
   static void jvmti_agent_error(InstanceKlass* expected, InstanceKlass* actual, const char* type);
 
 public:
@@ -65,6 +66,8 @@ public:
   static void load_non_javabase_boot_classes(JavaThread* current);
   static void load_platform_classes(JavaThread* current);
   static void load_app_classes(JavaThread* current);
+
+  static void init_javabase_preloaded_classes(TRAPS) NOT_CDS_RETURN;
 };
 
 #endif // SHARE_CDS_AOTLINKEDCLASSBULKLOADER_HPP
