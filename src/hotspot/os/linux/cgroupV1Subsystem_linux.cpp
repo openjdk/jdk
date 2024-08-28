@@ -44,6 +44,7 @@ void CgroupV1Controller::set_subsystem_path(const char* cgroup_path) {
   }
   if (_path != nullptr) {
     os::free(_path);
+    _path = nullptr;
   }
   _cgroup_path = os::strdup(cgroup_path);
   stringStream ss;
