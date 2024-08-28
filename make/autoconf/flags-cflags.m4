@@ -236,7 +236,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
 
       # Additional warnings that are not activated by -Wall and -Wextra
       WARNINGS_ENABLE_ADDITIONAL="-Wpointer-arith -Wreturn-type -Wsign-compare \
-          -Wtrampolines -Wundef -Wunused-const-variable -Wunused-function \
+          -Wtrampolines -Wundef -Wunused-const-variable=1 -Wunused-function \
           -Wunused-result -Wunused-value"
       WARNINGS_ENABLE_ADDITIONAL_CXX="-Woverloaded-virtual -Wreorder"
       WARNINGS_ENABLE_ALL_CFLAGS="-Wall -Wextra -Wformat=2 $WARNINGS_ENABLE_ADDITIONAL"

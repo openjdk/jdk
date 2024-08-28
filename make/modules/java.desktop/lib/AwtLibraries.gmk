@@ -236,8 +236,7 @@ ifeq ($(call isTargetOs, windows macosx)+$(ENABLE_HEADLESS_ONLY), false+false)
       OPTIMIZATION := LOW, \
       CFLAGS := -DXAWT -DXAWT_HACK $(LIBAWT_XAWT_CFLAGS) \
           $(FONTCONFIG_CFLAGS) $(CUPS_CFLAGS) $(X_CFLAGS), \
-      DISABLED_WARNINGS_gcc := int-to-pointer-cast unused-const-variable \
-          unused-variable, \
+      DISABLED_WARNINGS_gcc := int-to-pointer-cast unused-variable, \
       DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
       DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
       DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits \
