@@ -864,7 +864,7 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_windbg_WindbgDebuggerLocal
   ULONG64 disp = 0L;
   char buf[SYMBOL_BUFSIZE];
   memset(buf, 0, sizeof(buf));
-  if (ptrIDebugSymbols->GetNameByOffset(offset, buf, sizeof(buf), 0, &disp) ==  S_OK) {
+  if (ptrIDebugSymbols->GetNameByOffset(offset, buf, sizeof(buf), 0, &disp) == S_OK) {
     if (strstr(buf, name) == nullptr) {
       return (jlong)0;
     }
