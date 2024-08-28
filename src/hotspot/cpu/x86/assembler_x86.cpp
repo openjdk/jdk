@@ -1845,6 +1845,12 @@ void Assembler::cmpb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::cmpb(Register dst, int imm8) {
+  assert(dst->has_byte_register(), "must have byte register");
+  prefix(dst);
+  emit_arith_b(0x80, 0xF8, dst, imm8);
+}
+
 void Assembler::cmpl(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefix(dst);
@@ -8973,9 +8979,10 @@ void Assembler::vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, 
   emit_int24(0x3A, (0xC0 | encode), imm8 & 0x01);
 }
 
-void Assembler::vinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8) {
+void Assembler::vinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len) {
    assert(VM_Version::supports_avx512dq(), "");
-   InstructionAttr attributes(AVX_512bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+   assert(vector_len == AVX_256bit || VM_Version::supports_avx512vl(), "");
+   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
    attributes.set_is_evex_instruction();
    int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
    emit_int24(0x38, (0xC0 | encode), imm8 & 0x03);
@@ -11047,6 +11054,7 @@ void Assembler::vbroadcastf128(XMMRegister dst, Address src, int vector_len) {
 
 void Assembler::evbroadcastf64x2(XMMRegister dst, Address src, int vector_len) {
   assert(VM_Version::supports_avx512dq(), "");
+  assert(vector_len == AVX_256bit || VM_Version::supports_avx512vl(), "");
   assert(dst != xnoreg, "sanity");
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

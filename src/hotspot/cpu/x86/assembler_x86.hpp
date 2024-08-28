@@ -1193,6 +1193,7 @@ private:
   void cmpb(Address dst, int imm8);
   void cmpb(Address dst, Register reg);
   void cmpb(Register reg, Address dst);
+  void cmpb(Register reg, int imm8);
 
   void cmpl(Address dst, int32_t imm32);
   void cmpl(Register dst, int32_t imm32);
@@ -2818,7 +2819,7 @@ private:
   void vinserti32x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
   void vinserti32x4(XMMRegister dst, XMMRegister nds, Address src, uint8_t imm8);
   void vinserti64x4(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
-  void vinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
+  void vinserti64x2(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8, int vector_len);
 
   // vinsertf forms
   void vinsertf128(XMMRegister dst, XMMRegister nds, XMMRegister src, uint8_t imm8);
