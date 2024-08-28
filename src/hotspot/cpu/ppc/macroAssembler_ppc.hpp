@@ -419,7 +419,7 @@ class MacroAssembler: public Assembler {
   void call_VM_leaf(address entry_point, Register arg_1);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3);
-  
+
   // Call a stub function via a function descriptor, but don't save
   // TOC before call, don't setup TOC and ENV for call, and don't
   // restore TOC after call. Updates and returns _last_calls_return_pc.
