@@ -45,6 +45,11 @@ import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.MethodHandleEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 
+import static java.lang.classfile.ClassFile.*;
+
+/**
+ * Note: This class switches on opcode.bytecode for code size
+ */
 public class BytecodeHelpers {
 
     private BytecodeHelpers() {
@@ -172,7 +177,7 @@ public class BytecodeHelpers {
     }
 
     public static Opcode reverseBranchOpcode(Opcode op) {
-        return switch (op) {
+        return switch (op.bytecode()) {
             case IFEQ -> Opcode.IFNE;
             case IFNE -> Opcode.IFEQ;
             case IFLT -> Opcode.IFGE;
@@ -189,7 +194,7 @@ public class BytecodeHelpers {
             case IF_ACMPNE -> Opcode.IF_ACMPEQ;
             case IFNULL -> Opcode.IFNONNULL;
             case IFNONNULL -> Opcode.IFNULL;
-            default -> throw new IllegalArgumentException("Unknown branch instruction: " + op);
+            default -> throw Util.badOpcodeKindException(op, Opcode.Kind.BRANCH);
         };
     }
 
@@ -227,6 +232,29 @@ public class BytecodeHelpers {
                         default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
                     };
             default -> throw new IllegalArgumentException(String.format("convert %s -> %s", from, to));
+        };
+    }
+
+    public static TypeKind convertFromType(Opcode opcode) {
+        return switch (opcode.bytecode()) {
+            case I2D, I2F, I2L, I2B, I2C, I2S -> TypeKind.IntType;
+            case L2D, L2F, L2I -> TypeKind.LongType;
+            case F2D, F2I, F2L -> TypeKind.FloatType;
+            case D2F, D2I, D2L -> TypeKind.DoubleType;
+            default -> throw Util.badOpcodeKindException(opcode, Opcode.Kind.CONVERT);
+        };
+    }
+
+    public static TypeKind convertToType(Opcode opcode) {
+        return switch (opcode.bytecode()) {
+            case I2B -> TypeKind.ByteType;
+            case I2C -> TypeKind.CharType;
+            case I2S -> TypeKind.ShortType;
+            case L2I, F2I, D2I -> TypeKind.IntType;
+            case I2L, F2L, D2L -> TypeKind.LongType;
+            case I2F, L2F, D2F -> TypeKind.FloatType;
+            case I2D, L2D, F2D -> TypeKind.DoubleType;
+            default -> throw Util.badOpcodeKindException(opcode, Opcode.Kind.CONVERT);
         };
     }
 
@@ -283,7 +311,7 @@ public class BytecodeHelpers {
     }
 
     public static void validateValue(Opcode opcode, ConstantDesc v) {
-        switch (opcode) {
+        switch (opcode.bytecode()) {
             case ACONST_NULL -> {
                 if (v != null && v != ConstantDescs.NULL)
                     throw new IllegalArgumentException("value must be null or ConstantDescs.NULL with opcode ACONST_NULL");
@@ -297,9 +325,7 @@ public class BytecodeHelpers {
                     throw new IllegalArgumentException("`null` must use ACONST_NULL");
             }
             default -> {
-                var exp = opcode.constantValue();
-                if (exp == null)
-                    throw new IllegalArgumentException("Can not use Opcode: " + opcode + " with constant()");
+                var exp = intrinsicConstantValue(opcode);
                 if (v == null || !(v.equals(exp) || (exp instanceof Long l && v.equals(l.intValue())))) {
                     var t = (exp instanceof Long) ? "L" : (exp instanceof Float) ? "f" : (exp instanceof Double) ? "d" : "";
                     throw new IllegalArgumentException("value must be " + exp + t + " with opcode " + opcode.name());
@@ -338,5 +364,146 @@ public class BytecodeHelpers {
             return handleConstantDescToHandleInfo(constantPool, value);
         }
         throw new UnsupportedOperationException("not yet: " + constantValue);
+    }
+
+    public static ConstantDesc intrinsicConstantValue(Opcode opcode) {
+        return switch (opcode.bytecode()) {
+            case ACONST_NULL -> ConstantDescs.NULL;
+            case ICONST_M1 -> -1;
+            case ICONST_0 -> 0;
+            case ICONST_1 -> 1;
+            case ICONST_2 -> 2;
+            case ICONST_3 -> 3;
+            case ICONST_4 -> 4;
+            case ICONST_5 -> 5;
+            case LCONST_0 -> 0L;
+            case LCONST_1 -> 1L;
+            case FCONST_0 -> 0F;
+            case FCONST_1 -> 1F;
+            case FCONST_2 -> 2F;
+            case DCONST_0 -> 0D;
+            case DCONST_1 -> 1D;
+            default -> throw Util.badOpcodeKindException(opcode, Opcode.Kind.CONSTANT);
+        };
+    }
+
+    public static TypeKind intrinsicConstantType(Opcode opcode) {
+        return switch (opcode.bytecode()) {
+            case ACONST_NULL -> TypeKind.ReferenceType;
+            case ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5 -> TypeKind.IntType;
+            case LCONST_0, LCONST_1 -> TypeKind.LongType;
+            case FCONST_0, FCONST_1, FCONST_2 -> TypeKind.FloatType;
+            case DCONST_0, DCONST_1 -> TypeKind.DoubleType;
+            default -> throw Util.badOpcodeKindException(opcode, Opcode.Kind.CONSTANT);
+        };
+    }
+
+    public static boolean isUnconditionalBranch(Opcode opcode) {
+        return switch (opcode.bytecode()) {
+            case GOTO, ATHROW, GOTO_W, LOOKUPSWITCH, TABLESWITCH -> true;
+            default -> opcode.kind() == Opcode.Kind.RETURN;
+        };
+    }
+
+    // Must check Opcode.sizeIfFixed() == 1 before call!
+    public static int intrinsicLoadSlot(Opcode loadOpcode) {
+        return switch (loadOpcode.bytecode()) {
+            case ILOAD_0, LLOAD_0, FLOAD_0, DLOAD_0, ALOAD_0 -> 0;
+            case ILOAD_1, LLOAD_1, FLOAD_1, DLOAD_1, ALOAD_1 -> 1;
+            case ILOAD_2, LLOAD_2, FLOAD_2, DLOAD_2, ALOAD_2 -> 2;
+            case ILOAD_3, LLOAD_3, FLOAD_3, DLOAD_3, ALOAD_3 -> 3;
+            default -> throw Util.badOpcodeKindException(loadOpcode, Opcode.Kind.LOAD);
+        };
+    }
+
+    // Must check Opcode.sizeIfFixed() == 1 before call!
+    public static int intrinsicStoreSlot(Opcode storeOpcode) {
+        return switch (storeOpcode.bytecode()) {
+            case ISTORE_0, LSTORE_0, FSTORE_0, DSTORE_0, ASTORE_0 -> 0;
+            case ISTORE_1, LSTORE_1, FSTORE_1, DSTORE_1, ASTORE_1 -> 1;
+            case ISTORE_2, LSTORE_2, FSTORE_2, DSTORE_2, ASTORE_2 -> 2;
+            case ISTORE_3, LSTORE_3, FSTORE_3, DSTORE_3, ASTORE_3 -> 3;
+            default -> throw Util.badOpcodeKindException(storeOpcode, Opcode.Kind.STORE);
+        };
+    }
+
+    public static TypeKind loadType(Opcode loadOpcode) {
+        // Note: 0xFF handles wide opcodes
+        return switch (loadOpcode.bytecode() & 0xFF) {
+            case ILOAD, ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3 -> TypeKind.IntType;
+            case LLOAD, LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3 -> TypeKind.LongType;
+            case FLOAD, FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3 -> TypeKind.FloatType;
+            case DLOAD, DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3 -> TypeKind.DoubleType;
+            case ALOAD, ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3 -> TypeKind.ReferenceType;
+            default -> throw Util.badOpcodeKindException(loadOpcode, Opcode.Kind.LOAD);
+        };
+    }
+
+    public static TypeKind storeType(Opcode storeOpcode) {
+        // Note: 0xFF handles wide opcodes
+        return switch (storeOpcode.bytecode() & 0xFF) {
+            case ISTORE, ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3 -> TypeKind.IntType;
+            case LSTORE, LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3 -> TypeKind.LongType;
+            case FSTORE, FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3 -> TypeKind.FloatType;
+            case DSTORE, DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3 -> TypeKind.DoubleType;
+            case ASTORE, ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3 -> TypeKind.ReferenceType;
+            default -> throw Util.badOpcodeKindException(storeOpcode, Opcode.Kind.STORE);
+        };
+    }
+
+    public static TypeKind arrayLoadType(Opcode arrayLoadOpcode) {
+        return switch (arrayLoadOpcode.bytecode()) {
+            case IALOAD -> TypeKind.IntType;
+            case LALOAD -> TypeKind.LongType;
+            case FALOAD -> TypeKind.FloatType;
+            case DALOAD -> TypeKind.DoubleType;
+            case AALOAD -> TypeKind.ReferenceType;
+            case BALOAD -> TypeKind.ByteType;
+            case CALOAD -> TypeKind.CharType;
+            case SALOAD -> TypeKind.ShortType;
+            default -> throw Util.badOpcodeKindException(arrayLoadOpcode, Opcode.Kind.ARRAY_LOAD);
+        };
+    }
+
+    public static TypeKind arrayStoreType(Opcode arrayStoreOpcode) {
+        return switch (arrayStoreOpcode.bytecode()) {
+            case IASTORE -> TypeKind.IntType;
+            case LASTORE -> TypeKind.LongType;
+            case FASTORE -> TypeKind.FloatType;
+            case DASTORE -> TypeKind.DoubleType;
+            case AASTORE -> TypeKind.ReferenceType;
+            case BASTORE -> TypeKind.ByteType;
+            case CASTORE -> TypeKind.CharType;
+            case SASTORE -> TypeKind.ShortType;
+            default -> throw Util.badOpcodeKindException(arrayStoreOpcode, Opcode.Kind.ARRAY_STORE);
+        };
+    }
+
+    public static TypeKind returnType(Opcode returnOpcode) {
+        return switch (returnOpcode.bytecode()) {
+            case IRETURN -> TypeKind.IntType;
+            case LRETURN -> TypeKind.LongType;
+            case FRETURN -> TypeKind.FloatType;
+            case DRETURN -> TypeKind.DoubleType;
+            case ARETURN -> TypeKind.ReferenceType;
+            case RETURN -> TypeKind.VoidType;
+            default -> throw Util.badOpcodeKindException(returnOpcode, Opcode.Kind.RETURN);
+        };
+    }
+
+    public static TypeKind operatorOperandType(Opcode operationOpcode) {
+        return switch (operationOpcode.bytecode()) {
+            case IADD, ISUB, IMUL, IDIV, IREM, INEG,
+                 ISHL, ISHR, IUSHR, IAND, IOR, IXOR,
+                 ARRAYLENGTH -> TypeKind.IntType;
+            case LADD, LSUB, LMUL, LDIV, LREM, LNEG,
+                 LSHL, LSHR, LUSHR, LAND, LOR, LXOR,
+                 LCMP -> TypeKind.LongType;
+            case FADD, FSUB, FMUL, FDIV, FREM, FNEG,
+                 FCMPL, FCMPG -> TypeKind.FloatType;
+            case DADD, DSUB, DMUL, DDIV, DREM, DNEG,
+                 DCMPL, DCMPG -> TypeKind.DoubleType;
+            default -> throw Util.badOpcodeKindException(operationOpcode, Opcode.Kind.OPERATOR);
+        };
     }
 }

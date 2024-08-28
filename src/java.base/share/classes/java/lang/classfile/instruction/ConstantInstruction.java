@@ -33,6 +33,7 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
@@ -74,7 +75,7 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         @Override
         default TypeKind typeKind() {
-            return opcode().primaryTypeKind();
+            return BytecodeHelpers.intrinsicConstantType(opcode());
         }
     }
 
@@ -97,7 +98,7 @@ public sealed interface ConstantInstruction extends Instruction {
          */
         @Override
         default TypeKind typeKind() {
-            return opcode().primaryTypeKind();
+            return TypeKind.IntType;
         }
     }
 
@@ -136,7 +137,7 @@ public sealed interface ConstantInstruction extends Instruction {
      */
     static IntrinsicConstantInstruction ofIntrinsic(Opcode op) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
-        if (op.constantValue() == null)
+        if (op.sizeIfFixed() != 1)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected xCONST_val", op));
         return new AbstractInstruction.UnboundIntrinsicConstantInstruction(op);
     }
@@ -144,14 +145,13 @@ public sealed interface ConstantInstruction extends Instruction {
     /**
      * {@return an argument constant instruction}
      *
-     * @param op the opcode for the specific type of intrinsic constant instruction,
-     *           which must be of kind {@link Opcode.Kind#CONSTANT}
+     * @param op the opcode for the specific type of argument constant instruction,
+     *           which must be {@link Opcode#BIPUSH} or {@link Opcode#SIPUSH}
      * @param value the constant value
      * @throws IllegalArgumentException if the opcode is not {@link Opcode#BIPUSH}
      *                                  or {@link Opcode#SIPUSH}
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
-        Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op != Opcode.BIPUSH && op != Opcode.SIPUSH)
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected BIPUSH or SIPUSH", op));
         return new AbstractInstruction.UnboundArgumentConstantInstruction(op, value);
