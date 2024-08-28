@@ -888,10 +888,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
         }
 
         // Is it a stock icon ?
-        GTKStockIcon stockIcon = null;
-        synchronized (ICONS_MAP) {
-            stockIcon = ICONS_MAP.get(key);
-        }
+        GTKStockIcon stockIcon = ICONS_MAP.get(key);
 
         if (stockIcon != null) {
             return stockIcon;
