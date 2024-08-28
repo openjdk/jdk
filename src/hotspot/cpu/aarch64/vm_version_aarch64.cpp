@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "pauth_aarch64.hpp"
+#include "register_aarch64.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
