@@ -21,13 +21,18 @@
  * questions.
  */
 
-import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 
+/*
+ /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence::test -Xbatch ReachabilityFence.java
+*/
 public class ReachabilityFence {
+
     static MyClass obj = new MyClass();
 
     static class MyClass {
+
         static boolean[] collected = new boolean[100];
     }
 
@@ -37,8 +42,10 @@ public class ReachabilityFence {
                 MyClass myObject = obj;
                 if (myObject == null) return;
                 {
-                  // This would be some code that requires that myObject stays live
-                  if (MyClass.collected[i]) throw new RuntimeException("myObject collected before reachabilityFence was reached!");
+                    // This would be some code that requires that myObject stays live
+                    if (MyClass.collected[i]) throw new RuntimeException(
+                        "myObject collected before reachabilityFence was reached!"
+                    );
                 }
                 Reference.reachabilityFence(myObject);
             }
@@ -47,10 +54,11 @@ public class ReachabilityFence {
 
     public static void main(String[] args) throws Exception {
         // Set 'MyClass.collected[0]' to true if 'obj' is garbage collected
-        Cleaner.create().register(obj, () -> {
-            System.out.println("obj was garbage collected");
-            MyClass.collected[0] = true;
-        });
+        Cleaner.create()
+            .register(obj, () -> {
+                System.out.println("obj was garbage collected");
+                MyClass.collected[0] = true;
+            });
 
         // Warmup to trigger compilation
         for (int i = 0; i < 20_000; i++) {
@@ -78,6 +86,6 @@ public class ReachabilityFence {
         test(10_000_000);
 
         // Wait
-        while (!MyClass.collected[0]) { }
+        while (!MyClass.collected[0]) {}
     }
 }
