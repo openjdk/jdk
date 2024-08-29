@@ -226,7 +226,7 @@ void G1BarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-void refine_barrier_by_new_val_type(Node* n) {
+static void refine_barrier_by_new_val_type(const Node* n) {
   if (n->Opcode() != Op_StoreP &&
       n->Opcode() != Op_StoreN) {
     return;
