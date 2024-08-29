@@ -163,6 +163,7 @@ public enum TypeKind {
      * @param cl the class
      */
     public static TypeKind from(Class<?> cl) {
+        if (cl == null         ) throw new NullPointerException();
         if (cl == boolean.class) return BooleanType;
         if (cl == byte.class   ) return ByteType;
         if (cl == char.class   ) return CharType;
