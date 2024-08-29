@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.BytecodeHelpers;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
@@ -152,8 +153,13 @@ public sealed interface ConstantInstruction extends Instruction {
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
-        if (op != Opcode.BIPUSH && op != Opcode.SIPUSH)
+        if (op == Opcode.BIPUSH) {
+            BytecodeHelpers.validateBipush(value);
+        } else if (op == Opcode.SIPUSH) {
+            BytecodeHelpers.validateSipush(value);
+        } else {
             throw new IllegalArgumentException(String.format("Wrong opcode specified; found %s, expected BIPUSH or SIPUSH", op));
+        }
         return new AbstractInstruction.UnboundArgumentConstantInstruction(op, value);
     }
 
