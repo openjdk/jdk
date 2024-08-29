@@ -42,658 +42,658 @@ import jdk.internal.javac.PreviewFeature;
 public enum Opcode {
 
     /** Do nothing */
-    NOP(ClassFile.NOP, 1, Kind.NOP),
+    NOP(OpcodeValues.NOP, 1, Kind.NOP),
 
     /** Push null */
-    ACONST_NULL(ClassFile.ACONST_NULL, 1, Kind.CONSTANT, TypeKind.ReferenceType, 0, ConstantDescs.NULL),
+    ACONST_NULL(OpcodeValues.ACONST_NULL, 1, Kind.CONSTANT, TypeKind.ReferenceType, 0, ConstantDescs.NULL),
 
     /** Push int constant -1 */
-    ICONST_M1(ClassFile.ICONST_M1, 1, Kind.CONSTANT, TypeKind.IntType, 0, -1),
+    ICONST_M1(OpcodeValues.ICONST_M1, 1, Kind.CONSTANT, TypeKind.IntType, 0, -1),
 
     /** Push int constant 0 */
-    ICONST_0(ClassFile.ICONST_0, 1, Kind.CONSTANT, TypeKind.IntType, 0, 0),
+    ICONST_0(OpcodeValues.ICONST_0, 1, Kind.CONSTANT, TypeKind.IntType, 0, 0),
 
     /** Push int constant 1 */
-    ICONST_1(ClassFile.ICONST_1, 1, Kind.CONSTANT, TypeKind.IntType, 0, 1),
+    ICONST_1(OpcodeValues.ICONST_1, 1, Kind.CONSTANT, TypeKind.IntType, 0, 1),
 
     /** Push int constant 2 */
-    ICONST_2(ClassFile.ICONST_2, 1, Kind.CONSTANT, TypeKind.IntType, 0, 2),
+    ICONST_2(OpcodeValues.ICONST_2, 1, Kind.CONSTANT, TypeKind.IntType, 0, 2),
 
     /** Push int constant 3 */
-    ICONST_3(ClassFile.ICONST_3, 1, Kind.CONSTANT, TypeKind.IntType, 0, 3),
+    ICONST_3(OpcodeValues.ICONST_3, 1, Kind.CONSTANT, TypeKind.IntType, 0, 3),
 
     /** Push int constant 4 */
-    ICONST_4(ClassFile.ICONST_4, 1, Kind.CONSTANT, TypeKind.IntType, 0, 4),
+    ICONST_4(OpcodeValues.ICONST_4, 1, Kind.CONSTANT, TypeKind.IntType, 0, 4),
 
     /** Push int constant 5 */
-    ICONST_5(ClassFile.ICONST_5, 1, Kind.CONSTANT, TypeKind.IntType, 0, 5),
+    ICONST_5(OpcodeValues.ICONST_5, 1, Kind.CONSTANT, TypeKind.IntType, 0, 5),
 
     /** Push long constant 0 */
-    LCONST_0(ClassFile.LCONST_0, 1, Kind.CONSTANT, TypeKind.LongType, 0, 0L),
+    LCONST_0(OpcodeValues.LCONST_0, 1, Kind.CONSTANT, TypeKind.LongType, 0, 0L),
 
     /** Push long constant  1 */
-    LCONST_1(ClassFile.LCONST_1, 1, Kind.CONSTANT, TypeKind.LongType, 0, 1L),
+    LCONST_1(OpcodeValues.LCONST_1, 1, Kind.CONSTANT, TypeKind.LongType, 0, 1L),
 
     /** Push float constant 0 */
-    FCONST_0(ClassFile.FCONST_0, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 0.0f),
+    FCONST_0(OpcodeValues.FCONST_0, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 0.0f),
 
     /** Push float constant 1 */
-    FCONST_1(ClassFile.FCONST_1, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 1.0f),
+    FCONST_1(OpcodeValues.FCONST_1, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 1.0f),
 
     /** Push float constant 2 */
-    FCONST_2(ClassFile.FCONST_2, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 2.0f),
+    FCONST_2(OpcodeValues.FCONST_2, 1, Kind.CONSTANT, TypeKind.FloatType, 0, 2.0f),
 
     /** Push double constant 0 */
-    DCONST_0(ClassFile.DCONST_0, 1, Kind.CONSTANT, TypeKind.DoubleType, 0, 0.0d),
+    DCONST_0(OpcodeValues.DCONST_0, 1, Kind.CONSTANT, TypeKind.DoubleType, 0, 0.0d),
 
     /** Push double constant 1 */
-    DCONST_1(ClassFile.DCONST_1, 1, Kind.CONSTANT, TypeKind.DoubleType, 0, 1.0d),
+    DCONST_1(OpcodeValues.DCONST_1, 1, Kind.CONSTANT, TypeKind.DoubleType, 0, 1.0d),
 
     /** Push byte */
-    BIPUSH(ClassFile.BIPUSH, 2, Kind.CONSTANT, TypeKind.ByteType),
+    BIPUSH(OpcodeValues.BIPUSH, 2, Kind.CONSTANT, TypeKind.ByteType),
 
     /** Push short */
-    SIPUSH(ClassFile.SIPUSH, 3, Kind.CONSTANT, TypeKind.ShortType),
+    SIPUSH(OpcodeValues.SIPUSH, 3, Kind.CONSTANT, TypeKind.ShortType),
 
     /** Push item from run-time constant pool */
-    LDC(ClassFile.LDC, 2, Kind.CONSTANT),
+    LDC(OpcodeValues.LDC, 2, Kind.CONSTANT),
 
     /** Push item from run-time constant pool (wide index) */
-    LDC_W(ClassFile.LDC_W, 3, Kind.CONSTANT),
+    LDC_W(OpcodeValues.LDC_W, 3, Kind.CONSTANT),
 
     /** Push long or double from run-time constant pool (wide index) */
-    LDC2_W(ClassFile.LDC2_W, 3, Kind.CONSTANT),
+    LDC2_W(OpcodeValues.LDC2_W, 3, Kind.CONSTANT),
 
     /** Load int from local variable */
-    ILOAD(ClassFile.ILOAD, 2, Kind.LOAD, TypeKind.IntType, -1),
+    ILOAD(OpcodeValues.ILOAD, 2, Kind.LOAD, TypeKind.IntType, -1),
 
     /** Load long from local variable */
-    LLOAD(ClassFile.LLOAD, 2, Kind.LOAD, TypeKind.LongType, -1),
+    LLOAD(OpcodeValues.LLOAD, 2, Kind.LOAD, TypeKind.LongType, -1),
 
     /** Load float from local variable */
-    FLOAD(ClassFile.FLOAD, 2, Kind.LOAD, TypeKind.FloatType, -1),
+    FLOAD(OpcodeValues.FLOAD, 2, Kind.LOAD, TypeKind.FloatType, -1),
 
     /** Load double from local variable */
-    DLOAD(ClassFile.DLOAD, 2, Kind.LOAD, TypeKind.DoubleType, -1),
+    DLOAD(OpcodeValues.DLOAD, 2, Kind.LOAD, TypeKind.DoubleType, -1),
 
     /** Load reference from local variable */
-    ALOAD(ClassFile.ALOAD, 2, Kind.LOAD, TypeKind.ReferenceType, -1),
+    ALOAD(OpcodeValues.ALOAD, 2, Kind.LOAD, TypeKind.ReferenceType, -1),
 
     /** Load int from local variable 0 */
-    ILOAD_0(ClassFile.ILOAD_0, 1, Kind.LOAD, TypeKind.IntType, 0),
+    ILOAD_0(OpcodeValues.ILOAD_0, 1, Kind.LOAD, TypeKind.IntType, 0),
 
     /** Load int from local variable 1 */
-    ILOAD_1(ClassFile.ILOAD_1, 1, Kind.LOAD, TypeKind.IntType, 1),
+    ILOAD_1(OpcodeValues.ILOAD_1, 1, Kind.LOAD, TypeKind.IntType, 1),
 
     /** Load int from local variable 2 */
-    ILOAD_2(ClassFile.ILOAD_2, 1, Kind.LOAD, TypeKind.IntType, 2),
+    ILOAD_2(OpcodeValues.ILOAD_2, 1, Kind.LOAD, TypeKind.IntType, 2),
 
     /** Load int from local variable3  */
-    ILOAD_3(ClassFile.ILOAD_3, 1, Kind.LOAD, TypeKind.IntType, 3),
+    ILOAD_3(OpcodeValues.ILOAD_3, 1, Kind.LOAD, TypeKind.IntType, 3),
 
     /** Load long from local variable 0 */
-    LLOAD_0(ClassFile.LLOAD_0, 1, Kind.LOAD, TypeKind.LongType, 0),
+    LLOAD_0(OpcodeValues.LLOAD_0, 1, Kind.LOAD, TypeKind.LongType, 0),
 
     /** Load long from local variable 1 */
-    LLOAD_1(ClassFile.LLOAD_1, 1, Kind.LOAD, TypeKind.LongType, 1),
+    LLOAD_1(OpcodeValues.LLOAD_1, 1, Kind.LOAD, TypeKind.LongType, 1),
 
     /** Load long from local variable 2 */
-    LLOAD_2(ClassFile.LLOAD_2, 1, Kind.LOAD, TypeKind.LongType, 2),
+    LLOAD_2(OpcodeValues.LLOAD_2, 1, Kind.LOAD, TypeKind.LongType, 2),
 
     /** Load long from local variable 3 */
-    LLOAD_3(ClassFile.LLOAD_3, 1, Kind.LOAD, TypeKind.LongType, 3),
+    LLOAD_3(OpcodeValues.LLOAD_3, 1, Kind.LOAD, TypeKind.LongType, 3),
 
     /** Load float from local variable 0 */
-    FLOAD_0(ClassFile.FLOAD_0, 1, Kind.LOAD, TypeKind.FloatType, 0),
+    FLOAD_0(OpcodeValues.FLOAD_0, 1, Kind.LOAD, TypeKind.FloatType, 0),
 
     /** Load float from local variable 1 */
-    FLOAD_1(ClassFile.FLOAD_1, 1, Kind.LOAD, TypeKind.FloatType, 1),
+    FLOAD_1(OpcodeValues.FLOAD_1, 1, Kind.LOAD, TypeKind.FloatType, 1),
 
     /** Load float from local variable 2 */
-    FLOAD_2(ClassFile.FLOAD_2, 1, Kind.LOAD, TypeKind.FloatType, 2),
+    FLOAD_2(OpcodeValues.FLOAD_2, 1, Kind.LOAD, TypeKind.FloatType, 2),
 
     /** Load float from local variable 3 */
-    FLOAD_3(ClassFile.FLOAD_3, 1, Kind.LOAD, TypeKind.FloatType, 3),
+    FLOAD_3(OpcodeValues.FLOAD_3, 1, Kind.LOAD, TypeKind.FloatType, 3),
 
     /** Load double from local variable 0 */
-    DLOAD_0(ClassFile.DLOAD_0, 1, Kind.LOAD, TypeKind.DoubleType, 0),
+    DLOAD_0(OpcodeValues.DLOAD_0, 1, Kind.LOAD, TypeKind.DoubleType, 0),
 
     /** Load double from local variable 1 */
-    DLOAD_1(ClassFile.DLOAD_1, 1, Kind.LOAD, TypeKind.DoubleType, 1),
+    DLOAD_1(OpcodeValues.DLOAD_1, 1, Kind.LOAD, TypeKind.DoubleType, 1),
 
     /** Load double from local variable 2 */
-    DLOAD_2(ClassFile.DLOAD_2, 1, Kind.LOAD, TypeKind.DoubleType, 2),
+    DLOAD_2(OpcodeValues.DLOAD_2, 1, Kind.LOAD, TypeKind.DoubleType, 2),
 
     /** Load double from local variable 3 */
-    DLOAD_3(ClassFile.DLOAD_3, 1, Kind.LOAD, TypeKind.DoubleType, 3),
+    DLOAD_3(OpcodeValues.DLOAD_3, 1, Kind.LOAD, TypeKind.DoubleType, 3),
 
     /**  Load reference from local variable 0 */
-    ALOAD_0(ClassFile.ALOAD_0, 1, Kind.LOAD, TypeKind.ReferenceType, 0),
+    ALOAD_0(OpcodeValues.ALOAD_0, 1, Kind.LOAD, TypeKind.ReferenceType, 0),
 
     /** Load reference from local variable 1 */
-    ALOAD_1(ClassFile.ALOAD_1, 1, Kind.LOAD, TypeKind.ReferenceType, 1),
+    ALOAD_1(OpcodeValues.ALOAD_1, 1, Kind.LOAD, TypeKind.ReferenceType, 1),
 
     /** Load reference from local variable 2 */
-    ALOAD_2(ClassFile.ALOAD_2, 1, Kind.LOAD, TypeKind.ReferenceType, 2),
+    ALOAD_2(OpcodeValues.ALOAD_2, 1, Kind.LOAD, TypeKind.ReferenceType, 2),
 
     /** Load reference from local variable 3 */
-    ALOAD_3(ClassFile.ALOAD_3, 1, Kind.LOAD, TypeKind.ReferenceType, 3),
+    ALOAD_3(OpcodeValues.ALOAD_3, 1, Kind.LOAD, TypeKind.ReferenceType, 3),
 
     /** Load int from array */
-    IALOAD(ClassFile.IALOAD, 1, Kind.ARRAY_LOAD, TypeKind.IntType),
+    IALOAD(OpcodeValues.IALOAD, 1, Kind.ARRAY_LOAD, TypeKind.IntType),
 
     /** Load long from array */
-    LALOAD(ClassFile.LALOAD, 1, Kind.ARRAY_LOAD, TypeKind.LongType),
+    LALOAD(OpcodeValues.LALOAD, 1, Kind.ARRAY_LOAD, TypeKind.LongType),
 
     /** Load float from array */
-    FALOAD(ClassFile.FALOAD, 1, Kind.ARRAY_LOAD, TypeKind.FloatType),
+    FALOAD(OpcodeValues.FALOAD, 1, Kind.ARRAY_LOAD, TypeKind.FloatType),
 
     /** Load double from array */
-    DALOAD(ClassFile.DALOAD, 1, Kind.ARRAY_LOAD, TypeKind.DoubleType),
+    DALOAD(OpcodeValues.DALOAD, 1, Kind.ARRAY_LOAD, TypeKind.DoubleType),
 
     /** Load reference from array */
-    AALOAD(ClassFile.AALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ReferenceType),
+    AALOAD(OpcodeValues.AALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ReferenceType),
 
     /** Load byte from array */
-    BALOAD(ClassFile.BALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ByteType),
+    BALOAD(OpcodeValues.BALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ByteType),
 
     /** Load char from array */
-    CALOAD(ClassFile.CALOAD, 1, Kind.ARRAY_LOAD, TypeKind.CharType),
+    CALOAD(OpcodeValues.CALOAD, 1, Kind.ARRAY_LOAD, TypeKind.CharType),
 
     /** Load short from array */
-    SALOAD(ClassFile.SALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ShortType),
+    SALOAD(OpcodeValues.SALOAD, 1, Kind.ARRAY_LOAD, TypeKind.ShortType),
 
     /** Store int into local variable */
-    ISTORE(ClassFile.ISTORE, 2, Kind.STORE, TypeKind.IntType, -1),
+    ISTORE(OpcodeValues.ISTORE, 2, Kind.STORE, TypeKind.IntType, -1),
 
     /** Store long into local variable */
-    LSTORE(ClassFile.LSTORE, 2, Kind.STORE, TypeKind.LongType, -1),
+    LSTORE(OpcodeValues.LSTORE, 2, Kind.STORE, TypeKind.LongType, -1),
 
     /** Store float into local variable */
-    FSTORE(ClassFile.FSTORE, 2, Kind.STORE, TypeKind.FloatType, -1),
+    FSTORE(OpcodeValues.FSTORE, 2, Kind.STORE, TypeKind.FloatType, -1),
 
     /** Store double into local variable */
-    DSTORE(ClassFile.DSTORE, 2, Kind.STORE, TypeKind.DoubleType, -1),
+    DSTORE(OpcodeValues.DSTORE, 2, Kind.STORE, TypeKind.DoubleType, -1),
 
     /** Store reference into local variable */
-    ASTORE(ClassFile.ASTORE, 2, Kind.STORE, TypeKind.ReferenceType, -1),
+    ASTORE(OpcodeValues.ASTORE, 2, Kind.STORE, TypeKind.ReferenceType, -1),
 
     /** Store int into local variable 0 */
-    ISTORE_0(ClassFile.ISTORE_0, 1, Kind.STORE, TypeKind.IntType, 0),
+    ISTORE_0(OpcodeValues.ISTORE_0, 1, Kind.STORE, TypeKind.IntType, 0),
 
     /** Store int into local variable 1 */
-    ISTORE_1(ClassFile.ISTORE_1, 1, Kind.STORE, TypeKind.IntType, 1),
+    ISTORE_1(OpcodeValues.ISTORE_1, 1, Kind.STORE, TypeKind.IntType, 1),
 
     /** Store int into local variable 2 */
-    ISTORE_2(ClassFile.ISTORE_2, 1, Kind.STORE, TypeKind.IntType, 2),
+    ISTORE_2(OpcodeValues.ISTORE_2, 1, Kind.STORE, TypeKind.IntType, 2),
 
     /** Store int into local variable 3 */
-    ISTORE_3(ClassFile.ISTORE_3, 1, Kind.STORE, TypeKind.IntType, 3),
+    ISTORE_3(OpcodeValues.ISTORE_3, 1, Kind.STORE, TypeKind.IntType, 3),
 
     /** Store long into local variable 0 */
-    LSTORE_0(ClassFile.LSTORE_0, 1, Kind.STORE, TypeKind.LongType, 0),
+    LSTORE_0(OpcodeValues.LSTORE_0, 1, Kind.STORE, TypeKind.LongType, 0),
 
     /** Store long into local variable 1 */
-    LSTORE_1(ClassFile.LSTORE_1, 1, Kind.STORE, TypeKind.LongType, 1),
+    LSTORE_1(OpcodeValues.LSTORE_1, 1, Kind.STORE, TypeKind.LongType, 1),
 
     /** Store long into local variable 2 */
-    LSTORE_2(ClassFile.LSTORE_2, 1, Kind.STORE, TypeKind.LongType, 2),
+    LSTORE_2(OpcodeValues.LSTORE_2, 1, Kind.STORE, TypeKind.LongType, 2),
 
     /** Store long into local variable 3 */
-    LSTORE_3(ClassFile.LSTORE_3, 1, Kind.STORE, TypeKind.LongType, 3),
+    LSTORE_3(OpcodeValues.LSTORE_3, 1, Kind.STORE, TypeKind.LongType, 3),
 
     /** Store float into local variable 0 */
-    FSTORE_0(ClassFile.FSTORE_0, 1, Kind.STORE, TypeKind.FloatType, 0),
+    FSTORE_0(OpcodeValues.FSTORE_0, 1, Kind.STORE, TypeKind.FloatType, 0),
 
     /** Store float into local variable 1 */
-    FSTORE_1(ClassFile.FSTORE_1, 1, Kind.STORE, TypeKind.FloatType, 1),
+    FSTORE_1(OpcodeValues.FSTORE_1, 1, Kind.STORE, TypeKind.FloatType, 1),
 
     /** Store float into local variable 2 */
-    FSTORE_2(ClassFile.FSTORE_2, 1, Kind.STORE, TypeKind.FloatType, 2),
+    FSTORE_2(OpcodeValues.FSTORE_2, 1, Kind.STORE, TypeKind.FloatType, 2),
 
     /** Store float into local variable 3 */
-    FSTORE_3(ClassFile.FSTORE_3, 1, Kind.STORE, TypeKind.FloatType, 3),
+    FSTORE_3(OpcodeValues.FSTORE_3, 1, Kind.STORE, TypeKind.FloatType, 3),
 
     /** Store double into local variable 0 */
-    DSTORE_0(ClassFile.DSTORE_0, 1, Kind.STORE, TypeKind.DoubleType, 0),
+    DSTORE_0(OpcodeValues.DSTORE_0, 1, Kind.STORE, TypeKind.DoubleType, 0),
 
     /** Store double into local variable 1 */
-    DSTORE_1(ClassFile.DSTORE_1, 1, Kind.STORE, TypeKind.DoubleType, 1),
+    DSTORE_1(OpcodeValues.DSTORE_1, 1, Kind.STORE, TypeKind.DoubleType, 1),
 
     /** Store double into local variable 2 */
-    DSTORE_2(ClassFile.DSTORE_2, 1, Kind.STORE, TypeKind.DoubleType, 2),
+    DSTORE_2(OpcodeValues.DSTORE_2, 1, Kind.STORE, TypeKind.DoubleType, 2),
 
     /** Store double into local variable 3 */
-    DSTORE_3(ClassFile.DSTORE_3, 1, Kind.STORE, TypeKind.DoubleType, 3),
+    DSTORE_3(OpcodeValues.DSTORE_3, 1, Kind.STORE, TypeKind.DoubleType, 3),
 
     /** Store reference into local variable 0 */
-    ASTORE_0(ClassFile.ASTORE_0, 1, Kind.STORE, TypeKind.ReferenceType, 0),
+    ASTORE_0(OpcodeValues.ASTORE_0, 1, Kind.STORE, TypeKind.ReferenceType, 0),
 
     /** Store reference into local variable 1 */
-    ASTORE_1(ClassFile.ASTORE_1, 1, Kind.STORE, TypeKind.ReferenceType, 1),
+    ASTORE_1(OpcodeValues.ASTORE_1, 1, Kind.STORE, TypeKind.ReferenceType, 1),
 
     /** Store reference into local variable 2 */
-    ASTORE_2(ClassFile.ASTORE_2, 1, Kind.STORE, TypeKind.ReferenceType, 2),
+    ASTORE_2(OpcodeValues.ASTORE_2, 1, Kind.STORE, TypeKind.ReferenceType, 2),
 
     /** Store reference into local variable 3 */
-    ASTORE_3(ClassFile.ASTORE_3, 1, Kind.STORE, TypeKind.ReferenceType, 3),
+    ASTORE_3(OpcodeValues.ASTORE_3, 1, Kind.STORE, TypeKind.ReferenceType, 3),
 
     /** Store into int array */
-    IASTORE(ClassFile.IASTORE, 1, Kind.ARRAY_STORE, TypeKind.IntType),
+    IASTORE(OpcodeValues.IASTORE, 1, Kind.ARRAY_STORE, TypeKind.IntType),
 
     /** Store into long array */
-    LASTORE(ClassFile.LASTORE, 1, Kind.ARRAY_STORE, TypeKind.LongType),
+    LASTORE(OpcodeValues.LASTORE, 1, Kind.ARRAY_STORE, TypeKind.LongType),
 
     /** Store into float array */
-    FASTORE(ClassFile.FASTORE, 1, Kind.ARRAY_STORE, TypeKind.FloatType),
+    FASTORE(OpcodeValues.FASTORE, 1, Kind.ARRAY_STORE, TypeKind.FloatType),
 
     /** Store into double array */
-    DASTORE(ClassFile.DASTORE, 1, Kind.ARRAY_STORE, TypeKind.DoubleType),
+    DASTORE(OpcodeValues.DASTORE, 1, Kind.ARRAY_STORE, TypeKind.DoubleType),
 
     /** Store into reference array */
-    AASTORE(ClassFile.AASTORE, 1, Kind.ARRAY_STORE, TypeKind.ReferenceType),
+    AASTORE(OpcodeValues.AASTORE, 1, Kind.ARRAY_STORE, TypeKind.ReferenceType),
 
     /** Store into byte array */
-    BASTORE(ClassFile.BASTORE, 1, Kind.ARRAY_STORE, TypeKind.ByteType),
+    BASTORE(OpcodeValues.BASTORE, 1, Kind.ARRAY_STORE, TypeKind.ByteType),
 
     /** Store into char array */
-    CASTORE(ClassFile.CASTORE, 1, Kind.ARRAY_STORE, TypeKind.CharType),
+    CASTORE(OpcodeValues.CASTORE, 1, Kind.ARRAY_STORE, TypeKind.CharType),
 
     /** Store into short array */
-    SASTORE(ClassFile.SASTORE, 1, Kind.ARRAY_STORE, TypeKind.ShortType),
+    SASTORE(OpcodeValues.SASTORE, 1, Kind.ARRAY_STORE, TypeKind.ShortType),
 
     /** Pop the top operand stack value */
-    POP(ClassFile.POP, 1, Kind.STACK),
+    POP(OpcodeValues.POP, 1, Kind.STACK),
 
     /** Pop the top one or two operand stack values */
-    POP2(ClassFile.POP2, 1, Kind.STACK),
+    POP2(OpcodeValues.POP2, 1, Kind.STACK),
 
     /** Duplicate the top operand stack value */
-    DUP(ClassFile.DUP, 1, Kind.STACK),
+    DUP(OpcodeValues.DUP, 1, Kind.STACK),
 
     /** Duplicate the top operand stack value and insert two values down */
-    DUP_X1(ClassFile.DUP_X1, 1, Kind.STACK),
+    DUP_X1(OpcodeValues.DUP_X1, 1, Kind.STACK),
 
     /** Duplicate the top operand stack value and insert two or three values down */
-    DUP_X2(ClassFile.DUP_X2, 1, Kind.STACK),
+    DUP_X2(OpcodeValues.DUP_X2, 1, Kind.STACK),
 
     /** Duplicate the top one or two operand stack values */
-    DUP2(ClassFile.DUP2, 1, Kind.STACK),
+    DUP2(OpcodeValues.DUP2, 1, Kind.STACK),
 
     /** Duplicate the top one or two operand stack values and insert two or three values down */
-    DUP2_X1(ClassFile.DUP2_X1, 1, Kind.STACK),
+    DUP2_X1(OpcodeValues.DUP2_X1, 1, Kind.STACK),
 
     /** Duplicate the top one or two operand stack values and insert two, three, or four values down */
-    DUP2_X2(ClassFile.DUP2_X2, 1, Kind.STACK),
+    DUP2_X2(OpcodeValues.DUP2_X2, 1, Kind.STACK),
 
     /** Swap the top two operand stack values */
-    SWAP(ClassFile.SWAP, 1, Kind.STACK),
+    SWAP(OpcodeValues.SWAP, 1, Kind.STACK),
 
     /** Add int */
-    IADD(ClassFile.IADD, 1, Kind.OPERATOR, TypeKind.IntType),
+    IADD(OpcodeValues.IADD, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Add long */
-    LADD(ClassFile.LADD, 1, Kind.OPERATOR, TypeKind.LongType),
+    LADD(OpcodeValues.LADD, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Add float */
-    FADD(ClassFile.FADD, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FADD(OpcodeValues.FADD, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Add double */
-    DADD(ClassFile.DADD, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DADD(OpcodeValues.DADD, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Subtract int */
-    ISUB(ClassFile.ISUB, 1, Kind.OPERATOR, TypeKind.IntType),
+    ISUB(OpcodeValues.ISUB, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Subtract long */
-    LSUB(ClassFile.LSUB, 1, Kind.OPERATOR, TypeKind.LongType),
+    LSUB(OpcodeValues.LSUB, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Subtract float */
-    FSUB(ClassFile.FSUB, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FSUB(OpcodeValues.FSUB, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Subtract double */
-    DSUB(ClassFile.DSUB, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DSUB(OpcodeValues.DSUB, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Multiply int */
-    IMUL(ClassFile.IMUL, 1, Kind.OPERATOR, TypeKind.IntType),
+    IMUL(OpcodeValues.IMUL, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Multiply long */
-    LMUL(ClassFile.LMUL, 1, Kind.OPERATOR, TypeKind.LongType),
+    LMUL(OpcodeValues.LMUL, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Multiply float */
-    FMUL(ClassFile.FMUL, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FMUL(OpcodeValues.FMUL, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Multiply double */
-    DMUL(ClassFile.DMUL, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DMUL(OpcodeValues.DMUL, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Divide int */
-    IDIV(ClassFile.IDIV, 1, Kind.OPERATOR, TypeKind.IntType),
+    IDIV(OpcodeValues.IDIV, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Divide long */
-    LDIV(ClassFile.LDIV, 1, Kind.OPERATOR, TypeKind.LongType),
+    LDIV(OpcodeValues.LDIV, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Divide float */
-    FDIV(ClassFile.FDIV, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FDIV(OpcodeValues.FDIV, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Divide double */
-    DDIV(ClassFile.DDIV, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DDIV(OpcodeValues.DDIV, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Remainder int */
-    IREM(ClassFile.IREM, 1, Kind.OPERATOR, TypeKind.IntType),
+    IREM(OpcodeValues.IREM, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Remainder long */
-    LREM(ClassFile.LREM, 1, Kind.OPERATOR, TypeKind.LongType),
+    LREM(OpcodeValues.LREM, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Remainder float */
-    FREM(ClassFile.FREM, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FREM(OpcodeValues.FREM, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Remainder double */
-    DREM(ClassFile.DREM, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DREM(OpcodeValues.DREM, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Negate int */
-    INEG(ClassFile.INEG, 1, Kind.OPERATOR, TypeKind.IntType),
+    INEG(OpcodeValues.INEG, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Negate long */
-    LNEG(ClassFile.LNEG, 1, Kind.OPERATOR, TypeKind.LongType),
+    LNEG(OpcodeValues.LNEG, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Negate float */
-    FNEG(ClassFile.FNEG, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FNEG(OpcodeValues.FNEG, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Negate double */
-    DNEG(ClassFile.DNEG, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DNEG(OpcodeValues.DNEG, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Shift left int */
-    ISHL(ClassFile.ISHL, 1, Kind.OPERATOR, TypeKind.IntType),
+    ISHL(OpcodeValues.ISHL, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Shift left long */
-    LSHL(ClassFile.LSHL, 1, Kind.OPERATOR, TypeKind.LongType),
+    LSHL(OpcodeValues.LSHL, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Shift right int */
-    ISHR(ClassFile.ISHR, 1, Kind.OPERATOR, TypeKind.IntType),
+    ISHR(OpcodeValues.ISHR, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Shift right long */
-    LSHR(ClassFile.LSHR, 1, Kind.OPERATOR, TypeKind.LongType),
+    LSHR(OpcodeValues.LSHR, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Logical shift right int */
-    IUSHR(ClassFile.IUSHR, 1, Kind.OPERATOR, TypeKind.IntType),
+    IUSHR(OpcodeValues.IUSHR, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Logical shift right long */
-    LUSHR(ClassFile.LUSHR, 1, Kind.OPERATOR, TypeKind.LongType),
+    LUSHR(OpcodeValues.LUSHR, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Boolean AND int */
-    IAND(ClassFile.IAND, 1, Kind.OPERATOR, TypeKind.IntType),
+    IAND(OpcodeValues.IAND, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Boolean AND long */
-    LAND(ClassFile.LAND, 1, Kind.OPERATOR, TypeKind.LongType),
+    LAND(OpcodeValues.LAND, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Boolean OR int */
-    IOR(ClassFile.IOR, 1, Kind.OPERATOR, TypeKind.IntType),
+    IOR(OpcodeValues.IOR, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Boolean OR long */
-    LOR(ClassFile.LOR, 1, Kind.OPERATOR, TypeKind.LongType),
+    LOR(OpcodeValues.LOR, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Boolean XOR int */
-    IXOR(ClassFile.IXOR, 1, Kind.OPERATOR, TypeKind.IntType),
+    IXOR(OpcodeValues.IXOR, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Boolean XOR long */
-    LXOR(ClassFile.LXOR, 1, Kind.OPERATOR, TypeKind.LongType),
+    LXOR(OpcodeValues.LXOR, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Increment local variable by constant */
-    IINC(ClassFile.IINC, 3, Kind.INCREMENT, TypeKind.IntType, -1),
+    IINC(OpcodeValues.IINC, 3, Kind.INCREMENT, TypeKind.IntType, -1),
 
     /** Convert int to long */
-    I2L(ClassFile.I2L, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.LongType),
+    I2L(OpcodeValues.I2L, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.LongType),
 
     /** Convert int to float */
-    I2F(ClassFile.I2F, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.FloatType),
+    I2F(OpcodeValues.I2F, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.FloatType),
 
     /** Convert int to double */
-    I2D(ClassFile.I2D, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.DoubleType),
+    I2D(OpcodeValues.I2D, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.DoubleType),
 
     /** Convert long to int */
-    L2I(ClassFile.L2I, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.IntType),
+    L2I(OpcodeValues.L2I, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.IntType),
 
     /** Convert long to float */
-    L2F(ClassFile.L2F, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.FloatType),
+    L2F(OpcodeValues.L2F, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.FloatType),
 
     /** Convert long to double */
-    L2D(ClassFile.L2D, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.DoubleType),
+    L2D(OpcodeValues.L2D, 1, Kind.CONVERT, TypeKind.LongType, TypeKind.DoubleType),
 
     /** Convert float to int */
-    F2I(ClassFile.F2I, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.IntType),
+    F2I(OpcodeValues.F2I, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.IntType),
 
     /** Convert float to long */
-    F2L(ClassFile.F2L, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.LongType),
+    F2L(OpcodeValues.F2L, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.LongType),
 
     /** Convert float to double */
-    F2D(ClassFile.F2D, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.DoubleType),
+    F2D(OpcodeValues.F2D, 1, Kind.CONVERT, TypeKind.FloatType, TypeKind.DoubleType),
 
     /** Convert double to int */
-    D2I(ClassFile.D2I, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.IntType),
+    D2I(OpcodeValues.D2I, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.IntType),
 
     /** Convert double to long */
-    D2L(ClassFile.D2L, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.LongType),
+    D2L(OpcodeValues.D2L, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.LongType),
 
     /** Convert double to float */
-    D2F(ClassFile.D2F, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.FloatType),
+    D2F(OpcodeValues.D2F, 1, Kind.CONVERT, TypeKind.DoubleType, TypeKind.FloatType),
 
     /** Convert int to byte */
-    I2B(ClassFile.I2B, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.ByteType),
+    I2B(OpcodeValues.I2B, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.ByteType),
 
     /** Convert int to char */
-    I2C(ClassFile.I2C, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.CharType),
+    I2C(OpcodeValues.I2C, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.CharType),
 
     /** Convert int to short */
-    I2S(ClassFile.I2S, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.ShortType),
+    I2S(OpcodeValues.I2S, 1, Kind.CONVERT, TypeKind.IntType, TypeKind.ShortType),
 
     /** Compare long */
-    LCMP(ClassFile.LCMP, 1, Kind.OPERATOR, TypeKind.LongType),
+    LCMP(OpcodeValues.LCMP, 1, Kind.OPERATOR, TypeKind.LongType),
 
     /** Compare float */
-    FCMPL(ClassFile.FCMPL, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FCMPL(OpcodeValues.FCMPL, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Compare float */
-    FCMPG(ClassFile.FCMPG, 1, Kind.OPERATOR, TypeKind.FloatType),
+    FCMPG(OpcodeValues.FCMPG, 1, Kind.OPERATOR, TypeKind.FloatType),
 
     /** Compare double */
-    DCMPL(ClassFile.DCMPL, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DCMPL(OpcodeValues.DCMPL, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Compare double */
-    DCMPG(ClassFile.DCMPG, 1, Kind.OPERATOR, TypeKind.DoubleType),
+    DCMPG(OpcodeValues.DCMPG, 1, Kind.OPERATOR, TypeKind.DoubleType),
 
     /** Branch if int comparison with zero succeeds */
-    IFEQ(ClassFile.IFEQ, 3, Kind.BRANCH, TypeKind.IntType),
+    IFEQ(OpcodeValues.IFEQ, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison with zero succeeds */
-    IFNE(ClassFile.IFNE, 3, Kind.BRANCH, TypeKind.IntType),
+    IFNE(OpcodeValues.IFNE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison with zero succeeds */
-    IFLT(ClassFile.IFLT, 3, Kind.BRANCH, TypeKind.IntType),
+    IFLT(OpcodeValues.IFLT, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison with zero succeeds */
-    IFGE(ClassFile.IFGE, 3, Kind.BRANCH, TypeKind.IntType),
+    IFGE(OpcodeValues.IFGE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison with zero succeeds */
-    IFGT(ClassFile.IFGT, 3, Kind.BRANCH, TypeKind.IntType),
+    IFGT(OpcodeValues.IFGT, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison with zero succeeds */
-    IFLE(ClassFile.IFLE, 3, Kind.BRANCH, TypeKind.IntType),
+    IFLE(OpcodeValues.IFLE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPEQ(ClassFile.IF_ICMPEQ, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPEQ(OpcodeValues.IF_ICMPEQ, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPNE(ClassFile.IF_ICMPNE, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPNE(OpcodeValues.IF_ICMPNE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPLT(ClassFile.IF_ICMPLT, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPLT(OpcodeValues.IF_ICMPLT, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPGE(ClassFile.IF_ICMPGE, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPGE(OpcodeValues.IF_ICMPGE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPGT(ClassFile.IF_ICMPGT, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPGT(OpcodeValues.IF_ICMPGT, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if int comparison succeeds */
-    IF_ICMPLE(ClassFile.IF_ICMPLE, 3, Kind.BRANCH, TypeKind.IntType),
+    IF_ICMPLE(OpcodeValues.IF_ICMPLE, 3, Kind.BRANCH, TypeKind.IntType),
 
     /** Branch if reference comparison succeeds */
-    IF_ACMPEQ(ClassFile.IF_ACMPEQ, 3, Kind.BRANCH, TypeKind.ReferenceType),
+    IF_ACMPEQ(OpcodeValues.IF_ACMPEQ, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch if reference comparison succeeds */
-    IF_ACMPNE(ClassFile.IF_ACMPNE, 3, Kind.BRANCH, TypeKind.ReferenceType),
+    IF_ACMPNE(OpcodeValues.IF_ACMPNE, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch always */
-    GOTO(ClassFile.GOTO, 3, Kind.BRANCH, TypeKind.VoidType),
+    GOTO(OpcodeValues.GOTO, 3, Kind.BRANCH, TypeKind.VoidType),
 
     /**
      * Jump subroutine is discontinued opcode
      * @see java.lang.classfile.instruction.DiscontinuedInstruction
      */
-    JSR(ClassFile.JSR, 3, Kind.DISCONTINUED_JSR),
+    JSR(OpcodeValues.JSR, 3, Kind.DISCONTINUED_JSR),
 
     /**
      * Return from subroutine is discontinued opcode
      * @see java.lang.classfile.instruction.DiscontinuedInstruction
      */
-    RET(ClassFile.RET, 2, Kind.DISCONTINUED_RET),
+    RET(OpcodeValues.RET, 2, Kind.DISCONTINUED_RET),
 
     /** Access jump table by index and jump */
-    TABLESWITCH(ClassFile.TABLESWITCH, -1, Kind.TABLE_SWITCH),
+    TABLESWITCH(OpcodeValues.TABLESWITCH, -1, Kind.TABLE_SWITCH),
 
     /** Access jump table by key match and jump */
-    LOOKUPSWITCH(ClassFile.LOOKUPSWITCH, -1, Kind.LOOKUP_SWITCH),
+    LOOKUPSWITCH(OpcodeValues.LOOKUPSWITCH, -1, Kind.LOOKUP_SWITCH),
 
     /** Return int from method */
-    IRETURN(ClassFile.IRETURN, 1, Kind.RETURN, TypeKind.IntType),
+    IRETURN(OpcodeValues.IRETURN, 1, Kind.RETURN, TypeKind.IntType),
 
     /** Return long from method */
-    LRETURN(ClassFile.LRETURN, 1, Kind.RETURN, TypeKind.LongType),
+    LRETURN(OpcodeValues.LRETURN, 1, Kind.RETURN, TypeKind.LongType),
 
     /** Return float from method */
-    FRETURN(ClassFile.FRETURN, 1, Kind.RETURN, TypeKind.FloatType),
+    FRETURN(OpcodeValues.FRETURN, 1, Kind.RETURN, TypeKind.FloatType),
 
     /** Return double from method */
-    DRETURN(ClassFile.DRETURN, 1, Kind.RETURN, TypeKind.DoubleType),
+    DRETURN(OpcodeValues.DRETURN, 1, Kind.RETURN, TypeKind.DoubleType),
 
     /** Return reference from method */
-    ARETURN(ClassFile.ARETURN, 1, Kind.RETURN, TypeKind.ReferenceType),
+    ARETURN(OpcodeValues.ARETURN, 1, Kind.RETURN, TypeKind.ReferenceType),
 
     /** Return void from method */
-    RETURN(ClassFile.RETURN, 1, Kind.RETURN, TypeKind.VoidType),
+    RETURN(OpcodeValues.RETURN, 1, Kind.RETURN, TypeKind.VoidType),
 
     /** Get static field from class */
-    GETSTATIC(ClassFile.GETSTATIC, 3, Kind.FIELD_ACCESS),
+    GETSTATIC(OpcodeValues.GETSTATIC, 3, Kind.FIELD_ACCESS),
 
     /** Set static field in class */
-    PUTSTATIC(ClassFile.PUTSTATIC, 3, Kind.FIELD_ACCESS),
+    PUTSTATIC(OpcodeValues.PUTSTATIC, 3, Kind.FIELD_ACCESS),
 
     /** Fetch field from object */
-    GETFIELD(ClassFile.GETFIELD, 3, Kind.FIELD_ACCESS),
+    GETFIELD(OpcodeValues.GETFIELD, 3, Kind.FIELD_ACCESS),
 
     /** Set field in object */
-    PUTFIELD(ClassFile.PUTFIELD, 3, Kind.FIELD_ACCESS),
+    PUTFIELD(OpcodeValues.PUTFIELD, 3, Kind.FIELD_ACCESS),
 
     /** Invoke instance method; dispatch based on class */
-    INVOKEVIRTUAL(ClassFile.INVOKEVIRTUAL, 3, Kind.INVOKE),
+    INVOKEVIRTUAL(OpcodeValues.INVOKEVIRTUAL, 3, Kind.INVOKE),
 
     /**
      * Invoke instance method; direct invocation of instance initialization
      * methods and methods of the current class and its supertypes
      */
-    INVOKESPECIAL(ClassFile.INVOKESPECIAL, 3, Kind.INVOKE),
+    INVOKESPECIAL(OpcodeValues.INVOKESPECIAL, 3, Kind.INVOKE),
 
     /** Invoke a class (static) method */
-    INVOKESTATIC(ClassFile.INVOKESTATIC, 3, Kind.INVOKE),
+    INVOKESTATIC(OpcodeValues.INVOKESTATIC, 3, Kind.INVOKE),
 
     /** Invoke interface method */
-    INVOKEINTERFACE(ClassFile.INVOKEINTERFACE, 5, Kind.INVOKE),
+    INVOKEINTERFACE(OpcodeValues.INVOKEINTERFACE, 5, Kind.INVOKE),
 
     /** Invoke a dynamically-computed call site */
-    INVOKEDYNAMIC(ClassFile.INVOKEDYNAMIC, 5, Kind.INVOKE_DYNAMIC),
+    INVOKEDYNAMIC(OpcodeValues.INVOKEDYNAMIC, 5, Kind.INVOKE_DYNAMIC),
 
     /** Create new object */
-    NEW(ClassFile.NEW, 3, Kind.NEW_OBJECT),
+    NEW(OpcodeValues.NEW, 3, Kind.NEW_OBJECT),
 
     /** Create new array */
-    NEWARRAY(ClassFile.NEWARRAY, 2, Kind.NEW_PRIMITIVE_ARRAY),
+    NEWARRAY(OpcodeValues.NEWARRAY, 2, Kind.NEW_PRIMITIVE_ARRAY),
 
     /** Create new array of reference */
-    ANEWARRAY(ClassFile.ANEWARRAY, 3, Kind.NEW_REF_ARRAY),
+    ANEWARRAY(OpcodeValues.ANEWARRAY, 3, Kind.NEW_REF_ARRAY),
 
     /** Get length of array */
-    ARRAYLENGTH(ClassFile.ARRAYLENGTH, 1, Kind.OPERATOR, TypeKind.IntType),
+    ARRAYLENGTH(OpcodeValues.ARRAYLENGTH, 1, Kind.OPERATOR, TypeKind.IntType),
 
     /** Throw exception or error */
-    ATHROW(ClassFile.ATHROW, 1, Kind.THROW_EXCEPTION),
+    ATHROW(OpcodeValues.ATHROW, 1, Kind.THROW_EXCEPTION),
 
     /** Check whether object is of given type */
-    CHECKCAST(ClassFile.CHECKCAST, 3, Kind.TYPE_CHECK),
+    CHECKCAST(OpcodeValues.CHECKCAST, 3, Kind.TYPE_CHECK),
 
     /** Determine if object is of given type */
-    INSTANCEOF(ClassFile.INSTANCEOF, 3, Kind.TYPE_CHECK),
+    INSTANCEOF(OpcodeValues.INSTANCEOF, 3, Kind.TYPE_CHECK),
 
     /** Enter monitor for object */
-    MONITORENTER(ClassFile.MONITORENTER, 1, Kind.MONITOR),
+    MONITORENTER(OpcodeValues.MONITORENTER, 1, Kind.MONITOR),
 
     /** Exit monitor for object */
-    MONITOREXIT(ClassFile.MONITOREXIT, 1, Kind.MONITOR),
+    MONITOREXIT(OpcodeValues.MONITOREXIT, 1, Kind.MONITOR),
 
     /** Create new multidimensional array */
-    MULTIANEWARRAY(ClassFile.MULTIANEWARRAY, 4, Kind.NEW_MULTI_ARRAY),
+    MULTIANEWARRAY(OpcodeValues.MULTIANEWARRAY, 4, Kind.NEW_MULTI_ARRAY),
 
     /** Branch if reference is null */
-    IFNULL(ClassFile.IFNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
+    IFNULL(OpcodeValues.IFNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch if reference not null */
-    IFNONNULL(ClassFile.IFNONNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
+    IFNONNULL(OpcodeValues.IFNONNULL, 3, Kind.BRANCH, TypeKind.ReferenceType),
 
     /** Branch always (wide index) */
-    GOTO_W(ClassFile.GOTO_W, 5, Kind.BRANCH, TypeKind.VoidType),
+    GOTO_W(OpcodeValues.GOTO_W, 5, Kind.BRANCH, TypeKind.VoidType),
 
     /**
      * Jump subroutine (wide index) is discontinued opcode
      * @see java.lang.classfile.instruction.DiscontinuedInstruction
      */
-    JSR_W(ClassFile.JSR_W, 5, Kind.DISCONTINUED_JSR),
+    JSR_W(OpcodeValues.JSR_W, 5, Kind.DISCONTINUED_JSR),
 
     /** Load int from local variable (wide index) */
-    ILOAD_W((ClassFile.WIDE << 8) | ClassFile.ILOAD, 4, Kind.LOAD, TypeKind.IntType, -1),
+    ILOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ILOAD, 4, Kind.LOAD, TypeKind.IntType, -1),
 
     /** Load long from local variable (wide index) */
-    LLOAD_W((ClassFile.WIDE << 8) | ClassFile.LLOAD, 4, Kind.LOAD, TypeKind.LongType, -1),
+    LLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.LLOAD, 4, Kind.LOAD, TypeKind.LongType, -1),
 
     /** Load float from local variable (wide index) */
-    FLOAD_W((ClassFile.WIDE << 8) | ClassFile.FLOAD, 4, Kind.LOAD, TypeKind.FloatType, -1),
+    FLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.FLOAD, 4, Kind.LOAD, TypeKind.FloatType, -1),
 
     /** Load double from local variable (wide index) */
-    DLOAD_W((ClassFile.WIDE << 8) | ClassFile.DLOAD, 4, Kind.LOAD, TypeKind.DoubleType, -1),
+    DLOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.DLOAD, 4, Kind.LOAD, TypeKind.DoubleType, -1),
 
     /** Load reference from local variable (wide index) */
-    ALOAD_W((ClassFile.WIDE << 8) | ClassFile.ALOAD, 4, Kind.LOAD, TypeKind.ReferenceType, -1),
+    ALOAD_W((OpcodeValues.WIDE << 8) | OpcodeValues.ALOAD, 4, Kind.LOAD, TypeKind.ReferenceType, -1),
 
     /** Store int into local variable (wide index) */
-    ISTORE_W((ClassFile.WIDE << 8) | ClassFile.ISTORE, 4, Kind.STORE, TypeKind.IntType, -1),
+    ISTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ISTORE, 4, Kind.STORE, TypeKind.IntType, -1),
 
     /** Store long into local variable (wide index) */
-    LSTORE_W((ClassFile.WIDE << 8) | ClassFile.LSTORE, 4, Kind.STORE, TypeKind.LongType, -1),
+    LSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.LSTORE, 4, Kind.STORE, TypeKind.LongType, -1),
 
     /** Store float into local variable (wide index) */
-    FSTORE_W((ClassFile.WIDE << 8) | ClassFile.FSTORE, 4, Kind.STORE, TypeKind.FloatType, -1),
+    FSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.FSTORE, 4, Kind.STORE, TypeKind.FloatType, -1),
 
     /** Store double into local variable (wide index) */
-    DSTORE_W((ClassFile.WIDE << 8) | ClassFile.DSTORE, 4, Kind.STORE, TypeKind.DoubleType, -1),
+    DSTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.DSTORE, 4, Kind.STORE, TypeKind.DoubleType, -1),
 
     /** Store reference into local variable (wide index) */
-    ASTORE_W((ClassFile.WIDE << 8) | ClassFile.ASTORE, 4, Kind.STORE, TypeKind.ReferenceType, -1),
+    ASTORE_W((OpcodeValues.WIDE << 8) | OpcodeValues.ASTORE, 4, Kind.STORE, TypeKind.ReferenceType, -1),
 
     /**
      * Return from subroutine (wide index) is discontinued opcode
      * @see java.lang.classfile.instruction.DiscontinuedInstruction
      */
-    RET_W((ClassFile.WIDE << 8) | ClassFile.RET, 4, Kind.DISCONTINUED_RET),
+    RET_W((OpcodeValues.WIDE << 8) | OpcodeValues.RET, 4, Kind.DISCONTINUED_RET),
 
     /** Increment local variable by constant (wide index) */
-    IINC_W((ClassFile.WIDE << 8) | ClassFile.IINC, 6, Kind.INCREMENT, TypeKind.IntType, -1);
+    IINC_W((OpcodeValues.WIDE << 8) | OpcodeValues.IINC, 6, Kind.INCREMENT, TypeKind.IntType, -1);
 
     /**
      * Kinds of opcodes.
@@ -1175,5 +1175,622 @@ public enum Opcode {
             case GOTO, ATHROW, GOTO_W, LOOKUPSWITCH, TABLESWITCH -> true;
             default -> kind() == Kind.RETURN;
         };
+    }
+
+    /**
+     * Holds the constant values of the Opcodes.
+     *
+     * @since 24
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
+    public static final class OpcodeValues {
+
+        /** The integer value used to encode the {@link Opcode#NOP nop} instruction. */
+        public static final int NOP             = 0;
+
+        /** The integer value used to encode the {@link Opcode#ACONST_NULL aconst_null} instruction. */
+        public static final int ACONST_NULL     = 1;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_M1 iconst_m1} instruction. */
+        public static final int ICONST_M1       = 2;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_0 iconst_0} instruction. */
+        public static final int ICONST_0        = 3;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_1 iconst_1} instruction. */
+        public static final int ICONST_1        = 4;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_2 iconst_2} instruction. */
+        public static final int ICONST_2        = 5;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_3 iconst_3} instruction. */
+        public static final int ICONST_3        = 6;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_4 iconst_4} instruction. */
+        public static final int ICONST_4        = 7;
+
+        /** The integer value used to encode the {@link Opcode#ICONST_5 iconst_5} instruction. */
+        public static final int ICONST_5        = 8;
+
+        /** The integer value used to encode the {@link Opcode#LCONST_0 lconst_0} instruction. */
+        public static final int LCONST_0        = 9;
+
+        /** The integer value used to encode the {@link Opcode#LCONST_1 lconst_1} instruction. */
+        public static final int LCONST_1        = 10;
+
+        /** The integer value used to encode the {@link Opcode#FCONST_0 fconst_0} instruction. */
+        public static final int FCONST_0        = 11;
+
+        /** The integer value used to encode the {@link Opcode#FCONST_1 fconst_1} instruction. */
+        public static final int FCONST_1        = 12;
+
+        /** The integer value used to encode the {@link Opcode#FCONST_2 fconst_2} instruction. */
+        public static final int FCONST_2        = 13;
+
+        /** The integer value used to encode the {@link Opcode#DCONST_0 dconst_0} instruction. */
+        public static final int DCONST_0        = 14;
+
+        /** The integer value used to encode the {@link Opcode#DCONST_1 dconst_1} instruction. */
+        public static final int DCONST_1        = 15;
+
+        /** The integer value used to encode the {@link Opcode#BIPUSH bipush} instruction. */
+        public static final int BIPUSH          = 16;
+
+        /** The integer value used to encode the {@link Opcode#SIPUSH sipush} instruction. */
+        public static final int SIPUSH          = 17;
+
+        /** The integer value used to encode the {@link Opcode#LDC ldc} instruction. */
+        public static final int LDC             = 18;
+
+        /** The integer value used to encode the {@link Opcode#LDC_W ldc_w} instruction. */
+        public static final int LDC_W           = 19;
+
+        /** The integer value used to encode the {@link Opcode#LDC2_W ldc2_w} instruction. */
+        public static final int LDC2_W          = 20;
+
+        /** The integer value used to encode the {@link Opcode#ILOAD iload} instruction. */
+        public static final int ILOAD           = 21;
+
+        /** The integer value used to encode the {@link Opcode#LLOAD lload} instruction. */
+        public static final int LLOAD           = 22;
+
+        /** The integer value used to encode the {@link Opcode#FLOAD fload} instruction. */
+        public static final int FLOAD           = 23;
+
+        /** The integer value used to encode the {@link Opcode#DLOAD dload} instruction. */
+        public static final int DLOAD           = 24;
+
+        /** The integer value used to encode the {@link Opcode#ALOAD aload} instruction. */
+        public static final int ALOAD           = 25;
+
+        /** The integer value used to encode the {@link Opcode#ILOAD_0 iload_0} instruction. */
+        public static final int ILOAD_0         = 26;
+
+        /** The integer value used to encode the {@link Opcode#ILOAD_1 iload_1} instruction. */
+        public static final int ILOAD_1         = 27;
+
+        /** The integer value used to encode the {@link Opcode#ILOAD_2 iload_2} instruction. */
+        public static final int ILOAD_2         = 28;
+
+        /** The integer value used to encode the {@link Opcode#ILOAD_3 iload_3} instruction. */
+        public static final int ILOAD_3         = 29;
+
+        /** The integer value used to encode the {@link Opcode#LLOAD_0 lload_0} instruction. */
+        public static final int LLOAD_0         = 30;
+
+        /** The integer value used to encode the {@link Opcode#LLOAD_1 lload_1} instruction. */
+        public static final int LLOAD_1         = 31;
+
+        /** The integer value used to encode the {@link Opcode#LLOAD_2 lload_2} instruction. */
+        public static final int LLOAD_2         = 32;
+
+        /** The integer value used to encode the {@link Opcode#LLOAD_3 lload_3} instruction. */
+        public static final int LLOAD_3         = 33;
+
+        /** The integer value used to encode the {@link Opcode#FLOAD_0 fload_0} instruction. */
+        public static final int FLOAD_0         = 34;
+
+        /** The integer value used to encode the {@link Opcode#FLOAD_1 fload_1} instruction. */
+        public static final int FLOAD_1         = 35;
+
+        /** The integer value used to encode the {@link Opcode#FLOAD_2 fload_2} instruction. */
+        public static final int FLOAD_2         = 36;
+
+        /** The integer value used to encode the {@link Opcode#FLOAD_3 fload_3} instruction. */
+        public static final int FLOAD_3         = 37;
+
+        /** The integer value used to encode the {@link Opcode#DLOAD_0 dload_0} instruction. */
+        public static final int DLOAD_0         = 38;
+
+        /** The integer value used to encode the {@link Opcode#DLOAD_1 dload_1} instruction. */
+        public static final int DLOAD_1         = 39;
+
+        /** The integer value used to encode the {@link Opcode#DLOAD_2 dload_2} instruction. */
+        public static final int DLOAD_2         = 40;
+
+        /** The integer value used to encode the {@link Opcode#DLOAD_3 dload_3} instruction. */
+        public static final int DLOAD_3         = 41;
+
+        /** The integer value used to encode the {@link Opcode#ALOAD_0 aload_0} instruction. */
+        public static final int ALOAD_0         = 42;
+
+        /** The integer value used to encode the {@link Opcode#ALOAD_1 aload_1} instruction. */
+        public static final int ALOAD_1         = 43;
+
+        /** The integer value used to encode the {@link Opcode#ALOAD_2 aload_2} instruction. */
+        public static final int ALOAD_2         = 44;
+
+        /** The integer value used to encode the {@link Opcode#ALOAD_3 aload_3} instruction. */
+        public static final int ALOAD_3         = 45;
+
+        /** The integer value used to encode the {@link Opcode#IALOAD iaload} instruction. */
+        public static final int IALOAD          = 46;
+
+        /** The integer value used to encode the {@link Opcode#LALOAD laload} instruction. */
+        public static final int LALOAD          = 47;
+
+        /** The integer value used to encode the {@link Opcode#FALOAD faload} instruction. */
+        public static final int FALOAD          = 48;
+
+        /** The integer value used to encode the {@link Opcode#DALOAD daload} instruction. */
+        public static final int DALOAD          = 49;
+
+        /** The integer value used to encode the {@link Opcode#AALOAD aaload} instruction. */
+        public static final int AALOAD          = 50;
+
+        /** The integer value used to encode the {@link Opcode#BALOAD baload} instruction. */
+        public static final int BALOAD          = 51;
+
+        /** The integer value used to encode the {@link Opcode#CALOAD caload} instruction. */
+        public static final int CALOAD          = 52;
+
+        /** The integer value used to encode the {@link Opcode#SALOAD saload} instruction. */
+        public static final int SALOAD          = 53;
+
+        /** The integer value used to encode the {@link Opcode#ISTORE istore} instruction. */
+        public static final int ISTORE          = 54;
+
+        /** The integer value used to encode the {@link Opcode#LSTORE lstore} instruction. */
+        public static final int LSTORE          = 55;
+
+        /** The integer value used to encode the {@link Opcode#FSTORE fstore} instruction. */
+        public static final int FSTORE          = 56;
+
+        /** The integer value used to encode the {@link Opcode#DSTORE dstore} instruction. */
+        public static final int DSTORE          = 57;
+
+        /** The integer value used to encode the {@link Opcode#ASTORE astore} instruction. */
+        public static final int ASTORE          = 58;
+
+        /** The integer value used to encode the {@link Opcode#ISTORE_0 istore_0} instruction. */
+        public static final int ISTORE_0        = 59;
+
+        /** The integer value used to encode the {@link Opcode#ISTORE_1 istore_1} instruction. */
+        public static final int ISTORE_1        = 60;
+
+        /** The integer value used to encode the {@link Opcode#ISTORE_2 istore_2} instruction. */
+        public static final int ISTORE_2        = 61;
+
+        /** The integer value used to encode the {@link Opcode#ISTORE_3 istore_3} instruction. */
+        public static final int ISTORE_3        = 62;
+
+        /** The integer value used to encode the {@link Opcode#LSTORE_0 lstore_0} instruction. */
+        public static final int LSTORE_0        = 63;
+
+        /** The integer value used to encode the {@link Opcode#LSTORE_1 lstore_1} instruction. */
+        public static final int LSTORE_1        = 64;
+
+        /** The integer value used to encode the {@link Opcode#LSTORE_2 lstore_2} instruction. */
+        public static final int LSTORE_2        = 65;
+
+        /** The integer value used to encode the {@link Opcode#LSTORE_3 lstore_3} instruction. */
+        public static final int LSTORE_3        = 66;
+
+        /** The integer value used to encode the {@link Opcode#FSTORE_0 fstore_0} instruction. */
+        public static final int FSTORE_0        = 67;
+
+        /** The integer value used to encode the {@link Opcode#FSTORE_1 fstore_1} instruction. */
+        public static final int FSTORE_1        = 68;
+
+        /** The integer value used to encode the {@link Opcode#FSTORE_2 fstore_2} instruction. */
+        public static final int FSTORE_2        = 69;
+
+        /** The integer value used to encode the {@link Opcode#FSTORE_3 fstore_3} instruction. */
+        public static final int FSTORE_3        = 70;
+
+        /** The integer value used to encode the {@link Opcode#DSTORE_0 dstore_0} instruction. */
+        public static final int DSTORE_0        = 71;
+
+        /** The integer value used to encode the {@link Opcode#DSTORE_1 dstore_1} instruction. */
+        public static final int DSTORE_1        = 72;
+
+        /** The integer value used to encode the {@link Opcode#DSTORE_2 dstore_2} instruction. */
+        public static final int DSTORE_2        = 73;
+
+        /** The integer value used to encode the {@link Opcode#DSTORE_3 dstore_3} instruction. */
+        public static final int DSTORE_3        = 74;
+
+        /** The integer value used to encode the {@link Opcode#ASTORE_0 astore_0} instruction. */
+        public static final int ASTORE_0        = 75;
+
+        /** The integer value used to encode the {@link Opcode#ASTORE_1 astore_1} instruction. */
+        public static final int ASTORE_1        = 76;
+
+        /** The integer value used to encode the {@link Opcode#ASTORE_2 astore_2} instruction. */
+        public static final int ASTORE_2        = 77;
+
+        /** The integer value used to encode the {@link Opcode#ASTORE_3 astore_3} instruction. */
+        public static final int ASTORE_3        = 78;
+
+        /** The integer value used to encode the {@link Opcode#IASTORE iastore} instruction. */
+        public static final int IASTORE         = 79;
+
+        /** The integer value used to encode the {@link Opcode#LASTORE lastore} instruction. */
+        public static final int LASTORE         = 80;
+
+        /** The integer value used to encode the {@link Opcode#FASTORE fastore} instruction. */
+        public static final int FASTORE         = 81;
+
+        /** The integer value used to encode the {@link Opcode#DASTORE dastore} instruction. */
+        public static final int DASTORE         = 82;
+
+        /** The integer value used to encode the {@link Opcode#AASTORE aastore} instruction. */
+        public static final int AASTORE         = 83;
+
+        /** The integer value used to encode the {@link Opcode#BASTORE bastore} instruction. */
+        public static final int BASTORE         = 84;
+
+        /** The integer value used to encode the {@link Opcode#CASTORE castore} instruction. */
+        public static final int CASTORE         = 85;
+
+        /** The integer value used to encode the {@link Opcode#SASTORE sastore} instruction. */
+        public static final int SASTORE         = 86;
+
+        /** The integer value used to encode the {@link Opcode#POP pop} instruction. */
+        public static final int POP             = 87;
+
+        /** The integer value used to encode the {@link Opcode#POP2 pop2} instruction. */
+        public static final int POP2            = 88;
+
+        /** The integer value used to encode the {@link Opcode#DUP dup} instruction. */
+        public static final int DUP             = 89;
+
+        /** The integer value used to encode the {@link Opcode#DUP_X1 dup_x1} instruction. */
+        public static final int DUP_X1          = 90;
+
+        /** The integer value used to encode the {@link Opcode#DUP_X2 dup_x2} instruction. */
+        public static final int DUP_X2          = 91;
+
+        /** The integer value used to encode the {@link Opcode#DUP2 dup2} instruction. */
+        public static final int DUP2            = 92;
+
+        /** The integer value used to encode the {@link Opcode#DUP2_X1 dup2_x1} instruction. */
+        public static final int DUP2_X1         = 93;
+
+        /** The integer value used to encode the {@link Opcode#DUP2_X2 dup2_x2} instruction. */
+        public static final int DUP2_X2         = 94;
+
+        /** The integer value used to encode the {@link Opcode#SWAP swap} instruction. */
+        public static final int SWAP            = 95;
+
+        /** The integer value used to encode the {@link Opcode#IADD iadd} instruction. */
+        public static final int IADD            = 96;
+
+        /** The integer value used to encode the {@link Opcode#LADD ladd} instruction. */
+        public static final int LADD            = 97;
+
+        /** The integer value used to encode the {@link Opcode#FADD fadd} instruction. */
+        public static final int FADD            = 98;
+
+        /** The integer value used to encode the {@link Opcode#DADD dadd} instruction. */
+        public static final int DADD            = 99;
+
+        /** The integer value used to encode the {@link Opcode#ISUB isub} instruction. */
+        public static final int ISUB            = 100;
+
+        /** The integer value used to encode the {@link Opcode#LSUB lsub} instruction. */
+        public static final int LSUB            = 101;
+
+        /** The integer value used to encode the {@link Opcode#FSUB fsub} instruction. */
+        public static final int FSUB            = 102;
+
+        /** The integer value used to encode the {@link Opcode#DSUB dsub} instruction. */
+        public static final int DSUB            = 103;
+
+        /** The integer value used to encode the {@link Opcode#IMUL imul} instruction. */
+        public static final int IMUL            = 104;
+
+        /** The integer value used to encode the {@link Opcode#LMUL lmul} instruction. */
+        public static final int LMUL            = 105;
+
+        /** The integer value used to encode the {@link Opcode#FMUL fmul} instruction. */
+        public static final int FMUL            = 106;
+
+        /** The integer value used to encode the {@link Opcode#DMUL dmul} instruction. */
+        public static final int DMUL            = 107;
+
+        /** The integer value used to encode the {@link Opcode#IDIV idiv} instruction. */
+        public static final int IDIV            = 108;
+
+        /** The integer value used to encode the {@link Opcode#LDIV ldiv} instruction. */
+        public static final int LDIV            = 109;
+
+        /** The integer value used to encode the {@link Opcode#FDIV fdiv} instruction. */
+        public static final int FDIV            = 110;
+
+        /** The integer value used to encode the {@link Opcode#DDIV ddiv} instruction. */
+        public static final int DDIV            = 111;
+
+        /** The integer value used to encode the {@link Opcode#IREM irem} instruction. */
+        public static final int IREM            = 112;
+
+        /** The integer value used to encode the {@link Opcode#LREM lrem} instruction. */
+        public static final int LREM            = 113;
+
+        /** The integer value used to encode the {@link Opcode#FREM frem} instruction. */
+        public static final int FREM            = 114;
+
+        /** The integer value used to encode the {@link Opcode#DREM drem} instruction. */
+        public static final int DREM            = 115;
+
+        /** The integer value used to encode the {@link Opcode#INEG ineg} instruction. */
+        public static final int INEG            = 116;
+
+        /** The integer value used to encode the {@link Opcode#LNEG lneg} instruction. */
+        public static final int LNEG            = 117;
+
+        /** The integer value used to encode the {@link Opcode#FNEG fneg} instruction. */
+        public static final int FNEG            = 118;
+
+        /** The integer value used to encode the {@link Opcode#DNEG dneg} instruction. */
+        public static final int DNEG            = 119;
+
+        /** The integer value used to encode the {@link Opcode#ISHL ishl} instruction. */
+        public static final int ISHL            = 120;
+
+        /** The integer value used to encode the {@link Opcode#LSHL lshl} instruction. */
+        public static final int LSHL            = 121;
+
+        /** The integer value used to encode the {@link Opcode#ISHR ishr} instruction. */
+        public static final int ISHR            = 122;
+
+        /** The integer value used to encode the {@link Opcode#LSHR lshr} instruction. */
+        public static final int LSHR            = 123;
+
+        /** The integer value used to encode the {@link Opcode#IUSHR iushr} instruction. */
+        public static final int IUSHR           = 124;
+
+        /** The integer value used to encode the {@link Opcode#LUSHR lushr} instruction. */
+        public static final int LUSHR           = 125;
+
+        /** The integer value used to encode the {@link Opcode#IAND iand} instruction. */
+        public static final int IAND            = 126;
+
+        /** The integer value used to encode the {@link Opcode#LAND land} instruction. */
+        public static final int LAND            = 127;
+
+        /** The integer value used to encode the {@link Opcode#IOR ior} instruction. */
+        public static final int IOR             = 128;
+
+        /** The integer value used to encode the {@link Opcode#LOR lor} instruction. */
+        public static final int LOR             = 129;
+
+        /** The integer value used to encode the {@link Opcode#IXOR ixor} instruction. */
+        public static final int IXOR            = 130;
+
+        /** The integer value used to encode the {@link Opcode#LXOR lxor} instruction. */
+        public static final int LXOR            = 131;
+
+        /** The integer value used to encode the {@link Opcode#IINC iinc} instruction. */
+        public static final int IINC            = 132;
+
+        /** The integer value used to encode the {@link Opcode#I2L i2l} instruction. */
+        public static final int I2L             = 133;
+
+        /** The integer value used to encode the {@link Opcode#I2F i2f} instruction. */
+        public static final int I2F             = 134;
+
+        /** The integer value used to encode the {@link Opcode#I2D i2d} instruction. */
+        public static final int I2D             = 135;
+
+        /** The integer value used to encode the {@link Opcode#L2I l2i} instruction. */
+        public static final int L2I             = 136;
+
+        /** The integer value used to encode the {@link Opcode#L2F l2f} instruction. */
+        public static final int L2F             = 137;
+
+        /** The integer value used to encode the {@link Opcode#L2D l2d} instruction. */
+        public static final int L2D             = 138;
+
+        /** The integer value used to encode the {@link Opcode#F2I f2i} instruction. */
+        public static final int F2I             = 139;
+
+        /** The integer value used to encode the {@link Opcode#F2L f2l} instruction. */
+        public static final int F2L             = 140;
+
+        /** The integer value used to encode the {@link Opcode#F2D f2d} instruction. */
+        public static final int F2D             = 141;
+
+        /** The integer value used to encode the {@link Opcode#D2I d2i} instruction. */
+        public static final int D2I             = 142;
+
+        /** The integer value used to encode the {@link Opcode#D2L d2l} instruction. */
+        public static final int D2L             = 143;
+
+        /** The integer value used to encode the {@link Opcode#D2F d2f} instruction. */
+        public static final int D2F             = 144;
+
+        /** The integer value used to encode the {@link Opcode#I2B i2b} instruction. */
+        public static final int I2B             = 145;
+
+        /** The integer value used to encode the {@link Opcode#I2C i2c} instruction. */
+        public static final int I2C             = 146;
+
+        /** The integer value used to encode the {@link Opcode#I2S i2s} instruction. */
+        public static final int I2S             = 147;
+
+        /** The integer value used to encode the {@link Opcode#LCMP lcmp} instruction. */
+        public static final int LCMP            = 148;
+
+        /** The integer value used to encode the {@link Opcode#FCMPL fcmpl} instruction. */
+        public static final int FCMPL           = 149;
+
+        /** The integer value used to encode the {@link Opcode#FCMPG fcmpg} instruction. */
+        public static final int FCMPG           = 150;
+
+        /** The integer value used to encode the {@link Opcode#DCMPL dcmpl} instruction. */
+        public static final int DCMPL           = 151;
+
+        /** The integer value used to encode the {@link Opcode#DCMPG dcmpg} instruction. */
+        public static final int DCMPG           = 152;
+
+        /** The integer value used to encode the {@link Opcode#IFEQ ifeq} instruction. */
+        public static final int IFEQ            = 153;
+
+        /** The integer value used to encode the {@link Opcode#IFNE ifne} instruction. */
+        public static final int IFNE            = 154;
+
+        /** The integer value used to encode the {@link Opcode#IFLT iflt} instruction. */
+        public static final int IFLT            = 155;
+
+        /** The integer value used to encode the {@link Opcode#IFGE ifge} instruction. */
+        public static final int IFGE            = 156;
+
+        /** The integer value used to encode the {@link Opcode#IFGT ifgt} instruction. */
+        public static final int IFGT            = 157;
+
+        /** The integer value used to encode the {@link Opcode#IFLE ifle} instruction. */
+        public static final int IFLE            = 158;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPEQ if_icmpeq} instruction. */
+        public static final int IF_ICMPEQ       = 159;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPNE if_icmpne} instruction. */
+        public static final int IF_ICMPNE       = 160;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPLT if_icmplt} instruction. */
+        public static final int IF_ICMPLT       = 161;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPGE if_icmpge} instruction. */
+        public static final int IF_ICMPGE       = 162;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPGT if_icmpgt} instruction. */
+        public static final int IF_ICMPGT       = 163;
+
+        /** The integer value used to encode the {@link Opcode#IF_ICMPLE if_icmple} instruction. */
+        public static final int IF_ICMPLE       = 164;
+
+        /** The integer value used to encode the {@link Opcode#IF_ACMPEQ if_acmpeq} instruction. */
+        public static final int IF_ACMPEQ       = 165;
+
+        /** The integer value used to encode the {@link Opcode#IF_ACMPNE if_acmpne} instruction. */
+        public static final int IF_ACMPNE       = 166;
+
+        /** The integer value used to encode the {@link Opcode#GOTO goto} instruction. */
+        public static final int GOTO            = 167;
+
+        /** The integer value used to encode the {@link Opcode#JSR jsr} instruction. */
+        public static final int JSR             = 168;
+
+        /** The integer value used to encode the {@link Opcode#RET ret} instruction. */
+        public static final int RET             = 169;
+
+        /** The integer value used to encode the {@link Opcode#TABLESWITCH tableswitch} instruction. */
+        public static final int TABLESWITCH     = 170;
+
+        /** The integer value used to encode the {@link Opcode#LOOKUPSWITCH lookupswitch} instruction. */
+        public static final int LOOKUPSWITCH    = 171;
+
+        /** The integer value used to encode the {@link Opcode#IRETURN ireturn} instruction. */
+        public static final int IRETURN         = 172;
+
+        /** The integer value used to encode the {@link Opcode#LRETURN lreturn} instruction. */
+        public static final int LRETURN         = 173;
+
+        /** The integer value used to encode the {@link Opcode#FRETURN freturn} instruction. */
+        public static final int FRETURN         = 174;
+
+        /** The integer value used to encode the {@link Opcode#DRETURN dreturn} instruction. */
+        public static final int DRETURN         = 175;
+
+        /** The integer value used to encode the {@link Opcode#ARETURN areturn} instruction. */
+        public static final int ARETURN         = 176;
+
+        /** The integer value used to encode the {@link Opcode#RETURN return} instruction. */
+        public static final int RETURN          = 177;
+
+        /** The integer value used to encode the {@link Opcode#GETSTATIC getstatic} instruction. */
+        public static final int GETSTATIC       = 178;
+
+        /** The integer value used to encode the {@link Opcode#PUTSTATIC putstatic} instruction. */
+        public static final int PUTSTATIC       = 179;
+
+        /** The integer value used to encode the {@link Opcode#GETFIELD getfield} instruction. */
+        public static final int GETFIELD        = 180;
+
+        /** The integer value used to encode the {@link Opcode#PUTFIELD putfield} instruction. */
+        public static final int PUTFIELD        = 181;
+
+        /** The integer value used to encode the {@link Opcode#INVOKEVIRTUAL invokevirtual} instruction. */
+        public static final int INVOKEVIRTUAL   = 182;
+
+        /** The integer value used to encode the {@link Opcode#INVOKESPECIAL invokespecial} instruction. */
+        public static final int INVOKESPECIAL   = 183;
+
+        /** The integer value used to encode the {@link Opcode#INVOKESTATIC invokestatic} instruction. */
+        public static final int INVOKESTATIC    = 184;
+
+        /** The integer value used to encode the {@link Opcode#INVOKEINTERFACE invokeinterface} instruction. */
+        public static final int INVOKEINTERFACE = 185;
+
+        /** The integer value used to encode the {@link Opcode#INVOKEDYNAMIC invokedynamic} instruction. */
+        public static final int INVOKEDYNAMIC   = 186;
+
+        /** The integer value used to encode the {@link Opcode#NEW new} instruction. */
+        public static final int NEW             = 187;
+
+        /** The integer value used to encode the {@link Opcode#NEWARRAY newarray} instruction. */
+        public static final int NEWARRAY        = 188;
+
+        /** The integer value used to encode the {@link Opcode#ANEWARRAY anewarray} instruction. */
+        public static final int ANEWARRAY       = 189;
+
+        /** The integer value used to encode the {@link Opcode#ARRAYLENGTH arraylength} instruction. */
+        public static final int ARRAYLENGTH     = 190;
+
+        /** The integer value used to encode the {@link Opcode#ATHROW athrow} instruction. */
+        public static final int ATHROW          = 191;
+
+        /** The integer value used to encode the {@link Opcode#CHECKCAST checkcast} instruction. */
+        public static final int CHECKCAST       = 192;
+
+        /** The integer value used to encode the {@link Opcode#INSTANCEOF instanceof} instruction. */
+        public static final int INSTANCEOF      = 193;
+
+        /** The integer value used to encode the {@link Opcode#MONITORENTER monitorenter} instruction. */
+        public static final int MONITORENTER    = 194;
+
+        /** The integer value used to encode the {@link Opcode#MONITOREXIT monitorexit} instruction. */
+        public static final int MONITOREXIT     = 195;
+
+        /** The integer value used to encode the {@link Opcode#isWide() wide} instruction. */
+        public static final int WIDE            = 196;
+
+        /** The integer value used to encode the {@link Opcode#MULTIANEWARRAY multianewarray} instruction. */
+        public static final int MULTIANEWARRAY  = 197;
+
+        /** The integer value used to encode the {@link Opcode#IFNULL ifnull} instruction. */
+        public static final int IFNULL          = 198;
+
+        /** The integer value used to encode the {@link Opcode#IFNONNULL ifnonnull} instruction. */
+        public static final int IFNONNULL       = 199;
+
+        /** The integer value used to encode the {@link Opcode#GOTO_W goto_w} instruction. */
+        public static final int GOTO_W          = 200;
+
+        /** The integer value used to encode the {@link Opcode#JSR_W jsr_w} instruction. */
+        public static final int JSR_W           = 201;
+
+        private OpcodeValues() {}
     }
 }

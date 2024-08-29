@@ -42,6 +42,7 @@ import java.util.Queue;
 import java.util.stream.Collectors;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.Opcode.OpcodeValues.*;
 
 public final class StackCounter {
 
