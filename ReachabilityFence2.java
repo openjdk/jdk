@@ -25,7 +25,8 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence2::test -Xbatch -XX:-TieredCompilation -XX:+UseNewCode ReachabilityFence2.java */
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence2::test -Xbatch -XX:-TieredCompilation -XX:+UseNewCode ReachabilityFence2.java
+*/
 public class ReachabilityFence2 {
 
     static A obj = new A();
