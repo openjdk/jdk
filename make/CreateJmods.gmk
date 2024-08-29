@@ -230,11 +230,17 @@ ifeq ($(INTERIM_JMOD), true)
   # to compress them at all.
   JMOD_FLAGS += --compress zip-0
 
+  JMOD_TARGET_OS := $(OPENJDK_BUILD_OS)
+  ifeq ($(JMOD_TARGET_OS), macosx)
+    JMOD_TARGET_OS := macos
+  endif
+
   JMOD_TARGET_CPU := $(OPENJDK_BUILD_CPU)
   ifeq ($(JMOD_TARGET_CPU), x86_64)
     JMOD_TARGET_CPU := amd64
   endif
-  JMOD_TARGET_PLATFORM := $(OPENJDK_BUILD_OS)-$(JMOD_TARGET_CPU)
+
+  JMOD_TARGET_PLATFORM := $(JMOD_TARGET_OS)-$(JMOD_TARGET_CPU)
 else
   JMOD_FLAGS += --compress $(JMOD_COMPRESS)
   JMOD_TARGET_PLATFORM := $(OPENJDK_MODULE_TARGET_PLATFORM)
