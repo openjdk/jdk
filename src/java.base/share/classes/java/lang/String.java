@@ -1145,7 +1145,7 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
-    static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
+    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {

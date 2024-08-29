@@ -232,21 +232,75 @@ public abstract sealed class AbstractPoolEntry {
          */
         private void inflate() {
             int singleBytes = JLA.countPositives(rawBytes, offset, rawLen);
-            int hash;
+            int hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
             if (singleBytes == rawLen) {
-                hash = ArraysSupport.hashCodeOfUnsigned(rawBytes, offset, singleBytes, 0);
+                this.hash = hashString(hash);
                 charLen = rawLen;
                 state = State.BYTE;
             }
             else {
-                byte[] chararr = new byte[rawLen << 1];
-                int chararr_count = JLA.decodeUTF8_UTF16(rawBytes, offset, rawLen, chararr, 0);
-                hash = ArraysSupport.hashCodeOfUTF16(chararr, 0, chararr_count, 0);
-                charLen = chararr_count;
-                this.chars = chararr;
-                state = State.CHAR;
+                inflateCHAR(singleBytes, hash);
+            }
+        }
+
+        private void inflateCHAR(int singleBytes, int hash) {
+            byte[] chararr = new byte[rawLen << 1];
+            int chararr_count = singleBytes;
+            // Inflate prefix of bytes to characters
+            JLA.inflate(rawBytes, offset, chararr, 0, singleBytes);
+
+            int px = offset + singleBytes;
+            int utfend = offset + rawLen;
+            while (px < utfend) {
+                int c = (int) rawBytes[px] & 0xff;
+                switch (c >> 4) {
+                    case 0, 1, 2, 3, 4, 5, 6, 7: {
+                        // 0xxx xxxx
+                        px++;
+                        JLA.putCharUTF16(chararr, chararr_count++, (char) c);
+                        hash = 31 * hash + c;
+                        break;
+                    }
+                    case 12, 13: {
+                        // 110x xxxx  10xx xxxx
+                        px += 2;
+                        if (px > utfend) {
+                            throw new CpException("malformed input: partial character at end");
+                        }
+                        int char2 = rawBytes[px - 1];
+                        if ((char2 & 0xC0) != 0x80) {
+                            throw new CpException("malformed input around byte " + px);
+                        }
+                        char v = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
+                        JLA.putCharUTF16(chararr, chararr_count++, v);
+                        hash = 31 * hash + v;
+                        break;
+                    }
+                    case 14: {
+                        // 1110 xxxx  10xx xxxx  10xx xxxx
+                        px += 3;
+                        if (px > utfend) {
+                            throw new CpException("malformed input: partial character at end");
+                        }
+                        int char2 = rawBytes[px - 2];
+                        int char3 = rawBytes[px - 1];
+                        if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80)) {
+                            throw new CpException("malformed input around byte " + (px - 1));
+                        }
+                        char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
+                        JLA.putCharUTF16(chararr, chararr_count++, v);
+                        hash = 31 * hash + v;
+                        break;
+                    }
+                    default:
+                        // 10xx xxxx,  1111 xxxx
+                        throw new CpException("malformed input around byte " + px);
+                }
             }
             this.hash = hashString(hash);
+            charLen = chararr_count;
+            this.chars = chararr;
+            state = State.CHAR;
         }
 
         @Override

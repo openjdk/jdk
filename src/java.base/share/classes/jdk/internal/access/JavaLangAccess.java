@@ -391,7 +391,7 @@ public interface JavaLangAccess {
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
-    int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp);
+    void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len);
 
     boolean regionMatches(String s, byte[] bytes, byte coder, int off, int len);
 
