@@ -86,7 +86,8 @@ final class ChunkInputStream extends InputStream {
                 if (r != -1) {
                     return r;
                 }
-                advance();
+                closeStream();
+                closeChunk();
             }
             if (!nextStream()) {
                 return -1;
@@ -104,30 +105,25 @@ final class ChunkInputStream extends InputStream {
         int totalRead = 0;
         while (len > 0) {
             if (stream == null) {
-                advance();
+                closeChunk();
                 if (!nextStream()) {
                     return totalRead > 0 ? totalRead : -1;
                 }
             }
             int read = stream.read(buf, off, len);
-            if (read <= 0) {
-                advance();
-                continue;
-            } else {
+            if (read > -1) {
                 totalRead += read;
                 len -= read;
                 if (len == 0) {
                     return totalRead;
                 }
                 off += read;
+            } else {
+                closeStream();
+                closeChunk();
             }
         }
         return totalRead;
-    }
-
-    private void advance() throws IOException {
-        closeStream();
-        closeChunk();
     }
 
     private void closeStream() throws IOException {
