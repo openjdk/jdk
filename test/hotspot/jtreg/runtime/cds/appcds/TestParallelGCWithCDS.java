@@ -116,9 +116,10 @@ public class TestParallelGCWithCDS {
                 } else {
                     String pattern = "((Too small maximum heap)" +
                                      "|(GC triggered before VM initialization completed)" +
-                                     "|(java.lang.OutOfMemoryError: Java heap space)" +
                                      "|(CDS archive has aot-linked classes but the archived heap objects cannot be loaded)" +
-                                     "|(Initial heap size set to a larger value than the maximum heap size))";
+                                     "|(Initial heap size set to a larger value than the maximum heap size)" +
+                                     "|(java.lang.OutOfMemoryError)" +
+                                     "|(Error: A JNI error has occurred, please check your installation and try again))";
                     out.shouldMatch(pattern);
                     out.shouldNotHaveFatalError();
                 }
