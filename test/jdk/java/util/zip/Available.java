@@ -32,6 +32,8 @@
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -116,68 +118,39 @@ public class Available {
     }
 
     /**
-     * Verify that ZipFileInputStream.available() returns
-     * the number of remaining uncompressed bytes.
+     * Verify that ZipFileInputStream|ZipFileInflaterInputStream.available()
+     * return the number of remaining uncompressed bytes.
      *
      * This verifies unspecified, but long-standing behavior. See 4401122.
      *
      * @throws IOException if an unexpected error occurs
      */
-    @Test
-    public void testZipFileInputStream() throws IOException {
+    @ParameterizedTest
+    @ValueSource(strings = { "stored.txt", "deflated.txt" })
+    public void testZipFileStreamsRemainingBytes(String entryName) throws IOException {
         try (ZipFile zfile = new ZipFile(zip.toFile())) {
-            assertRemainingUncompressedBytes(zfile, "stored.txt");
+            ZipEntry entry = zfile.getEntry(entryName);
+            // Could be ZipFileInputStream or ZipFileInflaterInputStream
+            InputStream in = zfile.getInputStream(entry);
+
+            int initialAvailable = in.available();
+
+            // Initally, the number of remaining uncompressed bytes is the entry size
+            assertEquals(entry.getSize(), initialAvailable);
+
+            // Read all bytes one by one
+            for (int i = initialAvailable; i > 0; i--) {
+                // Reading a single byte should decrement available by 1
+                in.read();
+                assertEquals(i - 1, in.available(), "Available not decremented");
+            }
+
+            // No remaining uncompressed bytes
+            assertEquals(0, in.available());
+
+            // available() should still return 0 after close
+            in.close();
+            assertEquals(0, in.available());
         }
-    }
-
-    /**
-     * Verify that ZipFileInflaterInputStream.available() returns
-     * the number of remaining uncompressed bytes.
-     *
-     * This verifies unspecified, but long-standing behavior. See 4401122.
-     *
-     * @throws IOException if an unexpected error occurs
-     */
-    @Test
-    public void testZipFileInflaterInputStream() throws IOException {
-        try (ZipFile zfile = new ZipFile(zip.toFile())) {
-            assertRemainingUncompressedBytes(zfile, "deflated.txt");
-        }
-    }
-
-    /**
-     * Assert that calling available() on a an InputStream obtained
-     * from ZipFile.getInputStream for the given entry
-     * returns the number of remaining uncompressed bytes in the stream.
-     *
-     * @param zfile the ZipFile to read an entry from
-     * @param name the name of the entry to read
-     * @throws IOException if an unexpected error occurs
-     */
-    private void assertRemainingUncompressedBytes(ZipFile zfile, String name) throws IOException {
-        ZipEntry entry = zfile.getEntry(name);
-        InputStream in = zfile.getInputStream(entry);
-
-        int initialAvailable = in.available();
-
-        // Initally, the number of remaining uncompressed bytes is the entry size
-        assertEquals(entry.getSize(), in.available());
-
-        // Reading a single byte should decrement available by 1
-        in.read();
-        assertEquals(initialAvailable - 1, in.available(),
-                "Available not decremented");
-
-        // Read all bytes one by one
-        for (int i=0; i < initialAvailable-1; i++) {
-            in.read();
-        }
-
-        // No remaining uncompressed bytes
-        assertEquals(0, in.available());
-
-        // available() should still return 0 after close
-        in.close();
-        assertEquals(0, in.available());
     }
 }
