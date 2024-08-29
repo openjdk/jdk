@@ -391,6 +391,8 @@ public interface JavaLangAccess {
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
+    boolean hasNegativeOrZeros(String s);
+
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.

@@ -34,6 +34,15 @@ class StringCoding {
 
     private StringCoding() { }
 
+    public static boolean hasNegativeOrZeros(byte[] ba) {
+        for (int i = 0, len = ba.length; i < len; i++) {
+            if (ba[i] <= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static boolean hasNegatives(byte[] ba, int off, int len) {
         return countPositives(ba, off, len) != len;
     }

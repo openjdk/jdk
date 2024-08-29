@@ -128,6 +128,14 @@ public final class BufWriterImpl implements BufWriter {
         writeBytes(other.elems, 0, other.offset);
     }
 
+    @SuppressWarnings("deprecation")
+    void writeBytesDirect(String s) {
+        int length = s.length();
+        reserveSpace(length);
+        s.getBytes(0, length, elems, offset);
+        offset += length;
+    }
+
     @Override
     public void writeBytes(byte[] arr, int start, int length) {
         reserveSpace(length);
