@@ -391,6 +391,10 @@ public interface JavaLangAccess {
      */
     void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len);
 
+    int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp);
+
+    boolean regionMatches(String s, byte[] bytes, byte coder, int off, int len);
+
     /**
      * Decodes ASCII from the source byte array into the destination
      * char array.

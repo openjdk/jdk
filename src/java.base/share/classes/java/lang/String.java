@@ -1145,7 +1145,7 @@ public final class String
                                 ((byte) 0x80 <<  0))));
     }
 
-    private static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
+    static int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp, boolean doReplace) {
         while (sp < sl) {
             int b1 = src[sp++];
             if (b1 >= 0) {
@@ -2274,6 +2274,34 @@ public final class String
                         StringLatin1.getChar(ov, ooffset++)) {
                         return false;
                     }
+                }
+            }
+        }
+        return true;
+    }
+
+    boolean regionMatches(byte[] bytes, byte coder, int off, int len) {
+        if (len != length() || ((off + len) << coder) > bytes.length) {
+            return false;
+        }
+        byte[] tv = value;
+        byte tc = this.coder();
+        if (coder == tc) {
+            return ArraysSupport.mismatch(tv, 0, bytes, off, len << coder) < 0;
+        }
+        int toffset = 0;
+        if (coder == LATIN1) {
+            while (len-- > 0) {
+                if (StringLatin1.getChar(tv, toffset++) !=
+                        StringUTF16.getChar(bytes, off++)) {
+                    return false;
+                }
+            }
+        } else {
+            while (len-- > 0) {
+                if (StringUTF16.getChar(tv, toffset++) !=
+                        StringLatin1.getChar(bytes, off++)) {
+                    return false;
                 }
             }
         }

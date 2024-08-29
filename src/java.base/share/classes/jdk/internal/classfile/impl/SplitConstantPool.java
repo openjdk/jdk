@@ -381,7 +381,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             if (e.tag() == ClassFile.TAG_UTF8
                 && e instanceof AbstractPoolEntry.Utf8EntryImpl ce
                 && ce.hashCode() == hash
-                && target.equals(ce.stringValue()))
+                && ce.equalsString(target))
                 return ce;
         }
         if (!doneFullScan) {

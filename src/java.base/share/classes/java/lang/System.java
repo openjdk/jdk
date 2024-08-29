@@ -2594,6 +2594,14 @@ public final class System {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
+            public int decodeUTF8_UTF16(byte[] src, int sp, int sl, byte[] dst, int dp) {
+                return String.decodeUTF8_UTF16(src, sp, sl, dst, dp, false);
+            }
+
+            public boolean regionMatches(String s, byte[] bytes, byte coder, int off, int len) {
+                return s.regionMatches(bytes, coder, off, len);
+            }
+
             public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
