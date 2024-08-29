@@ -3470,11 +3470,6 @@ operand vReg_V3()
   interface(REG_INTER);
 %}
 
-operand vReg_V2M2()
-%{
-  group(vReg_V2, vReg_V3)
-%}
-
 operand vReg_V4()
 %{
   constraint(ALLOC_IN_RC(v4_reg));
@@ -3493,11 +3488,6 @@ operand vReg_V5()
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
-%}
-
-operand vReg_V4M2()
-%{
-  group(vReg_V4, vReg_V5)
 %}
 
 operand vReg_V6()
