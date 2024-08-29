@@ -25,7 +25,7 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence::test -Xbatch ReachabilityFence.java
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence::test -Xbatch -XX:-TieredCompilation -XX:-UseNewCode ReachabilityFence.java
  */
 public class ReachabilityFence {
 
