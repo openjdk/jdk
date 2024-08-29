@@ -2100,7 +2100,9 @@ Node* SelectFromTwoVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   //         (VectorRearrange SRC1, INDEX)
   //         (VectorRearrange SRC2, NORM_INDEX)
   //         MASK)
-  //
+  // This shall prevent an intrinsification failure and associated argument
+  // boxing penalties.
+
   auto lane_count_type = [&]() {
     switch(elem_bt) {
       case T_BYTE:
@@ -2177,6 +2179,10 @@ Node* VectorRearrangeNode::Ideal(PhaseGVN* phase, bool can_reshape) {
         default: return elem_bt;
       }
     };
+    // Targets emulating unsupported permutation for certain vector types
+    // may need to message the indexes to match the users intent.
+    // Lowering index vector to a bytevector followed by an explicit loadshuffle
+    // will bring the indexes in the consumable format.
     int cast_opc = VectorCastNode::opcode(-1, elem_bt, true);
     Node* pack_shuf = phase->transform(VectorCastNode::make(cast_opc, in(2), T_BYTE, num_elem));
     const TypeVect* newvt = TypeVect::make(get_integal_type(elem_bt), num_elem);
