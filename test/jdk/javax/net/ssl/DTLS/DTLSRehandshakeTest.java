@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,12 +44,56 @@
  *      -Dtest.mode=krb DTLSRehandshakeTest
  */
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 /**
  * Testing DTLS engines re-handshaking using each of the supported cipher
  * suites.
  */
 public class DTLSRehandshakeTest {
     public static void main(String[] args) {
-        RehandshakeTest.main(args);
+        PrintStream originalOut = System.out;
+        String fileOutName = RehandshakeTest.TEST_MODE + "-output.txt";
+        try (var fileOut = new FileOutputStream(fileOutName, true);
+             var multiOut = new MultiOutputStream(originalOut, fileOut);
+             var printOut = new PrintStream(multiOut)) {
+            System.setOut(printOut);
+            RehandshakeTest.main(args);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } finally {
+            System.setOut(originalOut);
+        }
+    }
+
+    private static class MultiOutputStream extends OutputStream {
+        private final OutputStream out1;
+        private final OutputStream out2;
+
+        public MultiOutputStream(OutputStream out1, OutputStream out2) {
+            this.out1 = out1;
+            this.out2 = out2;
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            out1.write(b);
+            out2.write(b);
+        }
+
+        @Override
+        public void flush() throws IOException {
+            out1.flush();
+            out2.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            out1.close();
+            out2.close();
+        }
     }
 }
