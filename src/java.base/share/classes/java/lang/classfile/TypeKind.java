@@ -157,4 +157,21 @@ public enum TypeKind {
                 ? fromDescriptor(descriptor.descriptorString())
                 : TypeKind.ReferenceType;
     }
+
+    /**
+     * {@return the type kind associated with the specified class}
+     * @param cl the class
+     */
+    public static TypeKind from(Class<?> cl) {
+        if (cl == boolean.class) return BooleanType;
+        if (cl == byte.class   ) return ByteType;
+        if (cl == char.class   ) return CharType;
+        if (cl == int.class    ) return IntType;
+        if (cl == long.class   ) return LongType;
+        if (cl == short.class  ) return ShortType;
+        if (cl == float.class  ) return FloatType;
+        if (cl == double.class ) return DoubleType;
+        if (cl == void.class   ) return VoidType;
+        else                     return ReferenceType;
+    }
 }
