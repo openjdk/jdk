@@ -647,8 +647,8 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @param value the constant value
+     * pushing an int onto the operand stack
+     * @param value the int value
      * @return this builder
      * @since 24
      */
@@ -668,8 +668,8 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @param value the constant value
+     * pushing an long onto the operand stack
+     * @param value the long value
      * @return this builder
      * @since 24
      */
@@ -680,8 +680,8 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @param value the constant value
+     * pushing an float onto the operand stack
+     * @param value the float value
      * @return this builder
      * @since 24
      */
@@ -693,8 +693,8 @@ public sealed interface CodeBuilder
     }
 
     /**
-     * Generate an instruction pushing a constant onto the operand stack
-     * @param value the constant value
+     * pushing an double onto the operand stack
+     * @param value the double value
      * @return this builder
      * @since 24
      */
