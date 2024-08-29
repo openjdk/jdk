@@ -1070,7 +1070,8 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
     _verifier->verify_region_sets_optional();
     HeapWord* result = attempt_allocation_at_safepoint(
         word_size, false /* expect_null_mutator_alloc_region */);
-    if (result != nullptr) {
+    // if (result != nullptr) {
+    if (true) {
       return result;
     }
     // If the allocation fails and AHS is enabled, we force the allocation.
