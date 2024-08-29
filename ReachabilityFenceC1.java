@@ -26,9 +26,6 @@ import java.lang.ref.Reference;
 
 /*
 /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
-!!! CLEAN !!!
-!!! GONE !!!
-Exception in thread "main" java.lang.AssertionError: 42 != 1
 */
 public class ReachabilityFenceC1 {
 
