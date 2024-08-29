@@ -135,7 +135,7 @@ define SetupBuildLauncherBody
           $$($1_CFLAGS), \
       CFLAGS_windows := $$($1_CFLAGS_windows), \
       EXTRA_HEADER_DIRS := java.base:libjvm, \
-      DISABLED_WARNINGS_gcc := unused-function, \
+      DISABLED_WARNINGS_gcc := unused-function unused-variable, \
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
       LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \

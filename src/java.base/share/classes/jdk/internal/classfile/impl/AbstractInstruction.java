@@ -1315,11 +1315,6 @@ public abstract sealed class AbstractInstruction
         }
 
         @Override
-        public void writeTo(DirectCodeBuilder writer) {
-            super.writeTo(writer);
-        }
-
-        @Override
         public ConstantDesc constantValue() {
             return BytecodeHelpers.intrinsicConstantValue(op);
         }
