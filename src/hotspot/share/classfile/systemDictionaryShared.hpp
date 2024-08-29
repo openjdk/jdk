@@ -199,10 +199,12 @@ private:
   static void remove_dumptime_info(InstanceKlass* k) NOT_CDS_RETURN;
   static bool has_been_redefined(InstanceKlass* k);
   static InstanceKlass* retrieve_lambda_proxy_class(const RunTimeLambdaProxyClassInfo* info) NOT_CDS_RETURN_(nullptr);
-
+  static void scan_constant_pool(InstanceKlass* k);
   DEBUG_ONLY(static bool _class_loading_may_happen;)
 
 public:
+  static bool should_hidden_class_be_archived(InstanceKlass* k);
+  static void mark_required_class(InstanceKlass* k);
   static bool is_hidden_lambda_proxy(InstanceKlass* ik);
   static bool is_early_klass(InstanceKlass* k);   // Was k loaded while JvmtiExport::is_early_phase()==true
   static bool has_archived_enum_objs(InstanceKlass* ik);

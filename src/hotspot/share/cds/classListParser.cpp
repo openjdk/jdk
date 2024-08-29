@@ -839,6 +839,8 @@ void ClassListParser::parse_constant_pool_tag() {
     case JVM_CONSTANT_InterfaceMethodref:
       preresolve_fmi = true;
       break;
+    case JVM_CONSTANT_InvokeDynamic:
+      preresolve_indy = true;
       break;
     default:
       constant_pool_resolution_warning("Unsupported constant pool index %d: %s (type=%d)",
@@ -852,6 +854,9 @@ void ClassListParser::parse_constant_pool_tag() {
   }
   if (preresolve_fmi) {
     AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(THREAD, ik, &preresolve_list);
+  }
+  if (preresolve_indy) {
+    AOTConstantPoolResolver::preresolve_indy_cp_entries(THREAD, ik, &preresolve_list);
   }
 }
 

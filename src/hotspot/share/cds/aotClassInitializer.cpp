@@ -26,6 +26,7 @@
 #include "cds/aotClassInitializer.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 #include "oops/instanceKlass.inline.hpp"
 
 bool AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass* ik) {
@@ -34,15 +35,27 @@ bool AOTClassInitializer::can_archive_preinitialized_mirror(InstanceKlass* ik) {
     return false;
   }
 
-  if (ik->is_initialized() && ik->java_super() == vmClasses::Enum_klass()) {
-    return true;
-  } else if (ik->is_initialized() &&
-             (ik->name()->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
-              ik->name()->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
-              ik->name()->equals("java/lang/constant/ConstantDescs") ||
-              ik->name()->equals("sun/invoke/util/Wrapper"))) {
-    return true;
-  } else {
-    return false;
+  if (ik->is_hidden()) {
+    return HeapShared::is_archivable_hidden_klass(ik);
+  } else if (ik->is_initialized()) {
+    if (ik->java_super() == vmClasses::Enum_klass()) {
+      return true;
+    }
+    Symbol* name = ik->name();
+    if (name->equals("jdk/internal/constant/PrimitiveClassDescImpl") ||
+        name->equals("jdk/internal/constant/ReferenceClassDescImpl") ||
+        name->equals("java/lang/constant/ConstantDescs") ||
+        name->equals("sun/invoke/util/Wrapper")) {
+      return true;
+    }
+    if (CDSConfig::is_dumping_invokedynamic()) {
+      if (name->equals("java/lang/invoke/DirectMethodHandle$AOTHolder") ||
+          name->equals("java/lang/invoke/LambdaForm$NamedFunction$AOTHolder") ||
+          name->equals("java/lang/invoke/MethodType$AOTHolder")) {
+        return true;
+      }
+    }
   }
+
+  return false;
 }

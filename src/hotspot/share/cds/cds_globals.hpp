@@ -95,9 +95,8 @@
            "do not map the archive")                                        \
            range(0, 2)                                                      \
                                                                             \
-  /*========== New "AOT" flags =========================================*/  \
-  /* These are aliases of -Xshare:dump, -XX:SharedArchiveFile=..., etc. */  \
-  /* See CDSConfig::check_flag_aliases().                               */  \
+  /* The following 3 flags are aliases of -Xshare:dump, */                  \
+  /* -XX:SharedArchiveFile=..., etc. See CDSConfig::check_flag_aliases()*/  \
                                                                             \
   product(ccstr, AOTMode, nullptr,                                          \
           "Specifies how AOTCache should be created or used. Valid values " \
@@ -109,6 +108,10 @@
                                                                             \
   product(ccstr, AOTCache, nullptr,                                         \
           "Cache for improving start up and warm up")                       \
+                                                                            \
+  product(bool, AOTInvokeDynamicLinking, false, DIAGNOSTIC,                 \
+          "AOT-link JVM_CONSTANT_InvokeDynamic entries in archived "        \
+          "ConstantPools according to profile")                             \
                                                                             \
   product(bool, AOTClassLinking, false,                                     \
           "Load/link all archived classes for the boot/platform/app "       \

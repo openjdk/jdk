@@ -532,7 +532,9 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/customLoader/ParallelTestMultiFP.java \
  -runtime/cds/appcds/customLoader/ParallelTestSingleFP.java \
  -runtime/cds/appcds/customLoader/SameNameInTwoLoadersTest.java \
+ -runtime/cds/appcds/DumpClassListWithLF.java \
  -runtime/cds/appcds/dynamicArchive/LambdaInBaseArchive.java \
+ -runtime/cds/appcds/HelloExtTest.java \
  -runtime/cds/appcds/jigsaw/classpathtests/EmptyClassInBootClassPath.java \
  -runtime/cds/appcds/jigsaw/JigsawOptionsCombo.java \
  -runtime/cds/appcds/jigsaw/modulepath/OptimizeModuleHandlingTest.java \

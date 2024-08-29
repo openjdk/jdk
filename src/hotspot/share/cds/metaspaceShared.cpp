@@ -79,6 +79,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/javaCalls.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -559,7 +560,10 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Block concurrent class unloading from changing the _dumptime_table
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
+
+  HeapShared::start_finding_archivable_hidden_classes();
   SystemDictionaryShared::check_excluded_classes();
+  HeapShared::end_finding_archivable_hidden_classes();
 
   _builder.gather_source_objs();
   _builder.reserve_buffer();
@@ -805,6 +809,20 @@ void MetaspaceShared::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS
     read_extra_data(THREAD, SharedArchiveConfigFile);
     log_info(cds)("Reading extra data: done.");
   }
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (CDSConfig::is_dumping_invokedynamic()) {
+    // This makes sure that the MethodType and MethodTypeForm tables won't be updated
+    // concurrently when we are saving their contents into a side table.
+    assert(CDSConfig::allow_only_single_java_thread(), "Required");
+
+    JavaValue result(T_VOID);
+    JavaCalls::call_static(&result, vmClasses::MethodType_klass(),
+                           vmSymbols::createArchivedObjects(),
+                           vmSymbols::void_method_signature(),
+                           CHECK);
+  }
+#endif
 
   // Rewrite and link classes
   log_info(cds)("Rewriting and linking classes ...");

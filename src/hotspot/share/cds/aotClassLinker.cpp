@@ -125,7 +125,13 @@ bool AOTClassLinker::try_add_candidate(InstanceKlass* ik) {
   }
 
   if (ik->is_hidden()) {
-    return false;
+    assert(ik->shared_class_loader_type() != ClassLoader::OTHER, "must have been set");
+    if (!CDSConfig::is_dumping_invokedynamic()) {
+      return false;
+    }
+    if (!SystemDictionaryShared::should_hidden_class_be_archived(ik)) {
+      return false;
+    }
   }
 
   InstanceKlass* s = ik->java_super();

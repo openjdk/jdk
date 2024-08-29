@@ -154,8 +154,7 @@ void AOTLinkedClassBulkLoader::load_classes(LoaderKind loader_kind, Array<Instan
 
     if (!ik->is_loaded()) {
       if (ik->is_hidden()) {
-        // TODO: AOTClassLinking is not implemented for hidden class until JDK-8293336
-        ShouldNotReachHere();
+        load_hidden_class(loader_data, ik, CHECK);
       } else {
         InstanceKlass* actual;
         if (loader_data == ClassLoaderData::the_null_class_loader_data()) {
@@ -217,6 +216,21 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
       SystemDictionary::add_to_initiating_loader(current, ik, loader_data);
     }
   }
+}
+
+// TODO -- is this really correct? Do we need a special ClassLoaderData for each hidden class?
+void AOTLinkedClassBulkLoader::load_hidden_class(ClassLoaderData* loader_data, InstanceKlass* ik, TRAPS) {
+  DEBUG_ONLY({
+      assert(ik->super() == vmClasses::Object_klass(), "must be");
+      for (int i = 0; i < ik->local_interfaces()->length(); i++) {
+        assert(ik->local_interfaces()->at(i)->is_loaded(), "must be");
+      }
+    });
+
+  ik->restore_unshareable_info(loader_data, Handle(), NULL, CHECK);
+  SystemDictionary::load_shared_class_misc(ik, loader_data);
+  ik->add_to_hierarchy(THREAD);
+  assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 
 void AOTLinkedClassBulkLoader::load_class_quick(InstanceKlass* ik, ClassLoaderData* loader_data, Handle domain, TRAPS) {

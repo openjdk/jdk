@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.util.Optional;
 import static java.lang.constant.ConstantDescs.BSM_GET_STATIC_FINAL;
 import static java.lang.constant.ConstantDescs.CD_Boolean;
 
+import jdk.internal.misc.CDS;
+
 /**
  * The Boolean class wraps a value of the primitive type
  * {@code boolean} in an object. An object of type
@@ -61,17 +63,31 @@ import static java.lang.constant.ConstantDescs.CD_Boolean;
 public final class Boolean implements java.io.Serializable,
                                       Comparable<Boolean>, Constable
 {
+    // CDS support.
+    private static Boolean[] archivedCache;
+    static {
+        CDS.initializeFromArchive(Boolean.class);
+    }
+
     /**
      * The {@code Boolean} object corresponding to the primitive
      * value {@code true}.
      */
-    public static final Boolean TRUE = new Boolean(true);
+    public static final Boolean TRUE = (archivedCache != null) ? archivedCache[0] : new Boolean(true);
 
     /**
      * The {@code Boolean} object corresponding to the primitive
      * value {@code false}.
      */
-    public static final Boolean FALSE = new Boolean(false);
+    public static final Boolean FALSE = (archivedCache != null) ? archivedCache[1] : new Boolean(false);
+
+    static {
+        if (archivedCache == null) {
+            archivedCache = new Boolean[2];
+            archivedCache[0] = TRUE;
+            archivedCache[1] = FALSE;
+        }
+    }
 
     /**
      * The Class object representing the primitive type boolean.

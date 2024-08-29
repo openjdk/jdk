@@ -96,6 +96,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
+  if (CDSConfig::is_dumping_static_archive() && CDSConfig::is_dumping_invokedynamic()) {
+    // Work around JDK-8310831, as some methods in lambda form holder classes may not get generated.
+    log_info(cds)("Archived MethodHandles may refer to lambda form holder classes. Cannot regenerate.");
+    return;
+  }
+
   if (CDSConfig::is_dumping_dynamic_archive() && CDSConfig::is_dumping_aot_linked_classes() &&
       CDSConfig::is_using_aot_linked_classes()) {
     // The base archive may have some pre-resolved CP entries that point to the lambda form holder
