@@ -1308,7 +1308,7 @@ void ShenandoahFreeSet::log_status() {
 
 HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_region) {
   shenandoah_assert_heaplocked();
-  if (req.size() > ShenandoahHeapRegion::humongous_threshold_words()) {
+  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
     switch (req.type()) {
       case ShenandoahAllocRequest::_alloc_shared:
       case ShenandoahAllocRequest::_alloc_shared_gc:
@@ -1317,8 +1317,7 @@ HeapWord* ShenandoahFreeSet::allocate(ShenandoahAllocRequest& req, bool& in_new_
       case ShenandoahAllocRequest::_alloc_gclab:
       case ShenandoahAllocRequest::_alloc_tlab:
         in_new_region = false;
-        assert(false, "Trying to allocate TLAB larger than the humongous threshold: " SIZE_FORMAT " > " SIZE_FORMAT,
-               req.size(), ShenandoahHeapRegion::humongous_threshold_words());
+        assert(false, "Trying to allocate TLAB in humongous region: " SIZE_FORMAT, req.size());
         return nullptr;
       default:
         ShouldNotReachHere();

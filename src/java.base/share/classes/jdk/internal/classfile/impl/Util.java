@@ -24,7 +24,10 @@
  */
 package jdk.internal.classfile.impl;
 
+import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.PseudoInstruction;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
@@ -61,6 +64,36 @@ import java.util.function.Consumer;
 public class Util {
 
     private Util() {
+    }
+
+    public static <T> Consumer<Consumer<T>> writingAll(Iterable<T> container) {
+        record ForEachConsumer<T>(Iterable<T> container) implements Consumer<Consumer<T>> {
+            @Override
+            public void accept(Consumer<T> consumer) {
+                container.forEach(consumer);
+            }
+        }
+        return new ForEachConsumer<>(container);
+    }
+
+    public static Consumer<MethodBuilder> buildingCode(Consumer<? super CodeBuilder> codeHandler) {
+        record WithCodeMethodHandler(Consumer<? super CodeBuilder> codeHandler) implements Consumer<MethodBuilder> {
+            @Override
+            public void accept(MethodBuilder builder) {
+                builder.withCode(codeHandler);
+            }
+        }
+        return new WithCodeMethodHandler(codeHandler);
+    }
+
+    public static Consumer<FieldBuilder> buildingFlags(int flags) {
+        record WithFlagFieldHandler(int flags) implements Consumer<FieldBuilder> {
+            @Override
+            public void accept(FieldBuilder builder) {
+                builder.withFlags(flags);
+            }
+        }
+        return new WithFlagFieldHandler(flags);
     }
 
     private static final int ATTRIBUTE_STABILITY_COUNT = AttributeMapper.AttributeStability.values().length;
@@ -191,7 +224,7 @@ public class Util {
     }
 
     @SuppressWarnings("unchecked")
-    private static <T> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
+    private static <T extends Attribute<T>> void writeAttribute(BufWriterImpl writer, Attribute<?> attr) {
         if (attr instanceof CustomAttribute<?> ca) {
             var mapper = (AttributeMapper<T>) ca.attributeMapper();
             mapper.writeAttribute(writer, (T) ca);
