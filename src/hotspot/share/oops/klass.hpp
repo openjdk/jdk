@@ -166,6 +166,8 @@ class Klass : public Metadata {
                                 // Keep it away from the beginning of a Klass to avoid cacheline
                                 // contention that may happen when a nearby object is modified.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
+                                // Some flags created by the JVM, not in the class file itself,
+                                // are in _misc_flags below.
 
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 

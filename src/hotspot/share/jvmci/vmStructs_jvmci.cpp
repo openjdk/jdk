@@ -727,6 +727,8 @@
                                                                           \
   declare_constant(InstanceKlassFlags::_misc_has_nonstatic_concrete_methods)   \
   declare_constant(InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods) \
+  declare_constant(KlassFlags::_misc_is_hidden_class)                     \
+  declare_constant(KlassFlags::_misc_is_value_based_class)                \
   declare_constant(KlassFlags::_misc_has_finalizer)                       \
   declare_constant(KlassFlags::_misc_is_cloneable_fast)                   \
                                                                           \
