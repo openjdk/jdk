@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 // These header files are included in at least 130 C++ files, as of
 // measurements made in November 2018. This list excludes files named
-// *.include.hpp, since including them decreased build performance.
+// *.inline.hpp, since including them decreased build performance.
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"

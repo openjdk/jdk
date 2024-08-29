@@ -122,7 +122,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     for (uint i1 = 0; i1 < null_block->number_of_nodes(); i1++) {
       Node* nn = null_block->get_node(i1);
       if (nn->is_MachCall() &&
-          nn->as_MachCall()->entry_point() == SharedRuntime::uncommon_trap_blob()->entry_point()) {
+          nn->as_MachCall()->entry_point() == OptoRuntime::uncommon_trap_blob()->entry_point()) {
         const Type* trtype = nn->in(TypeFunc::Parms)->bottom_type();
         if (trtype->isa_int() && trtype->is_int()->is_con()) {
           jint tr_con = trtype->is_int()->get_con();

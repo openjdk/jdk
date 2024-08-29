@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/copy.hpp"
 
 #ifdef ASSERT
@@ -220,6 +221,11 @@ ExternalsRecorder* ExternalsRecorder::_recorder = nullptr;
 
 ExternalsRecorder::ExternalsRecorder(): _arena(mtCode), _externals(&_arena) {}
 
+#ifndef PRODUCT
+static int total_access_count = 0;
+static GrowableArray<int>* extern_hist = nullptr;
+#endif
+
 void ExternalsRecorder_init() {
   ExternalsRecorder::initialize();
 }
@@ -228,30 +234,106 @@ void ExternalsRecorder::initialize() {
   // After Mutex and before CodeCache are initialized
   assert(_recorder == nullptr, "should initialize only once");
   _recorder = new ExternalsRecorder();
+#ifndef PRODUCT
+  if (PrintNMethodStatistics) {
+    Arena* arena = &_recorder->_arena;
+    extern_hist = new(arena) GrowableArray<int>(arena, 512, 512, 0);
+  }
+#endif
 }
 
 int ExternalsRecorder::find_index(address adr) {
-  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
   assert(_recorder != nullptr, "sanity");
-  return _recorder->_externals.find_index(adr);
+  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
+  int index = _recorder->_externals.find_index(adr);
+#ifndef PRODUCT
+  if (PrintNMethodStatistics) {
+    total_access_count++;
+    int n = extern_hist->at_grow(index, 0);
+    extern_hist->at_put(index, (n + 1));
+  }
+#endif
+  return index;
 }
 
 address ExternalsRecorder::at(int index) {
+  assert(_recorder != nullptr, "sanity");
   // find_index() may resize array by reallocating it and freeing old,
   // we need loock here to make sure we not accessing to old freed array.
   MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
-  assert(_recorder != nullptr, "sanity");
   return _recorder->_externals.at(index);
 }
 
 int ExternalsRecorder::count() {
-  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
   assert(_recorder != nullptr, "sanity");
+  MutexLocker ml(ExternalsRecorder_lock, Mutex::_no_safepoint_check_flag);
   return _recorder->_externals.count();
 }
 
 #ifndef PRODUCT
+extern "C" {
+  // Order from large to small values
+  static int count_cmp(const void *i, const void *j) {
+    int a = *(int*)i;
+    int b = *(int*)j;
+    return a < b ? 1 : a > b ? -1 : 0;
+  }
+}
+
 void ExternalsRecorder::print_statistics() {
-  tty->print_cr("External addresses table: %d entries", count());
+  int cnt = count();
+  tty->print_cr("External addresses table: %d entries, %d accesses", cnt, total_access_count);
+  { // Print most accessed entries in the table.
+    int* array = NEW_C_HEAP_ARRAY(int, (2 * cnt), mtCode);
+    for (int i = 0; i < cnt; i++) {
+      array[(2 * i) + 0] = extern_hist->at(i);
+      array[(2 * i) + 1] = i;
+    }
+    // Reverse sort to have "hottest" addresses first.
+    qsort(array, cnt, 2*sizeof(int), count_cmp);
+    // Print all entries with Verbose flag otherwise only top 5.
+    int limit = (Verbose || cnt <= 5) ? cnt : 5;
+    int j = 0;
+    for (int i = 0; i < limit; i++) {
+      int index = array[(2 * i) + 1];
+      int n = extern_hist->at(index);
+      if (n > 0) {
+        address addr = at(index);
+        tty->print("%d: %8d " INTPTR_FORMAT " :", j++, n, p2i(addr));
+        if (addr != nullptr) {
+          if (StubRoutines::contains(addr)) {
+            StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
+            if (desc == nullptr) {
+              desc = StubCodeDesc::desc_for(addr + frame::pc_return_offset);
+            }
+            const char* stub_name = (desc != nullptr) ? desc->name() : "<unknown>";
+            tty->print(" stub: %s", stub_name);
+          } else {
+            ResourceMark rm;
+            const int buflen = 1024;
+            char* buf = NEW_RESOURCE_ARRAY(char, buflen);
+            int offset = 0;
+            if (os::dll_address_to_function_name(addr, buf, buflen, &offset)) {
+              tty->print(" extn: %s", buf);
+              if (offset != 0) {
+                tty->print("+%d", offset);
+              }
+            } else {
+              if (CodeCache::contains((void*)addr)) {
+                // Something in CodeCache
+                tty->print(" in CodeCache");
+              } else {
+                // It could be string
+                memcpy(buf, (char*)addr, 80);
+                buf[80] = '\0';
+                tty->print(" '%s'", buf);
+              }
+            }
+          }
+        }
+        tty->cr();
+      }
+    }
+  }
 }
 #endif

@@ -100,7 +100,7 @@ static void z_store_barrier(MacroAssembler* masm, const MachNode* node, Address 
 %}
 
 // Load Pointer
-instruct zLoadP(iRegPNoSp dst, memory8 mem, rFlagsReg cr)
+instruct zLoadP(iRegPNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
   predicate(UseZGC && ZGenerational && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);

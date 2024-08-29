@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -507,15 +507,15 @@ public final class ClassPrinterImpl {
 
     private static Node[] elementValueToTree(AnnotationValue v) {
         return switch (v) {
-            case OfString cv -> leafs("string", String.valueOf(cv.constantValue()));
-            case OfDouble cv -> leafs("double", String.valueOf(cv.constantValue()));
-            case OfFloat cv -> leafs("float", String.valueOf(cv.constantValue()));
-            case OfLong cv -> leafs("long", String.valueOf(cv.constantValue()));
-            case OfInteger cv -> leafs("int", String.valueOf(cv.constantValue()));
-            case OfShort cv -> leafs("short", String.valueOf(cv.constantValue()));
-            case OfCharacter cv -> leafs("char", String.valueOf(cv.constantValue()));
-            case OfByte cv -> leafs("byte", String.valueOf(cv.constantValue()));
-            case OfBoolean cv -> leafs("boolean", String.valueOf((int)cv.constantValue() != 0));
+            case OfString cv -> leafs("string", String.valueOf(cv.stringValue()));
+            case OfDouble cv -> leafs("double", String.valueOf(cv.doubleValue()));
+            case OfFloat cv -> leafs("float", String.valueOf(cv.floatValue()));
+            case OfLong cv -> leafs("long", String.valueOf(cv.longValue()));
+            case OfInt cv -> leafs("int", String.valueOf(cv.intValue()));
+            case OfShort cv -> leafs("short", String.valueOf(cv.shortValue()));
+            case OfChar cv -> leafs("char", String.valueOf(cv.charValue()));
+            case OfByte cv -> leafs("byte", String.valueOf(cv.byteValue()));
+            case OfBoolean cv -> leafs("boolean", String.valueOf(cv.booleanValue()));
             case OfClass clv -> leafs("class", clv.className().stringValue());
             case OfEnum ev -> leafs("enum class", ev.className().stringValue(),
                                     "constant name", ev.constantName().stringValue());
@@ -1038,9 +1038,9 @@ public final class ClassPrinterImpl {
     private static Node typeAnnotationsToTree(Style style, String name, List<TypeAnnotation> annos) {
         return new ListNodeImpl(style, name, annos.stream().map(a ->
                 new MapNodeImpl(FLOW, "anno")
-                        .with(leaf("annotation class", a.className().stringValue()),
+                        .with(leaf("annotation class", a.annotation().className().stringValue()),
                               leaf("target info", a.targetInfo().targetType().name()))
-                        .with(elementValuePairsToTree(a.elements()))));
+                        .with(elementValuePairsToTree(a.annotation().elements()))));
 
     }
 

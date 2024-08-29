@@ -30,7 +30,6 @@ import jdk.internal.javac.PreviewFeature;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
-import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
