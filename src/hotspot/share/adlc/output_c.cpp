@@ -1753,8 +1753,8 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     bool declared_def  = false;
     bool declared_kill = false;
 
-    // NOTE: only plain operands or expanded operands are added here,
-    //       expanding operands are not added here.
+    // NOTE: only plain operands or ungrouped operands are added here,
+    //       grouping operands are not added here.
     while ((comp = node->_components.iter()) != nullptr) {
       // Lookup register class associated with operand type
       Form *form = (Form*)_globalNames[comp->_type];
@@ -1924,8 +1924,8 @@ private:
   OpClassForm  *_opclass;
   OperandForm  *_operand;
   int           _operand_idx;
-  int           _expanded_operands[OperandForm::EXPANDED_OPER_LIMIT];
-  uint          _expanded_operands_num;
+  int           _ungrouped_operands[OperandForm::UNGROUPED_OPER_LIMIT];
+  uint          _ungrouped_operands_num;
   const char   *_local_name;
   const char   *_operand_name;
   bool          _doing_disp;
@@ -1964,7 +1964,7 @@ public:
     _opclass       = nullptr;
     _operand       = nullptr;
     _operand_idx   = 0;
-    _expanded_operands_num  = 0;
+    _ungrouped_operands_num  = 0;
     _local_name    = "";
     _operand_name  = "";
     _doing_disp    = false;
@@ -2008,20 +2008,20 @@ public:
       else {
         // Lookup its position in (formal) parameter list of encoding
         int   param_no  = _encoding.rep_var_index(rep_var);
-        int   param_no_unexpanded = _encoding.rep_var_index_unexpanded(rep_var);
-        if ( param_no == -1 && param_no_unexpanded == -1 ) {
+        int   param_no_grouped = _encoding.rep_var_index_grouped(rep_var);
+        if ( param_no == -1 && param_no_grouped == -1 ) {
           _AD.syntax_err( _encoding._linenum,
                           "1 Replacement variable %s not found in enc_class %s.\n",
                           rep_var, _encoding._name);
         }
-        assert(param_no == -1 || param_no_unexpanded == -1, "sanity");
+        assert(param_no == -1 || param_no_grouped == -1, "sanity");
 
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
-        const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
-        const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ?
-                   _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
-        if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
+        const char *inst_rep_var_ungrouped = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+        const char *inst_rep_var_grouped = param_no_grouped != -1 ?
+                   _ins_encode.rep_var_name_grouped(_inst, param_no_grouped) : nullptr;
+        if (inst_rep_var_ungrouped == nullptr && inst_rep_var_grouped == nullptr) {
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
                           rep_var, _encoding._name, _inst._ident);
@@ -2029,34 +2029,34 @@ public:
         }
 
         // Check if instruction's actual parameter is a local name in the instruction
-        const char *inst_rep_var = inst_rep_var_expanded != nullptr ? inst_rep_var_expanded : inst_rep_var_unexpanded;
+        const char *inst_rep_var = inst_rep_var_ungrouped != nullptr ? inst_rep_var_ungrouped : inst_rep_var_grouped;
         const Form  *local     = _inst._localNames[inst_rep_var];
         OpClassForm *opc       = (local != nullptr) ? local->is_opclass() : nullptr;
         // Note: assert removed to allow constant and symbolic parameters
         // assert( opc, "replacement variable was not found in local names");
         // Lookup the index position iff the replacement variable is a localName
         int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
-        int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
-        assert(idx == -1 || idx_unexpanded == -1, "sanity");
+        int idx_grouped  = (opc != nullptr) ? _inst.operand_position_format_grouped(inst_rep_var) : -1;
+        assert(idx == -1 || idx_grouped == -1, "sanity");
 
-        if ( idx != -1 || idx_unexpanded != -1) {
+        if ( idx != -1 || idx_grouped != -1) {
           // This is a local in the instruction
           // Update local state info.
           _opclass        = opc;
           _operand_idx    = idx;
           if (idx != -1) {
-            _expanded_operands_num = 0;
+            _ungrouped_operands_num = 0;
           } else {
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
-            assert(operand->get_expanded_operands_num() > 0, "sanity");
-            for (int i = 0; i < (int)operand->get_expanded_operands_num(); i++) {
-              const char* expanded = OperandForm::get_expanded_oper_name(inst_rep_var, i);
-              int expanded_idx  = _inst.operand_position_format(expanded);
-              assert(expanded_idx >= 0 && (uint)expanded_idx < _inst.num_unique_opnds(), "sanity");
-              _expanded_operands[i] = expanded_idx;
+            assert(operand->get_ungrouped_operands_num() > 0, "sanity");
+            for (int i = 0; i < (int)operand->get_ungrouped_operands_num(); i++) {
+              const char* ungrouped = OperandForm::get_ungrouped_oper_name(inst_rep_var, i);
+              int ungrouped_idx  = _inst.operand_position_format(ungrouped);
+              assert(ungrouped_idx >= 0 && (uint)ungrouped_idx < _inst.num_unique_opnds(), "sanity");
+              _ungrouped_operands[i] = ungrouped_idx;
             }
-            _expanded_operands_num = operand->get_expanded_operands_num();
+            _ungrouped_operands_num = operand->get_ungrouped_operands_num();
           }
           _local_name     = rep_var;
           _operand_name   = inst_rep_var;
@@ -2409,7 +2409,7 @@ private:
     // A subfield variable, '$$subfield'
     if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
       // $reg form or the $Register MacroAssembler type conversions
-      assert( (_operand_idx != -1) != (_expanded_operands_num > 0),
+      assert( (_operand_idx != -1) != (_ungrouped_operands_num > 0),
               "Must use this subfield after operand");
       if( _reg_status == LITERAL_NOT_SEEN ) {
         if (_processing_noninput) {
@@ -2425,16 +2425,16 @@ private:
           // TODO
           fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
-          if (_expanded_operands_num == 0) {
+          if (_ungrouped_operands_num == 0) {
             assert(_operand_idx != -1, "sanity");
             if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           } else {
             assert(_operand_idx == -1, "sanity");
-            assert(_expanded_operands_num > 0 && _expanded_operands_num <= OperandForm::EXPANDED_OPER_LIMIT, "sanity");
-            fprintf(_fp, ",%d", _expanded_operands_num);
-            for (int i = 0; i < (int)_expanded_operands_num; i++) {
-              assert(_expanded_operands[i] >= 0, "sanity");
-              fprintf(_fp,",idx%d", _expanded_operands[i]);
+            assert(_ungrouped_operands_num > 0 && _ungrouped_operands_num <= OperandForm::UNGROUPED_OPER_LIMIT, "sanity");
+            fprintf(_fp, ",%d", _ungrouped_operands_num);
+            for (int i = 0; i < (int)_ungrouped_operands_num; i++) {
+              assert(_ungrouped_operands[i] >= 0, "sanity");
+              fprintf(_fp,",idx%d", _ungrouped_operands[i]);
             }
           }
           fprintf(_fp,")");
@@ -2527,26 +2527,26 @@ private:
     else {
       // Lookup its position in parameter list
       int   param_no  = _encoding.rep_var_index(rep_var);
-      int   param_no_unexpanded  = _encoding.rep_var_index_unexpanded(rep_var);
-      if ( param_no == -1 && param_no_unexpanded == -1 ) {
+      int   param_no_grouped  = _encoding.rep_var_index_grouped(rep_var);
+      if ( param_no == -1 && param_no_grouped == -1 ) {
         _AD.syntax_err( _encoding._linenum,
                         "2 Replacement variable %s not found in enc_class %s.\n",
                         rep_var, _encoding._name);
       }
-      assert(param_no == -1 || param_no_unexpanded == -1, "sanity");
+      assert(param_no == -1 || param_no_grouped == -1, "sanity");
 
       // Lookup the corresponding ins_encode parameter
-      const char *inst_rep_var_expanded = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
-      const char *inst_rep_var_unexpanded = param_no_unexpanded != -1 ?
-                 _ins_encode.rep_var_name_unexpanded(_inst, param_no_unexpanded) : nullptr;
-      if (inst_rep_var_expanded == nullptr && inst_rep_var_unexpanded == nullptr) {
+      const char *inst_rep_var_ungrouped = param_no != -1 ? _ins_encode.rep_var_name(_inst, param_no) : nullptr;
+      const char *inst_rep_var_grouped = param_no_grouped != -1 ?
+                 _ins_encode.rep_var_name_grouped(_inst, param_no_grouped) : nullptr;
+      if (inst_rep_var_ungrouped == nullptr && inst_rep_var_grouped == nullptr) {
         _AD.syntax_err( _ins_encode._linenum,
                         "Parameter %s not passed to enc_class %s from instruct %s.\n",
                         rep_var, _encoding._name, _inst._ident);
         assert(false, "inst_rep_var == null, cannot continue.");
       }
 
-      const char *inst_rep_var = inst_rep_var_expanded != nullptr ? inst_rep_var_expanded : inst_rep_var_unexpanded;
+      const char *inst_rep_var = inst_rep_var_ungrouped != nullptr ? inst_rep_var_ungrouped : inst_rep_var_grouped;
 
       // Check if instruction's actual parameter is a local name in the instruction
       const Form  *local     = _inst._localNames[inst_rep_var];
@@ -2555,10 +2555,10 @@ private:
       // assert( opc, "replacement variable was not found in local names");
       // Lookup the index position iff the replacement variable is a localName
       int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
-      int idx_unexpanded  = (opc != nullptr) ? _inst.operand_position_format_unexpanded(inst_rep_var) : -1;
-      assert(idx == -1 || idx_unexpanded == -1, "sanity");
+      int idx_grouped  = (opc != nullptr) ? _inst.operand_position_format_grouped(inst_rep_var) : -1;
+      assert(idx == -1 || idx_grouped == -1, "sanity");
 
-      if ( idx != -1 || idx_unexpanded != -1) {
+      if ( idx != -1 || idx_grouped != -1) {
         if ((idx != -1 && _inst.is_noninput_operand(idx))) {
           // This operand isn't a normal input so printing it is done
           // specially.
@@ -2571,12 +2571,12 @@ private:
           } else {
             OperandForm *operand = opc->is_operand();
             assert(operand != nullptr, "sanity");
-            assert(operand->get_expanded_operands_num() > 0, "sanity");
-            // Pass `- 1` below, because in _inst.operand_position_format_unexpanded above
-            // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
-            // and for expanding operand, only TEMP is supported.
-            assert(idx_unexpanded >= 1, "sanity");
-            fprintf(_fp,"opnd_array(%d",idx_unexpanded + _inst.num_unique_opnds() - 1);
+            assert(operand->get_ungrouped_operands_num() > 0, "sanity");
+            // Pass `- 1` below, because in _inst.operand_position_format_grouped above
+            // returned `idx_grouped` will start from 1 rather 0 for non-DEF operand,
+            // and for grouping operand, only TEMP is supported.
+            assert(idx_grouped >= 1, "sanity");
+            fprintf(_fp,"opnd_array(%d",idx_grouped + _inst.num_unique_opnds() - 1);
             fprintf(_fp,")");
           }
         }
@@ -4027,13 +4027,13 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     //
     // Check if the first post-match component may be an interesting def
     int index = buildMachNode(fp_cpp, inst, inst->_components, indent);
-    if (inst->_components_unexpanded.count() > 0) {
-      fprintf(fp_cpp,"%s // Below are expanding operands\n", indent);
+    if (inst->_components_grouped.count() > 0) {
+      fprintf(fp_cpp,"%s // Below are grouping operands\n", indent);
       assert(index + 1 == inst->num_unique_opnds(), "sanity");
       // Not pass `index + 1` as the start_index below, because in buildMachNode(..., start_idx)
-      // returned `idx_unexpanded` will start from 1 rather 0 for non-DEF operand,
-      // and for expanding operand, only TEMP is supported.
-      buildMachNode(fp_cpp, inst, inst->_components_unexpanded, indent, index);
+      // returned `idx_grouped` will start from 1 rather 0 for non-DEF operand,
+      // and for grouping operand, only TEMP is supported.
+      buildMachNode(fp_cpp, inst, inst->_components_grouped, indent, index);
     }
   }
   else if ( inst->is_chain_of_constant(_globalNames, opType) ) {
