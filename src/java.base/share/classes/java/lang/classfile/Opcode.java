@@ -1084,17 +1084,33 @@ public enum Opcode {
     }
 
     /**
-     * {@return the bytecode} The return value exceeds a byte if this is {@linkplain #isWide() wide}.
+     * {@return the opcode value} For {@linkplain #isWide() wide} pseudo-opcodes, returns the
+     * first 2 bytes of the instruction, which are the {@code wide} opcode and the functional
+     * local variable opcode, as a U2 value.
      */
     public int bytecode() { return bytecode; }
 
     /**
-     * {@return true if the instruction has extended local variable index by additional bytes}
+     * {@return true if this is a pseudo-opcode modified by {@code wide}}
+     *
+     * @see #ILOAD_W
+     * @see #LLOAD_W
+     * @see #FLOAD_W
+     * @see #DLOAD_W
+     * @see #ALOAD_W
+     * @see #ISTORE_W
+     * @see #LSTORE_W
+     * @see #FSTORE_W
+     * @see #DSTORE_W
+     * @see #ASTORE_W
+     * @see #RET_W
+     * @see #IINC_W
      */
     public boolean isWide() { return bytecode > 255; }
 
     /**
-     * {@return size of the instruction in bytes if fixed, or -1 otherwise} This size includes the bytecode.
+     * {@return size of the instruction in bytes if fixed, or -1 otherwise} This size includes
+     * the opcode itself.
      */
     public int sizeIfFixed() { return sizeIfFixed; }
 
