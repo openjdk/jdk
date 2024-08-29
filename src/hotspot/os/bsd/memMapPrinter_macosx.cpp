@@ -28,15 +28,74 @@
 #include "precompiled.hpp"
 
 #include "nmt/memMapPrinter.hpp"
-//#include "procMapsParser.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 #include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <libproc.h>
+#include <unistd.h>
 
-class ProcSmapsInfo {
+#include <mach/vm_inherit.h>
+#include <mach/vm_prot.h>
+
+
+/* maximum number of mapping records returned */
+static const int MAX_REGIONS_RETURNED = 1000000;
+
+class MappingInfo {
+public:
+  stringStream _ap_buffer;
+  stringStream _state_buffer;
+  stringStream _type_buffer;
+  stringStream _protect_buffer;
+  stringStream _file_name;
+
+  MappingInfo() {}
+
+  void process(const proc_regionwithpathinfo& mem_info) {
+    _ap_buffer.reset();
+    _state_buffer.reset();
+    _protect_buffer.reset();
+    _type_buffer.reset();
+    _file_name.reset();
+
+    const char *path = mem_info.prp_vip.vip_path;
+    if (path != nullptr) {
+      _file_name.print("%s", path);
+    }
+
+    const proc_regioninfo& rinfo = mem_info.prp_prinfo;
+    char prot[4];
+    char max_prot[4];
+    rwbits(rinfo.pri_protection, prot);
+    rwbits(rinfo.pri_max_protection, max_prot);
+    _protect_buffer.print("%s/%s", prot, max_prot);
+
+    _state_buffer.print("%s", sharemode(rinfo));
+
+    if (mem_info.prp_vip.vip_path[0] == 0 && mem_info.prp_vip.vip_vi.vi_stat.vst_ino != 0) {
+      _ap_buffer.print("path null inode %lld", mem_info.prp_vip.vip_vi.vi_stat.vst_ino);
+    }
+  }
+
+  const char* sharemode(const proc_regioninfo& rinfo) {
+    static const char* share_strings[] = {
+      "cow", "prv", "---", "shr", "tsh", "pva", "sha", "lrg"
+    };
+    assert(rinfo.pri_share_mode >= SM_COW && rinfo.pri_share_mode <= SM_LARGE_PAGE, "invalid pri_share_mode (%d)", rinfo.pri_share_mode);
+    return share_strings[rinfo.pri_share_mode - 1];
+  }
+
+  void rwbits(int rw, char bits[4]) {
+    bits[0] = rw & VM_PROT_READ ? 'r' : '-';
+    bits[1] = rw & VM_PROT_WRITE ? 'w' : '-';
+    bits[2] = rw & VM_PROT_EXECUTE ? 'x' : '-';
+    bits[3] = 0;
+  }
 };
 
 class ProcSmapsSummary {
@@ -51,7 +110,7 @@ class ProcSmapsSummary {
 public:
   ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
                      _swapped_out(0), _hugetlb(0), _thp(0) {}
-  void add_mapping(const ProcSmapsInfo& info) {
+  void add_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) {
  
   }
 
@@ -68,8 +127,6 @@ public:
   }
 };
 
-
-
 class ProcSmapsPrinter {
   const MappingPrintSession& _session;
 public:
@@ -77,8 +134,28 @@ public:
     _session(session)
   {}
 
-  void print_single_mapping(const ProcSmapsInfo& info) const {
-  
+  void print_single_mapping(const proc_regioninfo& region_info, const MappingInfo& mapping_info) const {
+     outputStream* st = _session.out();
+#define INDENT_BY(n)          \
+  if (st->fill_to(n) == 0) {  \
+    st->print(" ");           \
+  }
+    st->print(PTR_FORMAT "-" PTR_FORMAT, (size_t)region_info.pri_address, (size_t)(region_info.pri_address + region_info.pri_size));
+    INDENT_BY(38);
+    st->print("%12zu", (size_t)region_info.pri_size);
+    INDENT_BY(51);
+    st->print("%s", mapping_info._protect_buffer.base());
+    INDENT_BY(58);
+    st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
+    INDENT_BY(60);
+   // st->print("%#9llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
+  //  INDENT_BY(72);
+    if (_session.print_nmt_info_for_region((const void*)region_info.pri_address, (const void*)(region_info.pri_address + region_info.pri_size))) {
+      st->print(" ");
+    }
+    st->print_raw(mapping_info._file_name.base());
+  #undef INDENT_BY
+    st->cr();
   }
 
   void print_legend() const {
@@ -115,36 +192,40 @@ public:
 };
 
 void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
-  constexpr char filename[] = "/proc/self/smaps";
-  FILE* f = os::fopen(filename, "r");
-  if (f == nullptr) {
-    session.out()->print_cr("Cannot open %s", filename);
-    //return;
-  }
 
   ProcSmapsPrinter printer(session);
   ProcSmapsSummary summary;
-
   outputStream* const st = session.out();
+  const pid_t pid = getpid();
 
   printer.print_legend();
   st->cr();
   printer.print_header();
 
- // ProcSmapsInfo info;
-  /*
-  ProcSmapsParser parser(f);
-  while (parser.parse_next(info)) {
-    printer.print_single_mapping(info);
-    summary.add_mapping(info);
+  proc_regionwithpathinfo region_info;
+  MappingInfo mapping_info;
+  uint64_t address = 0;
+  int region_count = 0;
+  while (true) {
+    if (++region_count > MAX_REGIONS_RETURNED) {
+      st->print_cr("limit of %d regions reached (results inaccurate)", region_count);
+      break;
+    }
+    int retval = proc_pidinfo(pid, PROC_PIDREGIONPATHINFO, address, &region_info, sizeof(region_info));
+    if (retval <= 0) {
+      break;
+    } else if (retval < sizeof(region_info)) {
+      fatal("proc_pidinfo() returned %d", retval);
+    }
+    mapping_info.process(region_info);
+    printer.print_single_mapping(region_info.prp_prinfo, mapping_info);
+    summary.add_mapping(region_info.prp_prinfo, mapping_info);
+    assert(region_info.prp_prinfo.pri_size > 0, "size of region is 0");
+    address = region_info.prp_prinfo.pri_address + region_info.prp_prinfo.pri_size;
   }
-  */
   st->cr();
-
   summary.print_on(session);
   st->cr();
-
- // ::fclose(f);
 }
 
 #endif // __APPLE__
