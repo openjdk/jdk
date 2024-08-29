@@ -37,10 +37,10 @@ public class ReachabilityFence2 {
     }
 
     static void test() {
-        for (long j = 0; j < 1000; j++) {
+        for (long j = 0; j < 10_000_000; j++) {
             A a = obj;
-            obj = null;
-            System.gc();
+            //obj = null;
+            //System.gc();
             if (A.collected) throw new RuntimeException(
                 "obj collected before reachabilityFence was reached!"
             );
@@ -54,6 +54,14 @@ public class ReachabilityFence2 {
             .register(obj, () -> {
                 A.collected = true;
             });
+
+        Thread gcThread = new Thread() {
+            public void run() {
+                obj = null;
+                System.gc();
+            }
+        };
+        gcThread.start();
 
         test();
     }
