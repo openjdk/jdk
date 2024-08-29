@@ -59,6 +59,7 @@ import jdk.internal.vm.annotation.Stable;
 public enum TypeKind {
     // Elements are grouped so frequently used switch ranges such as
     // primitives (boolean - double) and computational (int - void) are together.
+    // This also follows the order of typed opcodes
     // Begin primitive types
     /**
      * The primitive type {@code boolean}. Its {@linkplain ##computational-type
@@ -97,13 +98,13 @@ public enum TypeKind {
      */
     INT(1, 10),
     /**
-     * The primitive type {@code float}.
-     */
-    FLOAT(1, 6),
-    /**
      * The primitive type {@code long}. It is of {@linkplain #slotSize() category} 2.
      */
     LONG(2, 11),
+    /**
+     * The primitive type {@code float}.
+     */
+    FLOAT(1, 6),
     /**
      * The primitive type {@code double}. It is of {@linkplain #slotSize() category} 2.
      */

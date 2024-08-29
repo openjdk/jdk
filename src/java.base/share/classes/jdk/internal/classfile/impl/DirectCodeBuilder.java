@@ -1436,7 +1436,7 @@ public final class DirectCodeBuilder
     public CodeBuilder newarray(TypeKind typeKind) {
         int atype = typeKind.newarrayCode(); // implicit null check
         if (atype < 0)
-            throw new IllegalArgumentException("Illegal component type: " + typeKind.typeName());
+            throw new IllegalArgumentException("Illegal component type: ".concat(typeKind.upperBound().displayName()));
         writeNewPrimitiveArray(atype);
         return this;
     }
