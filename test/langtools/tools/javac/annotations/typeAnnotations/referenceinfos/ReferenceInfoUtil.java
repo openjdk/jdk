@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class ReferenceInfoUtil {
         List<TAD> result = new ArrayList<>();
         for (TypeAnnotation anno: annos) {
             TAD tad = new TAD();
-            tad.annotation = anno.className().stringValue();
+            tad.annotation = anno.annotation().className().stringValue();
             tad.type = anno.targetInfo().targetType();
             switch (anno.targetInfo().targetType()) {
                 case CAST, CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, METHOD_INVOCATION_TYPE_ARGUMENT -> {

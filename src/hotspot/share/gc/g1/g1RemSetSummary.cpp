@@ -218,15 +218,24 @@ public:
   bool do_heap_region(G1HeapRegion* r) {
     G1HeapRegionRemSet* hrrs = r->rem_set();
 
+    size_t occupied_cards = hrrs->occupied();
     // G1HeapRegionRemSet::mem_size() includes the
     // size of the code roots
     size_t rs_unused_mem_sz = hrrs->unused_mem_size();
     size_t rs_mem_sz = hrrs->mem_size();
+
+    if (r->is_young()) {
+      uint num_young  =  G1CollectedHeap::heap()->young_regions_count();
+      occupied_cards /= num_young;
+      rs_unused_mem_sz /= num_young;
+      rs_mem_sz /= num_young;
+    }
+
     if (rs_mem_sz > _max_rs_mem_sz) {
       _max_rs_mem_sz = rs_mem_sz;
       _max_rs_mem_sz_region = r;
     }
-    size_t occupied_cards = hrrs->occupied();
+
     size_t code_root_mem_sz = hrrs->code_roots_mem_size();
     if (code_root_mem_sz > max_code_root_mem_sz()) {
       _max_code_root_mem_sz = code_root_mem_sz;
