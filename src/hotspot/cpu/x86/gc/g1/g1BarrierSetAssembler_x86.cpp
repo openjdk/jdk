@@ -361,9 +361,6 @@ void G1BarrierSetAssembler::g1_write_barrier_post(MacroAssembler* masm,
 
 #if defined(COMPILER2)
 
-#undef __
-#define __ masm->
-
 static void generate_c2_barrier_runtime_call(MacroAssembler* masm, G1BarrierStubC2* stub, const Register arg, const address runtime_path) {
 #ifdef _LP64
   SaveLiveRegisters save_registers(masm, stub);
