@@ -63,7 +63,7 @@ class CgroupV1Controller: public CgroupController {
     }
 
     void set_subsystem_path(const char *cgroup_path);
-    char* subsystem_path() override { return _path; }
+    const char* subsystem_path() override { return _path; }
     bool is_read_only() override { return _read_only; }
     bool needs_hierarchy_adjustment() override;
 };
@@ -95,9 +95,9 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    char* subsystem_path() override { return reader()->subsystem_path(); }
-    char* mount_point() override { return reader()->mount_point(); }
-    char* cgroup_path() override { return reader()->cgroup_path(); }
+    const char* subsystem_path() override { return reader()->subsystem_path(); }
+    const char* mount_point() override { return reader()->mount_point(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
   private:
     jlong read_mem_swappiness();
     jlong read_mem_swap(julong host_total_memsw);
@@ -124,16 +124,16 @@ class CgroupV1CpuController final : public CgroupCpuController {
     bool is_read_only() override {
       return reader()->is_read_only();
     }
-    char* subsystem_path() override {
+    const char* subsystem_path() override {
       return reader()->subsystem_path();
     }
-    char* mount_point() override {
+    const char* mount_point() override {
       return reader()->mount_point();
     }
     bool needs_hierarchy_adjustment() override {
       return reader()->needs_hierarchy_adjustment();
     }
-    char* cgroup_path() override { return reader()->cgroup_path(); }
+    const char* cgroup_path() override { return reader()->cgroup_path(); }
 
   public:
     CgroupV1CpuController(const CgroupV1Controller& reader) : _reader(reader) {
