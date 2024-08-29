@@ -1241,9 +1241,6 @@ public sealed interface ClassFile
     /** The value of constant pool tag UTF8. */
     int TAG_UTF8 = 1;
 
-    /** The value of default class access flags */
-    int DEFAULT_CLASS_FLAGS = ACC_PUBLIC;
-
     /** The class major version of JAVA_1. */
     int JAVA_1_VERSION = 45;
 
