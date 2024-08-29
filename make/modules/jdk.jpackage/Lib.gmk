@@ -89,6 +89,7 @@ ifeq ($(call isTargetOs, linux), true)
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       LINK_TYPE := C++, \
       OPTIMIZATION := LOW, \
+      DISABLED_WARNINGS_gcc_Log.cpp := unused-const-variable, \
       DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
       LD_SET_ORIGIN := false, \

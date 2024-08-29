@@ -637,14 +637,17 @@ public sealed interface CodeBuilder
      */
     default CodeBuilder loadConstant(ConstantDesc value) {
         //avoid switch expressions here
-        if (value == null
-         || value == ConstantDescs.NULL) return aconst_null();
-        if (value instanceof Integer   ) return loadConstant((int)    value);
-        if (value instanceof Long      ) return loadConstant((long)   value);
-        if (value instanceof Float     ) return loadConstant((float)  value);
-        if (value instanceof Double    ) return loadConstant((double) value);
-        else                             return ldc(value);
+        if (value == null || value == ConstantDescs.NULL)
+            return aconst_null();
+        if (value instanceof Number) {
+            if (value instanceof Integer) return loadConstant((int)    value);
+            if (value instanceof Long   ) return loadConstant((long)   value);
+            if (value instanceof Float  ) return loadConstant((float)  value);
+            if (value instanceof Double ) return loadConstant((double) value);
+        }
+        return ldc(value);
     }
+
 
     /**
      * Generate an instruction pushing a constant int value onto the operand stack.
@@ -2158,10 +2161,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
-        return with(ConstantInstruction.ofLoad(
-                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
-                : entry.index() > 0xff ? Opcode.LDC_W
-                : Opcode.LDC, entry));
+        return with(ConstantInstruction.ofLoad(BytecodeHelpers.ldcOpcode(entry), entry));
     }
 
     /**
