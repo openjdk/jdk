@@ -230,26 +230,38 @@ public class BytecodeHelpers {
         };
     }
 
-    static void validateSIPUSH(ConstantDesc d) {
-        if (d instanceof Integer iVal && Short.MIN_VALUE <= iVal && iVal <= Short.MAX_VALUE)
-            return;
-
-        if (d instanceof Long lVal && Short.MIN_VALUE <= lVal && Short.MAX_VALUE <= lVal)
-            return;
-
-        throw new IllegalArgumentException("SIPUSH: value must be within: Short.MIN_VALUE <= value <= Short.MAX_VALUE"
-                                           + ", found: " + d);
+    static void validateSipush(long value) {
+        if (value < Short.MIN_VALUE || Short.MAX_VALUE < value)
+            throw new IllegalArgumentException(
+                    "SIPUSH: value must be within: Short.MIN_VALUE <= value <= Short.MAX_VALUE, found: "
+                            .concat(Long.toString(value)));
     }
 
-    static void validateBIPUSH(ConstantDesc d) {
-        if (d instanceof Integer iVal && Byte.MIN_VALUE <= iVal && iVal <= Byte.MAX_VALUE)
-            return;
+    static void validateBipush(long value) {
+        if (value < Byte.MIN_VALUE || Byte.MAX_VALUE < value)
+            throw new IllegalArgumentException(
+                    "BIPUSH: value must be within: Byte.MIN_VALUE <= value <= Byte.MAX_VALUE, found: "
+                            .concat(Long.toString(value)));
+    }
 
-        if (d instanceof Long lVal && Byte.MIN_VALUE <= lVal && Byte.MAX_VALUE <= lVal)
-            return;
+    static void validateSipush(ConstantDesc d) {
+        if (d instanceof Integer iVal) {
+            validateSipush(iVal.longValue());
+        } else if (d instanceof Long lVal) {
+            validateSipush(lVal.longValue());
+        } else {
+            throw new IllegalArgumentException("SIPUSH: not an integral number: ".concat(d.toString()));
+        }
+    }
 
-        throw new IllegalArgumentException("BIPUSH: value must be within: Byte.MIN_VALUE <= value <= Byte.MAX_VALUE"
-                                           + ", found: " + d);
+    static void validateBipush(ConstantDesc d) {
+        if (d instanceof Integer iVal) {
+            validateBipush(iVal.longValue());
+        } else if (d instanceof Long lVal) {
+            validateBipush(lVal.longValue());
+        } else {
+            throw new IllegalArgumentException("BIPUSH: not an integral number: ".concat(d.toString()));
+        }
     }
 
     public static MethodHandleEntry handleDescToHandleInfo(ConstantPoolBuilder constantPool, DirectMethodHandleDesc bootstrapMethod) {
@@ -289,9 +301,9 @@ public class BytecodeHelpers {
                     throw new IllegalArgumentException("value must be null or ConstantDescs.NULL with opcode ACONST_NULL");
             }
             case SIPUSH ->
-                    validateSIPUSH(v);
+                    validateSipush(v);
             case BIPUSH ->
-                    validateBIPUSH(v);
+                    validateBipush(v);
             case LDC, LDC_W, LDC2_W -> {
                 if (v == null)
                     throw new IllegalArgumentException("`null` must use ACONST_NULL");
@@ -306,6 +318,12 @@ public class BytecodeHelpers {
                 }
             }
         }
+    }
+
+    public static Opcode ldcOpcode(LoadableConstantEntry entry) {
+        return entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
+                : entry.index() > 0xff ? Opcode.LDC_W
+                : Opcode.LDC;
     }
 
     public static LoadableConstantEntry constantEntry(ConstantPoolBuilder constantPool,
