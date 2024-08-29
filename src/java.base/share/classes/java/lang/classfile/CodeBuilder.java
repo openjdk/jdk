@@ -650,7 +650,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
-     * @since 23
+     * @since 24
      */
     default CodeBuilder loadConstant(int value) {
         return switch (value) {
@@ -671,7 +671,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
-     * @since 23
+     * @since 24
      */
     default CodeBuilder loadConstant(long value) {
         return value == 0l ? lconst_0()
@@ -683,7 +683,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
-     * @since 23
+     * @since 24
      */
     default CodeBuilder loadConstant(float value) {
         return Float.floatToRawIntBits(value) == 0 ? fconst_0()
@@ -696,7 +696,7 @@ public sealed interface CodeBuilder
      * Generate an instruction pushing a constant onto the operand stack
      * @param value the constant value
      * @return this builder
-     * @since 23
+     * @since 24
      */
     default CodeBuilder loadConstant(double value) {
         return Double.doubleToRawLongBits(value) == 0l ? dconst_0()
