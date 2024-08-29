@@ -25,42 +25,36 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence2::test -Xbatch ReachabilityFence2.java
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence2::test -Xbatch -XX:+UseNewCode ReachabilityFence2.java
  */
 public class ReachabilityFence2 {
 
-    static MyClass obj = new MyClass();
+    static A obj = new A();
 
-    static class MyClass {
+    static class A {
 
-        static boolean[] collected = new boolean[1];
+        static boolean collected = false;
     }
 
-    static void test(int limit) {
-        for (long j = 0; j < limit; j++) {
-            MyClass myObject = obj;
+    static void test() {
+        for (long j = 0; j < 1000; j++) {
+            A a = obj;
             obj = null;
             System.gc();
-            if (MyClass.collected[0]) throw new RuntimeException(
-                "myObject collected before reachabilityFence was reached!"
+            if (A.collected) throw new RuntimeException(
+                "obj collected before reachabilityFence was reached!"
             );
-            Reference.reachabilityFence(myObject);
+            Reference.reachabilityFence(a);
         }
     }
 
     public static void main(String[] args) throws Exception {
-        // Set 'MyClass.collected[0]' to true if 'obj' is garbage collected
+        // Set A to true if 'obj' is garbage collected
         Cleaner.create()
             .register(obj, () -> {
-                System.out.println("obj was garbage collected");
-                MyClass.collected[0] = true;
+                A.collected = true;
             });
 
-        // Warmup to trigger compilation
-        for (int i = 0; i < 20; i++) {
-            test(100);
-        }
-
-        test(100_000);
+        test();
     }
 }
