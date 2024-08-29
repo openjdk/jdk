@@ -157,8 +157,8 @@ bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
  *
  * To reduce the number of updates to the remembered set, the post-barrier
  * filters out updates to fields in objects located in the Young Generation, the
- * same region as the reference, when the null is being written, or if the card
- * is already marked as dirty by an earlier write.
+ * same region as the reference, when null is being written, or if the card is
+ * already marked as dirty by an earlier write.
  *
  * Under certain circumstances it is possible to avoid generating the
  * post-barrier completely, if it is possible during compile time to prove the
