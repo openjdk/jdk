@@ -167,14 +167,12 @@ public final class BufWriterImpl implements BufWriter {
         this.offset = prevOffset;
     }
 
-    @Override
     public void patchU2(int offset, int x) {
         byte[] elems = this.elems;
         elems[offset    ] = (byte) (x >> 8);
         elems[offset + 1] = (byte)  x;
     }
 
-    @Override
     public void patchInt(int offset, int x) {
         byte[] elems = this.elems;
         elems[offset    ] = (byte) (x >> 24);

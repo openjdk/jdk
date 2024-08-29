@@ -119,24 +119,6 @@ public sealed interface BufWriter
     void writeBytes(byte[] arr, int start, int length);
 
     /**
-     * Patch a previously written unsigned short .
-     *
-     * @param offset the offset at which to patch
-     * @param value the unsigned short
-     * @throws IndexOutOfBoundsException if patched int is outside of bounds
-     */
-    void patchU2(int offset, int value);
-
-    /**
-     * Patch a previously written integer value.
-     *
-     * @param offset the offset at which to patch
-     * @param value the integer value
-     * @throws IndexOutOfBoundsException if patched int is outside of bounds
-     */
-    void patchInt(int offset, int value);
-
-    /**
      * Patch a previously written integer value.  Depending on the specified
      * size, the entire value, or the low 1 or 2 bytes, may be written.
      *
