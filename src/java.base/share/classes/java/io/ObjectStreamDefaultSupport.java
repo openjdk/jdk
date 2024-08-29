@@ -44,10 +44,11 @@ final class ObjectStreamDefaultSupport {
 
     static {
         try {
+            MethodHandles.Lookup lookup = MethodHandles.lookup();
             MethodType droType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectInputStream.class);
-            DRO_HANDLE = MethodHandles.lookup().findStatic(ObjectStreamDefaultSupport.class, "defaultReadObject", droType);
+            DRO_HANDLE = lookup.findStatic(ObjectStreamDefaultSupport.class, "defaultReadObject", droType);
             MethodType dwoType = MethodType.methodType(void.class, ObjectStreamClass.class, Object.class, ObjectOutputStream.class);
-            DWO_HANDLE = MethodHandles.lookup().findStatic(ObjectStreamDefaultSupport.class, "defaultWriteObject", dwoType);
+            DWO_HANDLE = lookup.findStatic(ObjectStreamDefaultSupport.class, "defaultWriteObject", dwoType);
         } catch (NoSuchMethodException e) {
             throw new NoSuchMethodError(e.getMessage());
         } catch (IllegalAccessException e) {
