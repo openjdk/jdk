@@ -163,7 +163,8 @@ bool G1BarrierSetC2::g1_can_remove_pre_barrier(GraphKit* kit,
  * Under certain circumstances it is possible to avoid generating the
  * post-barrier completely, if it is possible during compile time to prove the
  * object is newly allocated and that no safepoint exists between the allocation
- * and the store.
+ * and the store. This can be seen as a compile-time version of the
+ * above-mentioned Young Generation filter.
  *
  * In the case of a slow allocation, the allocation code must handle the barrier
  * as part of the allocation if the allocated object is not located in the
