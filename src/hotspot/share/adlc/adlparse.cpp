@@ -2934,12 +2934,10 @@ void ADLParser::ins_encode_parse_block(InstructForm& inst) {
   NameAndList* params_unexpanded = encrule->add_encode_unexpanded(ec_name);
   inst._parameters.reset();
   while ((param = inst._parameters.iter()) != nullptr) {
-    OpClassForm* opForm = inst._localNames[param]->is_opclass();
     params->add_entry(param);
   }
   inst._parameters_unexpanded.reset();
   while ((param = inst._parameters_unexpanded.iter()) != nullptr) {
-    OpClassForm* opForm = inst._localNames[param]->is_opclass();
     params_unexpanded->add_entry(param);
   }
 
@@ -4443,8 +4441,9 @@ MatchNode *ADLParser::matchNode_parse(FormDict &operands, int &depth, int &numle
 
   {
     OperandForm *oper = opcForm ? opcForm->is_operand() : nullptr;
-    assert(oper == nullptr || oper->get_expanded_operands_num() == 0,
-           "expanded operand not supported in match rule, %d\n");
+    if (oper != nullptr && oper->get_expanded_operands_num() > 0) {
+      parse_err(SYNERR, "expanding operand (%s) is not supported in match rule\n", token);
+    }
   }
 
   // Parse the operands
@@ -4992,9 +4991,9 @@ void ADLParser::get_oplist(NameList &parameters, FormDict &operands, NameList* p
         operands.Insert(expanded, oper->get_expanded_operand(i));
         parameters.addName(expanded);
       }
-      // Expanding operands are only allowed in TEMP effect, and every expanding
-      // operand should be unique in an intruct level.
-      assert(operands[ident] == nullptr, "sanity");
+      if (operands[ident] != nullptr) {
+        parse_err(SYNERR, "Reuse of local name %s as operand.\n", ident);
+      }
       operands.Insert(ident, opclass);
       if (parameters_unexpanded != nullptr) {
         parameters_unexpanded->addName(ident);
@@ -5078,7 +5077,9 @@ void ADLParser::get_effectlist(FormDict &effects, FormDict &operands, bool& has_
       effects.Insert(ident, eForm);
       // Add the pairs of expanded operands to the effects table
       for (int i = 0; i < (int)opForm->get_expanded_operands_num(); i++) {
-        assert(eForm->isa(Component::TEMP), "only support `expand` for TEMP operand");
+        if (!eForm->isa(Component::TEMP)) {
+          parse_err(SYNERR, "expanding operand %s must be in TEMP effect\n", ident);
+        }
         const char* expanded = OperandForm::get_expanded_oper_name(ident, i);
         effects.Insert(expanded, eForm);
       }
