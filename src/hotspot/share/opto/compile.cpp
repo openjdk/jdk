@@ -1106,7 +1106,6 @@ void Compile::Init(bool aliasing) {
 }
 
 #ifdef ASSERT
-//---------------------------verify_start----------------------------------------
 // Install the StartNode on this compile object.
 void Compile::verify_start(StartNode* s) {
   assert(failing() || s == start(), "should be StartNode");
