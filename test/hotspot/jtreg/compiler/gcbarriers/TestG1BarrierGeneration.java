@@ -126,6 +126,25 @@ public class TestG1BarrierGeneration {
 
     @Test
     @IR(applyIf = {"UseCompressedOops", "false"},
+        counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    @IR(applyIf = {"UseCompressedOops", "true"},
+        counts = {IRNode.G1_STORE_N_WITH_BARRIER_FLAG, PRE_ONLY, "1"},
+        phase = CompilePhase.FINAL_CODE)
+    public static void testStoreObfuscatedNull(Outer o, Object o1) {
+        Object o2 = o1;
+        for (int i = 0; i < 4; i++) {
+            if ((i % 2) == 0) {
+                o2 = null;
+            }
+        }
+        // o2 is null here, but this is only known to C2 after applying some
+        // optimizations (loop unrolling, IGVN).
+        o.f = o2;
+    }
+
+    @Test
+    @IR(applyIf = {"UseCompressedOops", "false"},
         counts = {IRNode.G1_STORE_P_WITH_BARRIER_FLAG, PRE_AND_POST_NOT_NULL, "1"},
         phase = CompilePhase.FINAL_CODE)
     @IR(applyIf = {"UseCompressedOops", "true"},
@@ -165,6 +184,7 @@ public class TestG1BarrierGeneration {
 
     @Run(test = {"testStore",
                  "testStoreNull",
+                 "testStoreObfuscatedNull",
                  "testStoreNotNull",
                  "testStoreTwice",
                  "testStoreOnNewObject"})
@@ -178,6 +198,12 @@ public class TestG1BarrierGeneration {
         {
             Outer o = new Outer();
             testStoreNull(o);
+            Asserts.assertNull(o.f);
+        }
+        {
+            Outer o = new Outer();
+            Object o1 = new Object();
+            testStoreObfuscatedNull(o, o1);
             Asserts.assertNull(o.f);
         }
         {
