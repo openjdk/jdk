@@ -639,32 +639,34 @@ public sealed interface CodeBuilder
         //avoid switch expressions here
         if (value == null || value == ConstantDescs.NULL)
             return aconst_null();
-        if (value instanceof Integer iVal)
-            return switch (iVal) {
-                case -1 -> iconst_m1();
-                case  0 -> iconst_0();
-                case  1 -> iconst_1();
-                case  2 -> iconst_2();
-                case  3 -> iconst_3();
-                case  4 -> iconst_4();
-                case  5 -> iconst_5();
-                default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
-                         : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
-                         : ldc(constantPool().intEntry(iVal));
-            };
-        if (value instanceof Long lVal)
-            return lVal == 0l ? lconst_0()
-                 : lVal == 1l ? lconst_1()
-                 : ldc(constantPool().longEntry(lVal));
-        if (value instanceof Float fVal)
-            return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
-                 : fVal == 1.0f ? fconst_1()
-                 : fVal == 2.0f ? fconst_2()
-                 : ldc(constantPool().floatEntry(fVal));
-        if (value instanceof Double dVal)
-            return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
-                 : dVal == 1.0d ? dconst_1()
-                 : ldc(constantPool().doubleEntry(dVal));
+        if (value instanceof Number) {
+            if (value instanceof Integer iVal)
+                return switch (iVal) {
+                    case -1 -> iconst_m1();
+                    case 0 -> iconst_0();
+                    case 1 -> iconst_1();
+                    case 2 -> iconst_2();
+                    case 3 -> iconst_3();
+                    case 4 -> iconst_4();
+                    case 5 -> iconst_5();
+                    default -> (iVal >= Byte.MIN_VALUE && iVal <= Byte.MAX_VALUE) ? bipush(iVal)
+                            : (iVal >= Short.MIN_VALUE && iVal <= Short.MAX_VALUE) ? sipush(iVal)
+                            : ldc(constantPool().intEntry(iVal));
+                };
+            if (value instanceof Long lVal)
+                return lVal == 0L ? lconst_0()
+                        : lVal == 1L ? lconst_1()
+                        : ldc(constantPool().longEntry(lVal));
+            if (value instanceof Float fVal)
+                return Float.floatToRawIntBits(fVal) == 0 ? fconst_0()
+                        : fVal == 1.0f ? fconst_1()
+                        : fVal == 2.0f ? fconst_2()
+                        : ldc(constantPool().floatEntry(fVal));
+            if (value instanceof Double dVal)
+                return Double.doubleToRawLongBits(dVal) == 0L ? dconst_0()
+                        : dVal == 1.0d ? dconst_1()
+                        : ldc(constantPool().doubleEntry(dVal));
+        }
         return ldc(value);
     }
 
@@ -2122,10 +2124,7 @@ public sealed interface CodeBuilder
      * @return this builder
      */
     default CodeBuilder ldc(LoadableConstantEntry entry) {
-        return with(ConstantInstruction.ofLoad(
-                entry.typeKind().slotSize() == 2 ? Opcode.LDC2_W
-                : entry.index() > 0xff ? Opcode.LDC_W
-                : Opcode.LDC, entry));
+        return with(ConstantInstruction.ofLoad(BytecodeHelpers.ldcOpcode(entry), entry));
     }
 
     /**
