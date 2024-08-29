@@ -1860,9 +1860,9 @@ void os::initialize_initial_active_processor_count() {
   log_debug(os)("Initial active processor count set to %d" , _initial_active_processor_count);
 }
 
-int os::physical_active_processor_count() {
+int os::active_physical_processor_count() {
 #ifdef LINUX
-  return os::pd_physical_active_processor_count();
+  return os::pd_active_physical_processor_count();
 #else
   return os::active_processor_count();
 #endif

@@ -254,7 +254,7 @@ class os: AllStatic {
   static void initialize_initial_active_processor_count();
 
   LINUX_ONLY(static void pd_init_container_support();)
-  LINUX_ONLY(static int pd_physical_active_processor_count();)
+  LINUX_ONLY(static int pd_active_physical_processor_count();)
 
  public:
   static void init(void);                      // Called before command line parsing
@@ -373,7 +373,7 @@ class os: AllStatic {
   // the same as active_processor_count() except on Linux where this
   // function also returns the physical CPUs instead of the containerized
   // value.
-  static int physical_active_processor_count();
+  static int active_physical_processor_count();
 
   // Give a name to the current thread.
   static void set_native_thread_name(const char *name);
