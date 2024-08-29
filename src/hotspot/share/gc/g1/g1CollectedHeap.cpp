@@ -1070,8 +1070,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
     _verifier->verify_region_sets_optional();
     HeapWord* result = attempt_allocation_at_safepoint(
         word_size, false /* expect_null_mutator_alloc_region */);
-    // if (result != nullptr) {
-    if (true) {
+    if (result != nullptr) {
       return result;
     }
     // If the allocation fails and AHS is enabled, we force the allocation.
@@ -1137,6 +1136,11 @@ bool G1CollectedHeap::expand(size_t expand_bytes, WorkerThreads* pretouch_worker
       "Expand the heap. requested expansion amount: " SIZE_FORMAT
       "B expansion amount: " SIZE_FORMAT "B",
       expand_bytes, aligned_expand_bytes);
+
+  log_debug(gc, ergo, heap)(
+    "SoftMaxHeapSize value: " SIZE_FORMAT, SoftMaxHeapSize);
+  log_debug(gc, ergo, heap)(
+    "CurrentMaxExpansionSize value: " SIZE_FORMAT, CurrentMaxExpansionSize);
 
   if (is_maximal_no_gc()) {
     log_debug(gc, ergo, heap)("Did not expand the heap (heap already fully expanded)");
