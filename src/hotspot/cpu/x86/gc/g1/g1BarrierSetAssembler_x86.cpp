@@ -301,7 +301,7 @@ static void generate_post_barrier_fast_path(MacroAssembler* masm,
     __ cmpptr(new_val, NULL_WORD);                               // new value == null?
     __ jcc(Assembler::equal, done);
   }
-  // Storing region crossing non-null, is card already dirty?
+  // Storing region crossing non-null, is card young?
   __ movptr(tmp, store_addr);                                    // tmp := store address
   __ shrptr(tmp, CardTable::card_shift());                       // tmp := card address relative to card table base
   // Do not use ExternalAddress to load 'byte_map_base', since 'byte_map_base' is NOT
