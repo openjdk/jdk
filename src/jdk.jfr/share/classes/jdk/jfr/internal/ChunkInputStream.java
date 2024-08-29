@@ -87,7 +87,6 @@ final class ChunkInputStream extends InputStream {
                     return r;
                 }
                 closeStream();
-                closeChunk();
             }
             if (!nextStream()) {
                 return -1;
@@ -120,7 +119,6 @@ final class ChunkInputStream extends InputStream {
                 off += read;
             } else {
                 closeStream();
-                closeChunk();
             }
         }
         return totalRead;
@@ -131,6 +129,7 @@ final class ChunkInputStream extends InputStream {
             stream.close();
             stream = null;
         }
+        closeChunk();
     }
 
     private void closeChunk() {
