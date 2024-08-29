@@ -50,10 +50,6 @@ public class ReachabilityFenceC1 {
     }
 
     static void test(A foo, int[] arr, int limit) {
-        test1(foo, arr, arr, limit);
-    }
-
-    static void test1(A foo, int[] arr, int[] arr1, int limit) {
         int val = B.arr[0];
 
         for (long j = 0; j < limit; j += 1) {
