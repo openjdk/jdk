@@ -942,7 +942,7 @@ void G1CollectedHeap::resize_heap_if_necessary_ahs(bool record_expand_time) {
   if (bytes_to_change > 0) {
     log_info(ahs)(
         "Attempt heap expansion via ahs resize. "
-        "Expand bytes: " SIZE_FORMAT "B Capacity: " SIZE_FORMAT
+        "Expand bytes: " INT64_FORMAT "B Capacity: " SIZE_FORMAT
         "B occupancy: " SIZE_FORMAT "B live: " SIZE_FORMAT
         "B SoftMaxHeapSize: " SIZE_FORMAT "B",
         bytes_to_change, heap_capacity, heap_occupancy, used(),
