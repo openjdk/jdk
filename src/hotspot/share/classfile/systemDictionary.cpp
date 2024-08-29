@@ -261,17 +261,32 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
   if (name == nullptr) {
     THROW_MSG_NULL(exception, "No class name given");
   }
-  if ((int)strlen(name) > Symbol::max_length()) {
+  size_t name_len = strlen(name);
+  if (name_len > static_cast<size_t>(Symbol::max_length())) {
     // It's impossible to create this class;  the name cannot fit
-    // into the constant pool.
-    Exceptions::fthrow(THREAD_AND_LOCATION, exception,
-                       "Class name exceeds maximum length of %d: %s",
-                       Symbol::max_length(),
-                       name);
+    // into the constant pool. If necessary report an abridged name
+    // in the exception message.
+    if (name_len > static_cast<size_t>(MaxStringPrintSize)) {
+      Exceptions::fthrow(THREAD_AND_LOCATION, exception,
+                         "Class name exceeds maximum length of %d: %.*s ... (%zu characters omitted) ... %.*s",
+                         Symbol::max_length(),
+                         MaxStringPrintSize / 2,
+                         name,
+                         name_len - 2 * (MaxStringPrintSize / 2), // allows for odd value
+                         MaxStringPrintSize / 2,
+                         name + name_len - MaxStringPrintSize / 2);
+    }
+    else {
+      Exceptions::fthrow(THREAD_AND_LOCATION, exception,
+                         "Class name exceeds maximum length of %d: %s",
+                         Symbol::max_length(),
+                         name);
+    }
     return nullptr;
   }
   // Callers should ensure that the name is never an illegal UTF8 string.
-  assert(UTF8::is_legal_utf8((const unsigned char*)name, (int)strlen(name), false),
+  assert(UTF8::is_legal_utf8((const unsigned char*)name,
+                             static_cast<int>(name_len), false),
          "Class name is not a valid utf8 string.");
 
   // Make a new symbol for the class name.

@@ -572,89 +572,6 @@ class StubGenerator: public StubCodeGenerator {
     #undef pending_exception_offset
   }
 
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Only callee-saved registers are preserved (through the
-  // normal RegisterMap handling). If the compiler
-  // needs all registers to be preserved between the fault point and
-  // the exception handler then it must assume responsibility for that
-  // in AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
-
-  // Note that we generate only this stub into a RuntimeStub, because
-  // it needs to be properly traversed and ignored during GC, so we
-  // change the meaning of the "__" macro within this method.
-
-  // Note: the routine set_pc_not_at_call_for_caller in
-  // SharedRuntime.cpp requires that this code be generated into a
-  // RuntimeStub.
-#undef __
-#define __ masm->
-
-  address generate_throw_exception(const char* name, address runtime_entry,
-                                   bool restore_saved_exception_pc,
-                                   Register arg1 = noreg, Register arg2 = noreg) {
-    assert_different_registers(arg1, Z_R0_scratch);  // would be destroyed by push_frame()
-    assert_different_registers(arg2, Z_R0_scratch);  // would be destroyed by push_frame()
-
-    int insts_size = 256;
-    int locs_size  = 0;
-    CodeBuffer      code(name, insts_size, locs_size);
-    MacroAssembler* masm = new MacroAssembler(&code);
-    int framesize_in_bytes;
-    address start = __ pc();
-
-    __ save_return_pc();
-    framesize_in_bytes = __ push_frame_abi160(0);
-
-    address frame_complete_pc = __ pc();
-    if (restore_saved_exception_pc) {
-      __ unimplemented("StubGenerator::throw_exception", 74);
-    }
-
-    // Note that we always have a runtime stub frame on the top of stack at this point.
-    __ get_PC(Z_R1);
-    __ set_last_Java_frame(/*sp*/Z_SP, /*pc*/Z_R1);
-
-    // Do the call.
-    BLOCK_COMMENT("call runtime_entry");
-    __ call_VM_leaf(runtime_entry, Z_thread, arg1, arg2);
-
-    __ reset_last_Java_frame();
-
-#ifdef ASSERT
-    // Make sure that this code is only executed if there is a pending exception.
-    { Label L;
-      __ z_lg(Z_R0,
-                in_bytes(Thread::pending_exception_offset()),
-                Z_thread);
-      __ z_ltgr(Z_R0, Z_R0);
-      __ z_brne(L);
-      __ stop("StubRoutines::throw_exception: no pending exception");
-      __ bind(L);
-    }
-#endif
-
-    __ pop_frame();
-    __ restore_return_pc();
-
-    __ load_const_optimized(Z_R1, StubRoutines::forward_exception_entry());
-    __ z_br(Z_R1);
-
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name, &code,
-                                    frame_complete_pc - start,
-                                    framesize_in_bytes/wordSize,
-                                    nullptr /*oop_maps*/, false);
-
-    return stub->entry_point();
-  }
-
 #undef __
 #ifdef PRODUCT
 #define __ _masm->
@@ -3121,21 +3038,6 @@ class StubGenerator: public StubCodeGenerator {
     return nullptr;
   }
 
-  #if INCLUDE_JFR
-  RuntimeStub* generate_jfr_write_checkpoint() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
-  RuntimeStub* generate_jfr_return_lease() {
-    if (!Continuations::enabled()) return nullptr;
-    Unimplemented();
-    return nullptr;
-  }
-
-  #endif // INCLUDE_JFR
-
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubCodeMark mark(this, "StubRoutines", "upcall stub exception handler");
@@ -3164,14 +3066,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_call_stub_entry                         = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry                   = generate_catch_exception();
 
-    // Build this early so it's available for the interpreter.
-    StubRoutines::_throw_StackOverflowError_entry          =
-      generate_throw_exception("StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError), false);
-    StubRoutines::_throw_delayed_StackOverflowError_entry  =
-      generate_throw_exception("delayed StackOverflowError throw_exception",
-                               CAST_FROM_FN_PTR(address, SharedRuntime::throw_delayed_StackOverflowError), false);
-
     //----------------------------------------------------------------------
     // Entry points that are platform specific.
 
@@ -3196,28 +3090,12 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
-
-    JFR_ONLY(generate_jfr_stubs();)
   }
-
-#if INCLUDE_JFR
-  void generate_jfr_stubs() {
-    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
-    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
-    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
-    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
-  }
-#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points.
 
     StubRoutines::zarch::_partial_subtype_check            = generate_partial_subtype_check();
-
-    // These entry points require SharedInfo::stack0 to be set up in non-core builds.
-    StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError),  false);
-    StubRoutines::_throw_IncompatibleClassChangeError_entry= generate_throw_exception("IncompatibleClassChangeError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_IncompatibleClassChangeError),  false);
-    StubRoutines::_throw_NullPointerException_at_call_entry= generate_throw_exception("NullPointerException at call throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_NullPointerException_at_call), false);
 
     // Support for verify_oop (must happen after universe_init).
     StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop_subroutine();

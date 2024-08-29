@@ -27,13 +27,9 @@ package javax.lang.model.util;
 
 import jdk.internal.javac.PreviewFeature;
 
-import java.util.List;
-import java.util.ArrayList;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.ElementVisitor;
 import static javax.lang.model.SourceVersion.*;
 
 /**
