@@ -404,10 +404,3 @@ void C1_MacroAssembler::null_check(Register r, Label* Lnull) {
     bc_far_optimized(Assembler::bcondCRbiIs1, bi0(CCR0, Assembler::equal), *Lnull);
   }
 }
-
-address C1_MacroAssembler::call_c_with_frame_resize(address dest, int frame_resize) {
-  if (frame_resize) { resize_frame(-frame_resize, R0); }
-  address return_pc = call_c(dest, relocInfo::runtime_call_type);
-  if (frame_resize) { resize_frame(frame_resize, R0); }
-  return return_pc;
-}

@@ -3450,11 +3450,7 @@ RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address r
   __ set_last_Java_frame(/*sp*/R1_SP, /*pc*/R11_scratch1);
 
   __ mr(R3_ARG1, R16_thread);
-#if defined(ABI_ELFv2)
-  __ call_c(runtime_entry, relocInfo::none);
-#else
-  __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, runtime_entry), relocInfo::none);
-#endif
+  __ call_c(runtime_entry);
 
   // Set an oopmap for the call site.
   oop_maps->add_gc_map((int)(gc_map_pc - start), map);
