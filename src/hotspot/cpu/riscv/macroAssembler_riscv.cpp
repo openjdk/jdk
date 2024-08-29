@@ -146,18 +146,6 @@ bool MacroAssembler::is_li32_at(address instr) {
          check_li32_data_dependency(instr);
 }
 
-bool MacroAssembler::is_li64_at(address instr) {
-  return is_lui_at(instr) && // lui
-         is_addi_at(instr + instruction_size) && // addi
-         is_slli_shift_at(instr + instruction_size * 2, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 3) && // addi
-         is_slli_shift_at(instr + instruction_size * 4, 12) &&  // Slli Rd, Rs, 12
-         is_addi_at(instr + instruction_size * 5) && // addi
-         is_slli_shift_at(instr + instruction_size * 6, 8) &&   // Slli Rd, Rs, 8
-         is_addi_at(instr + instruction_size * 7) && // addi
-         check_li64_data_dependency(instr);
-}
-
 bool MacroAssembler::is_lwu_to_zr(address instr) {
   assert_cond(instr != nullptr);
   return (extract_opcode(instr) == 0b0000011 &&
@@ -909,35 +897,7 @@ void MacroAssembler::li32(Register Rd, int32_t imm) {
   upper = (int32_t)upper;
   // lui Rd, imm[31:12] + imm[11]
   lui(Rd, upper);
-  // use addiw to distinguish li32 to li64
   addiw(Rd, Rd, lower);
-}
-
-void MacroAssembler::li64(Register Rd, int64_t imm) {
-  // Load upper 32 bits. upper = imm[63:32], but if imm[31] == 1 or
-  // (imm[31:20] == 0x7ff && imm[19] == 1), upper = imm[63:32] + 1.
-  int64_t lower = imm & 0xffffffff;
-  lower -= ((lower << 44) >> 44);
-  int64_t tmp_imm = ((uint64_t)(imm & 0xffffffff00000000)) + (uint64_t)lower;
-  int32_t upper = (tmp_imm - (int32_t)lower) >> 32;
-
-  // Load upper 32 bits
-  int64_t up = upper, lo = upper;
-  lo = (lo << 52) >> 52;
-  up -= lo;
-  up = (int32_t)up;
-  lui(Rd, up);
-  addi(Rd, Rd, lo);
-
-  // Load the rest 32 bits.
-  slli(Rd, Rd, 12);
-  addi(Rd, Rd, (int32_t)lower >> 20);
-  slli(Rd, Rd, 12);
-  lower = ((int32_t)imm << 12) >> 20;
-  addi(Rd, Rd, lower);
-  slli(Rd, Rd, 8);
-  lower = imm & 0xff;
-  addi(Rd, Rd, lower);
 }
 
 void MacroAssembler::li(Register Rd, int64_t imm) {
@@ -1741,27 +1701,6 @@ static int patch_addr_in_movptr2(address instruction_address, address target) {
   return MacroAssembler::movptr2_instruction_size;
 }
 
-static int patch_imm_in_li64(address branch, address target) {
-  const int LI64_INSTRUCTIONS_NUM = 8;                                          // lui + addi + slli + addi + slli + addi + slli + addi
-  int64_t lower = (intptr_t)target & 0xffffffff;
-  lower = lower - ((lower << 44) >> 44);
-  int64_t tmp_imm = ((uint64_t)((intptr_t)target & 0xffffffff00000000)) + (uint64_t)lower;
-  int32_t upper =  (tmp_imm - (int32_t)lower) >> 32;
-  int64_t tmp_upper = upper, tmp_lower = upper;
-  tmp_lower = (tmp_lower << 52) >> 52;
-  tmp_upper -= tmp_lower;
-  tmp_upper >>= 12;
-  // Load upper 32 bits. Upper = target[63:32], but if target[31] = 1 or (target[31:20] == 0x7ff && target[19] == 1),
-  // upper = target[63:32] + 1.
-  Assembler::patch(branch + 0,  31, 12, tmp_upper & 0xfffff);                       // Lui.
-  Assembler::patch(branch + 4,  31, 20, tmp_lower & 0xfff);                         // Addi.
-  // Load the rest 32 bits.
-  Assembler::patch(branch + 12, 31, 20, ((int32_t)lower >> 20) & 0xfff);            // Addi.
-  Assembler::patch(branch + 20, 31, 20, (((intptr_t)target << 44) >> 52) & 0xfff);  // Addi.
-  Assembler::patch(branch + 28, 31, 20, (intptr_t)target & 0xff);                   // Addi.
-  return LI64_INSTRUCTIONS_NUM * MacroAssembler::instruction_size;
-}
-
 static int patch_imm_in_li16u(address branch, uint16_t target) {
   Assembler::patch(branch, 31, 12, target); // patch lui only
   return MacroAssembler::instruction_size;
@@ -1832,16 +1771,6 @@ static address get_target_of_movptr2(address insn_addr) {
   return ret;
 }
 
-static address get_target_of_li64(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 44; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 32;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 20;                // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20)) << 8;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 28), 31, 20));                      // Addi.
-  return (address)target_address;
-}
-
 address MacroAssembler::get_target_of_li32(address insn_addr) {
   assert_cond(insn_addr != nullptr);
   intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
@@ -1864,8 +1793,6 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
     return patch_addr_in_movptr1(instruction_address, target);
   } else if (MacroAssembler::is_movptr2_at(instruction_address)) {              // movptr2
     return patch_addr_in_movptr2(instruction_address, target);
-  } else if (MacroAssembler::is_li64_at(instruction_address)) {                 // li64
-    return patch_imm_in_li64(instruction_address, target);
   } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(instruction_address, (int32_t)imm);
@@ -1896,8 +1823,6 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     return get_target_of_movptr1(insn_addr);
   } else if (MacroAssembler::is_movptr2_at(insn_addr)) {          // movptr2
     return get_target_of_movptr2(insn_addr);
-  } else if (MacroAssembler::is_li64_at(insn_addr)) {             // li64
-    return get_target_of_li64(insn_addr);
   } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
   } else {
