@@ -365,7 +365,7 @@ public sealed interface ConstantPoolBuilder
      * it is returned; otherwise, a new entry is added and the new entry is
      * returned.
      *
-     * @param refKind the reference kind of the method handle {@jvms 4.4.8}
+     * @param refKind the reference kind of the method handle (JVMS {@jvms 4.4.8})
      * @param reference the constant pool entry describing the field or method
      */
     MethodHandleEntry methodHandleEntry(int refKind, MemberRefEntry reference);

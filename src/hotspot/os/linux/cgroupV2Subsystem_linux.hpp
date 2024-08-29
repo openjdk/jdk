@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Red Hat Inc.
+ * Copyright (c) 2020, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     const char * container_type() override {
       return "cgroupv2";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() { return _cpu; }
+    CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
 };
 
 #endif // CGROUP_V2_SUBSYSTEM_LINUX_HPP
