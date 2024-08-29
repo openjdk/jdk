@@ -25,7 +25,7 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
-$ ~/dev/jdk/open/ /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
 !!! CLEAN !!!
 !!! GONE !!!
 Exception in thread "main" java.lang.AssertionError: 42 != 1
@@ -76,7 +76,7 @@ public class ReachabilityFenceC1 {
         Cleaner.create()
             .register(foo.obj, () -> {
                 B.arr[0] = 42;
-                System.out.println("!!! GONE !!!");
+                System.out.println("foo.obj was garbage collected");
             });
 
         for (int j = 0; j < foo.obj.arr.length; j += 1) {
@@ -89,22 +89,15 @@ public class ReachabilityFenceC1 {
 
         Thread threadUpdate = new Thread() {
             public void run() {
-                try {
-                    foo.obj = null;
-                    System.out.println("!!! CLEAN !!!");
-                    while (true) {
-                        Thread.sleep(50);
-                        System.gc();
-                    }
-                } catch (Throwable e) {
-                    throw new InternalError(e);
-                }
+                foo.obj = null;
+                System.out.println(
+                    "foo.obj set to null. Waiting to be garbage collected"
+                );
+                System.gc();
             }
         };
-        threadUpdate.setDaemon(true);
-
         threadUpdate.start();
 
-        test(foo, foo.obj.arr, 10_000_000);
+        test(foo, foo.obj.arr, 100_000);
     }
 }
