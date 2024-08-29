@@ -44,7 +44,7 @@ include lib/CoreLibraries.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
     OPTIMIZATION := LOW, \
-    DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
+    DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral unused-variable, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_DefaultProxySelector.c := \
@@ -116,6 +116,7 @@ ifeq ($(call isTargetOsType, unix), true)
       NAME := jsig, \
       OPTIMIZATION := LOW, \
       jsig.c_CFLAGS := -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"', \
+      DISABLED_WARNINGS_gcc_jsig.c := unused-but-set-variable, \
       LIBS_linux := $(LIBDL), \
       LIBS_aix := $(LIBDL), \
   ))
@@ -169,6 +170,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       NAME := fallbackLinker, \
       EXTRA_HEADER_DIRS := java.base:libjava, \
       CFLAGS := $(LIBFFI_CFLAGS), \
+      DISABLED_WARNINGS_gcc := implicit-function-declaration unused-variable, \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := ws2_32.lib, \
   ))
@@ -186,6 +188,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
       CXXFLAGS := -std=c++17, \
+      DISABLED_WARNINGS_gcc := unused-variable, \
       LIBS_linux := $(LIBDL) $(LIBM), \
   ))
 
