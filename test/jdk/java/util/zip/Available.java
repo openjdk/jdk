@@ -66,6 +66,7 @@ public class Available {
 
             // Second entry uses STORED method
             ZipEntry stored = new ZipEntry("stored.txt");
+            stored.setMethod(ZipEntry.STORED);
             stored.setSize(contents.length);
             CRC32 crc32 = new CRC32();
             crc32.update(contents);
