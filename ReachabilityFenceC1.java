@@ -25,13 +25,11 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch ReachabilityFenceC1.java
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xint ReachabilityFenceC1.java
 
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch ReachabilityFenceC1.java
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch -XX:-TieredCompilation -XX:+UseNewCode ReachabilityFenceC1.java
 
-
-/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
-
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch -XX:TieredStopAtLevel=1 ReachabilityFenceC1.java
  */
 public class ReachabilityFenceC1 {
 
@@ -48,7 +46,7 @@ public class ReachabilityFenceC1 {
 
         public static int id;
 
-        public static int[] arr = new int[1024];
+        public static int[] arr = new int[100];
 
         public B(int id) {
             this.id = id;
@@ -82,7 +80,7 @@ public class ReachabilityFenceC1 {
             foo.obj.arr[j] = 1;
         }
 
-        for (int i = 0; i < 20_000; i++) {
+        for (int i = 0; i < 200; i++) {
             test(foo, foo.obj.arr, 100);
         }
 
