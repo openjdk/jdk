@@ -29,8 +29,6 @@ import java.lang.classfile.constantpool.*;
 
 import java.util.List;
 
-import static java.lang.classfile.ClassFile.*;
-
 public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elements)
         implements Annotation {
     public AnnotationImpl {

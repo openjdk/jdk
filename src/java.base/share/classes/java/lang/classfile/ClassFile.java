@@ -1118,101 +1118,74 @@ public sealed interface ClassFile
     /** The integer value used to encode the JSR_W instruction. */
     int JSR_W           = 201;
 
-    /** The value of PUBLIC access and property modifier. */
+    /** The bit mask of PUBLIC access and property modifier. */
     int ACC_PUBLIC = 0x0001;
 
-    /** The value of PROTECTED access and property modifier. */
+    /** The bit mask of PROTECTED access and property modifier. */
     int ACC_PROTECTED = 0x0004;
 
-    /** The value of PRIVATE access and property modifier. */
+    /** The bit mask of PRIVATE access and property modifier. */
     int ACC_PRIVATE = 0x0002;
 
-    /** The value of INTERFACE access and property modifier. */
+    /** The bit mask of INTERFACE access and property modifier. */
     int ACC_INTERFACE = 0x0200;
 
-    /** The value of ENUM access and property modifier. */
+    /** The bit mask of ENUM access and property modifier. */
     int ACC_ENUM = 0x4000;
 
-    /** The value of ANNOTATION access and property modifier. */
+    /** The bit mask of ANNOTATION access and property modifier. */
     int ACC_ANNOTATION = 0x2000;
 
-    /** The value of SUPER access and property modifier. */
+    /** The bit mask of SUPER access and property modifier. */
     int ACC_SUPER = 0x0020;
 
-    /** The value of ABSTRACT access and property modifier. */
+    /** The bit mask of ABSTRACT access and property modifier. */
     int ACC_ABSTRACT = 0x0400;
 
-    /** The value of VOLATILE access and property modifier. */
+    /** The bit mask of VOLATILE access and property modifier. */
     int ACC_VOLATILE = 0x0040;
 
-    /** The value of TRANSIENT access and property modifier. */
+    /** The bit mask of TRANSIENT access and property modifier. */
     int ACC_TRANSIENT = 0x0080;
 
-    /** The value of SYNTHETIC access and property modifier. */
+    /** The bit mask of SYNTHETIC access and property modifier. */
     int ACC_SYNTHETIC = 0x1000;
 
-    /** The value of STATIC access and property modifier. */
+    /** The bit mask of STATIC access and property modifier. */
     int ACC_STATIC = 0x0008;
 
-    /** The value of FINAL access and property modifier. */
+    /** The bit mask of FINAL access and property modifier. */
     int ACC_FINAL = 0x0010;
 
-    /** The value of SYNCHRONIZED access and property modifier. */
+    /** The bit mask of SYNCHRONIZED access and property modifier. */
     int ACC_SYNCHRONIZED = 0x0020;
 
-    /** The value of BRIDGE access and property modifier. */
+    /** The bit mask of BRIDGE access and property modifier. */
     int ACC_BRIDGE = 0x0040;
 
-    /** The value of VARARGS access and property modifier. */
+    /** The bit mask of VARARGS access and property modifier. */
     int ACC_VARARGS = 0x0080;
 
-    /** The value of NATIVE access and property modifier. */
+    /** The bit mask of NATIVE access and property modifier. */
     int ACC_NATIVE = 0x0100;
 
-    /** The value of STRICT access and property modifier. */
+    /** The bit mask of STRICT access and property modifier. */
     int ACC_STRICT = 0x0800;
 
-    /** The value of MODULE access and property modifier. */
+    /** The bit mask of MODULE access and property modifier. */
     int ACC_MODULE = 0x8000;
 
-    /** The value of OPEN access and property modifier. */
+    /** The bit mask of OPEN access and property modifier. */
     int ACC_OPEN = 0x20;
 
-    /** The value of MANDATED access and property modifier. */
+    /** The bit mask of MANDATED access and property modifier. */
     int ACC_MANDATED = 0x8000;
 
-    /** The value of TRANSITIVE access and property modifier. */
+    /** The bit mask of TRANSITIVE access and property modifier. */
     int ACC_TRANSITIVE = 0x20;
 
-    /** The value of STATIC_PHASE access and property modifier. */
+    /** The bit mask of STATIC_PHASE access and property modifier. */
     int ACC_STATIC_PHASE = 0x40;
-
-    /** The value of STATEMENT {@link CharacterRangeInfo} kind. */
-    int CRT_STATEMENT       = 0x0001;
-
-    /** The value of BLOCK {@link CharacterRangeInfo} kind. */
-    int CRT_BLOCK           = 0x0002;
-
-    /** The value of ASSIGNMENT {@link CharacterRangeInfo} kind. */
-    int CRT_ASSIGNMENT      = 0x0004;
-
-    /** The value of FLOW_CONTROLLER {@link CharacterRangeInfo} kind. */
-    int CRT_FLOW_CONTROLLER = 0x0008;
-
-    /** The value of FLOW_TARGET {@link CharacterRangeInfo} kind. */
-    int CRT_FLOW_TARGET     = 0x0010;
-
-    /** The value of INVOKE {@link CharacterRangeInfo} kind. */
-    int CRT_INVOKE          = 0x0020;
-
-    /** The value of CREATE {@link CharacterRangeInfo} kind. */
-    int CRT_CREATE          = 0x0040;
-
-    /** The value of BRANCH_TRUE {@link CharacterRangeInfo} kind. */
-    int CRT_BRANCH_TRUE     = 0x0080;
-
-    /** The value of BRANCH_FALSE {@link CharacterRangeInfo} kind. */
-    int CRT_BRANCH_FALSE    = 0x0100;
 
     /** The value of constant pool tag CLASS. */
     int TAG_CLASS = 7;
@@ -1267,144 +1240,6 @@ public sealed interface ClassFile
 
     /** The value of constant pool tag UTF8. */
     int TAG_UTF8 = 1;
-
-    // annotation element values
-
-    /** The value of annotation element value type AEV_BYTE. */
-    int AEV_BYTE = 'B';
-
-    /** The value of annotation element value type AEV_CHAR. */
-    int AEV_CHAR = 'C';
-
-    /** The value of annotation element value type AEV_DOUBLE. */
-    int AEV_DOUBLE = 'D';
-
-    /** The value of annotation element value type AEV_FLOAT. */
-    int AEV_FLOAT = 'F';
-
-    /** The value of annotation element value type AEV_INT. */
-    int AEV_INT = 'I';
-
-    /** The value of annotation element value type AEV_LONG. */
-    int AEV_LONG = 'J';
-
-    /** The value of annotation element value type AEV_SHORT. */
-    int AEV_SHORT = 'S';
-
-    /** The value of annotation element value type AEV_BOOLEAN. */
-    int AEV_BOOLEAN = 'Z';
-
-    /** The value of annotation element value type AEV_STRING. */
-    int AEV_STRING = 's';
-
-    /** The value of annotation element value type AEV_ENUM. */
-    int AEV_ENUM = 'e';
-
-    /** The value of annotation element value type AEV_CLASS. */
-    int AEV_CLASS = 'c';
-
-    /** The value of annotation element value type AEV_ANNOTATION. */
-    int AEV_ANNOTATION = '@';
-
-    /** The value of annotation element value type AEV_ARRAY. */
-    int AEV_ARRAY = '[';
-
-    //type annotations
-
-    /** The value of type annotation target type CLASS_TYPE_PARAMETER. */
-    int TAT_CLASS_TYPE_PARAMETER = 0x00;
-
-    /** The value of type annotation target type METHOD_TYPE_PARAMETER. */
-    int TAT_METHOD_TYPE_PARAMETER = 0x01;
-
-    /** The value of type annotation target type CLASS_EXTENDS. */
-    int TAT_CLASS_EXTENDS = 0x10;
-
-    /** The value of type annotation target type CLASS_TYPE_PARAMETER_BOUND. */
-    int TAT_CLASS_TYPE_PARAMETER_BOUND = 0x11;
-
-    /** The value of type annotation target type METHOD_TYPE_PARAMETER_BOUND. */
-    int TAT_METHOD_TYPE_PARAMETER_BOUND = 0x12;
-
-    /** The value of type annotation target type FIELD. */
-    int TAT_FIELD = 0x13;
-
-    /** The value of type annotation target type METHOD_RETURN. */
-    int TAT_METHOD_RETURN = 0x14;
-
-    /** The value of type annotation target type METHOD_RECEIVER. */
-    int TAT_METHOD_RECEIVER = 0x15;
-
-    /** The value of type annotation target type METHOD_FORMAL_PARAMETER. */
-    int TAT_METHOD_FORMAL_PARAMETER = 0x16;
-
-    /** The value of type annotation target type THROWS. */
-    int TAT_THROWS = 0x17;
-
-    /** The value of type annotation target type LOCAL_VARIABLE. */
-    int TAT_LOCAL_VARIABLE = 0x40;
-
-    /** The value of type annotation target type RESOURCE_VARIABLE. */
-    int TAT_RESOURCE_VARIABLE = 0x41;
-
-    /** The value of type annotation target type EXCEPTION_PARAMETER. */
-    int TAT_EXCEPTION_PARAMETER = 0x42;
-
-    /** The value of type annotation target type INSTANCEOF. */
-    int TAT_INSTANCEOF = 0x43;
-
-    /** The value of type annotation target type NEW. */
-    int TAT_NEW = 0x44;
-
-    /** The value of type annotation target type CONSTRUCTOR_REFERENCE. */
-    int TAT_CONSTRUCTOR_REFERENCE = 0x45;
-
-    /** The value of type annotation target type METHOD_REFERENCE. */
-    int TAT_METHOD_REFERENCE = 0x46;
-
-    /** The value of type annotation target type CAST. */
-    int TAT_CAST = 0x47;
-
-    /** The value of type annotation target type CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT. */
-    int TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
-
-    /** The value of type annotation target type METHOD_INVOCATION_TYPE_ARGUMENT. */
-    int TAT_METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
-
-    /** The value of type annotation target type CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT. */
-    int TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
-
-    /** The value of type annotation target type METHOD_REFERENCE_TYPE_ARGUMENT. */
-    int TAT_METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
-
-    //stackmap verification types
-
-    /** The value of verification type TOP. */
-    int VT_TOP = 0;
-
-    /** The value of verification type INTEGER. */
-    int VT_INTEGER = 1;
-
-    /** The value of verification type FLOAT. */
-    int VT_FLOAT = 2;
-
-    /** The value of verification type DOUBLE. */
-    int VT_DOUBLE = 3;
-
-    /** The value of verification type LONG. */
-    int VT_LONG = 4;
-
-    /** The value of verification type NULL. */
-    int VT_NULL = 5;
-
-    /** The value of verification type UNINITIALIZED_THIS. */
-    int VT_UNINITIALIZED_THIS = 6;
-
-    /** The value of verification type OBJECT. */
-    int VT_OBJECT = 7;
-
-    /** The value of verification type UNINITIALIZED. */
-    int VT_UNINITIALIZED = 8;
 
     /** The value of default class access flags */
     int DEFAULT_CLASS_FLAGS = ACC_PUBLIC;

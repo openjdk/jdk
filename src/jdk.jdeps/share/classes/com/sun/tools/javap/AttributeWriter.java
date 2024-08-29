@@ -35,6 +35,7 @@ import java.lang.classfile.constantpool.*;
 import java.lang.classfile.attribute.*;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.attribute.StackMapFrameInfo.*;
+import static java.lang.classfile.instruction.CharacterRange.*;
 
 /*
  *  A writer for writing Attributes as text.

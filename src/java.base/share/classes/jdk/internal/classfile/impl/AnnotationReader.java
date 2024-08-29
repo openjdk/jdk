@@ -32,7 +32,8 @@ import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassReader;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.TypeAnnotation;
-import static java.lang.classfile.ClassFile.*;
+
+import static java.lang.classfile.AnnotationValue.*;
 import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
 import java.util.List;

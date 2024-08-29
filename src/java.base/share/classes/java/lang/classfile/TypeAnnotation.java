@@ -31,30 +31,9 @@ import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
-
-import static java.lang.classfile.ClassFile.TAT_CAST;
-import static java.lang.classfile.ClassFile.TAT_CLASS_EXTENDS;
-import static java.lang.classfile.ClassFile.TAT_CLASS_TYPE_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_CLASS_TYPE_PARAMETER_BOUND;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_REFERENCE;
-import static java.lang.classfile.ClassFile.TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_EXCEPTION_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_FIELD;
-import static java.lang.classfile.ClassFile.TAT_INSTANCEOF;
-import static java.lang.classfile.ClassFile.TAT_LOCAL_VARIABLE;
-import static java.lang.classfile.ClassFile.TAT_METHOD_FORMAL_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_INVOCATION_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_METHOD_RECEIVER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_REFERENCE;
-import static java.lang.classfile.ClassFile.TAT_METHOD_REFERENCE_TYPE_ARGUMENT;
-import static java.lang.classfile.ClassFile.TAT_METHOD_RETURN;
-import static java.lang.classfile.ClassFile.TAT_METHOD_TYPE_PARAMETER;
-import static java.lang.classfile.ClassFile.TAT_METHOD_TYPE_PARAMETER_BOUND;
-import static java.lang.classfile.ClassFile.TAT_NEW;
-import static java.lang.classfile.ClassFile.TAT_RESOURCE_VARIABLE;
-import static java.lang.classfile.ClassFile.TAT_THROWS;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.lang.classfile.TypeAnnotation.TargetInfo.*;
 
 /**
  * Models a {@code type_annotation} structure (JVMS {@jvms 4.7.20}). This model
@@ -213,6 +192,72 @@ public sealed interface TypeAnnotation
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface TargetInfo {
+
+        /** The value of type annotation target type CLASS_TYPE_PARAMETER. */
+        int TAT_CLASS_TYPE_PARAMETER = 0x00;
+
+        /** The value of type annotation target type METHOD_TYPE_PARAMETER. */
+        int TAT_METHOD_TYPE_PARAMETER = 0x01;
+
+        /** The value of type annotation target type CLASS_EXTENDS. */
+        int TAT_CLASS_EXTENDS = 0x10;
+
+        /** The value of type annotation target type CLASS_TYPE_PARAMETER_BOUND. */
+        int TAT_CLASS_TYPE_PARAMETER_BOUND = 0x11;
+
+        /** The value of type annotation target type METHOD_TYPE_PARAMETER_BOUND. */
+        int TAT_METHOD_TYPE_PARAMETER_BOUND = 0x12;
+
+        /** The value of type annotation target type FIELD. */
+        int TAT_FIELD = 0x13;
+
+        /** The value of type annotation target type METHOD_RETURN. */
+        int TAT_METHOD_RETURN = 0x14;
+
+        /** The value of type annotation target type METHOD_RECEIVER. */
+        int TAT_METHOD_RECEIVER = 0x15;
+
+        /** The value of type annotation target type METHOD_FORMAL_PARAMETER. */
+        int TAT_METHOD_FORMAL_PARAMETER = 0x16;
+
+        /** The value of type annotation target type THROWS. */
+        int TAT_THROWS = 0x17;
+
+        /** The value of type annotation target type LOCAL_VARIABLE. */
+        int TAT_LOCAL_VARIABLE = 0x40;
+
+        /** The value of type annotation target type RESOURCE_VARIABLE. */
+        int TAT_RESOURCE_VARIABLE = 0x41;
+
+        /** The value of type annotation target type EXCEPTION_PARAMETER. */
+        int TAT_EXCEPTION_PARAMETER = 0x42;
+
+        /** The value of type annotation target type INSTANCEOF. */
+        int TAT_INSTANCEOF = 0x43;
+
+        /** The value of type annotation target type NEW. */
+        int TAT_NEW = 0x44;
+
+        /** The value of type annotation target type CONSTRUCTOR_REFERENCE. */
+        int TAT_CONSTRUCTOR_REFERENCE = 0x45;
+
+        /** The value of type annotation target type METHOD_REFERENCE. */
+        int TAT_METHOD_REFERENCE = 0x46;
+
+        /** The value of type annotation target type CAST. */
+        int TAT_CAST = 0x47;
+
+        /** The value of type annotation target type CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT. */
+        int TAT_CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
+
+        /** The value of type annotation target type METHOD_INVOCATION_TYPE_ARGUMENT. */
+        int TAT_METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
+
+        /** The value of type annotation target type CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT. */
+        int TAT_CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
+
+        /** The value of type annotation target type METHOD_REFERENCE_TYPE_ARGUMENT. */
+        int TAT_METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
 
         /**
          * {@return the type of the target}

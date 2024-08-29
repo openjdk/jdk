@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.attribute.StackMapFrameInfo.VerificationTypeInfo.*;
 
 public class StackMapDecoder {
 

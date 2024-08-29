@@ -32,7 +32,6 @@ import java.lang.classfile.Label;
 import java.lang.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.impl.StackMapDecoder;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
-import static java.lang.classfile.ClassFile.*;
 import jdk.internal.javac.PreviewFeature;
 
 /**
@@ -84,6 +83,33 @@ public sealed interface StackMapFrameInfo
      */
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface VerificationTypeInfo {
+
+        /** The {@link #tag() tag} for verification type info TOP. */
+        int VT_TOP = 0;
+
+        /** The {@link #tag() tag} for verification type info INTEGER. */
+        int VT_INTEGER = 1;
+
+        /** The {@link #tag() tag} for verification type info FLOAT. */
+        int VT_FLOAT = 2;
+
+        /** The {@link #tag() tag} for verification type info DOUBLE. */
+        int VT_DOUBLE = 3;
+
+        /** The {@link #tag() tag} for verification type info LONG. */
+        int VT_LONG = 4;
+
+        /** The {@link #tag() tag} for verification type info NULL. */
+        int VT_NULL = 5;
+
+        /** The {@link #tag() tag} for verification type info UNINITIALIZED_THIS. */
+        int VT_UNINITIALIZED_THIS = 6;
+
+        /** The {@link #tag() tag} for verification type info OBJECT. */
+        int VT_OBJECT = 7;
+
+        /** The {@link #tag() tag} for verification type info UNINITIALIZED. */
+        int VT_UNINITIALIZED = 8;
 
         /**
          * {@return the tag of the type info}
