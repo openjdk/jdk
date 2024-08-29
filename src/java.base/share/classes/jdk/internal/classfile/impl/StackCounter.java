@@ -123,8 +123,8 @@ public final class StackCounter {
             for (var smfi : smta.entries()) {
                 int frameStack = smfi.stack().size();
                 for (var vti : smfi.stack()) {
-                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_LONG
-                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.ITEM_DOUBLE) frameStack++;
+                    if (vti == StackMapFrameInfo.SimpleVerificationTypeInfo.LONG
+                     || vti == StackMapFrameInfo.SimpleVerificationTypeInfo.DOUBLE) frameStack++;
                 }
                 if (maxStack < frameStack) maxStack = frameStack;
                 targets.add(new Target(labelContext.labelToBci(smfi.target()), frameStack));

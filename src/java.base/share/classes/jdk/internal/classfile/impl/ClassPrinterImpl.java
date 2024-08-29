@@ -536,21 +536,21 @@ public final class ClassPrinterImpl {
             switch (vti) {
                 case SimpleVerificationTypeInfo s -> {
                     switch (s) {
-                        case ITEM_DOUBLE -> {
+                        case DOUBLE -> {
                             ret.accept("double");
                             ret.accept("double2");
                         }
-                        case ITEM_FLOAT ->
+                        case FLOAT ->
                             ret.accept("float");
-                        case ITEM_INTEGER ->
+                        case INTEGER ->
                             ret.accept("int");
-                        case ITEM_LONG ->  {
+                        case LONG ->  {
                             ret.accept("long");
                             ret.accept("long2");
                         }
-                        case ITEM_NULL -> ret.accept("null");
-                        case ITEM_TOP -> ret.accept("?");
-                        case ITEM_UNINITIALIZED_THIS -> ret.accept("THIS");
+                        case NULL -> ret.accept("null");
+                        case TOP -> ret.accept("?");
+                        case UNINITIALIZED_THIS -> ret.accept("THIS");
                     }
                 }
                 case ObjectVerificationTypeInfo o ->

@@ -706,13 +706,13 @@ public class AttributeWriter extends BasicWriter {
 
     String mapTypeName(SimpleVerificationTypeInfo type) {
         return switch (type) {
-            case ITEM_TOP -> "top";
-            case ITEM_INTEGER -> "int";
-            case ITEM_FLOAT -> "float";
-            case ITEM_LONG -> "long";
-            case ITEM_DOUBLE -> "double";
-            case ITEM_NULL -> "null";
-            case ITEM_UNINITIALIZED_THIS -> "this";
+            case TOP -> "top";
+            case INTEGER -> "int";
+            case FLOAT -> "float";
+            case LONG -> "long";
+            case DOUBLE -> "double";
+            case NULL -> "null";
+            case UNINITIALIZED_THIS -> "this";
         };
     }
 

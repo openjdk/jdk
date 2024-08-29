@@ -74,7 +74,7 @@ public class StackMapDecoder {
         if (!isStatic) {
             vtis = new VerificationTypeInfo[methodType.parameterCount() + 1];
             if ("<init>".equals(methodName) && !ConstantDescs.CD_Object.equals(thisClass.asSymbol())) {
-                vtis[i++] = SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
+                vtis[i++] = SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
             } else {
                 vtis[i++] = new StackMapDecoder.ObjectVerificationTypeInfoImpl(thisClass);
             }
@@ -84,10 +84,10 @@ public class StackMapDecoder {
         for (int pi = 0; pi < methodType.parameterCount(); pi++) {
             var arg = methodType.parameterType(pi);
             vtis[i++] = switch (arg.descriptorString().charAt(0)) {
-                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-                case 'J' -> SimpleVerificationTypeInfo.ITEM_LONG;
-                case 'F' -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-                case 'D' -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
+                case 'I', 'S', 'C' ,'B', 'Z' -> SimpleVerificationTypeInfo.INTEGER;
+                case 'J' -> SimpleVerificationTypeInfo.LONG;
+                case 'F' -> SimpleVerificationTypeInfo.FLOAT;
+                case 'D' -> SimpleVerificationTypeInfo.DOUBLE;
                 case 'V' -> throw new IllegalArgumentException("Illegal method argument type: " + arg);
                 default -> new StackMapDecoder.ObjectVerificationTypeInfoImpl(TemporaryConstantPool.INSTANCE.classEntry(arg));
             };
@@ -163,7 +163,8 @@ public class StackMapDecoder {
     private static void writeTypeInfo(BufWriterImpl bw, VerificationTypeInfo vti) {
         bw.writeU1(vti.tag());
         switch (vti.tag()) {
-            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL, VT_UNINITIALIZED_THIS ->
+            case VT_TOP, VT_INTEGER, VT_FLOAT, VT_DOUBLE, VT_LONG, VT_NULL,
+                 VT_UNINITIALIZED_THIS ->
                 {}
             case VT_OBJECT ->
                 bw.writeIndex(((ObjectVerificationTypeInfo)vti).className());
@@ -226,13 +227,13 @@ public class StackMapDecoder {
     private VerificationTypeInfo readVerificationTypeInfo() {
         int tag = classReader.readU1(p++);
         return switch (tag) {
-            case VT_TOP -> SimpleVerificationTypeInfo.ITEM_TOP;
-            case VT_INTEGER -> SimpleVerificationTypeInfo.ITEM_INTEGER;
-            case VT_FLOAT -> SimpleVerificationTypeInfo.ITEM_FLOAT;
-            case VT_DOUBLE -> SimpleVerificationTypeInfo.ITEM_DOUBLE;
-            case VT_LONG -> SimpleVerificationTypeInfo.ITEM_LONG;
-            case VT_NULL -> SimpleVerificationTypeInfo.ITEM_NULL;
-            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.ITEM_UNINITIALIZED_THIS;
+            case VT_TOP -> SimpleVerificationTypeInfo.TOP;
+            case VT_INTEGER -> SimpleVerificationTypeInfo.INTEGER;
+            case VT_FLOAT -> SimpleVerificationTypeInfo.FLOAT;
+            case VT_DOUBLE -> SimpleVerificationTypeInfo.DOUBLE;
+            case VT_LONG -> SimpleVerificationTypeInfo.LONG;
+            case VT_NULL -> SimpleVerificationTypeInfo.NULL;
+            case VT_UNINITIALIZED_THIS -> SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
             case VT_OBJECT -> new ObjectVerificationTypeInfoImpl(classReader.entryByIndex(u2(), ClassEntry.class));
             case VT_UNINITIALIZED -> new UninitializedVerificationTypeInfoImpl(ctx.getLabel(u2()));
             default -> throw new IllegalArgumentException("Invalid verification type tag: " + tag);

@@ -84,31 +84,31 @@ public sealed interface StackMapFrameInfo
     @PreviewFeature(feature = PreviewFeature.Feature.CLASSFILE_API)
     sealed interface VerificationTypeInfo {
 
-        /** The {@link #tag() tag} for verification type info TOP. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#TOP TOP}. */
         int VT_TOP = 0;
 
-        /** The {@link #tag() tag} for verification type info INTEGER. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#INTEGER INTEGER}. */
         int VT_INTEGER = 1;
 
-        /** The {@link #tag() tag} for verification type info FLOAT. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#FLOAT FLOAT}. */
         int VT_FLOAT = 2;
 
-        /** The {@link #tag() tag} for verification type info DOUBLE. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#DOUBLE DOUBLE}. */
         int VT_DOUBLE = 3;
 
-        /** The {@link #tag() tag} for verification type info LONG. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#LONG LONG}. */
         int VT_LONG = 4;
 
-        /** The {@link #tag() tag} for verification type info NULL. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#NULL NULL}. */
         int VT_NULL = 5;
 
-        /** The {@link #tag() tag} for verification type info UNINITIALIZED_THIS. */
+        /** The {@link #tag() tag} for verification type info {@link SimpleVerificationTypeInfo#UNINITIALIZED_THIS UNINITIALIZED_THIS}. */
         int VT_UNINITIALIZED_THIS = 6;
 
-        /** The {@link #tag() tag} for verification type info OBJECT. */
+        /** The {@link #tag() tag} for verification type info {@link ObjectVerificationTypeInfo OBJECT}. */
         int VT_OBJECT = 7;
 
-        /** The {@link #tag() tag} for verification type info UNINITIALIZED. */
+        /** The {@link #tag() tag} for verification type info {@link UninitializedVerificationTypeInfo UNINITIALIZED}. */
         int VT_UNINITIALIZED = 8;
 
         /**
@@ -126,25 +126,25 @@ public sealed interface StackMapFrameInfo
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
         /** verification type top */
-        ITEM_TOP(VT_TOP),
+        TOP(VT_TOP),
 
         /** verification type int */
-        ITEM_INTEGER(VT_INTEGER),
+        INTEGER(VT_INTEGER),
 
         /** verification type float */
-        ITEM_FLOAT(VT_FLOAT),
+        FLOAT(VT_FLOAT),
 
         /** verification type double */
-        ITEM_DOUBLE(VT_DOUBLE),
+        DOUBLE(VT_DOUBLE),
 
         /** verification type long */
-        ITEM_LONG(VT_LONG),
+        LONG(VT_LONG),
 
         /** verification type null */
-        ITEM_NULL(VT_NULL),
+        NULL(VT_NULL),
 
         /** verification type uninitializedThis */
-        ITEM_UNINITIALIZED_THIS(VT_UNINITIALIZED_THIS);
+        UNINITIALIZED_THIS(VT_UNINITIALIZED_THIS);
 
 
         private final int tag;
@@ -160,7 +160,7 @@ public sealed interface StackMapFrameInfo
     }
 
     /**
-     * A stack value for an object type.
+     * A stack value for an object type. Its {@link #tag() tag} is {@value #VT_OBJECT}.
      *
      * @since 22
      */
@@ -199,7 +199,7 @@ public sealed interface StackMapFrameInfo
     }
 
     /**
-     * An uninitialized stack value.
+     * An uninitialized stack value. Its {@link #tag() tag} is {@value #VT_UNINITIALIZED}.
      *
      * @since 22
      */
