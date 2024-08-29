@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,27 +51,25 @@ endif
 ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
 
   # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
-  define copy-and-chmod
-	$(install-file)
-	$(CHMOD) a+rx $@
-  endef
-
   # Use separate macro calls in case the source files are not in the same
   # directory.
-  $(eval $(call SetupCopyFiles,COPY_MSVCR, \
+  $(eval $(call SetupCopyFiles, COPY_MSVCR, \
       DEST := $(LIB_DST_DIR), \
       FILES := $(MSVCR_DLL), \
-      MACRO := copy-and-chmod))
+      MACRO := copy-and-chmod-executable, \
+  ))
 
-  $(eval $(call SetupCopyFiles,COPY_VCRUNTIME_1, \
+  $(eval $(call SetupCopyFiles, COPY_VCRUNTIME_1, \
       DEST := $(LIB_DST_DIR), \
       FILES := $(VCRUNTIME_1_DLL), \
-      MACRO := copy-and-chmod))
+      MACRO := copy-and-chmod-executable, \
+  ))
 
-  $(eval $(call SetupCopyFiles,COPY_MSVCP, \
+  $(eval $(call SetupCopyFiles, COPY_MSVCP, \
       DEST := $(LIB_DST_DIR), \
       FILES := $(MSVCP_DLL), \
-      MACRO := copy-and-chmod))
+      MACRO := copy-and-chmod-executable, \
+  ))
 
   TARGETS += $(COPY_MSVCR) $(COPY_VCRUNTIME_1) $(COPY_MSVCP)
 
@@ -80,7 +78,7 @@ ifeq ($(call isTargetOs, windows)+$(CREATING_BUILDJDK), true+false)
         DEST := $(LIB_DST_DIR), \
         SRC := $(UCRT_DLL_DIR), \
         FILES := $(wildcard $(UCRT_DLL_DIR)/*.dll), \
-        MACRO := copy-and-chmod, \
+        MACRO := copy-and-chmod-executable, \
     ))
 
     TARGETS += $(COPY_UCRT_DLLS)

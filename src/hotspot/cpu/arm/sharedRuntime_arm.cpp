@@ -1728,3 +1728,143 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
+
+//------------------------------------------------------------------------------------------------------------------------
+// Continuation point for throwing of implicit exceptions that are not handled in
+// the current activation. Fabricates an exception oop and initiates normal
+// exception dispatching in this frame.
+RuntimeStub* SharedRuntime::generate_throw_exception(const char* name, address runtime_entry) {
+  int insts_size = 128;
+  int locs_size  = 32;
+
+  ResourceMark rm;
+  const char* timer_msg = "SharedRuntime generate_throw_exception";
+  TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBuffer code(name, insts_size, locs_size);
+  OopMapSet* oop_maps;
+  int frame_size;
+  int frame_complete;
+
+  oop_maps = new OopMapSet();
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+
+  frame_size = 2;
+  __ mov(Rexception_pc, LR);
+  __ raw_push(FP, LR);
+
+  frame_complete = __ pc() - start;
+
+  // Any extra arguments are already supposed to be R1 and R2
+  __ mov(R0, Rthread);
+
+  int pc_offset = __ set_last_Java_frame(SP, FP, false, Rtemp);
+  assert(((__ pc()) - start) == __ offset(), "warning: start differs from code_begin");
+  __ call(runtime_entry);
+  if (pc_offset == -1) {
+    pc_offset = __ offset();
+  }
+
+  // Generate oop map
+  OopMap* map =  new OopMap(frame_size*VMRegImpl::slots_per_word, 0);
+  oop_maps->add_gc_map(pc_offset, map);
+  __ reset_last_Java_frame(Rtemp); // Rtemp free since scratched by far call
+
+  __ raw_pop(FP, LR);
+  __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
+
+  RuntimeStub* stub = RuntimeStub::new_runtime_stub(name, &code, frame_complete,
+                                                    frame_size, oop_maps, false);
+  return stub;
+}
+
+#if INCLUDE_JFR
+
+// For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
+// It returns a jobject handle to the event writer.
+// The handle is dereferenced and the return value is the event writer oop.
+RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  enum layout {
+    r1_off,
+    r2_off,
+    return_off,
+    framesize // inclusive of return address
+  };
+
+  CodeBuffer code("jfr_write_checkpoint", 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+  __ raw_push(R1, R2, LR);
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(SP, FP, true, Rtemp);
+  __ mov(c_rarg0, Rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), c_rarg0);
+  __ reset_last_Java_frame(Rtemp);
+
+  // R0 is jobject handle result, unpack and process it through a barrier.
+  __ resolve_global_jobject(R0, Rtemp, R1);
+
+  __ raw_pop(R1, R2, LR);
+  __ ret();
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
+// For c2: call to return a leased buffer.
+RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  enum layout {
+    r1_off,
+    r2_off,
+    return_off,
+    framesize // inclusive of return address
+  };
+
+  CodeBuffer code("jfr_return_lease", 512, 64);
+  MacroAssembler* masm = new MacroAssembler(&code);
+
+  address start = __ pc();
+  __ raw_push(R1, R2, LR);
+  address the_pc = __ pc();
+
+  int frame_complete = the_pc - start;
+
+  __ set_last_Java_frame(SP, FP, true, Rtemp);
+  __ mov(c_rarg0, Rthread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), c_rarg0);
+  __ reset_last_Java_frame(Rtemp);
+
+  __ raw_pop(R1, R2, LR);
+  __ ret();
+
+  OopMapSet* oop_maps = new OopMapSet();
+  OopMap* map = new OopMap(framesize, 1);
+  oop_maps->add_gc_map(frame_complete, map);
+
+  RuntimeStub* stub =
+    RuntimeStub::new_runtime_stub(code.name(),
+                                  &code,
+                                  frame_complete,
+                                  (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                  oop_maps,
+                                  false);
+  return stub;
+}
+
+#endif // INCLUDE_JFR
