@@ -26,8 +26,6 @@ package jdk.internal.classfile.impl;
 
 import java.lang.constant.*;
 import java.lang.invoke.TypeDescriptor;
-import java.nio.ByteOrder;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -129,10 +127,6 @@ public abstract sealed class AbstractPoolEntry {
     abstract PoolEntry clone(ConstantPoolBuilder cp);
 
     public static final class Utf8EntryImpl extends AbstractPoolEntry implements Utf8Entry {
-        static final byte LATIN1 = 0;
-        static final byte UTF16  = 1;
-        static final Charset UTF16_CHARSET
-                = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? StandardCharsets.UTF_16BE : StandardCharsets.UTF_16LE;
         // Processing UTF8 from the constant pool is one of the more expensive
         // operations, and often, we don't actually need access to the constant
         // as a string.  So there are multiple layers of laziness in UTF8
@@ -155,7 +149,7 @@ public abstract sealed class AbstractPoolEntry {
         private int hash;
         private int charLen;
         // Set in CHAR state
-        private byte[] chars;
+        private char[] chars;
         // Only set in STRING state
         private String stringValue;
 
@@ -237,17 +231,16 @@ public abstract sealed class AbstractPoolEntry {
                 this.hash = hashString(hash);
                 charLen = rawLen;
                 state = State.BYTE;
-            }
-            else {
-                inflateCHAR(singleBytes, hash);
+            } else {
+                inflateHCAR(singleBytes, hash);
             }
         }
 
-        private void inflateCHAR(int singleBytes, int hash) {
-            byte[] chararr = new byte[rawLen << 1];
+        private void inflateHCAR(int singleBytes, int hash) {
+            char[] chararr = new char[rawLen];
             int chararr_count = singleBytes;
             // Inflate prefix of bytes to characters
-            JLA.inflate(rawBytes, offset, chararr, 0, singleBytes);
+            JLA.inflateBytesToChars(rawBytes, offset, chararr, 0, singleBytes);
 
             int px = offset + singleBytes;
             int utfend = offset + rawLen;
@@ -257,7 +250,7 @@ public abstract sealed class AbstractPoolEntry {
                     case 0, 1, 2, 3, 4, 5, 6, 7: {
                         // 0xxx xxxx
                         px++;
-                        JLA.putCharUTF16(chararr, chararr_count++, (char) c);
+                        chararr[chararr_count++] = (char) c;
                         hash = 31 * hash + c;
                         break;
                     }
@@ -272,7 +265,7 @@ public abstract sealed class AbstractPoolEntry {
                             throw new CpException("malformed input around byte " + px);
                         }
                         char v = (char) (((c & 0x1F) << 6) | (char2 & 0x3F));
-                        JLA.putCharUTF16(chararr, chararr_count++, v);
+                        chararr[chararr_count++] = v;
                         hash = 31 * hash + v;
                         break;
                     }
@@ -288,7 +281,7 @@ public abstract sealed class AbstractPoolEntry {
                             throw new CpException("malformed input around byte " + (px - 1));
                         }
                         char v = (char) (((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) | (char3 & 0x3F));
-                        JLA.putCharUTF16(chararr, chararr_count++, v);
+                        chararr[chararr_count++] = v;
                         hash = 31 * hash + v;
                         break;
                     }
@@ -325,7 +318,7 @@ public abstract sealed class AbstractPoolEntry {
                 inflate();
             if (state != State.STRING) {
                 stringValue = (chars != null)
-                              ? new String(chars, 0, charLen, UTF16_CHARSET)
+                              ? new String(chars, 0, charLen)
                               : new String(rawBytes, offset, charLen, StandardCharsets.ISO_8859_1);
                 state = State.STRING;
             }
@@ -356,7 +349,7 @@ public abstract sealed class AbstractPoolEntry {
             if (state == State.RAW)
                 inflate();
             return (chars != null)
-                   ? JLA.getUTF16Char(chars, index)
+                   ? chars[index]
                    : (char) rawBytes[index + offset];
         }
 
@@ -391,16 +384,29 @@ public abstract sealed class AbstractPoolEntry {
         public boolean equalsString(String s) {
             if (state == State.RAW)
                 inflate();
-            if (charLen != s.length())
-                return false;
-            if (state == State.STRING)
-                return s.equals(stringValue);
-
-            if (state == State.BYTE) {
-                return JLA.regionMatches(s, rawBytes, LATIN1, offset, charLen);
-            } else {
-                return JLA.regionMatches(s, chars, UTF16, 0, charLen);
+            switch (state) {
+                case STRING:
+                    return stringValue.equals(s);
+                case CHAR:
+                    if (charLen != s.length() || hash != hashString(s.hashCode()))
+                        return false;
+                    for (int i=0; i<charLen; i++)
+                        if (chars[i] != s.charAt(i))
+                            return false;
+                    stringValue = s;
+                    state = State.STRING;
+                    return true;
+                case BYTE:
+                    if (rawLen != s.length() || hash != hashString(s.hashCode()))
+                        return false;
+                    for (int i=0; i<rawLen; i++)
+                        if (rawBytes[offset+i] != s.charAt(i))
+                            return false;
+                    stringValue = s;
+                    state = State.STRING;
+                    return true;
             }
+            throw new IllegalStateException("cannot reach here");
         }
 
         @Override
