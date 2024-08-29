@@ -149,7 +149,8 @@ public sealed interface ConstantInstruction extends Instruction {
      *           which must be of kind {@link Opcode.Kind#CONSTANT}
      * @param value the constant value
      * @throws IllegalArgumentException if the opcode is not {@link Opcode#BIPUSH}
-     *                                  or {@link Opcode#SIPUSH}
+     *         or {@link Opcode#SIPUSH}, or if the constant value is out of range
+     *         for the opcode
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
         Util.checkKind(op, Opcode.Kind.CONSTANT);
