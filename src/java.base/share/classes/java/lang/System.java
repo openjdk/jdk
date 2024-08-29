@@ -2595,7 +2595,7 @@ public final class System {
             }
 
             public boolean hasNegativeOrZeros(String s) {
-                return s.coder() == String.LATIN1 && StringCoding.hasNegativeOrZeros(s.value());
+                return s.coder() == String.UTF16 || StringCoding.hasNegativeOrZeros(s.value());
             }
 
             public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
