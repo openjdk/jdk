@@ -25,8 +25,14 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch ReachabilityFenceC1.java
+
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch ReachabilityFenceC1.java
+
+
 /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:+UseNewCode -XX:TieredStopAtLevel=1 -XX:+UseLoopInvariantCodeMotion  -XX:CompileCommand=compileonly,*ReachabilityFenceC1::* -Xbatch  ReachabilityFenceC1.java
-*/
+
+ */
 public class ReachabilityFenceC1 {
 
     static class A {
@@ -40,7 +46,7 @@ public class ReachabilityFenceC1 {
 
     static class B {
 
-        public final int id;
+        public static int id;
 
         public static int[] arr = new int[1024];
 
@@ -55,7 +61,7 @@ public class ReachabilityFenceC1 {
         for (long j = 0; j < limit; j += 1) {
             for (int i = 1; i < arr.length; i++) {
                 B bar = foo.obj;
-                arr[i] = bar.id * arr[i];
+                arr[i] = B.id * arr[i];
                 if (B.arr[0] != val) throw new AssertionError(
                     arr[0] + " != " + val
                 );
