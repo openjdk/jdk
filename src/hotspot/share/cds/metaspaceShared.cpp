@@ -669,6 +669,13 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
       MetaspaceShared::writing_error("Unexpected exception, use -Xlog:cds,exceptions=trace for detail");
     }
   }
+
+  if (AOTMode != nullptr && strcmp(AOTMode, "create") == 0) {
+    // We can't return to the JLI launcher, as it will try to run the main class, but
+    // the main class is not specified when -XX:AOTMode=create is used.
+    tty->print_cr("AOTCache creation is complete: %s", AOTCache);
+    vm_exit(0);
+  }
 }
 
 #if INCLUDE_CDS_JAVA_HEAP && defined(_LP64)
