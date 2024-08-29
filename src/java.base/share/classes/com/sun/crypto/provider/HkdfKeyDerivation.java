@@ -173,7 +173,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 (HKDFParameterSpec.Expand) derivationParameterSpec;
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk()) == null) {
-                throw new InvalidAlgorithmParameterException(
+                throw new AssertionError(
                     "PRK is required for HKDFParameterSpec.Expand");
             }
             // set this value in the "if"
@@ -183,8 +183,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             length = anExpand.length();
             if (length > (hmacLen * 255)) {
                 throw new InvalidAlgorithmParameterException(
-                    "Requested length exceeds maximum allowed key stream "
-                    + "length");
+                    "Requested length exceeds maximum allowed length");
             }
             // perform expand
             try {
@@ -224,8 +223,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             length = anExtractThenExpand.length();
             if (length > (hmacLen * 255)) {
                 throw new InvalidAlgorithmParameterException(
-                    "Requested length exceeds maximum allowed key stream "
-                    + "length");
+                    "Requested length exceeds maximum allowed length");
             }
             // perform extract and then expand
             try {
@@ -332,7 +330,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
 
         // Calculate the number of rounds of HMAC that are needed to
         // meet the requested data.  Then set up the buffers we will need.
-        if (prk.getEncoded().length < hmacLen) {
+        if (CipherCore.getKeyBytes(prk).length < hmacLen) {
             throw new InvalidKeyException(
                 "prk must be at least " + hmacLen + " bytes");
         }

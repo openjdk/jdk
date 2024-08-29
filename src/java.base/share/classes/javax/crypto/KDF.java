@@ -474,8 +474,7 @@ public final class KDF {
      * @param derivationParameterSpec
      *     the object describing the inputs to the derivation function
      *
-     * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters.
+     * @return the derived key
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationParameterSpec} is
@@ -516,8 +515,7 @@ public final class KDF {
      * @param derivationParameterSpec
      *     the object describing the inputs to the derivation function
      *
-     * @return a byte array corresponding to the KDF output and according to
-     * the derivation parameters.
+     * @return the derived key in its raw bytes
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationParameterSpec} is

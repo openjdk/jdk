@@ -284,7 +284,8 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      *     the length of the output keying material (must be greater than 0)
      *
      * @implNote HKDF implementations will enforce that the length is less than
-     * 255 * HMAC length.
+     * 255 * HMAC length. Implementations will also enforce that the prk is at least as
+     * many bytes as the HMAC length.
      *
      * @return a new {@code Expand} object
      *
@@ -362,8 +363,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be > 0 and < 255 *
-         *     HMAC length)
+         *     the length of the output keying material (must be greater than 0)
+         *
+         * @implNote HKDF implementations will enforce that the length is less than
+         * 255 * HMAC length. Implementations will also enforce that the prk
+         * calculated from the {@code Extract} phase, if applicable, is at least
+         * as many bytes as the HMAC length.
          *
          * @throws IllegalArgumentException
          *     if {@code length} not > 0
@@ -428,8 +433,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be > 0 and < 255 *
-         *     HMAC length)
+         *     the length of the output keying material (must be greater than 0)
+         *
+         * @implNote HKDF implementations will enforce that the length is less than
+         * 255 * HMAC length. Implementations will also enforce that the prk
+         * calculated from the {@code Extract} phase is at least as many bytes
+         * as the HMAC length.
          *
          * @throws IllegalArgumentException
          *     if {@code length} is not > 0

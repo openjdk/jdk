@@ -111,7 +111,9 @@ public abstract class KDFSpi {
      *     derivation parameters
      *
      * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters.
+     *     KDF output and according to the derivation parameters. If the resultant
+     *     key is extractable, then its {@code getEncoded} value should have the
+     *     same content as the result of {@code deriveData}.
      *
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationParameterSpec} is

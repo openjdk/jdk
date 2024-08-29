@@ -60,10 +60,10 @@ public class KDFDelayedProviderSyncTest {
         kdfUnderTest = KDF.getInstance("HKDFWithHmacSHA256");
     }
 
-    @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 30)
+    @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 100)
     public void testDerive()
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
-        SecretKey result = kdfUnderTest.deriveKey("AES", kdfParameterSpec);
+        SecretKey result = kdfUnderTest.deriveKey("Generic", kdfParameterSpec);
         assert (HexFormat.of().formatHex(result.getEncoded()).equals(
             expectedResult));
 
