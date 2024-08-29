@@ -99,6 +99,7 @@ public class SwingButtonResizeTestWithOpenGL {
         frame.setLocation(200, 200);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         button.setPreferredSize(new Dimension(300, 300));
+        button.setFocusPainted(false);
         button.addFocusListener(new FocusAdapter() {
             public void focusGained(FocusEvent fe) {
                 focusGainedLatch.countDown();
