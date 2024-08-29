@@ -26,6 +26,7 @@
 
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zAllocationFlags.hpp"
+#include "gc/z/zLock.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zPageType.hpp"
 #include "gc/z/zValue.hpp"
@@ -39,8 +40,9 @@ private:
   const bool         _use_per_cpu_shared_small_pages;
   ZPerCPU<size_t>    _used;
   ZPerCPU<size_t>    _undone;
-  ZContended<ZPage*> _shared_medium_page;
   ZPerCPU<ZPage*>    _shared_small_page;
+  ZContended<ZPage*> _shared_medium_page;
+  ZConditionLock     _medium_page_alloc_lock;
 
   ZPage** shared_small_page_addr();
   ZPage* const* shared_small_page_addr() const;
@@ -56,10 +58,16 @@ private:
                                        size_t size,
                                        ZAllocationFlags flags);
 
+  zaddress alloc_object_in_medium_page(ZPageType page_type,
+                                       size_t page_size,
+                                       size_t size,
+                                       ZAllocationFlags flags);
+
   zaddress alloc_large_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_medium_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_small_object(size_t size, ZAllocationFlags flags);
   zaddress alloc_object(size_t size, ZAllocationFlags flags);
+  zaddress alloc_object_in_page_atomic(ZPage* page, size_t size);
 
 public:
   ZObjectAllocator(ZPageAge age);
