@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
+
+/*
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence2::test -Xbatch ReachabilityFence2.java
+ */
+public class ReachabilityFence2 {
+
+    static MyClass obj = new MyClass();
+
+    static class MyClass {
+
+        static boolean[] collected = new boolean[1];
+    }
+
+    static void test(int limit) {
+        for (long j = 0; j < limit; j++) {
+            MyClass myObject = obj;
+            obj = null;
+            System.gc();
+            if (MyClass.collected[0]) throw new RuntimeException(
+                "myObject collected before reachabilityFence was reached!"
+            );
+            Reference.reachabilityFence(myObject);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        // Set 'MyClass.collected[0]' to true if 'obj' is garbage collected
+        Cleaner.create()
+            .register(obj, () -> {
+                System.out.println("obj was garbage collected");
+                MyClass.collected[0] = true;
+            });
+
+        // Warmup to trigger compilation
+        for (int i = 0; i < 20; i++) {
+            test(100);
+        }
+
+        test(100_000);
+    }
+}
