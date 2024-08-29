@@ -235,13 +235,8 @@ void mutex_init() {
 
   MUTEX_DEFN(Patching_lock                   , PaddedMutex  , nosafepoint);      // used for safepointing and code patching.
   MUTEX_DEFN(MonitorDeflation_lock           , PaddedMonitor, nosafepoint);      // used for monitor deflation thread operations
-  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);      // used for service thread operations
-
-  if (UseNotificationThread) {
-    MUTEX_DEFN(Notification_lock             , PaddedMonitor, service);  // used for notification thread operations
-  } else {
-    Notification_lock = Service_lock;
-  }
+  MUTEX_DEFN(Service_lock                    , PaddedMonitor, service);          // used for service thread operations
+  MUTEX_DEFN(Notification_lock               , PaddedMonitor, service);          // used for notification thread operations
 
   MUTEX_DEFN(JmethodIdCreation_lock          , PaddedMutex  , nosafepoint-2); // used for creating jmethodIDs.
   MUTEX_DEFN(InvokeMethodTypeTable_lock      , PaddedMutex  , safepoint);
@@ -274,7 +269,6 @@ void mutex_init() {
 
   MUTEX_DEFN(JvmtiThreadState_lock           , PaddedMutex  , safepoint);   // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFN(EscapeBarrier_lock              , PaddedMonitor, nosafepoint); // Used to synchronize object reallocation/relocking triggered by JVMTI
-  MUTEX_DEFN(JvmtiVTMSTransition_lock        , PaddedMonitor, safepoint);   // used for Virtual Thread Mount State transition management
   MUTEX_DEFN(Management_lock                 , PaddedMutex  , safepoint);   // used for JVM management
 
   MUTEX_DEFN(ConcurrentGCBreakpoints_lock    , PaddedMonitor, safepoint, true);
@@ -360,6 +354,7 @@ void mutex_init() {
   // JVMCIRuntime_lock must be acquired before JVMCI_lock to avoid deadlock
   MUTEX_DEFL(JVMCI_lock                     , PaddedMonitor, JVMCIRuntime_lock);
 #endif
+  MUTEX_DEFL(JvmtiVTMSTransition_lock        , PaddedMonitor, JvmtiThreadState_lock); // used for Virtual Thread Mount State transition management
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();

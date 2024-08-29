@@ -349,6 +349,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 // to be used for arbitrary strings. For debug builds we will assert if
 // a string is too long, whereas product builds will truncate it.
 static int check_length(const char* name, int len) {
+  assert(len >= 0, "negative length %d suggests integer overflow in the caller", len);
   assert(len <= Symbol::max_length(),
          "String length %d exceeds the maximum Symbol length of %d", len, Symbol::max_length());
   if (len > Symbol::max_length()) {

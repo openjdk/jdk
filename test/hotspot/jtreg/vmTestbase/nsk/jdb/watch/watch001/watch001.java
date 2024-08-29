@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@
  * @library /vmTestbase
  *          /test/lib
  * @build nsk.jdb.watch.watch001.watch001a
- * @run main/othervm
+ * @run driver
  *      nsk.jdb.watch.watch001.watch001
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
@@ -71,15 +71,11 @@ import java.util.*;
 public class watch001 extends JdbTest {
 
     public static void main (String argv[]) {
-        System.exit(run(argv, System.out) + JCK_STATUS_BASE);
-    }
-
-    public static int run(String argv[], PrintStream out) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
         lastBreak = LAST_BREAK;
         compoundPromptIdent = COMPOUND_PROMPT_IDENT;
-        return new watch001().runTest(argv, out);
+        new watch001().runTest(argv);
     }
 
     static final String PACKAGE_NAME       = "nsk.jdb.watch.watch001";

@@ -240,31 +240,31 @@ public final class ConstantDescs {
             CD_Object, CD_Object);
 
     /** {@link ClassDesc} representing the primitive type {@code int} */
-    public static final ClassDesc CD_int = new PrimitiveClassDescImpl("I");
+    public static final ClassDesc CD_int = PrimitiveClassDescImpl.CD_int;
 
     /** {@link ClassDesc} representing the primitive type {@code long} */
-    public static final ClassDesc CD_long = new PrimitiveClassDescImpl("J");
+    public static final ClassDesc CD_long = PrimitiveClassDescImpl.CD_long;
 
     /** {@link ClassDesc} representing the primitive type {@code float} */
-    public static final ClassDesc CD_float = new PrimitiveClassDescImpl("F");
+    public static final ClassDesc CD_float = PrimitiveClassDescImpl.CD_float;
 
     /** {@link ClassDesc} representing the primitive type {@code double} */
-    public static final ClassDesc CD_double = new PrimitiveClassDescImpl("D");
+    public static final ClassDesc CD_double = PrimitiveClassDescImpl.CD_double;
 
     /** {@link ClassDesc} representing the primitive type {@code short} */
-    public static final ClassDesc CD_short = new PrimitiveClassDescImpl("S");
+    public static final ClassDesc CD_short = PrimitiveClassDescImpl.CD_short;
 
     /** {@link ClassDesc} representing the primitive type {@code byte} */
-    public static final ClassDesc CD_byte = new PrimitiveClassDescImpl("B");
+    public static final ClassDesc CD_byte = PrimitiveClassDescImpl.CD_byte;
 
     /** {@link ClassDesc} representing the primitive type {@code char} */
-    public static final ClassDesc CD_char = new PrimitiveClassDescImpl("C");
+    public static final ClassDesc CD_char = PrimitiveClassDescImpl.CD_char;
 
     /** {@link ClassDesc} representing the primitive type {@code boolean} */
-    public static final ClassDesc CD_boolean = new PrimitiveClassDescImpl("Z");
+    public static final ClassDesc CD_boolean = PrimitiveClassDescImpl.CD_boolean;
 
     /** {@link ClassDesc} representing the primitive type {@code void} */
-    public static final ClassDesc CD_void = new PrimitiveClassDescImpl("V");
+    public static final ClassDesc CD_void = PrimitiveClassDescImpl.CD_void;
 
     /**
      * {@link MethodHandleDesc} representing {@link MethodHandles#classData(Lookup, String, Class) MethodHandles.classData}

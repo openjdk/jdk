@@ -40,6 +40,8 @@ import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents the AMD64 architecture.
+ *
+ * The value returned by {@code Architecture#getName} for an instance of this class is {@code "AMD64"}.
  */
 public class AMD64 extends Architecture {
 

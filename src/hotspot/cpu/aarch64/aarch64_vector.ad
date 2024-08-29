@@ -345,7 +345,7 @@ source %{
 // ------------------------------ Vector load/store ----------------------------
 
 // Load Vector (16 bits)
-instruct loadV2(vReg dst, vmem2 mem) %{
+instruct loadV2(vReg dst, vmem mem) %{
   predicate(n->as_LoadVector()->memory_size() == 2);
   match(Set dst (LoadVector mem));
   format %{ "loadV2 $dst, $mem\t# vector (16 bits)" %}
@@ -354,7 +354,7 @@ instruct loadV2(vReg dst, vmem2 mem) %{
 %}
 
 // Store Vector (16 bits)
-instruct storeV2(vReg src, vmem2 mem) %{
+instruct storeV2(vReg src, vmem mem) %{
   predicate(n->as_StoreVector()->memory_size() == 2);
   match(Set mem (StoreVector mem src));
   format %{ "storeV2 $mem, $src\t# vector (16 bits)" %}
@@ -363,7 +363,7 @@ instruct storeV2(vReg src, vmem2 mem) %{
 %}
 
 // Load Vector (32 bits)
-instruct loadV4(vReg dst, vmem4 mem) %{
+instruct loadV4(vReg dst, vmem mem) %{
   predicate(n->as_LoadVector()->memory_size() == 4);
   match(Set dst (LoadVector mem));
   format %{ "loadV4 $dst, $mem\t# vector (32 bits)" %}
@@ -372,7 +372,7 @@ instruct loadV4(vReg dst, vmem4 mem) %{
 %}
 
 // Store Vector (32 bits)
-instruct storeV4(vReg src, vmem4 mem) %{
+instruct storeV4(vReg src, vmem mem) %{
   predicate(n->as_StoreVector()->memory_size() == 4);
   match(Set mem (StoreVector mem src));
   format %{ "storeV4 $mem, $src\t# vector (32 bits)" %}
@@ -381,7 +381,7 @@ instruct storeV4(vReg src, vmem4 mem) %{
 %}
 
 // Load Vector (64 bits)
-instruct loadV8(vReg dst, vmem8 mem) %{
+instruct loadV8(vReg dst, vmem mem) %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   match(Set dst (LoadVector mem));
   format %{ "loadV8 $dst, $mem\t# vector (64 bits)" %}
@@ -390,7 +390,7 @@ instruct loadV8(vReg dst, vmem8 mem) %{
 %}
 
 // Store Vector (64 bits)
-instruct storeV8(vReg src, vmem8 mem) %{
+instruct storeV8(vReg src, vmem mem) %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   match(Set mem (StoreVector mem src));
   format %{ "storeV8 $mem, $src\t# vector (64 bits)" %}
@@ -399,7 +399,7 @@ instruct storeV8(vReg src, vmem8 mem) %{
 %}
 
 // Load Vector (128 bits)
-instruct loadV16(vReg dst, vmem16 mem) %{
+instruct loadV16(vReg dst, vmem mem) %{
   predicate(n->as_LoadVector()->memory_size() == 16);
   match(Set dst (LoadVector mem));
   format %{ "loadV16 $dst, $mem\t# vector (128 bits)" %}
@@ -408,7 +408,7 @@ instruct loadV16(vReg dst, vmem16 mem) %{
 %}
 
 // Store Vector (128 bits)
-instruct storeV16(vReg src, vmem16 mem) %{
+instruct storeV16(vReg src, vmem mem) %{
   predicate(n->as_StoreVector()->memory_size() == 16);
   match(Set mem (StoreVector mem src));
   format %{ "storeV16 $mem, $src\t# vector (128 bits)" %}

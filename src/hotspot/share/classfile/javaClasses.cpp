@@ -304,7 +304,7 @@ Handle java_lang_String::create_from_unicode(const jchar* unicode, int length, T
 #ifdef ASSERT
   {
     ResourceMark rm;
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     char* expected = UNICODE::as_utf8(unicode, utf8_len);
     char* actual = as_utf8_string(h_obj());
     if (strcmp(expected, actual) != 0) {
@@ -476,7 +476,7 @@ Handle java_lang_String::externalize_classname(Symbol* java_name, TRAPS) {
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
   jchar* result = as_unicode_string_or_null(java_string, length);
   if (result == nullptr) {
-    THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
+    THROW_MSG_NULL(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
   }
   return result;
 }
@@ -583,7 +583,7 @@ Symbol* java_lang_String::as_symbol(oop java_string) {
   } else {
     ResourceMark rm;
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     const char* base = UNICODE::as_utf8(position, utf8_len);
     Symbol* sym = SymbolTable::new_symbol(base, checked_cast<int>(utf8_len));
     return sym;
@@ -600,7 +600,7 @@ Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   } else {
     ResourceMark rm;
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    size_t utf8_len = length;
+    size_t utf8_len = static_cast<size_t>(length);
     const char* base = UNICODE::as_utf8(position, utf8_len);
     return SymbolTable::probe(base, checked_cast<int>(utf8_len));
   }
@@ -690,16 +690,14 @@ char* java_lang_String::as_utf8_string_full(oop java_string, char* buf, size_t b
 char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, char* buf, size_t buflen) {
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
-  // `length` is used as the incoming number of characters to
-  // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = java_lang_String::length(java_string, value);
+  int     length = java_lang_String::length(java_string, value);
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = (length == 0) ? nullptr : value->char_at_addr(0);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, length, buf, buflen);
   } else {
     jbyte* position = (length == 0) ? nullptr : value->byte_at_addr(0);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, length, buf, buflen);
   }
 }
 
@@ -711,7 +709,7 @@ char* java_lang_String::as_utf8_string(oop java_string, char* buf, size_t buflen
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   // `length` is used as the incoming number of characters to
   // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = len;
+  size_t  length = static_cast<size_t>(len);
   typeArrayOop value  = java_lang_String::value(java_string);
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   assert(start + len <= java_lang_String::length(java_string), "just checking");
@@ -728,16 +726,13 @@ char* java_lang_String::as_utf8_string(oop java_string, typeArrayOop value, int 
   assert(value_equals(value, java_lang_String::value(java_string)),
          "value must be same as java_lang_String::value(java_string)");
   assert(start + len <= java_lang_String::length(java_string), "just checking");
-  // `length` is used as the incoming number of characters to
-  // convert, and then set as the number of bytes in the UTF8 sequence.
-  size_t  length = len;
   bool is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* position = value->char_at_addr(start);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, len, buf, buflen);
   } else {
     jbyte* position = value->byte_at_addr(start);
-    return UNICODE::as_utf8(position, static_cast<int>(length), buf, buflen);
+    return UNICODE::as_utf8(position, len, buf, buflen);
   }
 }
 
@@ -995,7 +990,7 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
       // Keep list of classes needing java.base module fixup
       if (!ModuleEntryTable::javabase_defined()) {
         assert(k->java_mirror() != nullptr, "Class's mirror is null");
-        k->class_loader_data()->inc_keep_alive();
+        k->class_loader_data()->inc_keep_alive_ref_count();
         assert(fixup_module_field_list() != nullptr, "fixup_module_field_list not initialized");
         fixup_module_field_list()->push(k);
       } else {
@@ -1484,19 +1479,12 @@ void java_lang_Class::compute_offsets() {
 
   InstanceKlass* k = vmClasses::Class_klass();
   CLASS_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-
-  // Init lock is a C union with component_mirror.  Only instanceKlass mirrors have
-  // init_lock and only ArrayKlass mirrors have component_mirror.  Since both are oops
-  // GC treats them the same.
-  _init_lock_offset = _component_mirror_offset;
-
   CLASS_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void java_lang_Class::serialize_offsets(SerializeClosure* f) {
   f->do_bool(&_offsets_computed);
-  f->do_u4((u4*)&_init_lock_offset);
 
   CLASS_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 

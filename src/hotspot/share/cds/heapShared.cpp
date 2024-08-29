@@ -1554,7 +1554,6 @@ void HeapShared::archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
   //     by any of these static fields.
   //     At runtime, these classes are initialized before X's archived fields
   //     are restored by HeapShared::initialize_from_archived_subgraph().
-  int i;
   for (int i = 0; fields[i].valid(); ) {
     ArchivableStaticFieldInfo* info = &fields[i];
     const char* klass_name = info->klass_name;
