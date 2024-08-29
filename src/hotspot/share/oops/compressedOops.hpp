@@ -73,8 +73,7 @@ public:
     UnscaledNarrowOop  = 0,
     ZeroBasedNarrowOop = 1,
     DisjointBaseNarrowOop = 2,
-    HeapBasedNarrowOop = 3,
-    AnyNarrowOopMode = 4
+    HeapBasedNarrowOop = 3
   };
 
   // The representation type for narrowOop is assumed to be uint32_t.
