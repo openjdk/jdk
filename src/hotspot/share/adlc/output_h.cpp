@@ -1739,7 +1739,6 @@ void ArchDesc::declareClasses(FILE *fp) {
       }
     }
 
-    // TODO
     fprintf(fp," _num_opnds = %d; _opnds = _opnd_array; ", instr->num_opnds());
     fprintf(fp," _num_opnds_grouped = %d; ", instr->num_opnds_grouped());
 

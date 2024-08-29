@@ -1514,7 +1514,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   unsigned      i;
 
   // Generate Expand function header
-  // TODO
   fprintf(fp, "MachNode* %sNode::Expand(State* state, Node_List& proj_list, Node* mem) {\n", node->_ident);
   fprintf(fp, "  Compile* C = Compile::current();\n");
   // Generate expand code
@@ -1770,7 +1769,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           declared_def = true;
         }
         if (op && op->_interface && op->_interface->is_RegInterface()) {
-          // TODO
           fprintf(fp,"  def = new MachTempNode(state->MachOperGenerator(%s));\n",
                   machOperEnum(op->_ident));
           fprintf(fp,"  add_req(def);\n");
@@ -1788,7 +1786,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
         if (!declared_kill) {
           // Define the variable "kill" to hold new MachProjNodes
-          // TODO
           fprintf(fp, "  MachProjNode *kill;\n");
           declared_kill = true;
         }
@@ -1802,7 +1799,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
                      node->_ident, comp->_type, comp->_name);
         }
 
-        // TODO
         fprintf(fp,"  kill = ");
         fprintf(fp,"new MachProjNode( %s, %d, (%s), Op_%s );\n",
                 machNode, proj_no++, regmask, ideal_type);
@@ -2250,7 +2246,6 @@ public:
 
       if ( (*rep_var) == '$' ) {
         // A subfield variable, '$$' prefix
-        // TODO
         emit_field( rep_var );
       } else {
         if (_strings_to_emit.peek() != nullptr &&
@@ -2303,7 +2298,6 @@ public:
             // close up the parens
             fprintf(_fp, ")");
           } else {
-            // TODO
             emit_rep_var( rep_var );
           }
         }
@@ -2367,7 +2361,6 @@ public:
     }
     else {
       // Not an emit# command, just output the replacement string.
-      // TODO
       emit_replacement();
     }
 
@@ -2422,7 +2415,6 @@ private:
             fprintf(_fp, "%s_enc", first->_regname);
           }
         } else {
-          // TODO
           fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
           if (_ungrouped_operands_num == 0) {
@@ -2565,7 +2557,6 @@ private:
           _processing_noninput = true;
         } else {
           // Output the emit code for this operand
-          // TODO
           if (idx != -1) {
             fprintf(_fp,"opnd_array(%d)",idx);
           } else {
@@ -2750,7 +2741,6 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // (1)
   // Output instruction's emit prototype
-  // TODO
   fprintf(fp, "void %sNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const {\n", inst._ident);
 
   // If user did not define an encode section,
@@ -2801,7 +2791,6 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     while ((ec_code = encoding->_code.iter()) != nullptr) {
       if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
-        // TODO
         pending.emit();
         pending.clear();
         // Emit this code section
@@ -2810,7 +2799,6 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
         // A replacement variable or one of its subfields
         // Obtain replacement variable from list
         ec_rep_var  = encoding->_rep_vars.iter();
-        // TODO
         pending.add_rep_var(ec_rep_var);
       }
     }
@@ -4006,7 +3994,6 @@ int ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, ComponentList& com
     ComponentList clist = comp_list;
     index  = clist.operand_position(comp->_name, comp->_usedef, inst);
     const char *opcode = machOperEnum(comp->_type);
-    // TODO
     fprintf(fp_cpp, "%s node->set_opnd_array(%d, ", indent, start_index + index);
     fprintf(fp_cpp, "MachOperGenerator(%s));\n", opcode);
   }
@@ -4241,13 +4228,11 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
     char       *opType  = nullptr;
 
     // Generate the case statement for this instruction
-    // TODO
     fprintf(fp_cpp, "  case %s_rule:", opClass);
 
     // Start local scope
     fprintf(fp_cpp, " {\n");
     // Generate code to construct the new MachNode
-    // TODO
     buildMachNode(fp_cpp, inst, "     ");
     // Return result and exit scope
     fprintf(fp_cpp, "      return node;\n");
