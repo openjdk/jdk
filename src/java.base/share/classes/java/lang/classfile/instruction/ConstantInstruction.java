@@ -145,15 +145,14 @@ public sealed interface ConstantInstruction extends Instruction {
     /**
      * {@return an argument constant instruction}
      *
-     * @param op the opcode for the specific type of intrinsic constant instruction,
-     *           which must be of kind {@link Opcode.Kind#CONSTANT}
+     * @param op the opcode for the specific type of argument constant instruction,
+     *           which must be {@link Opcode#BIPUSH} or {@link Opcode#SIPUSH}
      * @param value the constant value
      * @throws IllegalArgumentException if the opcode is not {@link Opcode#BIPUSH}
      *         or {@link Opcode#SIPUSH}, or if the constant value is out of range
      *         for the opcode
      */
     static ArgumentConstantInstruction ofArgument(Opcode op, int value) {
-        Util.checkKind(op, Opcode.Kind.CONSTANT);
         if (op == Opcode.BIPUSH) {
             BytecodeHelpers.validateBipush(value);
         } else if (op == Opcode.SIPUSH) {
