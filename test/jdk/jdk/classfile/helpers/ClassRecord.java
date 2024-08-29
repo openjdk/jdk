@@ -22,21 +22,13 @@
  */
 package helpers;
 
-import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.RecordComponent;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -53,8 +45,9 @@ import java.lang.classfile.instruction.*;
 
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
-import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.Opcode.OpcodeValues.*;
 import static java.lang.classfile.Attributes.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static helpers.ClassRecord.CompatibilityFilter.By_ClassBuilder;
 
 /**

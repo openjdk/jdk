@@ -24,6 +24,7 @@
  */
 package jdk.tools.jlink.internal.plugins;
 
+import java.lang.classfile.constantpool.PoolEntry;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.ResourceBundle.Control;
 import java.util.Set;
 import java.util.function.IntUnaryOperator;
@@ -41,7 +44,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import static java.lang.classfile.ClassFile.*;
+
 import jdk.tools.jlink.internal.ResourcePrevisitor;
 import jdk.tools.jlink.internal.StringTable;
 import jdk.tools.jlink.plugin.ResourcePoolModule;

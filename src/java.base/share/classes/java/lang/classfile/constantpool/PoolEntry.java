@@ -38,6 +38,60 @@ public sealed interface PoolEntry
                 LoadableConstantEntry, MemberRefEntry, ModuleEntry, NameAndTypeEntry,
                 PackageEntry {
 
+    /** The value of constant pool {@linkplain #tag tag} CLASS. */
+    int TAG_CLASS = 7;
+
+    /** The value of constant pool {@linkplain #tag tag} CONSTANTDYNAMIC. */
+    int TAG_CONSTANTDYNAMIC = 17;
+
+    /** The value of constant pool {@linkplain #tag tag} DOUBLE. */
+    int TAG_DOUBLE = 6;
+
+    /** The value of constant pool {@linkplain #tag tag} FIELDREF. */
+    int TAG_FIELDREF = 9;
+
+    /** The value of constant pool {@linkplain #tag tag} FLOAT. */
+    int TAG_FLOAT = 4;
+
+    /** The value of constant pool {@linkplain #tag tag} INTEGER. */
+    int TAG_INTEGER = 3;
+
+    /** The value of constant pool {@linkplain #tag tag} INTERFACEMETHODREF. */
+    int TAG_INTERFACEMETHODREF = 11;
+
+    /** The value of constant pool {@linkplain #tag tag} INVOKEDYNAMIC. */
+    int TAG_INVOKEDYNAMIC = 18;
+
+    /** The value of constant pool {@linkplain #tag tag} LONG. */
+    int TAG_LONG = 5;
+
+    /** The value of constant pool {@linkplain #tag tag} METHODHANDLE. */
+    int TAG_METHODHANDLE = 15;
+
+    /** The value of constant pool {@linkplain #tag tag} METHODREF. */
+    int TAG_METHODREF = 10;
+
+    /** The value of constant pool {@linkplain #tag tag} METHODTYPE. */
+    int TAG_METHODTYPE = 16;
+
+    /** The value of constant pool {@linkplain #tag tag} MODULE. */
+    int TAG_MODULE = 19;
+
+    /** The value of constant pool {@linkplain #tag tag} NAMEANDTYPE. */
+    int TAG_NAMEANDTYPE = 12;
+
+    /** The value of constant pool {@linkplain #tag tag} PACKAGE. */
+    int TAG_PACKAGE = 20;
+
+    /** The value of constant pool {@linkplain #tag tag} STRING. */
+    int TAG_STRING = 8;
+
+    /** The value of constant pool {@linkplain #tag tag} UNICODE. */
+    int TAG_UNICODE = 2;
+
+    /** The value of constant pool {@linkplain #tag tag} UTF8. */
+    int TAG_UTF8 = 1;
+
     /**
      * {@return the constant pool this entry is from}
      */

@@ -49,6 +49,7 @@ import jdk.internal.constant.ReferenceClassDescImpl;
 
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.classfile.Opcode.OpcodeValues.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.lang.constant.ConstantDescs.*;
 
 /**

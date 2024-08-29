@@ -40,6 +40,7 @@ import java.lang.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.referenceClassDesc;
 

@@ -36,23 +36,7 @@ import java.lang.classfile.*;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
 
-import static java.lang.classfile.ClassFile.TAG_CLASS;
-import static java.lang.classfile.ClassFile.TAG_CONSTANTDYNAMIC;
-import static java.lang.classfile.ClassFile.TAG_DOUBLE;
-import static java.lang.classfile.ClassFile.TAG_FIELDREF;
-import static java.lang.classfile.ClassFile.TAG_FLOAT;
-import static java.lang.classfile.ClassFile.TAG_INTEGER;
-import static java.lang.classfile.ClassFile.TAG_INTERFACEMETHODREF;
-import static java.lang.classfile.ClassFile.TAG_INVOKEDYNAMIC;
-import static java.lang.classfile.ClassFile.TAG_LONG;
-import static java.lang.classfile.ClassFile.TAG_METHODHANDLE;
-import static java.lang.classfile.ClassFile.TAG_METHODREF;
-import static java.lang.classfile.ClassFile.TAG_METHODTYPE;
-import static java.lang.classfile.ClassFile.TAG_MODULE;
-import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
-import static java.lang.classfile.ClassFile.TAG_PACKAGE;
-import static java.lang.classfile.ClassFile.TAG_STRING;
-import static java.lang.classfile.ClassFile.TAG_UTF8;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 
 public final class ClassReaderImpl
         implements ClassReader {

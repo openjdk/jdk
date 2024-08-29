@@ -581,60 +581,6 @@ public sealed interface ClassFile
     /** The bit mask of STATIC_PHASE access and property modifier. */
     int ACC_STATIC_PHASE = 0x40;
 
-    /** The value of constant pool tag CLASS. */
-    int TAG_CLASS = 7;
-
-    /** The value of constant pool tag CONSTANTDYNAMIC. */
-    int TAG_CONSTANTDYNAMIC = 17;
-
-    /** The value of constant pool tag DOUBLE. */
-    int TAG_DOUBLE = 6;
-
-    /** The value of constant pool tag FIELDREF. */
-    int TAG_FIELDREF = 9;
-
-    /** The value of constant pool tag FLOAT. */
-    int TAG_FLOAT = 4;
-
-    /** The value of constant pool tag INTEGER. */
-    int TAG_INTEGER = 3;
-
-    /** The value of constant pool tag INTERFACEMETHODREF. */
-    int TAG_INTERFACEMETHODREF = 11;
-
-    /** The value of constant pool tag INVOKEDYNAMIC. */
-    int TAG_INVOKEDYNAMIC = 18;
-
-    /** The value of constant pool tag LONG. */
-    int TAG_LONG = 5;
-
-    /** The value of constant pool tag METHODHANDLE. */
-    int TAG_METHODHANDLE = 15;
-
-    /** The value of constant pool tag METHODREF. */
-    int TAG_METHODREF = 10;
-
-    /** The value of constant pool tag METHODTYPE. */
-    int TAG_METHODTYPE = 16;
-
-    /** The value of constant pool tag MODULE. */
-    int TAG_MODULE = 19;
-
-    /** The value of constant pool tag NAMEANDTYPE. */
-    int TAG_NAMEANDTYPE = 12;
-
-    /** The value of constant pool tag PACKAGE. */
-    int TAG_PACKAGE = 20;
-
-    /** The value of constant pool tag STRING. */
-    int TAG_STRING = 8;
-
-    /** The value of constant pool tag UNICODE. */
-    int TAG_UNICODE = 2;
-
-    /** The value of constant pool tag UTF8. */
-    int TAG_UTF8 = 1;
-
     /** The class major version of JAVA_1. */
     int JAVA_1_VERSION = 45;
 

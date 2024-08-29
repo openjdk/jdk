@@ -58,9 +58,9 @@ import java.lang.classfile.attribute.StackMapFrameInfo.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.classfile.instruction.*;
 
-import static java.lang.classfile.ClassFile.*;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.FieldModel;
+import static java.lang.classfile.constantpool.PoolEntry.*;
 import static jdk.internal.classfile.impl.ClassPrinterImpl.Style.*;
 
 public final class ClassPrinterImpl {
