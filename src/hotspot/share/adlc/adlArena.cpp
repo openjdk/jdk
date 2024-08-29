@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ void* AdlReAllocateHeap(void* old_ptr, size_t size) {
 }
 
 void* AdlChunk::operator new(size_t requested_size, size_t length) throw() {
+  assert(requested_size <= SIZE_MAX - length, "overflow");
   return AdlCHeapObj::operator new(requested_size + length);
 }
 
@@ -129,6 +130,7 @@ void* AdlArena::grow( size_t x ) {
 //------------------------------calloc-----------------------------------------
 // Allocate zeroed storage in AdlArena
 void *AdlArena::Acalloc( size_t items, size_t x ) {
+  assert(items <= SIZE_MAX / x, "overflow");
   size_t z = items*x;   // Total size needed
   void *ptr = Amalloc(z);       // Get space
   memset( ptr, 0, z );          // Zap space
@@ -147,8 +149,9 @@ void *AdlArena::Arealloc( void *old_ptr, size_t old_size, size_t new_size ) {
   }
 
   // See if we can resize in-place
-  if( (c_old+old_size == _hwm) &&       // Adjusting recent thing
-      (c_old+new_size <= _max) ) {      // Still fits where it sits
+  if( (c_old+old_size == _hwm) &&            // Adjusting recent thing
+      ((size_t)(_max-c_old) >= new_size) ) { // Still fits where it sits, safe from overflow
+
     _hwm = c_old+new_size;      // Adjust hwm
     return c_old;               // Return old pointer
   }
