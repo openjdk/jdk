@@ -24,21 +24,22 @@
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 import java.lang.reflect.*;
-
 import jdk.internal.misc.Unsafe;
 
-// Run with
-// java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED -XX:+UseNewCode --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -XX:CompileCommand=compileonly,TestReachabilityFenceWithBuffer::test -Xbatch TestReachabilityFenceWithBuffer.java
-
+/*
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java --add-opens java.base/jdk.internal.misc=ALL-UNNAMED --add-exports java.base/jdk.internal.misc=ALL-UNNAMED -XX:CompileCommand=compileonly,TestReachabilityFenceWithBuffer::test -Xbatch -XX:+UseNewCode TestReachabilityFenceWithBuffer.java
+*/
 public class TestReachabilityFenceWithBuffer {
 
     static class MyBuffer {
+
         private static Unsafe UNSAFE;
+
         static {
             try {
                 Field field = Unsafe.class.getDeclaredField("theUnsafe");
                 field.setAccessible(true);
-                UNSAFE = (Unsafe)field.get(null);
+                UNSAFE = (Unsafe) field.get(null);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -56,9 +57,14 @@ public class TestReachabilityFenceWithBuffer {
 
             // Register a cleaner to free the memory when the buffer is garbage collected
             int lid = id; // Capture current value
-            Cleaner.create().register(this, () -> { free(lid); });
+            Cleaner.create()
+                .register(this, () -> {
+                    free(lid);
+                });
 
-            System.out.println("Created new buffer of size = " + size + " with id = " + id);
+            System.out.println(
+                "Created new buffer of size = " + size + " with id = " + id
+            );
         }
 
         private static void free(int id) {
@@ -76,56 +82,52 @@ public class TestReachabilityFenceWithBuffer {
         }
     }
 
-    static MyBuffer buffer = new MyBuffer(1000);
+    static MyBuffer buffer = new MyBuffer(100);
+
     static {
         // Initialize buffer
-        for (int i = 0; i < 1000; ++i) {
-            buffer.put(i, (byte)42);
+        for (int i = 0; i < 100; ++i) {
+            buffer.put(i, (byte) 42);
         }
     }
 
     static void test(int limit) {
         for (long j = 0; j < limit; j++) {
+            MyBuffer myBuffer = buffer;
+            if (myBuffer == null) return;
             for (int i = 0; i < 100; i++) {
-                MyBuffer myBuffer = buffer;
-                if (myBuffer == null) return;
                 byte b = myBuffer.get(i);
                 if (b != 42) {
-                    throw new RuntimeException("Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!");
+                    throw new RuntimeException(
+                        "Unexpected value = " +
+                        b +
+                        ". Buffer was garbage collected before reachabilityFence was reached!"
+                    );
                 }
-                // Keep the buffer live while we read from it
-                Reference.reachabilityFence(myBuffer);
             }
+            // Keep the buffer live while we read from it
+            Reference.reachabilityFence(myBuffer);
         }
     }
 
     public static void main(String[] args) throws Exception {
         // Warmup to trigger compilation
-        for (int i = 0; i < 20000; i++) {
+        for (int i = 0; i < 20; i++) {
             test(100);
         }
 
         // Clear reference to 'buffer' and make sure it's garbage collected
         Thread gcThread = new Thread() {
             public void run() {
-                try {
-                    buffer = null;
-                    System.out.println("Buffer set to null. Waiting for garbage collection.");
-                    while (true) {
-                        Thread.sleep(50);
-                        System.gc();
-                    }
-                } catch (Throwable e) {
-                    throw new InternalError(e);
-                }
+                buffer = null;
+                System.out.println(
+                    "Buffer set to null. Waiting for garbage collection."
+                );
+                System.gc();
             }
         };
-        gcThread.setDaemon(true);
         gcThread.start();
 
-        test(10_000_000);
-
-        // Wait for garbage collection
-        while (MyBuffer.payload[0] != 0) { }
+        test(100_000);
     }
 }

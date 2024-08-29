@@ -25,8 +25,8 @@ import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
 
 /*
- /Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence::test -Xbatch ReachabilityFence.java
-*/
+/Users/tholenst/dev/jdk7/build/macosx-aarch64-debug/jdk/bin/java -XX:CompileCommand=compileonly,*ReachabilityFence::test -Xbatch ReachabilityFence.java
+ */
 public class ReachabilityFence {
 
     static MyClass obj = new MyClass();
@@ -38,15 +38,12 @@ public class ReachabilityFence {
 
     static void test(int limit) {
         for (long j = 0; j < limit; j++) {
+            MyClass myObject = obj;
             for (int i = 0; i < 100; i++) {
-                MyClass myObject = obj;
                 if (myObject == null) return;
-                {
-                    // This would be some code that requires that myObject stays live
-                    if (MyClass.collected[i]) throw new RuntimeException(
-                        "myObject collected before reachabilityFence was reached!"
-                    );
-                }
+                if (MyClass.collected[i]) throw new RuntimeException(
+                    "myObject collected before reachabilityFence was reached!"
+                );
                 Reference.reachabilityFence(myObject);
             }
         }
@@ -61,31 +58,22 @@ public class ReachabilityFence {
             });
 
         // Warmup to trigger compilation
-        for (int i = 0; i < 20_000; i++) {
+        for (int i = 0; i < 20; i++) {
             test(100);
         }
 
         // Clear reference to 'obj' and make sure it's garbage collected
         Thread gcThread = new Thread() {
             public void run() {
-                try {
-                    obj = null;
-                    System.out.println("obj set to null");
-                    while (true) {
-                        Thread.sleep(50);
-                        System.gc();
-                    }
-                } catch (Throwable e) {
-                    throw new InternalError(e);
-                }
+                obj = null;
+                System.out.println(
+                    "obj set to null. Waiting to be garbage collected"
+                );
+                System.gc();
             }
         };
-        gcThread.setDaemon(true);
         gcThread.start();
 
-        test(10_000_000);
-
-        // Wait
-        while (!MyClass.collected[0]) {}
+        test(100_000);
     }
 }
