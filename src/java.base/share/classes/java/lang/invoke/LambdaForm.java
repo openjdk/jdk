@@ -196,16 +196,12 @@ class LambdaForm {
             };
         }
         static BasicType basicType(Class<?> type) {
-            if (type == int.class
-             || type == short.class
-             || type == byte.class
-             || type == char.class
-             || type == boolean.class) return I_TYPE;
-            if (type == long.class   ) return J_TYPE;
-            if (type == float.class  ) return F_TYPE;
-            if (type == double.class ) return D_TYPE;
-            if (type == void.class   ) return V_TYPE;
-            else                       return L_TYPE;
+            if (!type.isPrimitive() ) return L_TYPE;
+            if (type == long.class  ) return J_TYPE;
+            if (type == float.class ) return F_TYPE;
+            if (type == double.class) return D_TYPE;
+            if (type == void.class  ) return V_TYPE;
+            else                      return I_TYPE; // int, short, byte, char, boolean
         }
         static int[] basicTypeOrds(BasicType[] types) {
             if (types == null) {
