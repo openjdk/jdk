@@ -2466,10 +2466,10 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
     Register dsts[] = {rx};
     // VectorRegister vdsts[] = {v6, vx, vy, vz, v00, v01, v02};
     VectorRegister vdsts[] = {v6, vx, vy};
-    for (int i = 0; i < sizeof(dsts)/sizeof(Register); i++) {
+    for (size_t i = 0; i < sizeof(dsts)/sizeof(Register); i++) {
       mv(dsts[i], src);
     }
-    for (int j = 0; j < sizeof(vdsts)/sizeof(VectorRegister); j++) {
+    for (size_t j = 0; j < sizeof(vdsts)/sizeof(VectorRegister); j++) {
       vlex_v(vdsts[j], src, Assembler::e32);
     }
 
