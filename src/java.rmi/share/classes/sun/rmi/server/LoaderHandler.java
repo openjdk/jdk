@@ -209,27 +209,12 @@ public final class LoaderHandler {
     }
 
     /**
-     * Returns a classloader that loads classes from the given codebase URL
-     * path.  The parent classloader of the returned classloader is the
-     * context class loader.
+     * Returns the thread context classloader. The codebase argument is ignored.
      */
     public static ClassLoader getClassLoader(String codebase)
         throws MalformedURLException
     {
-        ClassLoader parent = Thread.currentThread().getContextClassLoader();
-
-        URL[] urls;
-        if (codebase != null) {
-            urls = pathToURLs(codebase);
-        } else {
-            urls = getDefaultCodebaseURLs();
-        }
-
-        /*
-         * There is no security manager, so disable access to
-         * RMI class loaders and simply return the parent loader.
-         */
-        return parent;
+        return Thread.currentThread().getContextClassLoader();
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,7 @@ import java.util.ServiceLoader;
  * the location from which an existing class should be loaded by
  * remote parties.  These methods are used by the RMI runtime when
  * marshalling and unmarshalling classes contained in the arguments
- * and return values of remote method calls, and they also may be
- * invoked directly by applications in order to mimic RMI's dynamic
- * class loading behavior.
+ * and return values of remote method calls.
  *
  * <p>The implementation of the following static methods
  *
@@ -429,39 +427,19 @@ public class RMIClassLoader {
      *
      * </ul>
      *
-     * <p>FIXME: For the implementations of the methods described below,
+     * <p>For the implementations of the methods described below,
      * which all take a <code>String</code> parameter named
      * <code>codebase</code> that is a space-separated list of URLs,
-     * each invocation has an associated <i>codebase loader</i> that
-     * is identified using the <code>codebase</code> argument in
-     * conjunction with the current thread's context class loader (see
-     * {@link Thread#getContextClassLoader()}). When there is a
-     * security manager, this provider maintains an internal table of
-     * class loader instances (which are at least instances of {@link
-     * java.net.URLClassLoader}) keyed by the pair of their parent
-     * class loader and their codebase URL path (an ordered list of
-     * URLs).  If the <code>codebase</code> argument is <code>null</code>,
-     * the codebase URL path is the value of the system property
-     * <code>java.rmi.server.codebase</code> or possibly an
-     * earlier cached value.  For a given codebase URL path passed as the
-     * <code>codebase</code> argument to an invocation of one of the
-     * below methods in a given context, the codebase loader is the
-     * loader in the table with the specified codebase URL path and
-     * the current thread's context class loader as its parent.  If no
-     * such loader exists, then one is created and added to the table.
-     * The table does not maintain strong references to its contained
-     * loaders, in order to allow them and their defined classes to be
-     * garbage collected when not otherwise reachable.  In order to
-     * prevent arbitrary untrusted code from being implicitly loaded
-     * into a virtual machine with no security manager, if there is no
-     * security manager set, the codebase loader is just the current
-     * thread's context class loader (the supplied codebase URL path
-     * is ignored, so remote class loading is disabled).
-     *
+     * the <code>codebase</code> argument is ignored. Class loading
+     * proceeds using the the current thread's context class loader
+     * (see {@link Thread#getContextClassLoader()}), which is also
+     * considered to be the codebase loader, irrespective of any
+     * value passed as the <code>codebase</code> argument.
+     * 
      * <p>The <b>{@link RMIClassLoaderSpi#getClassLoader(String)
-     * getClassLoader}</b> method returns the codebase loader for the
-     * specified codebase URL path.
-     *
+     * getClassLoader}</b> method returns the current thread's
+     * context class loader.
+     * 
      * <p>The <b>{@link
      * RMIClassLoaderSpi#loadClass(String,String,ClassLoader)
      * loadClass}</b> method attempts to load the class with the
@@ -472,7 +450,7 @@ public class RMIClassLoader {
      * If the <code>defaultLoader</code> argument is
      * non-<code>null</code>, it first attempts to load the class with the
      * specified <code>name</code> using the
-     * <code>defaultLoader</code>, such as by evaluating
+     * <code>defaultLoader</code>, as if by evaluating
      *
      * <pre>
      *     Class.forName(name, false, defaultLoader)
@@ -484,9 +462,9 @@ public class RMIClassLoader {
      * thrown, that exception is thrown to the caller.
      *
      * <p>Next, the <code>loadClass</code> method attempts to load the
-     * class with the specified <code>name</code> using the codebase
-     * loader for the specified codebase URL path.
-     *
+     * class with the specified <code>name</code> using the current
+     * thread's context class loader.
+     * 
      * </blockquote>
      *
      * <p>The <b>{@link
