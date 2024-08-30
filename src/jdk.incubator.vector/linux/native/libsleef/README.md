@@ -28,7 +28,7 @@ To update the version of libsleef that is used in the JDK, clone
 and `.github` directories, into
 `src/jdk.incubator.vector/linux/native/libsleef/upstream`.
 
-The libsleef source code do not follow the JDK whitespace rules as enforced by
+The libsleef source code does not follow the JDK whitespace rules as enforced by
 jcheck. You will need to remove trailing whitespaces, and expand tabs to 8
 spaces in the imported source code.
 
