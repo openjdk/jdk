@@ -161,7 +161,7 @@ static INLINE vdouble2 ddigetdd_vd2_ddi(ddi_t d) {
 static INLINE vint ddigeti_vi_ddi(ddi_t d) { return svreinterpret_s32_f64(svget3_f64(d, 2)); }
 static INLINE ddi_t ddisetddi_ddi_vd2_vi(vdouble2 v, vint i) {
   return svcreate3_f64(svget2_f64(v, 0), svget2_f64(v, 1),
-		       svreinterpret_f64_s32(i));
+                       svreinterpret_f64_s32(i));
 }
 static INLINE ddi_t ddisetdd_ddi_ddi_vd2(ddi_t ddi, vdouble2 v) {
   return svcreate3_f64(svget2_f64(v, 0), svget2_f64(v, 1), svget3_f64(ddi, 2));
@@ -177,7 +177,7 @@ static INLINE vfloat2 dfigetdf_vf2_dfi(dfi_t d) {
 static INLINE vint2 dfigeti_vi2_dfi(dfi_t d) { return svreinterpret_s32_f32(svget3_f32(d, 2)); }
 static INLINE dfi_t dfisetdfi_dfi_vf2_vi2(vfloat2 v, vint2 i) {
   return svcreate3_f32(svget2_f32(v, 0), svget2_f32(v, 1),
-		       svreinterpret_f32_s32(i));
+                       svreinterpret_f32_s32(i));
 }
 static INLINE dfi_t dfisetdf_dfi_dfi_vf2(dfi_t dfi, vfloat2 v) {
   return svcreate3_f32(svget2_f32(v, 0), svget2_f32(v, 1), svget3_f32(dfi, 2));
@@ -189,7 +189,7 @@ typedef svfloat64x4_t dd2;
 
 static INLINE dd2 dd2setab_dd2_vd2_vd2(vdouble2 a, vdouble2 b) {
   return svcreate4_f64(svget2_f64(a, 0), svget2_f64(a, 1),
-		       svget2_f64(b, 0), svget2_f64(b, 1));
+                       svget2_f64(b, 0), svget2_f64(b, 1));
 }
 static INLINE vdouble2 dd2geta_vd2_dd2(dd2 d) {
   return svcreate2_f64(svget4_f64(d, 0), svget4_f64(d, 1));
@@ -204,7 +204,7 @@ typedef svfloat32x4_t df2;
 
 static INLINE df2 df2setab_df2_vf2_vf2(vfloat2 a, vfloat2 b) {
   return svcreate4_f32(svget2_f32(a, 0), svget2_f32(a, 1),
-		       svget2_f32(b, 0), svget2_f32(b, 1));
+                       svget2_f32(b, 0), svget2_f32(b, 1));
 }
 static INLINE vfloat2 df2geta_vf2_df2(df2 d) {
   return svcreate2_f32(svget4_f32(d, 0), svget4_f32(d, 1));
@@ -269,7 +269,7 @@ static INLINE vdouble tdigetx_vd_tdi(tdi_t d) { return svget4_f64(d, 0); }
 static INLINE vint tdigeti_vi_tdi(tdi_t d) { return svreinterpret_s32_f64(svget4_f64(d, 3)); }
 static INLINE tdi_t tdisettdi_tdi_vd3_vi(vdouble3 v, vint i) {
   return svcreate4_f64(svget3_f64(v, 0), svget3_f64(v, 1), svget3_f64(v, 2),
-		       svreinterpret_f64_s32(i));
+                       svreinterpret_f64_s32(i));
 }
 static INLINE tdi_t tdisettd_tdi_tdi_vd3(tdi_t tdi, vdouble3 v) {
   return svcreate4_f64(svget3_f64(v, 0), svget3_f64(v, 1), svget3_f64(v, 2), svget4_f64(tdi, 3));
@@ -467,7 +467,7 @@ static INLINE vfloat vrec_vf_vf(vfloat d) {
   return svdivr_n_f32_x(ptrue, d, 1.0f);
 #else
   return vsel_vf_vo_vf_vf(svcmpeq_f32(ptrue, vabs_vf_vf(d), vcast_vf_f(SLEEF_INFINITYf)),
-			  vcast_vf_f(0), vdiv_vf_vf_vf(vcast_vf_f(1.0f), d));
+                          vcast_vf_f(0), vdiv_vf_vf_vf(vcast_vf_f(1.0f), d));
 #endif
 }
 static INLINE vfloat vsqrt_vf_vf(vfloat d) {
@@ -491,7 +491,7 @@ static INLINE vfloat vsqrt_vf_vf(vfloat d) {
   w = vadd_vf_vf_vf(w, x);
 
   return svsel_f32(svorr_b_z(ptrue, svcmpeq_f32(ptrue, d, vcast_vf_f(0)),
-			     svcmpeq_f32(ptrue, d, vcast_vf_f(SLEEF_INFINITYf))), d, w);
+                             svcmpeq_f32(ptrue, d, vcast_vf_f(SLEEF_INFINITYf))), d, w);
 #endif
 }
 //
@@ -827,7 +827,7 @@ static INLINE vdouble vrec_vd_vd(vdouble d) {
   return svdivr_n_f64_x(ptrue, d, 1.0);
 #else
   return vsel_vd_vo_vd_vd(svcmpeq_f64(ptrue, vabs_vd_vd(d), vcast_vd_d(SLEEF_INFINITY)),
-			  vcast_vd_d(0), vdiv_vd_vd_vd(vcast_vd_d(1.0f), d));
+                          vcast_vd_d(0), vdiv_vd_vd_vd(vcast_vd_d(1.0f), d));
 #endif
 }
 static INLINE vdouble vsqrt_vd_vd(vdouble d) {
@@ -853,7 +853,7 @@ static INLINE vdouble vsqrt_vd_vd(vdouble d) {
   w = vadd_vd_vd_vd(w, x);
 
   return svsel_f64(svorr_b_z(ptrue, svcmpeq_f64(ptrue, d, vcast_vd_d(0)),
-			     svcmpeq_f64(ptrue, d, vcast_vd_d(SLEEF_INFINITY))), d, w);
+                             svcmpeq_f64(ptrue, d, vcast_vd_d(SLEEF_INFINITY))), d, w);
 #endif
 }
 

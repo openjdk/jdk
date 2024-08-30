@@ -222,21 +222,21 @@ static void dispatch(SleefDFT *p, const int N, real *d, const real *s, const int
 #endif
 
 #define BS (1 << LOG2BS)
-#define TRANSPOSE_BLOCK(y2) do {					\
-    for(int x2=y2+1;x2<BS;x2++) {					\
-      element_t r = *(element_t *)&row[y2].r[x2*2+0];			\
+#define TRANSPOSE_BLOCK(y2) do {                                        \
+    for(int x2=y2+1;x2<BS;x2++) {                                       \
+      element_t r = *(element_t *)&row[y2].r[x2*2+0];                   \
       *(element_t *)&row[y2].r[x2*2+0] = *(element_t *)&row[x2].r[y2*2+0]; \
-      *(element_t *)&row[x2].r[y2*2+0] = r;				\
+      *(element_t *)&row[x2].r[y2*2+0] = r;                             \
     }} while(0)
 
 static void transpose(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(256) s, const int log2n, const int log2m) {
   if (log2n < LOG2BS || log2m < LOG2BS) {
     for(int y=0;y<(1 << log2n);y++) {
       for(int x=0;x<(1 << log2m);x++) {
-	real r0 = s[((y << log2m)+x)*2+0];
-	real r1 = s[((y << log2m)+x)*2+1];
-	d[((x << log2n)+y)*2+0] = r0;
-	d[((x << log2n)+y)*2+1] = r1;
+        real r0 = s[((y << log2m)+x)*2+0];
+        real r1 = s[((y << log2m)+x)*2+1];
+        d[((x << log2n)+y)*2+0] = r0;
+        d[((x << log2n)+y)*2+1] = r1;
       }
     }
   } else {
@@ -249,32 +249,32 @@ static void transpose(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(256)
 #endif
     for(int y=0;y<(1 << log2n);y+=BS) {
       for(int x=0;x<(1 << log2m);x+=BS) {
-	row_t row[BS];
-	for(int y2=0;y2<BS;y2++) {
-	  row[y2] = *(row_t *)&s[(((y+y2) << log2m)+x)*2];
-	}
+        row_t row[BS];
+        for(int y2=0;y2<BS;y2++) {
+          row[y2] = *(row_t *)&s[(((y+y2) << log2m)+x)*2];
+        }
 
 #if LOG2BS == 4
-	TRANSPOSE_BLOCK( 0); TRANSPOSE_BLOCK( 1);
-	TRANSPOSE_BLOCK( 2); TRANSPOSE_BLOCK( 3);
-	TRANSPOSE_BLOCK( 4); TRANSPOSE_BLOCK( 5);
-	TRANSPOSE_BLOCK( 6); TRANSPOSE_BLOCK( 7);
-	TRANSPOSE_BLOCK( 8); TRANSPOSE_BLOCK( 9);
-	TRANSPOSE_BLOCK(10); TRANSPOSE_BLOCK(11);
-	TRANSPOSE_BLOCK(12); TRANSPOSE_BLOCK(13);
-	TRANSPOSE_BLOCK(14); TRANSPOSE_BLOCK(15);
+        TRANSPOSE_BLOCK( 0); TRANSPOSE_BLOCK( 1);
+        TRANSPOSE_BLOCK( 2); TRANSPOSE_BLOCK( 3);
+        TRANSPOSE_BLOCK( 4); TRANSPOSE_BLOCK( 5);
+        TRANSPOSE_BLOCK( 6); TRANSPOSE_BLOCK( 7);
+        TRANSPOSE_BLOCK( 8); TRANSPOSE_BLOCK( 9);
+        TRANSPOSE_BLOCK(10); TRANSPOSE_BLOCK(11);
+        TRANSPOSE_BLOCK(12); TRANSPOSE_BLOCK(13);
+        TRANSPOSE_BLOCK(14); TRANSPOSE_BLOCK(15);
 #else
-	for(int y2=0;y2<BS;y2++) {
-	  for(int x2=y2+1;x2<BS;x2++) {
-	    element_t r = *(element_t *)&row[y2].r[x2*2+0];
-	    *(element_t *)&row[y2].r[x2*2+0] = *(element_t *)&row[x2].r[y2*2+0];
-	    *(element_t *)&row[x2].r[y2*2+0] = r;
-	  }
-	}
+        for(int y2=0;y2<BS;y2++) {
+          for(int x2=y2+1;x2<BS;x2++) {
+            element_t r = *(element_t *)&row[y2].r[x2*2+0];
+            *(element_t *)&row[y2].r[x2*2+0] = *(element_t *)&row[x2].r[y2*2+0];
+            *(element_t *)&row[x2].r[y2*2+0] = r;
+          }
+        }
 #endif
-	for(int y2=0;y2<BS;y2++) {
-	  *(row_t *)&d[(((x+y2) << log2n)+y)*2] = row[y2];
-	}
+        for(int y2=0;y2<BS;y2++) {
+          *(row_t *)&d[(((x+y2) << log2n)+y)*2] = row[y2];
+        }
       }
     }
   }
@@ -285,10 +285,10 @@ static void transposeMT(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(25
   if (log2n < LOG2BS || log2m < LOG2BS) {
     for(int y=0;y<(1 << log2n);y++) {
       for(int x=0;x<(1 << log2m);x++) {
-	real r0 = s[((y << log2m)+x)*2+0];
-	real r1 = s[((y << log2m)+x)*2+1];
-	d[((x << log2n)+y)*2+0] = r0;
-	d[((x << log2n)+y)*2+1] = r1;
+        real r0 = s[((y << log2m)+x)*2+0];
+        real r1 = s[((y << log2m)+x)*2+1];
+        d[((x << log2n)+y)*2+0] = r0;
+        d[((x << log2n)+y)*2+1] = r1;
       }
     }
   } else {
@@ -303,32 +303,32 @@ static void transposeMT(real *RESTRICT ALIGNED(256) d, real *RESTRICT ALIGNED(25
 #pragma omp parallel for
     for(y=0;y<(1 << log2n);y+=BS) {
       for(int x=0;x<(1 << log2m);x+=BS) {
-	row_t row[BS];
-	for(int y2=0;y2<BS;y2++) {
-	  row[y2] = *(row_t *)&s[(((y+y2) << log2m)+x)*2];
-	}
+        row_t row[BS];
+        for(int y2=0;y2<BS;y2++) {
+          row[y2] = *(row_t *)&s[(((y+y2) << log2m)+x)*2];
+        }
 
 #if LOG2BS == 4
-	TRANSPOSE_BLOCK( 0); TRANSPOSE_BLOCK( 1);
-	TRANSPOSE_BLOCK( 2); TRANSPOSE_BLOCK( 3);
-	TRANSPOSE_BLOCK( 4); TRANSPOSE_BLOCK( 5);
-	TRANSPOSE_BLOCK( 6); TRANSPOSE_BLOCK( 7);
-	TRANSPOSE_BLOCK( 8); TRANSPOSE_BLOCK( 9);
-	TRANSPOSE_BLOCK(10); TRANSPOSE_BLOCK(11);
-	TRANSPOSE_BLOCK(12); TRANSPOSE_BLOCK(13);
-	TRANSPOSE_BLOCK(14); TRANSPOSE_BLOCK(15);
+        TRANSPOSE_BLOCK( 0); TRANSPOSE_BLOCK( 1);
+        TRANSPOSE_BLOCK( 2); TRANSPOSE_BLOCK( 3);
+        TRANSPOSE_BLOCK( 4); TRANSPOSE_BLOCK( 5);
+        TRANSPOSE_BLOCK( 6); TRANSPOSE_BLOCK( 7);
+        TRANSPOSE_BLOCK( 8); TRANSPOSE_BLOCK( 9);
+        TRANSPOSE_BLOCK(10); TRANSPOSE_BLOCK(11);
+        TRANSPOSE_BLOCK(12); TRANSPOSE_BLOCK(13);
+        TRANSPOSE_BLOCK(14); TRANSPOSE_BLOCK(15);
 #else
-	for(int y2=0;y2<BS;y2++) {
-	  for(int x2=y2+1;x2<BS;x2++) {
-	    element_t r = *(element_t *)&row[y2].r[x2*2+0];
-	    *(element_t *)&row[y2].r[x2*2+0] = *(element_t *)&row[x2].r[y2*2+0];
-	    *(element_t *)&row[x2].r[y2*2+0] = r;
-	  }
-	}
+        for(int y2=0;y2<BS;y2++) {
+          for(int x2=y2+1;x2<BS;x2++) {
+            element_t r = *(element_t *)&row[y2].r[x2*2+0];
+            *(element_t *)&row[y2].r[x2*2+0] = *(element_t *)&row[x2].r[y2*2+0];
+            *(element_t *)&row[x2].r[y2*2+0] = r;
+          }
+        }
 #endif
-	for(int y2=0;y2<BS;y2++) {
-	  *(row_t *)&d[(((x+y2) << log2n)+y)*2] = row[y2];
-	}
+        for(int y2=0;y2<BS;y2++) {
+          *(row_t *)&d[(((x+y2) << log2n)+y)*2] = row[y2];
+        }
       }
     }
   }
@@ -353,12 +353,12 @@ static int makeTableRecurse(real *x, int *p, const int log2len, const int levelo
     const int w = bl/4;
     for(int j=0;j<(bot-top)/bl;j++) {
       for(int i=0;i<w;i++) {
-	int a = sign*(p[(levelinc << N) + top+bl*j+i] & (-1 << (log2len - level)));
-	sc_t sc;
-	sc = r2coefsc(a, log2len, level);
-	x[cnt++] = -sc.x; x[cnt++] = -sc.y;
-	sc = srcoefsc(a, log2len, level);
-	x[cnt++] = -sc.x; x[cnt++] = -sc.y;
+        int a = sign*(p[(levelinc << N) + top+bl*j+i] & (-1 << (log2len - level)));
+        sc_t sc;
+        sc = r2coefsc(a, log2len, level);
+        x[cnt++] = -sc.x; x[cnt++] = -sc.y;
+        sc = srcoefsc(a, log2len, level);
+        x[cnt++] = -sc.x; x[cnt++] = -sc.y;
       }
       cnt = makeTableRecurse(x, p, log2len, levelorg, levelinc+1, sign, top+bl*j       , top+bl*j + bl/2, N, cnt);
       cnt = makeTableRecurse(x, p, log2len, levelorg, levelinc+2, sign, top+bl*j + bl/2, top+bl*j + bl  , N, cnt);
@@ -404,9 +404,9 @@ static real **makeTable(int sign, int vecwidth, int log2len, const int N, const 
 
     for(int i0=0;i0 < (1 << (log2len-N));i0+=(1 << (log2len - level))) {
       for(int j=0;j<N+1;j++) {
-	for(int i=0;i<(1 << N);i++) {
-	  p[(j << N) + i] = perm(log2len, i0 + (i << (log2len-N)), log2len-level, log2len-(level-j));
-	}
+        for(int i=0;i<(1 << N);i++) {
+          p[(j << N) + i] = perm(log2len, i0 + (i << (log2len-N)), log2len-level, log2len-(level-j));
+        }
       }
 
       int a = -sign*(p[((N-1) << N) + 0] & (-1 << (log2len - level)));
@@ -420,14 +420,14 @@ static real **makeTable(int sign, int vecwidth, int log2len, const int N, const 
       real *atbl = (real *)Sleef_malloc(sizeof(real)*(K << (log2len-N))*2);
       tblOffset = 0;
       while(tblOffset < (K << (log2len-N))) {
-	for(int k=0;k < K;k++) {
-	  for(int v = 0;v < vecwidth;v++) {
-	    assert((tblOffset + k * vecwidth + v)*2 + 1 < (K << (log2len-N))*2);
-	    atbl[(tblOffset + k * vecwidth + v)*2 + 0] = tbl[log2len][tblOffset + v * K + k];
-	    atbl[(tblOffset + k * vecwidth + v)*2 + 1] = tbl[log2len][tblOffset + v * K + k];
-	  }
-	}
-	tblOffset += K * vecwidth;
+        for(int k=0;k < K;k++) {
+          for(int v = 0;v < vecwidth;v++) {
+            assert((tblOffset + k * vecwidth + v)*2 + 1 < (K << (log2len-N))*2);
+            atbl[(tblOffset + k * vecwidth + v)*2 + 0] = tbl[log2len][tblOffset + v * K + k];
+            atbl[(tblOffset + k * vecwidth + v)*2 + 1] = tbl[log2len][tblOffset + v * K + k];
+          }
+        }
+        tblOffset += K * vecwidth;
       }
       Sleef_free(tbl[log2len]);
       tbl[log2len] = atbl;
@@ -645,8 +645,8 @@ static void searchForBestPath(SleefDFT *p) {
 
     for(int i=0;i<ksSize(q);i++) {
       if (ksCost(q, i) < bestCost) {
-	bestCost = ksCost(q, i);
-	bestPathNum = i;
+        bestCost = ksCost(q, i);
+        bestPathNum = i;
       }
     }
     if (bestPathNum == -1) break;
@@ -696,70 +696,70 @@ static void searchForBestPath(SleefDFT *p) {
 
     for(int mt=0;mt<2;mt++) {
       for(int i=q->nPaths-1;i>=0;i--) {
-	if (((pos2config(q->path[i][0]) & CONFIG_MT) != 0) != mt) continue;
+        if (((pos2config(q->path[i][0]) & CONFIG_MT) != 0) != mt) continue;
 
-	if ((p->mode & SLEEF_MODE_VERBOSE) != 0) {
-	  for(int j=0;j<q->pathLen[i];j++) {
-	    int N = pos2N(q->path[i][j]);
-	    int level = pos2level(q->path[i][j]);
-	    int config = pos2config(q->path[i][j]) & ~1;
-	    uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
-	    uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
-	    config = t0 < t1 ? config : (config | 1);
+        if ((p->mode & SLEEF_MODE_VERBOSE) != 0) {
+          for(int j=0;j<q->pathLen[i];j++) {
+            int N = pos2N(q->path[i][j]);
+            int level = pos2level(q->path[i][j]);
+            int config = pos2config(q->path[i][j]) & ~1;
+            uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
+            uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
+            config = t0 < t1 ? config : (config | 1);
 
-	    if (N != 0) printf("%d(%s) ", N, configStr[config]);
-	  }
-	}
+            if (N != 0) printf("%d(%s) ", N, configStr[config]);
+          }
+        }
 
-	if (mt) startAllThreads(p->nThread);
+        if (mt) startAllThreads(p->nThread);
 
-	uint64_t tm0 = Sleef_currentTimeMicros();
-	for(int k=0;k<niter;k++) {
-	  int nb = 0;
-	  const real *lb = s;
-	  if ((p->pathLen & 1) == 1) nb = -1;
-	  for(int level = p->log2len, j=0;level >= 1;j++) {
-	    assert(pos2level(q->path[i][j]) == level);
-	    int N = pos2N(q->path[i][j]);
-	    int config = pos2config(q->path[i][j]) & ~1;
-	    uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
-	    uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
-	    config = t0 < t1 ? config : (config | 1);
-	    dispatch(p, N, t[nb+1], lb, level, config);
-	    level -= N;
-	    lb = t[nb+1];
-	    nb = (nb + 1) & 1;
-	  }
-	}
-	uint64_t tm1 = Sleef_currentTimeMicros();
-	for(int k=0;k<niter;k++) {
-	  int nb = 0;
-	  const real *lb = s;
-	  if ((p->pathLen & 1) == 1) nb = -1;
-	  for(int level = p->log2len, j=0;level >= 1;j++) {
-	    assert(pos2level(q->path[i][j]) == level);
-	    int N = pos2N(q->path[i][j]);
-	    int config = pos2config(q->path[i][j]) & ~1;
-	    uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
-	    uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
-	    config = t0 < t1 ? config : (config | 1);
-	    dispatch(p, N, t[nb+1], lb, level, config);
-	    level -= N;
-	    lb = t[nb+1];
-	    nb = (nb + 1) & 1;
-	  }
-	}
-	uint64_t tm2 = Sleef_currentTimeMicros();
+        uint64_t tm0 = Sleef_currentTimeMicros();
+        for(int k=0;k<niter;k++) {
+          int nb = 0;
+          const real *lb = s;
+          if ((p->pathLen & 1) == 1) nb = -1;
+          for(int level = p->log2len, j=0;level >= 1;j++) {
+            assert(pos2level(q->path[i][j]) == level);
+            int N = pos2N(q->path[i][j]);
+            int config = pos2config(q->path[i][j]) & ~1;
+            uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
+            uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
+            config = t0 < t1 ? config : (config | 1);
+            dispatch(p, N, t[nb+1], lb, level, config);
+            level -= N;
+            lb = t[nb+1];
+            nb = (nb + 1) & 1;
+          }
+        }
+        uint64_t tm1 = Sleef_currentTimeMicros();
+        for(int k=0;k<niter;k++) {
+          int nb = 0;
+          const real *lb = s;
+          if ((p->pathLen & 1) == 1) nb = -1;
+          for(int level = p->log2len, j=0;level >= 1;j++) {
+            assert(pos2level(q->path[i][j]) == level);
+            int N = pos2N(q->path[i][j]);
+            int config = pos2config(q->path[i][j]) & ~1;
+            uint64_t t0 = q->p->tm[config | 0][level*(MAXBUTWIDTH+1) + N];
+            uint64_t t1 = q->p->tm[config | 1][level*(MAXBUTWIDTH+1) + N];
+            config = t0 < t1 ? config : (config | 1);
+            dispatch(p, N, t[nb+1], lb, level, config);
+            level -= N;
+            lb = t[nb+1];
+            nb = (nb + 1) & 1;
+          }
+        }
+        uint64_t tm2 = Sleef_currentTimeMicros();
 
-	if ((p->mode & SLEEF_MODE_VERBOSE) != 0) printf(" : %lld %lld\n", (long long int)(tm1 - tm0), (long long int)(tm2 - tm1));
-	if ((tm1 - tm0) < besttm) {
-	  bestPath = i;
-	  besttm = tm1 - tm0;
-	}
-	if ((tm2 - tm1) < besttm) {
-	  bestPath = i;
-	  besttm = tm2 - tm1;
-	}
+        if ((p->mode & SLEEF_MODE_VERBOSE) != 0) printf(" : %lld %lld\n", (long long int)(tm1 - tm0), (long long int)(tm2 - tm1));
+        if ((tm1 - tm0) < besttm) {
+          bestPath = i;
+          besttm = tm1 - tm0;
+        }
+        if ((tm2 - tm1) < besttm) {
+          bestPath = i;
+          besttm = tm2 - tm1;
+        }
       }
     }
 
@@ -827,70 +827,70 @@ static void measureBut(SleefDFT *p) {
 #endif
       if ((p->mode2 & SLEEF_MODE2_MT1D) == 0 && (config & CONFIG_MT) != 0) continue;
       for(uint32_t level = p->log2len;level >= 1;level--) {
-	for(uint32_t N=1;N<=MAXBUTWIDTH;N++) {
-	  if (level < N || p->log2len <= N) continue;
-	  if (level == N) {
-	    if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+        for(uint32_t N=1;N<=MAXBUTWIDTH;N++) {
+          if (level < N || p->log2len <= N) continue;
+          if (level == N) {
+            if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
 
-	    uint64_t tm = Sleef_currentTimeMicros();
-	    for(int i=0;i<niter*2;i++) {
-	      dispatch(p, N, d, s, level, config);
-	    }
-	    tm = Sleef_currentTimeMicros() - tm + 1;
-	    p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
-	  } else if (level == p->log2len) {
-	    if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	    if (p->vecwidth > (1 << N)) continue;
-	    if ((config & CONFIG_MT) != 0) {
-	      int i1=0;
+            uint64_t tm = Sleef_currentTimeMicros();
+            for(int i=0;i<niter*2;i++) {
+              dispatch(p, N, d, s, level, config);
+            }
+            tm = Sleef_currentTimeMicros() - tm + 1;
+            p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
+          } else if (level == p->log2len) {
+            if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+            if (p->vecwidth > (1 << N)) continue;
+            if ((config & CONFIG_MT) != 0) {
+              int i1=0;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-	      for(i1=0;i1 < (1 << (p->log2len-N-p->log2vecwidth));i1++) {
-		int i0 = i1 << p->log2vecwidth;
-		p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
-	      }
-	    } else {
-	      for(int i0=0, i1=0;i0 < (1 << (p->log2len-N));i0+=p->vecwidth, i1++) {
-		p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
-	      }
-	    }
+              for(i1=0;i1 < (1 << (p->log2len-N-p->log2vecwidth));i1++) {
+                int i0 = i1 << p->log2vecwidth;
+                p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
+              }
+            } else {
+              for(int i0=0, i1=0;i0 < (1 << (p->log2len-N));i0+=p->vecwidth, i1++) {
+                p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
+              }
+            }
 
-	    uint64_t tm = Sleef_currentTimeMicros();
-	    for(int i=0;i<niter;i++) {
-	      dispatch(p, N, d, s, level, config);
-	      dispatch(p, N, s, d, level, config);
-	    }
-	    tm = Sleef_currentTimeMicros() - tm + 1;
-	    p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
-	  } else {
-	    if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	    if (p->vecwidth > 2 && p->log2len <= N+2) continue;
-	    if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
-	    if ((config & CONFIG_MT) != 0) {
-	      int i1=0;
+            uint64_t tm = Sleef_currentTimeMicros();
+            for(int i=0;i<niter;i++) {
+              dispatch(p, N, d, s, level, config);
+              dispatch(p, N, s, d, level, config);
+            }
+            tm = Sleef_currentTimeMicros() - tm + 1;
+            p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
+          } else {
+            if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+            if (p->vecwidth > 2 && p->log2len <= N+2) continue;
+            if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+            if ((config & CONFIG_MT) != 0) {
+              int i1=0;
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-	      for(i1=0;i1 < (1 << (p->log2len-N-p->log2vecwidth));i1++) {
-		int i0 = i1 << p->log2vecwidth;
-		p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
-	      }
-	    } else {
-	      for(int i0=0, i1=0;i0 < (1 << (p->log2len-N));i0+=p->vecwidth, i1++) {
-		p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
-	      }
-	    }
+              for(i1=0;i1 < (1 << (p->log2len-N-p->log2vecwidth));i1++) {
+                int i0 = i1 << p->log2vecwidth;
+                p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
+              }
+            } else {
+              for(int i0=0, i1=0;i0 < (1 << (p->log2len-N));i0+=p->vecwidth, i1++) {
+                p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
+              }
+            }
 
-	    uint64_t tm = Sleef_currentTimeMicros();
-	    for(int i=0;i<niter;i++) {
-	      dispatch(p, N, d, s, level, config);
-	      dispatch(p, N, s, d, level, config);
-	    }
-	    tm = Sleef_currentTimeMicros() - tm + 1;
-	    p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
-	  }
-	}
+            uint64_t tm = Sleef_currentTimeMicros();
+            for(int i=0;i<niter;i++) {
+              dispatch(p, N, d, s, level, config);
+              dispatch(p, N, s, d, level, config);
+            }
+            tm = Sleef_currentTimeMicros() - tm + 1;
+            p->tm[config][level*(MAXBUTWIDTH+1)+N] = MIN(p->tm[config][level*(MAXBUTWIDTH+1)+N], tm);
+          }
+        }
       }
     }
   }
@@ -898,44 +898,44 @@ static void measureBut(SleefDFT *p) {
   if ((p->mode & SLEEF_MODE_VERBOSE) != 0) {
     for(uint32_t level = p->log2len;level >= 1;level--) {
       for(uint32_t N=1;N<=MAXBUTWIDTH;N++) {
-	if (level < N || p->log2len <= N) continue;
-	if (level == N) {
-	  if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
-	  printf("bot %d, %d, %d, ", p->log2len, level, N);
-	  for(int config=0;config<CONFIGMAX;config++) {
-	    if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
-	      printf("N/A, ");
-	    } else {
-	      printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
-	    }
-	  }
-	  printf("\n");
-	} else if (level == p->log2len) {
-	  if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	  if (p->vecwidth > (1 << N)) continue;
-	  printf("top %d, %d, %d, ", p->log2len, level, N);
-	  for(int config=0;config<CONFIGMAX;config++) {
-	    if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
-	      printf("N/A, ");
-	    } else {
-	      printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
-	    }
-	  }
-	  printf("\n");
-	} else {
-	  if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	  if (p->vecwidth > 2 && p->log2len <= N+2) continue;
-	  if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
-	  printf("mid %d, %d, %d, ", p->log2len, level, N);
-	  for(int config=0;config<CONFIGMAX;config++) {
-	    if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
-	      printf("N/A, ");
-	    } else {
-	      printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
-	    }
-	  }
-	  printf("\n");
-	}
+        if (level < N || p->log2len <= N) continue;
+        if (level == N) {
+          if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+          printf("bot %d, %d, %d, ", p->log2len, level, N);
+          for(int config=0;config<CONFIGMAX;config++) {
+            if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
+              printf("N/A, ");
+            } else {
+              printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
+            }
+          }
+          printf("\n");
+        } else if (level == p->log2len) {
+          if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+          if (p->vecwidth > (1 << N)) continue;
+          printf("top %d, %d, %d, ", p->log2len, level, N);
+          for(int config=0;config<CONFIGMAX;config++) {
+            if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
+              printf("N/A, ");
+            } else {
+              printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
+            }
+          }
+          printf("\n");
+        } else {
+          if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+          if (p->vecwidth > 2 && p->log2len <= N+2) continue;
+          if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+          printf("mid %d, %d, %d, ", p->log2len, level, N);
+          for(int config=0;config<CONFIGMAX;config++) {
+            if (p->tm[config][level*(MAXBUTWIDTH+1)+N] == 1ULL << 60) {
+              printf("N/A, ");
+            } else {
+              printf("%lld, ", (long long int)p->tm[config][level*(MAXBUTWIDTH+1)+N]);
+            }
+          }
+          printf("\n");
+        }
       }
     }
   }
@@ -946,32 +946,32 @@ static void estimateBut(SleefDFT *p) {
     for(uint32_t N=1;N<=MAXBUTWIDTH;N++) {
       if (level < N || p->log2len <= N) continue;
       if (level == N) {
-	if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
-	for(int config=0;config<CONFIGMAX;config++) {
+        if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+        for(int config=0;config<CONFIGMAX;config++) {
 #if ENABLE_STREAM == 0
-	  if ((config & 1) != 0) continue;
+          if ((config & 1) != 0) continue;
 #endif
-	  p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
-	}
+          p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
+        }
       } else if (level == p->log2len) {
-	if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	if (p->vecwidth > (1 << N)) continue;
-	for(int config=0;config<CONFIGMAX;config++) {
+        if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+        if (p->vecwidth > (1 << N)) continue;
+        for(int config=0;config<CONFIGMAX;config++) {
 #if ENABLE_STREAM == 0
-	  if ((config & 1) != 0) continue;
+          if ((config & 1) != 0) continue;
 #endif
-	  p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
-	}
+          p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
+        }
       } else {
-	if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
-	if (p->vecwidth > 2 && p->log2len <= N+2) continue;
-	if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
-	for(int config=0;config<CONFIGMAX;config++) {
+        if (p->tbl[N] == NULL || p->tbl[N][level] == NULL) continue;
+        if (p->vecwidth > 2 && p->log2len <= N+2) continue;
+        if ((int)p->log2len - (int)level < p->log2vecwidth) continue;
+        for(int config=0;config<CONFIGMAX;config++) {
 #if ENABLE_STREAM == 0
-	  if ((config & 1) != 0) continue;
+          if ((config & 1) != 0) continue;
 #endif
-	  p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
-	}
+          p->tm[config][level*(MAXBUTWIDTH+1)+N] = estimate(p->log2len, level, N, config);
+        }
       }
     }
   }
@@ -1002,7 +1002,7 @@ static int measure(SleefDFT *p, int randomize) {
   for(uint32_t level = p->log2len;level >= 1;level--) {
     for(uint32_t N=1;N<=MAXBUTWIDTH;N++) {
       for(int config=0;config<CONFIGMAX;config++) {
-	p->tm[config][level*(MAXBUTWIDTH+1)+N] = 1ULL << 60;
+        p->tm[config][level*(MAXBUTWIDTH+1)+N] = 1ULL << 60;
       }
     }
   }
@@ -1183,15 +1183,15 @@ EXPORT SleefDFT *INIT(uint32_t n, const real *in, real *out, uint64_t mode) {
 
     if ((mode & SLEEF_MODE_BACKWARD) == 0) {
       for(uint32_t i=0;i<n/2;i++) {
-	sc_t sc = SINCOSPI(i*((real)-1.0/n));
-	((real *)p->rtCoef0)[i*2+0] = ((real *)p->rtCoef0)[i*2+1] = (real)0.5 - (real)0.5 * sc.x;
-	((real *)p->rtCoef1)[i*2+0] = ((real *)p->rtCoef1)[i*2+1] = (real)0.5*sc.y;
+        sc_t sc = SINCOSPI(i*((real)-1.0/n));
+        ((real *)p->rtCoef0)[i*2+0] = ((real *)p->rtCoef0)[i*2+1] = (real)0.5 - (real)0.5 * sc.x;
+        ((real *)p->rtCoef1)[i*2+0] = ((real *)p->rtCoef1)[i*2+1] = (real)0.5*sc.y;
       }
     } else {
       for(uint32_t i=0;i<n/2;i++) {
-	sc_t sc = SINCOSPI(i*((real)-1.0/n));
-	((real *)p->rtCoef0)[i*2+0] = ((real *)p->rtCoef0)[i*2+1] = (real)0.5 + (real)0.5 * sc.x;
-	((real *)p->rtCoef1)[i*2+0] = ((real *)p->rtCoef1)[i*2+1] = (real)0.5*sc.y;
+        sc_t sc = SINCOSPI(i*((real)-1.0/n));
+        ((real *)p->rtCoef0)[i*2+0] = ((real *)p->rtCoef0)[i*2+1] = (real)0.5 + (real)0.5 * sc.x;
+        ((real *)p->rtCoef1)[i*2+0] = ((real *)p->rtCoef1)[i*2+1] = (real)0.5*sc.y;
       }
     }
   }
@@ -1225,7 +1225,7 @@ EXPORT SleefDFT *INIT(uint32_t n, const real *in, real *out, uint64_t mode) {
 
       int i1 = 0;
       for(int i0=0;i0 < (1 << (p->log2len-N));i0+=p->vecwidth, i1++) {
-	p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
+        p->perm[level][i1] = 2*perm(p->log2len, i0, p->log2len-level, p->log2len-(level-N));
       }
       for(;i1 < (1 << p->log2len) + 8;i1++) p->perm[level][i1] = 0;
 
@@ -1300,37 +1300,37 @@ EXPORT void EXECUTE(SleefDFT *p, const real *s0, real *d0) {
 
 #ifdef _OPENMP
     if ((p->mode3 & SLEEF_MODE3_MT2D) != 0 &&
-	(((p->mode & SLEEF_MODE_DEBUG) == 0 && p->tmMT < p->tmNoMT) ||
-	 ((p->mode & SLEEF_MODE_DEBUG) != 0 && (rand() & 1))))
+        (((p->mode & SLEEF_MODE_DEBUG) == 0 && p->tmMT < p->tmNoMT) ||
+         ((p->mode & SLEEF_MODE_DEBUG) != 0 && (rand() & 1))))
       {
-	int y=0;
+        int y=0;
 #pragma omp parallel for
-	for(y=0;y<p->vlen;y++) {
-	  EXECUTE(p->instH, &s[p->hlen*2*y], &tBuf[p->hlen*2*y]);
-	}
+        for(y=0;y<p->vlen;y++) {
+          EXECUTE(p->instH, &s[p->hlen*2*y], &tBuf[p->hlen*2*y]);
+        }
 
-	transposeMT(d, tBuf, p->log2vlen, p->log2hlen);
+        transposeMT(d, tBuf, p->log2vlen, p->log2hlen);
 
 #pragma omp parallel for
-	for(y=0;y<p->hlen;y++) {
-	  EXECUTE(p->instV, &d[p->vlen*2*y], &tBuf[p->vlen*2*y]);
-	}
+        for(y=0;y<p->hlen;y++) {
+          EXECUTE(p->instV, &d[p->vlen*2*y], &tBuf[p->vlen*2*y]);
+        }
 
-	transposeMT(d, tBuf, p->log2hlen, p->log2vlen);
+        transposeMT(d, tBuf, p->log2hlen, p->log2vlen);
       } else
 #endif
       {
-	for(int y=0;y<p->vlen;y++) {
-	  EXECUTE(p->instH, &s[p->hlen*2*y], &tBuf[p->hlen*2*y]);
-	}
+        for(int y=0;y<p->vlen;y++) {
+          EXECUTE(p->instH, &s[p->hlen*2*y], &tBuf[p->hlen*2*y]);
+        }
 
-	transpose(d, tBuf, p->log2vlen, p->log2hlen);
+        transpose(d, tBuf, p->log2vlen, p->log2hlen);
 
-	for(int y=0;y<p->hlen;y++) {
-	  EXECUTE(p->instV, &d[p->vlen*2*y], &tBuf[p->vlen*2*y]);
-	}
+        for(int y=0;y<p->hlen;y++) {
+          EXECUTE(p->instV, &d[p->vlen*2*y], &tBuf[p->vlen*2*y]);
+        }
 
-	transpose(d, tBuf, p->log2hlen, p->log2vlen);
+        transpose(d, tBuf, p->log2hlen, p->log2vlen);
       }
 
     return;
@@ -1345,52 +1345,52 @@ EXPORT void EXECUTE(SleefDFT *p, const real *s0, real *d0) {
       d[0] = r0; d[1] = r1; d[2] = r2; d[3] = r3;
     } else {
       if ((p->mode & SLEEF_MODE_ALT) == 0) {
-	if (p->log2len == 1) {
-	  if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
-	    real r0 = s[0] + s[2] + (s[1] + s[3]);
-	    real r1 = s[0] + s[2] - (s[1] + s[3]);
-	    real r2 = s[0] - s[2];
-	    real r3 = s[3] - s[1];
-	    d[0] = r0; d[1] = 0; d[2] = r2; d[3] = r3; d[4] = r1; d[5] = 0;
-	  } else {
-	    real r0 = (s[0] + s[4])*(real)0.5 + s[2];
-	    real r1 = (s[0] - s[4])*(real)0.5 - s[3];
-	    real r2 = (s[0] + s[4])*(real)0.5 - s[2];
-	    real r3 = (s[0] - s[4])*(real)0.5 + s[3];
-	    d[0] = r0*2; d[1] = r1*2; d[2] = r2*2; d[3] = r3*2;
-	  }
-	} else {
-	  if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
-	    real r0 = s[0] + s[1];
-	    real r1 = s[0] - s[1];
-	    d[0] = r0; d[1] = 0; d[2] = r1; d[3] = 0;
-	  } else {
-	    real r0 = s[0] + s[2];
-	    real r1 = s[0] - s[2];
-	    d[0] = r0; d[1] = r1;
-	  }
-	}
+        if (p->log2len == 1) {
+          if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
+            real r0 = s[0] + s[2] + (s[1] + s[3]);
+            real r1 = s[0] + s[2] - (s[1] + s[3]);
+            real r2 = s[0] - s[2];
+            real r3 = s[3] - s[1];
+            d[0] = r0; d[1] = 0; d[2] = r2; d[3] = r3; d[4] = r1; d[5] = 0;
+          } else {
+            real r0 = (s[0] + s[4])*(real)0.5 + s[2];
+            real r1 = (s[0] - s[4])*(real)0.5 - s[3];
+            real r2 = (s[0] + s[4])*(real)0.5 - s[2];
+            real r3 = (s[0] - s[4])*(real)0.5 + s[3];
+            d[0] = r0*2; d[1] = r1*2; d[2] = r2*2; d[3] = r3*2;
+          }
+        } else {
+          if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
+            real r0 = s[0] + s[1];
+            real r1 = s[0] - s[1];
+            d[0] = r0; d[1] = 0; d[2] = r1; d[3] = 0;
+          } else {
+            real r0 = s[0] + s[2];
+            real r1 = s[0] - s[2];
+            d[0] = r0; d[1] = r1;
+          }
+        }
       } else {
-	if (p->log2len == 1) {
-	  if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
-	    real r0 = s[0] + s[2] + (s[1] + s[3]);
-	    real r1 = s[0] + s[2] - (s[1] + s[3]);
-	    real r2 = s[0] - s[2];
-	    real r3 = s[1] - s[3];
-	    d[0] = r0; d[1] = r1; d[2] = r2; d[3] = r3;
-	  } else {
-	    real r0 = (s[0] + s[1])*(real)0.5 + s[2];
-	    real r1 = (s[0] - s[1])*(real)0.5 + s[3];
-	    real r2 = (s[0] + s[1])*(real)0.5 - s[2];
-	    real r3 = (s[0] - s[1])*(real)0.5 - s[3];
-	    d[0] = r0; d[1] = r1; d[2] = r2; d[3] = r3;
-	  }
-	} else {
-	  real c = ((p->mode & SLEEF_MODE_BACKWARD) != 0) ? (real)0.5 : (real)1.0;
-	  real r0 = s[0] + s[1];
-	  real r1 = s[0] - s[1];
-	  d[0] = r0 * c; d[1] = r1 * c;
-	}
+        if (p->log2len == 1) {
+          if ((p->mode & SLEEF_MODE_BACKWARD) == 0) {
+            real r0 = s[0] + s[2] + (s[1] + s[3]);
+            real r1 = s[0] + s[2] - (s[1] + s[3]);
+            real r2 = s[0] - s[2];
+            real r3 = s[1] - s[3];
+            d[0] = r0; d[1] = r1; d[2] = r2; d[3] = r3;
+          } else {
+            real r0 = (s[0] + s[1])*(real)0.5 + s[2];
+            real r1 = (s[0] - s[1])*(real)0.5 + s[3];
+            real r2 = (s[0] + s[1])*(real)0.5 - s[2];
+            real r3 = (s[0] - s[1])*(real)0.5 - s[3];
+            d[0] = r0; d[1] = r1; d[2] = r2; d[3] = r3;
+          }
+        } else {
+          real c = ((p->mode & SLEEF_MODE_BACKWARD) != 0) ? (real)0.5 : (real)1.0;
+          real r0 = s[0] + s[1];
+          real r1 = s[0] - s[1];
+          d[0] = r0 * c; d[1] = r1 * c;
+        }
       }
     }
     return;

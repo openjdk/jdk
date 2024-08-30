@@ -56,9 +56,9 @@ function(add_test_iut IUT C)
   if (QTESTER)
     if (NOT EMULATOR)
       if (SDE_COMMAND)
-	set(FLAGS_SDE "--sde" ${SDE_COMMAND})
+        set(FLAGS_SDE "--sde" ${SDE_COMMAND})
       else()
-	set(FLAGS_SDE)
+        set(FLAGS_SDE)
       endif()
       if (ARMIE_COMMAND)
         set(FLAGS_ARMIE ${ARMIE_COMMAND} -msve-vector-bits=${SVE_VECTOR_BITS})
@@ -66,13 +66,13 @@ function(add_test_iut IUT C)
         set(FLAGS_ARMIE)
       endif()
       add_test(NAME ${IUT}
-	COMMAND ${QTESTER} ${FLAGS_SDE} ${FLAGS_ARMIE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${IUT}
-	WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        COMMAND ${QTESTER} ${FLAGS_SDE} ${FLAGS_ARMIE} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${IUT}
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
       set_tests_properties(${IUT} PROPERTIES COST ${C})
     else()
       add_test(NAME ${IUT}
-	COMMAND ${QTESTER} "--qemu" ${EMULATOR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${IUT}
-	WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+        COMMAND ${QTESTER} "--qemu" ${EMULATOR} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${IUT}
+        WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
       set_tests_properties(${IUT} PROPERTIES COST ${C})
     endif()
   endif()
@@ -109,29 +109,29 @@ macro(test_extension SIMD)
 
     if (SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
       if (MSVC AND NOT SLEEF_CLANG_ON_WINDOWS)
-	message(STATUS "Quad inline headers are not tested with MSVC")
+        message(STATUS "Quad inline headers are not tested with MSVC")
       else()
-	string(CONCAT IUTINAME "qiuti" ${LCSIMD})
-	add_executable(${IUTINAME} ${IUT_SRC})
-	target_compile_options(${IUTINAME}
-	  PRIVATE ${FLAGS_ENABLE_${SIMD}})
-	target_compile_definitions(${IUTINAME}
-	  PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS}
-	  USE_INLINE_HEADER="sleefquadinline_${LCSIMD}.h"
-	  MACRO_ONLY_HEADER="qmacroonly${SIMD}.h"
-	  SIMD_SUFFIX=_${LCSIMD}_sleefq
-	  )
-	target_include_directories(${IUTINAME} PRIVATE ${PROJECT_BINARY_DIR}/include)
-	target_link_libraries(${IUTINAME} ${LIBM} ${LIBRT})
-	add_dependencies(${IUTINAME} ${TARGET_QINLINE_HEADERS})
-	set_target_properties(${IUTINAME} PROPERTIES C_STANDARD 99)
-	if (DEFINED COSTOVERRIDE_${SIMD})
-	  math(EXPR C "${COSTOVERRIDE_${SIMD}} + 1")
-	  add_test_iut(${IUTINAME} ${C})
-	else()
-	  add_test_iut(${IUTINAME} 0.5)
-	endif()
-	list(APPEND IUT_LIST ${IUTINAME})
+        string(CONCAT IUTINAME "qiuti" ${LCSIMD})
+        add_executable(${IUTINAME} ${IUT_SRC})
+        target_compile_options(${IUTINAME}
+          PRIVATE ${FLAGS_ENABLE_${SIMD}})
+        target_compile_definitions(${IUTINAME}
+          PRIVATE ENABLE_${SIMD}=1 ${COMMON_TARGET_DEFINITIONS}
+          USE_INLINE_HEADER="sleefquadinline_${LCSIMD}.h"
+          MACRO_ONLY_HEADER="qmacroonly${SIMD}.h"
+          SIMD_SUFFIX=_${LCSIMD}_sleefq
+          )
+        target_include_directories(${IUTINAME} PRIVATE ${PROJECT_BINARY_DIR}/include)
+        target_link_libraries(${IUTINAME} ${LIBM} ${LIBRT})
+        add_dependencies(${IUTINAME} ${TARGET_QINLINE_HEADERS})
+        set_target_properties(${IUTINAME} PROPERTIES C_STANDARD 99)
+        if (DEFINED COSTOVERRIDE_${SIMD})
+          math(EXPR C "${COSTOVERRIDE_${SIMD}} + 1")
+          add_test_iut(${IUTINAME} ${C})
+        else()
+          add_test_iut(${IUTINAME} 0.5)
+        endif()
+        list(APPEND IUT_LIST ${IUTINAME})
       endif()
     endif(SLEEF_BUILD_INLINE_HEADERS AND SED_COMMAND)
 
@@ -146,7 +146,7 @@ macro(test_extension SIMD)
       target_link_libraries(${T} sleefquad ${TARGET_LIBSLEEF} ${LIB_MPFR} ${LIBM} ${LIBGMP})
       add_dependencies(${T} sleefquad sleefquad_headers ${TARGET_LIBSLEEF} ${TARGET_HEADERS})
       if (MPFR_INCLUDE_DIR)
-	target_include_directories(${T} PRIVATE ${MPFR_INCLUDE_DIR})
+        target_include_directories(${T} PRIVATE ${MPFR_INCLUDE_DIR})
       endif()
     endif()
   endif(COMPILER_SUPPORTS_${SIMD})

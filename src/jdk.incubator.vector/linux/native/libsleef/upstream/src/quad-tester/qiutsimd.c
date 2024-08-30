@@ -321,344 +321,344 @@ typedef union {
 
 #define BUFSIZE 1024
 
-#define func_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      a0 = funcName(a0);						\
-      c0.q = xgetq(a0, lane);						\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_q_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      a0 = funcName(a0);                                                \
+      c0.q = xgetq(a0, lane);                                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0, c1;							\
+#define func_q_q_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0, c1;                                                    \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l, &c1.h, &c1.l); \
-      VARGQUAD a0, a1;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      memrand(&a1, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      a1 = xsetq(a1, lane, c1.q);					\
-      a0 = funcName(a0, a1);						\
-      c0.q = xgetq(a0, lane);						\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      VARGQUAD a0, a1;                                                  \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      memrand(&a1, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      a1 = xsetq(a1, lane, c1.q);                                       \
+      a0 = funcName(a0, a1);                                            \
+      c0.q = xgetq(a0, lane);                                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_q_q(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0, c1, c2;						\
+#define func_q_q_q_q(funcStr, funcName) {                               \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0, c1, c2;                                                \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, \
-	     &c0.h, &c0.l, &c1.h, &c1.l, &c2.h, &c2.l);			\
-      VARGQUAD a0, a1, a2;						\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      memrand(&a1, SIZEOF_VARGQUAD);					\
-      memrand(&a2, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      a1 = xsetq(a1, lane, c1.q);					\
-      a2 = xsetq(a2, lane, c2.q);					\
-      a0 = funcName(a0, a1, a2);					\
-      c0.q = xgetq(a0, lane);						\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+             &c0.h, &c0.l, &c1.h, &c1.l, &c2.h, &c2.l);                 \
+      VARGQUAD a0, a1, a2;                                              \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      memrand(&a1, SIZEOF_VARGQUAD);                                    \
+      memrand(&a2, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      a1 = xsetq(a1, lane, c1.q);                                       \
+      a2 = xsetq(a2, lane, c2.q);                                       \
+      a0 = funcName(a0, a1, a2);                                        \
+      c0.q = xgetq(a0, lane);                                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_i_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      vint vi = funcName(a0);						\
-      int t[VECTLENDP*2];						\
-      vstoreu_v_p_vi(t, vi);						\
-      printf("%d\n", t[lane]);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_i_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      vint vi = funcName(a0);                                           \
+      int t[VECTLENDP*2];                                               \
+      vstoreu_v_p_vi(t, vi);                                            \
+      printf("%d\n", t[lane]);                                          \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_i_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0, c1;							\
+#define func_i_q_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0, c1;                                                    \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l, &c1.h, &c1.l); \
-      VARGQUAD a0, a1;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      memrand(&a1, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      a1 = xsetq(a1, lane, c1.q);					\
-      vint vi = funcName(a0, a1);					\
-      int t[VECTLENDP*2];						\
-      vstoreu_v_p_vi(t, vi);						\
-      printf("%d\n", t[lane]);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      VARGQUAD a0, a1;                                                  \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      memrand(&a1, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      a1 = xsetq(a1, lane, c1.q);                                       \
+      vint vi = funcName(a0, a1);                                       \
+      int t[VECTLENDP*2];                                               \
+      vstoreu_v_p_vi(t, vi);                                            \
+      printf("%d\n", t[lane]);                                          \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_i(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      int k;								\
+#define func_q_q_i(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      int k;                                                            \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %d", &c0.h, &c0.l, &k); \
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      int t[VECTLENDP*2];						\
-      memrand(t, sizeof(t));						\
-      t[lane] = k;							\
-      a0 = funcName(a0, vloadu_vi_p(t));				\
-      c0.q = xgetq(a0, lane);						\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      int t[VECTLENDP*2];                                               \
+      memrand(t, sizeof(t));                                            \
+      t[lane] = k;                                                      \
+      a0 = funcName(a0, vloadu_vi_p(t));                                \
+      c0.q = xgetq(a0, lane);                                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_d_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      double d[VECTLENDP];						\
-      vstoreu_v_p_vd(d, funcName(a0));					\
-      printf("%" PRIx64 "\n", d2u(d[lane]));				\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_d_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      double d[VECTLENDP];                                              \
+      vstoreu_v_p_vd(d, funcName(a0));                                  \
+      printf("%" PRIx64 "\n", d2u(d[lane]));                            \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_d(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      int lane = xrand() % VECTLENDP;			\
-      uint64_t u;					\
-      sscanf(buf, funcStr " %" PRIx64, &u);		\
-      double s[VECTLENDP];				\
-      memrand(s, sizeof(s));				\
-      s[lane] = u2d(u);					\
-      VARGQUAD a0 = funcName(vloadu_vd_p(s));		\
-      cnv128 c0;					\
-      c0.q = xgetq(a0, lane);				\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_d(funcStr, funcName) {                   \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      int lane = xrand() % VECTLENDP;                   \
+      uint64_t u;                                       \
+      sscanf(buf, funcStr " %" PRIx64, &u);             \
+      double s[VECTLENDP];                              \
+      memrand(s, sizeof(s));                            \
+      s[lane] = u2d(u);                                 \
+      VARGQUAD a0 = funcName(vloadu_vd_p(s));           \
+      cnv128 c0;                                        \
+      c0.q = xgetq(a0, lane);                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_i64_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      double d[VECTLENDP];						\
+#define func_i64_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      double d[VECTLENDP];                                              \
       vstoreu_v_p_vd(d, vreinterpret_vd_vm(vreinterpret_vm_vi64(funcName(a0)))); \
-      printf("%" PRIx64 "\n", d2u(d[lane]));				\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      printf("%" PRIx64 "\n", d2u(d[lane]));                            \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_i64(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      int lane = xrand() % VECTLENDP;			\
-      uint64_t u;					\
-      sscanf(buf, funcStr " %" PRIx64, &u);		\
-      double s[VECTLENDP];				\
-      memrand(s, sizeof(s));				\
-      s[lane] = u2d(u);					\
-      VARGQUAD a0 = funcName(vreinterpret_vi64_vm(vreinterpret_vm_vd(vloadu_vd_p(s))));	\
-      cnv128 c0;					\
-      c0.q = xgetq(a0, lane);				\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_i64(funcStr, funcName) {                 \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      int lane = xrand() % VECTLENDP;                   \
+      uint64_t u;                                       \
+      sscanf(buf, funcStr " %" PRIx64, &u);             \
+      double s[VECTLENDP];                              \
+      memrand(s, sizeof(s));                            \
+      s[lane] = u2d(u);                                 \
+      VARGQUAD a0 = funcName(vreinterpret_vi64_vm(vreinterpret_vm_vd(vloadu_vd_p(s)))); \
+      cnv128 c0;                                        \
+      c0.q = xgetq(a0, lane);                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_u64_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      double d[VECTLENDP];						\
+#define func_u64_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      double d[VECTLENDP];                                              \
       vstoreu_v_p_vd(d, vreinterpret_vd_vm(vreinterpret_vm_vu64(funcName(a0)))); \
-      printf("%" PRIx64 "\n", d2u(d[lane]));				\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      printf("%" PRIx64 "\n", d2u(d[lane]));                            \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_u64(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      int lane = xrand() % VECTLENDP;			\
-      uint64_t u;					\
-      sscanf(buf, funcStr " %" PRIx64, &u);		\
-      double s[VECTLENDP];				\
-      memrand(s, sizeof(s));				\
-      s[lane] = u2d(u);					\
-      VARGQUAD a0 = funcName(vreinterpret_vu64_vm(vreinterpret_vm_vd(vloadu_vd_p(s))));	\
-      cnv128 c0;					\
-      c0.q = xgetq(a0, lane);				\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_u64(funcStr, funcName) {                 \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      int lane = xrand() % VECTLENDP;                   \
+      uint64_t u;                                       \
+      sscanf(buf, funcStr " %" PRIx64, &u);             \
+      double s[VECTLENDP];                              \
+      memrand(s, sizeof(s));                            \
+      s[lane] = u2d(u);                                 \
+      VARGQUAD a0 = funcName(vreinterpret_vu64_vm(vreinterpret_vm_vd(vloadu_vd_p(s)))); \
+      cnv128 c0;                                        \
+      c0.q = xgetq(a0, lane);                           \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_q_q_pi(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      vint vi;								\
-      a0 = funcName(a0, &vi);						\
-      c0.q = xgetq(a0, lane);						\
-      int t[VECTLENDP*2];						\
-      vstoreu_v_p_vi(t, vi);						\
-      printf("%" PRIx64 ":%" PRIx64 " %d\n", c0.h, c0.l, t[lane]);	\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_q_q_pi(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      vint vi;                                                          \
+      a0 = funcName(a0, &vi);                                           \
+      c0.q = xgetq(a0, lane);                                           \
+      int t[VECTLENDP*2];                                               \
+      vstoreu_v_p_vi(t, vi);                                            \
+      printf("%" PRIx64 ":%" PRIx64 " %d\n", c0.h, c0.l, t[lane]);      \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_pq(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      int lane = xrand() % VECTLENDP;					\
-      cnv128 c0, c1;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0, a1;							\
-      memrand(&a0, SIZEOF_VARGQUAD);					\
-      a0 = xsetq(a0, lane, c0.q);					\
-      a0 = funcName(a0, &a1);						\
-      c0.q = xgetq(a0, lane);						\
-      c1.q = xgetq(a1, lane);						\
+#define func_q_q_pq(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      int lane = xrand() % VECTLENDP;                                   \
+      cnv128 c0, c1;                                                    \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0, a1;                                                  \
+      memrand(&a0, SIZEOF_VARGQUAD);                                    \
+      a0 = xsetq(a0, lane, c0.q);                                       \
+      a0 = funcName(a0, &a1);                                           \
+      c0.q = xgetq(a0, lane);                                           \
+      c1.q = xgetq(a1, lane);                                           \
       printf("%" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l, c1.h, c1.l); \
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_strtoq(funcStr) {						\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      char s[64];							\
-      sscanf(buf, funcStr " %63s", s);					\
-      VARGQUAD a0;							\
-      a0 = Sleef_strtoq(s, NULL);					\
-      cnv128 c0;							\
-      c0.q = xgetq(a0, 0);						\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_strtoq(funcStr) {                                          \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      char s[64];                                                       \
+      sscanf(buf, funcStr " %63s", s);                                  \
+      VARGQUAD a0;                                                      \
+      a0 = Sleef_strtoq(s, NULL);                                       \
+      cnv128 c0;                                                        \
+      c0.q = xgetq(a0, 0);                                              \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
 #if !(defined(ENABLEFLOAT128) && defined(__clang__))
-#define func_snprintf_40Qg(funcStr) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memset(&a0, 0, sizeof(a0));					\
-      a0 = xsetq(a0, 0, c0.q);						\
-      char s[64];							\
-      Sleef_snprintf(s, 63, "%.40Qg", a0);				\
-      printf("%s\n", s);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_snprintf_40Qg(funcStr) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memset(&a0, 0, sizeof(a0));                                       \
+      a0 = xsetq(a0, 0, c0.q);                                          \
+      char s[64];                                                       \
+      Sleef_snprintf(s, 63, "%.40Qg", a0);                              \
+      printf("%s\n", s);                                                \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_snprintf_Qa(funcStr) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memset(&a0, 0, sizeof(a0));					\
-      a0 = xsetq(a0, 0, c0.q);						\
-      char s[64];							\
-      Sleef_snprintf(s, 63, "%Qa", a0);					\
-      printf("%s\n", s);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_snprintf_Qa(funcStr) {                                     \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memset(&a0, 0, sizeof(a0));                                       \
+      a0 = xsetq(a0, 0, c0.q);                                          \
+      char s[64];                                                       \
+      Sleef_snprintf(s, 63, "%Qa", a0);                                 \
+      printf("%s\n", s);                                                \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 #else
-#define func_snprintf_40Qg(funcStr) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memset(&a0, 0, sizeof(a0));					\
-      a0 = xsetq(a0, 0, c0.q);						\
-      char s[64];							\
-      Sleef_snprintf(s, 63, "%.40Pg", &a0);				\
-      printf("%s\n", s);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_snprintf_40Qg(funcStr) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memset(&a0, 0, sizeof(a0));                                       \
+      a0 = xsetq(a0, 0, c0.q);                                          \
+      char s[64];                                                       \
+      Sleef_snprintf(s, 63, "%.40Pg", &a0);                             \
+      printf("%s\n", s);                                                \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_snprintf_Qa(funcStr) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      VARGQUAD a0;							\
-      memset(&a0, 0, sizeof(a0));					\
-      a0 = xsetq(a0, 0, c0.q);						\
-      char s[64];							\
-      Sleef_snprintf(s, 63, "%Pa", &a0);				\
-      printf("%s\n", s);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_snprintf_Qa(funcStr) {                                     \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      VARGQUAD a0;                                                      \
+      memset(&a0, 0, sizeof(a0));                                       \
+      a0 = xsetq(a0, 0, c0.q);                                          \
+      char s[64];                                                       \
+      Sleef_snprintf(s, 63, "%Pa", &a0);                                \
+      printf("%s\n", s);                                                \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 #endif
 

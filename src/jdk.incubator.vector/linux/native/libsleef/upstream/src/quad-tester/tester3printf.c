@@ -28,78 +28,78 @@ static void testem(MD5_CTX *ctx, Sleef_quad val, char *types) {
   for(int alt=0;alt<2;alt++) {
     for(int zero=0;zero<2;zero++) {
       for(int left=0;left<2;left++) {
-	for(int blank=0;blank<2;blank++) {
-	  for(int sign=0;sign<2;sign++) {
-	    static char fmt[100], buf[100];
-	    Sleef_quad q;
-	    int r;
-	    snprintf(fmt, 99, "%%%s%s%s%s%s%s",
-		     alt ? "#" : "",
-		     zero ? "0" : "",
-		     left ? "-" : "",
-		     blank ? " " : "",
-		     sign ? "+" : "",
-		     types);
+        for(int blank=0;blank<2;blank++) {
+          for(int sign=0;sign<2;sign++) {
+            static char fmt[100], buf[100];
+            Sleef_quad q;
+            int r;
+            snprintf(fmt, 99, "%%%s%s%s%s%s%s",
+                     alt ? "#" : "",
+                     zero ? "0" : "",
+                     left ? "-" : "",
+                     blank ? " " : "",
+                     sign ? "+" : "",
+                     types);
 
-	    r = Sleef_snprintf(buf, 99, fmt, &val);
-	    assert(r < 100);
-	    MD5_Update(ctx, buf, r < 0 ? 0 : r);
-	    q = Sleef_strtoq(buf, NULL);
-	    convertEndianness(&q, sizeof(q));
-	    MD5_Update(ctx, &q, sizeof(Sleef_quad));
+            r = Sleef_snprintf(buf, 99, fmt, &val);
+            assert(r < 100);
+            MD5_Update(ctx, buf, r < 0 ? 0 : r);
+            q = Sleef_strtoq(buf, NULL);
+            convertEndianness(&q, sizeof(q));
+            MD5_Update(ctx, &q, sizeof(Sleef_quad));
 
-	    for(int width=0;width<=40;width += 2) {
-	      snprintf(fmt, 99, "%%%s%s%s%s%s%d.%s",
-		       alt ? "#" : "",
-		       zero ? "0" : "",
-		       left ? "-" : "",
-		       blank ? " " : "",
-		       sign ? "+" : "",
-		       width, types);
+            for(int width=0;width<=40;width += 2) {
+              snprintf(fmt, 99, "%%%s%s%s%s%s%d.%s",
+                       alt ? "#" : "",
+                       zero ? "0" : "",
+                       left ? "-" : "",
+                       blank ? " " : "",
+                       sign ? "+" : "",
+                       width, types);
 
-	      r = Sleef_snprintf(buf, 99, fmt, &val);
-	      assert(r < 100);
-	      MD5_Update(ctx, buf, r < 0 ? 0 : r);
-	      q = Sleef_strtoq(buf, NULL);
-	      convertEndianness(&q, sizeof(q));
-	      MD5_Update(ctx, &q, sizeof(Sleef_quad));
-	    }
+              r = Sleef_snprintf(buf, 99, fmt, &val);
+              assert(r < 100);
+              MD5_Update(ctx, buf, r < 0 ? 0 : r);
+              q = Sleef_strtoq(buf, NULL);
+              convertEndianness(&q, sizeof(q));
+              MD5_Update(ctx, &q, sizeof(Sleef_quad));
+            }
 
-	    for(int prec=0;prec<=40;prec += 3) {
-	      for(int width=0;width<=40;width += 3) {
-		snprintf(fmt, 99, "%%%s%s%s%s%s%d.%d%s",
-			 alt ? "#" : "",
-			 zero ? "0" : "",
-			 left ? "-" : "",
-			 blank ? " " : "",
-			 sign ? "+" : "",
-			 width, prec, types);
+            for(int prec=0;prec<=40;prec += 3) {
+              for(int width=0;width<=40;width += 3) {
+                snprintf(fmt, 99, "%%%s%s%s%s%s%d.%d%s",
+                         alt ? "#" : "",
+                         zero ? "0" : "",
+                         left ? "-" : "",
+                         blank ? " " : "",
+                         sign ? "+" : "",
+                         width, prec, types);
 
-		r = Sleef_snprintf(buf, 99, fmt, &val);
-		assert(r < 100);
-		MD5_Update(ctx, buf, r < 0 ? 0 : r);
-		q = Sleef_strtoq(buf, NULL);
-		convertEndianness(&q, sizeof(q));
-		MD5_Update(ctx, &q, sizeof(Sleef_quad));
-	      }
+                r = Sleef_snprintf(buf, 99, fmt, &val);
+                assert(r < 100);
+                MD5_Update(ctx, buf, r < 0 ? 0 : r);
+                q = Sleef_strtoq(buf, NULL);
+                convertEndianness(&q, sizeof(q));
+                MD5_Update(ctx, &q, sizeof(Sleef_quad));
+              }
 
-	      snprintf(fmt, 99, "%%%s%s%s%s%s.%d%s",
-		       alt ? "#" : "",
-		       zero ? "0" : "",
-		       left ? "-" : "",
-		       blank ? " " : "",
-		       sign ? "+" : "",
-		       prec, types);
+              snprintf(fmt, 99, "%%%s%s%s%s%s.%d%s",
+                       alt ? "#" : "",
+                       zero ? "0" : "",
+                       left ? "-" : "",
+                       blank ? " " : "",
+                       sign ? "+" : "",
+                       prec, types);
 
-	      r = Sleef_snprintf(buf, 99, fmt, &val);
-	      assert(r < 100);
-	      MD5_Update(ctx, buf, r < 0 ? 0 : r);
-	      q = Sleef_strtoq(buf, NULL);
-	      convertEndianness(&q, sizeof(q));
-	      MD5_Update(ctx, &q, sizeof(Sleef_quad));
-	    }
-	  }
-	}
+              r = Sleef_snprintf(buf, 99, fmt, &val);
+              assert(r < 100);
+              MD5_Update(ctx, buf, r < 0 ? 0 : r);
+              q = Sleef_strtoq(buf, NULL);
+              convertEndianness(&q, sizeof(q));
+              MD5_Update(ctx, &q, sizeof(Sleef_quad));
+            }
+          }
+        }
       }
     }
   }
@@ -211,21 +211,21 @@ int main(int argc, char **argv) {
 
   success = success && test2("head %d tail", 123);
   success = success && test2("head %.8d %hhd %hd %d %ld %lld %jd %zd %td %.4d tail",
-			     123, (signed char)1, (short int)2, (int)3, (long int)4, (long long int)5, (intmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (signed char)1, (short int)2, (int)3, (long int)4, (long long int)5, (intmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %10.8d %hhi %hi %i %li %lli %ji %zi %ti %8.5d tail",
-			     123, (signed char)1, (short int)2, (int)3, (long int)4, (long long int)5, (intmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (signed char)1, (short int)2, (int)3, (long int)4, (long long int)5, (intmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %-10d %hhx %hx %x %lx %llx %jx %zx %tx %-10.9d tail",
-			     123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %+10d %hhX %hX %X %lX %llX %jX %zX %tX %+10.9d tail",
-			     123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %d %hhu %hu %u %lu %llu %ju %zu %tu %d tail",
-			     123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %d %hho %ho %o %lo %llo %jo %zo %to %d tail",
-			     123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
+                             123, (unsigned char)1, (short unsigned)2, (unsigned)3, (long unsigned)4, (long long unsigned)5, (uintmax_t)6, (size_t)7, (ptrdiff_t) 8, 321);
   success = success && test2("head %d %f %F %e %E %g %G %a %A %d tail",
-			     123, 0.11, 0.21, 0.31, 0.41, 0.51, 0.61, 0.71, 0.81, 321);
+                             123, 0.11, 0.21, 0.31, 0.41, 0.51, 0.61, 0.71, 0.81, 321);
   success = success && test2("head %d %Lf %LF %Le %LE %Lg %LG %La %LA %d tail",
-			     123, 0.11L, 0.21L, 0.31L, 0.41L, 0.51L, 0.61L, 0.71L, 0.81L, 321);
+                             123, 0.11L, 0.21L, 0.31L, 0.41L, 0.51L, 0.61L, 0.71L, 0.81L, 321);
   success = success && test2("head %d %c %s %p %p %d tail", 123, 111, "string", NULL, &success, 321);
 
   if (!success) exit(-1);
@@ -246,15 +246,15 @@ int main(int argc, char **argv) {
     MD5_Final(d, &ctx);
 
     snprintf((char *)mes, 60, "%s %02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-	     types[j], d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],
-	     d[8],d[9],d[10],d[11],d[12],d[13],d[14],d[15]);
+             types[j], d[0],d[1],d[2],d[3],d[4],d[5],d[6],d[7],
+             d[8],d[9],d[10],d[11],d[12],d[13],d[14],d[15]);
 
     if (fp != NULL) {
       fgets((char *)buf, 60, fp);
       if (strncmp((char *)mes, (char *)buf, strlen((char *)mes)) != 0) {
-	puts((char *)mes);
-	puts((char *)buf);
-	success = 0;
+        puts((char *)mes);
+        puts((char *)buf);
+        success = 0;
       }
     } else puts((char *)mes);
   }

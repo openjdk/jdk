@@ -343,25 +343,25 @@ int main(int argc,char **argv)
       // once in 8 loops.
       switch(cnt & 7) {
       case 0:
-	q0 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
-	q1 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
-	q2 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
-	break;
+        q0 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
+        q1 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
+        q2 = rndf128(oneEMinus10Q, oneEPlus10Q, 1);
+        break;
       case 1:
-	q0 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
-	q1 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
-	q2 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
-	break;
+        q0 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
+        q1 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
+        q2 = rndf128(oneEMinus100Q, oneEPlus100Q, 1);
+        break;
       case 2:
-	q0 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
-	q1 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
-	q2 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
-	break;
+        q0 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
+        q1 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
+        q2 = rndf128(oneEMinus1000Q, oneEPlus1000Q, 1);
+        break;
       default:
-	q0 = rndf128x();
-	q1 = rndf128x();
-	q2 = rndf128x();
-	break;
+        q0 = rndf128x();
+        q1 = rndf128x();
+        q2 = rndf128x();
+        break;
       }
       break;
     }
@@ -379,10 +379,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xaddq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " add arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " add arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -392,10 +392,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xsubq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " sub arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " sub arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -405,10 +405,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xmulq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " mul arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " mul arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -418,10 +418,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xdivq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " div arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " div arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -431,10 +431,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xsqrtq_u05(a0), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " sqrt arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " sqrt arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -444,10 +444,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xcbrtq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " cbrt arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cbrt arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -457,10 +457,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xfdimq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " fdim arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " fdim arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -470,10 +470,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xhypotq_u05(a0, a1), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " hypot arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " hypot arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -483,10 +483,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xfmaq_u05(a0, a1, a2), e), frw, 0);
 
       if (u0 > 0.5000000001) {
-	printf(ISANAME " fma arg=%s, %s, %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), sprintf128(q2), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " fma arg=%s, %s, %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), sprintf128(q2), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -498,38 +498,38 @@ int main(int argc,char **argv)
       double u1 = countULPf128(q3 = vget(a3, e), frw, 0);
 
       if (u0 > 0 || u1 > 0) {
-	printf(ISANAME " modf arg=%s ulp=%.20g, %.20g\n", sprintf128(q0), u0, u1);
-	printf("test = %s, %s\n", sprintf128(q2), sprintf128(q3));
-	printf("corr = %s, %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)), sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " modf arg=%s ulp=%.20g, %.20g\n", sprintf128(q0), u0, u1);
+        printf("test = %s, %s\n", sprintf128(q2), sprintf128(q3));
+        printf("corr = %s, %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)), sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
     if (cnt % 101 == 0) {
       {
-	mpfr_fmod(frw, frx, fry, GMP_RNDN);
+        mpfr_fmod(frw, frx, fry, GMP_RNDN);
 
-	double u0 = countULPf128(t = vget(xfmodq(a0, a1), e), frw, 0);
+        double u0 = countULPf128(t = vget(xfmodq(a0, a1), e), frw, 0);
 
-	if (u0 > 0) {
-	  printf(ISANAME " fmod arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	  printf("test = %s\n", sprintf128(t));
-	  printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	  fflush(stdout); ecnt++;
-	}
+        if (u0 > 0) {
+          printf(ISANAME " fmod arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+          printf("test = %s\n", sprintf128(t));
+          printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+          fflush(stdout); ecnt++;
+        }
       }
 
       {
-	mpfr_remainder(frw, frx, fry, GMP_RNDN);
+        mpfr_remainder(frw, frx, fry, GMP_RNDN);
 
-	double u0 = countULPf128(t = vget(xremainderq(a0, a1), e), frw, 0);
+        double u0 = countULPf128(t = vget(xremainderq(a0, a1), e), frw, 0);
 
-	if (u0 > 0) {
-	  printf(ISANAME " remainder arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	  printf("test = %s\n", sprintf128(t));
-	  printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	  fflush(stdout); ecnt++;
-	}
+        if (u0 > 0) {
+          printf(ISANAME " remainder arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+          printf("test = %s\n", sprintf128(t));
+          printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+          fflush(stdout); ecnt++;
+        }
       }
     }
 
@@ -538,10 +538,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xtruncq(a0), e), frw, 0);
 
       if (u0 > 0) {
-	printf(ISANAME " trunc arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " trunc arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -550,10 +550,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xfloorq(a0), e), frw, 0);
 
       if (u0 > 0) {
-	printf(ISANAME " floor arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " floor arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -562,10 +562,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xceilq(a0), e), frw, 0);
 
       if (u0 > 0) {
-	printf(ISANAME " ceil arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " ceil arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -574,10 +574,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xroundq(a0), e), frw, 0);
 
       if (u0 > 0) {
-	printf(ISANAME " round arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " round arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -586,10 +586,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xrintq(a0), e), frw, 0);
 
       if (u0 > 0) {
-	printf(ISANAME " rint arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " rint arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -601,10 +601,10 @@ int main(int argc,char **argv)
       Sleef_quad q2 = mpfr_get_f128(frw, GMP_RNDN);
 
       if (memcmp(&t, &q2, sizeof(Sleef_quad)) != 0 && !(isnanf128(t) && isnanf128(q2))) {
-	printf(ISANAME " cast_from_double arg=%.20g\n", d);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(q2));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_from_double arg=%.20g\n", d);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(q2));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -613,10 +613,10 @@ int main(int argc,char **argv)
       double cd = mpfr_get_d(frx, GMP_RNDN);
 
       if (fabs(cd) >= DBL_MIN && cd != td && !(isnan(td) && isnan(cd))) {
-	printf(ISANAME " cast_to_double arg=%s\n", sprintf128(q0));
-	printf("test = %.20g\n", td);
-	printf("corr = %.20g\n", cd);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_to_double arg=%s\n", sprintf128(q0));
+        printf("test = %.20g\n", td);
+        printf("corr = %.20g\n", cd);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -628,10 +628,10 @@ int main(int argc,char **argv)
       Sleef_quad q2 = mpfr_get_f128(frw, GMP_RNDN);
 
       if (memcmp(&t, &q2, sizeof(Sleef_quad)) != 0) {
-	printf(ISANAME " cast_from_int64q arg=%lld\n", (long long)i64);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(q2));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_from_int64q arg=%lld\n", (long long)i64);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(q2));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -640,10 +640,10 @@ int main(int argc,char **argv)
       int64_t cd = mpfr_get_sj(frx, GMP_RNDZ);
 
       if (cd != td && !isnan(mpfr_get_d(frx, GMP_RNDN))) {
-	printf(ISANAME " cast_to_int64q arg=%s\n", sprintf128(q0));
-	printf("test = %lld\n", (long long)td);
-	printf("corr = %lld\n", (long long)cd);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_to_int64q arg=%s\n", sprintf128(q0));
+        printf("test = %lld\n", (long long)td);
+        printf("corr = %lld\n", (long long)cd);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -655,10 +655,10 @@ int main(int argc,char **argv)
       Sleef_quad q2 = mpfr_get_f128(frw, GMP_RNDN);
 
       if (memcmp(&t, &q2, sizeof(Sleef_quad)) != 0) {
-	printf(ISANAME " cast_from_uint64q arg=%llu\n", (unsigned long long)u64);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(q2));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_from_uint64q arg=%llu\n", (unsigned long long)u64);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(q2));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -667,10 +667,10 @@ int main(int argc,char **argv)
       uint64_t cd = mpfr_get_uj(frx, GMP_RNDZ);
 
       if (cd != td && !isnan(mpfr_get_d(frx, GMP_RNDN))) {
-	printf(ISANAME " cast_to_uint64q arg=%s\n", sprintf128(q0));
-	printf("test = %llu\n", (unsigned long long)td);
-	printf("corr = %llu\n", (unsigned long long)cd);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cast_to_uint64q arg=%s\n", sprintf128(q0));
+        printf("test = %llu\n", (unsigned long long)td);
+        printf("corr = %llu\n", (unsigned long long)cd);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -679,8 +679,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpltq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpltq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpltq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -689,8 +689,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpgtq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpgtq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpgtq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -699,8 +699,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpleq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpleq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpleq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -709,8 +709,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpgeq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpgeq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpgeq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -719,8 +719,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpeqq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpeq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpeq arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -729,8 +729,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpneq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmpne arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmpne arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -739,8 +739,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xicmpq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " icmp arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " icmp arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -749,8 +749,8 @@ int main(int argc,char **argv)
       int ti = vgeti(xiunordq(a0, a1), e);
 
       if (ci != ti) {
-	printf(ISANAME " iunord arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
-	fflush(stdout); ecnt++;
+        printf(ISANAME " iunord arg=%s, %s,  test = %d, corr = %d \n", sprintf128(q0), sprintf128(q1), ti, ci);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -763,15 +763,15 @@ int main(int argc,char **argv)
       Sleef_snprintf(s, 63, "%.40Qg", a0);
       q1 = vget(Sleef_strtoq(s, NULL), e);
       if (memcmp(&q0, &q1, sizeof(Sleef_quad)) != 0 && !(isnanf128(q0) && isnanf128(q1))) {
-	printf("snprintf(Qg)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
-	fflush(stdout); ecnt++;
+        printf("snprintf(Qg)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
+        fflush(stdout); ecnt++;
       }
 
       Sleef_snprintf(s, 63, "%Qa", a0);
       q1 = vget(Sleef_strtoq(s, NULL), e);
       if (memcmp(&q0, &q1, sizeof(Sleef_quad)) != 0 && !(isnanf128(q0) && isnanf128(q1))) {
-	printf("snprintf(Qa)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
-	fflush(stdout); ecnt++;
+        printf("snprintf(Qa)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
+        fflush(stdout); ecnt++;
       }
     }
 #else
@@ -782,15 +782,15 @@ int main(int argc,char **argv)
       Sleef_snprintf(s, 63, "%.40Pg", &a0);
       q1 = vget(Sleef_strtoq(s, NULL), e);
       if (memcmp(&q0, &q1, sizeof(Sleef_quad)) != 0 && !(isnanf128(q0) && isnanf128(q1))) {
-	printf("snprintf(Qg)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
-	fflush(stdout); ecnt++;
+        printf("snprintf(Qg)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
+        fflush(stdout); ecnt++;
       }
 
       Sleef_snprintf(s, 63, "%Pa", &a0);
       q1 = vget(Sleef_strtoq(s, NULL), e);
       if (memcmp(&q0, &q1, sizeof(Sleef_quad)) != 0 && !(isnanf128(q0) && isnanf128(q1))) {
-	printf("snprintf(Qa)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
-	fflush(stdout); ecnt++;
+        printf("snprintf(Qa)/strtoq arg=%s str=%s test=%s\n", sprintf128(q0), s, sprintf128(q1));
+        fflush(stdout); ecnt++;
       }
     }
 #endif
@@ -801,10 +801,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xexpq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " exp arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " exp arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -813,10 +813,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xexp2q_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " exp2 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " exp2 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -825,10 +825,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xexp10q_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " exp10 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " exp10 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -837,10 +837,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xexpm1q_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " expm1 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " expm1 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -849,10 +849,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xlogq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " log arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " log arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -861,10 +861,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xlog2q_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " log2 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " log2 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -873,10 +873,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xlog10q_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " log10 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " log10 arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -885,10 +885,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xlog1pq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " log1p arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " log1p arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -898,10 +898,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xpowq_u10(a0, a1), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " pow arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " pow arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -910,10 +910,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xsinhq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " sinh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " sinh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -922,10 +922,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xcoshq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " cosh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cosh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -934,10 +934,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xtanhq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " tanh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " tanh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -946,10 +946,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xasinhq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " asinh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " asinh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -958,10 +958,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xacoshq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " acosh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " acosh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -970,10 +970,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xatanhq_u10(a0), e), frw, 0);
 
       if (u0 > 0.7) {
-	printf(ISANAME " atanh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " atanh arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -982,10 +982,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xatanq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " atan arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " atan arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -995,10 +995,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xatan2q_u10(a0, a1), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " atan2 arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " atan2 arg=%s %s ulp=%.20g\n", sprintf128(q0), sprintf128(q1), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -1011,10 +1011,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xasinq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " asin arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " asin arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -1023,10 +1023,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xacosq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " acos arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " acos arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -1064,10 +1064,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xsinq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " sin arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " sin arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -1076,10 +1076,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xcosq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " cos arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " cos arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -1088,10 +1088,10 @@ int main(int argc,char **argv)
       double u0 = countULPf128(t = vget(xtanq_u10(a0), e), frw, 0);
 
       if (u0 > 0.8) {
-	printf(ISANAME " tan arg=%s ulp=%.20g\n", sprintf128(q0), u0);
-	printf("test = %s\n", sprintf128(t));
-	printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
-	fflush(stdout); ecnt++;
+        printf(ISANAME " tan arg=%s ulp=%.20g\n", sprintf128(q0), u0);
+        printf("test = %s\n", sprintf128(t));
+        printf("corr = %s\n\n", sprintf128(mpfr_get_f128(frw, GMP_RNDN)));
+        fflush(stdout); ecnt++;
       }
     }
   }

@@ -41,113 +41,113 @@ static int cpuSupportsExt(void (*tryExt)()) {
   return cache;
 }
 
-#define DISPATCH_vq_vq(qtype, funcName, pfn, dfn, funcExt0, funcExt1)	\
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0);			\
-  static CONST VECTOR_CC qtype dfn(qtype arg0) {			\
-    qtype CONST VECTOR_CC (*p)(qtype arg0) = funcExt0;			\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0);						\
-  }									\
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0) = dfn;		\
+#define DISPATCH_vq_vq(qtype, funcName, pfn, dfn, funcExt0, funcExt1)   \
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0);                      \
+  static CONST VECTOR_CC qtype dfn(qtype arg0) {                        \
+    qtype CONST VECTOR_CC (*p)(qtype arg0) = funcExt0;                  \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0);                                                \
+  }                                                                     \
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0) = dfn;                \
   EXPORT CONST VECTOR_CC qtype funcName(qtype arg0) { return (*pfn)(arg0); }
 
 #define DISPATCH_vq_vq_vq(qtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1);		\
-  static CONST VECTOR_CC qtype dfn(qtype arg0, qtype arg1) {		\
-    qtype CONST VECTOR_CC (*p)(qtype arg0, qtype arg1) = funcExt0;	\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1);						\
-  }									\
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1) = dfn;	\
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1);          \
+  static CONST VECTOR_CC qtype dfn(qtype arg0, qtype arg1) {            \
+    qtype CONST VECTOR_CC (*p)(qtype arg0, qtype arg1) = funcExt0;      \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1);                                          \
+  }                                                                     \
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1) = dfn;    \
   EXPORT CONST VECTOR_CC qtype funcName(qtype arg0, qtype arg1) { return (*pfn)(arg0, arg1); }
 
 #define DISPATCH_vq_vq_vq_vq(qtype, funcName, pfn, dfn, funcExt0, funcExt1) \
   static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1, qtype arg2); \
   static CONST VECTOR_CC qtype dfn(qtype arg0, qtype arg1, qtype arg2) { \
     qtype CONST VECTOR_CC (*p)(qtype arg0, qtype arg1, qtype arg2) = funcExt0; \
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1, arg2);					\
-  }									\
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1, arg2);                                    \
+  }                                                                     \
   static CONST VECTOR_CC qtype (*pfn)(qtype arg0, qtype arg1, qtype arg2) = dfn; \
   EXPORT CONST VECTOR_CC qtype funcName(qtype arg0, qtype arg1, qtype arg2) { return (*pfn)(arg0, arg1, arg2); }
 
 #define DISPATCH_vq_vq_vx(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1);		\
-  static CONST VECTOR_CC qtype dfn(qtype arg0, xtype arg1) {		\
-    qtype CONST VECTOR_CC (*p)(qtype arg0, xtype arg1) = funcExt0;	\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1);						\
-  }									\
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1) = dfn;	\
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1);          \
+  static CONST VECTOR_CC qtype dfn(qtype arg0, xtype arg1) {            \
+    qtype CONST VECTOR_CC (*p)(qtype arg0, xtype arg1) = funcExt0;      \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1);                                          \
+  }                                                                     \
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1) = dfn;    \
   EXPORT CONST VECTOR_CC qtype funcName(qtype arg0, xtype arg1) { return (*pfn)(arg0, arg1); }
 
 #define DISPATCH_vq_vq_pvx(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static VECTOR_CC qtype (*pfn)(qtype arg0, xtype *arg1);		\
-  static VECTOR_CC qtype dfn(qtype arg0, xtype *arg1) {		\
-    qtype VECTOR_CC (*p)(qtype arg0, xtype *arg1) = funcExt0;	\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1);						\
-  }									\
-  static VECTOR_CC qtype (*pfn)(qtype arg0, xtype *arg1) = dfn;	\
+  static VECTOR_CC qtype (*pfn)(qtype arg0, xtype *arg1);               \
+  static VECTOR_CC qtype dfn(qtype arg0, xtype *arg1) {         \
+    qtype VECTOR_CC (*p)(qtype arg0, xtype *arg1) = funcExt0;   \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1);                                          \
+  }                                                                     \
+  static VECTOR_CC qtype (*pfn)(qtype arg0, xtype *arg1) = dfn; \
   EXPORT VECTOR_CC qtype funcName(qtype arg0, xtype *arg1) { return (*pfn)(arg0, arg1); }
 
 #define DISPATCH_vq_vx(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC qtype (*pfn)(xtype arg0);			\
-  static CONST VECTOR_CC qtype dfn(xtype arg0) {			\
-    qtype CONST VECTOR_CC (*p)(xtype arg0) = funcExt0;			\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0);						\
-  }									\
-  static CONST VECTOR_CC qtype (*pfn)(xtype arg0) = dfn;		\
+  static CONST VECTOR_CC qtype (*pfn)(xtype arg0);                      \
+  static CONST VECTOR_CC qtype dfn(xtype arg0) {                        \
+    qtype CONST VECTOR_CC (*p)(xtype arg0) = funcExt0;                  \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0);                                                \
+  }                                                                     \
+  static CONST VECTOR_CC qtype (*pfn)(xtype arg0) = dfn;                \
   EXPORT CONST VECTOR_CC qtype funcName(xtype arg0) { return (*pfn)(arg0); }
 
 #define DISPATCH_vx_vq(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC xtype (*pfn)(qtype arg0);			\
-  static CONST VECTOR_CC xtype dfn(qtype arg0) {			\
-    xtype CONST VECTOR_CC (*p)(qtype arg0) = funcExt0;			\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0);						\
-  }									\
-  static CONST VECTOR_CC xtype (*pfn)(qtype arg0) = dfn;		\
+  static CONST VECTOR_CC xtype (*pfn)(qtype arg0);                      \
+  static CONST VECTOR_CC xtype dfn(qtype arg0) {                        \
+    xtype CONST VECTOR_CC (*p)(qtype arg0) = funcExt0;                  \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0);                                                \
+  }                                                                     \
+  static CONST VECTOR_CC xtype (*pfn)(qtype arg0) = dfn;                \
   EXPORT CONST VECTOR_CC xtype funcName(qtype arg0) { return (*pfn)(arg0); }
 
 #define DISPATCH_vx_vq_vq(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC xtype (*pfn)(qtype arg0, qtype arg1);		\
-  static CONST VECTOR_CC xtype dfn(qtype arg0, qtype arg1) {		\
-    xtype CONST VECTOR_CC (*p)(qtype arg0, qtype arg1) = funcExt0;	\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1);						\
-  }									\
-  static CONST VECTOR_CC xtype (*pfn)(qtype arg0, qtype arg1) = dfn;	\
+  static CONST VECTOR_CC xtype (*pfn)(qtype arg0, qtype arg1);          \
+  static CONST VECTOR_CC xtype dfn(qtype arg0, qtype arg1) {            \
+    xtype CONST VECTOR_CC (*p)(qtype arg0, qtype arg1) = funcExt0;      \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1);                                          \
+  }                                                                     \
+  static CONST VECTOR_CC xtype (*pfn)(qtype arg0, qtype arg1) = dfn;    \
   EXPORT CONST VECTOR_CC xtype funcName(qtype arg0, qtype arg1) { return (*pfn)(arg0, arg1); }
 
 #define DISPATCH_q_vq_vx(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC Sleef_quad (*pfn)(qtype arg0, xtype arg1);	\
-  static CONST VECTOR_CC Sleef_quad dfn(qtype arg0, xtype arg1) {	\
-    Sleef_quad CONST VECTOR_CC (*p)(qtype arg0, xtype arg1) = funcExt0;	\
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1);						\
-  }									\
+  static CONST VECTOR_CC Sleef_quad (*pfn)(qtype arg0, xtype arg1);     \
+  static CONST VECTOR_CC Sleef_quad dfn(qtype arg0, xtype arg1) {       \
+    Sleef_quad CONST VECTOR_CC (*p)(qtype arg0, xtype arg1) = funcExt0; \
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1);                                          \
+  }                                                                     \
   static CONST VECTOR_CC Sleef_quad (*pfn)(qtype arg0, xtype arg1) = dfn; \
   EXPORT CONST VECTOR_CC Sleef_quad funcName(qtype arg0, xtype arg1) { return (*pfn)(arg0, arg1); }
 
 #define DISPATCH_vq_vq_vi_q(qtype, xtype, funcName, pfn, dfn, funcExt0, funcExt1) \
-  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1, Sleef_quad arg2);	\
+  static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1, Sleef_quad arg2); \
   static CONST VECTOR_CC qtype dfn(qtype arg0, xtype arg1, Sleef_quad arg2) { \
     qtype CONST VECTOR_CC (*p)(qtype arg0, xtype arg1, Sleef_quad arg2) = funcExt0; \
-    SUBST_IF_EXT1(funcExt1);						\
-    pfn = p;								\
-    return (*pfn)(arg0, arg1, arg2);					\
-  }									\
+    SUBST_IF_EXT1(funcExt1);                                            \
+    pfn = p;                                                            \
+    return (*pfn)(arg0, arg1, arg2);                                    \
+  }                                                                     \
   static CONST VECTOR_CC qtype (*pfn)(qtype arg0, xtype arg1, Sleef_quad arg2) = dfn; \
   EXPORT CONST VECTOR_CC qtype funcName(qtype arg0, xtype arg1, Sleef_quad arg2) { return (*pfn)(arg0, arg1, arg2); }
 

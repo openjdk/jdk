@@ -583,7 +583,7 @@ static INLINE vopmask vgt_vo_vi_vi(vint x, vint y) { return (vopmask)vreinterpre
 
 static INLINE vint vsel_vi_vo_vi_vi(vopmask m, vint x, vint y) {
   return vor_vi_vi_vi(vand_vi_vi_vi(vreinterpretFirstHalf_vi_vi2((vint2)m), x),
-		      vandnot_vi_vi_vi(vreinterpretFirstHalf_vi_vi2((vint2)m), y));
+                      vandnot_vi_vi_vi(vreinterpretFirstHalf_vi_vi2((vint2)m), y));
 }
 
 static INLINE vopmask visinf_vo_vd(vdouble d) { return (vopmask)(vabs_vd_vd(d) == SLEEF_INFINITY); }

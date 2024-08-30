@@ -48,12 +48,12 @@ static INLINE CONST VECTOR_CC vdouble2 vcast_vd2_d2(double2 dd) {
 
 static INLINE CONST VECTOR_CC vdouble2 vsel_vd2_vo_vd2_vd2(vopmask m, vdouble2 x, vdouble2 y) {
   return vd2setxy_vd2_vd_vd(vsel_vd_vo_vd_vd(m, vd2getx_vd_vd2(x), vd2getx_vd_vd2(y)),
-			    vsel_vd_vo_vd_vd(m, vd2gety_vd_vd2(x), vd2gety_vd_vd2(y)));
+                            vsel_vd_vo_vd_vd(m, vd2gety_vd_vd2(x), vd2gety_vd_vd2(y)));
 }
 
 static INLINE CONST VECTOR_CC vdouble2 vsel_vd2_vo_d_d_d_d(vopmask o, double x1, double y1, double x0, double y0) {
   return vd2setxy_vd2_vd_vd(vsel_vd_vo_d_d(o, x1, x0),
-			    vsel_vd_vo_d_d(o, y1, y0));
+                            vsel_vd_vo_d_d(o, y1, y0));
 }
 
 static INLINE CONST VECTOR_CC vdouble vadd_vd_3vd(vdouble v0, vdouble v1, vdouble v2) {
@@ -100,9 +100,9 @@ static INLINE CONST VECTOR_CC vdouble2 ddneg_vd2_vd2(vdouble2 x) {
 
 static INLINE CONST VECTOR_CC vdouble2 ddabs_vd2_vd2(vdouble2 x) {
   return vcast_vd2_vd_vd(vabs_vd_vd(vd2getx_vd_vd2(x)),
-			 vreinterpret_vd_vm(vxor_vm_vm_vm(vreinterpret_vm_vd(vd2gety_vd_vd2(x)),
-							  vand_vm_vm_vm(vreinterpret_vm_vd(vd2getx_vd_vd2(x)),
-									vreinterpret_vm_vd(vcast_vd_d(-0.0))))));
+                         vreinterpret_vd_vm(vxor_vm_vm_vm(vreinterpret_vm_vd(vd2gety_vd_vd2(x)),
+                                                          vand_vm_vm_vm(vreinterpret_vm_vd(vd2getx_vd_vd2(x)),
+                                                                        vreinterpret_vm_vd(vcast_vd_d(-0.0))))));
 }
 
 static INLINE CONST VECTOR_CC vdouble2 ddnormalize_vd2_vd2(vdouble2 t) {
@@ -153,7 +153,7 @@ static INLINE CONST VECTOR_CC vdouble2 ddadd2_vd2_vd_vd2(vdouble x, vdouble2 y) 
   vdouble s = vadd_vd_vd_vd(x, vd2getx_vd_vd2(y));
   vdouble v = vsub_vd_vd_vd(s, x);
   return vd2setxy_vd2_vd_vd(s, vadd_vd_vd_vd(vadd_vd_vd_vd(vsub_vd_vd_vd(x, vsub_vd_vd_vd(s, v)),
-							   vsub_vd_vd_vd(vd2getx_vd_vd2(y), v)), vd2gety_vd_vd2(y)));
+                                                           vsub_vd_vd_vd(vd2getx_vd_vd2(y), v)), vd2gety_vd_vd2(y)));
 }
 
 static INLINE CONST VECTOR_CC vdouble2 ddadd_vd2_vd2_vd2(vdouble2 x, vdouble2 y) {
@@ -243,7 +243,7 @@ static INLINE CONST VECTOR_CC vdouble2 dddiv_vd2_vd2_vd2(vdouble2 n, vdouble2 d)
   vdouble s = vmul_vd_vd_vd(vd2getx_vd_vd2(n), t);
 
   vdouble u = vadd_vd_5vd(vsub_vd_vd_vd(vmul_vd_vd_vd(nhh, th), s), vmul_vd_vd_vd(nhh, tl), vmul_vd_vd_vd(nhl, th), vmul_vd_vd_vd(nhl, tl),
-		    vmul_vd_vd_vd(s, vsub_vd_5vd(vcast_vd_d(1), vmul_vd_vd_vd(dh, th), vmul_vd_vd_vd(dh, tl), vmul_vd_vd_vd(dl, th), vmul_vd_vd_vd(dl, tl))));
+                    vmul_vd_vd_vd(s, vsub_vd_5vd(vcast_vd_d(1), vmul_vd_vd_vd(dh, th), vmul_vd_vd_vd(dh, tl), vmul_vd_vd_vd(dl, th), vmul_vd_vd_vd(dl, tl))));
 
   return vd2setxy_vd2_vd_vd(s, vmla_vd_vd_vd_vd(t, vsub_vd_vd_vd(vd2gety_vd_vd2(n), vmul_vd_vd_vd(s, vd2gety_vd_vd2(d))), u));
 }

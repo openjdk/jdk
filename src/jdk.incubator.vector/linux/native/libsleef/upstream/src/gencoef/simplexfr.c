@@ -204,8 +204,8 @@ static void pivot(int ipivot, int jpivot) {
       mpfr_set(u, pivotcolumn[i], GMP_RNDN);
 
       for (j = 1; j <= m; j++) {
-	mpfr_fms(q[i][j], q[ipivot][j], u, q[i][j], GMP_RNDN);
-	mpfr_neg(q[i][j], q[i][j], GMP_RNDN);
+        mpfr_fms(q[i][j], q[ipivot][j], u, q[i][j], GMP_RNDN);
+        mpfr_neg(q[i][j], q[i][j], GMP_RNDN);
       }
     }
 
@@ -224,8 +224,8 @@ static int minimize() {
   for (;;) {
     for (jpivot = 1; jpivot <= jmax; jpivot++) {
       if (row[jpivot] == 0) {
-	tableau(pivotcolumn[0], 0, jpivot);
-	if (mpfr_cmp(pivotcolumn[0], minuseps) < 0) break;
+        tableau(pivotcolumn[0], 0, jpivot);
+        if (mpfr_cmp(pivotcolumn[0], minuseps) < 0) break;
       }
     }
     if (jpivot > jmax) {
@@ -238,9 +238,9 @@ static int minimize() {
     for (i = 1; i <= m; i++) {
       tableau(pivotcolumn[i], i, jpivot);
       if (mpfr_cmp(pivotcolumn[i], eps) > 0) {
-	tableau(t, i, 0);
-	mpfr_div(t, t, pivotcolumn[i], GMP_RNDN);
-	if (mpfr_cmp(t, u) < 0) { ipivot = i; mpfr_set(u, t, GMP_RNDN); }
+        tableau(t, i, 0);
+        mpfr_div(t, t, pivotcolumn[i], GMP_RNDN);
+        if (mpfr_cmp(t, u) < 0) { ipivot = i; mpfr_set(u, t, GMP_RNDN); }
       }
     }
     if (ipivot == 0) {
@@ -279,8 +279,8 @@ static int phase1() {
     if ((j = col[i]) > 0 && j <= n && mpfr_cmp_d(c[j], 0) != 0) {
       mpfr_set(u, c[j], GMP_RNDN);
       for (j = 1; j <= m; j++) {
-	mpfr_fms(q[0][j], q[i][j], u, q[0][j], GMP_RNDN);
-	mpfr_neg(q[0][j], q[0][j], GMP_RNDN);
+        mpfr_fms(q[0][j], q[i][j], u, q[0][j], GMP_RNDN);
+        mpfr_neg(q[0][j], q[0][j], GMP_RNDN);
       }
     }
 

@@ -32,170 +32,170 @@ int main(int argc, char **argv) {
     switch(funcList[i].funcType) {
     case 0:
       printf("DISPATCH_vq_vq(%s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 1:
       printf("DISPATCH_vq_vq_vq(%s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 3:
       printf("DISPATCH_vq_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vintname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vintname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 4:
       printf("DISPATCH_vx_vq(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vintname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vintname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 5:
       printf("DISPATCH_vq_vq_vq_vq(%s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 9:
       printf("DISPATCH_vx_vq_vq(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vintname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vintname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 10:
       printf("DISPATCH_vx_vq(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vdoublename,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vdoublename,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 11:
       printf("DISPATCH_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vdoublename,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vdoublename,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 12:
       printf("DISPATCH_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, "Sleef_quad",
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, "Sleef_quad",
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 16:
       printf("DISPATCH_q_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, "int",
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, "int",
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 17:
       printf("DISPATCH_vq_vq_vi_q(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, "int",
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, "int",
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 18:
       printf("DISPATCH_vx_vq(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vint64name,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vint64name,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 19:
       printf("DISPATCH_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vint64name,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vint64name,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 20:
       printf("DISPATCH_vx_vq(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vuint64name,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vuint64name,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 21:
       printf("DISPATCH_vq_vx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vuint64name,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vuint64name,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 22:
       printf("DISPATCH_vq_vq_pvx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vintname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vintname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;
 
     case 23:
       printf("DISPATCH_vq_vq_pvx(%s, %s, Sleef_%sq%d%s, pnt_%sq%d%s, disp_%sq%d%s",
-	     vquadname, vquadname,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0,
-	     funcList[i].name, wdp, ulpSuffix0);
+             vquadname, vquadname,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0,
+             funcList[i].name, wdp, ulpSuffix0);
       for(int j=0;j<nisa;j++) printf(", Sleef_%sq%d%s%s", funcList[i].name, wdp, ulpSuffix1, argv[isastart + j]);
       printf(")\n");
       break;

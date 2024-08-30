@@ -157,190 +157,190 @@ static SPTYPE vf2gety_vf_vf2(TYPE2(SPTYPE) v) { return v.y; }
 
 //
 
-#define initDigest 					\
-    EVP_MD_CTX *ctx; ctx = EVP_MD_CTX_new();		\
-    if (!ctx) {						\
-        fprintf(stderr, "Error creating context.\n");	\
-        return 0;					\
-    }							\
-    if (!EVP_DigestInit_ex(ctx, EVP_md5(), NULL)) {	\
+#define initDigest                                      \
+    EVP_MD_CTX *ctx; ctx = EVP_MD_CTX_new();            \
+    if (!ctx) {                                         \
+        fprintf(stderr, "Error creating context.\n");   \
+        return 0;                                       \
+    }                                                   \
+    if (!EVP_DigestInit_ex(ctx, EVP_md5(), NULL)) {     \
         fprintf(stderr, "Error initializing context.\n"); \
-        return 0;					\
+        return 0;                                       \
     }
 
-#define checkDigest(NAME, ULP) do {				\
-    unsigned int md5_digest_len = EVP_MD_size(EVP_md5());	\
-    unsigned char *md5_digest;					\
-    md5_digest = (unsigned char *)malloc(md5_digest_len);	\
+#define checkDigest(NAME, ULP) do {                             \
+    unsigned int md5_digest_len = EVP_MD_size(EVP_md5());       \
+    unsigned char *md5_digest;                                  \
+    md5_digest = (unsigned char *)malloc(md5_digest_len);       \
     if (!EVP_DigestFinal_ex(ctx, md5_digest, &md5_digest_len)) { \
-      fprintf(stderr, "Error finalizing digest.\n");		\
-      return 0;							\
-    }								\
-    EVP_MD_CTX_free(ctx);					\
-    unsigned char mes[64], buf[64];				\
-    memset(mes, 0, 64);						\
-    sprintf((char *)mes, "%s ", #NAME " " #ULP);		\
-    char tmp[3] = { 0 };					\
-    for (int i = 0; i < md5_digest_len; i++) {			\
-        sprintf(tmp, "%02x", md5_digest[i]);			\
-        strcat((char *)mes, tmp);				\
-    }								\
-    free(md5_digest);						\
-    if (fp != NULL) {						\
-      fgets((char *)buf, 60, fp);				\
+      fprintf(stderr, "Error finalizing digest.\n");            \
+      return 0;                                                 \
+    }                                                           \
+    EVP_MD_CTX_free(ctx);                                       \
+    unsigned char mes[64], buf[64];                             \
+    memset(mes, 0, 64);                                         \
+    sprintf((char *)mes, "%s ", #NAME " " #ULP);                \
+    char tmp[3] = { 0 };                                        \
+    for (int i = 0; i < md5_digest_len; i++) {                  \
+        sprintf(tmp, "%02x", md5_digest[i]);                    \
+        strcat((char *)mes, tmp);                               \
+    }                                                           \
+    free(md5_digest);                                           \
+    if (fp != NULL) {                                           \
+      fgets((char *)buf, 60, fp);                               \
       if (strncmp((char *)mes, (char *)buf, strlen((char *)mes)) != 0) { \
-	puts((char *)mes);					\
-	puts((char *)buf);					\
-	success = 0;						\
-      }								\
-    } else puts((char *)mes);					\
+        puts((char *)mes);                                      \
+        puts((char *)buf);                                      \
+        success = 0;                                            \
+      }                                                         \
+    } else puts((char *)mes);                                   \
   } while(0)
 
 #if defined(__BYTE_ORDER__) && (__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__)
-#define convertEndianness(ptr, len) do {				\
-  for(int k=0;k<len/2;k++) {						\
-    unsigned char t = ((unsigned char *)ptr)[k];			\
-    ((unsigned char *)ptr)[k] = ((unsigned char *)ptr)[len-1-k];	\
-    ((unsigned char *)ptr)[len-1-k] = t;				\
-  }									\
+#define convertEndianness(ptr, len) do {                                \
+  for(int k=0;k<len/2;k++) {                                            \
+    unsigned char t = ((unsigned char *)ptr)[k];                        \
+    ((unsigned char *)ptr)[k] = ((unsigned char *)ptr)[len-1-k];        \
+    ((unsigned char *)ptr)[len-1-k] = t;                                \
+  }                                                                     \
   } while(0)
 #else
 #define convertEndianness(ptr, len)
 #endif
 
-#define exec_d_d(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {		\
-    int r = xrand() & 0xffff;						\
-    DPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (arg, r));	\
-    double fx = GET(TYPE)(vx, r);					\
-    convertEndianness(&fx, sizeof(double));				\
-    EVP_DigestUpdate(ctx, &fx, sizeof(double));				\
+#define exec_d_d(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {              \
+    int r = xrand() & 0xffff;                                           \
+    DPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (arg, r));    \
+    double fx = GET(TYPE)(vx, r);                                       \
+    convertEndianness(&fx, sizeof(double));                             \
+    EVP_DigestUpdate(ctx, &fx, sizeof(double));                         \
   } while(0)
 
-#define test_d_d(NAME, ULP, START, END, NSTEP) do {		\
-    initDigest							\
-    double step = ((double)(END) - (double)(START))/NSTEP;	\
-    for(double d = (START);d < (END);d += step)			\
-      exec_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, d);	\
-    checkDigest(NAME, ULP);					\
+#define test_d_d(NAME, ULP, START, END, NSTEP) do {             \
+    initDigest                                                  \
+    double step = ((double)(END) - (double)(START))/NSTEP;      \
+    for(double d = (START);d < (END);d += step)                 \
+      exec_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, d); \
+    checkDigest(NAME, ULP);                                     \
   } while(0)
 
-#define testu_d_d(NAME, ULP, START, END, NSTEP) do {			\
-    initDigest								\
-    uint64_t step = (d2u(END) - d2u(START))/NSTEP;			\
-    for(uint64_t u = d2u(START);u < d2u(END);u += step)			\
-      exec_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, u2d(u));	\
-    checkDigest(NAME, ULP);						\
+#define testu_d_d(NAME, ULP, START, END, NSTEP) do {                    \
+    initDigest                                                          \
+    uint64_t step = (d2u(END) - d2u(START))/NSTEP;                      \
+    for(uint64_t u = d2u(START);u < d2u(END);u += step)                 \
+      exec_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, u2d(u));    \
+    checkDigest(NAME, ULP);                                             \
   } while(0)
 
 //
 
-#define exec_d2_d(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {		\
-    int r = xrand() & 0xffff;						\
+#define exec_d2_d(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {             \
+    int r = xrand() & 0xffff;                                           \
     TYPE2(TYPE) vx2 = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE)(arg, r)); \
     double fxx = GET(TYPE)(vd2getx_vd_vd2(vx2), r), fxy = GET(TYPE)(vd2gety_vd_vd2(vx2), r); \
-    convertEndianness(&fxx, sizeof(double));				\
-    EVP_DigestUpdate(ctx, &fxx, sizeof(double));			\
-    convertEndianness(&fxy, sizeof(double));				\
-    EVP_DigestUpdate(ctx, &fxy, sizeof(double));			\
+    convertEndianness(&fxx, sizeof(double));                            \
+    EVP_DigestUpdate(ctx, &fxx, sizeof(double));                        \
+    convertEndianness(&fxy, sizeof(double));                            \
+    EVP_DigestUpdate(ctx, &fxy, sizeof(double));                        \
   } while(0)
 
-#define test_d2_d(NAME, ULP, START, END, NSTEP) do {			\
-    initDigest								\
-    double step = ((double)(END) - (double)(START))/NSTEP;		\
-    for(double d = (START);d < (END);d += step)				\
-      exec_d2_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, d);	\
-    checkDigest(NAME, ULP);						\
+#define test_d2_d(NAME, ULP, START, END, NSTEP) do {                    \
+    initDigest                                                          \
+    double step = ((double)(END) - (double)(START))/NSTEP;              \
+    for(double d = (START);d < (END);d += step)                         \
+      exec_d2_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, d);        \
+    checkDigest(NAME, ULP);                                             \
   } while(0)
 
 //
 
-#define exec_d_d_d(ATR, NAME, ULP, TYPE, TSX, EXT, argu, argv) do {	\
-    int r = xrand() & 0xffff;						\
+#define exec_d_d_d(ATR, NAME, ULP, TYPE, TSX, EXT, argu, argv) do {     \
+    int r = xrand() & 0xffff;                                           \
     DPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (argu, r), SET(TYPE) (argv, r)); \
-    double fx = GET(TYPE)(vx, r);					\
-    convertEndianness(&fx, sizeof(double));				\
-    EVP_DigestUpdate(ctx, &fx, sizeof(double));				\
+    double fx = GET(TYPE)(vx, r);                                       \
+    convertEndianness(&fx, sizeof(double));                             \
+    EVP_DigestUpdate(ctx, &fx, sizeof(double));                         \
   } while(0)
 
 #define test_d_d_d(NAME, ULP, STARTU, ENDU, NSTEPU, STARTV, ENDV, NSTEPV) do { \
-    initDigest								\
-    double stepu = ((double)(ENDU) - (double)(STARTU))/NSTEPU;		\
-    double stepv = ((double)(ENDV) - (double)(STARTV))/NSTEPV;		\
-    for(double u = (STARTU);u < (ENDU);u += stepu)			\
-      for(double v = (STARTV);v < (ENDV);v += stepv)			\
-	exec_d_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, u, v);	\
-    checkDigest(NAME, ULP);						\
+    initDigest                                                          \
+    double stepu = ((double)(ENDU) - (double)(STARTU))/NSTEPU;          \
+    double stepv = ((double)(ENDV) - (double)(STARTV))/NSTEPV;          \
+    for(double u = (STARTU);u < (ENDU);u += stepu)                      \
+      for(double v = (STARTV);v < (ENDV);v += stepv)                    \
+        exec_d_d_d(ATR, NAME, ULP, DPTYPE, DPTYPESPEC, EXTSPEC, u, v);  \
+    checkDigest(NAME, ULP);                                             \
   } while(0)
 
 //
 
-#define exec_f_f(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {		\
-    int r = xrand() & 0xffff;						\
-    SPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (arg, r));	\
-    float fx = GET(TYPE)(vx, r);					\
-    convertEndianness(&fx, sizeof(float));				\
-    EVP_DigestUpdate(ctx, &fx, sizeof(float));				\
+#define exec_f_f(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {              \
+    int r = xrand() & 0xffff;                                           \
+    SPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (arg, r));    \
+    float fx = GET(TYPE)(vx, r);                                        \
+    convertEndianness(&fx, sizeof(float));                              \
+    EVP_DigestUpdate(ctx, &fx, sizeof(float));                          \
   } while(0)
 
-#define test_f_f(NAME, ULP, START, END, NSTEP) do {		\
-    initDigest							\
-    float step = ((double)(END) - (double)(START))/NSTEP;	\
-    for(float d = (START);d < (END);d += step)			\
-      exec_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, d);	\
-    checkDigest(NAME ## f, ULP);				\
+#define test_f_f(NAME, ULP, START, END, NSTEP) do {             \
+    initDigest                                                  \
+    float step = ((double)(END) - (double)(START))/NSTEP;       \
+    for(float d = (START);d < (END);d += step)                  \
+      exec_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, d); \
+    checkDigest(NAME ## f, ULP);                                \
   } while(0)
 
-#define testu_f_f(NAME, ULP, START, END, NSTEP) do {			\
-    initDigest								\
-    uint32_t step = (f2u(END) - f2u(START))/NSTEP;			\
-    for(uint32_t u = f2u(START);u < f2u(END);u += step)			\
-      exec_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, u2f(u));	\
-    checkDigest(NAME ## f, ULP);					\
+#define testu_f_f(NAME, ULP, START, END, NSTEP) do {                    \
+    initDigest                                                          \
+    uint32_t step = (f2u(END) - f2u(START))/NSTEP;                      \
+    for(uint32_t u = f2u(START);u < f2u(END);u += step)                 \
+      exec_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, u2f(u));    \
+    checkDigest(NAME ## f, ULP);                                        \
   } while(0)
 
 //
 
-#define exec_f2_f(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {		\
-    int r = xrand() & 0xffff;						\
+#define exec_f2_f(ATR, NAME, ULP, TYPE, TSX, EXT, arg) do {             \
+    int r = xrand() & 0xffff;                                           \
     TYPE2(TYPE) vx2 = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (arg, r)); \
     float fxx = GET(TYPE)(vf2getx_vf_vf2(vx2), r), fxy = GET(TYPE)(vf2gety_vf_vf2(vx2), r); \
-    convertEndianness(&fxx, sizeof(float));				\
-    EVP_DigestUpdate(ctx, &fxx, sizeof(float));				\
-    convertEndianness(&fxy, sizeof(float));				\
-    EVP_DigestUpdate(ctx, &fxy, sizeof(float));				\
+    convertEndianness(&fxx, sizeof(float));                             \
+    EVP_DigestUpdate(ctx, &fxx, sizeof(float));                         \
+    convertEndianness(&fxy, sizeof(float));                             \
+    EVP_DigestUpdate(ctx, &fxy, sizeof(float));                         \
   } while(0)
 
-#define test_f2_f(NAME, ULP, START, END, NSTEP) do {			\
-    initDigest								\
-    float step = ((float)(END) - (float)(START))/NSTEP;			\
-    for(float d = (START);d < (END);d += step)				\
-      exec_f2_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, d);	\
-    checkDigest(NAME ## f, ULP);					\
+#define test_f2_f(NAME, ULP, START, END, NSTEP) do {                    \
+    initDigest                                                          \
+    float step = ((float)(END) - (float)(START))/NSTEP;                 \
+    for(float d = (START);d < (END);d += step)                          \
+      exec_f2_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, d);        \
+    checkDigest(NAME ## f, ULP);                                        \
   } while(0)
 
 //
 
-#define exec_f_f_f(ATR, NAME, ULP, TYPE, TSX, EXT, argu, argv) do {	\
-    int r = xrand() & 0xffff;						\
+#define exec_f_f_f(ATR, NAME, ULP, TYPE, TSX, EXT, argu, argv) do {     \
+    int r = xrand() & 0xffff;                                           \
     SPTYPE vx = FUNC(ATR, NAME, TSX, ULP, EXT) (SET(TYPE) (argu, r), SET(TYPE) (argv, r)); \
-    float fx = GET(TYPE)(vx, r);					\
-    convertEndianness(&fx, sizeof(float));				\
-    EVP_DigestUpdate(ctx, &fx, sizeof(float));				\
+    float fx = GET(TYPE)(vx, r);                                        \
+    convertEndianness(&fx, sizeof(float));                              \
+    EVP_DigestUpdate(ctx, &fx, sizeof(float));                          \
   } while(0)
 
 #define test_f_f_f(NAME, ULP, STARTU, ENDU, NSTEPU, STARTV, ENDV, NSTEPV) do { \
-    initDigest								\
-    float stepu = ((float)(ENDU) - (float)(STARTU))/NSTEPU;		\
-    float stepv = ((float)(ENDV) - (float)(STARTV))/NSTEPV;		\
-    for(float u = (STARTU);u < (ENDU);u += stepu)			\
-      for(float v = (STARTV);v < (ENDV);v += stepv)			\
-	exec_f_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, u, v);	\
-    checkDigest(NAME ## f, ULP);					\
+    initDigest                                                          \
+    float stepu = ((float)(ENDU) - (float)(STARTU))/NSTEPU;             \
+    float stepv = ((float)(ENDV) - (float)(STARTV))/NSTEPV;             \
+    for(float u = (STARTU);u < (ENDU);u += stepu)                       \
+      for(float v = (STARTV);v < (ENDV);v += stepv)                     \
+        exec_f_f_f(ATR, NAME, ULP, SPTYPE, SPTYPESPEC, EXTSPEC, u, v);  \
+    checkDigest(NAME ## f, ULP);                                        \
   } while(0)
 
 //
 
-#define try_feature(TYPE, ATR_, TSX, EXT, arg)				\
+#define try_feature(TYPE, ATR_, TSX, EXT, arg)                          \
   GET(TYPE) (FUNC(ATR_, pow, TSX, u10, EXT) (SET(TYPE) (arg, 0), SET(TYPE) (arg, 0)), 0)
 
 int check_feature(double d, float f) {

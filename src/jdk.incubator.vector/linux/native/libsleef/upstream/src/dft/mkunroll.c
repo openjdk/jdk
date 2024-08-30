@@ -67,34 +67,34 @@ int main(int argc, char **argv) {
       fprintf(fpout, "#define ctbl ctbl_%s\n\n", baseType);
 
       for(;;) {
-	if (fgets(line, LEN, fpin) == NULL) break;
-	char *s;
-	if ((config & 1) == 0) {
-	  char *s0 = replaceAll(line, "%ISA%", isaString);
-	  s = replaceAll(s0, "%CONFIG%", configString);
-	  free(s0);
-	} else {
-	  char *s0 = replaceAll(line, "%ISA%", isaString);
-	  char *s1 = replaceAll(s0, "%CONFIG%", configString);
-	  char *s2 = replaceAll(s1, "store(", "stream(");
-	  s = replaceAll(s2, "scatter(", "scstream(");
-	  free(s0); free(s1); free(s2);
-	}
+        if (fgets(line, LEN, fpin) == NULL) break;
+        char *s;
+        if ((config & 1) == 0) {
+          char *s0 = replaceAll(line, "%ISA%", isaString);
+          s = replaceAll(s0, "%CONFIG%", configString);
+          free(s0);
+        } else {
+          char *s0 = replaceAll(line, "%ISA%", isaString);
+          char *s1 = replaceAll(s0, "%CONFIG%", configString);
+          char *s2 = replaceAll(s1, "store(", "stream(");
+          s = replaceAll(s2, "scatter(", "scstream(");
+          free(s0); free(s1); free(s2);
+        }
 
-	if ((config & 2) == 0) {
-	  char *s0 = replaceAll(s, "#pragma", "//");
-	  free(s);
-	  s = s0;
-	}
+        if ((config & 2) == 0) {
+          char *s0 = replaceAll(s, "#pragma", "//");
+          free(s);
+          s = s0;
+        }
 
-	if (config == 0) {
-	  char *s0 = replaceAll(s, "#undef EMITREALSUB", "#define EMITREALSUB");
-	  free(s);
-	  s = s0;
-	}
+        if (config == 0) {
+          char *s0 = replaceAll(s, "#undef EMITREALSUB", "#define EMITREALSUB");
+          free(s);
+          s = s0;
+        }
 
-	fputs(s, fpout);
-	free(s);
+        fputs(s, fpout);
+        free(s);
       }
 
       fclose(fpin);

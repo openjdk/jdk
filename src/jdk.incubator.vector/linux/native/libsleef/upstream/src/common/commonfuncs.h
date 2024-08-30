@@ -227,7 +227,7 @@ static INLINE CONST VECTOR_CC vdouble vorsign_vd_vd_vd(vdouble x, vdouble y) {
 
 static INLINE CONST VECTOR_CC vdouble vcopysign_vd_vd_vd(vdouble x, vdouble y) {
   return vreinterpret_vd_vm(vxor_vm_vm_vm(vandnot_vm_vm_vm(vreinterpret_vm_vd(vcast_vd_d(-0.0)), vreinterpret_vm_vd(x)),
-					  vand_vm_vm_vm   (vreinterpret_vm_vd(vcast_vd_d(-0.0)), vreinterpret_vm_vd(y))));
+                                          vand_vm_vm_vm   (vreinterpret_vm_vd(vcast_vd_d(-0.0)), vreinterpret_vm_vd(y))));
 }
 #endif
 
@@ -271,7 +271,7 @@ static INLINE  CONST VECTOR_CC vdouble vrint2_vd_vd(vdouble d) {
 #else
   vdouble c = vmulsign_vd_vd_vd(vcast_vd_d(INT64_C(1) << 52), d);
   return vsel_vd_vo_vd_vd(vgt_vo_vd_vd(vabs_vd_vd(d), vcast_vd_d(INT64_C(1) << 52)),
-			  d, vorsign_vd_vd_vd(vsub_vd_vd_vd(vadd_vd_vd_vd(d, c), c), d));
+                          d, vorsign_vd_vd_vd(vsub_vd_vd_vd(vadd_vd_vd_vd(d, c), c), d));
 #endif
 }
 
@@ -415,7 +415,7 @@ static INLINE CONST vquad add128_vq_vq_vq(vquad x, vquad y) {
 static INLINE CONST vquad imdvq_vq_vm_vm(vmask x, vmask y) { vquad r = vqsetxy_vq_vm_vm(x, y); return r; }
 
 // imm must be smaller than 64
-#define srl128_vq_vq_i(m, imm)					\
+#define srl128_vq_vq_i(m, imm)                                  \
   imdvq_vq_vm_vm(vor_vm_vm_vm(vsrl64_vm_vm_i(vqgetx_vm_vq(m), imm), vsll64_vm_vm_i(vqgety_vm_vq(m), 64-imm)), vsrl64_vm_vm_i(vqgety_vm_vq(m), imm))
 
 // This function is equivalent to :
@@ -428,11 +428,11 @@ static INLINE CONST di_t rempisub(vdouble x) {
 #else
   vdouble c = vmulsign_vd_vd_vd(vcast_vd_d(INT64_C(1) << 52), x);
   vdouble rint4x = vsel_vd_vo_vd_vd(vgt_vo_vd_vd(vabs_vd_vd(vmul_vd_vd_vd(vcast_vd_d(4), x)), vcast_vd_d(INT64_C(1) << 52)),
-				    vmul_vd_vd_vd(vcast_vd_d(4), x),
-				    vorsign_vd_vd_vd(vsub_vd_vd_vd(vmla_vd_vd_vd_vd(vcast_vd_d(4), x, c), c), x));
+                                    vmul_vd_vd_vd(vcast_vd_d(4), x),
+                                    vorsign_vd_vd_vd(vsub_vd_vd_vd(vmla_vd_vd_vd_vd(vcast_vd_d(4), x, c), c), x));
   vdouble rintx  = vsel_vd_vo_vd_vd(vgt_vo_vd_vd(vabs_vd_vd(x), vcast_vd_d(INT64_C(1) << 52)),
-				    x, vorsign_vd_vd_vd(vsub_vd_vd_vd(vadd_vd_vd_vd(x, c), c), x));
+                                    x, vorsign_vd_vd_vd(vsub_vd_vd_vd(vadd_vd_vd_vd(x, c), c), x));
   return disetdi_di_vd_vi(vmla_vd_vd_vd_vd(vcast_vd_d(-0.25), rint4x, x),
-			  vtruncate_vi_vd(vmla_vd_vd_vd_vd(vcast_vd_d(-4), rintx, rint4x)));
+                          vtruncate_vi_vd(vmla_vd_vd_vd_vd(vcast_vd_d(-4), rintx, rint4x)));
 #endif
 }

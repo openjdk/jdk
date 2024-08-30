@@ -14071,7 +14071,7 @@ ALIGNED(8192) void realSub0_%ISA%(real *d, const real *s, const int log2len, con
 
     real2 t = minusplus(v, u);
     real2 m = minusplus(reverse(times(t, loadu(rtCoef1, k))),
-			times(t, loadu(rtCoef0, k)));
+                        times(t, loadu(rtCoef0, k)));
 
     storeu(d, idx0, minusplus(v, uminus(m)));
     store (d, idx1, reverse2(minus(u, m)));
@@ -14125,7 +14125,7 @@ ALIGNED(8192) void realSub1_%ISA%(real *d, const real *s, const int log2len, con
 
     real2 t = minusplus(v, u);
     real2 m = minusplus(reverse(times(t, loadu(rtCoef1, k))),
-			times(t, loadu(rtCoef0, k)));
+                        times(t, loadu(rtCoef0, k)));
 
     storeu(d, idx0, ctimes(uplusminus(minus(u, m)), c));
     store (d, idx1, ctimes(reverse2(minusplus(m, uminus(v))), c));

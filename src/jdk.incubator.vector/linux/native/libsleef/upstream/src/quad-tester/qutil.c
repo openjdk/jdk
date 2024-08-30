@@ -33,9 +33,9 @@ int main(int argc, char **argv) {
   } cnv = { .q = Sleef_strtoq(argv[1], NULL) };
 
   Sleef_printf("%+Pa\nsleef_q(%c0x%c%012llxLL, 0x%016llxULL, %d)\n",
-	       &cnv.q, (cnv.h >> 63) ? '-' : '+',
-	       (int)((cnv.h >> 48) & 0x7fff) == 0 ? '0' : '1',
-	       (unsigned long long)(0xffffffffffffULL & cnv.h),
-	       (unsigned long long)cnv.l,
-	       (int)((cnv.h >> 48) & 0x7fff) - 16383);
+               &cnv.q, (cnv.h >> 63) ? '-' : '+',
+               (int)((cnv.h >> 48) & 0x7fff) == 0 ? '0' : '1',
+               (unsigned long long)(0xffffffffffffULL & cnv.h),
+               (unsigned long long)cnv.l,
+               (int)((cnv.h >> 48) & 0x7fff) - 16383);
 }

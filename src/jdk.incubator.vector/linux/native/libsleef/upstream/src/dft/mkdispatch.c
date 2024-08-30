@@ -43,12 +43,12 @@ int main(int argc, char **argv) {
       if ((config & 1) != 0) continue;
 #endif
       for(int j=1;j<=maxbutwidth;j++) {
-	printf("void dft%df_%d_%s(real *, const real *, const int);\n", 1 << j, config, argv[k]);
-	printf("void dft%db_%d_%s(real *, const real *, const int);\n", 1 << j, config, argv[k]);
-	printf("void tbut%df_%d_%s(real *, uint32_t *, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
-	printf("void tbut%db_%d_%s(real *, uint32_t *, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
-	printf("void but%df_%d_%s(real *, uint32_t *, const int, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
-	printf("void but%db_%d_%s(real *, uint32_t *, const int, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void dft%df_%d_%s(real *, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void dft%db_%d_%s(real *, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void tbut%df_%d_%s(real *, uint32_t *, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void tbut%db_%d_%s(real *, uint32_t *, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void but%df_%d_%s(real *, uint32_t *, const int, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
+        printf("void but%db_%d_%s(real *, uint32_t *, const int, const real *, const int, const real *, const int);\n", 1 << j, config, argv[k]);
       }
     }
     printf("void realSub0_%s(real *, const real *, const int, const real *, const real *);\n", argv[k]);
@@ -65,11 +65,11 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  printf("dft%df_%d_%s, ", 1 << i, config, argv[k]);
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          printf("dft%df_%d_%s, ", 1 << i, config, argv[k]);
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }
@@ -83,15 +83,15 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  if (i == 1) {
-	    printf("dft%df_%d_%s, ", 1 << i, config, argv[k]);
-	  } else {
-	    printf("dft%db_%d_%s, ", 1 << i, config, argv[k]);
-	  }
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          if (i == 1) {
+            printf("dft%df_%d_%s, ", 1 << i, config, argv[k]);
+          } else {
+            printf("dft%db_%d_%s, ", 1 << i, config, argv[k]);
+          }
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }
@@ -105,11 +105,11 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  printf("tbut%df_%d_%s, ", 1 << i, config, argv[k]);
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          printf("tbut%df_%d_%s, ", 1 << i, config, argv[k]);
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }
@@ -123,11 +123,11 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  printf("tbut%db_%d_%s, ", 1 << i, config, argv[k]);
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          printf("tbut%db_%d_%s, ", 1 << i, config, argv[k]);
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }
@@ -141,11 +141,11 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  printf("but%df_%d_%s, ", 1 << i, config, argv[k]);
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          printf("but%df_%d_%s, ", 1 << i, config, argv[k]);
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }
@@ -159,11 +159,11 @@ int main(int argc, char **argv) {
     for(int k=isastart;k<argc;k++) {
       printf("    {NULL, ");
       for(int i=1;i<=maxbutwidth;i++) {
-	if (enable_stream || (config & 1) == 0) {
-	  printf("but%db_%d_%s, ", 1 << i, config, argv[k]);
-	} else {
-	  printf("NULL, ");
-	}
+        if (enable_stream || (config & 1) == 0) {
+          printf("but%db_%d_%s, ", 1 << i, config, argv[k]);
+        } else {
+          printf("NULL, ");
+        }
       }
       printf("},\n");
     }

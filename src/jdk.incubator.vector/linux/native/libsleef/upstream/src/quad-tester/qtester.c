@@ -101,177 +101,177 @@ typedef union {
 } cnv128;
 #endif
 
-#define child_q_q(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);			\
-    return c.q;								\
+#define child_q_q(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg;                                                          \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);       \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);                    \
+    return c.q;                                                         \
   } while(0)
 
-#define child_q2_q(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c0, c1;							\
-    c0.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
+#define child_q2_q(funcStr, arg) do {                                   \
+    char str[256];                                                      \
+    cnv128 c0, c1;                                                      \
+    c0.q = arg;                                                         \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);     \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
     sscanf(str, "%" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 , &c0.h, &c0.l, &c1.h, &c1.l); \
-    Sleef_quad2 ret = { c0.q, c1.q };					\
-    return ret;								\
+    Sleef_quad2 ret = { c0.q, c1.q };                                   \
+    return ret;                                                         \
   } while(0)
 
-#define child_q_q_q(funcStr, arg0, arg1) do {				\
-    char str[256];							\
-    cnv128 c0, c1;							\
-    c0.q = arg0;							\
-    c1.q = arg1;							\
+#define child_q_q_q(funcStr, arg0, arg1) do {                           \
+    char str[256];                                                      \
+    cnv128 c0, c1;                                                      \
+    c0.q = arg0;                                                        \
+    c1.q = arg1;                                                        \
     sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l, c1.h, c1.l); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c0.h, &c0.l);			\
-    return c0.q;							\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c0.h, &c0.l);                  \
+    return c0.q;                                                        \
   } while(0)
 
-#define child_q_q_q_q(funcStr, arg0, arg1, arg2) do {			\
-    char str[256];							\
-    cnv128 c0, c1, c2;							\
-    c0.q = arg0;							\
-    c1.q = arg1;							\
-    c2.q = arg2;							\
+#define child_q_q_q_q(funcStr, arg0, arg1, arg2) do {                   \
+    char str[256];                                                      \
+    cnv128 c0, c1, c2;                                                  \
+    c0.q = arg0;                                                        \
+    c1.q = arg1;                                                        \
+    c2.q = arg2;                                                        \
     sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l, c1.h, c1.l, c2.h, c2.l); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c0.h, &c0.l);			\
-    return c0.q;							\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c0.h, &c0.l);                  \
+    return c0.q;                                                        \
   } while(0)
 
-#define child_i_q(funcStr, arg0) do {					\
-    char str[256];							\
-    cnv128 c0;							\
-    c0.q = arg0;							\
+#define child_i_q(funcStr, arg0) do {                                   \
+    char str[256];                                                      \
+    cnv128 c0;                                                  \
+    c0.q = arg0;                                                        \
     sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    int i;								\
-    sscanf(str, "%d", &i);						\
-    return i;								\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    int i;                                                              \
+    sscanf(str, "%d", &i);                                              \
+    return i;                                                           \
   } while(0)
 
-#define child_i_q_q(funcStr, arg0, arg1) do {				\
-    char str[256];							\
-    cnv128 c0, c1;							\
-    c0.q = arg0;							\
-    c1.q = arg1;							\
+#define child_i_q_q(funcStr, arg0, arg1) do {                           \
+    char str[256];                                                      \
+    cnv128 c0, c1;                                                      \
+    c0.q = arg0;                                                        \
+    c1.q = arg1;                                                        \
     sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l, c1.h, c1.l); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    int i;								\
-    sscanf(str, "%d", &i);						\
-    return i;								\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    int i;                                                              \
+    sscanf(str, "%d", &i);                                              \
+    return i;                                                           \
   } while(0)
 
-#define child_q_q_i(funcStr, arg0, arg1) do {				\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg0;								\
+#define child_q_q_i(funcStr, arg0, arg1) do {                           \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg0;                                                         \
     sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 " %d\n", c.h, c.l, arg1); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);			\
-    return c.q;								\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);                    \
+    return c.q;                                                         \
   } while(0)
 
-#define child_d_q(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    uint64_t u;								\
-    sscanf(str, "%" PRIx64, &u);					\
-    return u2d(u);							\
+#define child_d_q(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg;                                                          \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);       \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    uint64_t u;                                                         \
+    sscanf(str, "%" PRIx64, &u);                                        \
+    return u2d(u);                                                      \
   } while(0)
 
-#define child_q_d(funcStr, arg) do {					\
-    char str[256];							\
-    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));			\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    cnv128 c;								\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);			\
-    return c.q;								\
+#define child_q_d(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                   \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    cnv128 c;                                                           \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);                    \
+    return c.q;                                                         \
   } while(0)
 
-#define child_m_q(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    uint64_t u;								\
-    sscanf(str, "%" PRIx64, &u);					\
-    return u;								\
+#define child_m_q(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg;                                                          \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);       \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    uint64_t u;                                                         \
+    sscanf(str, "%" PRIx64, &u);                                        \
+    return u;                                                           \
   } while(0)
 
-#define child_q_m(funcStr, arg) do {					\
-    char str[256];							\
-    sprintf(str, funcStr " %" PRIx64 "\n", arg);			\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    cnv128 c;								\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);			\
-    return c.q;								\
+#define child_q_m(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    sprintf(str, funcStr " %" PRIx64 "\n", arg);                        \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    cnv128 c;                                                           \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);                    \
+    return c.q;                                                         \
   } while(0)
 
-#define child_q_q_pi(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    int i;								\
-    sscanf(str, "%" PRIx64 ":%" PRIx64 " %d", &c.h, &c.l, &i);		\
-    *ptr = i;								\
-    return c.q;								\
+#define child_q_q_pi(funcStr, arg) do {                                 \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg;                                                          \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);       \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    int i;                                                              \
+    sscanf(str, "%" PRIx64 ":%" PRIx64 " %d", &c.h, &c.l, &i);          \
+    *ptr = i;                                                           \
+    return c.q;                                                         \
   } while(0)
 
-#define child_q_q_pq(funcStr, arg) do {					\
-    char str[256];							\
-    cnv128 c0, c1;							\
-    c0.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
+#define child_q_q_pq(funcStr, arg) do {                                 \
+    char str[256];                                                      \
+    cnv128 c0, c1;                                                      \
+    c0.q = arg;                                                         \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);     \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
     sscanf(str, "%" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l, &c1.h, &c1.l); \
-    *ptr = c1.q;							\
-    return c0.q;							\
+    *ptr = c1.q;                                                        \
+    return c0.q;                                                        \
   } while(0)
 
-#define child_q_str(funcStr, arg) do {					\
-    char str[256];							\
-    sprintf(str, funcStr " %s\n", arg);					\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    cnv128 c;								\
-    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);			\
-    return c.q;								\
+#define child_q_str(funcStr, arg) do {                                  \
+    char str[256];                                                      \
+    sprintf(str, funcStr " %s\n", arg);                                 \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    cnv128 c;                                                           \
+    sscanf(str, "%" PRIx64 ":%" PRIx64, &c.h, &c.l);                    \
+    return c.q;                                                         \
   } while(0)
 
-#define child_str_q(funcStr, ret, arg) do {				\
-    char str[256];							\
-    cnv128 c;								\
-    c.q = arg;								\
-    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);	\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%63s", ret);						\
+#define child_str_q(funcStr, ret, arg) do {                             \
+    char str[256];                                                      \
+    cnv128 c;                                                           \
+    c.q = arg;                                                          \
+    sprintf(str, funcStr " %" PRIx64 ":%" PRIx64 "\n", c.h, c.l);       \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%63s", ret);                                           \
   } while(0)
 
 Sleef_quad child_addq_u05(Sleef_quad x, Sleef_quad y) { child_q_q_q("addq_u05", x, y); }
@@ -348,368 +348,368 @@ Sleef_quad child_rintq(Sleef_quad x) { child_q_q("rintq", x); }
 
 //
 
-#define cmpDenorm_q(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frz, frx, GMP_RNDN);					\
-    Sleef_quad t = childFunc(argx);					\
-    double u = countULPf128(t, frz, 1);					\
-    if (u >= 10) {							\
-      fprintf(stderr, "\narg     = %s\ntest    = %s\ncorrect = %s\nulp = %g\n",	\
-	      sprintf128(argx), sprintf128(t), sprintfr(frz), u);	\
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenorm_q(mpfrFunc, childFunc, argx) do {                     \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx, GMP_RNDN);                                       \
+    Sleef_quad t = childFunc(argx);                                     \
+    double u = countULPf128(t, frz, 1);                                 \
+    if (u >= 10) {                                                      \
+      fprintf(stderr, "\narg     = %s\ntest    = %s\ncorrect = %s\nulp = %g\n", \
+              sprintf128(argx), sprintf128(t), sprintfr(frz), u);       \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormNMR_q(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frz, frx);							\
-    Sleef_quad t = childFunc(argx);					\
-    double u = countULPf128(t, frz, 1);					\
-    if (u >= 10) {							\
-      fprintf(stderr, "\narg     = %s\ntest    = %s\ncorrect = %s\nulp = %g\n",	\
-	      sprintf128(argx), sprintf128(t), sprintfr(frz), u);	\
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenormNMR_q(mpfrFunc, childFunc, argx) do {                  \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx);                                                 \
+    Sleef_quad t = childFunc(argx);                                     \
+    double u = countULPf128(t, frz, 1);                                 \
+    if (u >= 10) {                                                      \
+      fprintf(stderr, "\narg     = %s\ntest    = %s\ncorrect = %s\nulp = %g\n", \
+              sprintf128(argx), sprintf128(t), sprintfr(frz), u);       \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenorm_q_q(mpfrFunc, childFunc, argx, argy) do {		\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_set_f128(fry, argy, GMP_RNDN);					\
-    mpfrFunc(frz, frx, fry, GMP_RNDN);					\
-    Sleef_quad t = childFunc(argx, argy);				\
-    double u = countULPf128(t, frz, 1);					\
-    if (u >= 10) {							\
-      Sleef_quad qz = mpfr_get_f128(frz, GMP_RNDN);			\
+#define cmpDenorm_q_q(mpfrFunc, childFunc, argx, argy) do {             \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_set_f128(fry, argy, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx, fry, GMP_RNDN);                                  \
+    Sleef_quad t = childFunc(argx, argy);                               \
+    double u = countULPf128(t, frz, 1);                                 \
+    if (u >= 10) {                                                      \
+      Sleef_quad qz = mpfr_get_f128(frz, GMP_RNDN);                     \
       fprintf(stderr, "\narg     = %s,\n          %s\ntest    = %s\ncorrect = %s\nulp = %g\n", \
-	      sprintf128(argx), sprintf128(argy), sprintf128(t), sprintf128(qz), u); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(argy), sprintf128(t), sprintf128(qz), u); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenorm_q_q_q(mpfrFunc, childFunc, argw, argx, argy) do {	\
-    mpfr_set_f128(frw, argw, GMP_RNDN);					\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_set_f128(fry, argy, GMP_RNDN);					\
-    mpfrFunc(frz, frw, frx, fry, GMP_RNDN);				\
-    Sleef_quad t = childFunc(argw, argx, argy);				\
-    double u = countULPf128(t, frz, 1);					\
-    if (u >= 10) {							\
-      Sleef_quad qz = mpfr_get_f128(frz, GMP_RNDN);			\
+#define cmpDenorm_q_q_q(mpfrFunc, childFunc, argw, argx, argy) do {     \
+    mpfr_set_f128(frw, argw, GMP_RNDN);                                 \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_set_f128(fry, argy, GMP_RNDN);                                 \
+    mpfrFunc(frz, frw, frx, fry, GMP_RNDN);                             \
+    Sleef_quad t = childFunc(argw, argx, argy);                         \
+    double u = countULPf128(t, frz, 1);                                 \
+    if (u >= 10) {                                                      \
+      Sleef_quad qz = mpfr_get_f128(frz, GMP_RNDN);                     \
       fprintf(stderr, "\narg     = %s,\n          %s,\n          %s\ntest    = %s\ncorrect = %s\nulp = %g\n", \
-	      sprintf128(argw), sprintf128(argx), sprintf128(argy), sprintf128(t), sprintf128(qz), u); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argw), sprintf128(argx), sprintf128(argy), sprintf128(t), sprintf128(qz), u); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenorm_q_pi(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_exp_t e;							\
-    mpfrFunc(&e, frz, frx, GMP_RNDN);					\
-    int i;								\
-    Sleef_quad t = childFunc(argx, &i);					\
-    double u = countULPf128(t, frz, 1);					\
-    if (u >= 10 || i != (int)e) {					\
-      fprintf(stderr, "\narg     = %s\ntest    = %s, %d\ncorrect = %s, %d\nulp = %g\n",	\
-	      sprintf128(argx), sprintf128(t), i, sprintfr(frz), (int)e, u); \
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenorm_q_pi(mpfrFunc, childFunc, argx) do {                  \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_exp_t e;                                                       \
+    mpfrFunc(&e, frz, frx, GMP_RNDN);                                   \
+    int i;                                                              \
+    Sleef_quad t = childFunc(argx, &i);                                 \
+    double u = countULPf128(t, frz, 1);                                 \
+    if (u >= 10 || i != (int)e) {                                       \
+      fprintf(stderr, "\narg     = %s\ntest    = %s, %d\ncorrect = %s, %d\nulp = %g\n", \
+              sprintf128(argx), sprintf128(t), i, sprintfr(frz), (int)e, u); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenorm_q_pq(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(fry, frz, frx, GMP_RNDN);					\
-    Sleef_quad qi, qf;							\
-    qf = childFunc(argx, &qi);						\
-    double u = countULPf128(qf, frz, 1);				\
-    double v = countULPf128(qi, fry, 1);				\
-    if (u >= 10 || v >= 10) {						\
+#define cmpDenorm_q_pq(mpfrFunc, childFunc, argx) do {                  \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(fry, frz, frx, GMP_RNDN);                                  \
+    Sleef_quad qi, qf;                                                  \
+    qf = childFunc(argx, &qi);                                          \
+    double u = countULPf128(qf, frz, 1);                                \
+    double v = countULPf128(qi, fry, 1);                                \
+    if (u >= 10 || v >= 10) {                                           \
       fprintf(stderr, "\narg     = %s\ntest    = %s, %s\ncorrect = %s, %s\nulp = %g, %g\n", \
-	      sprintf128(argx), sprintf128(qf), sprintf128(qi), sprintfr(frz), sprintfr(fry), u, v); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(qf), sprintf128(qi), sprintfr(frz), sprintfr(fry), u, v); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_q(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frz, frx, GMP_RNDN);					\
-    Sleef_quad t = childFunc(argx);					\
-    double e = countULPf128(t, frz, 0);					\
-    maxError = fmax(maxError, e);					\
-    if (e > bound) {							\
+#define checkAccuracy_q(mpfrFunc, childFunc, argx, bound) do {          \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx, GMP_RNDN);                                       \
+    Sleef_quad t = childFunc(argx);                                     \
+    double e = countULPf128(t, frz, 0);                                 \
+    maxError = fmax(maxError, e);                                       \
+    if (e > bound) {                                                    \
       fprintf(stderr, "\narg = %s, test = %s, correct = %s, ULP = %lf\n", \
-	      sprintf128(argx), sprintf128(childFunc(argx)), sprintfr(frz), countULPf128(t, frz, 0)); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(childFunc(argx)), sprintfr(frz), countULPf128(t, frz, 0)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyNMR_q(mpfrFunc, childFunc, argx, bound) do {	\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frz, frx);							\
-    Sleef_quad t = childFunc(argx);					\
-    double e = countULPf128(t, frz, 0);					\
-    maxError = fmax(maxError, e);					\
-    if (e > bound) {							\
+#define checkAccuracyNMR_q(mpfrFunc, childFunc, argx, bound) do {       \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx);                                                 \
+    Sleef_quad t = childFunc(argx);                                     \
+    double e = countULPf128(t, frz, 0);                                 \
+    maxError = fmax(maxError, e);                                       \
+    if (e > bound) {                                                    \
       fprintf(stderr, "\narg = %s, test = %s, correct = %s, ULP = %lf\n", \
-	      sprintf128(argx), sprintf128(childFunc(argx)), sprintfr(frz), countULPf128(t, frz, 0)); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(childFunc(argx)), sprintfr(frz), countULPf128(t, frz, 0)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_q_q(mpfrFunc, childFunc, argx, argy, bound) do {	\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_set_f128(fry, argy, GMP_RNDN);					\
-    mpfrFunc(frz, frx, fry, GMP_RNDN);					\
-    Sleef_quad t = childFunc(argx, argy);				\
-    double e = countULPf128(t, frz, 0);					\
-    maxError = fmax(maxError, e);					\
-    if (e > bound) {							\
+#define checkAccuracy_q_q(mpfrFunc, childFunc, argx, argy, bound) do {  \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_set_f128(fry, argy, GMP_RNDN);                                 \
+    mpfrFunc(frz, frx, fry, GMP_RNDN);                                  \
+    Sleef_quad t = childFunc(argx, argy);                               \
+    double e = countULPf128(t, frz, 0);                                 \
+    maxError = fmax(maxError, e);                                       \
+    if (e > bound) {                                                    \
       fprintf(stderr, "\narg = %s, %s, test = %s, correct = %s, ULP = %lf\n", \
-	      sprintf128(argx), sprintf128(argy), sprintf128(childFunc(argx, argy)), sprintfr(frz), countULPf128(t, frz, 0)); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(argy), sprintf128(childFunc(argx, argy)), sprintfr(frz), countULPf128(t, frz, 0)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_q_q_q(mpfrFunc, childFunc, argw, argx, argy, bound) do {	\
-    mpfr_set_f128(frw, argw, GMP_RNDN);					\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_set_f128(fry, argy, GMP_RNDN);					\
-    mpfrFunc(frz, frw, frx, fry, GMP_RNDN);				\
-    Sleef_quad t = childFunc(argw, argx, argy);				\
-    double e = countULPf128(t, frz, 0);					\
-    maxError = fmax(maxError, e);					\
-    if (e > bound) {							\
+#define checkAccuracy_q_q_q(mpfrFunc, childFunc, argw, argx, argy, bound) do {  \
+    mpfr_set_f128(frw, argw, GMP_RNDN);                                 \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_set_f128(fry, argy, GMP_RNDN);                                 \
+    mpfrFunc(frz, frw, frx, fry, GMP_RNDN);                             \
+    Sleef_quad t = childFunc(argw, argx, argy);                         \
+    double e = countULPf128(t, frz, 0);                                 \
+    maxError = fmax(maxError, e);                                       \
+    if (e > bound) {                                                    \
       fprintf(stderr, "\narg = %s, %s, %s, test = %s, correct = %s, ULP = %lf\n", \
-	      sprintf128(argw), sprintf128(argx), sprintf128(argy), sprintf128(childFunc(argw, argx, argy)), sprintfr(frz), countULPf128(t, frz, 0)); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argw), sprintf128(argx), sprintf128(argy), sprintf128(childFunc(argw, argx, argy)), sprintfr(frz), countULPf128(t, frz, 0)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_q_pi(mpfrFunc, childFunc, argx, bound) do {	\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_exp_t ex;							\
-    mpfrFunc(&ex, frz, frx, GMP_RNDN);					\
-    int i;								\
-    Sleef_quad t = childFunc(argx, &i);					\
-    double e = countULPf128(t, frz, 0);					\
-    maxError = fmax(maxError, e);					\
-    if (e > bound || i != (int)ex) {					\
+#define checkAccuracy_q_pi(mpfrFunc, childFunc, argx, bound) do {       \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_exp_t ex;                                                      \
+    mpfrFunc(&ex, frz, frx, GMP_RNDN);                                  \
+    int i;                                                              \
+    Sleef_quad t = childFunc(argx, &i);                                 \
+    double e = countULPf128(t, frz, 0);                                 \
+    maxError = fmax(maxError, e);                                       \
+    if (e > bound || i != (int)ex) {                                    \
       fprintf(stderr, "\narg = %s, test = %s, %d, correct = %s, %d, ULP = %lf\n", \
-	      sprintf128(argx), sprintf128(t), i, sprintfr(frz), (int)ex, countULPf128(t, frz, 0)); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(t), i, sprintfr(frz), (int)ex, countULPf128(t, frz, 0)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_q_pq(mpfrFunc, childFunc, argx, bound) do {	\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfrFunc(fry, frz, frx, GMP_RNDN);					\
-    Sleef_quad qi, qf;							\
-    qf = childFunc(argx, &qi);						\
-    double ef = countULPf128(qf, frz, 0);				\
-    double ei = countULPf128(qi, fry, 0);				\
-    maxError = fmax(maxError, ef);					\
-    maxError = fmax(maxError, ei);					\
-    if (ef > bound || ei > bound) {					\
+#define checkAccuracy_q_pq(mpfrFunc, childFunc, argx, bound) do {       \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfrFunc(fry, frz, frx, GMP_RNDN);                                  \
+    Sleef_quad qi, qf;                                                  \
+    qf = childFunc(argx, &qi);                                          \
+    double ef = countULPf128(qf, frz, 0);                               \
+    double ei = countULPf128(qi, fry, 0);                               \
+    maxError = fmax(maxError, ef);                                      \
+    maxError = fmax(maxError, ei);                                      \
+    if (ef > bound || ei > bound) {                                     \
       fprintf(stderr, "\narg = %s, test = %s, %s, correct = %s, %s, ULP = %lf, %lf\n", \
-	      sprintf128(argx), sprintf128(qf), sprintf128(qi), sprintfr(frz), sprintfr(fry), ef, ei); \
-      success = 0;							\
-      break;								\
-    }									\
+              sprintf128(argx), sprintf128(qf), sprintf128(qi), sprintfr(frz), sprintfr(fry), ef, ei); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define testComparison(mpfrFunc, childFunc, argx, argy) do {		\
-    mpfr_set_f128(frx, argx, GMP_RNDN);					\
-    mpfr_set_f128(fry, argy, GMP_RNDN);					\
-    int c = mpfrFunc(frx, fry);						\
-    int t = childFunc(argx, argy);					\
-    if ((c != 0) != (t != 0)) {						\
-      fprintf(stderr, "\narg = %s, %s, test = %d, correct = %d\n",	\
-	      sprintf128(argx), sprintf128(argy), t, c);		\
-      success = 0;							\
-      break;								\
-    }									\
+#define testComparison(mpfrFunc, childFunc, argx, argy) do {            \
+    mpfr_set_f128(frx, argx, GMP_RNDN);                                 \
+    mpfr_set_f128(fry, argy, GMP_RNDN);                                 \
+    int c = mpfrFunc(frx, fry);                                         \
+    int t = childFunc(argx, argy);                                      \
+    if ((c != 0) != (t != 0)) {                                         \
+      fprintf(stderr, "\narg = %s, %s, test = %d, correct = %d\n",      \
+              sprintf128(argx), sprintf128(argy), t, c);                \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
 //
 
-#define cmpDenormOuterLoop_q(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      cmpDenorm_q(mpfrFunc, childFunc, a0);				\
-    }									\
+#define cmpDenormOuterLoop_q(mpfrFunc, childFunc, checkVals) do {       \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      cmpDenorm_q(mpfrFunc, childFunc, a0);                             \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormOuterLoop_q_q(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {	\
-	Sleef_quad a1 = cast_q_str(checkVals[j]);			\
-	cmpDenorm_q_q(mpfrFunc, childFunc, a0, a1);			\
-      }									\
-    }									\
+#define cmpDenormOuterLoop_q_q(mpfrFunc, childFunc, checkVals) do {     \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {  \
+        Sleef_quad a1 = cast_q_str(checkVals[j]);                       \
+        cmpDenorm_q_q(mpfrFunc, childFunc, a0, a1);                     \
+      }                                                                 \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormOuterLoop_q_q_q(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {	\
-	Sleef_quad a1 = cast_q_str(checkVals[j]);			\
-	for(int k=0;k<sizeof(checkVals)/sizeof(char *) && success;k++) { \
-	  Sleef_quad a2 = cast_q_str(checkVals[k]);			\
-	  cmpDenorm_q_q_q(mpfrFunc, childFunc, a0, a1, a2);		\
-	}								\
-      }									\
-    }									\
+#define cmpDenormOuterLoop_q_q_q(mpfrFunc, childFunc, checkVals) do {   \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {  \
+        Sleef_quad a1 = cast_q_str(checkVals[j]);                       \
+        for(int k=0;k<sizeof(checkVals)/sizeof(char *) && success;k++) { \
+          Sleef_quad a2 = cast_q_str(checkVals[k]);                     \
+          cmpDenorm_q_q_q(mpfrFunc, childFunc, a0, a1, a2);             \
+        }                                                               \
+      }                                                                 \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormOuterLoopNMR_q(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      cmpDenormNMR_q(mpfrFunc, childFunc, a0);				\
-    }									\
+#define cmpDenormOuterLoopNMR_q(mpfrFunc, childFunc, checkVals) do {    \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      cmpDenormNMR_q(mpfrFunc, childFunc, a0);                          \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormOuterLoop_q_pi(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      cmpDenorm_q_pi(mpfrFunc, childFunc, a0);				\
-    }									\
+#define cmpDenormOuterLoop_q_pi(mpfrFunc, childFunc, checkVals) do {    \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      cmpDenorm_q_pi(mpfrFunc, childFunc, a0);                          \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormOuterLoop_q_pq(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      cmpDenorm_q_pq(mpfrFunc, childFunc, a0);				\
-    }									\
+#define cmpDenormOuterLoop_q_pq(mpfrFunc, childFunc, checkVals) do {    \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      cmpDenorm_q_pq(mpfrFunc, childFunc, a0);                          \
+    }                                                                   \
   } while(0)
 
 //
 
 #define checkAccuracyOuterLoop_q(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
-      Sleef_quad x = rndf128(min, max, sign);				\
-      checkAccuracy_q(mpfrFunc, childFunc, x, bound);			\
-    }									\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
+      Sleef_quad x = rndf128(min, max, sign);                           \
+      checkAccuracy_q(mpfrFunc, childFunc, x, bound);                   \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyOuterLoop2_q(mpfrFunc, childFunc, checkVals, bound) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      checkAccuracy_q(mpfrFunc, childFunc, x, bound);			\
-    }									\
+#define checkAccuracyOuterLoop2_q(mpfrFunc, childFunc, checkVals, bound) do {   \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      checkAccuracy_q(mpfrFunc, childFunc, x, bound);                   \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop_q_q(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
       Sleef_quad x = rndf128(min, max, sign), y = rndf128(min, max, sign); \
-      checkAccuracy_q_q(mpfrFunc, childFunc, x, y, bound);		\
-    }									\
+      checkAccuracy_q_q(mpfrFunc, childFunc, x, y, bound);              \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop2_q_q(mpfrFunc, childFunc, checkVals, bound) do { \
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      for(int j=0;j<sizeof(checkVals)/sizeof(char *);j++) {		\
-	Sleef_quad y = cast_q_str(checkVals[j]);			\
-	checkAccuracy_q_q(mpfrFunc, childFunc, x, y, bound);		\
-      }									\
-    }									\
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      for(int j=0;j<sizeof(checkVals)/sizeof(char *);j++) {             \
+        Sleef_quad y = cast_q_str(checkVals[j]);                        \
+        checkAccuracy_q_q(mpfrFunc, childFunc, x, y, bound);            \
+      }                                                                 \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop_q_q_q(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
-      Sleef_quad w = rndf128(min, max, sign);				\
-      Sleef_quad x = rndf128(min, max, sign);				\
-      Sleef_quad y = rndf128(min, max, sign);				\
-      checkAccuracy_q_q_q(mpfrFunc, childFunc, w, x, y, bound);		\
-    }									\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
+      Sleef_quad w = rndf128(min, max, sign);                           \
+      Sleef_quad x = rndf128(min, max, sign);                           \
+      Sleef_quad y = rndf128(min, max, sign);                           \
+      checkAccuracy_q_q_q(mpfrFunc, childFunc, w, x, y, bound);         \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop2_q_q_q(mpfrFunc, childFunc, checkVals, bound) do { \
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      for(int j=0;j<sizeof(checkVals)/sizeof(char *);j++) {		\
-	Sleef_quad y = cast_q_str(checkVals[j]);			\
-	for(int k=0;k<sizeof(checkVals)/sizeof(char *);k++) {		\
-	  Sleef_quad z = cast_q_str(checkVals[k]);			\
-	  checkAccuracy_q_q_q(mpfrFunc, childFunc, x, y, z, bound);	\
-	}								\
-      }									\
-    }									\
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      for(int j=0;j<sizeof(checkVals)/sizeof(char *);j++) {             \
+        Sleef_quad y = cast_q_str(checkVals[j]);                        \
+        for(int k=0;k<sizeof(checkVals)/sizeof(char *);k++) {           \
+          Sleef_quad z = cast_q_str(checkVals[k]);                      \
+          checkAccuracy_q_q_q(mpfrFunc, childFunc, x, y, z, bound);     \
+        }                                                               \
+      }                                                                 \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoopNMR_q(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
-      Sleef_quad x = rndf128(min, max, sign);				\
-      checkAccuracyNMR_q(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
+      Sleef_quad x = rndf128(min, max, sign);                           \
+      checkAccuracyNMR_q(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop2NMR_q(mpfrFunc, childFunc, checkVals, bound) do { \
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      checkAccuracyNMR_q(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      checkAccuracyNMR_q(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
-#define testComparisonOuterLoop(mpfrFunc, childFunc, checkVals) do {	\
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad a0 = cast_q_str(checkVals[i]);				\
-      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {	\
-	Sleef_quad a1 = cast_q_str(checkVals[j]);			\
-	testComparison(mpfrFunc, childFunc, a0, a1);			\
-      }									\
-    }									\
+#define testComparisonOuterLoop(mpfrFunc, childFunc, checkVals) do {    \
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad a0 = cast_q_str(checkVals[i]);                         \
+      for(int j=0;j<sizeof(checkVals)/sizeof(char *) && success;j++) {  \
+        Sleef_quad a1 = cast_q_str(checkVals[j]);                       \
+        testComparison(mpfrFunc, childFunc, a0, a1);                    \
+      }                                                                 \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop_q_pi(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
-      Sleef_quad x = rndf128(min, max, sign);				\
-      checkAccuracy_q_pi(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
+      Sleef_quad x = rndf128(min, max, sign);                           \
+      checkAccuracy_q_pi(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop2_q_pi(mpfrFunc, childFunc, checkVals, bound) do { \
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      checkAccuracy_q_pi(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      checkAccuracy_q_pi(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop_q_pq(mpfrFunc, childFunc, minStr, maxStr, sign, nLoop, bound, seed) do { \
-    xsrand(seed);							\
-    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);	\
-    for(int i=0;i<nLoop && success;i++) {				\
-      Sleef_quad x = rndf128(min, max, sign);				\
-      checkAccuracy_q_pq(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    xsrand(seed);                                                       \
+    Sleef_quad min = cast_q_str(minStr), max = cast_q_str(maxStr);      \
+    for(int i=0;i<nLoop && success;i++) {                               \
+      Sleef_quad x = rndf128(min, max, sign);                           \
+      checkAccuracy_q_pq(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
 #define checkAccuracyOuterLoop2_q_pq(mpfrFunc, childFunc, checkVals, bound) do { \
-    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {		\
-      Sleef_quad x = cast_q_str(checkVals[i]);				\
-      checkAccuracy_q_pq(mpfrFunc, childFunc, x, bound);		\
-    }									\
+    for(int i=0;i<sizeof(checkVals)/sizeof(char *);i++) {               \
+      Sleef_quad x = cast_q_str(checkVals[i]);                          \
+      checkAccuracy_q_pq(mpfrFunc, childFunc, x, bound);                \
+    }                                                                   \
   } while(0)
 
 //
@@ -923,12 +923,12 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       double d;
       switch(i) {
-	case 0: d = +0.0; break;
-	case 1: d = -0.0; break;
-	case 2: d = +SLEEF_INFINITY; break;
-	case 3: d = -SLEEF_INFINITY; break;
-	case 4: d = SLEEF_NAN; break;
-	default : memrand(&d, sizeof(d));
+        case 0: d = +0.0; break;
+        case 1: d = -0.0; break;
+        case 2: d = +SLEEF_INFINITY; break;
+        case 3: d = -SLEEF_INFINITY; break;
+        case 4: d = SLEEF_NAN; break;
+        default : memrand(&d, sizeof(d));
       }
       Sleef_quad qt = child_cast_from_doubleq(d);
       mpfr_set_d(frz, d, GMP_RNDN);
@@ -936,7 +936,7 @@ void do_test(int options) {
       if (memcmp(&qt, &qc, sizeof(Sleef_quad)) == 0) continue;
       if (isnanf128(qt) && isnanf128(qc)) continue;
       fprintf(stderr, "\narg     = %.20g\ntest    = %s\ncorrect = %s\n",
-	      d, sprintf128(qt), sprintf128(qc));
+              d, sprintf128(qt), sprintf128(qc));
       success = 0;
       break;
     }
@@ -950,9 +950,9 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       Sleef_quad x;
       if (i < sizeof(stdCheckVals)/sizeof(char *)) {
-	x = cast_q_str(stdCheckVals[i]);
+        x = cast_q_str(stdCheckVals[i]);
       } else {
-	x = rndf128(min, max, 1);
+        x = rndf128(min, max, 1);
       }
       double dt = child_cast_to_doubleq(x);
       mpfr_set_f128(frz, x, GMP_RNDN);
@@ -960,7 +960,7 @@ void do_test(int options) {
       if (dt == dc) continue;
       if (isnan(dt) && isnan(dc)) continue;
       fprintf(stderr, "\narg     = %s\ntest    = %.20g\ncorrect = %.20g\n",
-	      sprintf128(x), dt, dc);
+              sprintf128(x), dt, dc);
       success = 0;
       break;
     }
@@ -973,17 +973,17 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       int64_t d;
       switch(i) {
-	case 0: d = 0; break;
-	case 1: d = +0x7fffffffffffffffL; break;
-	case 2: d = -0x8000000000000000L; break;
-	default : memrand(&d, sizeof(d));
+        case 0: d = 0; break;
+        case 1: d = +0x7fffffffffffffffL; break;
+        case 2: d = -0x8000000000000000L; break;
+        default : memrand(&d, sizeof(d));
       }
       Sleef_quad qt = child_cast_from_int64q(d);
       mpfr_set_sj(frz, d, GMP_RNDN);
       Sleef_quad qc = mpfr_get_f128(frz, GMP_RNDN);
       if (memcmp(&qt, &qc, sizeof(Sleef_quad)) == 0) continue;
       fprintf(stderr, "\narg     = %lld\ntest    = %s\ncorrect = %s\n",
-	      (long long int)d, sprintf128(qt), sprintf128(qc));
+              (long long int)d, sprintf128(qt), sprintf128(qc));
       success = 0;
       break;
     }
@@ -997,16 +997,16 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       Sleef_quad x;
       if (i < sizeof(stdCheckVals)/sizeof(char *) - 1) {
-	x = cast_q_str(stdCheckVals[i]);
+        x = cast_q_str(stdCheckVals[i]);
       } else {
-	x = rndf128(min, max, 1);
+        x = rndf128(min, max, 1);
       }
       int64_t dt = child_cast_to_int64q(x);
       mpfr_set_f128(frz, x, GMP_RNDN);
       int64_t dc = mpfr_get_sj(frz, GMP_RNDZ);
       if (dt == dc) continue;
       fprintf(stderr, "\narg     = %s\ntest    = %lld\ncorrect = %lld\n",
-	      sprintf128(x), (long long int)dt, (long long int)dc);
+              sprintf128(x), (long long int)dt, (long long int)dc);
       success = 0;
       break;
     }
@@ -1019,17 +1019,17 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       uint64_t d;
       switch(i) {
-	case 0: d = 0; break;
-	case 1: d = +0x7fffffffffffffffL; break;
-	case 2: d = -0x8000000000000000L; break;
-	default : memrand(&d, sizeof(d));
+        case 0: d = 0; break;
+        case 1: d = +0x7fffffffffffffffL; break;
+        case 2: d = -0x8000000000000000L; break;
+        default : memrand(&d, sizeof(d));
       }
       Sleef_quad qt = child_cast_from_uint64q(d);
       mpfr_set_uj(frz, d, GMP_RNDN);
       Sleef_quad qc = mpfr_get_f128(frz, GMP_RNDN);
       if (memcmp(&qt, &qc, sizeof(Sleef_quad)) == 0) continue;
       fprintf(stderr, "\narg     = %lld\ntest    = %s\ncorrect = %s\n",
-	      (long long int)d, sprintf128(qt), sprintf128(qc));
+              (long long int)d, sprintf128(qt), sprintf128(qc));
       success = 0;
       break;
     }
@@ -1043,16 +1043,16 @@ void do_test(int options) {
     for(int i=0;i<10 * NTEST;i++) {
       Sleef_quad x;
       if (i < sizeof(stdCheckVals)/sizeof(char *) - 1) {
-	x = cast_q_str(stdCheckVals[i]);
+        x = cast_q_str(stdCheckVals[i]);
       } else {
-	x = rndf128(min, max, 0);
+        x = rndf128(min, max, 0);
       }
       uint64_t dt = child_cast_to_uint64q(x);
       mpfr_set_f128(frz, x, GMP_RNDN);
       uint64_t dc = mpfr_get_uj(frz, GMP_RNDZ);
       if (dt == dc) continue;
       fprintf(stderr, "\narg     = %s\ntest    = %lld\ncorrect = %lld\n",
-	      sprintf128(x), (long long int)dt, (long long int)dc);
+              sprintf128(x), (long long int)dt, (long long int)dc);
       success = 0;
       break;
     }
@@ -1351,18 +1351,18 @@ void do_test(int options) {
 
     for(int i=0;i<sizeof(ldexpCheckVals)/sizeof(int);i++) {
       for(int j=0;j<sizeof(stdCheckVals)/sizeof(char *) && success;j++) {
-	Sleef_quad a0 = cast_q_str(stdCheckVals[j]);
-	Sleef_quad t = child_ldexpq(a0, ldexpCheckVals[i]);
-	mpfr_set_f128(frx, a0, GMP_RNDN);
-	mpfr_set(frz, frx, GMP_RNDN);
-	if (!mpfr_zero_p(frx)) mpfr_set_exp(frz, mpfr_get_exp(frz) + ldexpCheckVals[i]);
-	double u = countULPf128(t, frz, 0);
-	if (u > 0.5) {
-	  fprintf(stderr, "\narg     = %s, %d\ntest    = %s\ncorrect = %s\nulp = %g\n",
-		  sprintf128(a0), ldexpCheckVals[i], sprintf128(t), sprintfr(frz), u);
-	  success = 0;
-	  break;
-	}
+        Sleef_quad a0 = cast_q_str(stdCheckVals[j]);
+        Sleef_quad t = child_ldexpq(a0, ldexpCheckVals[i]);
+        mpfr_set_f128(frx, a0, GMP_RNDN);
+        mpfr_set(frz, frx, GMP_RNDN);
+        if (!mpfr_zero_p(frx)) mpfr_set_exp(frz, mpfr_get_exp(frz) + ldexpCheckVals[i]);
+        double u = countULPf128(t, frz, 0);
+        if (u > 0.5) {
+          fprintf(stderr, "\narg     = %s, %d\ntest    = %s\ncorrect = %s\nulp = %g\n",
+                  sprintf128(a0), ldexpCheckVals[i], sprintf128(t), sprintfr(frz), u);
+          success = 0;
+          break;
+        }
       }
     }
 
@@ -1385,10 +1385,10 @@ void do_test(int options) {
       Sleef_quad a0 = cast_q_str(stdCheckVals[i]);
       int t = child_ilogbq(a0);
       if (t != correctIlogbVals[i]) {
-	fprintf(stderr, "\narg     = %s\ntest    = %d\ncorrect = %d\n",
-		sprintf128(a0), t, correctIlogbVals[i]);
-	success = 0;
-	break;
+        fprintf(stderr, "\narg     = %s\ntest    = %d\ncorrect = %d\n",
+                sprintf128(a0), t, correctIlogbVals[i]);
+        success = 0;
+        break;
       }
     }
 
@@ -1453,7 +1453,7 @@ void do_test(int options) {
       if (isnanf128(a0) && isnanf128(a1)) continue;
 
       fprintf(stderr, "\narg     = %s\ntest    = %s\ncorrect = %s\n",
-	      stdCheckVals[i], sprintf128(a1), sprintf128(a0));
+              stdCheckVals[i], sprintf128(a1), sprintf128(a0));
       success = 0;
       break;
     }
@@ -1469,7 +1469,7 @@ void do_test(int options) {
       if (isnanf128(a0) && isnanf128(a1)) continue;
 
       fprintf(stderr, "\narg     = %s\nteststr = %s\ntest    = %s\ncorrect = %s\n",
-	      stdCheckVals[i], s, sprintf128(a0), sprintf128(a1));
+              stdCheckVals[i], s, sprintf128(a0), sprintf128(a1));
       success = 0;
       break;
     }
@@ -1485,7 +1485,7 @@ void do_test(int options) {
       if (isnanf128(a0) && isnanf128(a1)) continue;
 
       fprintf(stderr, "\narg     = %s\nteststr = %s\ntest    = %s\ncorrect = %s\n",
-	      stdCheckVals[i], s, sprintf128(a0), sprintf128(a1));
+              stdCheckVals[i], s, sprintf128(a0), sprintf128(a1));
       success = 0;
       break;
     }
@@ -1529,43 +1529,43 @@ int main(int argc, char **argv) {
     char str[256];
 
     if (readln(ctop[0], str, 255) < 1 ||
-	sscanf(str, "%d", &options) != 1 ||
-	(options & 1) == 0) {
+        sscanf(str, "%d", &options) != 1 ||
+        (options & 1) == 0) {
       if (commandSde != NULL || commandQEmu != NULL) {
-	close(ctop[0]);
-	close(ptoc[1]);
+        close(ctop[0]);
+        close(ptoc[1]);
 
-	if (commandSde) {
-	  argv2[0] = commandSde;
-	  argv2[1] = "--";
-	  for(i=a2s;i<argc;i++) argv2[i-a2s+2] = argv[i];
-	  argv2[argc-a2s+2] = NULL;
-	} else {
-	  argv2[0] = commandQEmu;
-	  for(i=a2s;i<argc;i++) argv2[i-a2s+1] = argv[i];
-	  argv2[argc-a2s+1] = NULL;
-	}
+        if (commandSde) {
+          argv2[0] = commandSde;
+          argv2[1] = "--";
+          for(i=a2s;i<argc;i++) argv2[i-a2s+2] = argv[i];
+          argv2[argc-a2s+2] = NULL;
+        } else {
+          argv2[0] = commandQEmu;
+          for(i=a2s;i<argc;i++) argv2[i-a2s+1] = argv[i];
+          argv2[argc-a2s+1] = NULL;
+        }
 
-	startChild(argv2[0], argv2);
+        startChild(argv2[0], argv2);
 
-	if (readln(ctop[0], str, 255) < 1) stop("Feature detection(sde, readln)");
-	if (sscanf(str, "%d", &options) != 1) stop("Feature detection(sde, sscanf)");
-	if ((options & 1) == 0) {
-	  fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature(SDE)\n");
-	  return 0;
-	}
+        if (readln(ctop[0], str, 255) < 1) stop("Feature detection(sde, readln)");
+        if (sscanf(str, "%d", &options) != 1) stop("Feature detection(sde, sscanf)");
+        if ((options & 1) == 0) {
+          fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature(SDE)\n");
+          return 0;
+        }
 
-	fprintf(stderr, "*** Using emulator\n");
+        fprintf(stderr, "*** Using emulator\n");
       } else {
-	int status;
-	waitpid(pid, &status, 0);
-	if (WIFSIGNALED(status)) {
-	  fprintf(stderr, "\n\nTester : *** Child process has crashed\n");
-	  return -1;
-	}
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFSIGNALED(status)) {
+          fprintf(stderr, "\n\nTester : *** Child process has crashed\n");
+          return -1;
+        }
 
-	fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature\n");
-	return 0;
+        fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature\n");
+        return 0;
       }
     }
   }

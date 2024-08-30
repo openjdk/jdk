@@ -52,11 +52,11 @@ static int cpuSupportsFMA() {
 #endif
 
 #ifdef ENABLE_ALIAS
-#define VECALIAS_vf_vf(fptype, funcNameS, funcName, veclen)		\
+#define VECALIAS_vf_vf(fptype, funcNameS, funcName, veclen)             \
   EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## v_ ## funcNameS(fptype) __attribute__((alias(stringify(funcName))));
-#define VECALIAS_vf_vf_vf(fptype, funcNameS, funcName, veclen)		\
+#define VECALIAS_vf_vf_vf(fptype, funcNameS, funcName, veclen)          \
   EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## vv_ ## funcNameS(fptype, fptype) __attribute__((alias(stringify(funcName))));
-#define VECALIAS_vf_vf_vf_vf(fptype, funcNameS, funcName, veclen)	\
+#define VECALIAS_vf_vf_vf_vf(fptype, funcNameS, funcName, veclen)       \
   EXPORT CONST VECTOR_CC fptype _ZGVbN ## veclen ## vvv_ ## funcNameS(fptype, fptype, fptype) __attribute__((alias(stringify(funcName))));
 #endif
 

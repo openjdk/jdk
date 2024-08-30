@@ -295,13 +295,13 @@ if(ENABLE_GNUABI)
 
       set(HEADER_GENERATED "")
       foreach(T dp sp)
-	set(HEADER_MASKED_${SIMD}_${T}_GNUABI ${CMAKE_CURRENT_BINARY_DIR}/include/masked_${vecarch}_${T}_gnuabi.h)
-	list(APPEND HEADER_GENERATED ${HEADER_MASKED_${SIMD}_${T}_GNUABI})
+        set(HEADER_MASKED_${SIMD}_${T}_GNUABI ${CMAKE_CURRENT_BINARY_DIR}/include/masked_${vecarch}_${T}_gnuabi.h)
+        list(APPEND HEADER_GENERATED ${HEADER_MASKED_${SIMD}_${T}_GNUABI})
 
-	add_custom_command(OUTPUT ${HEADER_MASKED_${SIMD}_${T}_GNUABI}
+        add_custom_command(OUTPUT ${HEADER_MASKED_${SIMD}_${T}_GNUABI}
           COMMAND $<TARGET_FILE:${TARGET_MKMASKED_GNUABI}> ${MKMASKED_PARAMS_GNUABI_${SIMD}_${T}} > ${HEADER_MASKED_${SIMD}_${T}_GNUABI}
           DEPENDS ${TARGET_MKMASKED_GNUABI}
-	  )
+          )
       endforeach()
       add_custom_target(masked${SIMD}_generated DEPENDS ${HEADER_GENERATED})
     endif()
@@ -425,45 +425,45 @@ foreach(SIMD ${SLEEF_SUPPORTED_LIBM_EXTENSIONS})
 
     if (INDEX_ALIAS EQUAL -1)
       target_compile_definitions(${OBJECT_${SIMD}} PRIVATE
-	ENABLE_${SIMD}=1
-	DORENAME=1
-	${COMMON_TARGET_DEFINITIONS}
-	)
+        ENABLE_${SIMD}=1
+        DORENAME=1
+        ${COMMON_TARGET_DEFINITIONS}
+        )
       target_compile_definitions(${OBJECTDET_${SIMD}} PRIVATE
-	ENABLE_${SIMD}=1
-	DORENAME=1
-	${COMMON_TARGET_DEFINITIONS}
-	)
+        ENABLE_${SIMD}=1
+        DORENAME=1
+        ${COMMON_TARGET_DEFINITIONS}
+        )
     else()
       add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
-	COMMAND $<TARGET_FILE:${TARGET_MKALIAS}> ${ALIAS_PARAMS_${SIMD}_DP} > ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
-	DEPENDS ${TARGET_MKALIAS}
-	)
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
+        COMMAND $<TARGET_FILE:${TARGET_MKALIAS}> ${ALIAS_PARAMS_${SIMD}_DP} > ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
+        DEPENDS ${TARGET_MKALIAS}
+        )
       add_custom_command(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp
-	COMMAND $<TARGET_FILE:${TARGET_MKALIAS}> ${ALIAS_PARAMS_${SIMD}_SP} > ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp
-	DEPENDS ${TARGET_MKALIAS}
-	)
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp
+        COMMAND $<TARGET_FILE:${TARGET_MKALIAS}> ${ALIAS_PARAMS_${SIMD}_SP} > ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp
+        DEPENDS ${TARGET_MKALIAS}
+        )
       sleef_concat_files(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/alias_${SIMDLC}.h
-	SOURCES ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
-       	)
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/alias_${SIMDLC}.h
+        SOURCES ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_sp.h.tmp ${CMAKE_CURRENT_BINARY_DIR}/alias_${SIMD}_dp.h.tmp
+        )
       add_custom_target(alias_${SIMDLC}.h_generated SOURCES ${CMAKE_CURRENT_BINARY_DIR}/include/alias_${SIMDLC}.h)
       add_dependencies(${OBJECT_${SIMD}} alias_${SIMDLC}.h_generated)
       add_dependencies(${OBJECTDET_${SIMD}} alias_${SIMDLC}.h_generated)
       target_compile_definitions(${OBJECT_${SIMD}} PRIVATE
-	ENABLE_${SIMD}=1
-	DORENAME=1
-	${COMMON_TARGET_DEFINITIONS}
-	ALIAS_NO_EXT_SUFFIX=\"alias_${SIMDLC}.h\"
-	)
+        ENABLE_${SIMD}=1
+        DORENAME=1
+        ${COMMON_TARGET_DEFINITIONS}
+        ALIAS_NO_EXT_SUFFIX=\"alias_${SIMDLC}.h\"
+        )
       target_compile_definitions(${OBJECTDET_${SIMD}} PRIVATE
-	ENABLE_${SIMD}=1
-	DORENAME=1
-	${COMMON_TARGET_DEFINITIONS}
-	ALIAS_NO_EXT_SUFFIX=\"alias_${SIMDLC}.h\"
-	)
+        ENABLE_${SIMD}=1
+        DORENAME=1
+        ${COMMON_TARGET_DEFINITIONS}
+        ALIAS_NO_EXT_SUFFIX=\"alias_${SIMDLC}.h\"
+        )
     endif()
 
     # Enable Vector PCS for Advanced SIMD (if supported)
@@ -507,143 +507,143 @@ if(SLEEF_BUILD_INLINE_HEADERS)
   if (SED_COMMAND)
     foreach(SIMD ${SLEEF_SUPPORTED_LIBM_EXTENSIONS} CUDA)
       if(COMPILER_SUPPORTS_${SIMD} OR ${SIMD} STREQUAL "CUDA")
-	string(TOLOWER ${SIMD} SIMDLC)
+        string(TOLOWER ${SIMD} SIMDLC)
 
         if(CMAKE_CROSSCOMPILING AND CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_C_COMPILER_TARGET AND NOT "${SIMD}" STREQUAL "CUDA" )
           set(FLAG_TARGET --target=${CMAKE_C_COMPILER_TARGET})
         endif()
 
-	if ("${SIMD}" STREQUAL "CUDA")
-	  set(TARGET_PP_FLAGS ${FLAG_DEFINE}SLEEF_ALWAYS_INLINE=__device__
-	                      ${FLAG_DEFINE}SLEEF_INLINE=__device__
-	                      ${FLAG_DEFINE}SLEEF_CONST=__device__
-	                      ${FLAG_DEFINE}static=__device__)
+        if ("${SIMD}" STREQUAL "CUDA")
+          set(TARGET_PP_FLAGS ${FLAG_DEFINE}SLEEF_ALWAYS_INLINE=__device__
+                              ${FLAG_DEFINE}SLEEF_INLINE=__device__
+                              ${FLAG_DEFINE}SLEEF_CONST=__device__
+                              ${FLAG_DEFINE}static=__device__)
           set(INLINE_HEADER_ORG ${CMAKE_CURRENT_SOURCE_DIR}/sleefinline_cuda_header.h.org)
-	  # Remove redundant __device__
-	  set(TARGET_REPLACEMENTS -e "s/__device__ __device__/__device__/g" -e "s/__device__ __device__/__device__/g")
-	  set(TARGET_ADDSUFFIX_KEYWORDS double2 double3 float2)
-	else()
-	  set(TARGET_ADDSUFFIX_KEYWORDS Sleef_rempitabdp Sleef_rempitabsp)
+          # Remove redundant __device__
+          set(TARGET_REPLACEMENTS -e "s/__device__ __device__/__device__/g" -e "s/__device__ __device__/__device__/g")
+          set(TARGET_ADDSUFFIX_KEYWORDS double2 double3 float2)
+        else()
+          set(TARGET_ADDSUFFIX_KEYWORDS Sleef_rempitabdp Sleef_rempitabsp)
           set(INLINE_HEADER_ORG ${CMAKE_CURRENT_SOURCE_DIR}/sleefinline_header.h.org)
-	endif()
+        endif()
 
-	set(INLINE_HEADER_FILE ${PROJECT_BINARY_DIR}/include/sleefinline_${SIMDLC}.h)
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
+        set(INLINE_HEADER_FILE ${PROJECT_BINARY_DIR}/include/sleefinline_${SIMDLC}.h)
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
 
-	  # Preprocess sleefsimddp.c with SLEEF_GENHEADER defined, comments are preserved
-	  COMMAND "${CMAKE_C_COMPILER}"  ${FLAG_PREPROCESS} ${FLAG_PRESERVE_COMMENTS}                      # gcc -E -C
-	  ${FLAG_TARGET} ${FLAGS_ENABLE_${SIMD}}                                                           # -msse2
-	  ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/common ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/arch    # -I/sleef/src/common -I/sleef/src/arch
-	  ${FLAG_INCLUDE}${CMAKE_CURRENT_BINARY_DIR}/include/                                              # -I/build/src/libm/include
-	  ${FLAG_DEFINE}SLEEF_GENHEADER ${FLAG_DEFINE}ENABLE_${SIMD} ${FLAG_DEFINE}DORENAME                # -DSLEEF_GENHEADER -DENABLE_SSE2 -DDORENAME
-	  ${TARGET_PP_FLAGS}
-	  ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimddp.c > ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp # /sleef/src/libm/sleefsimddp.c > /build/libm/sleefsimddpSSE2.h.tmp
+          # Preprocess sleefsimddp.c with SLEEF_GENHEADER defined, comments are preserved
+          COMMAND "${CMAKE_C_COMPILER}"  ${FLAG_PREPROCESS} ${FLAG_PRESERVE_COMMENTS}                      # gcc -E -C
+          ${FLAG_TARGET} ${FLAGS_ENABLE_${SIMD}}                                                           # -msse2
+          ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/common ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/arch    # -I/sleef/src/common -I/sleef/src/arch
+          ${FLAG_INCLUDE}${CMAKE_CURRENT_BINARY_DIR}/include/                                              # -I/build/src/libm/include
+          ${FLAG_DEFINE}SLEEF_GENHEADER ${FLAG_DEFINE}ENABLE_${SIMD} ${FLAG_DEFINE}DORENAME                # -DSLEEF_GENHEADER -DENABLE_SSE2 -DDORENAME
+          ${TARGET_PP_FLAGS}
+          ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimddp.c > ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp # /sleef/src/libm/sleefsimddp.c > /build/libm/sleefsimddpSSE2.h.tmp
 
-	  # ${HEADER_${SIMD}} listed here as sleefsimddp.c includes it for renaming
-	  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimddp.c ${HEADER_${SIMD}}
-	  )
+          # ${HEADER_${SIMD}} listed here as sleefsimddp.c includes it for renaming
+          DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimddp.c ${HEADER_${SIMD}}
+          )
 
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h
 
-	  # Remove all lines except those begin with "//@", then remove "//@"
-	  COMMAND ${SED_COMMAND} -e "/^\\/\\/@#.*$/!d"
-	                         -e "s/^\\/\\/@#/#/g"
-	    ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
-	  > ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h
+          # Remove all lines except those begin with "//@", then remove "//@"
+          COMMAND ${SED_COMMAND} -e "/^\\/\\/@#.*$/!d"
+                                 -e "s/^\\/\\/@#/#/g"
+            ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
+          > ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h
 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
-	  VERBATIM
-	  )
+          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
+          VERBATIM
+          )
 
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp
 
-	  # Preprocess sleefsimdsp.c with SLEEF_GENHEADER defined. Include macroonly*.h instead of helper*.h.
-	  COMMAND "${CMAKE_C_COMPILER}" ${FLAG_PREPROCESS} ${FLAG_PRESERVE_COMMENTS}                       # gcc -E -C
-	  ${FLAG_TARGET} ${FLAGS_ENABLE_${SIMD}}                                                           # -msse2
-	  ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/common ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/arch    # -I/sleef/src/common -I/sleef/src/arch
-	  ${FLAG_INCLUDE}${CMAKE_CURRENT_BINARY_DIR}/include/                                              # -I/build/src/libm/include
-	  ${FLAG_DEFINE}SLEEF_GENHEADER ${FLAG_DEFINE}ENABLE_${SIMD} ${FLAG_DEFINE}DORENAME                # -DSLEEF_GENHEADER -DENABLE_SSE2 -DDORENAME
-	  ${TARGET_PP_FLAGS}
-	  ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimdsp.c > ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp # /sleef/src/libm/sleefsimdsp.c > /build/libm/sleefsimdspSSE2.h.tmp
+          # Preprocess sleefsimdsp.c with SLEEF_GENHEADER defined. Include macroonly*.h instead of helper*.h.
+          COMMAND "${CMAKE_C_COMPILER}" ${FLAG_PREPROCESS} ${FLAG_PRESERVE_COMMENTS}                       # gcc -E -C
+          ${FLAG_TARGET} ${FLAGS_ENABLE_${SIMD}}                                                           # -msse2
+          ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/common ${FLAG_INCLUDE}${PROJECT_SOURCE_DIR}/src/arch    # -I/sleef/src/common -I/sleef/src/arch
+          ${FLAG_INCLUDE}${CMAKE_CURRENT_BINARY_DIR}/include/                                              # -I/build/src/libm/include
+          ${FLAG_DEFINE}SLEEF_GENHEADER ${FLAG_DEFINE}ENABLE_${SIMD} ${FLAG_DEFINE}DORENAME                # -DSLEEF_GENHEADER -DENABLE_SSE2 -DDORENAME
+          ${TARGET_PP_FLAGS}
+          ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimdsp.c > ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp # /sleef/src/libm/sleefsimdsp.c > /build/libm/sleefsimdspSSE2.h.tmp
 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimdsp.c
-	  )
+          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/include/macroonly${SIMD}.h ${CMAKE_CURRENT_SOURCE_DIR}/sleefsimdsp.c
+          )
 
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
 
-	  # Remove lines beginning with "#" so that the resulting file can be preprocessed again.
-	  COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
-	                                  ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp
+          # Remove lines beginning with "#" so that the resulting file can be preprocessed again.
+          COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
+                                          ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp
                 | ${SED_COMMAND} -e "s/^#.*//g" > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
-	  VERBATIM
-	  )
+          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleefsimdsp${SIMD}.h.tmp ${CMAKE_CURRENT_BINARY_DIR}/sleefsimddp${SIMD}.h.tmp
+          VERBATIM
+          )
 
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
 
-	  # Preprocess the intemediate file again to remove comments
-	  COMMAND "${CMAKE_C_COMPILER}" ${FLAG_PREPROCESS} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
-	   # Remove lines beginning with "#"
-	   | ${SED_COMMAND} -e "s/^#.*//g"
-	   > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
+          # Preprocess the intemediate file again to remove comments
+          COMMAND "${CMAKE_C_COMPILER}" ${FLAG_PREPROCESS} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
+           # Remove lines beginning with "#"
+           | ${SED_COMMAND} -e "s/^#.*//g"
+           > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
-	  VERBATIM
-	  )
+          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.c
+          VERBATIM
+          )
 
-	add_custom_command(
-	  OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
+        add_custom_command(
+          OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
 
-	  COMMAND ${CMAKE_COMMAND} -E cat
-	      ${INLINE_HEADER_ORG}
-	      ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
-	    | ${SED_COMMAND}
-	      # Embed version number into the header
-	      -e "s/SLEEF_VERSION_SLEEF/${SLEEF_VERSION_MAJOR}.${SLEEF_VERSION_MINOR}.${SLEEF_VERSION_PATCH}/g"
-	      -e "s/SLEEF_SIMD_SLEEF/${SIMD}/g"
-	      # Substitute "SLEEFSHARP" at the beginning of line with "#"
-	      -e "s/^SLEEFSHARP/#/g"
-	      # Remove SLEEFXXX
-	      -e "s/SLEEFXXX//g"
-	      # Replace multiple empty lines with a single empty line (part 1)
-	      -e "s/^[[:space:]]*$//g"
-	      > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
+          COMMAND ${CMAKE_COMMAND} -E cat
+              ${INLINE_HEADER_ORG}
+              ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
+            | ${SED_COMMAND}
+              # Embed version number into the header
+              -e "s/SLEEF_VERSION_SLEEF/${SLEEF_VERSION_MAJOR}.${SLEEF_VERSION_MINOR}.${SLEEF_VERSION_PATCH}/g"
+              -e "s/SLEEF_SIMD_SLEEF/${SIMD}/g"
+              # Substitute "SLEEFSHARP" at the beginning of line with "#"
+              -e "s/^SLEEFSHARP/#/g"
+              # Remove SLEEFXXX
+              -e "s/SLEEFXXX//g"
+              # Replace multiple empty lines with a single empty line (part 1)
+              -e "s/^[[:space:]]*$//g"
+              > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
 
-	    DEPENDS ${INLINE_HEADER_ORG} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
-	    VERBATIM
-	 )
+            DEPENDS ${INLINE_HEADER_ORG} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp3
+            VERBATIM
+         )
 
          add_custom_command(
-	   OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5
+           OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5
 
-	   # Replace multiple empty lines with a single empty line
-	   # (part 2 - cannot occur in same command as part 1)
-	   COMMAND ${SED_COMMAND} -e "/^$/N" -e "/^\\n$/D" ${TARGET_REPLACEMENTS} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
-	   > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5
+           # Replace multiple empty lines with a single empty line
+           # (part 2 - cannot occur in same command as part 1)
+           COMMAND ${SED_COMMAND} -e "/^$/N" -e "/^\\n$/D" ${TARGET_REPLACEMENTS} ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
+           > ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5
 
-	   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
-	   VERBATIM
-	   )
+           DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp4
+           VERBATIM
+           )
 
-	add_custom_command(
-	  OUTPUT ${INLINE_HEADER_FILE}
+        add_custom_command(
+          OUTPUT ${INLINE_HEADER_FILE}
 
-	  COMMAND $<TARGET_FILE:addSuffix> ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5                 # addSuffix /build/src/libm/sleefSSE2.h.tmp5
-	  ${sleef_SOURCE_DIR}/src/common/keywords.txt "_${SIMDLC}_sleef"                                   # keywords.txt "_sse2_sleef"
-	  ${TARGET_ADDSUFFIX_KEYWORDS}
+          COMMAND $<TARGET_FILE:addSuffix> ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5                 # addSuffix /build/src/libm/sleefSSE2.h.tmp5
+          ${sleef_SOURCE_DIR}/src/common/keywords.txt "_${SIMDLC}_sleef"                                   # keywords.txt "_sse2_sleef"
+          ${TARGET_ADDSUFFIX_KEYWORDS}
           > ${PROJECT_BINARY_DIR}/include/sleefinline_${SIMDLC}.h                                          # > /build/include/sleefinline_sse2.h
 
-	  DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5 addSuffix
-	  VERBATIM
-	  )
+          DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sleef${SIMD}.h.tmp5 addSuffix
+          VERBATIM
+          )
 
-	list(APPEND INLINE_HEADER_FILES_GENERATED ${INLINE_HEADER_FILE})
+        list(APPEND INLINE_HEADER_FILES_GENERATED ${INLINE_HEADER_FILE})
       endif(COMPILER_SUPPORTS_${SIMD} OR ${SIMD} STREQUAL "CUDA")
     endforeach()
 
@@ -698,7 +698,7 @@ sleef_concat_files(
   OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/dispscalar.c
   SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dispscalar.c.org
           ${CMAKE_CURRENT_BINARY_DIR}/dispscalar.c.body
-	  ${CMAKE_CURRENT_SOURCE_DIR}/dispscalar_footer.c.org
+          ${CMAKE_CURRENT_SOURCE_DIR}/dispscalar_footer.c.org
 )
 add_custom_target(dispscalar.c_generated SOURCES ${CMAKE_CURRENT_BINARY_DIR}/dispscalar.c)
 
@@ -854,12 +854,12 @@ if(ENABLE_GNUABI)
       string(TOLOWER ${SIMD} vecarch)
 
       foreach(T dp sp)
-	add_library(${OBJECT_${SIMD}_${T}_GNUABI} OBJECT sleefsimd${T}.c ${HEADER_${SIMD}_GNUABI})
-	target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE
+        add_library(${OBJECT_${SIMD}_${T}_GNUABI} OBJECT sleefsimd${T}.c ${HEADER_${SIMD}_GNUABI})
+        target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE
           ENABLE_${SIMD}=1
           DORENAME=1
           ENABLE_GNUABI=1
-	  )
+          )
 
         if(FORCE_AAVPCS AND ${SIMD} STREQUAL "ADVSIMD")
           target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE
@@ -867,29 +867,29 @@ if(ENABLE_GNUABI)
           )
         endif()
 
-	if(SLEEF_ENABLE_ALTDIV)
-	  target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE SLEEF_ENABLE_ALTDIV=1)
-	endif()
+        if(SLEEF_ENABLE_ALTDIV)
+          target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE SLEEF_ENABLE_ALTDIV=1)
+        endif()
 
-	if(SLEEF_ENABLE_ALTSQRT)
-	  target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE SLEEF_ENABLE_ALTSQRT=1)
-	endif()
+        if(SLEEF_ENABLE_ALTSQRT)
+          target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE SLEEF_ENABLE_ALTSQRT=1)
+        endif()
 
-	set_target_properties(${OBJECT_${SIMD}_${T}_GNUABI} PROPERTIES
+        set_target_properties(${OBJECT_${SIMD}_${T}_GNUABI} PROPERTIES
           ${COMMON_TARGET_PROPERTIES}
-	  )
+          )
 
-	target_compile_options(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE ${FLAGS_ENABLE_${SIMD}})
-	if (COMPILER_SUPPORTS_WEAK_ALIASES)
+        target_compile_options(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE ${FLAGS_ENABLE_${SIMD}})
+        if (COMPILER_SUPPORTS_WEAK_ALIASES)
           target_compile_options(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE -DENABLE_GNUABI=1)
-	endif(COMPILER_SUPPORTS_WEAK_ALIASES)
-	list(APPEND TARGET_LIBSLEEFGNUABI_OBJECTS $<TARGET_OBJECTS:${OBJECT_${SIMD}_${T}_GNUABI}>)
+        endif(COMPILER_SUPPORTS_WEAK_ALIASES)
+        list(APPEND TARGET_LIBSLEEFGNUABI_OBJECTS $<TARGET_OBJECTS:${OBJECT_${SIMD}_${T}_GNUABI}>)
 
-	if(MKMASKED_PARAMS_GNUABI_${SIMD}_${T})
-	  target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE
-	    HEADER_MASKED=\"masked_${vecarch}_${T}_gnuabi.h\")
-	  add_dependencies(${OBJECT_${SIMD}_${T}_GNUABI} masked${SIMD}_generated)
-	endif()
+        if(MKMASKED_PARAMS_GNUABI_${SIMD}_${T})
+          target_compile_definitions(${OBJECT_${SIMD}_${T}_GNUABI} PRIVATE
+            HEADER_MASKED=\"masked_${vecarch}_${T}_gnuabi.h\")
+          add_dependencies(${OBJECT_${SIMD}_${T}_GNUABI} masked${SIMD}_generated)
+        endif()
       endforeach()
     endif(COMPILER_SUPPORTS_${SIMD})
   endforeach()

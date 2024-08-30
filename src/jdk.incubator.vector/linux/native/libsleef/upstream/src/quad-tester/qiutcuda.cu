@@ -125,216 +125,216 @@ typedef union {
 
 #define BUFSIZE 1024
 
-#define func_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(r, a0);					\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_q_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(r, a0);                                        \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0, c1;							\
+#define func_q_q_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0, c1;                                                    \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l, &c1.h, &c1.l); \
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);				\
-      funcName<<<1, 1>>>(r, a0, a1);					\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);                             \
+      funcName<<<1, 1>>>(r, a0, a1);                                    \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_q_q(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0, c1, c2;						\
+#define func_q_q_q_q(funcStr, funcName) {                               \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0, c1, c2;                                                \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, \
-	     &c0.h, &c0.l, &c1.h, &c1.l, &c2.h, &c2.l);			\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);				\
-      *a2 = Sleef_setq1_cuda(*a2, 0, c2.q);				\
-      funcName<<<1, 1>>>(r, a0, a1, a2);				\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+             &c0.h, &c0.l, &c1.h, &c1.l, &c2.h, &c2.l);                 \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);                             \
+      *a2 = Sleef_setq1_cuda(*a2, 0, c2.q);                             \
+      funcName<<<1, 1>>>(r, a0, a1, a2);                                \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_i_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
+#define func_i_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l); \
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(i0, a0);					\
-      cudaDeviceSynchronize();						\
-      printf("%d\n", *i0);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(i0, a0);                                       \
+      cudaDeviceSynchronize();                                          \
+      printf("%d\n", *i0);                                              \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_i_q_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0, c1;							\
+#define func_i_q_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0, c1;                                                    \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l, &c1.h, &c1.l); \
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);				\
-      funcName<<<1, 1>>>(i0, a0, a1);					\
-      cudaDeviceSynchronize();						\
-      printf("%d\n", *i0);						\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      *a1 = Sleef_setq1_cuda(*a1, 0, c1.q);                             \
+      funcName<<<1, 1>>>(i0, a0, a1);                                   \
+      cudaDeviceSynchronize();                                          \
+      printf("%d\n", *i0);                                              \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_i(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      int k;								\
+#define func_q_q_i(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      int k;                                                            \
       sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64 " %d", &c0.h, &c0.l, &k); \
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      *i0 = k;								\
-      funcName<<<1, 1>>>(r, a0, i0);					\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);			\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      *i0 = k;                                                          \
+      funcName<<<1, 1>>>(r, a0, i0);                                    \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);                  \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_d_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(d0, a0);					\
-      cudaDeviceSynchronize();						\
-      printf("%" PRIx64 "\n", d2u(*d0));				\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_d_q(funcStr, funcName) {                                   \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(d0, a0);                                       \
+      cudaDeviceSynchronize();                                          \
+      printf("%" PRIx64 "\n", d2u(*d0));                                \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_d(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      uint64_t u;					\
-      sscanf(buf, funcStr " %" PRIx64, &u);		\
-      *d0 = u2d(u);					\
-      funcName<<<1, 1>>>(r, d0);			\
-      cudaDeviceSynchronize();				\
-      cnv128 c0;					\
-      c0.q = Sleef_getq1_cuda(*r, 0);			\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_d(funcStr, funcName) {                   \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      uint64_t u;                                       \
+      sscanf(buf, funcStr " %" PRIx64, &u);             \
+      *d0 = u2d(u);                                     \
+      funcName<<<1, 1>>>(r, d0);                        \
+      cudaDeviceSynchronize();                          \
+      cnv128 c0;                                        \
+      c0.q = Sleef_getq1_cuda(*r, 0);                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_i64_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(i64, a0);					\
-      cudaDeviceSynchronize();						\
-      printf("%" PRIx64 "\n", *i64);					\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_i64_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(i64, a0);                                      \
+      cudaDeviceSynchronize();                                          \
+      printf("%" PRIx64 "\n", *i64);                                    \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_i64(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      sscanf(buf, funcStr " %" PRIx64, i64);		\
-      funcName<<<1, 1>>>(r, i64);			\
-      cudaDeviceSynchronize();				\
-      cnv128 c0;					\
-      c0.q = Sleef_getq1_cuda(*r, 0);			\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_i64(funcStr, funcName) {                 \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      sscanf(buf, funcStr " %" PRIx64, i64);            \
+      funcName<<<1, 1>>>(r, i64);                       \
+      cudaDeviceSynchronize();                          \
+      cnv128 c0;                                        \
+      c0.q = Sleef_getq1_cuda(*r, 0);                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_u64_q(funcStr, funcName) {					\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(u64, a0);					\
-      cudaDeviceSynchronize();						\
-      printf("%" PRIx64 "\n", *u64);					\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_u64_q(funcStr, funcName) {                                 \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(u64, a0);                                      \
+      cudaDeviceSynchronize();                                          \
+      printf("%" PRIx64 "\n", *u64);                                    \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_u64(funcStr, funcName) {			\
-    while (startsWith(buf, funcStr " ")) {		\
-      sentinel = 0;					\
-      sscanf(buf, funcStr " %" PRIx64, u64);		\
-      funcName<<<1, 1>>>(r, u64);			\
-      cudaDeviceSynchronize();				\
-      cnv128 c0;					\
-      c0.q = Sleef_getq1_cuda(*r, 0);			\
-      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);	\
-      fflush(stdout);					\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;	\
-    }							\
+#define func_q_u64(funcStr, funcName) {                 \
+    while (startsWith(buf, funcStr " ")) {              \
+      sentinel = 0;                                     \
+      sscanf(buf, funcStr " %" PRIx64, u64);            \
+      funcName<<<1, 1>>>(r, u64);                       \
+      cudaDeviceSynchronize();                          \
+      cnv128 c0;                                        \
+      c0.q = Sleef_getq1_cuda(*r, 0);                   \
+      printf("%" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l);  \
+      fflush(stdout);                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;  \
+    }                                                   \
   }
 
-#define func_q_q_pi(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(r, a0, i0);					\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      printf("%" PRIx64 ":%" PRIx64 " %d\n", c0.h, c0.l, *i0);		\
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+#define func_q_q_pi(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0;                                                        \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(r, a0, i0);                                    \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      printf("%" PRIx64 ":%" PRIx64 " %d\n", c0.h, c0.l, *i0);          \
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
-#define func_q_q_pq(funcStr, funcName) {				\
-    while (startsWith(buf, funcStr " ")) {				\
-      sentinel = 0;							\
-      cnv128 c0, c1;							\
-      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);	\
-      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);				\
-      funcName<<<1, 1>>>(r, a0, a1);					\
-      cudaDeviceSynchronize();						\
-      c0.q = Sleef_getq1_cuda(*r, 0);					\
-      c1.q = Sleef_getq1_cuda(*a1, 0);					\
+#define func_q_q_pq(funcStr, funcName) {                                \
+    while (startsWith(buf, funcStr " ")) {                              \
+      sentinel = 0;                                                     \
+      cnv128 c0, c1;                                                    \
+      sscanf(buf, funcStr " %" PRIx64 ":%" PRIx64, &c0.h, &c0.l);       \
+      *a0 = Sleef_setq1_cuda(*a0, 0, c0.q);                             \
+      funcName<<<1, 1>>>(r, a0, a1);                                    \
+      cudaDeviceSynchronize();                                          \
+      c0.q = Sleef_getq1_cuda(*r, 0);                                   \
+      c1.q = Sleef_getq1_cuda(*a1, 0);                                  \
       printf("%" PRIx64 ":%" PRIx64 " %" PRIx64 ":%" PRIx64 "\n", c0.h, c0.l, c1.h, c1.l); \
-      fflush(stdout);							\
-      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;			\
-    }									\
+      fflush(stdout);                                                   \
+      if (fgets(buf, BUFSIZE-1, stdin) == NULL) break;                  \
+    }                                                                   \
   }
 
 int main(int argc, char **argv) {

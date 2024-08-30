@@ -67,36 +67,36 @@ void doit(FILE *fp) {
     switch(state) {
     case 0:
       if (isalnum(c) || c == '_') {
-	ungetc(c, fp);
-	p = buf;
-	state = 1;
-	break;
+        ungetc(c, fp);
+        p = buf;
+        state = 1;
+        break;
       }
       if (c == '/') {
-	int c2 = getc(fp);
-	if (c2 == '*') {
-	  putc(c, stdout);
-	  putc(c2, stdout);
-	  state = 4;
-	  break;
-	} else if (c2 == '/') {
-	  putc(c, stdout);
-	  putc(c2, stdout);
-	  do {
-	    c = getc(fp);
-	    putc(c, stdout);
-	  } while(c != '\n');
-	  break;
-	}
-	ungetc(c2, fp);
+        int c2 = getc(fp);
+        if (c2 == '*') {
+          putc(c, stdout);
+          putc(c2, stdout);
+          state = 4;
+          break;
+        } else if (c2 == '/') {
+          putc(c, stdout);
+          putc(c2, stdout);
+          do {
+            c = getc(fp);
+            putc(c, stdout);
+          } while(c != '\n');
+          break;
+        }
+        ungetc(c2, fp);
       }
       if (nl && c == '#') {
-	putc(c, stdout);
-	do {
-	  c = getc(fp);
-	  putc(c, stdout);
-	} while(c != '\n');
-	break;
+        putc(c, stdout);
+        do {
+          c = getc(fp);
+          putc(c, stdout);
+        } while(c != '\n');
+        break;
       }
       putc(c, stdout);
       if (!isspace(c)) nl = false;
@@ -107,57 +107,57 @@ void doit(FILE *fp) {
 
     case 1: // Identifier
       if (isalnum(c) || c == '_') {
-	if (p - buf < N) { *p++ = c; *p = '\0'; }
-	putc(c, stdout);
+        if (p - buf < N) { *p++ = c; *p = '\0'; }
+        putc(c, stdout);
       } else if (c == '\"') {
-	insert(buf);
-	putc(c, stdout);
-	state = 2;
+        insert(buf);
+        putc(c, stdout);
+        state = 2;
       } else if (c == '\'') {
-	insert(buf);
-	putc(c, stdout);
-	state = 3;
+        insert(buf);
+        putc(c, stdout);
+        state = 3;
       } else {
-	insert(buf);
-	putc(c, stdout);
-	state = 0;
+        insert(buf);
+        putc(c, stdout);
+        state = 0;
       }
       break;
 
     case 2: // String
       if (c == '\\') {
-	putc(c, stdout);
-	putc(getc(fp), stdout);
+        putc(c, stdout);
+        putc(getc(fp), stdout);
       } else if (c == '\"') {
-	putc(c, stdout);
-	state = 0;
+        putc(c, stdout);
+        state = 0;
       } else {
-	putc(c, stdout);
+        putc(c, stdout);
       }
       break;
 
     case 3: // Character
       if (c == '\\') {
-	putc(c, stdout);
-	putc(getc(fp), stdout);
+        putc(c, stdout);
+        putc(getc(fp), stdout);
       } else if (c == '\'') {
-	putc(c, stdout);
-	state = 0;
+        putc(c, stdout);
+        state = 0;
       } else {
-	putc(c, stdout);
+        putc(c, stdout);
       }
       break;
 
     case 4: // Comment
       if (c == '*') {
-	int c2 = getc(fp);
-	if (c2 == '/') {
-	  putc(c, stdout);
-	  putc(c2, stdout);
-	  state = 0;
-	  break;
-	}
-	ungetc(c2, fp);
+        int c2 = getc(fp);
+        if (c2 == '/') {
+          putc(c, stdout);
+          putc(c2, stdout);
+          state = 0;
+          break;
+        }
+        ungetc(c2, fp);
       }
       putc(c, stdout);
       break;

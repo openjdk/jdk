@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
 #endif
 
       for(int i=0;i<n*2;i++) {
-	din[i] = 0;
+        din[i] = 0;
       }
 
 #ifdef ENABLE_SLEEP
@@ -72,9 +72,9 @@ int main(int argc, char **argv) {
 
 #ifdef WARMUP
       for(int64_t i=0;i<niter/2;i++) {
-	SleefDFT_double_execute(pf, din, dout);
+        SleefDFT_double_execute(pf, din, dout);
 #ifdef ROUNDTRIP
-	SleefDFT_double_execute(pb, dout, din);
+        SleefDFT_double_execute(pb, dout, din);
 #endif
       }
 #endif
@@ -83,16 +83,16 @@ int main(int argc, char **argv) {
 
       //printf("\n");
       for(int rep=0;rep<REPEAT;rep++) {
-	uint64_t tm0 = gettime();
-	for(int64_t i=0;i<niter;i++) {
-	  SleefDFT_double_execute(pf, din, dout);
+        uint64_t tm0 = gettime();
+        for(int64_t i=0;i<niter;i++) {
+          SleefDFT_double_execute(pf, din, dout);
 #ifdef ROUNDTRIP
-	  SleefDFT_double_execute(pb, dout, din);
+          SleefDFT_double_execute(pb, dout, din);
 #endif
-	}
-	uint64_t tm1 = gettime();
-	if (tm1 - tm0 < best) best = tm1 - tm0;
-	//printf("%g\n", (double)(tm1 - tm0));
+        }
+        uint64_t tm1 = gettime();
+        if (tm1 - tm0 < best) best = tm1 - tm0;
+        //printf("%g\n", (double)(tm1 - tm0));
       }
 
       SleefDFT_dispose(pf);
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 #endif
 
       for(int i=0;i<n*2;i++) {
-	sin[i] = 0;
+        sin[i] = 0;
       }
 
 #ifdef ENABLE_SLEEP
@@ -132,9 +132,9 @@ int main(int argc, char **argv) {
 
 #ifdef WARMUP
       for(int64_t i=0;i<niter/2;i++) {
-	SleefDFT_float_execute(pf, sin, sout);
+        SleefDFT_float_execute(pf, sin, sout);
 #ifdef OUNDTRIP
-	SleefDFT_float_execute(pb, sout, sin);
+        SleefDFT_float_execute(pb, sout, sin);
 #endif
       }
 #endif
@@ -142,15 +142,15 @@ int main(int argc, char **argv) {
       uint64_t best = 1LL << 62;
 
       for(int rep=0;rep<REPEAT;rep++) {
-	uint64_t tm0 = gettime();
-	for(int64_t i=0;i<niter;i++) {
-	  SleefDFT_float_execute(pf, sin, sout);
+        uint64_t tm0 = gettime();
+        for(int64_t i=0;i<niter;i++) {
+          SleefDFT_float_execute(pf, sin, sout);
 #ifdef ROUNDTRIP
-	  SleefDFT_float_execute(pb, sout, sin);
+          SleefDFT_float_execute(pb, sout, sin);
 #endif
-	}
-	uint64_t tm1 = gettime();
-	if (tm1 - tm0 < best) best = tm1 - tm0;
+        }
+        uint64_t tm1 = gettime();
+        if (tm1 - tm0 < best) best = tm1 - tm0;
       }
 
       SleefDFT_dispose(pf);

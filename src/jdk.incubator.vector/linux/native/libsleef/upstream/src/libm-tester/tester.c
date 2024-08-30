@@ -89,37 +89,37 @@ void startChild(const char *path, char *const argv[]) {
 
 //
 
-#define child_d_d(funcStr, arg) do {					\
-    char str[256];							\
-    uint64_t u;								\
-    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));			\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64, &u);					\
-    return u2d(u);							\
+#define child_d_d(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    uint64_t u;                                                         \
+    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                   \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64, &u);                                        \
+    return u2d(u);                                                      \
   } while(0)
 
-#define child_d2_d(funcStr, arg) do {					\
-    char str[256];							\
-    uint64_t u, v;							\
-    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));			\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64 " %" PRIx64, &u, &v);			\
-    Sleef_double2 ret;							\
-    ret.x = u2d(u);							\
-    ret.y = u2d(v);							\
-    return ret;								\
+#define child_d2_d(funcStr, arg) do {                                   \
+    char str[256];                                                      \
+    uint64_t u, v;                                                      \
+    sprintf(str, funcStr " %" PRIx64 "\n", d2u(arg));                   \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64 " %" PRIx64, &u, &v);                        \
+    Sleef_double2 ret;                                                  \
+    ret.x = u2d(u);                                                     \
+    ret.y = u2d(v);                                                     \
+    return ret;                                                         \
   } while(0)
 
-#define child_d_d_d(funcStr, arg1, arg2) do {				\
-    char str[256];							\
-    uint64_t u;								\
+#define child_d_d_d(funcStr, arg1, arg2) do {                           \
+    char str[256];                                                      \
+    uint64_t u;                                                         \
     sprintf(str, funcStr " %" PRIx64 " %" PRIx64 "\n", d2u(arg1), d2u(arg2)); \
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%" PRIx64, &u);					\
-    return u2d(u);							\
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%" PRIx64, &u);                                        \
+    return u2d(u);                                                      \
   } while(0)
 
 double child_sin(double x) { child_d_d("sin", x); }
@@ -224,37 +224,37 @@ int child_ilogb(double x) {
 
 //
 
-#define child_f_f(funcStr, arg) do {					\
-    char str[256];							\
-    uint32_t u;								\
-    sprintf(str, funcStr " %x\n", f2u(arg));				\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%x", &u);						\
-    return u2f(u);							\
+#define child_f_f(funcStr, arg) do {                                    \
+    char str[256];                                                      \
+    uint32_t u;                                                         \
+    sprintf(str, funcStr " %x\n", f2u(arg));                            \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%x", &u);                                              \
+    return u2f(u);                                                      \
   } while(0)
 
-#define child_f2_f(funcStr, arg) do {					\
-    char str[256];							\
-    uint32_t u, v;							\
-    sprintf(str, funcStr " %x\n", f2u(arg));				\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%x %x", &u, &v);					\
-    Sleef_float2 ret;							\
-    ret.x = u2f(u);							\
-    ret.y = u2f(v);							\
-    return ret;								\
+#define child_f2_f(funcStr, arg) do {                                   \
+    char str[256];                                                      \
+    uint32_t u, v;                                                      \
+    sprintf(str, funcStr " %x\n", f2u(arg));                            \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%x %x", &u, &v);                                       \
+    Sleef_float2 ret;                                                   \
+    ret.x = u2f(u);                                                     \
+    ret.y = u2f(v);                                                     \
+    return ret;                                                         \
   } while(0)
 
-#define child_f_f_f(funcStr, arg1, arg2) do {				\
-    char str[256];							\
-    uint32_t u;								\
-    sprintf(str, funcStr " %x %x\n", f2u(arg1), f2u(arg2));		\
-    write(ptoc[1], str, strlen(str));					\
-    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);	\
-    sscanf(str, "%x", &u);						\
-    return u2f(u);							\
+#define child_f_f_f(funcStr, arg1, arg2) do {                           \
+    char str[256];                                                      \
+    uint32_t u;                                                         \
+    sprintf(str, funcStr " %x %x\n", f2u(arg1), f2u(arg2));             \
+    write(ptoc[1], str, strlen(str));                                   \
+    if (fgets(str, 255, fpctop) == NULL) stop("child " funcStr);        \
+    sscanf(str, "%x", &u);                                              \
+    return u2f(u);                                                      \
   } while(0)
 
 float child_sinf(float x) { child_f_f("sinf", x); }
@@ -418,9 +418,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -433,9 +433,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != -M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != -M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -448,9 +448,9 @@ void do_test() {
       double xa[] = { +0.0, -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != -M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != -M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -463,9 +463,9 @@ void do_test() {
       double xa[] = { +0.0, -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -478,9 +478,9 @@ void do_test() {
       double xa[] = { -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -493,9 +493,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -508,9 +508,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != -M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != -M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -523,9 +523,9 @@ void do_test() {
       double xa[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -538,9 +538,9 @@ void do_test() {
       double xa[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2(ya[j], xa[i]) != -M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2(ya[j], xa[i]) != -M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -553,9 +553,9 @@ void do_test() {
       double xa[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_atan2(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_atan2(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -568,9 +568,9 @@ void do_test() {
       double xa[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isMinusZero(child_atan2(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isMinusZero(child_atan2(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -583,9 +583,9 @@ void do_test() {
       double xa[] = { NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_atan2(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_atan2(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -598,9 +598,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_atan2(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_atan2(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -643,9 +643,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -658,9 +658,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != -M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != -M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -673,9 +673,9 @@ void do_test() {
       double xa[] = { +0.0, -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != -M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != -M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -689,9 +689,9 @@ void do_test() {
       double xa[] = { +0.0, -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -704,9 +704,9 @@ void do_test() {
       double xa[] = { -0.0 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -719,9 +719,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -734,9 +734,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != -M_PI/2) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != -M_PI/2) success = 0;
+        }
       }
 
       showResult(success);
@@ -749,9 +749,9 @@ void do_test() {
       double xa[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -764,9 +764,9 @@ void do_test() {
       double xa[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_atan2_u1(ya[j], xa[i]) != -M_PI) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_atan2_u1(ya[j], xa[i]) != -M_PI) success = 0;
+        }
       }
 
       showResult(success);
@@ -779,9 +779,9 @@ void do_test() {
       double xa[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_atan2_u1(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_atan2_u1(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -794,9 +794,9 @@ void do_test() {
       double xa[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isMinusZero(child_atan2_u1(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isMinusZero(child_atan2_u1(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -809,9 +809,9 @@ void do_test() {
       double xa[] = { NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_atan2_u1(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_atan2_u1(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -824,9 +824,9 @@ void do_test() {
       double xa[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, -0.0, +0.0, 0.5, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_atan2_u1(ya[j], xa[i]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_atan2_u1(ya[j], xa[i]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -857,9 +857,9 @@ void do_test() {
       double ya[] = { -100000.5, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -872,9 +872,9 @@ void do_test() {
       double ya[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -887,9 +887,9 @@ void do_test() {
       double ya[] = { NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!xisnan(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -902,9 +902,9 @@ void do_test() {
       double ya[] = { 1, 3, 5, 7, 100001 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -917,13 +917,13 @@ void do_test() {
       double ya[] = { 1, 3, 5, 7, 100001 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  double test = child_pow(xa[i], ya[j]);
-	  if (!isMinusZero(test)) {
-	    fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", xa[i], ya[j], test, -0.0);
-	    success = 0;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          double test = child_pow(xa[i], ya[j]);
+          if (!isMinusZero(test)) {
+            fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", xa[i], ya[j], test, -0.0);
+            success = 0;
+          }
+        }
       }
 
       showResult(success);
@@ -936,9 +936,9 @@ void do_test() {
       double ya[] = { 0.5, 1.5, 2.0, 2.5, 4.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -951,9 +951,9 @@ void do_test() {
       double ya[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -966,9 +966,9 @@ void do_test() {
       double ya[] = { NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -981,9 +981,9 @@ void do_test() {
       double ya[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -996,9 +996,9 @@ void do_test() {
       double ya[] = { POSITIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1011,9 +1011,9 @@ void do_test() {
       double ya[] = { -100001, -5, -3, -1 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isMinusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isMinusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -1026,9 +1026,9 @@ void do_test() {
       double ya[] = { -100000.5, -100000, -4, -2.5, -2, -1.5, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -1041,9 +1041,9 @@ void do_test() {
       double ya[] = { 1, 3, 5, 7, 100001 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != NEGATIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != NEGATIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1056,9 +1056,9 @@ void do_test() {
       double ya[] = { 0.5, 1.5, 2, 2.5, 3.5, 4, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1071,9 +1071,9 @@ void do_test() {
       double ya[] = { -100000.5, -100000, -3, -2.5, -2, -1.5, -1.0, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (!isPlusZero(child_pow(xa[i], ya[j]))) success = 0;
+        }
       }
 
       showResult(success);
@@ -1086,9 +1086,9 @@ void do_test() {
       double ya[] = { 0.5, 1, 1.5, 2.0, 2.5, 3.0, 100000, 100000.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1101,9 +1101,9 @@ void do_test() {
       double ya[] = { -100001, -5, -3, -1 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1116,9 +1116,9 @@ void do_test() {
       double ya[] = { -100001, -5, -3, -1 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != NEGATIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != NEGATIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1131,9 +1131,9 @@ void do_test() {
       double ya[] = { -100000.5, -100000, -4, -2.5, -2, -1.5, -0.5 };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (child_pow(xa[i], ya[j]) != POSITIVE_INFINITY) success = 0;
+        }
       }
 
       showResult(success);
@@ -1142,62 +1142,62 @@ void do_test() {
 
   //
 
-#define cmpDenorm_f(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {	\
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",	\
-	      (float)flushToZero(argx), childFunc((float)flushToZero(argx)), flushToZero(mpfr_get_d(frc, GMP_RNDN))); \
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenorm_f(mpfrFunc, childFunc, argx) do {                     \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {       \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+              (float)flushToZero(argx), childFunc((float)flushToZero(argx)), flushToZero(mpfr_get_d(frc, GMP_RNDN))); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormNR_f(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx);							\
-    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {	\
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",	\
-	      (float)flushToZero(argx), childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenormNR_f(mpfrFunc, childFunc, argx) do {                   \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx);                                                 \
+    if (!cmpDenormsp(childFunc((float)flushToZero(argx)), frc)) {       \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+              (float)flushToZero(argx), childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenorm_f_f(mpfrFunc, childFunc, argx, argy) do {		\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);		\
-    mpfrFunc(frc, frx, fry, GMP_RNDN);					\
+#define cmpDenorm_f_f(mpfrFunc, childFunc, argx, argy) do {             \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);                \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
     if (!cmpDenormsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc)) { \
       fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", \
-	      (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;							\
-      break;								\
-    }									\
+              (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormX_f(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));		\
-    if (!cmpDenormsp(d2.x, frc)) {					\
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",	\
-	      (float)flushToZero(argx), d2.x, mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenormX_f(mpfrFunc, childFunc, argx) do {                    \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));              \
+    if (!cmpDenormsp(d2.x, frc)) {                                      \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+              (float)flushToZero(argx), d2.x, mpfr_get_d(frc, GMP_RNDN)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define cmpDenormY_f(mpfrFunc, childFunc, argx) do {			\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));		\
-    if (!cmpDenormsp(d2.y, frc)) {					\
-      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",	\
-	      (float)flushToZero(argx), d2.y, mpfr_get_d(frc, GMP_RNDN)); \
-      success = 0;							\
-      break;								\
-    }									\
+#define cmpDenormY_f(mpfrFunc, childFunc, argx) do {                    \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));              \
+    if (!cmpDenormsp(d2.y, frc)) {                                      \
+      fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n",   \
+              (float)flushToZero(argx), d2.y, mpfr_get_d(frc, GMP_RNDN)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
   //
@@ -1238,12 +1238,12 @@ void do_test() {
       int success = 1;
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1257,12 +1257,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != -M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != -M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1276,12 +1276,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != -M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != -M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1296,12 +1296,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1315,12 +1315,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1334,12 +1334,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1353,12 +1353,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != -M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != -M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1372,12 +1372,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1391,12 +1391,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f(ya[j], xa[i]) != -M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f(ya[j], xa[i]) != -M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1410,12 +1410,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_atan2f(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_atan2f(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1429,12 +1429,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isMinusZerof(child_atan2f(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isMinusZerof(child_atan2f(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1448,12 +1448,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_atan2f(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_atan2f(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1467,12 +1467,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_atan2f(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_atan2f(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1517,12 +1517,12 @@ void do_test() {
       int success = 1;
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1536,12 +1536,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1555,12 +1555,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1575,12 +1575,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1594,12 +1594,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1613,12 +1613,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1632,12 +1632,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf/2) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf/2) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1651,12 +1651,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1670,12 +1670,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_atan2f_u1(ya[j], xa[i]) != -M_PIf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1689,12 +1689,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_atan2f_u1(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_atan2f_u1(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1708,12 +1708,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isMinusZerof(child_atan2f_u1(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isMinusZerof(child_atan2f_u1(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1727,12 +1727,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_atan2f_u1(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_atan2f_u1(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1746,12 +1746,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_atan2f_u1(ya[j], xa[i]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_atan2f_u1(ya[j], xa[i]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1783,12 +1783,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1802,12 +1802,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1821,12 +1821,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!xisnanf(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!xisnanf(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1840,12 +1840,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1859,12 +1859,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isMinusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isMinusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1878,12 +1878,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1897,12 +1897,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1916,12 +1916,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1935,12 +1935,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1954,12 +1954,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1973,12 +1973,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isMinusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isMinusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -1992,12 +1992,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2011,12 +2011,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != NEGATIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != NEGATIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2030,12 +2030,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2049,12 +2049,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (!isPlusZerof(child_powf(xa[i], ya[j]))) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2068,12 +2068,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2087,12 +2087,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2106,12 +2106,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != NEGATIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != NEGATIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2125,12 +2125,12 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          if (child_powf(xa[i], ya[j]) != POSITIVE_INFINITYf) {
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2144,9 +2144,9 @@ void do_test() {
 
       int success = 1;
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  cmpDenorm_f_f(mpfr_pow, child_powf, xa[i], ya[i]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          cmpDenorm_f_f(mpfr_pow, child_powf, xa[i], ya[i]);
+        }
       }
 
       showResult(success);
@@ -2157,57 +2157,57 @@ void do_test() {
 
   //
 
-#define cmpDenorm_d(mpfrFunc, childFunc, argx) do {			\
-      mpfr_set_d(frx, argx, GMP_RNDN);					\
-      mpfrFunc(frc, frx, GMP_RNDN);					\
-      if (!cmpDenormdp(childFunc(argx), frc)) {				\
-	fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
-	success = 0;							\
-	break;								\
-      }									\
+#define cmpDenorm_d(mpfrFunc, childFunc, argx) do {                     \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
+      mpfrFunc(frc, frx, GMP_RNDN);                                     \
+      if (!cmpDenormdp(childFunc(argx), frc)) {                         \
+        fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
+        success = 0;                                                    \
+        break;                                                          \
+      }                                                                 \
     } while(0)
 
-#define cmpDenormNR_d(mpfrFunc, childFunc, argx) do {			\
-      mpfr_set_d(frx, argx, GMP_RNDN);					\
-      mpfrFunc(frc, frx);						\
-      if (!cmpDenormdp(childFunc(argx), frc)) {				\
-	fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
-	success = 0;							\
-	break;								\
-      }									\
+#define cmpDenormNR_d(mpfrFunc, childFunc, argx) do {                   \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
+      mpfrFunc(frc, frx);                                               \
+      if (!cmpDenormdp(childFunc(argx), frc)) {                         \
+        fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN)); \
+        success = 0;                                                    \
+        break;                                                          \
+      }                                                                 \
     } while(0)
 
-#define cmpDenorm_d_d(mpfrFunc, childFunc, argx, argy) do {		\
-      mpfr_set_d(frx, argx, GMP_RNDN);					\
-      mpfr_set_d(fry, argy, GMP_RNDN);					\
-      mpfrFunc(frc, frx, fry, GMP_RNDN);				\
-      if (!cmpDenormdp(childFunc(argx, argy), frc)) {			\
-	fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN)); \
-	success = 0;							\
-	break;								\
-      }									\
+#define cmpDenorm_d_d(mpfrFunc, childFunc, argx, argy) do {             \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
+      mpfr_set_d(fry, argy, GMP_RNDN);                                  \
+      mpfrFunc(frc, frx, fry, GMP_RNDN);                                \
+      if (!cmpDenormdp(childFunc(argx, argy), frc)) {                   \
+        fprintf(stderr, "arg = %.20g, %.20g, test = %.20g, correct = %.20g\n", argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN)); \
+        success = 0;                                                    \
+        break;                                                          \
+      }                                                                 \
     } while(0)
 
-#define cmpDenormX_d(mpfrFunc, childFunc, argx) do {			\
-      mpfr_set_d(frx, argx, GMP_RNDN);					\
-      mpfrFunc(frc, frx, GMP_RNDN);					\
-      Sleef_double2 d2 = childFunc(argx);				\
-      if (!cmpDenormdp(d2.x, frc)) {					\
-	fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.x, mpfr_get_d(frc, GMP_RNDN)); \
-	success = 0;							\
-	break;								\
-      }									\
+#define cmpDenormX_d(mpfrFunc, childFunc, argx) do {                    \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
+      mpfrFunc(frc, frx, GMP_RNDN);                                     \
+      Sleef_double2 d2 = childFunc(argx);                               \
+      if (!cmpDenormdp(d2.x, frc)) {                                    \
+        fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.x, mpfr_get_d(frc, GMP_RNDN)); \
+        success = 0;                                                    \
+        break;                                                          \
+      }                                                                 \
     } while(0)
 
-#define cmpDenormY_d(mpfrFunc, childFunc, argx) do {			\
-      mpfr_set_d(frx, argx, GMP_RNDN);					\
-      mpfrFunc(frc, frx, GMP_RNDN);					\
-      Sleef_double2 d2 = childFunc(argx);				\
-      if (!cmpDenormdp(d2.y, frc)) {					\
-	fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.y, mpfr_get_d(frc, GMP_RNDN)); \
-	success = 0;							\
-	break;								\
-      }									\
+#define cmpDenormY_d(mpfrFunc, childFunc, argx) do {                    \
+      mpfr_set_d(frx, argx, GMP_RNDN);                                  \
+      mpfrFunc(frc, frx, GMP_RNDN);                                     \
+      Sleef_double2 d2 = childFunc(argx);                               \
+      if (!cmpDenormdp(d2.y, frc)) {                                    \
+        fprintf(stderr, "arg = %.20g, test = %.20g, correct = %.20g\n", argx, d2.y, mpfr_get_d(frc, GMP_RNDN)); \
+        success = 0;                                                    \
+        break;                                                          \
+      }                                                                 \
     } while(0)
 
   //
@@ -2332,7 +2332,7 @@ void do_test() {
     {
       fprintf(stderr, "asin denormal/nonnumber test : ");
       double xa[] = { +0.0, -0.0, +1, -1, +1e+10, -1e+10, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN,
-		      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
+                      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) cmpDenorm_d(mpfr_asin, child_asin, xa[i]);
       showResult(success);
     }
@@ -2340,7 +2340,7 @@ void do_test() {
     {
       fprintf(stderr, "asin_u1 denormal/nonnumber test : ");
       double xa[] = { +0.0, -0.0, +1, -1, +1e+10, -1e+10, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN,
-		      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
+                      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) cmpDenorm_d(mpfr_asin, child_asin_u1, xa[i]);
       showResult(success);
     }
@@ -2348,7 +2348,7 @@ void do_test() {
     {
       fprintf(stderr, "acos denormal/nonnumber test : ");
       double xa[] = { +0.0, -0.0, +1, -1, +1e+10, -1e+10, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN,
-		      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
+                      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) cmpDenorm_d(mpfr_acos, child_acos, xa[i]);
       showResult(success);
     }
@@ -2356,7 +2356,7 @@ void do_test() {
     {
       fprintf(stderr, "acos_u1 denormal/nonnumber test : ");
       double xa[] = { +0.0, -0.0, +1, -1, +1e+10, -1e+10, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN,
-		      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
+                      POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, nextafter(1, 2), nextafter(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) cmpDenorm_d(mpfr_acos, child_acos_u1, xa[i]);
       showResult(success);
     }
@@ -2561,16 +2561,16 @@ void do_test() {
       fprintf(stderr, "ldexp denormal/nonnumber test : ");
 
       for(i=-10000;i<=10000 && success;i++) {
-	d = child_ldexp(1.0, i);
-	mpfr_set_d(frx, 1.0, GMP_RNDN);
-	mpfr_set_exp(frx, mpfr_get_exp(frx) + i);
-	double c = mpfr_get_d(frx, GMP_RNDN);
+        d = child_ldexp(1.0, i);
+        mpfr_set_d(frx, 1.0, GMP_RNDN);
+        mpfr_set_exp(frx, mpfr_get_exp(frx) + i);
+        double c = mpfr_get_d(frx, GMP_RNDN);
 
-	if (c != d) {
-	  fprintf(stderr, "arg = %.20g, correct = %.20g, test = %.20g\n", (double)i, c, d);
-	  success = 0;
-	  break;
-	}
+        if (c != d) {
+          fprintf(stderr, "arg = %.20g, correct = %.20g, test = %.20g\n", (double)i, c, d);
+          success = 0;
+          break;
+        }
       }
 
       showResult(success);
@@ -2582,21 +2582,21 @@ void do_test() {
       double xa[] = { POSITIVE_INFINITY, NEGATIVE_INFINITY, -1, };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	if (child_ilogb(xa[i]) != ilogb(xa[i])) {
-	  fprintf(stderr, "arg = %.20g, correct = %d, test = %d\n", xa[i], ilogb(xa[i]), child_ilogb(xa[i]));
-	  success = 0;
-	  break;
-	}
+        if (child_ilogb(xa[i]) != ilogb(xa[i])) {
+          fprintf(stderr, "arg = %.20g, correct = %d, test = %d\n", xa[i], ilogb(xa[i]), child_ilogb(xa[i]));
+          success = 0;
+          break;
+        }
       }
 
       {
-	int t = child_ilogb(NAN);
-	if (t != INT_MAX && t != INT_MIN) success = 0;
+        int t = child_ilogb(NAN);
+        if (t != INT_MAX && t != INT_MIN) success = 0;
       }
 
       {
-	int t = child_ilogb(0);
-	if (t != INT_MIN && t != -INT_MAX) success = 0;
+        int t = child_ilogb(0);
+        if (t != INT_MIN && t != -INT_MAX) success = 0;
       }
 
       showResult(success);
@@ -2608,14 +2608,14 @@ void do_test() {
       double xa[] = { NEGATIVE_INFINITY, -DBL_MAX, -1, -DBL_MIN, -SLEEF_DBL_DENORM_MIN, -0, +0, SLEEF_DBL_DENORM_MIN, DBL_MIN, 1 , DBL_MAX, POSITIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(xa)/sizeof(double) && success;j++) {
-	  double t = child_nextafter(xa[i], xa[j]), c = nextafter(xa[i], xa[j]);
-	  if (!((t != 0 && !isnan(t) && !isnan(c) && t == c) || (t == 0 && c == 0 && signbit(t) == signbit(c)) || (isnan(t) && isnan(c)))) {
-	    fprintf(stderr, "arg = %.20g, %.20g, correct = %.20g, test = %.20g\n", xa[i], xa[j], c, t);
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(xa)/sizeof(double) && success;j++) {
+          double t = child_nextafter(xa[i], xa[j]), c = nextafter(xa[i], xa[j]);
+          if (!((t != 0 && !isnan(t) && !isnan(c) && t == c) || (t == 0 && c == 0 && signbit(t) == signbit(c)) || (isnan(t) && isnan(c)))) {
+            fprintf(stderr, "arg = %.20g, %.20g, correct = %.20g, test = %.20g\n", xa[i], xa[j], c, t);
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -2628,9 +2628,9 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_hypot, child_hypot_u35, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_hypot, child_hypot_u35, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2643,9 +2643,9 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_hypot, child_hypot_u05, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_hypot, child_hypot_u05, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2658,9 +2658,9 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_copysign, child_copysign, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_copysign, child_copysign, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2673,9 +2673,9 @@ void do_test() {
       double ya[] = { +0.0, +1, -1, +1e+100, -1e+100, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, SLEEF_SNAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_max, child_fmax, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_max, child_fmax, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2688,9 +2688,9 @@ void do_test() {
       double ya[] = { +0.0, +1, -1, +1e+100, -1e+100, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN, SLEEF_SNAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_min, child_fmin, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_min, child_fmin, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2703,9 +2703,9 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  cmpDenorm_d_d(mpfr_dim, child_fdim, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          cmpDenorm_d_d(mpfr_dim, child_fdim, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2718,10 +2718,10 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (fabs(xa[i] / ya[j]) > 1e+300) continue;
-	  cmpDenorm_d_d(mpfr_fmod, child_fmod, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (fabs(xa[i] / ya[j]) > 1e+300) continue;
+          cmpDenorm_d_d(mpfr_fmod, child_fmod, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2734,10 +2734,10 @@ void do_test() {
       double ya[] = { +0.0, -0.0, +1, -1, +1e+100, -1e+100, 1.0e+308, DBL_MAX, -DBL_MAX, DBL_MIN, -DBL_MIN, POSITIVE_INFINITY, NEGATIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(double) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
-	  if (fabs(xa[i] / ya[j]) > 1e+300) continue;
-	  cmpDenorm_d_d(mpfr_remainder, child_remainder, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(double) && success;j++) {
+          if (fabs(xa[i] / ya[j]) > 1e+300) continue;
+          cmpDenorm_d_d(mpfr_remainder, child_remainder, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -2927,13 +2927,13 @@ void do_test() {
     {
       fprintf(stderr, "asinf denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX,
-		       POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asin, child_asinf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX,
+                       POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asin, child_asinf, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN,
-		       POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asin, child_asinf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN,
+                       POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asin, child_asinf, xa[i]);
       }
       showResult(success);
     }
@@ -2941,7 +2941,7 @@ void do_test() {
     {
       fprintf(stderr, "asinf_u1 denormal/nonnumber test : ");
       float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN,
-		     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
+                     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asin, child_asinf_u1, xa[i]);
       showResult(success);
     }
@@ -2949,7 +2949,7 @@ void do_test() {
     {
       fprintf(stderr, "acosf denormal/nonnumber test : ");
       float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN,
-		     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
+                     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acos, child_acosf, xa[i]);
       showResult(success);
     }
@@ -2957,7 +2957,7 @@ void do_test() {
     {
       fprintf(stderr, "acosf_u1 denormal/nonnumber test : ");
       float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN,
-		     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
+                     POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(1, 2), nextafterf(-1, -2) };
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acos, child_acosf_u1, xa[i]);
       showResult(success);
     }
@@ -2986,11 +2986,11 @@ void do_test() {
     {
       fprintf(stderr, "logf_u1 denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(0, -1) };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log, child_logf_u1, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(0, -1) };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log, child_logf_u1, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(0, -1) };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log, child_logf_u1, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(0, -1) };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log, child_logf_u1, xa[i]);
       }
       showResult(success);
     }
@@ -3026,11 +3026,11 @@ void do_test() {
     {
       fprintf(stderr, "sinhf_u35 denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_sinh, child_sinhf_u35, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_sinh, child_sinhf_u35, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_sinh, child_sinhf_u35, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_sinh, child_sinhf_u35, xa[i]);
       }
       showResult(success);
     }
@@ -3045,11 +3045,11 @@ void do_test() {
     {
       fprintf(stderr, "tanhf_u35 denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_tanh, child_tanhf_u35, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_tanh, child_tanhf_u35, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_tanh, child_tanhf_u35, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_tanh, child_tanhf_u35, xa[i]);
       }
       showResult(success);
     }
@@ -3057,11 +3057,11 @@ void do_test() {
     {
       fprintf(stderr, "asinhf denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asinh, child_asinhf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asinh, child_asinhf, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asinh, child_asinhf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_asinh, child_asinhf, xa[i]);
       }
       showResult(success);
     }
@@ -3069,11 +3069,11 @@ void do_test() {
     {
       fprintf(stderr, "acoshf denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acosh, child_acoshf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acosh, child_acoshf, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acosh, child_acoshf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_acosh, child_acoshf, xa[i]);
       }
       showResult(success);
     }
@@ -3179,11 +3179,11 @@ void do_test() {
     {
       fprintf(stderr, "log1pf denormal/nonnumber test : ");
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(-1, -2), -2 };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log1p, child_log1pf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(-1, -2), -2 };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log1p, child_log1pf, xa[i]);
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(-1, -2), -2 };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log1p, child_log1pf, xa[i]);
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+7, -1e+7, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, nextafterf(-1, -2), -2 };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) cmpDenorm_f(mpfr_log1p, child_log1pf, xa[i]);
       }
       showResult(success);
     }
@@ -3192,21 +3192,21 @@ void do_test() {
       fprintf(stderr, "hypotf_u35 denormal/nonnumber test : ");
 
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    cmpDenorm_f_f(mpfr_hypot, child_hypotf_u35, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            cmpDenorm_f_f(mpfr_hypot, child_hypotf_u35, xa[i], ya[j]);
+          }
+        }
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    cmpDenorm_f_f(mpfr_hypot, child_hypotf_u35, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            cmpDenorm_f_f(mpfr_hypot, child_hypotf_u35, xa[i], ya[j]);
+          }
+        }
       }
 
       showResult(success);
@@ -3216,21 +3216,21 @@ void do_test() {
       fprintf(stderr, "hypotf_u05 denormal/nonnumber test : ");
 
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    cmpDenorm_f_f(mpfr_hypot, child_hypotf_u05, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            cmpDenorm_f_f(mpfr_hypot, child_hypotf_u05, xa[i], ya[j]);
+          }
+        }
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    cmpDenorm_f_f(mpfr_hypot, child_hypotf_u05, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            cmpDenorm_f_f(mpfr_hypot, child_hypotf_u05, xa[i], ya[j]);
+          }
+        }
       }
 
       showResult(success);
@@ -3243,9 +3243,9 @@ void do_test() {
       float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf };
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  cmpDenorm_f_f(mpfr_copysign, child_copysignf, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          cmpDenorm_f_f(mpfr_copysign, child_copysignf, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -3257,14 +3257,14 @@ void do_test() {
       float xa[] = { NEGATIVE_INFINITY, -FLT_MAX, -1, -FLT_MIN, -SLEEF_FLT_DENORM_MIN, -0, +0, SLEEF_FLT_DENORM_MIN, FLT_MIN, 1 , FLT_MAX, POSITIVE_INFINITY, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(xa)/sizeof(float) && success;j++) {
-	  float t = child_nextafterf(xa[i], xa[j]), c = nextafterf(xa[i], xa[j]);
-	  if (!((t != 0 && !isnan(t) && !isnan(c) && t == c) || (t == 0 && c == 0 && signbit(t) == signbit(c)) || (isnan(t) && isnan(c)))) {
-	    fprintf(stderr, "arg = %.20g, %.20g, correct = %.20g, test = %.20g\n", xa[i], xa[j], c, t);
-	    success = 0;
-	    break;
-	  }
-	}
+        for(j=0;j<sizeof(xa)/sizeof(float) && success;j++) {
+          float t = child_nextafterf(xa[i], xa[j]), c = nextafterf(xa[i], xa[j]);
+          if (!((t != 0 && !isnan(t) && !isnan(c) && t == c) || (t == 0 && c == 0 && signbit(t) == signbit(c)) || (isnan(t) && isnan(c)))) {
+            fprintf(stderr, "arg = %.20g, %.20g, correct = %.20g, test = %.20g\n", xa[i], xa[j], c, t);
+            success = 0;
+            break;
+          }
+        }
       }
 
       showResult(success);
@@ -3277,9 +3277,9 @@ void do_test() {
       float ya[] = { +0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, SLEEF_SNANf };
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  cmpDenorm_f_f(mpfr_max, child_fmaxf, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          cmpDenorm_f_f(mpfr_max, child_fmaxf, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -3292,9 +3292,9 @@ void do_test() {
       float ya[] = { +0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN, SLEEF_SNANf };
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  cmpDenorm_f_f(mpfr_min, child_fminf, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          cmpDenorm_f_f(mpfr_min, child_fminf, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -3307,9 +3307,9 @@ void do_test() {
       float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
 
       for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	  cmpDenorm_f_f(mpfr_dim, child_fdimf, xa[i], ya[j]);
-	}
+        for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+          cmpDenorm_f_f(mpfr_dim, child_fdimf, xa[i], ya[j]);
+        }
       }
 
       showResult(success);
@@ -3319,23 +3319,23 @@ void do_test() {
       fprintf(stderr, "fmodf denormal/nonnumber test : ");
 
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    if (fabs(xa[i] / ya[j]) > 1e+38) continue;
-	    cmpDenorm_f_f(mpfr_fmod, child_fmodf, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            if (fabs(xa[i] / ya[j]) > 1e+38) continue;
+            cmpDenorm_f_f(mpfr_fmod, child_fmodf, xa[i], ya[j]);
+          }
+        }
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    if (fabs(xa[i] / ya[j]) > 1e+38) continue;
-	    cmpDenorm_f_f(mpfr_fmod, child_fmodf, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            if (fabs(xa[i] / ya[j]) > 1e+38) continue;
+            cmpDenorm_f_f(mpfr_fmod, child_fmodf, xa[i], ya[j]);
+          }
+        }
       }
 
       showResult(success);
@@ -3345,23 +3345,23 @@ void do_test() {
       fprintf(stderr, "remainderf denormal/nonnumber test : ");
 
       if (enableFlushToZero) {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    if (fabs(xa[i] / ya[j]) > 1e+38) continue;
-	    cmpDenorm_f_f(mpfr_remainder, child_remainderf, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            if (fabs(xa[i] / ya[j]) > 1e+38) continue;
+            cmpDenorm_f_f(mpfr_remainder, child_remainderf, xa[i], ya[j]);
+          }
+        }
       } else {
-	float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
-	for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
-	  for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
-	    if (fabs(xa[i] / ya[j]) > 1e+38) continue;
-	    cmpDenorm_f_f(mpfr_remainder, child_remainderf, xa[i], ya[j]);
-	  }
-	}
+        float xa[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        float ya[] = { +0.0, -0.0, +1, -1, +1e+30, -1e+30, FLT_MAX, -FLT_MAX, FLT_MIN, -FLT_MIN, POSITIVE_INFINITYf, NEGATIVE_INFINITYf, NAN };
+        for(i=0;i<sizeof(xa)/sizeof(float) && success;i++) {
+          for(j=0;j<sizeof(ya)/sizeof(float) && success;j++) {
+            if (fabs(xa[i] / ya[j]) > 1e+38) continue;
+            cmpDenorm_f_f(mpfr_remainder, child_remainderf, xa[i], ya[j]);
+          }
+        }
       }
 
       showResult(success);
@@ -3435,58 +3435,58 @@ void do_test() {
 
   //
 
-#define checkAccuracy_d(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    if (countULPdp(childFunc(argx), frc) > bound) {			\
+#define checkAccuracy_d(mpfrFunc, childFunc, argx, bound) do {          \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    if (countULPdp(childFunc(argx), frc) > bound) {                     \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyNR_d(mpfrFunc, childFunc, argx, bound) do {	\
-    mpfr_set_d(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frc, frx);							\
-    if (countULPdp(childFunc(argx), frc) > bound) {			\
+#define checkAccuracyNR_d(mpfrFunc, childFunc, argx, bound) do {        \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
+    mpfrFunc(frc, frx);                                                 \
+    if (countULPdp(childFunc(argx), frc) > bound) {                     \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, childFunc(argx), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_d_d(mpfrFunc, childFunc, argx, argy, bound) do {	\
-    mpfr_set_d(frx, argx, GMP_RNDN);					\
-    mpfr_set_d(fry, argy, GMP_RNDN);					\
-    mpfrFunc(frc, frx, fry, GMP_RNDN);					\
-    if (countULPdp(childFunc(argx, argy), frc) > bound) {		\
+#define checkAccuracy_d_d(mpfrFunc, childFunc, argx, argy, bound) do {  \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
+    mpfr_set_d(fry, argy, GMP_RNDN);                                    \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
+    if (countULPdp(childFunc(argx, argy), frc) > bound) {               \
       fprintf(stderr, "\narg = %.20g, %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
-	      argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx, argy), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+              argx, argy, childFunc(argx, argy), mpfr_get_d(frc, GMP_RNDN), countULPdp(childFunc(argx, argy), frc)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyX_d(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_double2 d2 = childFunc(argx);					\
-    if (countULPdp(d2.x, frc) > bound) {				\
+#define checkAccuracyX_d(mpfrFunc, childFunc, argx, bound) do {         \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_double2 d2 = childFunc(argx);                                 \
+    if (countULPdp(d2.x, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, d2.x, mpfr_get_d(frc, GMP_RNDN), countULPdp(d2.x, frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyY_d(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, argx, GMP_RNDN);					\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_double2 d2 = childFunc(argx);					\
-    if (countULPdp(d2.y, frc) > bound) {				\
+#define checkAccuracyY_d(mpfrFunc, childFunc, argx, bound) do {         \
+    mpfr_set_d(frx, argx, GMP_RNDN);                                    \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_double2 d2 = childFunc(argx);                                 \
+    if (countULPdp(d2.y, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", argx, d2.y, mpfr_get_d(frc, GMP_RNDN), countULPdp(d2.y, frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
   //
@@ -3910,7 +3910,7 @@ void do_test() {
     fprintf(stderr, "pow : ");
     for(y = 0.1;y < 100 && success;y += 0.6) {
       for(x = -100;x < 100 && success;x += 0.6) {
-	checkAccuracy_d_d(mpfr_pow, child_pow, x, y, 1.0);
+        checkAccuracy_d_d(mpfr_pow, child_pow, x, y, 1.0);
       }
     }
     for(y = -1000;y < 1000 && success;y += 0.1) checkAccuracy_d_d(mpfr_pow, child_pow, 2.1, y, 1.0);
@@ -4173,47 +4173,47 @@ void do_test() {
       fprintf(stderr, "ilogb : ");
 
       for(d = 0.0001;d < 10;d += 0.001) {
-	int q = child_ilogb(d);
-	int c = ilogb(d);
-	if (q != c) {
-	  fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
-	  success = 0;
-	  showResult(success);
-	}
+        int q = child_ilogb(d);
+        int c = ilogb(d);
+        if (q != c) {
+          fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
+          success = 0;
+          showResult(success);
+        }
       }
 
       for(d = 0.0001;d < 10000;d += 1.1) {
-	int q = child_ilogb(d);
-	int c = ilogb(d);
-	if (q != c) {
-	  fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
-	  success = 0;
-	  showResult(success);
-	}
+        int q = child_ilogb(d);
+        int c = ilogb(d);
+        if (q != c) {
+          fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
+          success = 0;
+          showResult(success);
+        }
       }
 
       for(i=0;i<10000;i+=10) {
-	d = DBL_MIN * pow(0.996323, i);
-	if (d == 0) continue;
-	int q = child_ilogb(d);
-	int c = ilogb(d);
-	if (q != c) {
-	  fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
-	  success = 0;
-	  showResult(success);
-	}
+        d = DBL_MIN * pow(0.996323, i);
+        if (d == 0) continue;
+        int q = child_ilogb(d);
+        int c = ilogb(d);
+        if (q != c) {
+          fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
+          success = 0;
+          showResult(success);
+        }
       }
 
       for(i=0;i<10000;i+=10) {
-	d = pow(0.933254300796991, i);
-	if (d == 0) continue;
-	int q = child_ilogb(d);
-	int c = ilogb(d);
-	if (q != c) {
-	  fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
-	  success = 0;
-	  showResult(success);
-	}
+        d = pow(0.933254300796991, i);
+        if (d == 0) continue;
+        int q = child_ilogb(d);
+        int c = ilogb(d);
+        if (q != c) {
+          fprintf(stderr, "ilogb : arg = %.20g, test = %d, correct = %d\n", d, ilogb(d), child_ilogb(d));
+          success = 0;
+          showResult(success);
+        }
       }
 
       showResult(success);
@@ -4222,73 +4222,73 @@ void do_test() {
 
   //
 
-#define checkAccuracy_f(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) {	\
+#define checkAccuracy_f(mpfrFunc, childFunc, argx, bound) do {          \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) { \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
-	      (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+              (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyNR_f(mpfrFunc, childFunc, argx, bound) do {	\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx);							\
-    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) {	\
+#define checkAccuracyNR_f(mpfrFunc, childFunc, argx, bound) do {        \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx);                                                 \
+    if (countULPsp(childFunc((float)flushToZero(argx)), frc) > bound) { \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
-	      (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+              (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy_f_f(mpfrFunc, childFunc, argx, argy, bound) do {	\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);		\
-    mpfrFunc(frc, frx, fry, GMP_RNDN);					\
-    if (countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc) > bound) {	\
+#define checkAccuracy_f_f(mpfrFunc, childFunc, argx, argy, bound) do {  \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfr_set_d(fry, (float)flushToZero(argy), GMP_RNDN);                \
+    mpfrFunc(frc, frx, fry, GMP_RNDN);                                  \
+    if (countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc) > bound) {       \
       fprintf(stderr, "\narg = %.20g, %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", \
-	      (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+              (float)flushToZero(argx), (float)flushToZero(argy), childFunc((float)flushToZero(argx), (float)flushToZero(argy)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx), (float)flushToZero(argy)), frc)); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyX_f(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);				\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));				\
-    if (countULPsp(d2.x, frc) > bound) {				\
+#define checkAccuracyX_f(mpfrFunc, childFunc, argx, bound) do {         \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                              \
+    if (countULPsp(d2.x, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", (float)flushToZero(argx), (double)d2.x, mpfr_get_d(frc, GMP_RNDN), countULPsp(d2.x, frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracyY_f(mpfrFunc, childFunc, argx, bound) do {		\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);				\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    Sleef_float2 d2 = childFunc((float)flushToZero(argx));				\
-    if (countULPsp(d2.y, frc) > bound) {				\
+#define checkAccuracyY_f(mpfrFunc, childFunc, argx, bound) do {         \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    Sleef_float2 d2 = childFunc((float)flushToZero(argx));                              \
+    if (countULPsp(d2.y, frc) > bound) {                                \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf\n", (float)flushToZero(argx), (double)d2.y, mpfr_get_d(frc, GMP_RNDN), countULPsp(d2.y, frc)); \
-      success = 0;							\
-      break;								\
-    }									\
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
-#define checkAccuracy2_f(mpfrFunc, childFunc, argx, bound, abound) do {	\
-    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);		\
-    mpfrFunc(frc, frx, GMP_RNDN);					\
-    double t = childFunc((float)flushToZero(argx));			\
-    double ae = fabs(mpfr_get_d(frc, GMP_RNDN) - t);			\
-    if (countULPsp(t, frc) > bound && ae > abound) {			\
+#define checkAccuracy2_f(mpfrFunc, childFunc, argx, bound, abound) do { \
+    mpfr_set_d(frx, (float)flushToZero(argx), GMP_RNDN);                \
+    mpfrFunc(frc, frx, GMP_RNDN);                                       \
+    double t = childFunc((float)flushToZero(argx));                     \
+    double ae = fabs(mpfr_get_d(frc, GMP_RNDN) - t);                    \
+    if (countULPsp(t, frc) > bound && ae > abound) {                    \
       fprintf(stderr, "\narg = %.20g, test = %.20g, correct = %.20g, ULP = %lf, abserror = %g\n", \
-	      (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc), ae); \
-      success = 0;							\
-      break;								\
-    }									\
+              (float)flushToZero(argx), (double)childFunc((float)flushToZero(argx)), mpfr_get_d(frc, GMP_RNDN), countULPsp(childFunc((float)flushToZero(argx)), frc), ae); \
+      success = 0;                                                      \
+      break;                                                            \
+    }                                                                   \
   } while(0)
 
   //
@@ -4725,16 +4725,16 @@ void do_test() {
     fprintf(stderr, "powf : ");
     if (!enableFlushToZero) {
       for(y = 0.1;y < 100 && success;y += 0.6) {
-	for(x = -100;x < 100 && success;x += 0.6) {
-	  checkAccuracy_f_f(mpfr_pow, child_powf, x, y, 1.0);
-	}
+        for(x = -100;x < 100 && success;x += 0.6) {
+          checkAccuracy_f_f(mpfr_pow, child_powf, x, y, 1.0);
+        }
       }
       for(y = -1000;y < 1000 && success;y += 0.1) checkAccuracy_f_f(mpfr_pow, child_powf, 2.1, y, 1.0);
     } else {
       for(y = 0.1;y < 10 && success;y += 0.06) {
-	for(x = -100;x < 10 && success;x += 0.06) {
-	  checkAccuracy_f_f(mpfr_pow, child_powf, x, y, 1.0);
-	}
+        for(x = -100;x < 10 && success;x += 0.06) {
+          checkAccuracy_f_f(mpfr_pow, child_powf, x, y, 1.0);
+        }
       }
     }
     showResult(success);
@@ -4744,7 +4744,7 @@ void do_test() {
     fprintf(stderr, "fastpowf_u3500 : ");
     for(y = -25;y < 25 && success;y += 0.121) {
       for(x = 0.1;x < 25 && success;x += 0.251) {
-	checkAccuracy_f_f(mpfr_pow, child_fastpowf_u3500, x, y, 350);
+        checkAccuracy_f_f(mpfr_pow, child_fastpowf_u3500, x, y, 350);
       }
     }
     showResult(success);
@@ -4754,7 +4754,7 @@ void do_test() {
     if (!deterministicMode) {
       fprintf(stderr, "sqrtf : ");
       if (!enableFlushToZero) {
-	for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf, d, 1.0);
+        for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf, d, 1.0);
       }
       for(i = -1000;i <= 1000 && success;i+=10) checkAccuracy_f(mpfr_sqrt, child_sqrtf, pow(2.1, d), 1.0);
       showResult(success);
@@ -4763,7 +4763,7 @@ void do_test() {
 
       fprintf(stderr, "sqrtf_u05 : ");
       if (!enableFlushToZero) {
-	for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u05, d, 0.506);
+        for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u05, d, 0.506);
       }
       for(i = -1000;i <= 1000 && success;i+=10) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u05, pow(2.1, d), 0.506);
       showResult(success);
@@ -4772,7 +4772,7 @@ void do_test() {
 
       fprintf(stderr, "sqrtf_u35 : ");
       if (!enableFlushToZero) {
-	for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u35, d, 3.5);
+        for(d = -10000;d < 10000 && success;d += 2.1) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u35, d, 3.5);
       }
       for(i = -1000;i <= 1000 && success;i+=10) checkAccuracy_f(mpfr_sqrt, child_sqrtf_u35, pow(2.1, d), 3.5);
       showResult(success);
@@ -5083,43 +5083,43 @@ int main(int argc, char **argv) {
     int u;
 
     if (readln(ctop[0], str, 255) < 1 ||
-	sscanf(str, "%d", &u) != 1 ||
-	(u & 3) == 0) {
+        sscanf(str, "%d", &u) != 1 ||
+        (u & 3) == 0) {
       if (commandSde != NULL || commandQEmu != NULL) {
-	close(ctop[0]);
-	close(ptoc[1]);
+        close(ctop[0]);
+        close(ptoc[1]);
 
-	if (commandSde) {
-	  argv2[0] = commandSde;
-	  argv2[1] = "--";
-	  for(i=a2s;i<argc;i++) argv2[i-a2s+2] = argv[i];
-	  argv2[argc-a2s+2] = NULL;
-	} else {
-	  argv2[0] = commandQEmu;
-	  for(i=a2s;i<argc;i++) argv2[i-a2s+1] = argv[i];
-	  argv2[argc-a2s+1] = NULL;
-	}
+        if (commandSde) {
+          argv2[0] = commandSde;
+          argv2[1] = "--";
+          for(i=a2s;i<argc;i++) argv2[i-a2s+2] = argv[i];
+          argv2[argc-a2s+2] = NULL;
+        } else {
+          argv2[0] = commandQEmu;
+          for(i=a2s;i<argc;i++) argv2[i-a2s+1] = argv[i];
+          argv2[argc-a2s+1] = NULL;
+        }
 
-	startChild(argv2[0], argv2);
+        startChild(argv2[0], argv2);
 
-	if (readln(ctop[0], str, 255) < 1) stop("Feature detection(sde, readln)");
-	if (sscanf(str, "%d", &u) != 1) stop("Feature detection(sde, sscanf)");
-	if ((u & 3) == 0) {
-	  fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature(SDE)\n");
-	  return 0;
-	}
+        if (readln(ctop[0], str, 255) < 1) stop("Feature detection(sde, readln)");
+        if (sscanf(str, "%d", &u) != 1) stop("Feature detection(sde, sscanf)");
+        if ((u & 3) == 0) {
+          fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature(SDE)\n");
+          return 0;
+        }
 
-	printf("*** Using emulator\n");
+        printf("*** Using emulator\n");
       } else {
-	int status;
-	waitpid(pid, &status, 0);
-	if (WIFSIGNALED(status)) {
-	  fprintf(stderr, "\n\nTester : *** Child process has crashed\n");
-	  return -1;
-	}
+        int status;
+        waitpid(pid, &status, 0);
+        if (WIFSIGNALED(status)) {
+          fprintf(stderr, "\n\nTester : *** Child process has crashed\n");
+          return -1;
+        }
 
-	fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature\n");
-	return 0;
+        fprintf(stderr, "\n\nTester : *** CPU does not support the necessary feature\n");
+        return 0;
       }
     }
 

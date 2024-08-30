@@ -118,148 +118,148 @@ typedef svint32_t vint2;
 
 #define __MAKE_FN_NAME(name, t, vl, p) _ZGV##t##N##vl##p##_##name
 
-#define __DECLARE_vd_vd(name, t, vl, p)					\
+#define __DECLARE_vd_vd(name, t, vl, p)                                 \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble)
-#define __CALL_vd_vd(name, t, vl, p)				\
+#define __CALL_vd_vd(name, t, vl, p)                            \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1); } while(0)
 
-#define __DECLARE_vi_vd(name, t, vl, p)				\
+#define __DECLARE_vi_vd(name, t, vl, p)                         \
   extern vint VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble)
-#define __CALL_vi_vd(name, t, vl, p)				\
+#define __CALL_vi_vd(name, t, vl, p)                            \
   do { vi0 = __MAKE_FN_NAME(name, t, vl, p)(vd1); } while(0)
 
-#define __DECLARE_vd_vd_vi(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vi(name, t, vl, p)                              \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vint)
-#define __CALL_vd_vd_vi(name, t, vl, p)					\
+#define __CALL_vd_vd_vi(name, t, vl, p)                                 \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vi2); } while(0)
 
-#define __DECLARE_vd_vd_vd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vd(name, t, vl, p)                              \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble)
-#define __CALL_vd_vd_vd(name, t, vl, p)					\
+#define __CALL_vd_vd_vd(name, t, vl, p)                                 \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vd2); } while(0)
 
-#define __DECLARE_vd_vd_vd_vd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vd_vd(name, t, vl, p)                           \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble, vdouble)
-#define __CALL_vd_vd_vd_vd(name, t, vl, p)				\
+#define __CALL_vd_vd_vd_vd(name, t, vl, p)                              \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vd2, vd3); } while(0)
 
-#define __DECLARE_vd_vd_pvd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_pvd(name, t, vl, p)                             \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble *)
-#define __CALL_vd_vd_pvd(name, t, vl, p)				\
+#define __CALL_vd_vd_pvd(name, t, vl, p)                                \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, &vd2); } while(0)
 
-#define __DECLARE_v_vd_pvd_pvd(name, t, vl, p)				\
+#define __DECLARE_v_vd_pvd_pvd(name, t, vl, p)                          \
   extern void VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble *, vdouble *)
-#define __CALL_v_vd_pvd_pvd(name, t, vl, p)				\
+#define __CALL_v_vd_pvd_pvd(name, t, vl, p)                             \
   do { __MAKE_FN_NAME(name, t, vl, p)(vd0, &vd1, &vd2); } while(0)
 
-#define __DECLARE_vf_vf(name, t, vl, p)					\
+#define __DECLARE_vf_vf(name, t, vl, p)                                 \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat)
-#define __CALL_vf_vf(name, t, vl, p)				\
+#define __CALL_vf_vf(name, t, vl, p)                            \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1); } while(0)
 
-#define __DECLARE_vf_vf_vf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vf(name, t, vl, p)                              \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat)
-#define __CALL_vf_vf_vf(name, t, vl, p)					\
+#define __CALL_vf_vf_vf(name, t, vl, p)                                 \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vf2); } while(0)
 
-#define __DECLARE_vf_vf_vf_vf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vf_vf(name, t, vl, p)                           \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat, vfloat)
-#define __CALL_vf_vf_vf_vf(name, t, vl, p)				\
+#define __CALL_vf_vf_vf_vf(name, t, vl, p)                              \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vf2, vf3); } while(0)
 
-#define __DECLARE_vf_vf_pvf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_pvf(name, t, vl, p)                             \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat *)
-#define __CALL_vf_vf_pvf(name, t, vl, p)				\
+#define __CALL_vf_vf_pvf(name, t, vl, p)                                \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, &vf2); } while(0)
 
-#define __DECLARE_vi_vf(name, t, vl, p)				\
+#define __DECLARE_vi_vf(name, t, vl, p)                         \
   extern vint2 VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat)
-#define __CALL_vi_vf(name, t, vl, p)				\
+#define __CALL_vi_vf(name, t, vl, p)                            \
   do { vi20 = __MAKE_FN_NAME(name, t, vl, p)(vf1); } while(0)
 
-#define __DECLARE_vf_vf_vi(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vi(name, t, vl, p)                              \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vint2)
-#define __CALL_vf_vf_vi(name, t, vl, p)					\
+#define __CALL_vf_vf_vi(name, t, vl, p)                                 \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vi22); } while(0)
 
-#define __DECLARE_v_vf_pvf_pvf(name, t, vl, p)				\
+#define __DECLARE_v_vf_pvf_pvf(name, t, vl, p)                          \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat *, vfloat*)
-#define __CALL_v_vf_pvf_pvf(name, t, vl, p)				\
+#define __CALL_v_vf_pvf_pvf(name, t, vl, p)                             \
   do { __MAKE_FN_NAME(name, t, vl, p)(vf0, &vf1, &vf2); } while(0)
 
 #else /******************** MASKED_GNUABI *****************************/
 
 #define __MAKE_FN_NAME(name, t, vl, p) _ZGV##t##M##vl##p##_##name
 
-#define __DECLARE_vd_vd(name, t, vl, p)					\
+#define __DECLARE_vd_vd(name, t, vl, p)                                 \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vopmask)
-#define __CALL_vd_vd(name, t, vl, p)					\
+#define __CALL_vd_vd(name, t, vl, p)                                    \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, mask); } while(0)
 
-#define __DECLARE_vi_vd(name, t, vl, p)					\
+#define __DECLARE_vi_vd(name, t, vl, p)                                 \
   extern vint VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vopmask)
-#define __CALL_vi_vd(name, t, vl, p)					\
+#define __CALL_vi_vd(name, t, vl, p)                                    \
   do { vi0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, mask); } while(0)
 
-#define __DECLARE_vd_vd_vi(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vi(name, t, vl, p)                              \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vint, vopmask)
-#define __CALL_vd_vd_vi(name, t, vl, p)					\
+#define __CALL_vd_vd_vi(name, t, vl, p)                                 \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vi2, mask); } while(0)
 
-#define __DECLARE_vd_vd_vd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vd(name, t, vl, p)                              \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble, vopmask)
-#define __CALL_vd_vd_vd(name, t, vl, p)					\
+#define __CALL_vd_vd_vd(name, t, vl, p)                                 \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vd2, mask); } while(0)
 
-#define __DECLARE_vd_vd_vd_vd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_vd_vd(name, t, vl, p)                           \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble, vdouble, vopmask)
-#define __CALL_vd_vd_vd_vd(name, t, vl, p)				\
+#define __CALL_vd_vd_vd_vd(name, t, vl, p)                              \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, vd2, vd3, mask); } while(0)
 
-#define __DECLARE_vd_vd_pvd(name, t, vl, p)				\
+#define __DECLARE_vd_vd_pvd(name, t, vl, p)                             \
   extern vdouble VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble *, vopmask)
-#define __CALL_vd_vd_pvd(name, t, vl, p)				\
+#define __CALL_vd_vd_pvd(name, t, vl, p)                                \
   do { vd0 = __MAKE_FN_NAME(name, t, vl, p)(vd1, &vd2, mask); } while(0)
 
-#define __DECLARE_v_vd_pvd_pvd(name, t, vl, p)				\
+#define __DECLARE_v_vd_pvd_pvd(name, t, vl, p)                          \
   extern void VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vdouble, vdouble *, vdouble *, vopmask)
-#define __CALL_v_vd_pvd_pvd(name, t, vl, p)				\
+#define __CALL_v_vd_pvd_pvd(name, t, vl, p)                             \
   do { __MAKE_FN_NAME(name, t, vl, p)(vd0, &vd1, &vd2, mask); } while(0)
 
-#define __DECLARE_vf_vf(name, t, vl, p)					\
+#define __DECLARE_vf_vf(name, t, vl, p)                                 \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vopmask)
-#define __CALL_vf_vf(name, t, vl, p)					\
+#define __CALL_vf_vf(name, t, vl, p)                                    \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, mask); } while(0)
 
-#define __DECLARE_vf_vf_vf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vf(name, t, vl, p)                              \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat, vopmask)
-#define __CALL_vf_vf_vf(name, t, vl, p)					\
+#define __CALL_vf_vf_vf(name, t, vl, p)                                 \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vf2, mask); } while(0)
 
-#define __DECLARE_vf_vf_vf_vf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vf_vf(name, t, vl, p)                           \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat, vfloat, vopmask)
-#define __CALL_vf_vf_vf_vf(name, t, vl, p)				\
+#define __CALL_vf_vf_vf_vf(name, t, vl, p)                              \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vf2, vf3, mask); } while(0)
 
-#define __DECLARE_vf_vf_pvf(name, t, vl, p)				\
+#define __DECLARE_vf_vf_pvf(name, t, vl, p)                             \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat *, vopmask)
-#define __CALL_vf_vf_pvf(name, t, vl, p)				\
+#define __CALL_vf_vf_pvf(name, t, vl, p)                                \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, &vf2, mask); } while(0)
 
-#define __DECLARE_vi_vf(name, t, vl, p)					\
+#define __DECLARE_vi_vf(name, t, vl, p)                                 \
   extern vint2 VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vopmask)
-#define __CALL_vi_vf(name, t, vl, p)					\
+#define __CALL_vi_vf(name, t, vl, p)                                    \
   do { vi20 = __MAKE_FN_NAME(name, t, vl, p)(vf1, mask); } while(0)
 
-#define __DECLARE_vf_vf_vi(name, t, vl, p)				\
+#define __DECLARE_vf_vf_vi(name, t, vl, p)                              \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vint2, vopmask)
-#define __CALL_vf_vf_vi(name, t, vl, p)					\
+#define __CALL_vf_vf_vi(name, t, vl, p)                                 \
   do { vf0 = __MAKE_FN_NAME(name, t, vl, p)(vf1, vi22, mask); } while(0)
 
-#define __DECLARE_v_vf_pvf_pvf(name, t, vl, p)				\
+#define __DECLARE_v_vf_pvf_pvf(name, t, vl, p)                          \
   extern vfloat VECTOR_CC __MAKE_FN_NAME(name, t, vl, p)(vfloat, vfloat *, vfloat*, vopmask)
-#define __CALL_v_vf_pvf_pvf(name, t, vl, p)				\
+#define __CALL_v_vf_pvf_pvf(name, t, vl, p)                             \
   do { __MAKE_FN_NAME(name, t, vl, p)(vf0, &vf1, &vf2, mask); } while(0)
 
 #endif /* MASKED_GNUABI */

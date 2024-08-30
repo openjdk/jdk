@@ -293,7 +293,7 @@ static INLINE vint vsel_vi_vo_vi_vi(vopmask m, vint x, vint y) {
   union { vopmask vo; vint2 vi2; } cnv;
   cnv.vo = m;
   return vor_vi_vi_vi(vand_vi_vi_vi(vreinterpretFirstHalf_vi_vi2(cnv.vi2), x),
-		      vandnot_vi_vi_vi(vreinterpretFirstHalf_vi_vi2(cnv.vi2), y));
+                      vandnot_vi_vi_vi(vreinterpretFirstHalf_vi_vi2(cnv.vi2), y));
 }
 
 static INLINE vopmask visinf_vo_vd(vdouble d)  { vopmask ret; for(int i=0;i<VECTLENDP;i++) ret.x[i] = (d.d[i] == SLEEF_INFINITY || d.d[i] == -SLEEF_INFINITY) ? -1 : 0; return ret; }

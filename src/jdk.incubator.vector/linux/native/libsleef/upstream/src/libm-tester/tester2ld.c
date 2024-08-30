@@ -205,15 +205,15 @@ int main(int argc,char **argv)
       double u0 = countULP2(t = sc.x, frx);
 
       if (u0 != 0 && ((fabsl(d) <= rangemax2 && u0 > 0.505) || fabsl(t) > 1 || !isnumberl(t))) {
-	printf("Pure C sincospil_u05 sin arg=%.30Lg ulp=%.20g\n", d, u0);
-	fflush(stdout); ecnt++;
+        printf("Pure C sincospil_u05 sin arg=%.30Lg ulp=%.20g\n", d, u0);
+        fflush(stdout); ecnt++;
       }
 
       double u1 = countULP2(t = sc2.x, frx);
 
       if (u1 != 0 && ((fabsl(d) <= rangemax2 && u1 > 1.5) || fabsl(t) > 1 || !isnumberl(t))) {
-	printf("Pure C sincospil_u35 sin arg=%.30Lg ulp=%.20g\n", d, u1);
-	fflush(stdout); ecnt++;
+        printf("Pure C sincospil_u35 sin arg=%.30Lg ulp=%.20g\n", d, u1);
+        fflush(stdout); ecnt++;
       }
     }
 
@@ -225,15 +225,15 @@ int main(int argc,char **argv)
       double u0 = countULP2(t = sc.y, frx);
 
       if (u0 != 0 && ((fabsl(d) <= rangemax2 && u0 > 0.505) || fabsl(t) > 1 || !isnumberl(t))) {
-	printf("Pure C sincospil_u05 cos arg=%.30Lg ulp=%.20g\n", d, u0);
-	fflush(stdout); ecnt++;
+        printf("Pure C sincospil_u05 cos arg=%.30Lg ulp=%.20g\n", d, u0);
+        fflush(stdout); ecnt++;
       }
 
       double u1 = countULP2(t = sc.y, frx);
 
       if (u1 != 0 && ((fabsl(d) <= rangemax2 && u1 > 1.5) || fabsl(t) > 1 || !isnumberl(t))) {
-	printf("Pure C sincospil_u35 cos arg=%.30Lg ulp=%.20g\n", d, u1);
-	fflush(stdout); ecnt++;
+        printf("Pure C sincospil_u35 cos arg=%.30Lg ulp=%.20g\n", d, u1);
+        fflush(stdout); ecnt++;
       }
     }
 

@@ -314,10 +314,10 @@ int main(int argc, char **argv)
 
       mpfr_set_d(frb, 0, GMP_RNDN);
       for(j=N-1;j>=0;j--) {
-	mpfr_set_d(frc, (double)j*PMUL+PADD, GMP_RNDN);
-	mpfr_pow(frc, a[i], frc, GMP_RNDN);
-	mpfr_mul(frc, frc, curcoef[j], GMP_RNDN);
-	mpfr_add(frb, frb, frc, GMP_RNDN);
+        mpfr_set_d(frc, (double)j*PMUL+PADD, GMP_RNDN);
+        mpfr_pow(frc, a[i], frc, GMP_RNDN);
+        mpfr_mul(frc, frc, curcoef[j], GMP_RNDN);
+        mpfr_add(frb, frb, frc, GMP_RNDN);
       }
 
       double e = countULP(frb, v[i]);
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 
     if (emax < best || (emax == best && esum < bestsum)) {
       for(i=0;i<N;i++) {
-	mpfr_set(bestcoef[i], curcoef[i], GMP_RNDN);
+        mpfr_set(bestcoef[i], curcoef[i], GMP_RNDN);
       }
       if (best == 1e+100 || k > 10) printf("Max error = %g ULP, Sum error = %g (Max error at %g)\n", emax, esum, worstx);
       if ((best - emax) / best > 0.0001) k = 0;
@@ -352,9 +352,9 @@ int main(int argc, char **argv)
       //static int tab[] = {0, 0, 0, 0, 2, -2, 1, -1};
       int r = tab[random() & 7];
       if (r > 0) {
-	for(int j=0;j<r;j++) mpfr_nextabove(curcoef[i]);
+        for(int j=0;j<r;j++) mpfr_nextabove(curcoef[i]);
       } else if (r < 0) {
-	for(int j=0;j>r;j--) mpfr_nextbelow(curcoef[i]);
+        for(int j=0;j>r;j--) mpfr_nextbelow(curcoef[i]);
       }
     }
   }

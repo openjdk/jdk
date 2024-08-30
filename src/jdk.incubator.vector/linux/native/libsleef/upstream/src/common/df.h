@@ -53,7 +53,7 @@ static INLINE CONST VECTOR_CC vfloat2 vsel_vf2_vo_vo_vo_d_d_d_d(vopmask o0, vopm
 
 static INLINE CONST VECTOR_CC vfloat2 vabs_vf2_vf2(vfloat2 x) {
   return vcast_vf2_vf_vf(vreinterpret_vf_vm(vxor_vm_vm_vm(vand_vm_vm_vm(vreinterpret_vm_vf(vcast_vf_f(-0.0)), vreinterpret_vm_vf(vf2getx_vf_vf2(x))), vreinterpret_vm_vf(vf2getx_vf_vf2(x)))),
-			 vreinterpret_vf_vm(vxor_vm_vm_vm(vand_vm_vm_vm(vreinterpret_vm_vf(vcast_vf_f(-0.0)), vreinterpret_vm_vf(vf2getx_vf_vf2(x))), vreinterpret_vm_vf(vf2gety_vf_vf2(x)))));
+                         vreinterpret_vf_vm(vxor_vm_vm_vm(vand_vm_vm_vm(vreinterpret_vm_vf(vcast_vf_f(-0.0)), vreinterpret_vm_vf(vf2getx_vf_vf2(x))), vreinterpret_vm_vf(vf2gety_vf_vf2(x)))));
 }
 
 static INLINE CONST VECTOR_CC vfloat vadd_vf_3vf(vfloat v0, vfloat v1, vfloat v2) {
@@ -96,7 +96,7 @@ static INLINE CONST VECTOR_CC vfloat2 dfneg_vf2_vf2(vfloat2 x) {
 
 static INLINE CONST VECTOR_CC vfloat2 dfabs_vf2_vf2(vfloat2 x) {
   return vcast_vf2_vf_vf(vabs_vf_vf(vf2getx_vf_vf2(x)),
-			 vreinterpret_vf_vm(vxor_vm_vm_vm(vreinterpret_vm_vf(vf2gety_vf_vf2(x)), vand_vm_vm_vm(vreinterpret_vm_vf(vf2getx_vf_vf2(x)), vreinterpret_vm_vf(vcast_vf_f(-0.0f))))));
+                         vreinterpret_vf_vm(vxor_vm_vm_vm(vreinterpret_vm_vf(vf2gety_vf_vf2(x)), vand_vm_vm_vm(vreinterpret_vm_vf(vf2getx_vf_vf2(x)), vreinterpret_vm_vf(vcast_vf_f(-0.0f))))));
 }
 
 static INLINE CONST VECTOR_CC vfloat2 dfnormalize_vf2_vf2(vfloat2 t) {

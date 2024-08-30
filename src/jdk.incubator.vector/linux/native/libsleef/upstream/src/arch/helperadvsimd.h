@@ -220,7 +220,7 @@ static INLINE VECTOR_CC vfloat vrec_vf_vf(vfloat d) {
   return vdiv_vf_vf_vf(vcast_vf_f(1.0f), d);
 #else
   return vbslq_f32(vceqq_f32(vabs_vf_vf(d), vcast_vf_f(SLEEF_INFINITYf)),
-		   vcast_vf_f(0), vdiv_vf_vf_vf(vcast_vf_f(1.0f), d));
+                   vcast_vf_f(0), vdiv_vf_vf_vf(vcast_vf_f(1.0f), d));
 #endif
 }
 
@@ -245,7 +245,7 @@ static INLINE VECTOR_CC vfloat vsqrt_vf_vf(vfloat d) {
   w = vadd_vf_vf_vf(w, x);
 
   return vbslq_f32(vorrq_u32(vceqq_f32(d, vcast_vf_f(0)),
-			     vceqq_f32(d, vcast_vf_f(SLEEF_INFINITYf))), d, w);
+                             vceqq_f32(d, vcast_vf_f(SLEEF_INFINITYf))), d, w);
 #endif
 }
 
@@ -433,7 +433,7 @@ static INLINE VECTOR_CC vdouble vrec_vd_vd(vdouble d) {
   return vdiv_vd_vd_vd(vcast_vd_d(1.0f), d);
 #else
   return vbslq_f64(vceqq_f64(vabs_vd_vd(d), vcast_vd_d(SLEEF_INFINITY)),
-		   vcast_vd_d(0), vdiv_vd_vd_vd(vcast_vd_d(1.0f), d));
+                   vcast_vd_d(0), vdiv_vd_vd_vd(vcast_vd_d(1.0f), d));
 #endif
 }
 
@@ -460,7 +460,7 @@ static INLINE VECTOR_CC vdouble vsqrt_vd_vd(vdouble d) {
   w = vadd_vd_vd_vd(w, x);
 
   return vbslq_f64(vorrq_u64(vceqq_f64(d, vcast_vd_d(0)),
-			     vceqq_f64(d, vcast_vd_d(SLEEF_INFINITY))), d, w);
+                             vceqq_f64(d, vcast_vd_d(SLEEF_INFINITY))), d, w);
 #endif
 }
 
@@ -506,7 +506,7 @@ static INLINE VECTOR_CC vdouble vsel_vd_vo_vo_vo_d_d_d_d(vopmask o0, vopmask o1,
 // I(Naoki Shibata) expect that on future CPU models with hardware similar to Super Shuffle Engine, this implementation will be faster.
 static INLINE CONST VECTOR_CC vdouble vsel_vd_vo_d_d(vopmask o, double d0, double d1) {
   uint8x16_t idx = vbslq_u8(vreinterpretq_u8_u32(o), (uint8x16_t) { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7 },
-			    (uint8x16_t) { 8, 9, 10, 11, 12, 13, 14, 15, 8, 9, 10, 11, 12, 13, 14, 15 });
+                            (uint8x16_t) { 8, 9, 10, 11, 12, 13, 14, 15, 8, 9, 10, 11, 12, 13, 14, 15 });
 
   uint8x16_t tab = (uint8x16_t) (float64x2_t) { d0, d1 };
   return (vdouble) vqtbl1q_u8(tab, idx);
@@ -514,9 +514,9 @@ static INLINE CONST VECTOR_CC vdouble vsel_vd_vo_d_d(vopmask o, double d0, doubl
 
 static INLINE VECTOR_CC vdouble vsel_vd_vo_vo_vo_d_d_d_d(vopmask o0, vopmask o1, vopmask o2, double d0, double d1, double d2, double d3) {
   uint8x16_t idx = vbslq_u8(vreinterpretq_u8_u32(o0), (uint8x16_t) { 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4, 5, 6, 7 },
-			    vbslq_u8(vreinterpretq_u8_u32(o1), (uint8x16_t) { 8, 9, 10, 11, 12, 13, 14, 15, 8, 9, 10, 11, 12, 13, 14, 15 },
-				     vbslq_u8(vreinterpretq_u8_u32(o2), (uint8x16_t) { 16, 17, 18, 19, 20, 21, 22, 23, 16, 17, 18, 19, 20, 21, 22, 23 },
-					      (uint8x16_t) { 24, 25, 26, 27, 28, 29, 30, 31, 24, 25, 26, 27, 28, 29, 30, 31 })));
+                            vbslq_u8(vreinterpretq_u8_u32(o1), (uint8x16_t) { 8, 9, 10, 11, 12, 13, 14, 15, 8, 9, 10, 11, 12, 13, 14, 15 },
+                                     vbslq_u8(vreinterpretq_u8_u32(o2), (uint8x16_t) { 16, 17, 18, 19, 20, 21, 22, 23, 16, 17, 18, 19, 20, 21, 22, 23 },
+                                              (uint8x16_t) { 24, 25, 26, 27, 28, 29, 30, 31, 24, 25, 26, 27, 28, 29, 30, 31 })));
 
   uint8x16x2_t tab = { { (uint8x16_t) (float64x2_t) { d0, d1 }, (uint8x16_t) (float64x2_t) { d2, d3 } } };
   return (vdouble) vqtbl2q_u8(tab, idx);

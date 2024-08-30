@@ -130,7 +130,7 @@ int check_cf(int n) {
 
   for(i=0;i<n;i++) {
     if ((fabs(sy[(i*2+0)] - creal(fs[i])) > THRES) ||
-	(fabs(sy[(i*2+1)] - cimag(fs[i])) > THRES)) {
+        (fabs(sy[(i*2+1)] - cimag(fs[i])) > THRES)) {
       success = 0;
     }
 
@@ -191,7 +191,7 @@ int check_cb(int n) {
 
   for(i=0;i<n;i++) {
     if ((fabs(sy[(i*2+0)] - creal(ts[i])) > THRES) ||
-	(fabs(sy[(i*2+1)] - cimag(ts[i])) > THRES)) {
+        (fabs(sy[(i*2+1)] - cimag(ts[i])) > THRES)) {
       success = 0;
     }
   }
