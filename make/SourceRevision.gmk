@@ -64,7 +64,7 @@ ifeq ($(USE_SCM), true)
 
   # Verify that the entire forest is consistent
   $(foreach repo, $(call FindAllReposRel), \
-    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)),, \
+    $(if $(wildcard $(TOPDIR)/$(repo)/$(SCM_DIR)), , \
         $(error Inconsistent revision control: $(repo) is missing $(SCM_DIR) directory)) \
   )
 

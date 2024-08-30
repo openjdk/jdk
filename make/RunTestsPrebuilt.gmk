@@ -34,7 +34,7 @@ ifneq ($(findstring :, $(MAKE)), )
 endif
 
 # Locate this Makefile
-ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))),)
+ifeq ($(filter /%, $(lastword $(MAKEFILE_LIST))), )
   makefile_path := $(CURDIR)/$(strip $(lastword $(MAKEFILE_LIST)))
 else
   makefile_path := $(lastword $(MAKEFILE_LIST))

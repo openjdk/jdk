@@ -26,7 +26,7 @@
 ifndef _JAVA_COMPILATION_GMK
 _JAVA_COMPILATION_GMK := 1
 
-ifeq (,$(_MAKEBASE_GMK))
+ifeq ($(_MAKEBASE_GMK), )
   $(error You must include MakeBase.gmk prior to including JavaCompilation.gmk)
 endif
 
@@ -59,7 +59,7 @@ define add_file_to_copy
   # parma 2 = The source file to copy.
   $2_TARGET := $2
   # Remove the source prefix.
-  $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
+  $$(foreach i, $$($1_SRC), $$(eval $$(call remove_string,$$i,$2_TARGET)))
   # To allow for automatic overrides, do not create a rule for a target file that
   # already has one
   ifneq ($$($1_COPY_$$($2_TARGET)), 1)
@@ -100,7 +100,7 @@ define add_file_to_clean
   # parma 2 = The source file to copy and clean.
   $2_TARGET := $2
   # Remove the source prefix.
-  $$(foreach i,$$($1_SRC),$$(eval $$(call remove_string,$$i,$2_TARGET)))
+  $$(foreach i, $$($1_SRC), $$(eval $$(call remove_string,$$i,$2_TARGET)))
   # Now we can setup the dependency that will trigger the copying.
   # To allow for automatic overrides, do not create a rule for a target file that
   # already has one
@@ -175,7 +175,7 @@ SetupJavaCompilation = $(NamedParamsMacroTemplate)
 define SetupJavaCompilationBody
 
   # Verify arguments
-  ifeq ($$($1_BIN),)
+  ifeq ($$($1_BIN), )
     $$(error Must specify BIN (in $1))
   endif
 
@@ -313,7 +313,7 @@ define SetupJavaCompilationBody
       ) \
     ) \
   )
-  $$(call MakeDir,$$($1_BIN))
+  $$(call MakeDir, $$($1_BIN))
   # Order src files according to the order of the src dirs. Correct ordering is
   # needed for correct overriding between different source roots.
   $1_ALL_SRC_RAW := $$(call FindFiles, $$($1_SRC))
@@ -369,60 +369,60 @@ define SetupJavaCompilationBody
     endif
   else
     # All files below META-INF are always copied.
-    $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%,$$($1_SRC)),$$($1_ALL_SRCS))
+    $1_ALL_COPIES := $$(filter $$(addsuffix /META-INF%, $$($1_SRC)), $$($1_ALL_SRCS))
     # Find all files to be copied from source to bin.
-    ifneq (,$$($1_COPY)$$($1_COPY_FILES))
+    ifneq ($$($1_COPY)$$($1_COPY_FILES), )
       # Search for all files to be copied.
-      $1_ALL_COPIES += $$(filter $$(addprefix %,$$($1_COPY)),$$($1_ALL_SRCS))
+      $1_ALL_COPIES += $$(filter $$(addprefix %, $$($1_COPY)), $$($1_ALL_SRCS))
       # Copy these explicitly
       $1_ALL_COPIES += $$($1_COPY_FILES)
     endif
     # Copy must also respect filters.
-    ifneq (,$$($1_INCLUDE_PATTERN))
-      $1_ALL_COPIES := $$(filter $$($1_INCLUDE_PATTERN),$$($1_ALL_COPIES))
+    ifneq ($$($1_INCLUDE_PATTERN), )
+      $1_ALL_COPIES := $$(filter $$($1_INCLUDE_PATTERN), $$($1_ALL_COPIES))
     endif
-    ifneq (,$$($1_EXCLUDE_PATTERN))
-      $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_COPIES))
+    ifneq ($$($1_EXCLUDE_PATTERN), )
+      $1_ALL_COPIES := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_ALL_COPIES))
     endif
     # Filter out any excluded translations
     ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
       $1_ALL_COPIES := $$(call FilterExcludedTranslations, $$($1_ALL_COPIES), .properties)
     endif
-    ifneq (,$$($1_ALL_COPIES))
+    ifneq ($$($1_ALL_COPIES), )
       # Yep, there are files to be copied!
       $1_ALL_COPY_TARGETS :=
-          $$(foreach i,$$($1_ALL_COPIES),$$(eval $$(call add_file_to_copy,$1,$$i)))
+          $$(foreach i, $$($1_ALL_COPIES), $$(eval $$(call add_file_to_copy,$1,$$i)))
       # Now we can depend on $$($1_ALL_COPY_TARGETS) to copy all files!
     endif
 
     # Find all property files to be copied and cleaned from source to bin.
-    ifneq (,$$($1_CLEAN)$$($1_CLEAN_FILES))
+    ifneq ($$($1_CLEAN)$$($1_CLEAN_FILES), )
       # Search for all files to be copied.
-      $1_ALL_CLEANS := $$(filter $$(addprefix %,$$($1_CLEAN)),$$($1_ALL_SRCS))
+      $1_ALL_CLEANS := $$(filter $$(addprefix %, $$($1_CLEAN)), $$($1_ALL_SRCS))
       # Clean these explicitly
       $1_ALL_CLEANS += $$($1_CLEAN_FILES)
       # Copy and clean must also respect filters.
-      ifneq (,$$($1_INCLUDE_PATTERN))
-        $1_ALL_CLEANS := $$(filter $$($1_INCLUDE_PATTERN),$$($1_ALL_CLEANS))
+      ifneq ($$($1_INCLUDE_PATTERN), )
+        $1_ALL_CLEANS := $$(filter $$($1_INCLUDE_PATTERN), $$($1_ALL_CLEANS))
       endif
-      ifneq (,$$($1_EXCLUDE_PATTERN))
-        $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_PATTERN),$$($1_ALL_CLEANS))
+      ifneq ($$($1_EXCLUDE_PATTERN), )
+        $1_ALL_CLEANS := $$(filter-out $$($1_EXCLUDE_PATTERN), $$($1_ALL_CLEANS))
       endif
       # Filter out any excluded translations
       ifneq ($$($1_KEEP_ALL_TRANSLATIONS), true)
         $1_ALL_CLEANS := $$(call FilterExcludedTranslations, $$($1_ALL_CLEANS), .properties)
       endif
-      ifneq (,$$($1_ALL_CLEANS))
+      ifneq ($$($1_ALL_CLEANS), )
         # Yep, there are files to be copied and cleaned!
         $1_ALL_COPY_CLEAN_TARGETS :=
-            $$(foreach i,$$($1_ALL_CLEANS),$$(eval $$(call add_file_to_clean,$1,$$i)))
+            $$(foreach i, $$($1_ALL_CLEANS), $$(eval $$(call add_file_to_clean,$1,$$i)))
         # Now we can depend on $$($1_ALL_COPY_CLEAN_TARGETS) to copy all files!
       endif
     endif
 
     # Create a sed expression to remove the source roots and to replace / with .
     # and remove .java at the end.
-    $1_REWRITE_INTO_CLASSES := $$(foreach i,$$($1_SRC),-e 's|$$i/||g') -e 's|/|.|g' -e 's|.java$$$$||g'
+    $1_REWRITE_INTO_CLASSES := $$(foreach i, $$($1_SRC), -e 's|$$i/||g') -e 's|/|.|g' -e 's|.java$$$$||g'
 
     $1_COMPILE_TARGET := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch
     $1_FILELIST := $$($1_BIN)$$($1_MODULE_SUBDIR)/_the.$1_batch.filelist
@@ -431,7 +431,7 @@ define SetupJavaCompilationBody
 
     # Put headers in a temp dir to filter out those that actually
     # changed before copying them to the real header dir.
-    ifneq (,$$($1_HEADERS))
+    ifneq ($$($1_HEADERS), )
       $1_HEADERS_ARG := -h $$($1_HEADERS).$1.tmp
 
       $$($1_HEADERS)/_the.$1_headers: $$($1_COMPILE_TARGET)
@@ -503,11 +503,11 @@ define SetupJavaCompilationBody
         $$($1_HEADER_TARGETS)
 
     # Check if a jar file was specified, then setup the rules for the jar.
-    ifneq (,$$($1_JAR))
+    ifneq ($$($1_JAR), )
       # If no suffixes was explicitly set for this jar file.
       # Use class and the cleaned/copied properties file suffixes as the default
       # for the types of files to be put into the jar.
-      ifeq (,$$($1_SUFFIXES))
+      ifeq ($$($1_SUFFIXES), )
         $1_SUFFIXES := .class $$($1_CLEAN) $$($1_COPY)
       endif
 
@@ -531,7 +531,7 @@ define SetupJavaCompilationBody
     endif
 
     # Check if a srczip was specified, then setup the rules for the srczip.
-    ifneq (,$$($1_SRCZIP))
+    ifneq ($$($1_SRCZIP), )
       $$(eval $$(call SetupZipArchive, ZIP_ARCHIVE_$1, \
           SRC := $$($1_SRC), \
           ZIP := $$($1_SRCZIP), \
