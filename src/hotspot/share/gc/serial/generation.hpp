@@ -103,19 +103,11 @@ class Generation: public CHeapObj<mtGC> {
     return _reserved.contains(p);
   }
 
-  // Printing
-  virtual const char* name() const = 0;
-  virtual const char* short_name() const = 0;
-
-  virtual void print() const;
-  virtual void print_on(outputStream* st) const;
-
   virtual void verify() = 0;
 
 public:
   // Performance Counter support
-  virtual void update_counters() = 0;
-  virtual CollectorCounters* counters() { return _gc_counters; }
+  CollectorCounters* counters() { return _gc_counters; }
 
   GCMemoryManager* gc_manager() const {
     assert(_gc_manager != nullptr, "not initialized yet");

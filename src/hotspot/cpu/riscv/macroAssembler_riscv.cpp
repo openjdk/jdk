@@ -3973,8 +3973,8 @@ void MacroAssembler::lookup_secondary_supers_table_slow_path(Register r_super_kl
 
   // Check if bitmap is SECONDARY_SUPERS_BITMAP_FULL
   assert(Klass::SECONDARY_SUPERS_BITMAP_FULL == ~uintx(0), "Adjust this code");
-  addi(t0, r_bitmap, (u1)1);
-  beqz(t0, L_bitmap_full);
+  subw(t0, r_array_length, Klass::SECONDARY_SUPERS_TABLE_SIZE - 2);
+  bgtz(t0, L_bitmap_full);
 
   // NB! Our caller has checked bits 0 and 1 in the bitmap. The
   // current slot (at secondary_supers[r_array_index]) has not yet
@@ -4144,7 +4144,7 @@ void MacroAssembler::reserved_stack_check() {
   // We have already removed our own frame.
   // throw_delayed_StackOverflowError will think that it's been
   // called by our caller.
-  la(t0, RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+  la(t0, RuntimeAddress(SharedRuntime::throw_delayed_StackOverflowError_entry()));
   jr(t0);
   should_not_reach_here();
 
@@ -5792,9 +5792,9 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 //  - obj: the object to be locked
 //  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
 //  - slow: branched to if locking fails
-void MacroAssembler::lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
+void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
+  assert_different_registers(basic_lock, obj, tmp1, tmp2, tmp3, t0);
 
   Label push;
   const Register top = tmp1;
@@ -5804,6 +5804,11 @@ void MacroAssembler::lightweight_lock(Register obj, Register tmp1, Register tmp2
   // Preload the markWord. It is important that this is the first
   // instruction emitted as it is part of C1's null check semantics.
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  if (UseObjectMonitorTable) {
+    // Clear cache in case fast locking succeeds.
+    sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
+  }
 
   // Check if the lock-stack is full.
   lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));

@@ -504,7 +504,8 @@ JavaThread::JavaThread(MEMFLAGS flags) :
 
   _SleepEvent(ParkEvent::Allocate(this)),
 
-  _lock_stack(this) {
+  _lock_stack(this),
+  _om_cache(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -802,6 +803,8 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   elapsedTimer _timer_exit_phase2;
   elapsedTimer _timer_exit_phase3;
   elapsedTimer _timer_exit_phase4;
+
+  om_clear_monitor_cache();
 
   if (log_is_enabled(Debug, os, thread, timer)) {
     _timer_exit_phase1.start();
@@ -1903,7 +1906,7 @@ void JavaThread::trace_frames() {
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
     tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty, this);
+    fst.current()->print_value_on(tty);
     tty->cr();
   }
 }

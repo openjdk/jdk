@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
 /**
- * Models generic Java type signatures, as defined in {@jvms 4.7.9.1}.
+ * Models generic Java type signatures, as defined in JVMS {@jvms 4.7.9.1}.
  *
  * @sealedGraph
  * @since 22

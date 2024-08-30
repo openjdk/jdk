@@ -1602,7 +1602,7 @@ private:
   void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
 
 public:
-  void lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void lightweight_lock(Register basic_lock, Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
   void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
 
 public:
