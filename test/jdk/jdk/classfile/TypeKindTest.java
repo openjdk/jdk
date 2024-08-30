@@ -30,13 +30,15 @@
 import org.junit.jupiter.api.Test;
 
 import java.lang.classfile.TypeKind;
+import java.lang.constant.ClassDesc;
 
 import static org.junit.Assert.assertThrows;
 
 class TypeKindTest {
     @Test
     void testContracts() {
-        assertThrows(NullPointerException.class, () -> TypeKind.from(null));
+        assertThrows(NullPointerException.class, () -> TypeKind.from((Class) null));
+        assertThrows(NullPointerException.class, () -> TypeKind.from((ClassDesc) null));
 
         assertThrows(NullPointerException.class, () -> TypeKind.fromDescriptor(null));
         assertThrows(IllegalArgumentException.class, () -> TypeKind.fromDescriptor(""));
