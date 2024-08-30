@@ -25,8 +25,11 @@
 
 package java.lang.classfile;
 
+import java.lang.constant.ClassDesc;
 import java.lang.invoke.TypeDescriptor;
 import jdk.internal.javac.PreviewFeature;
+
+import static java.lang.constant.ConstantDescs.*;
 
 /**
  * Describes the types that can be part of a field or method descriptor.
@@ -149,13 +152,21 @@ public enum TypeKind {
     }
 
     /**
-     * {@return the type kind associated with the specified field descriptor}
-     * @param descriptor the field descriptor
+     * {@return the type kind associated with the specified ClassDesc}
+     * @param desc the ClassDesc
      */
-    public static TypeKind from(TypeDescriptor.OfField<?> descriptor) {
-        return descriptor.isPrimitive() // implicit null check
-                ? fromDescriptor(descriptor.descriptorString())
-                : TypeKind.ReferenceType;
+    public static TypeKind from(ClassDesc desc) {
+        if (desc == null      ) throw new NullPointerException();
+        if (desc == CD_boolean) return BooleanType;
+        if (desc == CD_byte   ) return ByteType;
+        if (desc == CD_char   ) return CharType;
+        if (desc == CD_int    ) return IntType;
+        if (desc == CD_long   ) return LongType;
+        if (desc == CD_short  ) return ShortType;
+        if (desc == CD_float  ) return FloatType;
+        if (desc == CD_double ) return DoubleType;
+        if (desc == CD_void   ) return VoidType;
+        else                    return ReferenceType;
     }
 
     /**
