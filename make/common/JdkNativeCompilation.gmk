@@ -196,10 +196,10 @@ define AddJdkLibrary
   # Determine if the library in question is static.
   # Ideally, we should not hardcode these
   ifeq ($(call isTargetOs, aix)+$$($1_$2_MODULE):$$($1_$2_NAME), true+java.base:jli)
-     $1_$2_STATIC_LIBRARY := true
+    $1_$2_STATIC_LIBRARY := true
   endif
   ifeq ($$($1_$2_MODULE):$$($1_$2_NAME), gtest:gtest)
-     $1_$2_STATIC_LIBRARY := true
+    $1_$2_STATIC_LIBRARY := true
   endif
 
   # Setup $1_$2_LIBPATH.

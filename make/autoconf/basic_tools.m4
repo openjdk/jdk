@@ -129,7 +129,7 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     MAKE_VERSION_EXPR="-e 4\."
     MAKE_REQUIRED_VERSION="4.0"
-   else
+  else
     MAKE_VERSION_EXPR="-e 3\.8[[12]] -e 4\."
     MAKE_REQUIRED_VERSION="3.81"
   fi

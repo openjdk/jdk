@@ -1033,34 +1033,13 @@ public abstract sealed class AbstractPoolEntry {
 
     }
 
-    abstract static sealed class PrimitiveEntry<T extends ConstantDesc>
-            extends AbstractPoolEntry {
-        protected final T val;
+    public static final class IntegerEntryImpl extends AbstractPoolEntry implements IntegerEntry {
 
-        public PrimitiveEntry(ConstantPool constantPool, int tag, int index, T val) {
-            super(constantPool, tag, index, hash1(tag, val.hashCode()));
-            this.val = val;
-        }
-
-        public T value() {
-            return val;
-        }
-
-        public ConstantDesc constantValue() {
-            return value();
-        }
-
-        @Override
-        public String toString() {
-            return "" + tag() + value();
-        }
-    }
-
-    public static final class IntegerEntryImpl extends PrimitiveEntry<Integer>
-            implements IntegerEntry {
+        private final int val;
 
         IntegerEntryImpl(ConstantPool cpm, int index, int i) {
-            super(cpm, ClassFile.TAG_INTEGER, index, i);
+            super(cpm, ClassFile.TAG_INTEGER, index, hash1(ClassFile.TAG_INTEGER, Integer.hashCode(i)));
+            val = i;
         }
 
         @Override
@@ -1076,7 +1055,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public int intValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1089,11 +1073,14 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class FloatEntryImpl extends PrimitiveEntry<Float>
+    public static final class FloatEntryImpl extends AbstractPoolEntry
             implements FloatEntry {
 
+        private final float val;
+
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, ClassFile.TAG_FLOAT, index, f);
+            super(cpm, ClassFile.TAG_FLOAT, index, hash1(ClassFile.TAG_FLOAT, Float.hashCode(f)));
+            val = f;
         }
 
         @Override
@@ -1109,7 +1096,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public float floatValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1122,10 +1114,13 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class LongEntryImpl extends PrimitiveEntry<Long> implements LongEntry {
+    public static final class LongEntryImpl extends AbstractPoolEntry implements LongEntry {
+
+        private final long val;
 
         LongEntryImpl(ConstantPool cpm, int index, long l) {
-            super(cpm, ClassFile.TAG_LONG, index, l);
+            super(cpm, ClassFile.TAG_LONG, index, hash1(ClassFile.TAG_LONG, Long.hashCode(l)));
+            val = l;
         }
 
         @Override
@@ -1141,7 +1136,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public long longValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override
@@ -1154,10 +1154,13 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static final class DoubleEntryImpl extends PrimitiveEntry<Double> implements DoubleEntry {
+    public static final class DoubleEntryImpl extends AbstractPoolEntry implements DoubleEntry {
+
+        private final double val;
 
         DoubleEntryImpl(ConstantPool cpm, int index, double d) {
-            super(cpm, ClassFile.TAG_DOUBLE, index, d);
+            super(cpm, ClassFile.TAG_DOUBLE, index, hash1(ClassFile.TAG_DOUBLE, Double.hashCode(d)));
+            val = d;
         }
 
         @Override
@@ -1173,7 +1176,12 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public double doubleValue() {
-            return value();
+            return val;
+        }
+
+        @Override
+        public ConstantDesc constantValue() {
+            return val;
         }
 
         @Override

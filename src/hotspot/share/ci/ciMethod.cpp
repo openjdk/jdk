@@ -782,6 +782,22 @@ bool ciMethod::can_omit_stack_trace() const {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::equals
+//
+// Returns true if the methods are the same, taking redefined methods
+// into account.
+bool ciMethod::equals(const ciMethod* m) const {
+  if (this == m) return true;
+  VM_ENTRY_MARK;
+  Method* m1 = this->get_Method();
+  Method* m2 = m->get_Method();
+  if (m1->is_old()) m1 = m1->get_new_method();
+  if (m2->is_old()) m2 = m2->get_new_method();
+  return m1 == m2;
+}
+
+
+// ------------------------------------------------------------------
 // ciMethod::resolve_invoke
 //
 // Given a known receiver klass, find the target for the call.
