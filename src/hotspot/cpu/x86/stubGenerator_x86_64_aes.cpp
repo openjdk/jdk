@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2019, 2023, Intel Corporation. All rights reserved.
+* Copyright (c) 2019, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -279,11 +279,10 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #endif
   __ enter();
  // Save state before entering routine
-  __ push(r12);
-  __ push(r13);
-  __ push(r14);
-  __ push(r15);
-  __ push(rbx);
+  __ push(r12);//holds pointer to avx512_subkeyHtbl
+  __ push(r14);//holds CTR_CHECK value to check for overflow
+  __ push(r15);//holds number of rounds
+  __ push(rbx);//scratch register
 #ifdef _WIN64
   // on win64, fill len_reg from stack position
   __ push(rsi);
@@ -295,7 +294,7 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
   __ movptr(counter, counter_mem);
 // Align stack
   __ andq(rsp, -64);
-  __ subptr(rsp, 200 * longSize); // Create space on the stack for 64 htbl entries and 4 zmm AES entries
+  __ subptr(rsp, 200 * longSize); // Create space on the stack for 64 htbl entries and 8 zmm AES entries
   __ movptr(avx512_subkeyHtbl, rsp);
 
   aesgcm_avx512(in, len, ct, out, key, state, subkeyHtbl, avx512_subkeyHtbl, counter);
@@ -304,16 +303,15 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 
   // Restore state before leaving routine
 #ifdef _WIN64
-  __ lea(rsp, Address(rbp, -7 * wordSize));
+  __ lea(rsp, Address(rbp, -6 * wordSize));
   __ pop(rdi);
   __ pop(rsi);
 #else
-  __ lea(rsp, Address(rbp, -5 * wordSize));
+  __ lea(rsp, Address(rbp, -4 * wordSize));
 #endif
   __ pop(rbx);
   __ pop(r15);
   __ pop(r14);
-  __ pop(r13);
   __ pop(r12);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
@@ -2742,6 +2740,7 @@ void StubGenerator::gfmul_avx512(XMMRegister GH, XMMRegister HK) {
   __ vpternlogq(GH, 0x96, TMP1, TMP2, Assembler::AVX_512bit);
 }
 
+// Holds 64 Htbl entries, 32 HKey and 32 HkKey (derived from HKey)
 void StubGenerator::generateHtbl_32_blocks_avx512(Register htbl, Register avx512_htbl) {
   const XMMRegister HK = xmm6;
   const XMMRegister ZT1 = xmm0, ZT2 = xmm1, ZT3 = xmm2, ZT4 = xmm3;
@@ -2768,22 +2767,22 @@ void StubGenerator::generateHtbl_32_blocks_avx512(Register htbl, Register avx512
   __ movdqu(Address(avx512_htbl, 16 * 31), HK); // H ^ 2
 
   __ movdqu(ZT5, HK);
-  __ vinserti64x2(ZT7, ZT7, HK, 3, Assembler::AVX_512bit);
+  __ evinserti64x2(ZT7, ZT7, HK, 3, Assembler::AVX_512bit);
 
   //calculate HashKey ^ 2 << 1 mod poly
   gfmul_avx512(ZT5, HK);
   __ movdqu(Address(avx512_htbl, 16 * 30), ZT5);
-  __ vinserti64x2(ZT7, ZT7, ZT5, 2, Assembler::AVX_512bit);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 2, Assembler::AVX_512bit);
 
   //calculate HashKey ^ 3 << 1 mod poly
   gfmul_avx512(ZT5, HK);
   __ movdqu(Address(avx512_htbl, 16 * 29), ZT5);
-  __ vinserti64x2(ZT7, ZT7, ZT5, 1, Assembler::AVX_512bit);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 1, Assembler::AVX_512bit);
 
   //calculate HashKey ^ 4 << 1 mod poly
   gfmul_avx512(ZT5, HK);
   __ movdqu(Address(avx512_htbl, 16 * 28), ZT5);
-  __ vinserti64x2(ZT7, ZT7, ZT5, 0, Assembler::AVX_512bit);
+  __ evinserti64x2(ZT7, ZT7, ZT5, 0, Assembler::AVX_512bit);
   // ZT5 amd ZT7 to be cleared(hash key)
   //calculate HashKeyK = HashKey x POLY
   __ evmovdquq(xmm11, ExternalAddress(ghash_polynomial_addr()), Assembler::AVX_512bit, r15);
@@ -2810,7 +2809,7 @@ void StubGenerator::generateHtbl_32_blocks_avx512(Register htbl, Register avx512
 
   __ evshufi64x2(ZT5, ZT7, ZT7, 0x00, Assembler::AVX_512bit);//;; broadcast HashKey ^ 8 across all ZT5
 
-  for (int i = 20, j = 52; i >= 0;) {
+  for (int i = 20, j = 52; i > 0;) {
     gfmul_avx512(ZT8, ZT5);
     __ evmovdquq(Address(avx512_htbl, 16 * i), ZT8, Assembler::AVX_512bit);
     //calculate HashKeyK = HashKey x POLY
@@ -3389,6 +3388,33 @@ void StubGenerator::aesgcm_avx512(Register in, Register len, Register ct, Regist
   __ cmpl(len, 256);
   __ jcc(Assembler::lessEqual, ENC_DEC_DONE);
 
+  /* Structure of the Htbl is as follows:
+  *   Where 0 - 31 we have 32 Hashkey's and 32-63 we have 32 HashKeyK (derived from HashKey)
+  *   Rest 8 entries are for storing CTR values post AES rounds
+  * ----------------------------------------------------------------------------------------
+      Hashkey32 -> 16 * 0
+      Hashkey31 -> 16 * 1
+      Hashkey30 -> 16 * 2
+      ........
+      Hashkey1 -> 16 * 31
+      ---------------------
+      HaskeyK32 -> 16 * 32
+      HashkeyK31 -> 16 * 33
+      .........
+      HashkeyK1 -> 16 * 63
+      ---------------------
+      1st set of AES Entries
+      B00_03 -> 16 * 64
+      B04_07 -> 16 * 68
+      B08_11 -> 16 * 72
+      B12_15 -> 16 * 80
+      ---------------------
+      2nd set of AES Entries
+      B00_03 -> 16 * 84
+      B04_07 -> 16 * 88
+      B08_11 -> 16 * 92
+      B12_15 -> 16 * 96
+      ---------------------*/
   generateHtbl_32_blocks_avx512(subkeyHtbl, avx512_subkeyHtbl);
 
   //Move initial counter value and STATE value into variables
