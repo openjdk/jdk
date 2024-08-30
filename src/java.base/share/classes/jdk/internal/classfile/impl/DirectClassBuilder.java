@@ -30,7 +30,6 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.ClassBuilder;
@@ -46,6 +45,8 @@ import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.MethodTransform;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
@@ -75,7 +76,7 @@ public final class DirectClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {
@@ -88,6 +89,9 @@ public final class DirectClassBuilder
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
                                  .run(handler));
     }
@@ -105,6 +109,9 @@ public final class DirectClassBuilder
                                    Utf8Entry descriptor,
                                    int flags,
                                    Consumer<? super MethodBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
     }

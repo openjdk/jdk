@@ -25,12 +25,13 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedClassBuilder
         implements ClassBuilder, Consumer<ClassElement> {
@@ -48,13 +49,16 @@ public final class ChainedClassBuilder
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         consumer.accept(element);
         return this;
     }
 
     @Override
     public ClassBuilder withField(Utf8Entry name, Utf8Entry descriptor, Consumer<? super FieldBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         consumer.accept(new BufferedFieldBuilder(terminal.constantPool, terminal.context,
                                                         name, descriptor)
                                        .run(handler)
@@ -74,6 +78,9 @@ public final class ChainedClassBuilder
     @Override
     public ClassBuilder withMethod(Utf8Entry name, Utf8Entry descriptor, int flags,
                                    Consumer<? super MethodBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         consumer.accept(new BufferedMethodBuilder(terminal.constantPool, terminal.context,
                                                          name, descriptor, flags, null)
                                        .run(handler)

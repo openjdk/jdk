@@ -26,7 +26,6 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.ClassFile;
@@ -38,6 +37,8 @@ import java.lang.classfile.MethodBuilder;
 import java.lang.classfile.MethodElement;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
 
 public final class DirectMethodBuilder
         extends AbstractDirectBuilder<MethodModel>
@@ -111,7 +112,7 @@ public final class DirectMethodBuilder
 
     @Override
     public MethodBuilder with(MethodElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

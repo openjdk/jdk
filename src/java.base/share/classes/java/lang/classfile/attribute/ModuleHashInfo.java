@@ -26,6 +26,8 @@ package java.lang.classfile.attribute;
 
 import java.lang.classfile.constantpool.ModuleEntry;
 import java.lang.constant.ModuleDesc;
+import static java.util.Objects.requireNonNull;
+
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.javac.PreviewFeature;
@@ -55,6 +57,8 @@ public sealed interface ModuleHashInfo
      * @param hash the hash value
      */
     static ModuleHashInfo of(ModuleEntry moduleName, byte[] hash) {
+        requireNonNull(moduleName);
+        requireNonNull(hash);
         return new UnboundAttribute.UnboundModuleHashInfo(moduleName, hash);
     }
 
@@ -64,6 +68,8 @@ public sealed interface ModuleHashInfo
      * @param hash the hash value
      */
     static ModuleHashInfo of(ModuleDesc moduleDesc, byte[] hash) {
+        requireNonNull(moduleDesc);
+        requireNonNull(hash);
         return new UnboundAttribute.UnboundModuleHashInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleDesc.name())), hash);
     }
 }

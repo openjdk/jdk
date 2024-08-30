@@ -26,6 +26,7 @@ package java.lang.classfile.components;
 
 import java.lang.constant.ClassDesc;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Function;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
@@ -64,6 +65,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Map<ClassDesc, ClassDesc> classMap) {
+        requireNonNull(classMap);
         return of(desc -> classMap.getOrDefault(desc, desc));
     }
 
@@ -75,6 +77,7 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
      * @return new instance of {@code ClassRemapper}
      */
     static ClassRemapper of(Function<ClassDesc, ClassDesc> mapFunction) {
+        requireNonNull(mapFunction);
         return new ClassRemapperImpl(mapFunction);
     }
 

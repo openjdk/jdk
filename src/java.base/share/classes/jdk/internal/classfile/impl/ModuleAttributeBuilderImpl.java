@@ -36,6 +36,8 @@ import java.lang.constant.PackageDesc;
 import java.lang.constant.ClassDesc;
 import java.util.*;
 
+import static java.util.Objects.requireNonNull;
+
 public final class ModuleAttributeBuilderImpl
         implements ModuleAttributeBuilder {
 
@@ -65,7 +67,7 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder moduleName(ModuleDesc moduleName) {
-        Objects.requireNonNull(moduleName);
+        requireNonNull(moduleName);
         moduleEntry = TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(moduleName.name()));
         return this;
     }
@@ -78,26 +80,29 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder moduleVersion(String version) {
+        requireNonNull(version);
         moduleVersion = version == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(version);
         return this;
     }
 
     @Override
     public ModuleAttributeBuilder requires(ModuleDesc module, int flags, String version) {
-        Objects.requireNonNull(module);
+        requireNonNull(module);
+        // todo this crashes corpus test??
+//        requireNonNull(version);
         return requires(ModuleRequireInfo.of(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(module.name())), flags, version == null ? null : TemporaryConstantPool.INSTANCE.utf8Entry(version)));
     }
 
     @Override
     public ModuleAttributeBuilder requires(ModuleRequireInfo requires) {
-        Objects.requireNonNull(requires);
+        requireNonNull(requires);
         this.requires.add(requires);
         return this;
     }
 
     @Override
     public ModuleAttributeBuilder exports(PackageDesc pkge, int flags, ModuleDesc... exportsToModules) {
-        Objects.requireNonNull(pkge);
+        requireNonNull(pkge);
         var exportsTo = new ArrayList<ModuleEntry>(exportsToModules.length);
         for (var e : exportsToModules)
             exportsTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
@@ -106,14 +111,14 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder exports(ModuleExportInfo exports) {
-        Objects.requireNonNull(exports);
+        requireNonNull(exports);
         this.exports.add(exports);
         return this;
     }
 
     @Override
     public ModuleAttributeBuilder opens(PackageDesc pkge, int flags, ModuleDesc... opensToModules) {
-        Objects.requireNonNull(pkge);
+        requireNonNull(pkge);
         var opensTo = new ArrayList<ModuleEntry>(opensToModules.length);
         for (var e : opensToModules)
             opensTo.add(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(e.name())));
@@ -122,27 +127,27 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder opens(ModuleOpenInfo opens) {
-        Objects.requireNonNull(opens);
+        requireNonNull(opens);
         this.opens.add(opens);
         return this;
     }
 
     @Override
     public ModuleAttributeBuilder uses(ClassDesc service) {
-        Objects.requireNonNull(service);
+        requireNonNull(service);
         return uses(TemporaryConstantPool.INSTANCE.classEntry(service));
     }
 
     @Override
     public ModuleAttributeBuilder uses(ClassEntry uses) {
-        Objects.requireNonNull(uses);
+        requireNonNull(uses);
         this.uses.add(uses);
         return this;
     }
 
     @Override
     public ModuleAttributeBuilder provides(ClassDesc service, ClassDesc... implClasses) {
-        Objects.requireNonNull(service);
+        requireNonNull(service);
         var impls = new ArrayList<ClassEntry>(implClasses.length);
         for (var seq : implClasses)
             impls.add(TemporaryConstantPool.INSTANCE.classEntry(seq));
@@ -151,7 +156,7 @@ public final class ModuleAttributeBuilderImpl
 
     @Override
     public ModuleAttributeBuilder provides(ModuleProvideInfo provides) {
-        Objects.requireNonNull(provides);
+        requireNonNull(provides);
         this.provides.add(provides);
         return this;
     }

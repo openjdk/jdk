@@ -28,7 +28,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
@@ -63,7 +63,7 @@ public sealed interface NewMultiArrayInstruction extends Instruction
      */
     static NewMultiArrayInstruction of(ClassEntry arrayTypeEntry,
                                        int dimensions) {
-        Objects.requireNonNull(arrayTypeEntry);
+        requireNonNull(arrayTypeEntry);
         return new AbstractInstruction.UnboundNewMultidimensionalArrayInstruction(arrayTypeEntry, dimensions);
     }
 }

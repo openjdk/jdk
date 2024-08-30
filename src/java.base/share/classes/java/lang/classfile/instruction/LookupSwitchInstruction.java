@@ -30,7 +30,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
@@ -63,7 +63,7 @@ public sealed interface LookupSwitchInstruction extends Instruction
      * @param cases the cases of the switch
      */
     static LookupSwitchInstruction of(Label defaultTarget, List<SwitchCase> cases) {
-        Objects.requireNonNull(defaultTarget);
+        requireNonNull(defaultTarget);
         return new AbstractInstruction.UnboundLookupSwitchInstruction(defaultTarget, cases);
     }
 }

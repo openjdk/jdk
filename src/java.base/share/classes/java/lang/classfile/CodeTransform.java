@@ -24,7 +24,7 @@
  */
 package java.lang.classfile;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -49,8 +49,8 @@ public non-sealed interface CodeTransform
     CodeTransform ACCEPT_ALL = new CodeTransform() {
         @Override
         public void accept(CodeBuilder builder, CodeElement element) {
-            Objects.requireNonNull(builder);
-            Objects.requireNonNull(element);
+            requireNonNull(builder);
+            requireNonNull(element);
             builder.with(element);
         }
     };
@@ -64,6 +64,7 @@ public non-sealed interface CodeTransform
      * @return the stateful code transform
      */
     static CodeTransform ofStateful(Supplier<CodeTransform> supplier) {
+        requireNonNull(supplier);
         return new TransformImpl.SupplierCodeTransform(supplier);
     }
 
@@ -75,17 +76,18 @@ public non-sealed interface CodeTransform
      * @return the code transform
      */
     static CodeTransform endHandler(Consumer<CodeBuilder> finisher) {
+        requireNonNull(finisher);
         return new CodeTransform() {
             @Override
             public void accept(CodeBuilder builder, CodeElement element) {
-                Objects.requireNonNull(builder);
-                Objects.requireNonNull(element);
+                requireNonNull(builder);
+                requireNonNull(element);
                 builder.with(element);
             }
 
             @Override
             public void atEnd(CodeBuilder builder) {
-                Objects.requireNonNull(builder);
+                requireNonNull(builder);
                 finisher.accept(builder);
             }
         };
@@ -100,7 +102,7 @@ public non-sealed interface CodeTransform
      */
     @Override
     default CodeTransform andThen(CodeTransform t) {
-        Objects.requireNonNull(t);
+        requireNonNull(t);
         return new TransformImpl.ChainedCodeTransform(this, t);
     }
 }

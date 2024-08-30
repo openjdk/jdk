@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -44,7 +44,6 @@ import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.attribute.LocalVariableTypeInfo;
 import java.lang.classfile.instruction.ExceptionCatch;
 import java.util.List;
-import static java.util.Objects.requireNonNull;
 import static jdk.internal.constant.ConstantUtils.CD_module_info;
 import jdk.internal.javac.PreviewFeature;
 
@@ -71,6 +70,10 @@ public sealed interface ClassFile
      * @param options the desired processing options
      */
     static ClassFile of(Option... options) {
+        requireNonNull(options);
+        for (var o : options){
+            requireNonNull(o);
+        }
         return of().withOptions(options);
     }
 
@@ -393,7 +396,7 @@ public sealed interface ClassFile
      */
     default byte[] buildModule(ModuleAttribute moduleAttribute,
                                      Consumer<? super ClassBuilder> handler) {
-        Objects.requireNonNull(moduleAttribute);
+        requireNonNull(moduleAttribute);
         return build(CD_module_info, clb -> {
             clb.withFlags(AccessFlag.MODULE);
             clb.with(moduleAttribute);

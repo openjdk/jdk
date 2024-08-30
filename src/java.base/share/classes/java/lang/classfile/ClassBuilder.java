@@ -30,6 +30,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ClassEntry;
@@ -165,6 +166,8 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(Utf8Entry name,
                                    Utf8Entry descriptor,
                                    int flags) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
         return withField(name, descriptor, Util.buildingFlags(flags));
     }
 
@@ -179,6 +182,9 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    Consumer<? super FieldBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         return withField(constantPool().utf8Entry(name),
                          constantPool().utf8Entry(descriptor),
                          handler);
@@ -194,6 +200,8 @@ public sealed interface ClassBuilder
     default ClassBuilder withField(String name,
                                    ClassDesc descriptor,
                                    int flags) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
         return withField(name, descriptor, Util.buildingFlags(flags));
     }
 
@@ -241,6 +249,9 @@ public sealed interface ClassBuilder
                                         Utf8Entry descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 
@@ -276,6 +287,9 @@ public sealed interface ClassBuilder
                                         MethodTypeDesc descriptor,
                                         int methodFlags,
                                         Consumer<? super CodeBuilder> handler) {
+        requireNonNull(name);
+        requireNonNull(descriptor);
+        requireNonNull(handler);
         return withMethod(name, descriptor, methodFlags, Util.buildingCode(handler));
     }
 

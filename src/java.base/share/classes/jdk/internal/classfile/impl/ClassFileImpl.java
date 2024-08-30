@@ -41,6 +41,8 @@ import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.verifier.VerifierImpl;
 
+import static java.util.Objects.requireNonNull;
+
 public record ClassFileImpl(StackMapsOption stackMapsOption,
                             DebugElementsOption debugElementsOption,
                             LineNumbersOption lineNumbersOption,
@@ -72,6 +74,10 @@ public record ClassFileImpl(StackMapsOption stackMapsOption,
     @SuppressWarnings("unchecked")
     @Override
     public ClassFileImpl withOptions(Option... options) {
+        requireNonNull(options);
+        for (var o : options){
+            requireNonNull(o);
+        }
         var smo = stackMapsOption;
         var deo = debugElementsOption;
         var lno = lineNumbersOption;

@@ -29,7 +29,7 @@ import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.constantpool.Utf8Entry;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -70,7 +70,7 @@ public sealed interface SourceFileAttribute
      * @param sourceFile the source file name
      */
     static SourceFileAttribute of(Utf8Entry sourceFile) {
-        Objects.requireNonNull(sourceFile);
+        requireNonNull(sourceFile);
         return new UnboundAttribute.UnboundSourceFileAttribute(sourceFile);
     }
 }

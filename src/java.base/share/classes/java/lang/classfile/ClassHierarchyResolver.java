@@ -30,7 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -83,6 +83,9 @@ public interface ClassHierarchyResolver {
          * @return the info indicating the super class
          */
         static ClassHierarchyInfo ofClass(ClassDesc superClass) {
+            //todo: uncomment later
+            // this causes CorpusTest to fail
+            // requireNonNull(superClass);
             return new ClassHierarchyImpl.ClassHierarchyInfoImpl(superClass, false);
         }
 
@@ -107,7 +110,7 @@ public interface ClassHierarchyResolver {
      *           other resolver in cases where this resolver returns {@code null}.
      */
     default ClassHierarchyResolver orElse(ClassHierarchyResolver other) {
-        Objects.requireNonNull(other);
+        requireNonNull(other);
         return new ClassHierarchyResolver() {
             @Override
             public ClassHierarchyInfo getClassInfo(ClassDesc classDesc) {
@@ -172,7 +175,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(Function<ClassDesc, InputStream> classStreamResolver) {
-        Objects.requireNonNull(classStreamResolver);
+        requireNonNull(classStreamResolver);
         return new ClassHierarchyImpl.ResourceParsingClassHierarchyResolver(classStreamResolver);
     }
 
@@ -184,7 +187,7 @@ public interface ClassHierarchyResolver {
      * @return the {@linkplain ClassHierarchyResolver}
      */
     static ClassHierarchyResolver ofResourceParsing(ClassLoader loader) {
-        Objects.requireNonNull(loader);
+        requireNonNull(loader);
         return ofResourceParsing(new Function<>() {
             @Override
             public InputStream apply(ClassDesc classDesc) {
@@ -203,11 +206,11 @@ public interface ClassHierarchyResolver {
      */
     static ClassHierarchyResolver of(Collection<ClassDesc> interfaces,
                                             Map<ClassDesc, ClassDesc> classToSuperClass) {
-        Objects.requireNonNull(interfaces);
+        requireNonNull(interfaces);
         for (var i : interfaces){
-            Objects.requireNonNull(i);
+            requireNonNull(i);
         }
-        Objects.requireNonNull(classToSuperClass);
+        requireNonNull(classToSuperClass);
         return new StaticClassHierarchyResolver(interfaces, classToSuperClass);
     }
 
@@ -219,7 +222,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(ClassLoader loader) {
-        Objects.requireNonNull(loader);
+        requireNonNull(loader);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {
@@ -242,7 +245,7 @@ public interface ClassHierarchyResolver {
      * @return the class hierarchy resolver
      */
     static ClassHierarchyResolver ofClassLoading(MethodHandles.Lookup lookup) {
-        Objects.requireNonNull(lookup);
+        requireNonNull(lookup);
         return new ClassLoadingClassHierarchyResolver(new Function<>() {
             @Override
             public Class<?> apply(ClassDesc cd) {

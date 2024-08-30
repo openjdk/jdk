@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 import java.lang.constant.ClassDesc;
 import java.util.List;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -96,8 +96,8 @@ public sealed interface Annotation
      */
     static Annotation of(Utf8Entry annotationClass,
                          List<AnnotationElement> elements) {
-        Objects.requireNonNull(annotationClass);
-        Objects.requireNonNull(elements);
+        requireNonNull(annotationClass);
+        requireNonNull(elements);
         return new AnnotationImpl(annotationClass, elements);
     }
 
@@ -119,7 +119,7 @@ public sealed interface Annotation
      */
     static Annotation of(ClassDesc annotationClass,
                          List<AnnotationElement> elements) {
-        Objects.requireNonNull(elements);
+        requireNonNull(elements);
         return of(TemporaryConstantPool.INSTANCE.utf8Entry(annotationClass.descriptorString()), elements);
     }
 

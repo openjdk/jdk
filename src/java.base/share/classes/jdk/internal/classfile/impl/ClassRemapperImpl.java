@@ -88,15 +88,16 @@ import java.lang.constant.DynamicConstantDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
+
+import static java.util.Objects.requireNonNull;
 
 public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) implements ClassRemapper {
 
     @Override
     public void accept(ClassBuilder clb, ClassElement cle) {
-        Objects.requireNonNull(clb);
-        Objects.requireNonNull(cle);
+        requireNonNull(clb);
+        requireNonNull(cle);
         switch (cle) {
             case FieldModel fm ->
                 clb.withField(fm.fieldName().stringValue(), map(
@@ -277,6 +278,7 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
 
     @Override
     public ClassDesc map(ClassDesc desc) {
+        requireNonNull(desc);
         if (desc == null) return null;
         if (desc.isArray()) return map(desc.componentType()).arrayType();
         if (desc.isPrimitive()) return desc;

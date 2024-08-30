@@ -25,7 +25,7 @@
 package java.lang.classfile.attribute;
 
 import java.lang.constant.ClassDesc;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Set;
 
@@ -94,9 +94,9 @@ public sealed interface InnerClassInfo
      */
     static InnerClassInfo of(ClassEntry innerClass, Optional<ClassEntry> outerClass,
                              Optional<Utf8Entry> innerName, int flags) {
-        Objects.requireNonNull(innerClass);
-        Objects.requireNonNull(outerClass);
-        Objects.requireNonNull(innerName);
+        requireNonNull(innerClass);
+        requireNonNull(outerClass);
+        requireNonNull(innerName);
         return new UnboundAttribute.UnboundInnerClassInfo(innerClass, outerClass, innerName, flags);
     }
 
@@ -109,9 +109,9 @@ public sealed interface InnerClassInfo
      * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
      */
     static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, int flags) {
-        Objects.requireNonNull(innerClass);
-        Objects.requireNonNull(outerClass);
-        Objects.requireNonNull(innerName);
+        requireNonNull(innerClass);
+        requireNonNull(outerClass);
+        requireNonNull(innerName);
         return new UnboundAttribute.UnboundInnerClassInfo(TemporaryConstantPool.INSTANCE.classEntry(innerClass),
                                                           outerClass.map(TemporaryConstantPool.INSTANCE::classEntry),
                                                           innerName.map(TemporaryConstantPool.INSTANCE::utf8Entry),
@@ -127,8 +127,8 @@ public sealed interface InnerClassInfo
      * @throws IllegalArgumentException if {@code innerClass} or {@code outerClass} represents a primitive type
      */
     static InnerClassInfo of(ClassDesc innerClass, Optional<ClassDesc> outerClass, Optional<String> innerName, AccessFlag... flags) {
-        Objects.requireNonNull(innerClass);
-        Objects.requireNonNull(flags);
+        requireNonNull(innerClass);
+        requireNonNull(flags);
         return of(innerClass, outerClass, innerName, Util.flagsToBits(AccessFlag.Location.INNER_CLASS, flags));
     }
 }

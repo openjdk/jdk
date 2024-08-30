@@ -34,7 +34,7 @@ import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import java.lang.classfile.MethodSignature;
 import java.lang.classfile.Signature;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -119,7 +119,7 @@ public sealed interface SignatureAttribute
      * @param signature the signature
      */
     static SignatureAttribute of(Utf8Entry signature) {
-        Objects.requireNonNull(signature);
+        requireNonNull(signature);
         return new UnboundAttribute.UnboundSignatureAttribute(signature);
     }
 }

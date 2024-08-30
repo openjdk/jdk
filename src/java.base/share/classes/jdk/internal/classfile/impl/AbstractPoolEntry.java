@@ -51,11 +51,12 @@ import java.lang.classfile.constantpool.PackageEntry;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.StringEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ArraysSupport;
+
+import static java.util.Objects.requireNonNull;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -382,7 +383,7 @@ public abstract sealed class AbstractPoolEntry {
 
         @Override
         public boolean equalsString(String s) {
-            Objects.requireNonNull(s);
+            requireNonNull(s);
             if (state == State.RAW)
                 inflate();
             switch (state) {

@@ -28,6 +28,7 @@ import java.lang.constant.ClassDesc;
 import jdk.internal.classfile.impl.SignaturesImpl;
 
 import java.util.List;
+
 import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import jdk.internal.classfile.impl.Util;
@@ -147,6 +148,8 @@ public sealed interface Signature {
          * @param typeArgs signatures of the type arguments
          */
         public static ClassTypeSig of(ClassDesc className, TypeArg... typeArgs) {
+            requireNonNull(className);
+            requireNonNull(typeArgs);
             return of(null, className, typeArgs);
         }
 
@@ -158,6 +161,7 @@ public sealed interface Signature {
          */
         public static ClassTypeSig of(ClassTypeSig outerType, ClassDesc className, TypeArg... typeArgs) {
             requireNonNull(className);
+            requireNonNull(typeArgs);
             return of(outerType, Util.toInternalName(className), typeArgs);
         }
 
@@ -167,6 +171,8 @@ public sealed interface Signature {
          * @param typeArgs signatures of the type arguments
          */
         public static ClassTypeSig of(String className, TypeArg... typeArgs) {
+            requireNonNull(className);
+            requireNonNull(typeArgs);
             return of(null, className, typeArgs);
         }
 
@@ -178,6 +184,7 @@ public sealed interface Signature {
          */
         public static ClassTypeSig of(ClassTypeSig outerType, String className, TypeArg... typeArgs) {
             requireNonNull(className);
+            requireNonNull(typeArgs);
             return new SignaturesImpl.ClassTypeSigImpl(Optional.ofNullable(outerType), className.replace(".", "/"), List.of(typeArgs));
         }
     }

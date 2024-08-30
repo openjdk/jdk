@@ -24,7 +24,7 @@
  */
 package java.lang.classfile;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -50,8 +50,8 @@ public non-sealed interface FieldTransform
     FieldTransform ACCEPT_ALL = new FieldTransform() {
         @Override
         public void accept(FieldBuilder builder, FieldElement element) {
-            Objects.requireNonNull(builder);
-            Objects.requireNonNull(element);
+            requireNonNull(builder);
+            requireNonNull(element);
             builder.with(element);
         }
     };
@@ -65,6 +65,7 @@ public non-sealed interface FieldTransform
      * @return the stateful field transform
      */
     static FieldTransform ofStateful(Supplier<FieldTransform> supplier) {
+        requireNonNull(supplier);
         return new TransformImpl.SupplierFieldTransform(supplier);
     }
 
@@ -76,11 +77,12 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform endHandler(Consumer<FieldBuilder> finisher) {
+        requireNonNull(finisher);
         return new FieldTransform() {
             @Override
             public void accept(FieldBuilder builder, FieldElement element) {
-                Objects.requireNonNull(builder);
-                Objects.requireNonNull(element);
+                requireNonNull(builder);
+                requireNonNull(element);
                 builder.with(element);
             }
 
@@ -99,6 +101,7 @@ public non-sealed interface FieldTransform
      * @return the field transform
      */
     static FieldTransform dropping(Predicate<FieldElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -114,6 +117,7 @@ public non-sealed interface FieldTransform
      */
     @Override
     default FieldTransform andThen(FieldTransform t) {
+        requireNonNull(t);
         return new TransformImpl.ChainedFieldTransform(this, t);
     }
 }

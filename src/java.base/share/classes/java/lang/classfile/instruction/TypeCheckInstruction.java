@@ -31,7 +31,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.constantpool.ClassEntry;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Opcode;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -65,7 +65,7 @@ public sealed interface TypeCheckInstruction extends Instruction
      *         {@link Opcode.Kind#TYPE_CHECK}.
      */
     static TypeCheckInstruction of(Opcode op, ClassEntry type) {
-        Objects.requireNonNull(type);
+        requireNonNull(type);
         Util.checkKind(op, Opcode.Kind.TYPE_CHECK);
         return new AbstractInstruction.UnboundTypeCheckInstruction(op, type);
     }

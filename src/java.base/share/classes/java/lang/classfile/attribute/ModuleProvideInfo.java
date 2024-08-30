@@ -29,6 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import java.lang.classfile.constantpool.ClassEntry;
+import static java.util.Objects.requireNonNull;
+
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import jdk.internal.classfile.impl.Util;
@@ -60,6 +62,8 @@ public sealed interface ModuleProvideInfo
      */
     static ModuleProvideInfo of(ClassEntry provides,
                                 List<ClassEntry> providesWith) {
+        requireNonNull(provides);
+        requireNonNull(providesWith);
         return new UnboundAttribute.UnboundModuleProvideInfo(provides, providesWith);
     }
 

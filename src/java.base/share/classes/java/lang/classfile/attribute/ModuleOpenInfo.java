@@ -26,6 +26,7 @@ package java.lang.classfile.attribute;
 
 import java.util.Collection;
 import java.util.List;
+import static java.util.Objects.requireNonNull;
 import java.util.Set;
 
 import java.lang.classfile.constantpool.ModuleEntry;
@@ -91,6 +92,8 @@ public sealed interface ModuleOpenInfo
      */
     static ModuleOpenInfo of(PackageEntry opens, int opensFlags,
                              List<ModuleEntry> opensTo) {
+        requireNonNull(opens);
+        requireNonNull(opensTo);
         return new UnboundAttribute.UnboundModuleOpenInfo(opens, opensFlags, opensTo);
     }
 

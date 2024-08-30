@@ -25,7 +25,7 @@
 package java.lang.classfile;
 
 import java.lang.constant.ClassDesc;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
@@ -58,7 +58,7 @@ public sealed interface ClassFileBuilder<E extends ClassFileElement, B extends C
      */
     @Override
     default void accept(E e) {
-        Objects.requireNonNull(e);
+        requireNonNull(e);
         with(e);
     }
 

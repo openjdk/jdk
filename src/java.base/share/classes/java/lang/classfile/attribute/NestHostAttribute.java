@@ -29,7 +29,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.ClassEntry;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -65,7 +65,7 @@ public sealed interface NestHostAttribute extends Attribute<NestHostAttribute>, 
      * @param nestHost the host class of the nest
      */
     static NestHostAttribute of(ClassEntry nestHost) {
-        Objects.requireNonNull(nestHost);
+        requireNonNull(nestHost);
         return new UnboundAttribute.UnboundNestHostAttribute(nestHost);
     }
 

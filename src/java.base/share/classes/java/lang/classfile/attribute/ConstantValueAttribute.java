@@ -28,7 +28,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.constantpool.ConstantValueEntry;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -63,7 +63,7 @@ public sealed interface ConstantValueAttribute
      * @param value the constant value
      */
     static ConstantValueAttribute of(ConstantValueEntry value) {
-        Objects.requireNonNull(value);
+        requireNonNull(value);
         return new UnboundAttribute.UnboundConstantValueAttribute(value);
     }
 

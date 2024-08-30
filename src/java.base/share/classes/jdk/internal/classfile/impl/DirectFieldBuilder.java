@@ -25,7 +25,6 @@
 
 package jdk.internal.classfile.impl;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.CustomAttribute;
@@ -33,6 +32,9 @@ import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.constantpool.Utf8Entry;
+
+import static java.util.Objects.requireNonNull;
+
 
 public final class DirectFieldBuilder
         extends AbstractDirectBuilder<FieldModel>
@@ -55,7 +57,7 @@ public final class DirectFieldBuilder
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         if (element instanceof AbstractElement ae) {
             ae.writeTo(this);
         } else {

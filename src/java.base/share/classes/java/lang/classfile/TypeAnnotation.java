@@ -29,7 +29,7 @@ import java.util.List;
 
 import java.lang.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
 import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.TargetInfoImpl;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -204,8 +204,8 @@ public sealed interface TypeAnnotation
      */
     static TypeAnnotation of(TargetInfo targetInfo, List<TypePathComponent> targetPath,
                              Annotation annotation) {
-        Objects.requireNonNull(targetInfo);
-        Objects.requireNonNull(annotation);
+        requireNonNull(targetInfo);
+        requireNonNull(annotation);
         return new UnboundAttribute.UnboundTypeAnnotation(targetInfo, targetPath, annotation);
     }
 
@@ -348,6 +348,11 @@ public sealed interface TypeAnnotation
          * @param table the list of local variable targets
          */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
+            requireNonNull(targetType);
+            requireNonNull(table);
+            for (var r : table){
+                requireNonNull(r);
+            }
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
         }
 
@@ -385,6 +390,8 @@ public sealed interface TypeAnnotation
          * @param target the code label corresponding to the instruction
          */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
+            requireNonNull(target);
+            requireNonNull(target);
             return new TargetInfoImpl.OffsetTargetImpl(targetType, target);
         }
 
@@ -433,6 +440,8 @@ public sealed interface TypeAnnotation
          * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
          */
         static TypeArgumentTarget ofTypeArgument(TargetType targetType, Label target, int typeArgumentIndex) {
+            requireNonNull(targetType);
+            requireNonNull(target);
             return new TargetInfoImpl.TypeArgumentTargetImpl(targetType, target, typeArgumentIndex);
         }
 

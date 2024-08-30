@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
@@ -35,6 +34,7 @@ import java.lang.classfile.ClassFile;
 import java.lang.classfile.BootstrapMethodEntry;
 import java.lang.classfile.attribute.BootstrapMethodsAttribute;
 import java.lang.classfile.constantpool.*;
+
 import java.util.Objects;
 
 import static java.lang.classfile.ClassFile.TAG_CLASS;
@@ -53,6 +53,7 @@ import static java.lang.classfile.ClassFile.TAG_MODULE;
 import static java.lang.classfile.ClassFile.TAG_NAMEANDTYPE;
 import static java.lang.classfile.ClassFile.TAG_PACKAGE;
 import static java.lang.classfile.ClassFile.TAG_STRING;
+import static java.util.Objects.requireNonNull;
 
 public final class SplitConstantPool implements ConstantPoolBuilder {
 
@@ -114,7 +115,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public <T extends PoolEntry> T entryByIndex(int index, Class<T> cls) {
-        Objects.requireNonNull(cls);
+        requireNonNull(cls);
         return ClassReaderImpl.checkType(entryByIndex(index), index, cls);
     }
 
@@ -130,7 +131,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
 
     @Override
     public boolean canWriteDirect(ConstantPool other) {
-        Objects.requireNonNull(other);
+        requireNonNull(other);
         return this == other || parent == other;
     }
 

@@ -36,7 +36,7 @@ import java.lang.classfile.constantpool.MemberRefEntry;
 import java.lang.classfile.constantpool.MethodRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -110,7 +110,7 @@ public sealed interface InvokeInstruction extends Instruction
      *         {@link Opcode.Kind#INVOKE}.
      */
     static InvokeInstruction of(Opcode op, MemberRefEntry method) {
-        Objects.requireNonNull(method);
+        requireNonNull(method);
         Util.checkKind(op, Opcode.Kind.INVOKE);
         return new AbstractInstruction.UnboundInvokeInstruction(op, method);
     }

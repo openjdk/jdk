@@ -29,7 +29,7 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.Util;
@@ -74,7 +74,7 @@ public sealed interface DiscontinuedInstruction extends Instruction {
          *         {@link Opcode.Kind#DISCONTINUED_JSR}.
          */
         static JsrInstruction of(Opcode op, Label target) {
-            Objects.requireNonNull(target);
+            requireNonNull(target);
             Util.checkKind(op, Opcode.Kind.DISCONTINUED_JSR);
             return new AbstractInstruction.UnboundJsrInstruction(op, target);
         }

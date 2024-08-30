@@ -27,7 +27,7 @@ package java.lang.classfile.attribute;
 
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -61,7 +61,7 @@ public sealed interface SourceDebugExtensionAttribute
      * @param contents the extension contents
      */
     static SourceDebugExtensionAttribute of(byte[] contents) {
-        Objects.requireNonNull(contents);
+        requireNonNull(contents);
         return new UnboundAttribute.UnboundSourceDebugExtensionAttribute(contents);
     }
 }

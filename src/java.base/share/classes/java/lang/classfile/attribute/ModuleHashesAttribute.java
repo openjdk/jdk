@@ -31,6 +31,8 @@ import java.lang.classfile.ClassElement;
 import java.util.List;
 
 import java.lang.classfile.constantpool.Utf8Entry;
+import static java.util.Objects.requireNonNull;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -113,6 +115,8 @@ public sealed interface ModuleHashesAttribute
      */
     static ModuleHashesAttribute of(Utf8Entry algorithm,
                                     List<ModuleHashInfo> hashes) {
+        requireNonNull(algorithm);
+        requireNonNull(hashes);
         return new UnboundAttribute.UnboundModuleHashesAttribute(algorithm, hashes);
     }
 

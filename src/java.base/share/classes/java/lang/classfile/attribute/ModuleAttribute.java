@@ -42,6 +42,8 @@ import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
 import jdk.internal.javac.PreviewFeature;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Models the {@code Module} attribute (JVMS {@jvms 4.7.25}), which can
  * appear on classes that represent module descriptors.
@@ -137,13 +139,14 @@ public sealed interface ModuleAttribute
                               Collection<ModuleOpenInfo> opens,
                               Collection<ClassEntry> uses,
                               Collection<ModuleProvideInfo> provides) {
-        Objects.requireNonNull(moduleName);
-        Objects.requireNonNull(moduleVersion);
-        Objects.requireNonNull(requires);
-        Objects.requireNonNull(exports);
-        Objects.requireNonNull(opens);
-        Objects.requireNonNull(uses);
-        Objects.requireNonNull(provides);
+        requireNonNull(moduleName);
+        //todo should moduleVersion be Nullable?
+//        requireNonNull(moduleVersion);
+        requireNonNull(requires);
+        requireNonNull(exports);
+        requireNonNull(opens);
+        requireNonNull(uses);
+        requireNonNull(provides);
         return new UnboundAttribute.UnboundModuleAttribute(moduleName, moduleFlags, moduleVersion, requires, exports, opens, uses, provides);
     }
 
@@ -168,8 +171,8 @@ public sealed interface ModuleAttribute
      */
     static ModuleAttribute of(ModuleEntry moduleName,
                               Consumer<ModuleAttributeBuilder> attrHandler) {
-        Objects.requireNonNull(moduleName);
-        Objects.requireNonNull(attrHandler);
+        requireNonNull(moduleName);
+        requireNonNull(attrHandler);
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);
         return mb.build();
@@ -204,6 +207,7 @@ public sealed interface ModuleAttribute
          * @return this builder
          */
         default ModuleAttributeBuilder moduleFlags(AccessFlag... moduleFlags) {
+            requireNonNull(moduleFlags);
             return moduleFlags(Util.flagsToBits(AccessFlag.Location.MODULE, moduleFlags));
         }
 
@@ -231,6 +235,9 @@ public sealed interface ModuleAttribute
          * @return this builder
          */
         default ModuleAttributeBuilder requires(ModuleDesc module, Collection<AccessFlag> requiresFlags, String version) {
+            requireNonNull(module);
+            requireNonNull(requiresFlags);
+            requireNonNull(version);
             return requires(module, Util.flagsToBits(AccessFlag.Location.MODULE_REQUIRES, requiresFlags), version);
         }
 

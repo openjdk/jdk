@@ -25,6 +25,7 @@
 package java.lang.classfile.attribute;
 
 import java.util.Collection;
+import static java.util.Objects.requireNonNull;
 import java.util.Optional;
 import java.util.Set;
 
@@ -87,6 +88,9 @@ public sealed interface ModuleRequireInfo
      * @param requiresVersion the required version
      */
     static ModuleRequireInfo of(ModuleEntry requires, int requiresFlags, Utf8Entry requiresVersion) {
+        requireNonNull(requires);
+        //todo: uncomment later after CorpusTest is fixed
+//        requireNonNull(requiresVersion);
         return new UnboundAttribute.UnboundModuleRequiresInfo(requires, requiresFlags, Optional.ofNullable(requiresVersion));
     }
 
@@ -97,6 +101,9 @@ public sealed interface ModuleRequireInfo
      * @param requiresVersion the required version
      */
     static ModuleRequireInfo of(ModuleEntry requires, Collection<AccessFlag> requiresFlags, Utf8Entry requiresVersion) {
+        requireNonNull(requiresVersion);
+        requireNonNull(requiresFlags);
+        requireNonNull(requiresVersion);
         return of(requires, Util.flagsToBits(AccessFlag.Location.MODULE_REQUIRES, requiresFlags), requiresVersion);
     }
 
@@ -107,6 +114,8 @@ public sealed interface ModuleRequireInfo
      * @param requiresVersion the required version
      */
     static ModuleRequireInfo of(ModuleDesc requires, int requiresFlags, String requiresVersion) {
+        requireNonNull(requires);
+        requireNonNull(requiresVersion);
         return new UnboundAttribute.UnboundModuleRequiresInfo(TemporaryConstantPool.INSTANCE.moduleEntry(TemporaryConstantPool.INSTANCE.utf8Entry(requires.name())), requiresFlags, Optional.ofNullable(requiresVersion).map(s -> TemporaryConstantPool.INSTANCE.utf8Entry(s)));
     }
 

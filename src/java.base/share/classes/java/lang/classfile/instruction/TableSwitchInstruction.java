@@ -30,7 +30,7 @@ import java.lang.classfile.CodeElement;
 import java.lang.classfile.CodeModel;
 import java.lang.classfile.Instruction;
 import java.lang.classfile.Label;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.javac.PreviewFeature;
@@ -74,7 +74,7 @@ public sealed interface TableSwitchInstruction extends Instruction
      * @param cases the cases of the switch
      */
     static TableSwitchInstruction of(int lowValue, int highValue, Label defaultTarget, List<SwitchCase> cases) {
-        Objects.requireNonNull(defaultTarget);
+        requireNonNull(defaultTarget);
         return new AbstractInstruction.UnboundTableSwitchInstruction(lowValue, highValue, defaultTarget, cases);
     }
 }

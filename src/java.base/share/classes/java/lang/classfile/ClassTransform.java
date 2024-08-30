@@ -24,7 +24,7 @@
  */
 package java.lang.classfile;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -51,8 +51,8 @@ public non-sealed interface ClassTransform
     static final ClassTransform ACCEPT_ALL = new ClassTransform() {
         @Override
         public void accept(ClassBuilder builder, ClassElement element) {
-            Objects.requireNonNull(builder);
-            Objects.requireNonNull(element);
+            requireNonNull(builder);
+            requireNonNull(element);
             builder.with(element);
         }
     };
@@ -66,6 +66,7 @@ public non-sealed interface ClassTransform
      * @return the stateful class transform
      */
     static ClassTransform ofStateful(Supplier<ClassTransform> supplier) {
+        requireNonNull(supplier);
         return new TransformImpl.SupplierClassTransform(supplier);
     }
 
@@ -77,17 +78,18 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform endHandler(Consumer<ClassBuilder> finisher) {
+        requireNonNull(finisher);
         return new ClassTransform() {
             @Override
             public void accept(ClassBuilder builder, ClassElement element) {
-                Objects.requireNonNull(builder);
-                Objects.requireNonNull(element);
+                requireNonNull(builder);
+                requireNonNull(element);
                 builder.with(element);
             }
 
             @Override
             public void atEnd(ClassBuilder builder) {
-                Objects.requireNonNull(builder);
+                requireNonNull(builder);
                 finisher.accept(builder);
             }
         };
@@ -101,6 +103,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform dropping(Predicate<ClassElement> filter) {
+        requireNonNull(filter);
         return (b, e) -> {
             if (!filter.test(e))
                 b.with(e);
@@ -117,6 +120,8 @@ public non-sealed interface ClassTransform
      */
     static ClassTransform transformingMethods(Predicate<MethodModel> filter,
                                               MethodTransform xform) {
+        requireNonNull(filter);
+        requireNonNull(xform);
         return new TransformImpl.ClassMethodTransform(xform, filter);
     }
 
@@ -163,6 +168,7 @@ public non-sealed interface ClassTransform
      * @return the class transform
      */
     static ClassTransform transformingFields(FieldTransform xform) {
+        requireNonNull(xform);
         return new TransformImpl.ClassFieldTransform(xform, f -> true);
     }
 
@@ -175,6 +181,7 @@ public non-sealed interface ClassTransform
      */
     @Override
     default ClassTransform andThen(ClassTransform t) {
+        requireNonNull(t);
         return new TransformImpl.ChainedClassTransform(this, t);
     }
 }

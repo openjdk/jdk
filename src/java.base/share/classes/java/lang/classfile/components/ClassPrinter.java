@@ -27,7 +27,7 @@ package java.lang.classfile.components;
 import java.lang.constant.ConstantDesc;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.lang.classfile.ClassModel;
@@ -194,8 +194,8 @@ public final class ClassPrinter {
      * @return root node of the exported tree
      */
     public static MapNode toTree(CompoundElement<?> model, Verbosity verbosity) {
-        Objects.requireNonNull(model);
-        Objects.requireNonNull(verbosity);
+        requireNonNull(model);
+        requireNonNull(verbosity);
         return ClassPrinterImpl.modelToTree(model, verbosity);
     }
 

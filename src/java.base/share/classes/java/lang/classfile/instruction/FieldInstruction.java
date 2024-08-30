@@ -34,7 +34,7 @@ import java.lang.classfile.Opcode;
 import java.lang.classfile.constantpool.FieldRefEntry;
 import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 import jdk.internal.classfile.impl.AbstractInstruction;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -95,7 +95,7 @@ public sealed interface FieldInstruction extends Instruction
      *         {@link Opcode.Kind#FIELD_ACCESS}.
      */
     static FieldInstruction of(Opcode op, FieldRefEntry field) {
-        Objects.requireNonNull(field);
+        requireNonNull(field);
         Util.checkKind(op, Opcode.Kind.FIELD_ACCESS);
         return new AbstractInstruction.UnboundFieldInstruction(op, field);
     }

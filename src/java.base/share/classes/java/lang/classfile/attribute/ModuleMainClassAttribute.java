@@ -29,6 +29,8 @@ import java.lang.constant.ClassDesc;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.ClassElement;
 import java.lang.classfile.constantpool.ClassEntry;
+import static java.util.Objects.requireNonNull;
+
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -63,6 +65,7 @@ public sealed interface ModuleMainClassAttribute
      * @param mainClass the main class
      */
     static ModuleMainClassAttribute of(ClassEntry mainClass) {
+        requireNonNull(mainClass);
         return new UnboundAttribute.UnboundModuleMainClassAttribute(mainClass);
     }
 

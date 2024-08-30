@@ -24,12 +24,13 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import java.lang.classfile.FieldBuilder;
 import java.lang.classfile.FieldElement;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+
+import static java.util.Objects.requireNonNull;
 
 public final class ChainedFieldBuilder implements FieldBuilder {
     private final TerminalFieldBuilder terminal;
@@ -51,7 +52,7 @@ public final class ChainedFieldBuilder implements FieldBuilder {
 
     @Override
     public FieldBuilder with(FieldElement element) {
-        Objects.requireNonNull(element);
+        requireNonNull(element);
         consumer.accept(element);
         return this;
     }

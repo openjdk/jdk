@@ -26,6 +26,7 @@ package java.lang.classfile.components;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
+import static java.util.Objects.requireNonNull;
 import java.util.function.BiFunction;
 import java.lang.classfile.CodeBuilder;
 import java.lang.classfile.CodeTransform;
@@ -62,6 +63,7 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(Map<Label, Label> map) {
+        requireNonNull(map);
         return of((l, cob) -> map.computeIfAbsent(l, ll -> cob.newLabel()));
     }
 
@@ -72,6 +74,7 @@ public sealed interface CodeRelabeler extends CodeTransform permits CodeRelabele
      * @return a new instance of CodeRelabeler
      */
     static CodeRelabeler of(BiFunction<Label, CodeBuilder, Label> mapFunction) {
+        requireNonNull(mapFunction);
         return new CodeRelabelerImpl(mapFunction);
     }
 }
