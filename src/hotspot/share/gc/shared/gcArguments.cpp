@@ -160,7 +160,7 @@ void GCArguments::initialize_heap_flags_and_sizes() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(SoftMaxHeapSize)) {
+  if (FLAG_IS_DEFAULT(SoftMaxHeapSize) && !UseG1GC) {
     FLAG_SET_ERGO(SoftMaxHeapSize, MaxHeapSize);
   }
 
