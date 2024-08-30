@@ -239,7 +239,6 @@ JLI_Launch(int argc, char ** argv,              /* main argc, argv */
 {
     int mode = LM_UNKNOWN;
     char *what = NULL;
-    char *main_class = NULL;
     int ret;
     InvocationFunctions ifn;
     jlong start = 0, end = 0;

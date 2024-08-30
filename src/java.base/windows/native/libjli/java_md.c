@@ -918,14 +918,13 @@ JVMInit(InvocationFunctions* ifn, jlong threadStackSize,
         int argc, char **argv,
         int mode, char *what, int ret)
 {
-    ShowSplashScreen();
     return ContinueInNewThread(ifn, threadStackSize, argc, argv, mode, what, ret);
 }
 
 void
 PostJVMInit(JNIEnv *env, jclass mainClass, JavaVM *vm)
 {
-    // stubbed out for windows and *nixes.
+    ShowSplashScreen();
 }
 
 void
