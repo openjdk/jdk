@@ -247,7 +247,7 @@ DependOnVariableFileName = \
 DependOnVariableWriteFile = \
     $(call MakeDir, $(dir $($1_filename))) \
     $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
-         $($1_filename)) \
+        $($1_filename)) \
 
 # Does the actual work with parameters stripped.
 # If the file exists AND the contents is the same as the variable, do nothing
