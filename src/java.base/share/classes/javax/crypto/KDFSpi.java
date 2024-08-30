@@ -118,8 +118,7 @@ public abstract class KDFSpi {
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationSpec} is
      *     invalid or if the combination of {@code alg} and the {@code derivationSpec}
-     *     results in something invalid, ie - a key of inappropriate length
-     *     for the specified algorithm
+     *     results in something invalid
      * @throws NoSuchAlgorithmException
      *     if {@code alg} is empty or invalid
      * @throws NullPointerException

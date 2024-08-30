@@ -92,21 +92,16 @@ public final class KDF {
     private static final boolean skipDebug = Debug.isOn("engine=")
                                              && !Debug.isOn("kdf");
 
-    // The provider
-    private Provider provider;
+    private record Delegate(KDFSpi spi, Provider provider) {}
 
-    // The provider implementation (delegate)
-    private KDFSpi spi;
+    private Delegate pairOfSpiAndProv;
+    private Delegate firstPairOfSpiAndProv;
 
     // The name of the KDF algorithm.
     private final String algorithm;
 
     // Additional KDF configuration parameters
     private final KDFParameters kdfParameters;
-
-    // the first KDFSpi and provider supporting the specified configuration parameters
-    private KDFSpi firstSpi;
-    private Provider firstProv;
 
     // remaining services to try in provider selection
     // null once provider is selected
@@ -118,19 +113,14 @@ public final class KDF {
      * Instantiates a {@code KDF} object. This constructor is called when a
      * provider is supplied to {@code getInstance}.
      *
-     * @param keyDerivSpi
-     *     the delegate
-     * @param provider
-     *     the provider
-     * @param algorithm
-     *     the algorithm
+     * @param delegate the delegate
+     * @param algorithm the algorithm
      */
-    private KDF(KDFSpi keyDerivSpi, Provider provider, String algorithm) {
-        this.spi = keyDerivSpi;
-        this.provider = provider;
+    private KDF(Delegate delegate, String algorithm, KDFParameters kdfParameters) {
+        this.pairOfSpiAndProv = delegate;
         this.algorithm = algorithm;
         // note that the parameters are being passed to the impl in getInstance
-        this.kdfParameters = null;
+        this.kdfParameters = kdfParameters;
         serviceIterator = null;
         lock = new Object();
     }
@@ -139,16 +129,14 @@ public final class KDF {
      * Instantiates a {@code KDF} object. This constructor is called when a
      * provider is not supplied to {@code getInstance}.
      *
-     * @param firstSpi the first matching Spi
-     * @param firstProv the first matching provider
+     * @param firstPairOfSpiAndProv the delegate
      * @param t the service iterator
      * @param algorithm the algorithm
      * @param kdfParameters the algorithm parameters
      */
-    private KDF(KDFSpi firstSpi, Provider firstProv, Iterator<Service> t, String algorithm,
+    private KDF(Delegate firstPairOfSpiAndProv, Iterator<Service> t, String algorithm,
                 KDFParameters kdfParameters) {
-        this.firstSpi = firstSpi;
-        this.firstProv = firstProv;
+        this.firstPairOfSpiAndProv = firstPairOfSpiAndProv;
         serviceIterator = t;
         this.algorithm = algorithm;
         this.kdfParameters = kdfParameters;
@@ -171,7 +159,7 @@ public final class KDF {
      */
     public String getProviderName() {
         useFirstSpi();
-        return provider.getName();
+        return pairOfSpiAndProv.provider().getName();
     }
 
     /**
@@ -189,7 +177,7 @@ public final class KDF {
      */
     public KDFParameters getParameters() {
         useFirstSpi();
-        return spi.engineGetParameters();
+        return pairOfSpiAndProv.spi().engineGetParameters();
     }
 
     /**
@@ -333,7 +321,11 @@ public final class KDF {
                 if (!(obj instanceof KDFSpi spiObj)) {
                     continue;
                 }
-                return new KDF(spiObj, s.getProvider(), t, algorithm, kdfParameters);
+                if (t.hasNext()) {
+                    return new KDF(new Delegate(spiObj, s.getProvider()), t, algorithm, kdfParameters);
+                } else { // no other choices, lock down provider
+                    return new KDF(new Delegate(spiObj, s.getProvider()), algorithm, kdfParameters);
+                }
             } catch (NoSuchAlgorithmException e) {
                 // ignore
                 continue;
@@ -391,7 +383,8 @@ public final class KDF {
                              + instance.provider.getName();
                 throw new NoSuchProviderException(msg);
             }
-            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm);
+            return new KDF(new Delegate((KDFSpi) instance.impl,
+                                        instance.provider), algorithm, kdfParameters);
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -442,7 +435,8 @@ public final class KDF {
                              + instance.provider.getName();
                 throw new SecurityException(msg);
             }
-            return new KDF((KDFSpi) instance.impl, instance.provider, algorithm);
+            return new KDF(new Delegate((KDFSpi) instance.impl,
+                                        instance.provider), algorithm, kdfParameters);
 
         } catch (NoSuchAlgorithmException nsae) {
             return handleException(nsae);
@@ -474,8 +468,7 @@ public final class KDF {
      * @throws InvalidAlgorithmParameterException
      *     if the information contained within the {@code derivationSpec} is
      *     invalid or if the combination of {@code alg} and the {@code derivationSpec}
-     *     results in something invalid, ie - a key of inappropriate length
-     *     for the specified algorithm
+     *     results in something invalid
      * @throws NoSuchAlgorithmException
      *     if {@code alg} is empty or invalid
      * @throws NullPointerException
@@ -494,8 +487,8 @@ public final class KDF {
                 + "empty");
         }
         Objects.requireNonNull(derivationSpec);
-        if (spi != null) {
-            return spi.engineDeriveKey(alg, derivationSpec);
+        if (delegateAndSpiAreInitialized(pairOfSpiAndProv)) {
+            return pairOfSpiAndProv.spi().engineDeriveKey(alg, derivationSpec);
         } else {
             return (SecretKey) chooseProvider(alg, derivationSpec);
         }
@@ -524,8 +517,8 @@ public final class KDF {
         throws InvalidAlgorithmParameterException {
 
         Objects.requireNonNull(derivationSpec);
-        if (spi != null) {
-            return spi.engineDeriveData(derivationSpec);
+        if (delegateAndSpiAreInitialized(pairOfSpiAndProv)) {
+            return pairOfSpiAndProv.spi().engineDeriveData(derivationSpec);
         } else {
             try {
                 return (byte[]) chooseProvider(null, derivationSpec);
@@ -540,15 +533,13 @@ public final class KDF {
      * Use the firstSpi as the chosen KDFSpi and set the fields accordingly
      */
     private void useFirstSpi() {
-        if ((spi != null) || (serviceIterator == null)) return;
+        if ((delegateAndSpiAreInitialized(pairOfSpiAndProv)) || (serviceIterator == null)) return;
 
         synchronized (lock) {
-            if ((spi == null) && (serviceIterator != null)) {
-                spi = firstSpi;
-                provider = firstProv;
+            if ((delegateIsNullOrSpiIsNull(pairOfSpiAndProv)) && (serviceIterator != null)) {
+                pairOfSpiAndProv = firstPairOfSpiAndProv;
                 // not needed any more
-                firstSpi = null;
-                firstProv = null;
+                firstPairOfSpiAndProv = new Delegate(null, null);
                 serviceIterator = null;
             }
         }
@@ -568,21 +559,20 @@ public final class KDF {
         boolean isDeriveData = (algorithm == null);
 
         synchronized (lock) {
-            if (spi != null) {
-                return (isDeriveData) ? spi.engineDeriveData(
-                    derivationSpec) : spi.engineDeriveKey(algorithm,
+            if (delegateAndSpiAreInitialized(pairOfSpiAndProv)) {
+                return (isDeriveData) ? pairOfSpiAndProv.spi().engineDeriveData(
+                    derivationSpec) : pairOfSpiAndProv.spi().engineDeriveKey(algorithm,
                                                                    derivationSpec);
             }
 
             Exception lastException = null;
-            while ((firstSpi != null) || serviceIterator.hasNext()) {
+            while ((delegateAndSpiAreInitialized(firstPairOfSpiAndProv)) || serviceIterator.hasNext()) {
                 KDFSpi currSpi;
                 Provider currProv;
-                if (firstSpi != null) {
-                    currSpi = firstSpi;
-                    currProv = firstProv;
-                    firstSpi = null;
-                    firstProv = null;
+                if (delegateAndSpiAreInitialized(firstPairOfSpiAndProv)) {
+                    currSpi = firstPairOfSpiAndProv.spi();
+                    currProv = firstPairOfSpiAndProv.provider();
+                    firstPairOfSpiAndProv = new Delegate(null, null);
                 } else {
                     Service s = serviceIterator.next();
                     currProv = s.getProvider();
@@ -606,8 +596,7 @@ public final class KDF {
                         derivationSpec) : currSpi.engineDeriveKey(
                         algorithm, derivationSpec);
                     // found a working KDFSpi
-                    this.provider = currProv;
-                    this.spi = currSpi;
+                    this.pairOfSpiAndProv = new Delegate(currSpi, currProv);
                     // not looking further
                     serviceIterator = null;
                     return result;
@@ -629,5 +618,13 @@ public final class KDF {
             "No installed provider supports the " +
             ((isDeriveData) ? "deriveData" : "deriveKey")
             + " method with these parameters");
+    }
+
+    boolean delegateAndSpiAreInitialized(Delegate delegate) {
+        return (delegate != null && delegate.spi() != null);
+    }
+
+    boolean delegateIsNullOrSpiIsNull(Delegate delegate) {
+        return (delegate == null || delegate.spi() == null);
     }
 }
