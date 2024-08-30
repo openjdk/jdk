@@ -67,7 +67,6 @@ void VirtualMemoryTrackerWithTree::set_reserved_region_type(address addr, MEMFLA
     ReservedMemoryRegion rgn = tree()->find_reserved_region(addr);
     if (rgn.flag() == flag)
       return;
-
     const VMATree::position& start = (VMATree::position)addr;
     const VMATree::position& end = (VMATree::position)(rgn.end() + 1);
     RegionsTree::NodeHelper prev;
