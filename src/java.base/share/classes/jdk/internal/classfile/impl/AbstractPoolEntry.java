@@ -421,7 +421,7 @@ public abstract sealed class AbstractPoolEntry {
                 }
                 pool.writeU1(tag);
                 pool.writeU2(charLen);
-                if (!JLA.hasNegativeOrZeros(stringValue)) {
+                if (JLA.isLatin1GreaterThanZero(stringValue)) {
                     pool.writeBytesDirect(stringValue);
                 } else {
                     writeToSlow(pool);

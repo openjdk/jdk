@@ -2594,8 +2594,8 @@ public final class System {
                 StringLatin1.inflate(src, srcOff, dst, dstOff, len);
             }
 
-            public boolean hasNegativeOrZeros(String s) {
-                return s.coder() == String.UTF16 || StringCoding.hasNegativeOrZeros(s.value());
+            public boolean isLatin1GreaterThanZero(String s) {
+                return StringCoding.isLatin1GreaterThanZero(s);
             }
 
             public int decodeASCII(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
