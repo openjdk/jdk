@@ -67,8 +67,8 @@ MICROBENCHMARK_NATIVE_EXCLUDE :=
 ###
 
 # Need double \n to get new lines and no trailing spaces
-MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n\
-\nJMH-Version: $(JMH_VERSION)\n\
+MICROBENCHMARK_MANIFEST := Build: $(FULL_VERSION)\n \
+\nJMH-Version: $(JMH_VERSION)\n \
 \nName: OpenJDK Microbenchmark Suite
 
 #### Compile Indify tool

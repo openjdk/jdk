@@ -260,7 +260,7 @@ DependOnVariableHelper = \
         $(eval $1_filename := $(call DependOnVariableFileName, $1, $2)) \
         $(if $(wildcard $($1_filename)), \
           $(eval include $($1_filename)) \
-          $(if $(call equals, $(strip $($1)), $(strip $($1_old))),,\
+          $(if $(call equals, $(strip $($1)), $(strip $($1_old))),, \
             $(if $(findstring $(LOG_LEVEL), trace), \
                 $(info NewVariable $1: >$(strip $($1))<) \
                 $(info OldVariable $1: >$(strip $($1_old))<) \

@@ -182,7 +182,7 @@ define SetupNativeCompilationBody
 
   # Now call CreateCompiledNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)), \
           FILE := $$(file), \
           BASE := $1, \
       )) \

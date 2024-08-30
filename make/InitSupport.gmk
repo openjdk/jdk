@@ -531,7 +531,7 @@ else # $(HAS_SPEC)=true
     # used by build comparisons.
     define WaitForJavacServerFinish
 	$(if $(JAVAC_SERVER_DIR), \
-	  sleep 5\
+	  sleep 5 \
 	)
     endef
   else
