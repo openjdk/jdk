@@ -28,6 +28,7 @@
  * @summary Memory/CPU awareness test for JDK-under-test inside a systemd slice.
  * @requires systemd.support
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build HelloSystemd jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SystemdMemoryAwarenessTest
