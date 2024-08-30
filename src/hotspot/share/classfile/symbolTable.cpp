@@ -349,6 +349,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 // to be used for arbitrary strings. For debug builds we will assert if
 // a string is too long, whereas product builds will truncate it.
 static int check_length(const char* name, int len) {
+  assert(len >= 0, "negative length %d suggests integer overflow in the caller", len);
   assert(len <= Symbol::max_length(),
          "String length %d exceeds the maximum Symbol length of %d", len, Symbol::max_length());
   if (len > Symbol::max_length()) {
@@ -461,33 +462,33 @@ Symbol* SymbolTable::lookup_only(const char* name, int len, unsigned int& hash) 
 // and probing logic, so there is no need for convert_to_utf8 until
 // an actual new Symbol* is created.
 Symbol* SymbolTable::new_symbol(const jchar* name, int utf16_length) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return new_symbol(chars, utf8_length);
+    return new_symbol(chars, checked_cast<int>(utf8_length));
   }
 }
 
 Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
                                          unsigned int& hash) {
-  int utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
+  size_t utf8_length = UNICODE::utf8_length((jchar*) name, utf16_length);
   char stack_buf[ON_STACK_BUFFER_LENGTH];
-  if (utf8_length < (int) sizeof(stack_buf)) {
+  if (utf8_length < sizeof(stack_buf)) {
     char* chars = stack_buf;
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   } else {
     ResourceMark rm;
     char* chars = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
     UNICODE::convert_to_utf8(name, utf16_length, chars);
-    return lookup_only(chars, utf8_length, hash);
+    return lookup_only(chars, checked_cast<int>(utf8_length), hash);
   }
 }
 
