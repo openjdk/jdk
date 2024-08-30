@@ -5523,6 +5523,7 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
           _igvn.add_input_to(C->root(), halt);
         }
         set_loop(C->root(), _ltree_root);
+        // move to outer most loop with same header
         l = m_loop;
         for (;;) {
           IdealLoopTree* next = l->_parent;
@@ -5531,10 +5532,13 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
           }
           l = next;
         }
+        // properly insert infinite loop in loop tree
         sort(_ltree_root, l);
+        // fix child link from parent
         IdealLoopTree *p = l->_parent;
         l->_next = p->_child;
         p->_child = l;
+        // code below needs enclosing loop
         l = l->_parent;
       }
     }
