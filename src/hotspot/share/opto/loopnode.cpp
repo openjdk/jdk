@@ -4580,35 +4580,11 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Build a loop tree on the fly.  Build a mapping from CFG nodes to
   // IdealLoopTree entries.  Data nodes are NOT walked.
-  DEBUG_ONLY(_new_never_branch = false;)
-  build_loop_tree(false);
+  build_loop_tree();
   // Check for bailout, and return
   if (C->failing()) {
     return;
   }
-#ifdef ASSERT
-  if (_new_never_branch) {
-    ResourceMark rm;
-    Node_List loop_tree;
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      loop_tree.push(lpt->_head);
-    }
-    _ltree_root->_child = nullptr;
-    _loop_or_ctrl.clear();
-    reallocate_preorders();
-    build_loop_tree(true);
-    Node_List loop_tree2;
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      loop_tree2.push(lpt->_head);
-    }
-    assert(loop_tree.size() == loop_tree2.size(), "");
-    for (uint i = 0; i < loop_tree.size(); ++i) {
-      assert(loop_tree.at(i) == loop_tree2.at(i), "");
-    }
-  }
-#endif
 
   // Verify that the has_loops() flag set at parse time is consistent with the just built loop tree. When the back edge
   // is an exception edge, parsing doesn't set has_loops().
@@ -4649,7 +4625,7 @@ void PhaseIdealLoop::build_and_optimize() {
       _ltree_root->_child = nullptr;
       _loop_or_ctrl.clear();
       reallocate_preorders();
-      build_loop_tree(false);
+      build_loop_tree();
       // Check for bailout, and return
       if (C->failing()) {
         return;
@@ -5392,7 +5368,7 @@ IdealLoopTree *PhaseIdealLoop::sort( IdealLoopTree *loop, IdealLoopTree *innermo
 // loops.  This means I need to sort my childrens' loops by pre-order.
 // The sort is of size number-of-control-children, which generally limits
 // it to size 2 (i.e., I just choose between my 2 target loops).
-void PhaseIdealLoop::build_loop_tree(bool verify) {
+void PhaseIdealLoop::build_loop_tree() {
   // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   GrowableArray <Node *> bltstack(C->live_nodes() >> 1);
   Node *n = C->root();
@@ -5445,7 +5421,7 @@ void PhaseIdealLoop::build_loop_tree(bool verify) {
       if ( bltstack.length() == stack_size ) {
         // There were no additional children, post visit node now
         (void)bltstack.pop(); // Remove node from stack
-        pre_order = build_loop_tree_impl(n, pre_order, verify);
+        pre_order = build_loop_tree_impl(n, pre_order);
         // Check for bailout
         if (C->failing()) {
           return;
@@ -5463,7 +5439,7 @@ void PhaseIdealLoop::build_loop_tree(bool verify) {
 }
 
 //------------------------------build_loop_tree_impl---------------------------
-int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order, bool verify) {
+int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
   // ---- Post-pass Work ----
   // Pre-walked but not post-walked nodes need a pre_order number.
 
@@ -5506,7 +5482,6 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order, bool verify) {
       // If this loop is not properly parented, then this loop
       // has no exit path out, i.e. its an infinite loop.
       if (!l) {
-        assert(!verify, "");
         // Make loop "reachable" from root so the CFG is reachable.  Basically
         // insert a bogus loop exit that is never taken.  'm', the loop head,
         // points to 'n', one (of possibly many) fall-in paths.  There may be
@@ -5638,7 +5613,6 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order, bool verify) {
               !iff->is_If() ||
               (n->in(0)->Opcode() == Op_IfFalse && (1.0 - iff->as_If()->_prob) >= 0.01) ||
               iff->as_If()->_prob >= 0.01) {
-            assert(!verify || innermost->_has_call, "");
             innermost->_has_call = 1;
           }
         }
@@ -5646,22 +5620,12 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order, bool verify) {
         // Disable loop optimizations if the loop has a scalar replaceable
         // allocation. This disabling may cause a potential performance lost
         // if the allocation is not eliminated for some reason.
-        assert(!verify || innermost->_allow_optimizations, "");
-        assert(!verify || innermost->_has_call, "");
         innermost->_allow_optimizations = false;
         innermost->_has_call = 1; // = true
       } else if (n->Opcode() == Op_SafePoint) {
         // Record all safepoints in this loop.
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
-#ifdef ASSERT
-        if (verify) {
-          assert(innermost->_safepts->contains(n), "");
-        } else {
-#endif
-          innermost->_safepts->push(n);
-#ifdef ASSERT
-        }
-#endif
+        innermost->_safepts->push(n);
       }
     }
   }

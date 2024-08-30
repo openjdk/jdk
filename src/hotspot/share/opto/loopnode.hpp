@@ -1076,13 +1076,9 @@ public:
 
 private:
 
-#ifdef ASSERT
-  bool _new_never_branch;
-#endif
-
   // Place 'n' in some loop nest, where 'n' is a CFG node
-  void build_loop_tree(bool verify);
-  int build_loop_tree_impl(Node* n, int pre_order, bool verify);
+  void build_loop_tree();
+  int build_loop_tree_impl(Node *n, int pre_order);
   // Insert loop into the existing loop tree.  'innermost' is a leaf of the
   // loop tree, not the root.
   IdealLoopTree *sort( IdealLoopTree *loop, IdealLoopTree *innermost );
