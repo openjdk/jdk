@@ -100,7 +100,8 @@ TARGETS += $(BUILD_LIBLCMS)
 ifeq ($(USE_EXTERNAL_LIBJPEG), true)
   LIBJAVAJPEG_INCLUDE_FILES := \
       imageioJPEG.c \
-      jpegdecoder.c
+      jpegdecoder.c \
+      #
   # If we're using an external library, we can't include our own SRC path
   # as includes, instead the system headers should be used.
   LIBJAVAJPEG_HEADERS_FROM_SRC := false

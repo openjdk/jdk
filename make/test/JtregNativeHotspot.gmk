@@ -59,77 +59,93 @@ VM_TESTBASE_DIR := $(TOPDIR)/test/hotspot/jtreg/vmTestbase
 VM_SHARE_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/vm/share \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_MONITORING_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_JDI_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/share/native
+    -I$(VM_TESTBASE_DIR)/nsk/share/native \
+    #
 
 NSK_SHARE_JDI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jdi
+    -I$(VM_TESTBASE_DIR)/nsk/share/jdi \
+    #
 
 NSK_SHARE_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 RUNTIME_DEFMETH_INCLUDES := \
     -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jni \
     -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/native \
-    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jvmti
+    -I$(TOPDIR)/test/hotspot/jtreg/vmTestbase/nsk/share/jvmti \
+    #
 
 NSK_SHARE_LOCKS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/locks
+    -I$(VM_TESTBASE_DIR)/nsk/share/locks \
+    #
 
 MLVM_JVMTI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common \
-    -I$(VM_TESTBASE_DIR)/vm/mlvm/share
+    -I$(VM_TESTBASE_DIR)/vm/mlvm/share \
+    #
 
 MLVM_STRESS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_GC_LOCK_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_GC_LOCK_REF_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jniref \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_STRACE_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NSK_STRESS_JNI_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/stress/jni
+    -I$(VM_TESTBASE_DIR)/nsk/stress/jni \
+    #
 
 NSK_JVMTI_AGENT_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common
+    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/agent_common \
+    #
 
 NSK_JVMTI_AOD_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/aod \
     -I$(VM_TESTBASE_DIR)/nsk/share/jvmti \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/aod
+    -I$(VM_TESTBASE_DIR)/nsk/share/jvmti/aod \
+    #
 
 NSK_AOD_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/aod \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
+    -I$(VM_TESTBASE_DIR)/nsk/share/jni \
+    #
 
 NO_FRAMEPOINTER_CFLAGS :=
 ifeq ($(call isTargetOs, linux), true)

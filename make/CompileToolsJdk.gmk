@@ -52,8 +52,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
         build/tools/deps \
         build/tools/docs \
         build/tools/jigsaw \
-        build/tools/depend \
-        , \
+        build/tools/depend, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes, \
     DISABLED_WARNINGS := dangling-doc-comments options, \
     JAVAC_FLAGS := \

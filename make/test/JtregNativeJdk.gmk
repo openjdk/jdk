@@ -53,7 +53,8 @@ BUILD_JDK_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/jdk/jtreg
 BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
     -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_TYPE)/native/libjli \
-    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli
+    -I$(TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libjli \
+    #
 
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeJliLaunchTest := java.base:libjli
 BUILD_JDK_JTREG_EXECUTABLES_JDK_LIBS_exeCallerAccessTest := java.base:libjvm
