@@ -76,7 +76,7 @@ public class TestLambdaInvokers extends DynamicArchiveTestBase {
                  output.shouldContain("[LF_RESOLVE] java.lang.invoke.Invokers$Holder invoker L3I_L (success)");
 
                  // java.lang.invoke.BoundMethodHandle$Species_LLLL is generated dynamically and not stored in the archive
-                 //output.shouldContain("Skipping java/lang/invoke/BoundMethodHandle$Species_LLLL because it was generated dynamically");
+                 output.shouldContain("Skipping java/lang/invoke/BoundMethodHandle$Species_LLLL because it is dynamically generated");
              });
     }
 
