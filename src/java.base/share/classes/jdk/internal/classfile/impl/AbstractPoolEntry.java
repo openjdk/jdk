@@ -236,7 +236,7 @@ public abstract sealed class AbstractPoolEntry {
             }
         }
 
-        private void inflateHCAR(int singleBytes, int hash) {
+        private void inflateCHAR(int singleBytes, int hash) {
             char[] chararr = new char[rawLen];
             int chararr_count = singleBytes;
             // Inflate prefix of bytes to characters
