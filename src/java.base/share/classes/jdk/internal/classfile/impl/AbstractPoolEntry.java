@@ -232,7 +232,7 @@ public abstract sealed class AbstractPoolEntry {
                 charLen = rawLen;
                 state = State.BYTE;
             } else {
-                inflateHCAR(singleBytes, hash);
+                inflateCHAR(singleBytes, hash);
             }
         }
 
