@@ -593,9 +593,9 @@ SafepointBlob* SafepointBlob::create(
 //----------------------------------------------------------------------------------------------------
 // Implementation of UpcallStub
 
-UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset) :
+UpcallStub::UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset, int frame_size) :
   RuntimeBlob(name, CodeBlobKind::Upcall, cb, size, sizeof(UpcallStub),
-              CodeOffsets::frame_never_safe, 0 /* no frame size */,
+              CodeOffsets::frame_never_safe, frame_size,
               /* oop maps = */ nullptr, /* caller must gc arguments = */ false),
   _receiver(receiver),
   _frame_data_offset(frame_data_offset)
@@ -607,14 +607,14 @@ void* UpcallStub::operator new(size_t s, unsigned size) throw() {
   return CodeCache::allocate(size, CodeBlobType::NonNMethod);
 }
 
-UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset) {
+UpcallStub* UpcallStub::create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset, int frame_size) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   UpcallStub* blob = nullptr;
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(UpcallStub));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset);
+    blob = new (size) UpcallStub(name, cb, size, receiver, frame_data_offset, frame_size);
   }
   if (blob == nullptr) {
     return nullptr; // caller must handle this

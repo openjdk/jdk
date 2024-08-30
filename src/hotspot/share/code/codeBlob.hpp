@@ -600,7 +600,7 @@ class UpcallStub: public RuntimeBlob {
   jobject _receiver;
   ByteSize _frame_data_offset;
 
-  UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset);
+  UpcallStub(const char* name, CodeBuffer* cb, int size, jobject receiver, ByteSize frame_data_offset, int frame_size);
 
   void* operator new(size_t s, unsigned size) throw();
 
@@ -615,7 +615,7 @@ class UpcallStub: public RuntimeBlob {
   FrameData* frame_data_for_frame(const frame& frame) const;
  public:
   // Creation
-  static UpcallStub* create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset);
+  static UpcallStub* create(const char* name, CodeBuffer* cb, jobject receiver, ByteSize frame_data_offset, int frame_size);
 
   static void free(UpcallStub* blob);
 

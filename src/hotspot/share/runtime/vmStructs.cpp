@@ -1306,6 +1306,7 @@
   declare_type(nmethod,                  CodeBlob)                        \
   declare_type(RuntimeStub,              RuntimeBlob)                     \
   declare_type(SingletonBlob,            RuntimeBlob)                     \
+  declare_type(UpcallStub,               RuntimeBlob)                     \
   declare_type(SafepointBlob,            SingletonBlob)                   \
   declare_type(DeoptimizationBlob,       SingletonBlob)                   \
   declare_c2_type(ExceptionBlob,         SingletonBlob)                   \
