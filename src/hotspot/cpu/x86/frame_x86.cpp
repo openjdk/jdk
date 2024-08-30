@@ -279,7 +279,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
   assert(!Continuation::is_return_barrier_entry(*pc_addr), "return barrier");
 
-  assert(_pc == *pc_addr || pc == *pc_addr || *pc_addr == 0, "");
+  assert(_pc == *pc_addr || pc == *pc_addr || *pc_addr == nullptr, "");
   DEBUG_ONLY(address old_pc = _pc;)
   *pc_addr = pc;
   _pc = pc; // must be set before call to get_deopt_original_pc
@@ -483,10 +483,10 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   // These are reasonable sanity checks
-  if (fp() == 0 || (intptr_t(fp()) & (wordSize-1)) != 0) {
+  if (fp() == nullptr || (intptr_t(fp()) & (wordSize-1)) != 0) {
     return false;
   }
-  if (sp() == 0 || (intptr_t(sp()) & (wordSize-1)) != 0) {
+  if (sp() == nullptr || (intptr_t(sp()) & (wordSize-1)) != 0) {
     return false;
   }
   if (fp() + interpreter_frame_initial_sp_offset < sp()) {

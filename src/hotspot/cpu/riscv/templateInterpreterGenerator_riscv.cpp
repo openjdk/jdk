@@ -658,8 +658,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
 
   // Note: the restored frame is not necessarily interpreted.
   // Use the shared runtime version of the StackOverflowError.
-  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
-  __ far_jump(RuntimeAddress(StubRoutines::throw_StackOverflowError_entry()));
+  assert(SharedRuntime::throw_StackOverflowError_entry() != nullptr, "stub not yet generated");
+  __ far_jump(RuntimeAddress(SharedRuntime::throw_StackOverflowError_entry()));
 
   // all done with frame size check
   __ bind(after_frame_check);
@@ -1111,8 +1111,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label L;
     __ ld(x28, Address(xmethod, Method::native_function_offset()));
-    address unsatisfied = (SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
-    __ mv(t, unsatisfied);
+    ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
+    __ la(t, unsatisfied);
     __ load_long_misaligned(t1, Address(t, 0), t0, 2); // 2 bytes aligned, but not 4 or 8
 
     __ bne(x28, t1, L);
@@ -1815,7 +1815,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // the tosca in-state for the given template.
 
   assert(Interpreter::trace_code(t->tos_in()) != nullptr, "entry must have been generated");
-  __ call(Interpreter::trace_code(t->tos_in()));
+  __ rt_call(Interpreter::trace_code(t->tos_in()));
   __ reinit_heapbase();
 }
 

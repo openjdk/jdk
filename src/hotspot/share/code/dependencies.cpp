@@ -72,7 +72,7 @@ void Dependencies::initialize(ciEnv* env) {
 #endif
   DEBUG_ONLY(_deps[end_marker] = nullptr);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
-    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
+    _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, nullptr);
   }
   _content_bytes = nullptr;
   _size_in_bytes = (size_t)-1;

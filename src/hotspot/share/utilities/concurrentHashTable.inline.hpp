@@ -679,7 +679,9 @@ inline bool ConcurrentHashTable<CONFIG, F>::
         // Keep in odd list
         odd = aux->next_ptr();
       } else {
-        fatal("aux_index does not match even or odd indices");
+        const char* msg = "Cannot resize table: Node hash code has changed possibly due to corruption of the contents.";
+        DEBUG_ONLY(fatal("%s Node hash code changed from " SIZE_FORMAT " to " SIZE_FORMAT, msg, aux->saved_hash(), aux_hash);)
+        NOT_DEBUG(fatal("%s", msg);)
       }
     }
     aux = aux_next;
@@ -892,6 +894,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   size_t i = 0;
   uintx hash = lookup_f.get_hash();
   Node* new_node = Node::create_node(_context, value, nullptr);
+  DEBUG_ONLY(new_node->set_saved_hash(hash);)
 
   while (true) {
     {
@@ -1117,6 +1120,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   Bucket* bucket = get_bucket_in(table, hash);
   assert(!bucket->have_redirect() && !bucket->is_locked(), "bad");
   Node* new_node = Node::create_node(_context, value, bucket->first());
+  DEBUG_ONLY(new_node->set_saved_hash(hash);)
   if (!bucket->cas_first(new_node, bucket->first())) {
     assert(false, "bad");
   }

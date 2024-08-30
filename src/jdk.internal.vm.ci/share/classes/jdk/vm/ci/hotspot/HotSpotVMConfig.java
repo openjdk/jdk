@@ -194,6 +194,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constMethodFlagsReservedStackAccess = getConstant("ConstMethodFlags::_misc_reserved_stack_access", Integer.class);
     final int constMethodFlagsCallerSensitive = getConstant("ConstMethodFlags::_misc_caller_sensitive", Integer.class);
     final int constMethodFlagsIntrinsicCandidate = getConstant("ConstMethodFlags::_misc_intrinsic_candidate", Integer.class);
+    final int constMethodFlagsIsScoped = getConstant("ConstMethodFlags::_misc_is_scoped", Integer.class);
     final int constMethodHasLineNumberTable = getConstant("ConstMethodFlags::_misc_has_linenumber_table", Integer.class);
     final int constMethodHasLocalVariableTable = getConstant("ConstMethodFlags::_misc_has_localvariable_table", Integer.class);
     final int constMethodHasMethodAnnotations = getConstant("ConstMethodFlags::_misc_has_method_annotations", Integer.class);

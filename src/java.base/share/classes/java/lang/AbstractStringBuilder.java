@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.math.DoubleToDecimal;
 import jdk.internal.math.FloatToDecimal;
+import jdk.internal.util.DecimalDigits;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
@@ -836,7 +837,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(int i) {
         int count = this.count;
-        int spaceNeeded = count + Integer.stringSize(i);
+        int spaceNeeded = count + DecimalDigits.stringSize(i);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             StringLatin1.getChars(i, spaceNeeded, value);
@@ -861,7 +862,7 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      */
     public AbstractStringBuilder append(long l) {
         int count = this.count;
-        int spaceNeeded = count + Long.stringSize(l);
+        int spaceNeeded = count + DecimalDigits.stringSize(l);
         ensureCapacityInternal(spaceNeeded);
         if (isLatin1()) {
             StringLatin1.getChars(l, spaceNeeded, value);

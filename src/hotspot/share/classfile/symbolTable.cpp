@@ -193,7 +193,7 @@ private:
       // We cannot use arena because arena chunks are allocated by the OS. As a result, for example,
       // the archived symbol of "java/lang/Object" may sometimes be lower than "java/lang/String", and
       // sometimes be higher. This would cause non-deterministic contents in the archive.
-      DEBUG_ONLY(static void* last = 0);
+      DEBUG_ONLY(static void* last = nullptr);
       void* p = (void*)MetaspaceShared::symbol_space_alloc(alloc_size);
       assert(p > last, "must increase monotonically");
       DEBUG_ONLY(last = p);

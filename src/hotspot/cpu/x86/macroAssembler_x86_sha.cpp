@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2021, Intel Corporation. All rights reserved.
+* Copyright (c) 2016, 2024, Intel Corporation. All rights reserved.
 *
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -689,7 +689,7 @@ void MacroAssembler::sha256_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
   address K256_W = StubRoutines::x86::k256_W_addr();
   address pshuffle_byte_flip_mask = StubRoutines::x86::pshuffle_byte_flip_mask_addr();
-  address pshuffle_byte_flip_mask_addr = 0;
+  address pshuffle_byte_flip_mask_addr = nullptr;
 
 const XMMRegister& SHUF_00BA        = xmm10;    // ymm10: shuffle xBxA -> 00BA
 const XMMRegister& SHUF_DC00        = xmm12;    // ymm12: shuffle xDxC -> DC00
@@ -1247,7 +1247,7 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 
     address K512_W = StubRoutines::x86::k512_W_addr();
     address pshuffle_byte_flip_mask_sha512 = StubRoutines::x86::pshuffle_byte_flip_mask_addr_sha512();
-    address pshuffle_byte_flip_mask_addr = 0;
+    address pshuffle_byte_flip_mask_addr = nullptr;
 
     const XMMRegister& XFER = xmm0; // YTMP0
     const XMMRegister& BYTE_FLIP_MASK = xmm9; // ymm9
