@@ -62,7 +62,8 @@ public sealed abstract class AbstractAttributeMapper<T extends Attribute<T>>
     }
 
     @Override
-    public final void writeAttribute(BufWriter buf, T attr) {
+    public final void writeAttribute(BufWriter writer, T attr) {
+        BufWriterImpl buf = (BufWriterImpl) writer;
         buf.writeIndex(buf.constantPool().utf8Entry(name));
         buf.writeInt(0);
         int start = buf.size();
