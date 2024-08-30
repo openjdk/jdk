@@ -311,6 +311,7 @@ public final class KDF {
         Objects.requireNonNull(algorithm, "algorithm must not be null");
         // make sure there is at least one service from a signed provider
         Iterator<Service> t = GetInstance.getServices("KDF", algorithm);
+        NoSuchAlgorithmException lastException = null;
         while (t.hasNext()) {
             Service s = t.next();
             if (!JceSecurity.canUseProvider(s.getProvider())) {
@@ -319,20 +320,34 @@ public final class KDF {
             try {
                 Object obj = s.newInstance(kdfParameters);
                 if (!(obj instanceof KDFSpi spiObj)) {
+                    lastException = new NoSuchAlgorithmException(
+                        new InvalidAlgorithmParameterException(
+                            "newInstance failed to provide a KDFSpi for the "
+                            + "provided kdfParameters"));
                     continue;
                 }
                 if (t.hasNext()) {
-                    return new KDF(new Delegate(spiObj, s.getProvider()), t, algorithm, kdfParameters);
+                    return new KDF(new Delegate(spiObj, s.getProvider()), t,
+                                   algorithm, kdfParameters);
                 } else { // no other choices, lock down provider
-                    return new KDF(new Delegate(spiObj, s.getProvider()), algorithm, kdfParameters);
+                    return new KDF(new Delegate(spiObj, s.getProvider()),
+                                   algorithm, kdfParameters);
                 }
             } catch (NoSuchAlgorithmException e) {
-                // ignore
+                lastException =
+                    new NoSuchAlgorithmException(
+                        new InvalidAlgorithmParameterException(
+                            "newInstance failed for the provided "
+                            + "kdfParameters"));
                 continue;
             }
         }
-        throw new NoSuchAlgorithmException(
-            "Algorithm " + algorithm + " not available");
+        if (lastException != null) {
+            return handleException(lastException);
+        } else {
+            throw new NoSuchAlgorithmException(
+                "Algorithm " + algorithm + " not available");
+        }
     }
 
     /**

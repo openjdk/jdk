@@ -155,12 +155,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * be assembled piece-meal or if part of the IKM is to be supplied by a
          * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
-         * <p>
-         * This supports the use-case where a label can be applied to the IKM
-         * but the actual value of the IKM is not yet available.
-         *
-         * @implNote An HKDF implementation should concatenate the input keying
-         * materials into a single value once all components are available.
          *
          * @param ikm
          *     the input keying material value
@@ -183,12 +177,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * be assembled piece-meal or if part of the IKM is to be supplied by a
          * hardware crypto device. This method appends to the existing list of
          * values or creates a new list if there is none yet.
-         * <p>
-         * This supports the use-case where a label can be applied to the IKM
-         * but the actual value of the IKM is not yet available.
-         *
-         * @implNote An HKDF implementation should concatenate the input keying
-         * materials into a single value once all components are available.
          *
          * @param ikm
          *     the input keying material value
@@ -215,9 +203,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
          *
-         * @implNote An HKDF implementation should concatenate the salt into a
-         * single value once all components are available.
-         *
          * @param salt
          *     the salt value
          *
@@ -239,9 +224,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * piece-meal or if part of the salt is to be supplied by a hardware
          * crypto device. This method appends to the existing list of values or
          * creates a new list if there is none yet.
-         *
-         * @implNote An HKDF implementation should concatenate the salt into a
-         * single value once all components are available.
          *
          * @param salt
          *     the salt value
@@ -321,6 +303,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of input keying material values
          * in the order they were added. Returns an empty list if there are no
          * input keying material values.
+         * <p>
+         * Input keying material values added by {@link Builder#addIKM(byte[])}
+         * are converted to a {@code SecretKeySpec} object.
+         *
+         * @implNote An HKDF implementation should concatenate the input keying
+         * materials into a single value to be used in HKDF-Extract.
          *
          * @return the unmodifiable {@code List} of input keying material values
          */
@@ -331,6 +319,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Returns an unmodifiable {@code List} of salt values in the order they
          * were added. Returns an empty list if there are no salt values.
+         * <p>
+         * Salt values added by {@link Builder#addSalt(byte[])}
+         * are converted to a {@code SecretKeySpec} object.
+         *
+         * @implNote An HKDF implementation should concatenate the salt into a
+         * single value to be used in HKDF-Extract.
          *
          * @return the unmodifiable {@code List} of salt values
          */
@@ -363,11 +357,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be greater than
-         *     0). Note: HKDF implementations will enforce that the length is
-         *     less than 255 * HMAC length. Implementations will also enforce
-         *     that the prk calculated from the {@code Extract} phase, if
-         *     applicable, is at least as many bytes as the HMAC length.
+         *     the length of the output keying material
          *
          * @throws IllegalArgumentException
          *     if {@code length} not > 0
@@ -432,16 +422,7 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be greater than
-         *     0). Note: HKDF implementations will enforce that the length is
-         *     less than 255 * HMAC length. Implementations will also enforce
-         *     that the prk calculated from the {@code Extract} phase, if
-         *     applicable, is at least as many bytes as the HMAC length.
-         *
-         * @implNote HKDF implementations will enforce that the length is less than
-         * 255 * HMAC length. Implementations will also enforce that the prk
-         * calculated from the {@code Extract} phase is at least as many bytes
-         * as the HMAC length.
+         *     the length of the output keying material
          *
          * @throws IllegalArgumentException
          *     if {@code length} is not > 0
@@ -459,6 +440,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          * Returns an unmodifiable {@code List} of input keying material values
          * in the order they were added. Returns an empty list if there are no
          * input keying material values.
+         * <p>
+         * Input keying material values added by {@link Builder#addIKM(byte[])}
+         * are converted to a {@code SecretKeySpec} object.
+         *
+         * @implNote An HKDF implementation should concatenate the input keying
+         * materials into a single value to be used in the HKDF-Extract phase.
          *
          * @return the unmodifiable {@code List} of input keying material values
          */
@@ -469,6 +456,12 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
         /**
          * Returns an unmodifiable {@code List} of salt values in the order they
          * were added. Returns an empty list if there are no salt values.
+         * <p>
+         * Salt values added by {@link Builder#addSalt(byte[])}
+         * are converted to a {@code SecretKeySpec} object.
+         *
+         * @implNote An HKDF implementation should concatenate the salt into a
+         * single value to be used in the HKDF-Extract phase.
          *
          * @return the unmodifiable {@code List} of salt values
          */
