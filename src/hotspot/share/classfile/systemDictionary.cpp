@@ -998,7 +998,8 @@ bool SystemDictionary::is_shared_class_visible_impl(Symbol* class_name,
                                                     Handle class_loader) {
   int scp_index = ik->shared_classpath_index();
   assert(!ik->is_shared_unregistered_class(), "this function should be called for built-in classes only");
-  assert(scp_index >= 0, "must be");
+  ResourceMark rm;
+  assert(scp_index >= 0, "must be %s", ik->name()->as_C_string());
   SharedClassPathEntry* scp_entry = FileMapInfo::shared_path(scp_index);
   if (!Universe::is_module_initialized()) {
     assert(scp_entry != nullptr, "must be");
