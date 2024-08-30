@@ -39,8 +39,8 @@ import java.util.Objects;
  *
  * <p>
  * In the GZIP file format, compressed data payloads are preceded by a
- * header and followed by a trailer. When a new header immediately follows
- * a trailer, this class continues to decode compressed data as a single,
+ * header and followed by a trailer. When a trailer is immediately followed by
+ * a new header, this class continues to decode compressed data as a single,
  * concatenated stream. Otherwise, any additional trailing bytes are discarded
  * as if the end of stream is reached.
  *
