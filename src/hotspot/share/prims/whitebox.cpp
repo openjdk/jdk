@@ -2504,7 +2504,8 @@ WB_ENTRY(jint, WB_ValidateCgroup(JNIEnv* env,
   return ret;
 WB_END
 
-// Physical cpus of the host machine (including containers), Linux only.
+// Available cpus of the host machine, Linux only.
+// Used in container testing.
 WB_ENTRY(jint, WB_HostCPUs(JNIEnv* env, jobject o))
   LINUX_ONLY(return Whitebox_Linux::host_cpus();)
   return -1; // Not used/implemented on other platforms
