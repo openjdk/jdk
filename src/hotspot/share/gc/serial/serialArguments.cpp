@@ -30,7 +30,7 @@
 
 void SerialArguments::initialize_heap_flags_and_sizes() {
   GenArguments::initialize_heap_flags_and_sizes();
-  GCForwarding::initialize_flags(MaxNewSize + MaxOldSize);
+  GCForwarding::initialize_flags(MaxHeapSize);
 }
 
 CollectedHeap* SerialArguments::create_heap() {
