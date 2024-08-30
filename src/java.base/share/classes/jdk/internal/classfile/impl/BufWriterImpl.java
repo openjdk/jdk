@@ -136,6 +136,29 @@ public final class BufWriterImpl implements BufWriter {
         offset += length;
     }
 
+    void writeUTF(String s) {
+        int charLength = s.length();
+        reserveSpace(charLength * 3);
+        int offset = this.offset;
+        byte[] elems = this.elems;
+        for (int i = 0; i < charLength; ++i) {
+            char c = s.charAt(i);
+            if (c >= '\001' && c <= '\177') {
+                elems[offset++] = (byte) c;
+            } else if (c > '\u07FF') {
+                elems[offset    ] = (byte) (0xE0 | c >> 12 & 0xF);
+                elems[offset + 1] = (byte) (0x80 | c >> 6 & 0x3F);
+                elems[offset + 2] = (byte) (0x80 | c & 0x3F);
+                offset += 3;
+            } else {
+                elems[offset    ] = (byte) (0xC0 | c >> 6 & 0x1F);
+                elems[offset + 1] = (byte) (0x80 | c & 0x3F);
+                offset += 2;
+            }
+        }
+        this.offset = offset;
+    }
+
     @Override
     public void writeBytes(byte[] arr, int start, int length) {
         reserveSpace(length);
