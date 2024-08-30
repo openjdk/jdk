@@ -259,6 +259,19 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
   SET_TRIGFUNC(dpow);
 
 #undef SET_TRIGFUNC
+
+#define SET_TRIGFUNC_OR_NULL(name)                              \
+  if (StubRoutines::name() != nullptr) {                        \
+    name = StubRoutines::name();                                \
+  } else {                                                      \
+    name = nullptr;                                             \
+  }
+
+  SET_TRIGFUNC_OR_NULL(dtanh);
+
+#undef SET_TRIGFUNC_OR_NULL
+
+
 }
 
 static jboolean is_c1_supported(vmIntrinsics::ID id){

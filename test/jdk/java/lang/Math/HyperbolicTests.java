@@ -31,6 +31,7 @@
  */
 
 import static java.lang.Double.longBitsToDouble;
+import java.util.Random;
 
 public class HyperbolicTests {
     private HyperbolicTests(){}
@@ -972,6 +973,46 @@ public class HyperbolicTests {
         return failures;
     }
 
+    /**
+     * Test accuracy of Math.tanh intrinsic using StrictMath.tanh as the reference.
+     * The specified accuracy is 2.5 ulps.
+     *
+     */
+    static int testTanhIntrinsicWithReference() {
+        double b1 = 0.02;
+        double b2 = 5.1;
+        double b3 = 55 * Math.log(2)/2; // ~19.062
+
+        int failures = 0;
+
+        failures += testTanhWithReferenceInRange(0.0, b3 + 2.0); // entire range
+        failures += testTanhWithReferenceInRange(b1 - 0.005, 0.01);
+        failures += testTanhWithReferenceInRange(b2 - 0.5, 1.0);
+        failures += testTanhWithReferenceInRange(b3 - 2.5, 5.0);
+
+        return failures;
+
+    }
+
+    static int testTanhWithReferenceInRange(double min, double range) {
+        int failures = 0;
+
+        double [] testCases = new double[500];
+
+        Random rand = new Random(0);
+        for (int i = 0; i < testCases.length; i++) {
+            testCases[i] = min + range * rand.nextDouble();
+        }
+
+        for(int i = 0; i < testCases.length; i++) {
+            double testCase = testCases[i];
+            failures += testTanhWithReferenceUlpDiff(testCase, StrictMath.tanh(testCase), 2.5);
+        }
+
+        return failures;
+    }
+
+
     public static int testTanhCaseWithTolerance(double input,
                                                 double expected,
                                                 double tolerance) {
@@ -994,6 +1035,17 @@ public class HyperbolicTests {
 
         failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh",  input, StrictMath::tanh,  expected, ulps, 1.0);
         failures += Tests.testUlpDiffWithAbsBound("StrictMath.tanh", -input, StrictMath::tanh, -expected, ulps, 1.0);
+        return failures;
+    }
+
+    public static int testTanhWithReferenceUlpDiff(double input,
+                                                   double expected,
+                                                   double ulps) {
+        int failures = 0;
+
+        failures += Tests.testUlpDiffWithAbsBound("Math.tanh",       input,  Math::tanh,       expected, ulps, 1.0);
+        failures += Tests.testUlpDiffWithAbsBound("Math.tanh",      -input,  Math::tanh,      -expected, ulps, 1.0);
+
         return failures;
     }
 }
