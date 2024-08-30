@@ -253,8 +253,7 @@ public class Util {
     }
 
     public static int slotSize(ClassDesc desc) {
-        return desc == CD_void ? 0
-             : desc == CD_double || desc == CD_long ? 2 : 1;
+        return desc == CD_void ? 0 : isDoubleSlot(desc) ? 2 : 1;
     }
 
     public static boolean isDoubleSlot(ClassDesc desc) {
