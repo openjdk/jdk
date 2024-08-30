@@ -45,6 +45,33 @@ final class EntrustTLSPolicy {
 
     // SHA-256 certificate fingerprints of distrusted roots
     private static final Set<String> FINGERPRINTS = Set.of(
+        // cacerts alias: entrustevca
+        // DN: CN=Entrust Root Certification Authority,
+        //     OU=(c) 2006 Entrust, Inc.,
+        //     OU=www.entrust.net/CPS is incorporated by reference,
+        //     O=Entrust, Inc., C=US
+        "73C176434F1BC6D5ADF45B0E76E727287C8DE57616C1E6E6141A2B2CBC7D8E4C",
+        // cacerts alias: entrustrootcaec1
+        // DN: CN=Entrust Root Certification Authority - EC1,
+        //     OU=(c) 2012 Entrust, Inc. - for authorized use only,
+        //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US
+        "02ED0EB28C14DA45165C566791700D6451D7FB56F0B2AB1D3B8EB070E56EDFF5",
+        // cacerts alias: entrustrootcag2
+        // DN: CN=Entrust Root Certification Authority - G2,
+        //     OU=(c) 2009 Entrust, Inc. - for authorized use only,
+        //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US
+        "43DF5774B03E7FEF5FE40D931A7BEDF1BB2E6B42738C4E6D3841103D3AA7F339",
+        // cacerts alias: entrustrootcag4
+        // DN: CN=Entrust Root Certification Authority - G4
+        //     OU=(c) 2015 Entrust, Inc. - for authorized use only,
+        //     OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US,
+        "DB3517D1F6732A2D5AB97C533EC70779EE3270A62FB4AC4238372460E6F01E88"
+        // cacerts alias: entrust2048ca
+        // DN: CN=Entrust.net Certification Authority (2048),
+        //     OU=(c) 1999 Entrust.net Limited,
+        //     OU=www.entrust.net/CPS_2048 incorp. by ref. (limits liab.),
+        //     O=Entrust.net
+        "6DC47172E01CBCB0BF62580D895FE2B8AC9AD4F873801E0C10B9C837D21EB177",
         // cacerts alias: affirmtrustcommercialca
         // DN: CN=AffirmTrust Commercial, O=AffirmTrust, C=US
         "0376AB1D54C5F9803CE4B2E201A0EE7EEF7B57B636E8A93C9B8D4860C96F5FA7",
@@ -57,33 +84,6 @@ final class EntrustTLSPolicy {
         // cacerts alias: affirmtrustpremiumeccca
         // DN: CN=AffirmTrust Premium ECC, O=AffirmTrust, C=US
         "BD71FDF6DA97E4CF62D1647ADD2581B07D79ADF8397EB4ECBA9C5E8488821423",
-        // cacerts alias: entrust2048ca
-        // DN: CN=Entrust.net Certification Authority (2048),
-        //    OU=(c) 1999 Entrust.net Limited,
-        //    OU=www.entrust.net/CPS_2048 incorp. by ref. (limits liab.),
-        //    O=Entrust.net
-        "6DC47172E01CBCB0BF62580D895FE2B8AC9AD4F873801E0C10B9C837D21EB177",
-        // cacerts alias: entrustevca
-        // CN=Entrust Root Certification Authority,
-        //    OU=(c) 2006 Entrust, Inc.,
-        //    OU=www.entrust.net/CPS is incorporated by reference,
-        //    O=Entrust, Inc., C=US
-        "73C176434F1BC6D5ADF45B0E76E727287C8DE57616C1E6E6141A2B2CBC7D8E4C",
-        // cacerts alias: entrustrootcaec1
-        // CN=Entrust Root Certification Authority - EC1,
-        //    OU=(c) 2012 Entrust, Inc. - for authorized use only,
-        //    OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US
-        "02ED0EB28C14DA45165C566791700D6451D7FB56F0B2AB1D3B8EB070E56EDFF5",
-        // cacerts alias: entrustrootcag2
-        // CN=Entrust Root Certification Authority - G2,
-        //    OU=(c) 2009 Entrust, Inc. - for authorized use only,
-        //    OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US
-        "43DF5774B03E7FEF5FE40D931A7BEDF1BB2E6B42738C4E6D3841103D3AA7F339",
-        // cacerts alias: entrustrootcag4
-        //    CN=Entrust Root Certification Authority - G4
-        //    OU=(c) 2015 Entrust, Inc. - for authorized use only,
-        //    OU=See www.entrust.net/legal-terms, O=Entrust, Inc., C=US,
-        "DB3517D1F6732A2D5AB97C533EC70779EE3270A62FB4AC4238372460E6F01E88"
     );
 
     // Any TLS Server certificate that is anchored by one of the Entrust

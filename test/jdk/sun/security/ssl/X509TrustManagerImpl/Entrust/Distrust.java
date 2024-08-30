@@ -54,7 +54,7 @@ public class Distrust {
     // Each of the roots have a test certificate chain stored in a file
     // named "<root>-chain.pem".
     private static String[] rootsToTest = new String[] {
-        "entrustevca", "entrustcaec1", "entrustcag2", "entrustcag4",
+        "entrustevca", "entrustrootcaec1", "entrustrootcag2", "entrustrootcag4",
         "entrust2048ca", "affirmtrustcommercialca", "affirmtrustnetworkingca",
         "affirmtrustpremiumca", "affirmtrustpremiumeccca" };
 
