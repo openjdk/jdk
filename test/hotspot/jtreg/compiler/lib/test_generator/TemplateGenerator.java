@@ -41,6 +41,23 @@ public class TemplateGenerator {
     static final int MAX_TASKS_IN_QUEUE = NUM_THREADS * 330;
     static String[] TEMPLATE_FILES = {
             "InputTemplate1.java",
+            "InputTemplate2.java",
+            "InputTemplate3.java",
+            "InputTemplate4.java",
+            "InputTemplate5.java",
+            "InputTemplate6.java",
+            "InputTemplate7.java",
+            "InputTemplate8.java",
+            "InputTemplate9.java",
+            "InputTemplate10.java",
+            "InputTemplate11.java",
+            "InputTemplate12.java",
+            "InputTemplate13.java",
+            "InputTemplate14.java",
+            "InputTemplate15.java",
+            "InputTemplate16.java",
+            "InputTemplate17.java",
+
     };
     private static long testId = 0L;
     public static long getID() {

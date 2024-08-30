@@ -86,7 +86,6 @@ public abstract class InputTemplate {
         return String.valueOf(System.nanoTime());
     }
     public static Integer[] getIntegerValues(int size) {
-
         HashSet<Integer> integers = new HashSet<>(size);
         while (integers.size() < size) {
             int number = RAND.nextInt(Integer.MAX_VALUE - 1) + 1;

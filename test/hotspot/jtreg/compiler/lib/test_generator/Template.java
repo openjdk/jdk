@@ -27,6 +27,11 @@ import java.util.regex.Pattern;
 public abstract class Template {
     public Template() {}
     static int variableNumber = 1;
+    /*
+     * This method processes a given template string to avoid variable name conflicts by appending a unique identifier.
+     * It searches for placeholders within the string, identified by a '$' followed by a word (variable name),
+     * and replaces each placeholder with the variable name concatenated with a unique number.
+     */
     public static String avoidConflict(String temp){
         StringBuilder result = new StringBuilder();
         String regex="\\$(\\w+)";

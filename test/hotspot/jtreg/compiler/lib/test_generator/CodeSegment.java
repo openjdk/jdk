@@ -22,66 +22,33 @@
  */
 
 package compiler.lib.test_generator;
-
 public class CodeSegment {
     private final String statics;
-    //private  String calls;
     private StringBuilder calls = new StringBuilder();
     private StringBuilder methods = new StringBuilder();
-    //private  String methods;
     private final String imports;
-
     public CodeSegment(String statics, String calls, String methods, String imports) {
         this.statics = statics;
-        //this.calls = calls;
         this.calls = new StringBuilder(calls);
-        //this.methods = methods;
         this.methods = new StringBuilder(methods);
         this.imports = imports;
     }
-
     public String getStatics() {
         return statics;
     }
-/*
-    public String getCalls() {
-        return calls;
-    }
-    public void appendCall(String call) {
-        this.calls += call;
-    }
-
- */
     public void appendCall(String calls) {
         this.calls.append(calls);
     }
-
     public String getCalls() {
         return calls.toString();
     }
-/*
-    public String getMethods() {
-        return methods;
-    }
-    public void appendMethods(String method) {
-        this.methods += method;
-    }
-
-
-
- */
-
-
     public void appendMethods(String method) {
         this.methods.append(method);
     }
-
     public String getMethods() {
         return methods.toString();
     }
-
-
-
-
-    public String getImports() {return imports;}
+    public String getImports() {
+        return imports;
+    }
 }

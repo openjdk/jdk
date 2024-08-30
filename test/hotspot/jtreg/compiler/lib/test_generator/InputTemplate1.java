@@ -66,8 +66,6 @@ public class InputTemplate1 extends InputTemplate {
                 }
             }
             """;
-
-
         return new CodeSegment(statics, call, method,imports);
     }
     @Override
@@ -114,6 +112,6 @@ public class InputTemplate1 extends InputTemplate {
     }
     @Override
     public int getNumberOfTestMethods() {
-        return 1000;
+        return 1;
     }
 }
