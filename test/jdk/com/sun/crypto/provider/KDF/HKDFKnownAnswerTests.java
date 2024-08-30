@@ -76,7 +76,7 @@ public class HKDFKnownAnswerTests {
     }
 
     public static final List<TestData> testList = new LinkedList<TestData>() {{
-        add(new TestData("RFC 5869 Test Case 1", "HKDFWithHmacSHA256",
+        add(new TestData("RFC 5869 Test Case 1", "HKDF-SHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          "000102030405060708090a0b0c",
                          "f0f1f2f3f4f5f6f7f8f9",
@@ -85,7 +85,7 @@ public class HKDFKnownAnswerTests {
                          "3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf"
                          +
                          "34007208d5b887185865"));
-        add(new TestData("RFC 5869 Test Case 2", "HKDFWithHmacSHA256",
+        add(new TestData("RFC 5869 Test Case 2", "HKDF-SHA256",
                          "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
                          +
                          "202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f"
@@ -108,7 +108,7 @@ public class HKDFKnownAnswerTests {
                          "59045a99cac7827271cb41c65e590e09da3275600c2f09b8367793a9aca3db71"
                          +
                          "cc30c58179ec3e87c14c01d5c1f3434f1d87"));
-        add(new TestData("RFC 5869 Test Case 3", "HKDFWithHmacSHA256",
+        add(new TestData("RFC 5869 Test Case 3", "HKDF-SHA256",
                          "0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b",
                          new String(new byte[0]), new String(new byte[0]), 42,
                          "19ef24a32c717b167f33a91d6f648bdf96596776afdb6377ac434c1c293ccb04",
@@ -165,14 +165,14 @@ public class HKDFKnownAnswerTests {
 
         // *** HKDF-Extract-only testing
         // Create KDFParameterSpec for the Extract-only operation
-        AlgorithmParameterSpec kdfParameterSpecExtract =
+        AlgorithmParameterSpec derivationSpecExtract =
             HKDFParameterSpec.ofExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .extractOnly();
-        actualPRK = kdfExtract.deriveKey("Generic", kdfParameterSpecExtract);
+        actualPRK = kdfExtract.deriveKey("Generic", derivationSpecExtract);
 
         // Re-run the KDF to give us raw output data
-        deriveData = kdfExtract.deriveData(kdfParameterSpecExtract);
+        deriveData = kdfExtract.deriveData(derivationSpecExtract);
 
         System.out.println("* HKDF-Extract-Only:");
         result &= compareKeyAndData(actualPRK, deriveData,
@@ -181,13 +181,13 @@ public class HKDFKnownAnswerTests {
         // *** HKDF Expand-Only testing
         // For these tests, we'll use the actualPRK as the input key
         // Create KDFParameterSpec for key output and raw byte output
-        AlgorithmParameterSpec kdfParameterSpecExpand = HKDFParameterSpec.expandOnly(
+        AlgorithmParameterSpec derivationSpecExpand = HKDFParameterSpec.expandOnly(
             actualPRK, testData.info,
             testData.outLen);
-        actualOKM = kdfExpand.deriveKey("Generic", kdfParameterSpecExpand);
+        actualOKM = kdfExpand.deriveKey("Generic", derivationSpecExpand);
 
         // Re-run the KDF to give us raw output data
-        deriveData = kdfExpand.deriveData(kdfParameterSpecExpand);
+        deriveData = kdfExpand.deriveData(derivationSpecExpand);
 
         System.out.println("* HKDF-Expand-Only:");
         result &= compareKeyAndData(actualOKM, deriveData,
@@ -197,15 +197,15 @@ public class HKDFKnownAnswerTests {
         // We can reuse the KDFParameterSpec from the Expand-only test
 
         // Use the KDF to make us a key
-        AlgorithmParameterSpec kdfParameterSpecExtractExpand =
+        AlgorithmParameterSpec derivationSpecExtractExpand =
             HKDFParameterSpec.ofExtract().addIKM(ikmKey)
                              .addSalt(testData.salt)
                              .thenExpand(testData.info,
                                          testData.outLen);
-        actualOKM = kdfHkdf.deriveKey("Generic", kdfParameterSpecExtractExpand);
+        actualOKM = kdfHkdf.deriveKey("Generic", derivationSpecExtractExpand);
 
         // Re-run the KDF to give us raw output data
-        deriveData = kdfHkdf.deriveData(kdfParameterSpecExtractExpand);
+        deriveData = kdfHkdf.deriveData(derivationSpecExtractExpand);
 
         System.out.println("* HKDF-Extract-then-Expand:");
         result &= compareKeyAndData(actualOKM, deriveData,

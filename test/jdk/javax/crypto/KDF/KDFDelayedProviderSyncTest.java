@@ -49,7 +49,7 @@ public class KDFDelayedProviderSyncTest {
     byte[] salt = new BigInteger("000102030405060708090a0b0c",
                                  16).toByteArray();
     byte[] info = new BigInteger("f0f1f2f3f4f5f6f7f8f9", 16).toByteArray();
-    AlgorithmParameterSpec kdfParameterSpec =
+    AlgorithmParameterSpec derivationSpec =
         HKDFParameterSpec.ofExtract().addIKM(ikm).addSalt(salt).thenExpand(
             info, 42);
     String expectedResult =
@@ -57,17 +57,17 @@ public class KDFDelayedProviderSyncTest {
 
     @BeforeClass
     public void setUp() throws NoSuchAlgorithmException {
-        kdfUnderTest = KDF.getInstance("HKDFWithHmacSHA256");
+        kdfUnderTest = KDF.getInstance("HKDF-SHA256");
     }
 
     @Test(threadPoolSize = 50, invocationCount = 100, timeOut = 100)
     public void testDerive()
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
-        SecretKey result = kdfUnderTest.deriveKey("Generic", kdfParameterSpec);
+        SecretKey result = kdfUnderTest.deriveKey("Generic", derivationSpec);
         assert (HexFormat.of().formatHex(result.getEncoded()).equals(
             expectedResult));
 
-        byte[] resultData = kdfUnderTest.deriveData(kdfParameterSpec);
+        byte[] resultData = kdfUnderTest.deriveData(derivationSpec);
         assert (HexFormat.of().formatHex(resultData).equals(expectedResult));
     }
 }

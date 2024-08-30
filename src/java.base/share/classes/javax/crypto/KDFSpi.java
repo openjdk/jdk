@@ -50,11 +50,10 @@ import java.security.spec.AlgorithmParameterSpec;
  * {@code null} to be passed, otherwise an {@code InvalidAlgorithmParameterException}
  * may be thrown. On the other hand, implementations which require
  * {@code KDFParameters} should throw an {@code InvalidAlgorithmParameterException}
- * upon receiving a {@code null} value. Furthermore, implementations
- * may supply default values for {@code KDFParameters}, mutating the
- * object or returning a new object. In that case,
- * {@link KDFSpi#engineGetParameters()} should supply callers with the actual
- * {@code KDFParameters} object used.
+ * upon receiving a {@code null} value. Furthermore, implementations may
+ * return parameters with additional default values or random parameter
+ * values used by the underlying {@code KDF} algorithm. See
+ * {@link KDFSpi#engineGetParameters()} for more details.
  *
  * @see KDF
  * @see KDFParameters
@@ -107,26 +106,27 @@ public abstract class KDFSpi {
      *
      * @param alg
      *     the algorithm of the resultant {@code SecretKey} object
-     * @param derivationParameterSpec
+     * @param derivationSpec
      *     derivation parameters
      *
-     * @return a {@code SecretKey} object corresponding to a key built from the
-     *     KDF output and according to the derivation parameters. If the resultant
-     *     key is extractable, then its {@code getEncoded} value should have the
-     *     same content as the result of {@code deriveData}.
+     * @return the derived key.
+     *
+     * @implNote If the resultant key is extractable, then its {@code
+     * getEncoded} value should have the same content as the result of {@code
+     * deriveData}.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code derivationParameterSpec} is
-     *     invalid or if the combination of {@code alg} and the {@code derivationParameterSpec}
+     *     if the information contained within the {@code derivationSpec} is
+     *     invalid or if the combination of {@code alg} and the {@code derivationSpec}
      *     results in something invalid, ie - a key of inappropriate length
      *     for the specified algorithm
      * @throws NoSuchAlgorithmException
      *     if {@code alg} is empty or invalid
      * @throws NullPointerException
-     *     if {@code alg} or {@code derivationParameterSpec} is null
+     *     if {@code alg} or {@code derivationSpec} is null
      */
     protected abstract SecretKey engineDeriveKey(String alg,
-                                                 AlgorithmParameterSpec derivationParameterSpec)
+                                                 AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException;
 
     /**
@@ -135,22 +135,21 @@ public abstract class KDFSpi {
      * The {@code engineDeriveData} method may be called multiple times on a
      * particular {@code KDFSpi} instance, but it is not considered thread-safe.
      *
-     * @param derivationParameterSpec
+     * @param derivationSpec
      *     derivation parameters
      *
-     * @return a byte array corresponding to the KDF output and according to
-     * the derivation parameters.
+     * @return the derived key in its raw bytes.
      *
      * @throws InvalidAlgorithmParameterException
-     *     if the information contained within the {@code derivationParameterSpec} is
+     *     if the information contained within the {@code derivationSpec} is
      *     invalid
      * @throws UnsupportedOperationException
      *     if the derived keying material is not extractable
      * @throws NullPointerException
-     *     if {@code derivationParameterSpec} is null
+     *     if {@code derivationSpec} is null
      */
     protected abstract byte[] engineDeriveData(
-        AlgorithmParameterSpec derivationParameterSpec)
+        AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException;
 
 }

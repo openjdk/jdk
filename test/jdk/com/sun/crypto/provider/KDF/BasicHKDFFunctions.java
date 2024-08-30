@@ -40,7 +40,7 @@ public class BasicHKDFFunctions {
         var info = HexFormat.of().parseHex("f0f1f2f3f4f5f6f7f8f9");
         var len = 42;
 
-        var kdf = KDF.getInstance("HKDFWithHmacSHA256");
+        var kdf = KDF.getInstance("HKDF-SHA256");
         var expectedPrk = HexFormat.of().parseHex("077709362c2e32df0ddc3f0dc47bba6390b6c73bb50f9c3122ec844ad7c2b3e5");
         var expectedOkm = HexFormat.of().parseHex("3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865");
 
@@ -70,7 +70,7 @@ public class BasicHKDFFunctions {
     }
 
     static void test(HKDFParameterSpec p) throws Exception {
-        var kdf = KDF.getInstance("HKDFWithHmacSHA256");
+        var kdf = KDF.getInstance("HKDF-SHA256");
         System.out.println(HexFormat.of().formatHex(kdf.deriveData(p)));
     }
 }

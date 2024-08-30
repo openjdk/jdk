@@ -55,7 +55,7 @@ public class KDFDelayedProviderTest {
         Asserts.assertEquals(kdf.getProviderName(), "P1");
 
         kdf = KDF.getInstance("X");
-        kdf.deriveData(new MyKDFParameterSpec() {});
+        kdf.deriveData(new MyDerivationSpec() {});
         Asserts.assertEquals(kdf.getProviderName(), "P2");
 
         kdf = KDF.getInstance("X");
@@ -93,9 +93,9 @@ public class KDFDelayedProviderTest {
 
         @Override
         protected byte[] engineDeriveData(
-            AlgorithmParameterSpec derivationParameterSpec)
+            AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException {
-            if (derivationParameterSpec instanceof MyKDFParameterSpec) {
+            if (derivationSpec instanceof MyDerivationSpec) {
                 return null;
             } else {
                 throw new InvalidAlgorithmParameterException();
@@ -123,13 +123,13 @@ public class KDFDelayedProviderTest {
         }
 
         protected SecretKey engineDeriveKey(String alg,
-                                            AlgorithmParameterSpec derivationParameterSpec)
+                                            AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException {
             return null;
         }
 
         protected byte[] engineDeriveData(
-            AlgorithmParameterSpec derivationParameterSpec)
+            AlgorithmParameterSpec derivationSpec)
             throws InvalidAlgorithmParameterException {
             return new byte[0];
         }
@@ -139,5 +139,5 @@ public class KDFDelayedProviderTest {
         }
     }
 
-    static class MyKDFParameterSpec implements AlgorithmParameterSpec {}
+    static class MyDerivationSpec implements AlgorithmParameterSpec {}
 }

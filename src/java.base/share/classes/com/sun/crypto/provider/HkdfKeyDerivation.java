@@ -95,7 +95,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      */
     @Override
     protected SecretKey engineDeriveKey(String alg,
-                                        AlgorithmParameterSpec derivationParameterSpec)
+                                        AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
 
         if (alg == null) {
@@ -108,7 +108,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                 + "empty");
         }
 
-        return new SecretKeySpec(engineDeriveData(derivationParameterSpec), alg);
+        return new SecretKeySpec(engineDeriveData(derivationSpec), alg);
 
     }
 
@@ -124,7 +124,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if the derived keying material is not extractable
      */
     @Override
-    protected byte[] engineDeriveData(AlgorithmParameterSpec derivationParameterSpec)
+    protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
@@ -137,14 +137,14 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         // JDK 17
         // Also, JEP 305 came out in JDK 14, so we can't declare a variable
         // in instanceof either
-        if (derivationParameterSpec instanceof HKDFParameterSpec.Extract) {
+        if (derivationSpec instanceof HKDFParameterSpec.Extract) {
             HKDFParameterSpec.Extract anExtract =
-                (HKDFParameterSpec.Extract) derivationParameterSpec;
+                (HKDFParameterSpec.Extract) derivationSpec;
             ikms = anExtract.ikms();
             salts = anExtract.salts();
-            // we should be able to combine these Lists of key segments into
-            // single SecretKey Objects, unless we were passed something bogus
-            // or an unexportable P11 key
+            // we should be able to combine both of the above Lists of key
+            // segments into one SecretKey object each, unless we were passed
+            // something bogus or an unexportable P11 key
             try {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
@@ -168,9 +168,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
             }
-        } else if (derivationParameterSpec instanceof HKDFParameterSpec.Expand) {
+        } else if (derivationSpec instanceof HKDFParameterSpec.Expand) {
             HKDFParameterSpec.Expand anExpand =
-                (HKDFParameterSpec.Expand) derivationParameterSpec;
+                (HKDFParameterSpec.Expand) derivationSpec;
             // set this value in the "if"
             if ((pseudoRandomKey = anExpand.prk()) == null) {
                 throw new AssertionError(
@@ -200,14 +200,14 @@ abstract class HkdfKeyDerivation extends KDFSpi {
                     "could not instantiate a Mac with the provided algorithm",
                     nsae);
             }
-        } else if (derivationParameterSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
+        } else if (derivationSpec instanceof HKDFParameterSpec.ExtractThenExpand) {
             HKDFParameterSpec.ExtractThenExpand anExtractThenExpand =
-                (HKDFParameterSpec.ExtractThenExpand) derivationParameterSpec;
+                (HKDFParameterSpec.ExtractThenExpand) derivationSpec;
             ikms = anExtractThenExpand.ikms();
             salts = anExtractThenExpand.salts();
-            // we should be able to combine these Lists of key segments into
-            // single SecretKey Objects, unless we were passed something bogus
-            // or an unexportable P11 key
+            // we should be able to combine both of the above Lists of key
+            // segments into one SecretKey object each, unless we were passed
+            // something bogus or an unexportable P11 key
             try {
                 inputKeyMaterial = consolidateKeyMaterial(ikms);
                 salt = consolidateKeyMaterial(salts);
@@ -340,25 +340,17 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         }
         int rounds = (outLen + hmacLen - 1) / hmacLen;
         kdfOutput = new byte[rounds * hmacLen];
-        int offset = 0;
-        int tLength = 0;
 
-        for (int i = 0; i < rounds; i++) {
-
+        for (int i = 0, offset = 0; i < rounds; i++, offset += hmacLen) {
             // Calculate this round
             try {
-                // Add T(i).  This will be an empty string on the first
-                // iteration since tLength starts at zero.  After the first
-                // iteration, tLength is changed to the HMAC length for the
-                // rest of the loop.
-                hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen),
-                               tLength);
-                hmacObj.update(info);                       // Add info
-                hmacObj.update((byte) (i + 1));              // Add round number
+                if (i > 0) {
+                    hmacObj.update(kdfOutput, Math.max(0, offset - hmacLen),
+                                   hmacLen); // add T(i-1)
+                }
+                hmacObj.update(info); // Add info
+                hmacObj.update((byte) (i + 1)); // Add round number
                 hmacObj.doFinal(kdfOutput, offset);
-
-                tLength = hmacLen;
-                offset += hmacLen;                       // For next iteration
             } catch (ShortBufferException sbe) {
                 // This really shouldn't happen given that we've
                 // sized the buffers to their largest possible size up-front,

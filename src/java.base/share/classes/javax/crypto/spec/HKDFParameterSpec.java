@@ -363,12 +363,11 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be greater than 0)
-         *
-         * @implNote HKDF implementations will enforce that the length is less than
-         * 255 * HMAC length. Implementations will also enforce that the prk
-         * calculated from the {@code Extract} phase, if applicable, is at least
-         * as many bytes as the HMAC length.
+         *     the length of the output keying material (must be greater than
+         *     0). Note: HKDF implementations will enforce that the length is
+         *     less than 255 * HMAC length. Implementations will also enforce
+         *     that the prk calculated from the {@code Extract} phase, if
+         *     applicable, is at least as many bytes as the HMAC length.
          *
          * @throws IllegalArgumentException
          *     if {@code length} not > 0
@@ -433,7 +432,11 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
          *     {@code null}); the byte[] is copied to prevent subsequent
          *     modification
          * @param length
-         *     the length of the output keying material (must be greater than 0)
+         *     the length of the output keying material (must be greater than
+         *     0). Note: HKDF implementations will enforce that the length is
+         *     less than 255 * HMAC length. Implementations will also enforce
+         *     that the prk calculated from the {@code Extract} phase, if
+         *     applicable, is at least as many bytes as the HMAC length.
          *
          * @implNote HKDF implementations will enforce that the length is less than
          * 255 * HMAC length. Implementations will also enforce that the prk
