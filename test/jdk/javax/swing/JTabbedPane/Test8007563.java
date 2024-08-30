@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,29 @@
  * questions.
  */
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.SecondaryLoop;
+import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTabbedPane;
 
-import static javax.swing.UIManager.*;
-import static javax.swing.SwingUtilities.*;
+import static javax.swing.SwingUtilities.convertPointToScreen;
+import static javax.swing.SwingUtilities.invokeLater;
+import static javax.swing.UIManager.getLookAndFeel;
+import static javax.swing.UIManager.getInstalledLookAndFeels;
+import static javax.swing.UIManager.LookAndFeelInfo;
+import static javax.swing.UIManager.setLookAndFeel;
 
 /*
  * @test
  * @key headful
  * @bug 8007563
  * @summary Tests JTabbedPane background
- * @author Sergey Malenkov
  */
 
 public class Test8007563 implements Runnable {
@@ -63,7 +70,7 @@ public class Test8007563 implements Runnable {
         if (index >= 0) {
             try {
                 LookAndFeelInfo info = INFO[index];
-                System.err.println("L&F: " + info.getName());
+                System.out.println("L&F: " + info.getName());
                 setLookAndFeel(info.getClassName());
                 return true;
             } catch (Exception exception) {
@@ -125,7 +132,7 @@ public class Test8007563 implements Runnable {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(200);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                 }
                 secondaryLoop.exit();
