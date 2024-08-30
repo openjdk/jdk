@@ -436,236 +436,232 @@ public final class StackMapGenerator {
             } else if (ncf) {
                 throw generatorError("Expecting a stack map frame");
             }
-            ncf = processBlock(bcs);
-        }
-    }
 
-    private boolean processBlock(RawBytecodeHelper bcs) {
-        int opcode = bcs.rawCode;
-        boolean ncf = false;
-        boolean this_uninit = false;
-        boolean verified_exc_handlers = false;
-        int bci = bcs.bci;
-        Type type1, type2, type3, type4;
-        if (RawBytecodeHelper.isStoreIntoLocal(opcode) && bci >= exMin && bci < exMax) {
-            processExceptionHandlerTargets(bci, this_uninit);
-            verified_exc_handlers = true;
-        }
-        switch (opcode) {
-            case NOP -> {}
-            case RETURN -> {
-                ncf = true;
+            int opcode = bcs.rawCode;
+            ncf = false;
+            boolean this_uninit = false;
+            boolean verified_exc_handlers = false;
+            int bci = bcs.bci;
+            Type type1, type2, type3, type4;
+            if (RawBytecodeHelper.isStoreIntoLocal(opcode) && bci >= exMin && bci < exMax) {
+                processExceptionHandlerTargets(bci, this_uninit);
+                verified_exc_handlers = true;
             }
-            case ACONST_NULL ->
-                currentFrame.pushStack(Type.NULL_TYPE);
-            case ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, SIPUSH, BIPUSH ->
-                currentFrame.pushStack(Type.INTEGER_TYPE);
-            case LCONST_0, LCONST_1 ->
-                currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case FCONST_0, FCONST_1, FCONST_2 ->
-                currentFrame.pushStack(Type.FLOAT_TYPE);
-            case DCONST_0, DCONST_1 ->
-                currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case LDC ->
-                processLdc(bcs.getIndexU1());
-            case LDC_W, LDC2_W ->
-                processLdc(bcs.getIndexU2());
-            case ILOAD ->
-                currentFrame.checkLocal(bcs.getIndex()).pushStack(Type.INTEGER_TYPE);
-            case ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3 ->
-                currentFrame.checkLocal(opcode - ILOAD_0).pushStack(Type.INTEGER_TYPE);
-            case LLOAD ->
-                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3 ->
-                currentFrame.checkLocal(opcode - LLOAD_0 + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case FLOAD ->
-                currentFrame.checkLocal(bcs.getIndex()).pushStack(Type.FLOAT_TYPE);
-            case FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3 ->
-                currentFrame.checkLocal(opcode - FLOAD_0).pushStack(Type.FLOAT_TYPE);
-            case DLOAD ->
-                currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3 ->
-                currentFrame.checkLocal(opcode - DLOAD_0 + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case ALOAD ->
-                currentFrame.pushStack(currentFrame.getLocal(bcs.getIndex()));
-            case ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3 ->
-                currentFrame.pushStack(currentFrame.getLocal(opcode - ALOAD_0));
-            case IALOAD, BALOAD, CALOAD, SALOAD ->
-                currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
-            case LALOAD ->
-                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case FALOAD ->
-                currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
-            case DALOAD ->
-                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case AALOAD ->
-                currentFrame.pushStack((type1 = currentFrame.decStack(1).popStack()) == Type.NULL_TYPE ? Type.NULL_TYPE : type1.getComponent());
-            case ISTORE ->
-                currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.INTEGER_TYPE);
-            case ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3 ->
-                currentFrame.decStack(1).setLocal(opcode - ISTORE_0, Type.INTEGER_TYPE);
-            case LSTORE ->
-                currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.LONG_TYPE, Type.LONG2_TYPE);
-            case LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3 ->
-                currentFrame.decStack(2).setLocal2(opcode - LSTORE_0, Type.LONG_TYPE, Type.LONG2_TYPE);
-            case FSTORE ->
-                currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.FLOAT_TYPE);
-            case FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3 ->
-                currentFrame.decStack(1).setLocal(opcode - FSTORE_0, Type.FLOAT_TYPE);
-            case DSTORE ->
-                currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3 ->
-                currentFrame.decStack(2).setLocal2(opcode - DSTORE_0, Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case ASTORE ->
-                currentFrame.setLocal(bcs.getIndex(), currentFrame.popStack());
-            case ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3 ->
-                currentFrame.setLocal(opcode - ASTORE_0, currentFrame.popStack());
-            case LASTORE, DASTORE ->
-                currentFrame.decStack(4);
-            case IASTORE, BASTORE, CASTORE, SASTORE, FASTORE, AASTORE ->
-                currentFrame.decStack(3);
-            case POP, MONITORENTER, MONITOREXIT ->
-                currentFrame.decStack(1);
-            case POP2 ->
-                currentFrame.decStack(2);
-            case DUP ->
-                currentFrame.pushStack(type1 = currentFrame.popStack()).pushStack(type1);
-            case DUP_X1 -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                currentFrame.pushStack(type1).pushStack(type2).pushStack(type1);
-            }
-            case DUP_X2 -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                type3 = currentFrame.popStack();
-                currentFrame.pushStack(type1).pushStack(type3).pushStack(type2).pushStack(type1);
-            }
-            case DUP2 -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                currentFrame.pushStack(type2).pushStack(type1).pushStack(type2).pushStack(type1);
-            }
-            case DUP2_X1 -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                type3 = currentFrame.popStack();
-                currentFrame.pushStack(type2).pushStack(type1).pushStack(type3).pushStack(type2).pushStack(type1);
-            }
-            case DUP2_X2 -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                type3 = currentFrame.popStack();
-                type4 = currentFrame.popStack();
-                currentFrame.pushStack(type2).pushStack(type1).pushStack(type4).pushStack(type3).pushStack(type2).pushStack(type1);
-            }
-            case SWAP -> {
-                type1 = currentFrame.popStack();
-                type2 = currentFrame.popStack();
-                currentFrame.pushStack(type1);
-                currentFrame.pushStack(type2);
-            }
-            case IADD, ISUB, IMUL, IDIV, IREM, ISHL, ISHR, IUSHR, IOR, IXOR, IAND ->
-                currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
-            case INEG, ARRAYLENGTH, INSTANCEOF ->
-                currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
-            case LADD, LSUB, LMUL, LDIV, LREM, LAND, LOR, LXOR ->
-                currentFrame.decStack(4).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case LNEG ->
-                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case LSHL, LSHR, LUSHR ->
-                currentFrame.decStack(3).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case FADD, FSUB, FMUL, FDIV, FREM ->
-                currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
-            case FNEG ->
-                currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
-            case DADD, DSUB, DMUL, DDIV, DREM ->
-                currentFrame.decStack(4).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case DNEG ->
-                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case IINC ->
-                currentFrame.checkLocal(bcs.getIndex());
-            case I2L ->
-                currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case L2I ->
-                currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
-            case I2F ->
-                currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
-            case I2D ->
-                currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case L2F ->
-                currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
-            case L2D ->
-                currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case F2I ->
-                currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
-            case F2L ->
-                currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case F2D ->
-                currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
-            case D2L ->
-                currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
-            case D2F ->
-                currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
-            case I2B, I2C, I2S ->
-                currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
-            case LCMP, DCMPL, DCMPG ->
-                currentFrame.decStack(4).pushStack(Type.INTEGER_TYPE);
-            case FCMPL, FCMPG, D2I ->
-                currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
-            case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE ->
-                checkJumpTarget(currentFrame.decStack(2), bcs.dest());
-            case IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IFNULL, IFNONNULL ->
-                checkJumpTarget(currentFrame.decStack(1), bcs.dest());
-            case GOTO -> {
-                checkJumpTarget(currentFrame, bcs.dest());
-                ncf = true;
-            }
-            case GOTO_W -> {
-                checkJumpTarget(currentFrame, bcs.destW());
-                ncf = true;
-            }
-            case TABLESWITCH, LOOKUPSWITCH -> {
-                processSwitch(bcs);
-                ncf = true;
-            }
-            case LRETURN, DRETURN -> {
-                currentFrame.decStack(2);
-                ncf = true;
-            }
-            case IRETURN, FRETURN, ARETURN, ATHROW -> {
-                currentFrame.decStack(1);
-                ncf = true;
-            }
-            case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD ->
-                processFieldInstructions(bcs);
-            case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC ->
-                this_uninit = processInvokeInstructions(bcs, (bci >= exMin && bci < exMax), this_uninit);
-            case NEW ->
-                currentFrame.pushStack(Type.uninitializedType(bci));
-            case NEWARRAY ->
-                currentFrame.decStack(1).pushStack(getNewarrayType(bcs.getIndex()));
-            case ANEWARRAY ->
-                processAnewarray(bcs.getIndexU2());
-            case CHECKCAST ->
-                currentFrame.decStack(1).pushStack(cpIndexToType(bcs.getIndexU2(), cp));
-            case MULTIANEWARRAY -> {
-                type1 = cpIndexToType(bcs.getIndexU2(), cp);
-                int dim = bcs.getU1(bcs.bci + 3);
-                for (int i = 0; i < dim; i++) {
-                    currentFrame.popStack();
+            switch (opcode) {
+                case NOP -> {}
+                case RETURN -> {
+                    ncf = true;
                 }
-                currentFrame.pushStack(type1);
+                case ACONST_NULL ->
+                        currentFrame.pushStack(Type.NULL_TYPE);
+                case ICONST_M1, ICONST_0, ICONST_1, ICONST_2, ICONST_3, ICONST_4, ICONST_5, SIPUSH, BIPUSH ->
+                        currentFrame.pushStack(Type.INTEGER_TYPE);
+                case LCONST_0, LCONST_1 ->
+                        currentFrame.pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case FCONST_0, FCONST_1, FCONST_2 ->
+                        currentFrame.pushStack(Type.FLOAT_TYPE);
+                case DCONST_0, DCONST_1 ->
+                        currentFrame.pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case LDC ->
+                        processLdc(bcs.getIndexU1());
+                case LDC_W, LDC2_W ->
+                        processLdc(bcs.getIndexU2());
+                case ILOAD ->
+                        currentFrame.checkLocal(bcs.getIndex()).pushStack(Type.INTEGER_TYPE);
+                case ILOAD_0, ILOAD_1, ILOAD_2, ILOAD_3 ->
+                        currentFrame.checkLocal(opcode - ILOAD_0).pushStack(Type.INTEGER_TYPE);
+                case LLOAD ->
+                        currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case LLOAD_0, LLOAD_1, LLOAD_2, LLOAD_3 ->
+                        currentFrame.checkLocal(opcode - LLOAD_0 + 1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case FLOAD ->
+                        currentFrame.checkLocal(bcs.getIndex()).pushStack(Type.FLOAT_TYPE);
+                case FLOAD_0, FLOAD_1, FLOAD_2, FLOAD_3 ->
+                        currentFrame.checkLocal(opcode - FLOAD_0).pushStack(Type.FLOAT_TYPE);
+                case DLOAD ->
+                        currentFrame.checkLocal(bcs.getIndex() + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case DLOAD_0, DLOAD_1, DLOAD_2, DLOAD_3 ->
+                        currentFrame.checkLocal(opcode - DLOAD_0 + 1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case ALOAD ->
+                        currentFrame.pushStack(currentFrame.getLocal(bcs.getIndex()));
+                case ALOAD_0, ALOAD_1, ALOAD_2, ALOAD_3 ->
+                        currentFrame.pushStack(currentFrame.getLocal(opcode - ALOAD_0));
+                case IALOAD, BALOAD, CALOAD, SALOAD ->
+                        currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
+                case LALOAD ->
+                        currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case FALOAD ->
+                        currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
+                case DALOAD ->
+                        currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case AALOAD ->
+                        currentFrame.pushStack((type1 = currentFrame.decStack(1).popStack()) == Type.NULL_TYPE ? Type.NULL_TYPE : type1.getComponent());
+                case ISTORE ->
+                        currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.INTEGER_TYPE);
+                case ISTORE_0, ISTORE_1, ISTORE_2, ISTORE_3 ->
+                        currentFrame.decStack(1).setLocal(opcode - ISTORE_0, Type.INTEGER_TYPE);
+                case LSTORE ->
+                        currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.LONG_TYPE, Type.LONG2_TYPE);
+                case LSTORE_0, LSTORE_1, LSTORE_2, LSTORE_3 ->
+                        currentFrame.decStack(2).setLocal2(opcode - LSTORE_0, Type.LONG_TYPE, Type.LONG2_TYPE);
+                case FSTORE ->
+                        currentFrame.decStack(1).setLocal(bcs.getIndex(), Type.FLOAT_TYPE);
+                case FSTORE_0, FSTORE_1, FSTORE_2, FSTORE_3 ->
+                        currentFrame.decStack(1).setLocal(opcode - FSTORE_0, Type.FLOAT_TYPE);
+                case DSTORE ->
+                        currentFrame.decStack(2).setLocal2(bcs.getIndex(), Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case DSTORE_0, DSTORE_1, DSTORE_2, DSTORE_3 ->
+                        currentFrame.decStack(2).setLocal2(opcode - DSTORE_0, Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case ASTORE ->
+                        currentFrame.setLocal(bcs.getIndex(), currentFrame.popStack());
+                case ASTORE_0, ASTORE_1, ASTORE_2, ASTORE_3 ->
+                        currentFrame.setLocal(opcode - ASTORE_0, currentFrame.popStack());
+                case LASTORE, DASTORE ->
+                        currentFrame.decStack(4);
+                case IASTORE, BASTORE, CASTORE, SASTORE, FASTORE, AASTORE ->
+                        currentFrame.decStack(3);
+                case POP, MONITORENTER, MONITOREXIT ->
+                        currentFrame.decStack(1);
+                case POP2 ->
+                        currentFrame.decStack(2);
+                case DUP ->
+                        currentFrame.pushStack(type1 = currentFrame.popStack()).pushStack(type1);
+                case DUP_X1 -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    currentFrame.pushStack(type1).pushStack(type2).pushStack(type1);
+                }
+                case DUP_X2 -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    type3 = currentFrame.popStack();
+                    currentFrame.pushStack(type1).pushStack(type3).pushStack(type2).pushStack(type1);
+                }
+                case DUP2 -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    currentFrame.pushStack(type2).pushStack(type1).pushStack(type2).pushStack(type1);
+                }
+                case DUP2_X1 -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    type3 = currentFrame.popStack();
+                    currentFrame.pushStack(type2).pushStack(type1).pushStack(type3).pushStack(type2).pushStack(type1);
+                }
+                case DUP2_X2 -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    type3 = currentFrame.popStack();
+                    type4 = currentFrame.popStack();
+                    currentFrame.pushStack(type2).pushStack(type1).pushStack(type4).pushStack(type3).pushStack(type2).pushStack(type1);
+                }
+                case SWAP -> {
+                    type1 = currentFrame.popStack();
+                    type2 = currentFrame.popStack();
+                    currentFrame.pushStack(type1);
+                    currentFrame.pushStack(type2);
+                }
+                case IADD, ISUB, IMUL, IDIV, IREM, ISHL, ISHR, IUSHR, IOR, IXOR, IAND ->
+                        currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
+                case INEG, ARRAYLENGTH, INSTANCEOF ->
+                        currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
+                case LADD, LSUB, LMUL, LDIV, LREM, LAND, LOR, LXOR ->
+                        currentFrame.decStack(4).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case LNEG ->
+                        currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case LSHL, LSHR, LUSHR ->
+                        currentFrame.decStack(3).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case FADD, FSUB, FMUL, FDIV, FREM ->
+                        currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
+                case FNEG ->
+                        currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
+                case DADD, DSUB, DMUL, DDIV, DREM ->
+                        currentFrame.decStack(4).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case DNEG ->
+                        currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case IINC ->
+                        currentFrame.checkLocal(bcs.getIndex());
+                case I2L ->
+                        currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case L2I ->
+                        currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
+                case I2F ->
+                        currentFrame.decStack(1).pushStack(Type.FLOAT_TYPE);
+                case I2D ->
+                        currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case L2F ->
+                        currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
+                case L2D ->
+                        currentFrame.decStack(2).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case F2I ->
+                        currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
+                case F2L ->
+                        currentFrame.decStack(1).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case F2D ->
+                        currentFrame.decStack(1).pushStack(Type.DOUBLE_TYPE, Type.DOUBLE2_TYPE);
+                case D2L ->
+                        currentFrame.decStack(2).pushStack(Type.LONG_TYPE, Type.LONG2_TYPE);
+                case D2F ->
+                        currentFrame.decStack(2).pushStack(Type.FLOAT_TYPE);
+                case I2B, I2C, I2S ->
+                        currentFrame.decStack(1).pushStack(Type.INTEGER_TYPE);
+                case LCMP, DCMPL, DCMPG ->
+                        currentFrame.decStack(4).pushStack(Type.INTEGER_TYPE);
+                case FCMPL, FCMPG, D2I ->
+                        currentFrame.decStack(2).pushStack(Type.INTEGER_TYPE);
+                case IF_ICMPEQ, IF_ICMPNE, IF_ICMPLT, IF_ICMPGE, IF_ICMPGT, IF_ICMPLE, IF_ACMPEQ, IF_ACMPNE ->
+                        checkJumpTarget(currentFrame.decStack(2), bcs.dest());
+                case IFEQ, IFNE, IFLT, IFGE, IFGT, IFLE, IFNULL, IFNONNULL ->
+                        checkJumpTarget(currentFrame.decStack(1), bcs.dest());
+                case GOTO -> {
+                    checkJumpTarget(currentFrame, bcs.dest());
+                    ncf = true;
+                }
+                case GOTO_W -> {
+                    checkJumpTarget(currentFrame, bcs.destW());
+                    ncf = true;
+                }
+                case TABLESWITCH, LOOKUPSWITCH -> {
+                    processSwitch(bcs);
+                    ncf = true;
+                }
+                case LRETURN, DRETURN -> {
+                    currentFrame.decStack(2);
+                    ncf = true;
+                }
+                case IRETURN, FRETURN, ARETURN, ATHROW -> {
+                    currentFrame.decStack(1);
+                    ncf = true;
+                }
+                case GETSTATIC, PUTSTATIC, GETFIELD, PUTFIELD ->
+                        processFieldInstructions(bcs);
+                case INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC, INVOKEINTERFACE, INVOKEDYNAMIC ->
+                        this_uninit = processInvokeInstructions(bcs, (bci >= exMin && bci < exMax), this_uninit);
+                case NEW ->
+                        currentFrame.pushStack(Type.uninitializedType(bci));
+                case NEWARRAY ->
+                        currentFrame.decStack(1).pushStack(getNewarrayType(bcs.getIndex()));
+                case ANEWARRAY ->
+                        processAnewarray(bcs.getIndexU2());
+                case CHECKCAST ->
+                        currentFrame.decStack(1).pushStack(cpIndexToType(bcs.getIndexU2(), cp));
+                case MULTIANEWARRAY -> {
+                    type1 = cpIndexToType(bcs.getIndexU2(), cp);
+                    int dim = bcs.getU1(bcs.bci + 3);
+                    for (int i = 0; i < dim; i++) {
+                        currentFrame.popStack();
+                    }
+                    currentFrame.pushStack(type1);
+                }
+                case JSR, JSR_W, RET ->
+                        throw generatorError("Instructions jsr, jsr_w, or ret must not appear in the class file version >= 51.0");
+                default ->
+                        throw generatorError(String.format("Bad instruction: %02x", opcode));
             }
-            case JSR, JSR_W, RET ->
-                throw generatorError("Instructions jsr, jsr_w, or ret must not appear in the class file version >= 51.0");
-            default ->
-                throw generatorError(String.format("Bad instruction: %02x", opcode));
+            if (!verified_exc_handlers && bci >= exMin && bci < exMax) {
+                processExceptionHandlerTargets(bci, this_uninit);
+            }
         }
-        if (!verified_exc_handlers && bci >= exMin && bci < exMax) {
-            processExceptionHandlerTargets(bci, this_uninit);
-        }
-        return ncf;
     }
 
     private void processExceptionHandlerTargets(int bci, boolean this_uninit) {
