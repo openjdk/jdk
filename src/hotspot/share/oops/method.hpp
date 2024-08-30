@@ -27,6 +27,7 @@
 
 #include "code/compressedStream.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "memory/universe.hpp"
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/methodFlags.hpp"
@@ -847,12 +848,9 @@ public:
   void release_C_heap_structures();
 
   Method* get_new_method() const {
-    InstanceKlass* holder = method_holder();
-    Method* new_method = holder->method_with_idnum(orig_method_idnum());
-
-    assert(new_method != nullptr, "method_with_idnum() should not be null");
+    Method* new_method = method_holder()->method_with_idnum(orig_method_idnum());
     assert(this != new_method, "sanity check");
-    return new_method;
+    return new_method == nullptr ? Universe::throw_no_such_method_error() : new_method;
   }
 
   // Printing
