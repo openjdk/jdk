@@ -107,7 +107,7 @@ class PSPromotionManager {
   template <class T> void  process_array_chunk_work(oop obj,
                                                     int start, int end);
   void process_array_chunk(PartialArrayState* state);
-  void push_objArray(oop old_obj, oop new_obj, size_t obj_size);
+  void push_objArray(oop old_obj, oop new_obj);
 
   void push_depth(ScannerTask task);
 

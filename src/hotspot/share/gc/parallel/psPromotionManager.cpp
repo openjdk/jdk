@@ -320,7 +320,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayState* state) {
   _partial_array_state_allocator->release(_partial_array_state_allocator_index, state);
 }
 
-void PSPromotionManager::push_objArray(oop old_obj, oop new_obj, size_t obj_size) {
+void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   assert(old_obj->is_objArray(), "precondition");
   assert(old_obj->is_forwarded(), "precondition");
   assert(old_obj->forwardee() == new_obj, "precondition");
