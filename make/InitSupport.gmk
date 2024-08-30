@@ -205,7 +205,7 @@ ifeq ($(HAS_SPEC),)
           ifeq ($$(patsubst !%,,$$(CONF)),)
             # A CONF starting with ! means we should negate the search term
             matching_confs := $$(strip $$(foreach var, $$(all_confs), \
-               $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
+                $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
           else
             matching_confs := $$(strip $$(foreach var, $$(all_confs), \
                 $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
