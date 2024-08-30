@@ -35,7 +35,7 @@ include Execute.gmk
 
 ################################################################################
 # This file is responsible for updating the generated sleef source code files
-# that are checked in to the JDK repo, and that is actually used when building.
+# that are checked in to the JDK repo, and that are actually used when building.
 # This target needs to be re-run every time the source code of libsleef is
 # updated from upstream.
 ################################################################################
