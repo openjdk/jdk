@@ -156,9 +156,9 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
-  Node* generate_access_flags_guard(Node* kls,
-                                    int modifier_mask, int modifier_bits,
-                                    RegionNode* region);
+  Node* generate_mods_flags_guard(Node* kls,
+                                  int modifier_mask, int modifier_bits,
+                                  RegionNode* region);
   Node* generate_misc_flags_guard(Node* kls,
                                   int modifier_mask, int modifier_bits,
                                   RegionNode* region);
