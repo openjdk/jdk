@@ -457,9 +457,13 @@ public class JavacParser implements Parser {
     }
 
     protected JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey) {
+        return syntaxError(pos, errs, errorKey, false);
+    }
+
+    private JCErroneous syntaxError(int pos, List<? extends JCTree> errs, Error errorKey, boolean noEofError) {
         setErrorEndPos(pos);
         JCErroneous err = F.at(pos).Erroneous(errs);
-        reportSyntaxError(err, errorKey);
+        reportSyntaxError(err, errorKey, noEofError);
         if (errs != null) {
             JCTree last = errs.last();
             if (last != null)
@@ -486,9 +490,13 @@ public class JavacParser implements Parser {
      * arguments, unless one was already reported at the same position.
      */
     protected void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, Error errorKey) {
+        reportSyntaxError(diagPos, errorKey, false);
+    }
+
+    private void reportSyntaxError(JCDiagnostic.DiagnosticPosition diagPos, Error errorKey, boolean noEofError) {
         int pos = diagPos.getPreferredPosition();
         if (pos > S.errPos() || pos == Position.NOPOS) {
-            if (token.kind == EOF) {
+            if (token.kind == EOF && !noEofError) {
                 log.error(DiagnosticFlag.SYNTAX, diagPos, Errors.PrematureEof);
             } else {
                 log.error(DiagnosticFlag.SYNTAX, diagPos, errorKey);
@@ -4093,6 +4101,13 @@ public class JavacParser implements Parser {
                     checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods, docComment));
                     isImplicitClass = true;
+                } else if (isDefiniteStatementStartToken()) {
+                    int startPos = token.pos;
+                    List<JCStatement> statements = blockStatement();
+                    defs.append(syntaxError(startPos,
+                                            statements,
+                                            Errors.StatementNotExpected,
+                                            true));
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -4325,6 +4340,9 @@ public class JavacParser implements Parser {
             JCDiagnostic.Error error;
             if (parseModuleInfo) {
                 error = Errors.ExpectedModuleOrOpen;
+            } else if (Feature.IMPLICIT_CLASSES.allowedInSource(source) &&
+                       (!preview.isPreview(Feature.IMPLICIT_CLASSES) || preview.isEnabled())) {
+                error = Errors.ClassMethodOrFieldExpected;
             } else if (allowRecords) {
                 error = Errors.Expected4(CLASS, INTERFACE, ENUM, "record");
             } else {
@@ -4907,6 +4925,12 @@ public class JavacParser implements Parser {
 
                 return defs;
             }
+        } else if (token.kind == LPAREN && type.hasTag(IDENT)) {
+            log.error(DiagnosticFlag.SYNTAX, pos, Errors.InvalidMethDeclRetTypeReq);
+
+            return List.of(methodDeclaratorRest(
+                    pos, mods, null, names.init, typarams,
+                    false, true, false, dc));
         }
 
         return List.of(F.Erroneous());

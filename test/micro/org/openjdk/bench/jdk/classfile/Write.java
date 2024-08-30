@@ -24,7 +24,6 @@ package org.openjdk.bench.jdk.classfile;
 
 import java.lang.reflect.AccessFlag;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
@@ -142,9 +141,9 @@ public class Write {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0, mb -> mb
-                      .withCode(codeb -> codeb.loadLocal(TypeKind.ReferenceType, 0)
+                      .withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
                                               .invoke(INVOKESPECIAL, CD_Object, INIT_NAME, MTD_void, false)
-                                              .return_(VoidType)
+                                              .return_(VOID)
                       )
               );
             for (int xi = 0; xi < 40; ++xi) {
@@ -190,7 +189,7 @@ public class Write {
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod(INIT_NAME, MTD_void, 0,
-                          mb -> mb.withCode(codeb -> codeb.loadLocal(ReferenceType, 0)
+                          mb -> mb.withCode(codeb -> codeb.loadLocal(REFERENCE, 0)
                                                           .invokespecial(CD_Object, INIT_NAME, MTD_void, false)
                                                           .return_()
                           )

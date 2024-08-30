@@ -95,8 +95,9 @@ DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     shift-negative-value unknown-pragmas unused-but-set-variable \
     unused-local-typedefs unused-variable
 
-DISABLED_WARNINGS_clang := sometimes-uninitialized \
-    missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
+DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor missing-braces \
+    sometimes-uninitialized unknown-pragmas unused-but-set-variable \
+    unused-function unused-local-typedef unused-private-field unused-variable
 
 ifneq ($(DEBUG_LEVEL), release)
   # Assert macro gives warning

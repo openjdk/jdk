@@ -73,11 +73,11 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 [
   AC_ARG_WITH(freetype, [AS_HELP_STRING([--with-freetype],
       [specify whether to use 'system' or 'bundled' freetype.
-       The selected option applies to both build time and run time.
-       The default behaviour can be platform dependent.
-       If using 'system' and either the include files or libraries cannot be
-       located automatically, then additionally specify both using
-       --with-freetype-include and --with-freetype-lib.])])
+      The selected option applies to both build time and run time.
+      The default behaviour can be platform dependent.
+      If using 'system' and either the include files or libraries cannot be
+      located automatically, then additionally specify both using
+      --with-freetype-include and --with-freetype-lib.])])
   AC_ARG_WITH(freetype-include, [AS_HELP_STRING([--with-freetype-include],
       [specify directory for the freetype include files])])
   AC_ARG_WITH(freetype-lib, [AS_HELP_STRING([--with-freetype-lib],
@@ -95,8 +95,10 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   FREETYPE_CFLAGS=
   FREETYPE_LIBS=
 
-  if (test "x$with_freetype_include" = "x" && test "x$with_freetype_lib" != "x") || \
-     (test "x$with_freetype_include" != "x" && test "x$with_freetype_lib" = "x"); then
+  if (test "x$with_freetype_include" = "x" && \
+      test "x$with_freetype_lib" != "x") || \
+      (test "x$with_freetype_include" != "x" && \
+      test "x$with_freetype_lib" = "x"); then
     AC_MSG_ERROR([Must specify both or neither of --with-freetype-include and --with-freetype-lib])
   fi
 
@@ -126,8 +128,8 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   fi
 
   if test "x$FREETYPE_TO_USE" = "xsystem" && \
-     (test "x$OPENJDK_TARGET_OS" = "xwindows" || \
-     test "x$OPENJDK_TARGET_OS" = "xmacosx"); then
+      (test "x$OPENJDK_TARGET_OS" = "xwindows" || \
+      test "x$OPENJDK_TARGET_OS" = "xmacosx"); then
     AC_MSG_ERROR([Only bundled freetype can be specified on Mac and Windows])
   fi
 
