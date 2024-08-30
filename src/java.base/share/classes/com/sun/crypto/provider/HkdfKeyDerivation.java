@@ -128,9 +128,9 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         throws InvalidAlgorithmParameterException {
         List<SecretKey> ikms;
         List<SecretKey> salts;
-        SecretKey inputKeyMaterial;
-        SecretKey salt;
-        SecretKey pseudoRandomKey;
+        byte[] inputKeyMaterial;
+        byte[] salt;
+        byte[] pseudoRandomKey;
         byte[] info;
         int length;
         // A switch would be nicer, but we may need to backport this before
@@ -155,8 +155,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract
             try {
-                return hkdfExtract(inputKeyMaterial,
-                                   (salt == null) ? null : salt.getEncoded());
+                return hkdfExtract(inputKeyMaterial, salt);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Extract could not be initialized with the given "
@@ -172,7 +171,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             HKDFParameterSpec.Expand anExpand =
                 (HKDFParameterSpec.Expand) derivationSpec;
             // set this value in the "if"
-            if ((pseudoRandomKey = anExpand.prk()) == null) {
+            if ((pseudoRandomKey = anExpand.prk().getEncoded()) == null) {
                 throw new AssertionError(
                     "PRK is required for HKDFParameterSpec.Expand");
             }
@@ -187,8 +186,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform expand
             try {
-                return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
-                                     length);
+                return hkdfExpand(pseudoRandomKey, info, length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF Expand could not be initialized with the given "
@@ -227,11 +225,8 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
             // perform extract and then expand
             try {
-                byte[] extractResult = hkdfExtract(inputKeyMaterial, (salt
-                                                                      == null) ? null : salt.getEncoded());
-                pseudoRandomKey = new SecretKeySpec(extractResult, hmacAlgName);
-                return Arrays.copyOf(hkdfExpand(pseudoRandomKey, info, length),
-                                     length);
+                pseudoRandomKey = hkdfExtract(inputKeyMaterial, salt);
+                return hkdfExpand(pseudoRandomKey, info, length);
             } catch (InvalidKeyException ike) {
                 throw new InvalidAlgorithmParameterException(
                     "an HKDF ExtractThenExpand could not be initialized with "
@@ -248,21 +243,20 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             "an HKDF derivation requires a valid HKDFParameterSpec");
     }
 
-    private SecretKey consolidateKeyMaterial(List<SecretKey> keys)
+    private byte[] consolidateKeyMaterial(List<SecretKey> keys)
         throws InvalidKeyException {
         if (keys != null && !keys.isEmpty()) {
             ArrayList<SecretKey> localKeys = new ArrayList<>(keys);
             if (localKeys.size() == 1) {
                 // return this element
                 SecretKey checkIt = localKeys.get(0);
-                byte[] workItemBytes = CipherCore.getKeyBytes(checkIt);
-                return new SecretKeySpec(workItemBytes, "Generic");
+                return CipherCore.getKeyBytes(checkIt);
             } else {
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 for (SecretKey workItem : localKeys) {
                     os.writeBytes(CipherCore.getKeyBytes(workItem));
                 }
-                return new SecretKeySpec(os.toByteArray(), "Generic");
+                return os.toByteArray();
             }
         } else if(keys != null) {
                 return null;
@@ -287,7 +281,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if an invalid salt was provided through the
      *     {@code HkdfParameterSpec}
      */
-    private byte[] hkdfExtract(SecretKey inputKeyMaterial, byte[] salt)
+    private byte[] hkdfExtract(byte[] inputKeyMaterial, byte[] salt)
         throws InvalidKeyException, NoSuchAlgorithmException {
 
         if (salt == null) {
@@ -299,7 +293,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
         if (inputKeyMaterial == null) {
             return hmacObj.doFinal();
         } else {
-            return hmacObj.doFinal(inputKeyMaterial.getEncoded());
+            return hmacObj.doFinal(inputKeyMaterial);
         }
     }
 
@@ -323,18 +317,20 @@ abstract class HkdfKeyDerivation extends KDFSpi {
      *     if an invalid PRK was provided through the {@code HKDFParameterSpec}
      *     or derived during the extract phase.
      */
-    private byte[] hkdfExpand(SecretKey prk, byte[] info, int outLen)
+    private byte[] hkdfExpand(byte[] prk, byte[] info, int outLen)
         throws InvalidKeyException, NoSuchAlgorithmException {
         byte[] kdfOutput;
+        SecretKey pseudoRandomKey = new SecretKeySpec(prk, hmacAlgName);
+
         Mac hmacObj = Mac.getInstance(hmacAlgName);
 
         // Calculate the number of rounds of HMAC that are needed to
         // meet the requested data.  Then set up the buffers we will need.
-        if (CipherCore.getKeyBytes(prk).length < hmacLen) {
+        if (CipherCore.getKeyBytes(pseudoRandomKey).length < hmacLen) {
             throw new InvalidKeyException(
                 "prk must be at least " + hmacLen + " bytes");
         }
-        hmacObj.init(prk);
+        hmacObj.init(pseudoRandomKey);
         if (info == null) {
             info = new byte[0];
         }
@@ -359,7 +355,7 @@ abstract class HkdfKeyDerivation extends KDFSpi {
             }
         }
 
-        return kdfOutput;
+        return Arrays.copyOf(kdfOutput, outLen);
     }
 
     protected KDFParameters engineGetParameters() {
