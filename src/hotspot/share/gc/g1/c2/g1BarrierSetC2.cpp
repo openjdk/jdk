@@ -294,6 +294,15 @@ uint G1BarrierSetC2::estimated_barrier_size(const Node* node) const {
   return nodes;
 }
 
+bool G1BarrierSetC2::can_initialize_object(const StoreNode* store) const {
+  assert(store->Opcode() == Op_StoreP || store->Opcode() == Op_StoreN, "OOP store expected");
+  // It is OK to move the store across the object initialization boundary only
+  // if it does not have any barrier, or if it has barriers that can be safely
+  // elided (because of the compensation steps taken on the allocation slow path
+  // when ReduceInitialCardMarks is enabled).
+  return (MemNode::barrier_data(store) == 0) || use_ReduceInitialCardMarks();
+}
+
 void G1BarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const {
   if (ac->is_clone_inst() && !use_ReduceInitialCardMarks()) {
     clone_in_runtime(phase, ac, G1BarrierSetRuntime::clone_addr(), "G1BarrierSetRuntime::clone");

@@ -3500,7 +3500,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Capture an unaliased, unconditional, simple store into an initializer.
   // Or, if it is independent of the allocation, hoist it above the allocation.
-  if (ReduceFieldZeroing && ReduceInitialCardMarks && /*can_reshape &&*/
+  if (ReduceFieldZeroing && /*can_reshape &&*/
       mem->is_Proj() && mem->in(0)->is_Initialize()) {
     InitializeNode* init = mem->in(0)->as_Initialize();
     intptr_t offset = init->can_capture_store(this, phase, can_reshape);
@@ -4638,6 +4638,11 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseGVN* phase, bool 
   Node* mem = st->in(MemNode::Memory);
   if (!(mem->is_Proj() && mem->in(0) == this))
     return FAIL;                // must not be preceded by other stores
+  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
+  if ((st->Opcode() == Op_StoreP || st->Opcode() == Op_StoreN) &&
+      !bs->can_initialize_object(st)) {
+    return FAIL;
+  }
   Node* adr = st->in(MemNode::Address);
   intptr_t offset;
   AllocateNode* alloc = AllocateNode::Ideal_allocation(adr, phase, offset);

@@ -110,6 +110,7 @@ public:
   virtual void eliminate_gc_barrier_data(Node* node) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
   virtual uint estimated_barrier_size(const Node* node) const;
+  virtual bool can_initialize_object(const StoreNode* store) const;
   virtual void clone_at_expansion(PhaseMacroExpand* phase,
                                   ArrayCopyNode* ac) const;
   virtual void* create_barrier_state(Arena* comp_arena) const;
