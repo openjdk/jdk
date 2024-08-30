@@ -54,19 +54,6 @@ import java.util.Objects;
  * will return a {@code SecretKey} object with the specified algorithm. The
  * {@code deriveData} method returns a byte array of raw data.
  * <p>
- * If a provider is not specified in the {@code getInstance} method when
- * instantiating a {@code KDF} object, the provider is selected the first time
- * the {@code deriveKey} or {@code deriveData} method is called, and a provider
- * is chosen that supports the parameters passed to the {@code deriveKey} or
- * {@code deriveData} method. However, if {@code getProviderName} or
- * {@code getParameters} is called before calling the {@code deriveKey} or
- * {@code deriveData} methods, the first provider supporting the KDF algorithm
- * and {@code KDFParameters} is chosen which may not be the provider that is
- * eventually selected once the {@code AlgorithmParameterSpec} is supplied in
- * the derive methods; therefore it is recommended not to call
- * {@code getProviderName} or {@code getKDFParameters} until after a key
- * derivation operation. Once a provider is selected, it cannot be changed.
- * <p>
  * API Usage Example:
  * {@snippet lang = java:
  *    KDF kdfHkdf = KDF.getInstance("HKDF-SHA256");
@@ -78,6 +65,36 @@ import java.util.Objects;
  *
  *    SecretKey sKey = kdfHkdf.deriveKey("AES", derivationSpec);
  *}
+ * <br>
+ * <h2><a id="ConcurrentAccess">Concurrent Access</a></h2>
+ * Unless otherwise documented by an implementation, the methods defined in
+ * this class are not thread-safe. Multiple threads that need to access a
+ * single object concurrently should synchronize amongst themselves and
+ * provide the necessary locking. Multiple threads each manipulating separate
+ * objects need not synchronize.
+ * <br>
+ * <h2><a id="DelayedProviderSelection">Delayed Provider Selection</a></h2>
+ * If a provider is not specified when calling one of the {@code getInstance}
+ * methods, the implementation delays the selection of the provider until the
+ * {@code deriveKey} or {@code deriveData} method is called. This is called
+ * <i>delayed provider selection</i>. The primary reason this is done is to
+ * ensure that the selected provider can handle the key material that is passed
+ * to those methods - for example, the key material may reside on a
+ * hardware device that only a specific {@code KDF} provider can utilize.
+ * <p>
+ * If a provider is not specified in the {@code getInstance} method when
+ * instantiating a {@code KDF} object, the provider is selected the first time
+ * the {@code deriveKey} or {@code deriveData} method is called, and a provider
+ * is chosen that supports the parameters passed to the {@code deriveKey} or
+ * {@code deriveData} method. However, if {@code getProviderName} or
+ * {@code getParameters} is called before calling the {@code deriveKey} or
+ * {@code deriveData} methods, the first provider supporting the KDF algorithm
+ * and {@code KDFParameters} is chosen, which may not be the provider that is
+ * eventually selected once the {@code AlgorithmParameterSpec} is supplied in
+ * the derive methods. Therefore, it is recommended not to call
+ * {@code getProviderName} or {@code getKDFParameters} until after a key
+ * derivation operation. Once a provider is selected, it cannot be changed.
+ *
  *
  * @see KDFParameters
  * @see SecretKey
@@ -155,6 +172,8 @@ public final class KDF {
     /**
      * Returns the name of the provider.
      *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider Selection</a>
+     *
      * @return the name of the provider
      */
     public String getProviderName() {
@@ -172,6 +191,8 @@ public final class KDF {
      * the {@code KDF} object, the generated parameters are returned;
      * otherwise {@code null} is returned.
      *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider Selection</a>
+     *
      * @return the parameters used with this {@code KDF} object, or
      * {@code null}
      */
@@ -182,6 +203,8 @@ public final class KDF {
 
     /**
      * Returns a {@code KDF} object that implements the specified algorithm.
+     *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider Selection</a>
      *
      * @param algorithm
      *     the key derivation algorithm to use.
@@ -283,6 +306,8 @@ public final class KDF {
     /**
      * Returns a {@code KDF} object that implements the specified algorithm and
      * is initialized with the specified parameters.
+     *
+     * @see <a href="#DelayedProviderSelection">Delayed Provider Selection</a>
      *
      * @param algorithm
      *     the key derivation algorithm to use.
