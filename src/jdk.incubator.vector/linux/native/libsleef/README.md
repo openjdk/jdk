@@ -29,7 +29,7 @@ and `.github` directories, into
 `src/jdk.incubator.vector/linux/native/libsleef/upstream`.
 
 The libsleef source code does not follow the JDK whitespace rules as enforced by
-jcheck. You will need to remove trailing whitespaces, and expand tabs to 8
+jcheck. You will need to remove trailing whitespace, and expand tabs to 8
 spaces in the imported source code.
 
 Update the note above with information about what version you import.
