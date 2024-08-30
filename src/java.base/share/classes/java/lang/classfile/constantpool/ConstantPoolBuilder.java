@@ -476,8 +476,6 @@ public sealed interface ConstantPoolBuilder
     /**
      * {@return A {@link ConstantValueEntry} describing the provided
      * Integer, Long, Float, Double, or String constant}
-     * The returned consant is suitable as a value for the
-     * {@code ConstantValue} attribute.
      *
      * @param c the constant
      * @see java.lang.classfile.Attributes#constantValue()

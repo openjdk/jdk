@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,6 +248,7 @@ public final class Attributes {
     /**
      * {@return Attribute mapper for the {@code ConstantValue} attribute}
      * @since 23
+     * @see java.lang.classfile.constantpool.ConstantPoolBuilder#constantValueEntry(java.lang.constant.ConstantDesc)
      */
     public static AttributeMapper<ConstantValueAttribute> constantValue() {
         return ConstantValueMapper.INSTANCE;
