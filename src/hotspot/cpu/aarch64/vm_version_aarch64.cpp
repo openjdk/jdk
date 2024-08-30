@@ -539,7 +539,7 @@ void VM_Version::initialize() {
 
   if (UseSVE == 0) {  // NEON
     int min_vector_size = 8;
-    int max_vector_size = 16;
+    int max_vector_size = FloatRegister::neon_vl;
     if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
       if (!is_power_of_2(MaxVectorSize)) {
         vm_exit_during_initialization(err_msg("Unsupported MaxVectorSize: %d", (int)MaxVectorSize));
@@ -551,11 +551,11 @@ void VM_Version::initialize() {
         FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
       }
     } else {
-      FLAG_SET_DEFAULT(MaxVectorSize, 16);
+      FLAG_SET_DEFAULT(MaxVectorSize, FloatRegister::neon_vl);
     }
   }
 
-  int inline_size = (UseSVE > 0 && MaxVectorSize >= 16) ? MaxVectorSize : 0;
+  int inline_size = (UseSVE > 0 && MaxVectorSize >= FloatRegister::sve_vl_min) ? MaxVectorSize : 0;
   if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
     FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, inline_size);
   } else if (ArrayOperationPartialInlineSize != 0 && ArrayOperationPartialInlineSize != inline_size) {
