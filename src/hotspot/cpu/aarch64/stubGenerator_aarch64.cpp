@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/register.hpp"
+#include "assembler_x86.hpp"
 #include "atomic_aarch64.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -2096,6 +2097,112 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  //  Generate 'unsafe' set memory stub
+  //  Though just as safe as the other stubs, it takes an unscaled
+  //  size_t (# bytes) argument instead of an element count.
+  //
+  //  Input:
+  //    c_rarg0   - destination array address
+  //    c_rarg1   - byte count (size_t)
+  //    c_rarg2   - byte value
+  //
+  // Examines the alignment of the operands and dispatches
+  // to an int, short, or byte fill loop.
+  //
+  address generate_unsafe_setmemory(const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    assert(unsafe_byte_fill != nullptr, "Invalid call");
+
+    // bump this on entry, not on exit:
+    inc_counter_np(SharedRuntime::_unsafe_set_memory_ctr);
+
+    const Register array = c_rarg0;
+    const Register size = c_rarg1;
+    const Register byte_value = c_rarg2;
+    const Register wide_value = rscratch1;
+    const Register align_reg = rscratch2;
+
+    // Is size == 0? Just exit directly.
+    __ cbz(size, L_exit);
+
+    // Set up bit pattern
+    __ and(byte_value, 0xFF); // Clear upper 24 bits
+    __ mov(wide_value, 0x0101010101010101ULL);
+    __ mul(wide_value, byte_value);
+
+    // Figure out where we should go
+    Label L_8byte, L_4byte, L_2byte;
+    Label L_exit;
+    __ orr(align_reg, array, size);
+
+    __ tst(align_reg, 7);
+    __ beq(L_8byte);
+    __ tst(align_reg, 3);
+    __ beq(L_4byte);
+    __ tst(align_reg, 1);
+    __ beq(L_2byte);
+    // Single-byte fill
+    {
+      UnsafeMemoryAccessMark umam(this, true, true);
+      Label L_loop;
+      __ add(size, array);
+      __ bind(L_loop);
+      __ strb(wide_value, Address(__ post(array, 1)));
+      __ cmp(array, size); // Are we at the end?
+      __ bne(L_loop);
+      __ b(L_exit);
+    }
+
+    __ bind(L_8byte);
+    {
+      UnsafeMemoryAccessMark umam(this, true, true);
+      Label L_loop;
+      __ lsr(size, 3); // Divide size by 8
+      __ add(size, array, lsl(3)); // Replace size with end of array
+      __ bind(L_loop);
+      // *array = wide_value; array += 8;
+      __ str(wide_value, Address(__ post(array, 8)));
+      __ cmp(array, size); // Are we at the end?
+      __ bne(L_loop);
+      __ b(L_exit);
+    }
+    __ bind(L_4byte);
+    {
+      UnsafeMemoryAccessMark umam(this, true, true);
+      Label L_loop;
+      __ lsr(size, 2);
+      __ add(size, array, lsl(2));
+      __ bind(L_loop);
+      __ strw(wide_value, Address(__ post(array, 4)));
+      __ cmp(array, size);
+      __ bne(L_loop);
+      __ b(L_exit);
+    }
+    __ bind(L_2byte);
+    {
+      UnsafeMemoryAccessMark umam(this, true, true);
+      Label L_loop;
+      __ lsr(size, 1);
+      // Clear upper 16-bits
+      __ and(wide_value, 0xFFFF);
+      __ add(size, array, lsl(1));
+      __ bind(L_loop);
+      __ strh(wide_value, Address(__ post(array, 2)));
+      __ cmp(array, size);
+      __ bne(L_loop);
+      __ b(L_exit);
+    }
+    __ bind(L_exit);
+    __ leave();
+    __ ret(0);
+
+    return start;
+  }
+
   //
   //  Generate generic array copy stubs
   //
@@ -2677,6 +2784,8 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
     StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
     StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
+
+    Stubroutines::_unsafe_setmemory = generate_unsafe_setmemory("unsafe_setmemory");
   }
 
   void generate_math_stubs() { Unimplemented(); }
