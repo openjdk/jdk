@@ -4792,8 +4792,7 @@ Register MacroAssembler::allocate_if_noreg(Register r,
                                   RegSetIterator<Register> &available_regs,
                                   RegSet &regs_to_push) {
   if (!r->is_valid()) {
-    r = *available_regs;
-    ++available_regs;
+    r = *available_regs++;
     regs_to_push += r;
   }
   return r;
@@ -5069,13 +5068,13 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // temps, use it for slot. If not, pick any of our temps.
   Register slot;
   if (!temps.contains(rcx)) {
-    slot = *available_regs; ++available_regs;
+    slot = *available_regs++;
   } else {
     slot = rcx;
   }
 
-  const Register r_array_index = *available_regs; ++available_regs;
-  const Register r_bitmap      = *available_regs; ++available_regs;
+  const Register r_array_index = *available_regs++;
+  const Register r_bitmap      = *available_regs++;
 
   // The logic above guarantees this property, but we state it here.
   assert_different_registers(r_array_index, r_bitmap, rcx);
@@ -5094,7 +5093,7 @@ void MacroAssembler::lookup_secondary_supers_table_var(Register r_sub_klass,
   // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
 
-  const Register r_array_base = *available_regs; ++available_regs;
+  const Register r_array_base = *available_regs++;
 
   // Get the first array index that can contain super_klass into r_array_index.
   population_count(r_array_index, r_array_index, /*temp2*/r_array_base, /*temp3*/slot);

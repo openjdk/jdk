@@ -1580,8 +1580,7 @@ Register MacroAssembler::allocate_if_noreg(Register r,
                                   RegSetIterator<Register> &available_regs,
                                   RegSet &regs_to_push) {
   if (!r->is_valid()) {
-    r = *available_regs;
-    ++available_regs;
+    r = *available_regs++;
     regs_to_push += r;
   }
   return r;
