@@ -476,7 +476,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   # Always enable optional macros for VM.
   ALWAYS_CFLAGS_JVM="-D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS"
 
-  ###############################################################################
+  ##############################################################################
 
   # Adjust flags according to debug level.
   # Setup debug/release defines
@@ -510,7 +510,7 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     ALWAYS_DEFINES_JVM="$ALWAYS_DEFINES -DNOMINMAX"
   fi
 
-  ###############################################################################
+  ##############################################################################
   #
   #
   # CFLAGS BASIC

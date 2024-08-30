@@ -23,12 +23,12 @@
 # questions.
 #
 
-################################################################
+################################################################################
 # MakeBase provides the core functionality needed and used by all makefiles. It
 # should be included by all makefiles. MakeBase provides essential
 # functionality for named parameter functions, variable dependency, tool
 # execution, logging and fixpath functionality.
-################################################################
+################################################################################
 
 ifndef _MAKEBASE_GMK
 _MAKEBASE_GMK := 1

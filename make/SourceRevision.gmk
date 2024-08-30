@@ -72,7 +72,7 @@ ifeq ($(USE_SCM), true)
   MakeFilenameFromRepo = \
       $(strip $(subst .,top, $(subst /,-, $1)))
 
-  ################################################################################
+  ##############################################################################
   # SetupGetRevisionForRepo defines a make rule for creating a file containing
   # the name of the repository and the output of the scm command for that
   # repository.
