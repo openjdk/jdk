@@ -49,16 +49,16 @@ endif
 # When calling macros, the spaces between arguments are
 # often semantically important! Sometimes we need to subst
 # spaces and commas, therefore we need the following macros.
-X:=
-SPACE:=$(X) $(X)
-COMMA:=,
-DOLLAR:=$$
-HASH:=\#
-LEFT_PAREN:=(
-RIGHT_PAREN:=)
-SQUOTE:='
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
+DOLLAR := $$
+HASH := \#
+LEFT_PAREN := (
+RIGHT_PAREN := )
+SQUOTE := '
 #'
-DQUOTE:="
+DQUOTE := "
 #"
 define NEWLINE
 
@@ -246,7 +246,7 @@ DependOnVariableFileName = \
 # Param 1 - Name of variable
 DependOnVariableWriteFile = \
     $(call MakeDir, $(dir $($1_filename))) \
-    $(call WriteFile, $1_old:=$(call DoubleDollar,$(call EscapeHash,$($1))), \
+    $(call WriteFile, $1_old := $(call DoubleDollar,$(call EscapeHash,$($1))), \
         $($1_filename)) \
 
 # Does the actual work with parameters stripped.

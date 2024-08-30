@@ -101,8 +101,8 @@ define SetupTextFileProcessingBody
               SOURCE_BASE_DIR $$($1_SOURCE_BASE_DIR) (in $1))))
     endif
     $1_SOURCE_FILES := $$(sort $$(call FindFiles,$$($1_SOURCE_DIRS)))
-    $1_EXCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
-    $1_INCLUDE_FILES:=$$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
+    $1_EXCLUDE_FILES := $$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_EXCLUDE_FILES)))
+    $1_INCLUDE_FILES := $$(foreach i,$$($1_SOURCE_DIRS),$$(addprefix $$i/,$$($1_INCLUDE_FILES)))
     $1_SOURCE_FILES := $$(filter-out $$($1_EXCLUDE_FILES),$$($1_SOURCE_FILES))
     ifneq (,$$(strip $$($1_INCLUDE_FILES)))
       $1_SOURCE_FILES := $$(filter $$($1_INCLUDE_FILES),$$($1_SOURCE_FILES))

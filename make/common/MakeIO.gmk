@@ -67,7 +67,7 @@ else # HAS_FILE_FUNCTION = false
   $(eval compress_paths += \
       $(strip $(shell $(CAT) $(TOPDIR)/make/common/support/ListPathsSafely-post-compress.incl)))
 
-  decompress_paths=$(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
+  decompress_paths = $(SED) -f $(TOPDIR)/make/common/support/ListPathsSafely-uncompress.sed \
       -e 's|X99|\\n|g' \
       -e 's|X98|$(OUTPUTDIR)|g' -e 's|X97|$(TOPDIR)|g' \
       -e 's|X00|X|g'

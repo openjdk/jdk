@@ -500,7 +500,7 @@ define SetupRunGtestTestBody
   endif
 
   ifneq ($$(GTEST_REPEAT), )
-    $1_GTEST_REPEAT :=--gtest_repeat=$$(GTEST_REPEAT)
+    $1_GTEST_REPEAT := --gtest_repeat=$$(GTEST_REPEAT)
   endif
 
   run-test-$1: pre-run-test

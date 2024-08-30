@@ -67,7 +67,7 @@ define SetupVariable
       ifneq ($$(findstring $$(LOG), info debug trace), )
         $$(info Prebuilt variable $1=$2 (default value))
       endif
-      $1:=$2
+      $1 := $2
     endif
   else
     ifneq ($$(findstring $$(LOG), info debug trace), )
@@ -163,7 +163,7 @@ else ifeq ($(UNAME_OS), MINGW64)
   OPENJDK_TARGET_OS_TYPE := windows
   OPENJDK_TARGET_OS_ENV := windows.msys2
 else
-  OPENJDK_TARGET_OS_TYPE:=unix
+  OPENJDK_TARGET_OS_TYPE := unix
   ifeq ($(UNAME_OS), Linux)
     OPENJDK_TARGET_OS := linux
   else ifeq ($(UNAME_OS), Darwin)

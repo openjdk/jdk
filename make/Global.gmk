@@ -28,7 +28,7 @@
 ###
 
 # Helper macro to allow $(info) to properly print strings beginning with spaces.
-_:=
+_ :=
 
 help:
 	$(info )

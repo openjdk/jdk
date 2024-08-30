@@ -64,7 +64,7 @@ uppercase = \
 # Param 2 - ending number
 sequence = \
     $(wordlist $1, $2, $(strip \
-        $(eval SEQUENCE_COUNT :=) \
+        $(eval SEQUENCE_COUNT := ) \
         $(call _sequence-do,$(strip $2))))
 
 _sequence-do = \

@@ -74,13 +74,13 @@ ifeq ($(HAS_SPEC),)
 
   # Setup information about available configurations, if any.
   ifneq ($(CUSTOM_ROOT), )
-    build_dir=$(CUSTOM_ROOT)/build
+    build_dir = $(CUSTOM_ROOT)/build
   else
-    build_dir=$(topdir)/build
+    build_dir = $(topdir)/build
   endif
-  all_spec_files=$(wildcard $(build_dir)/*/spec.gmk)
+  all_spec_files = $(wildcard $(build_dir)/*/spec.gmk)
   # Extract the configuration names from the path
-  all_confs=$(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
+  all_confs = $(patsubst %/spec.gmk, %, $(patsubst $(build_dir)/%, %, $(all_spec_files)))
 
   # Check for unknown command-line variables
   define CheckControlVariables
@@ -316,9 +316,9 @@ else # $(HAS_SPEC)=true
   BUILD_LOG_PIPE_SIMPLE := | $(TEE) -a $(BUILD_LOG)
 
   ifneq ($(CUSTOM_ROOT), )
-    topdir=$(CUSTOM_ROOT)
+    topdir = $(CUSTOM_ROOT)
   else
-    topdir=$(TOPDIR)
+    topdir = $(TOPDIR)
   endif
 
   # Setup the build environment to match the requested specification on
@@ -349,39 +349,39 @@ else # $(HAS_SPEC)=true
       ifneq ($$(findstring :, $$(COMPARE_BUILD)), )
         $$(foreach part, $$(subst :, , $$(COMPARE_BUILD)), \
           $$(if $$(filter PATCH=%, $$(part)), \
-            $$(eval COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(part)))) \
+            $$(eval COMPARE_BUILD_PATCH = $$(strip $$(patsubst PATCH=%, %, $$(part)))) \
           ) \
           $$(if $$(filter CONF=%, $$(part)), \
-            $$(eval COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(part))))) \
           ) \
           $$(if $$(filter MAKE=%, $$(part)), \
-            $$(eval COMPARE_BUILD_MAKE=$$(strip $$(subst +, , $$(patsubst MAKE=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_MAKE = $$(strip $$(subst +, , $$(patsubst MAKE=%, %, $$(part))))) \
           ) \
           $$(if $$(filter COMP_OPTS=%, $$(part)), \
-            $$(eval COMPARE_BUILD_COMP_OPTS=$$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_COMP_OPTS = $$(strip $$(subst +, , $$(patsubst COMP_OPTS=%, %, $$(part))))) \
           ) \
           $$(if $$(filter COMP_DIR=%, $$(part)), \
-            $$(eval COMPARE_BUILD_COMP_DIR=$$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_COMP_DIR = $$(strip $$(subst +, , $$(patsubst COMP_DIR=%, %, $$(part))))) \
           ) \
           $$(if $$(filter FAIL=%, $$(part)), \
-            $$(eval COMPARE_BUILD_FAIL=$$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_FAIL = $$(strip $$(subst +, , $$(patsubst FAIL=%, %, $$(part))))) \
           ) \
           $$(if $$(filter NODRYRUN=%, $$(part)), \
-            $$(eval COMPARE_BUILD_NODRYRUN=$$(strip $$(subst +, , $$(patsubst NODRYRUN=%, %, $$(part))))) \
+            $$(eval COMPARE_BUILD_NODRYRUN = $$(strip $$(subst +, , $$(patsubst NODRYRUN=%, %, $$(part))))) \
           ) \
         )
       else
         # Separate handling for single field case, to allow for spaces in values.
         ifneq ($$(filter PATCH=%, $$(COMPARE_BUILD)), )
-          COMPARE_BUILD_PATCH=$$(strip $$(patsubst PATCH=%, %, $$(COMPARE_BUILD)))
+          COMPARE_BUILD_PATCH = $$(strip $$(patsubst PATCH=%, %, $$(COMPARE_BUILD)))
         else ifneq ($$(filter CONF=%, $$(COMPARE_BUILD)), )
-          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(COMPARE_BUILD))))
+          COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(patsubst CONF=%, %, $$(COMPARE_BUILD))))
         else ifneq ($$(filter --%, $$(COMPARE_BUILD)), )
           # Assume CONF if value begins with --
-          COMPARE_BUILD_CONF=$$(strip $$(subst +, , $$(COMPARE_BUILD)))
+          COMPARE_BUILD_CONF = $$(strip $$(subst +, , $$(COMPARE_BUILD)))
         else
           # Otherwise assume patch file
-          COMPARE_BUILD_PATCH=$$(strip $$(COMPARE_BUILD))
+          COMPARE_BUILD_PATCH = $$(strip $$(COMPARE_BUILD))
         endif
       endif
       ifneq ($$(COMPARE_BUILD_PATCH), )
@@ -544,7 +544,7 @@ else # $(HAS_SPEC)=true
   ##############################################################################
 
   # Store the build times in this directory.
-  BUILDTIMESDIR=$(OUTPUTDIR)/make-support/build-times
+  BUILDTIMESDIR = $(OUTPUTDIR)/make-support/build-times
 
   # Record starting time for build of a sub repository.
   define RecordStartTime
