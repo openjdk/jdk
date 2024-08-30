@@ -192,33 +192,8 @@ public abstract sealed class AbstractMemorySegmentImpl
 
     @Override
     public final MemorySegment fill(byte value) {
-        if ((length & ~7) == 0) { // 0 <= length < 8
-            if (length == 0) {
-                // Make explicit tests as there are no set operations
-                checkReadOnly(false);
-                checkValidState();
-                return this;
-            }
-            // Handle smaller fills directly without having to transition to native code.
-            final int valueUnsigned = Byte.toUnsignedInt(value);
-            final int intValue = valueUnsigned | valueUnsigned << 8 | valueUnsigned << 16 | valueUnsigned << 24;
-
-            int offset = 0;
-            if ((length & 4) != 0) {
-                set(JAVA_INT_UNALIGNED, 0, intValue);
-                offset += 4;
-            }
-            if ((length & 2) != 0) {
-                set(JAVA_SHORT_UNALIGNED, offset, (short) intValue);
-                offset += 2;
-            }
-            if ((length & 1) != 0) {
-                set(JAVA_BYTE, offset, value);
-            }
-        } else {
-            checkReadOnly(false);
-            SCOPED_MEMORY_ACCESS.setMemory(sessionImpl(), unsafeGetBase(), unsafeGetOffset(), length, value);
-        }
+        checkReadOnly(false);
+        SCOPED_MEMORY_ACCESS.setMemory(this, value);
         return this;
     }
 

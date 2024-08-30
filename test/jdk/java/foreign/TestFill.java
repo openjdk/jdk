@@ -41,29 +41,38 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestFill {
+final class TestFill {
 
     // Make sure negative values are treated as expected
     private static final byte VALUE = -71;
 
     @ParameterizedTest
     @MethodSource("sizes")
-    public void testFill(int len) {
+    void testFill(int len) {
+        int offset = 16;
+        int expandedLen = offset + MAX_SIZE + offset;
+
+        // Make sure fill only affects the intended region XXXXXX
+        //
+        // ................XXXXXX................
+        // |    offset     | len |    offset     |
+
         try (var arena = Arena.ofConfined()) {
-            var segment = arena.allocate(10);
-            var slice = segment.asSlice(0, len);
+            var segment = arena.allocate(expandedLen);
+            var slice = segment.asSlice(offset, len);
             slice.fill(VALUE);
 
-            var expected = new byte[10];
-            Arrays.fill(expected, 0, len, VALUE);
+            var expected = new byte[expandedLen];
+            Arrays.fill(expected, offset, offset + len, VALUE);
 
+            // This checks the actual fill region as well as potential under and overflows
             assertArrayEquals(expected, segment.toArray(ValueLayout.JAVA_BYTE));
         }
     }
 
     @ParameterizedTest
     @MethodSource("sizes")
-    public void testReadOnly(int len) {
+    void testReadOnly(int len) {
         try (var arena = Arena.ofConfined()) {
             var segment = arena.allocate(10).asReadOnly();
             assertThrows(IllegalArgumentException.class, () -> segment.fill(VALUE));
@@ -72,7 +81,7 @@ public class TestFill {
 
     @ParameterizedTest
     @MethodSource("sizes")
-    public void testConfinement(int len) {
+    void testConfinement(int len) {
         try (var arena = Arena.ofConfined()) {
             var segment = arena.allocate(10);
             AtomicReference<RuntimeException> ex = new AtomicReference<>();
@@ -90,15 +99,17 @@ public class TestFill {
 
     @ParameterizedTest
     @MethodSource("sizes")
-    public void testScope(int len) {
+    void testScope(int len) {
         var arena = Arena.ofConfined();
         var segment = arena.allocate(len);
         arena.close();
         assertThrows(IllegalStateException.class, () -> segment.fill(VALUE));
     }
 
+    private static final int MAX_SIZE = 1 << 10;
+
     private static Stream<Arguments> sizes() {
-        return IntStream.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+        return IntStream.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 23, 32, 63, 128, 256, 511, MAX_SIZE)
                 .boxed()
                 .map(Arguments::of);
     }

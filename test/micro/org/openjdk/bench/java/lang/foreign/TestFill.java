@@ -50,19 +50,25 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3)
 public class TestFill {
 
-    @Param({"0", "1", "2", "3", "4", "5", "6", "7", "8", "16", "32", "64", "128"})
+    @Param({"0", "1", "2", "3", "4", "5", "6", "7",
+            "8", "9", "10", "11", "12", "13", "14", "15",
+            "16", "17", "18", "19", "20", "21", "22", "23",
+            "24", "25", "26", "27", "28", "29", "30", "31",
+            "32", "128", "256", "384", "511", "512"})
     public int ELEM_SIZE;
 
     byte[] array;
     MemorySegment heapSegment;
     MemorySegment nativeSegment;
+    MemorySegment unalignedSegment;
     ByteBuffer buffer;
 
     @Setup
     public void setup() {
         array = new byte[ELEM_SIZE];
         heapSegment = MemorySegment.ofArray(array);
-        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE);
+        nativeSegment = Arena.ofAuto().allocate(ELEM_SIZE, 8);
+        unalignedSegment = Arena.ofAuto().allocate(ELEM_SIZE + 1, 8).asSlice(1);
         buffer = ByteBuffer.wrap(array);
     }
 
@@ -79,6 +85,11 @@ public class TestFill {
     @Benchmark
     public void native_segment_fill() {
         nativeSegment.fill((byte) 0);
+    }
+
+    @Benchmark
+    public void unaligned_segment_fill() {
+        unalignedSegment.fill((byte) 0);
     }
 
 }
