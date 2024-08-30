@@ -38,11 +38,12 @@ import java.util.Objects;
  * the GZIP file format.
  *
  * <p>
- * In the GZIP file format, compressed data payloads are preceded by a
- * header and followed by a trailer. When a trailer is immediately followed by
- * a new header, this class continues to decode compressed data as a single,
- * concatenated stream. Otherwise, any additional trailing bytes are discarded
- * as if the end of stream is reached.
+ * The InputStream passed to the constructor of this class may represent a
+ * single GZIP file or multiple consecutive GZIP files. When the
+ * end of a GZIP file is immediately followed by a new GZIP file, this
+ * class continues to decode compressed data into a single, concatenated
+ * stream of uncompressed data. Otherwise, any additional trailing bytes
+ * following a GZIP file are discarded as if the end of stream is reached.
  *
  * @see         InflaterInputStream
  * @author      David Connelly
